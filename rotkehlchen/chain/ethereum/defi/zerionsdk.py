@@ -19,6 +19,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
@@ -27,7 +28,8 @@ from rotkehlchen.utils.misc import get_chunks
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 PROTOCOLS_QUERY_NUM = 40  # number of protocols to query in a single call
@@ -128,6 +130,9 @@ KNOWN_ZERION_PROTOCOL_NAMES = (
     'Cozy',
     'Cozy • Yearn',
     'Cozy • Compound',
+    'Unagii',
+    'Origin Protocol • OGN Staking',
+    'TimeWarp • Staking',
 )
 
 

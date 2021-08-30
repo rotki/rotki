@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union, cast
 
 from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -37,8 +38,9 @@ log = RotkehlchenLogsAdapter(logger)
 # adex staking
 # aave lending
 # eth2
+# liquity
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 11
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 12
 FREE_LEDGER_ACTIONS_LIMIT = 50
 
 HistoryResult = Tuple[
@@ -199,13 +201,19 @@ class EventsHistorian():
 
         try:
             self.processing_state_name = 'Querying ethereum transactions history'
-            eth_transactions = self.chain_manager.ethereum.transactions.query(
-                addresses=None,  # all addresses
+            filter_query = ETHTransactionsFilterQuery.make(
+                order_ascending=True,  # for history processing we need oldest first
+                limit=None,
+                offset=None,
+                addresses=None,
                 # We need to have history of transactions since before the range
                 from_ts=Timestamp(0),
                 to_ts=end_ts,
-                with_limit=False,  # at the moment ignore the limit for historical processing,
-                recent_first=False,  # for history processing we need oldest first
+            )
+            eth_transactions = self.chain_manager.ethereum.transactions.query(
+                filter_query=filter_query,
+                with_limit=False,  # at the moment ignore the limit for historical processing
+                only_cache=False,
             )
         except RemoteError as e:
             eth_transactions = []
@@ -311,7 +319,7 @@ class EventsHistorian():
                 to_timestamp=end_ts,
                 addresses=self.chain_manager.queried_addresses_for_module('aave'),
             ))
-        self._increase_progress(step, total_steps)
+        step = self._increase_progress(step, total_steps)
 
         # include eth2 staking events
         eth2 = self.chain_manager.get_module('eth2')
@@ -320,6 +328,17 @@ class EventsHistorian():
             defi_events.extend(self.chain_manager.get_eth2_history_events(
                 from_timestamp=start_ts,
                 to_timestamp=end_ts,
+            ))
+        step = self._increase_progress(step, total_steps)
+
+        # include liquity events
+        liquity = self.chain_manager.get_module('liquity')
+        if liquity is not None and has_premium:
+            self.processing_state_name = 'Querying Liquity staking history'
+            defi_events.extend(liquity.get_history_events(
+                from_timestamp=start_ts,
+                to_timestamp=end_ts,
+                addresses=self.chain_manager.queried_addresses_for_module('liquity'),
             ))
         self._increase_progress(step, total_steps)
 

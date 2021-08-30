@@ -9,6 +9,8 @@ from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.substrate.typing import KusamaAddress
 from rotkehlchen.chain.substrate.utils import is_valid_kusama_address
+from rotkehlchen.chain.substrate.typing import PolkadotAddress
+from rotkehlchen.chain.substrate.utils import is_valid_polkadot_address
 from rotkehlchen.typing import (
     BlockchainAccountData,
     BTCAddress,
@@ -29,6 +31,8 @@ class BlockchainAccounts(NamedTuple):
     eth: List[ChecksumEthAddress]
     btc: List[BTCAddress]
     ksm: List[KusamaAddress]
+    dot: List[PolkadotAddress]
+    avax: List[ChecksumEthAddress]
 
     def get(self, blockchain: SupportedBlockchain) -> ListOfBlockchainAddresses:
         if blockchain == SupportedBlockchain.BITCOIN:
@@ -37,6 +41,11 @@ class BlockchainAccounts(NamedTuple):
             return self.eth
         if blockchain == SupportedBlockchain.KUSAMA:
             return self.ksm
+        if blockchain == SupportedBlockchain.POLKADOT:
+            return self.dot
+        if blockchain == SupportedBlockchain.AVALANCHE:
+            return self.avax
+
         raise AssertionError(f'Unsupported blockchain: {blockchain}')
 
 
@@ -150,13 +159,14 @@ def is_valid_db_blockchain_account(
         blockchain: str,
         account: str,
 ) -> bool:
-    """Validates a blockchain address already stored in DB.
-    """
+    """Validates a blockchain address already stored in DB."""
     if blockchain == SupportedBlockchain.BITCOIN.value:
         return True
-    if blockchain == SupportedBlockchain.ETHEREUM.value:
+    if blockchain in (SupportedBlockchain.ETHEREUM.value, SupportedBlockchain.AVALANCHE.value):
         return is_checksum_address(account)
     if blockchain == SupportedBlockchain.KUSAMA.value:
         return is_valid_kusama_address(account)
+    if blockchain == SupportedBlockchain.POLKADOT.value:
+        return is_valid_polkadot_address(account)
 
     raise AssertionError(f'Unknown blockchain: {blockchain}')

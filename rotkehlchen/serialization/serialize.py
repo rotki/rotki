@@ -20,6 +20,14 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.modules.adex import ADXStakingHistory
+from rotkehlchen.chain.ethereum.modules.liquity.trove import (
+    Trove,
+    LiquityTroveEvent,
+    LiquityStakeEvent,
+    TroveOperation,
+    LiquityStakeEventType,
+    StakePosition,
+)
 from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerBPTEventPoolToken,
     BalancerEvent,
@@ -131,6 +139,10 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             BalancerPoolEventsBalance,
             BalancerPoolBalance,
             BalancerPoolTokenBalance,
+            LiquityTroveEvent,
+            LiquityStakeEvent,
+            Trove,
+            StakePosition,
     )):
         return process_result(entry.serialize())
     if isinstance(entry, (
@@ -165,6 +177,10 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             CurrentPriceOracle,
             HistoricalPriceOracle,
             LedgerActionType,
+            TroveOperation,
+            LiquityStakeEvent,
+            TroveOperation,
+            LiquityStakeEventType,
     )):
         return str(entry)
 

@@ -12,7 +12,7 @@
       </span>
     </v-col>
     <v-col cols="auto" :class="privacyMode ? 'blur-content' : ''">
-      ({{ address | truncateAddress }})
+      ({{ truncateAddress(address) }})
     </v-col>
   </v-row>
 </template>
@@ -21,6 +21,7 @@
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { truncateAddress } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 import { GeneralAccount } from '@/typing/types';
 import { randomHex } from '@/typing/utils';
@@ -33,6 +34,7 @@ export default class AccountDisplay extends Mixins(ScrambleMixin) {
   @Prop({ required: true })
   account!: GeneralAccount;
   privacyMode!: boolean;
+  readonly truncateAddress = truncateAddress;
 
   get address(): string {
     if (!this.scrambleData) {

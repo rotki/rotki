@@ -11,12 +11,13 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
 from rotkehlchen.assets.utils import add_ethereum_token_to_db
 from rotkehlchen.chain.ethereum.graph import (
+    SUBGRAPH_REMOTE_ERROR_MSG,
     GRAPH_QUERY_LIMIT,
     GRAPH_QUERY_SKIP_LIMIT,
     Graph,
     format_query_indentation,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap.graph import TOKEN_DAY_DATAS_QUERY
+from rotkehlchen.chain.ethereum.interfaces.ammswap.graph import TOKEN_DAY_DATAS_QUERY
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
@@ -69,7 +70,6 @@ from .typing import (
     TokenToPrices,
 )
 from .utils import (
-    SUBGRAPH_REMOTE_ERROR_MSG,
     UNISWAP_REMOTE_ERROR_MSG,
     deserialize_bpt_event,
     deserialize_invest_event,
@@ -113,7 +113,9 @@ class Balancer(EthereumModule):
                 'https://api.thegraph.com/subgraphs/name/yurycooliq/balancer',
             )
         except RemoteError as e:
-            self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+            self.msg_aggregator.add_error(
+                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
+            )
             raise ModuleInitializationFailure('subgraph remote error') from e
 
         try:
@@ -154,9 +156,9 @@ class Balancer(EthereumModule):
         # Take into account the current pool balances
         for pool_balance in pool_balances:
             profit_loss_amounts = pool_addr_to_profit_loss_amounts[pool_balance.pool_token]
-            for idx in range(len(pool_balance.underlying_tokens_balance)):
-                profit_loss_amounts[idx] += pool_balance.underlying_tokens_balance[idx].user_balance.amount  # type: ignore # noqa: E501
-                pool_addr_to_usd_value[pool_balance.pool_token] += pool_balance.underlying_tokens_balance[idx].user_balance.usd_value  # noqa: E501
+            for idx, underlying_token_balance in enumerate(pool_balance.underlying_tokens_balance):
+                profit_loss_amounts[idx] += underlying_token_balance.user_balance.amount  # type: ignore # noqa: E501
+                pool_addr_to_usd_value[pool_balance.pool_token] += underlying_token_balance.user_balance.usd_value  # noqa: E501
 
         for pool_address_token, pool_events in pool_addr_to_events.items():
             pool_tokens = pool_address_token.underlying_tokens
@@ -244,7 +246,9 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
+                )
                 raise
 
             try:
@@ -410,7 +414,9 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
+                )
                 raise
 
             try:
@@ -595,7 +601,9 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
+                )
                 raise
 
             try:
@@ -613,15 +621,19 @@ class Balancer(EthereumModule):
                 try:
                     amm_swap = deserialize_swap(self.database, raw_swap)
                 except DeserializationError as e:
+                    error = str(e)
+                    self.msg_aggregator.add_error(
+                        f'Failed to deserialize a balancer swap due to {error}. Check logs for more details',  # noqa: E501
+                    )
                     log.error(
                         'Failed to deserialize a balancer swap',
-                        error=str(e),
+                        error=error,
                         raw_swap=raw_swap,
                         start_ts=start_ts,
                         end_ts=end_ts,
                         param_values=param_values,
                     )
-                    raise RemoteError('Failed to deserialize balancer trades') from e
+                    continue
 
                 address_to_unique_swaps[amm_swap.address].add(amm_swap)
 
@@ -864,10 +876,11 @@ class Balancer(EthereumModule):
                             self.msg_aggregator.add_error(
                                 f"Failed to request the USD price of {token.identifier} at "
                                 f"timestamp {invest_event.timestamp}. The USD price of the "
-                                f"Balancer {event_type} for the pool {bpt_event.pool_address} "
+                                f"Balancer {event_type} for the pool {bpt_event.pool_address_token.ethereum_address} "  # noqa: E501
                                 f"at transaction {bpt_event.tx_hash} can't be calculated and "
                                 f"it will be set to zero.",
                             )
+
                 if is_missing_token_price is True:
                     lp_balance.usd_value = ZERO
 
@@ -932,7 +945,9 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
+                )
                 raise
 
             try:
@@ -1063,7 +1078,9 @@ class Balancer(EthereumModule):
                     param_values=param_values,
                 )
             except RemoteError as e:
-                self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Balancer", error_msg=str(e)),
+                )
                 raise
 
             try:

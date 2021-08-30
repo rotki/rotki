@@ -3,7 +3,10 @@
     fill="none"
     viewBox="0 0 24 24"
     xmlns="http://www.w3.org/2000/svg"
-    :class="dark ? null : $style.opacity"
+    :class="{
+      [$style.opacity]: !dark,
+      [$style.icon]: true
+    }"
   >
     <g
       transform="matrix(.093023 0 0 .093023 -1.2093 -1.907)"
@@ -47,5 +50,10 @@ export default defineComponent({
 <style module>
 .opacity {
   opacity: 0.66;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
 }
 </style>

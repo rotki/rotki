@@ -1,5 +1,5 @@
 import { SupportedExchange } from '@/services/balances/types';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { KrakenAccountType } from '@/store/balances/types';
 import { LedgerActionType } from '@/store/history/consts';
 
@@ -34,11 +34,12 @@ export interface DBSettings {
   readonly balance_save_frequency: number;
   readonly eth_rpc_endpoint: string;
   readonly ksm_rpc_endpoint: string;
+  readonly dot_rpc_endpoint: string;
   readonly main_currency: string;
   readonly last_balance_save: number;
   readonly date_display_format: string;
   readonly kraken_account_type: string;
-  readonly active_modules: SupportedModules[];
+  readonly active_modules: Module[];
   readonly frontend_settings: string;
   readonly account_for_assets_movements: boolean;
   readonly btc_derivation_gap_limit: number;
@@ -46,6 +47,8 @@ export interface DBSettings {
   readonly display_date_in_localtime: boolean;
   readonly current_price_oracles: PriceOracles[];
   readonly historical_price_oracles: PriceOracles[];
+  readonly pnl_csv_with_formulas: boolean;
+  readonly pnl_csv_have_summary: boolean;
 }
 
 interface ApiKey {
@@ -55,6 +58,7 @@ interface ApiKey {
 export interface ExternalServiceKeys {
   etherscan?: ApiKey;
   cryptocompare?: ApiKey;
+  covalent?: ApiKey;
   beaconchain?: ApiKey;
   loopring?: ApiKey;
 }

@@ -41,8 +41,7 @@ import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import { V1, V2 } from '@/services/defi/consts';
-import { ProtocolVersion } from '@/services/defi/types';
+import { ProtocolVersion } from '@/services/defi/consts';
 import { YearnVaultBalance } from '@/services/defi/types/yearn';
 import { DefiGetterTypes } from '@/store/defi/getters';
 import { Nullable } from '@/types';
@@ -66,13 +65,13 @@ export default class YearnAssetsTable extends Vue {
   get vaults(): YearnVaultBalance[] {
     let v1Assets: YearnVaultBalance[] = [];
     const addresses = this.selectedAddresses;
-    if (this.version === V1 || !this.version) {
-      v1Assets = this.yearnVaultsAssets(addresses, V1);
+    if (this.version === ProtocolVersion.V1 || !this.version) {
+      v1Assets = this.yearnVaultsAssets(addresses, ProtocolVersion.V1);
     }
 
     let v2Assets: YearnVaultBalance[] = [];
-    if (this.version === V2 || !this.version) {
-      v2Assets = this.yearnVaultsAssets(addresses, V2);
+    if (this.version === ProtocolVersion.V2 || !this.version) {
+      v2Assets = this.yearnVaultsAssets(addresses, ProtocolVersion.V2);
     }
     return [...v1Assets, ...v2Assets];
   }

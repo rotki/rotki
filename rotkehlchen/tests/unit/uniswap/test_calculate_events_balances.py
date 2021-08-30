@@ -1,7 +1,8 @@
 from typing import List
 
-from rotkehlchen.chain.ethereum.modules.uniswap.typing import LiquidityPool, LiquidityPoolEvent
-from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
+import pytest
+
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import LiquidityPool, LiquidityPoolEvent
 
 from .utils import (
     LP_1_EVENTS,
@@ -15,10 +16,12 @@ from .utils import (
 )
 
 
-def test_no_events_no_balances():
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+def test_no_events_no_balances(rotkehlchen_api_server):
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     events: List[LiquidityPoolEvent] = []
     balances: List[LiquidityPool] = []
-    events_balances = Uniswap._calculate_events_balances(
+    events_balances = rotki.chain_manager.get_module('uniswap')._calculate_events_balances(
         address=TEST_ADDRESS_1,
         events=events,
         balances=balances,
@@ -26,9 +29,11 @@ def test_no_events_no_balances():
     assert events_balances == []
 
 
-def test_single_pool_without_balances():
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+def test_single_pool_without_balances(rotkehlchen_api_server):
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     balances: List[LiquidityPool] = []
-    events_balances = Uniswap._calculate_events_balances(
+    events_balances = rotki.chain_manager.get_module('uniswap')._calculate_events_balances(
         address=TEST_ADDRESS_1,
         events=LP_1_EVENTS,
         balances=balances,
@@ -36,11 +41,13 @@ def test_single_pool_without_balances():
     assert events_balances == [LP_1_EVENTS_BALANCE]
 
 
-def test_multiple_pools_without_balances():
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+def test_multiple_pools_without_balances(rotkehlchen_api_server):
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     events = list(LP_1_EVENTS)
     events.extend(LP_2_EVENTS)
     balances: List[LiquidityPool] = []
-    events_balances = Uniswap._calculate_events_balances(
+    events_balances = rotki.chain_manager.get_module('uniswap')._calculate_events_balances(
         address=TEST_ADDRESS_1,
         events=events,
         balances=balances,
@@ -48,10 +55,12 @@ def test_multiple_pools_without_balances():
     assert events_balances == [LP_1_EVENTS_BALANCE, LP_2_EVENTS_BALANCE]
 
 
-def test_single_pool_with_balances():
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+def test_single_pool_with_balances(rotkehlchen_api_server):
     """Test LP current balances are factorized in the pool events balance
     """
-    events_balances = Uniswap._calculate_events_balances(
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    events_balances = rotki.chain_manager.get_module('uniswap')._calculate_events_balances(
         address=TEST_ADDRESS_1,
         events=LP_3_EVENTS,
         balances=[LP_3_BALANCE],

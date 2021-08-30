@@ -1,40 +1,38 @@
 <template>
-  <v-container class="settings">
-    <base-page-header :text="$t('settings.title')" />
-    <tab-navigation :tab-contents="settingsTabs" />
-  </v-container>
+  <tab-navigation :tab-contents="tabs" class="settings" />
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import BasePageHeader from '@/components/base/BasePageHeader.vue';
+import { defineComponent } from '@vue/composition-api';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
+import i18n from '@/i18n';
 
-@Component({
-  components: { BasePageHeader, TabNavigation }
-})
-export default class Settings extends Vue {
-  readonly settingsTabs: TabContent[] = [
-    {
-      name: this.$t('settings.tabs.general').toString(),
-      routeTo: '/settings/general'
-    },
-    {
-      name: this.$t('settings.tabs.accounting').toString(),
-      routeTo: '/settings/accounting'
-    },
-    {
-      name: this.$t('settings.tabs.data_security').toString(),
-      routeTo: '/settings/data-security'
-    },
-    {
-      name: this.$t('settings.tabs.modules').toString(),
-      routeTo: '/settings/modules'
-    }
-  ];
-}
+const tabs: TabContent[] = [
+  {
+    name: i18n.t('settings.tabs.general').toString(),
+    routeTo: '/settings/general'
+  },
+  {
+    name: i18n.t('settings.tabs.accounting').toString(),
+    routeTo: '/settings/accounting'
+  },
+  {
+    name: i18n.t('settings.tabs.data_security').toString(),
+    routeTo: '/settings/data-security'
+  },
+  {
+    name: i18n.t('settings.tabs.modules').toString(),
+    routeTo: '/settings/modules'
+  }
+];
+
+export default defineComponent({
+  name: 'Settings',
+  components: { TabNavigation },
+  setup() {
+    return { tabs };
+  }
+});
 </script>
-
-<style scoped lang="scss"></style>

@@ -184,8 +184,13 @@ class AMMTrade(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        """Since these trades are made up, uniqueness needs an extra id"""
-        return f'{self.tx_hash}-{self.trade_index}'
+        """Since these trades are made up, uniqueness needs an extra id
+
+        Also look at https://github.com/rotki/rotki/issues/3287. Turns out this
+        identifier mechanism is not unique for multiple swaps in same transaction
+        from different locations. So also adding log index in there to make up for it.
+        """
+        return f'{self.tx_hash}-{self.trade_index}-{self.swaps[0].log_index}'
 
     @property
     def trade_id(self) -> str:

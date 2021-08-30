@@ -6,7 +6,7 @@
       position="left"
       width="26px"
       max-height="24px"
-      :src="require(`@/assets/images/defi/${item.protocol}.svg`)"
+      :src="require(`@/assets/images/defi/${getIcon(item)}.svg`)"
     />
     <span class="ml-2">{{ identifier }}</span>
   </div>
@@ -14,17 +14,21 @@
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import ScrambleMixin from '@/mixins/scramble-mixin';
-import { SupportedDefiProtocols } from '@/services/defi/types';
+import { DefiProtocol } from '@/services/defi/consts';
 
-type DefiProtocol = {
+type DefiProtocolInfo = {
   readonly identifier: string;
-  readonly protocol: SupportedDefiProtocols;
+  readonly protocol: DefiProtocol;
 };
 
 @Component({})
 export default class DefiSelectorItem extends Mixins(ScrambleMixin) {
   @Prop({ required: true })
-  item!: DefiProtocol;
+  item!: DefiProtocolInfo;
+
+  getIcon({ protocol }: DefiProtocolInfo): string {
+    return protocol.startsWith('makerdao') ? 'makerdao' : protocol;
+  }
 
   get identifier(): string {
     const { identifier } = this.item;

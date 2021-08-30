@@ -1,14 +1,15 @@
-gevent==21.1.2
-greenlet==1.1.0
+gevent==21.8.0
+greenlet==1.1.1
 gevent-websocket==0.10.1
 wsaccel==0.6.3  # recommended for acceleration of gevent-websocket. But abandoned.
-web3==5.21.0
+web3==5.23.1
 pysqlcipher3==1.0.4
-requests==2.25.1
+requests==2.26.0
+urllib3==1.26.6
 pycryptodome==3.6.6
 pycryptodomex==3.6.6
 coincurve==13.0.0
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.1
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0
@@ -16,15 +17,15 @@ gql==2.0.0
 py-sr25519-bindings==0.1.2
 py-ed25519-bindings==0.1.2
 py-bip39-bindings==0.1.6
-substrate-interface==0.13.9
+substrate-interface==0.13.12
 beautifulsoup4==4.9.3
 
 # For the rest api
 flask-cors==3.0.10
 flask-restful==0.3.9
-flask==2.0.0
-marshmallow==3.12.2
-webargs==8.0.0
+flask==2.0.1
+marshmallow==3.13.0
+webargs==8.0.1
 
 #constraints
 setuptools==41.0.1  # constraint required by pyinstaller==3.5.0

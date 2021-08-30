@@ -1,3 +1,4 @@
+import { ActionResult, SupportedAsset } from '@rotki/common/lib/data';
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import {
   AssetIdResponse,
@@ -5,18 +6,13 @@ import {
   EthereumToken,
   HistoricalPrice,
   HistoricalPriceDeletePayload,
-  HistoricalPricePayload,
-  SupportedAsset
+  HistoricalPricePayload
 } from '@/services/assets/types';
 import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import {
-  ActionResult,
-  PendingTask,
-  SupportedAssets
-} from '@/services/types-api';
+import { PendingTask, SupportedAssets } from '@/services/types-api';
 import {
   handleResponse,
   validStatus,
@@ -288,6 +284,19 @@ export class AssetApi {
       .delete<ActionResult<boolean>>('/assets/prices/historical', {
         data: axiosSnakeCaseTransformer(payload),
         validateStatus: validWithoutSessionStatus
+      })
+      .then(handleResponse);
+  }
+
+  restoreAssetsDatabase(
+    reset: String,
+    ignoreWarnings: boolean
+  ): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>('/assets/updates', {
+        data: axiosSnakeCaseTransformer({ reset, ignoreWarnings }),
+        validateStatus: validStatus,
+        transformResponse: this.baseTransformer
       })
       .then(handleResponse);
   }

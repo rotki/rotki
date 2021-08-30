@@ -3,23 +3,18 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Tuple
 
+from rotkehlchen.chain.ethereum.interfaces.ammswap import UNISWAP_TRADES_PREFIX
 from rotkehlchen.chain.ethereum.modules.adex.utils import ADEX_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.balancer.typing import (
     BALANCER_EVENTS_PREFIX,
     BALANCER_TRADES_PREFIX,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap.typing import (
-    UNISWAP_EVENTS_PREFIX,
-    UNISWAP_TRADES_PREFIX,
-)
+from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.exchanges.data_structures import hash_id
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_movement_category_from_db,
-    deserialize_trade_type_from_db,
-)
-from rotkehlchen.typing import Location
+from rotkehlchen.serialization.deserialize import deserialize_trade_type_from_db
+from rotkehlchen.typing import AssetMovementCategory, Location
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -199,7 +194,7 @@ class V24V25UpgradeHelper():
             # formulate the new DB identifier primary key. Copy the identifier() functionality
             new_id_string = (
                 str(Location.deserialize_from_db(entry[1])) +
-                str(deserialize_asset_movement_category_from_db(entry[2])) +
+                str(AssetMovementCategory.deserialize_from_db(entry[2])) +
                 str(entry[5]) +
                 new_asset +
                 new_fee_asset +

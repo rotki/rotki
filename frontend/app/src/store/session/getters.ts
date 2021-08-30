@@ -1,9 +1,6 @@
 import { Currency } from '@/model/currency';
-import {
-  SupportedModules,
-  Watcher,
-  WatcherType
-} from '@/services/session/types';
+import { Module } from '@/services/session/consts';
+import { Watcher, WatcherType } from '@/services/session/types';
 import { SessionState } from '@/store/session/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
@@ -15,7 +12,7 @@ interface SessionGetters {
   currency: Currency;
   tags: Tag[];
   loanWatchers: Watcher<WatcherType>[];
-  activeModules: SupportedModules[];
+  activeModules: Module[];
   currencySymbol: string;
 }
 

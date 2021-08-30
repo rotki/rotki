@@ -43,6 +43,7 @@ from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeTyp
 BALANCER_TEST_ADDR1 = string_to_ethereum_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')
 BALANCER_TEST_ADDR2 = string_to_ethereum_address('0x029f388aC4D5C8BfF490550ce0853221030E822b')
 BALANCER_TEST_ADDR3 = string_to_ethereum_address('0x7716a99194d758c8537F056825b75Dd0C8FDD89f')
+BALANCER_TEST_ADDR4 = string_to_ethereum_address('0x231DC6af3C66741f6Cf618884B953DF0e83C1A2A')
 BALANCER_TEST_ADDR3_POOL1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
     symbol='BPT',
@@ -412,6 +413,70 @@ def test_get_trades_history(
     filtered_trades = address_trades[:len(expected_trades)]
     for trade, expected_trade in zip(filtered_trades, expected_trades):
         assert trade == expected_trade.serialize()
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR4]])
+@pytest.mark.parametrize('ethereum_modules', [['balancer']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_get_trade_with_1_token_pool(
+        rotkehlchen_api_server,
+        ethereum_accounts,  # pylint: disable=unused-argument
+        rotki_premium_credentials,  # pylint: disable=unused-argument
+        start_with_valid_premium,  # pylint: disable=unused-argument
+):
+    """
+    Test the special case of a swap within an 1 token pool.
+    This can probably happen if the controller has since removed tokens from the pool.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        original_queries=['zerion', 'logs', 'blocknobytime'],
+    )
+    with ExitStack() as stack:
+        # patch ethereum/etherscan to not autodetect tokens
+        setup.enter_ethereum_patches(stack)
+        response = requests.get(
+            api_url_for(rotkehlchen_api_server, 'balancertradeshistoryresource'),
+            json={
+                'from_timestamp': 1621358338,
+                'to_timestamp': 1621358340,
+            },
+        )
+        result = assert_proper_response_with_result(response)
+
+    db_trades = rotki.data.db.get_amm_swaps()
+    assert len(db_trades) == 29
+
+    address_trades = result[BALANCER_TEST_ADDR4]
+    assert len(address_trades) == 1
+    assert address_trades[0] == AMMTrade(
+        trade_type=TradeType.BUY,
+        base_asset=A_WETH,
+        quote_asset=A_WBTC,
+        amount=AssetAmount(FVal('0.205421420618533148')),
+        rate=Price(FVal('0.07606382992071615428519015532')),
+        trade_index=0,
+        swaps=[
+            AMMSwap(
+                tx_hash='0x4f9e0d8aa660a5d3db276a1ade038f7027f29838dd22d5276571d2e4ea7131ae',  # noqa: E501
+                log_index=84,
+                address=string_to_ethereum_address(BALANCER_TEST_ADDR4),  # noqa: E501
+                from_address=string_to_ethereum_address('0xFD3dFB524B2dA40c8a6D703c62BE36b5D8540626'),  # noqa: E501
+                to_address=string_to_ethereum_address('0x582818356331877553F3E9Cf9557b48e5DdbD54a'),  # noqa: E501
+                timestamp=Timestamp(1621358339),
+                location=Location.BALANCER,
+                token0=A_WBTC,
+                token1=A_WETH,
+                amount0_in=AssetAmount(FVal('0.01562514')),
+                amount1_in=AssetAmount(ZERO),
+                amount0_out=AssetAmount(ZERO),
+                amount1_out=AssetAmount(FVal('0.205421420618533148')),
+            ),
+        ],
+    ).serialize()
 
 
 BALANCER_TEST_ADDR3_EXPECTED_HISTORY_POOL1 = (

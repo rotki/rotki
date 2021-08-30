@@ -92,6 +92,10 @@
 </template>
 
 <script lang="ts">
+import {
+  TimeFramePeriod,
+  TimeFrameSetting
+} from '@rotki/common/lib/settings/graphs';
 import { Component, Mixins } from 'vue-property-decorator';
 import ThemeManagerLock from '@/components/premium/ThemeManagerLock.vue';
 import Explorers from '@/components/settings/explorers/Explorers.vue';
@@ -110,13 +114,9 @@ import {
   GRAPH_ZERO_BASED,
   QUERY_PERIOD,
   REFRESH_PERIOD,
-  TIMEFRAME_ALL,
   TIMEFRAME_SETTING
 } from '@/store/settings/consts';
-import {
-  FrontendSettingsPayload,
-  TimeFrameSetting
-} from '@/store/settings/types';
+import { FrontendSettingsPayload } from '@/store/settings/types';
 
 const SETTING_SCRAMBLE_DATA = 'scrambleData';
 const SETTING_TIMEFRAME = 'timeframe';
@@ -147,7 +147,7 @@ export default class FrontendSettings extends Mixins<
 >(SettingsMixin, PremiumMixin) {
   queryPeriod: string = '5';
   scrambleData: boolean = false;
-  defaultGraphTimeframe: TimeFrameSetting = TIMEFRAME_ALL;
+  defaultGraphTimeframe: TimeFrameSetting = TimeFramePeriod.ALL;
   refreshPeriod: string = '';
   refreshEnabled: boolean = false;
   zeroBased: boolean = false;

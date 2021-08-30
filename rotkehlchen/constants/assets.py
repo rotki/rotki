@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 08/07/2021 21:43:30.
+# tools/scripts/generate_constant_assets.py at 12/08/2021 19:54:12.
 # Do not edit manually!
 
 from typing import List
@@ -119,6 +119,31 @@ A_KSM = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_KSM)
+A_AVAX = Asset.initialize(
+    identifier='AVAX',
+    asset_type=AssetType.OWN_CHAIN,
+    name="Avalanche",
+    symbol='AVAX',
+    started=Timestamp(1600646400),
+    forked=None,
+    swapped_for=None,
+    coingecko='avalanche-2',
+    cryptocompare=None,
+)
+CONSTANT_ASSETS.append(A_AVAX)
+A_DOGE = Asset.initialize(
+    identifier='DOGE',
+    asset_type=AssetType.OWN_CHAIN,
+    name="Dogecoin",
+    symbol='DOGE',
+    started=Timestamp(1386325540),
+    forked=None,
+    swapped_for=None,
+    coingecko='dogecoin',
+    cryptocompare=None,
+)
+CONSTANT_ASSETS.append(A_DOGE)
+
 
 A_BAL = EthereumToken.initialize(
     address=string_to_ethereum_address('0xba100000625a3754423978a60c9317c58a424e3D'),
@@ -240,6 +265,30 @@ A_TUSD = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_TUSD)
+A_MATIC = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
+    decimals=18,
+    name="Matic Network",
+    symbol='MATIC',
+    started=Timestamp(1555718400),
+    swapped_for=None,
+    coingecko='matic-network',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_MATIC)
+A_LQTY = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'),
+    decimals=18,
+    name="LQTY",
+    symbol='LQTY',
+    started=Timestamp(1617611590),
+    swapped_for=None,
+    coingecko='liquity',
+    cryptocompare='LQTY',
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_LQTY)
 
 A_AAVE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'),
@@ -358,7 +407,7 @@ A_COMP = EthereumToken.initialize(
     swapped_for=None,
     coingecko='compound-governance-token',
     cryptocompare=None,
-    protocol=None,
+    protocol='compound',
 )
 CONSTANT_ASSETS.append(A_COMP)
 A_LRC = EthereumToken.initialize(
@@ -553,6 +602,18 @@ A_MCB = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_MCB)
+A_LUSD = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'),
+    decimals=18,
+    name="LUSD Stablecoin",
+    symbol='LUSD',
+    started=Timestamp(1617611299),
+    swapped_for=None,
+    coingecko='liquity-usd',
+    cryptocompare='LUSD',
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_LUSD)
 
 # used as underlying assets of aave v1 tokens
 A_ENJ = EthereumToken.initialize(
@@ -652,7 +713,7 @@ A_ALINK_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-link',
     cryptocompare='LINK',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_ALINK_V1)
 A_AETH_V1 = EthereumToken.initialize(
@@ -664,7 +725,7 @@ A_AETH_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-eth-v1',
     cryptocompare='ETH',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AETH_V1)
 A_AENJ_V1 = EthereumToken.initialize(
@@ -676,7 +737,7 @@ A_AENJ_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-enj',
     cryptocompare='ENJ',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AENJ_V1)
 A_ADAI_V1 = EthereumToken.initialize(
@@ -688,7 +749,7 @@ A_ADAI_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-dai',
     cryptocompare='DAI',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_ADAI_V1)
 A_AUSDC_V1 = EthereumToken.initialize(
@@ -700,7 +761,7 @@ A_AUSDC_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-usdc',
     cryptocompare='USDC',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AUSDC_V1)
 A_ASUSD_V1 = EthereumToken.initialize(
@@ -712,7 +773,7 @@ A_ASUSD_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-susd',
     cryptocompare='sUSD',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_ASUSD_V1)
 A_ATUSD_V1 = EthereumToken.initialize(
@@ -724,7 +785,7 @@ A_ATUSD_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-tusd',
     cryptocompare='TUSD',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_ATUSD_V1)
 A_AUSDT_V1 = EthereumToken.initialize(
@@ -736,7 +797,7 @@ A_AUSDT_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-usdt',
     cryptocompare='USDT',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AUSDT_V1)
 A_ABUSD_V1 = EthereumToken.initialize(
@@ -748,7 +809,7 @@ A_ABUSD_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-busd',
     cryptocompare='BUSD',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_ABUSD_V1)
 A_ABAT_V1 = EthereumToken.initialize(
@@ -760,7 +821,7 @@ A_ABAT_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-bat',
     cryptocompare='BAT',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_ABAT_V1)
 A_AKNC_V1 = EthereumToken.initialize(
@@ -772,7 +833,7 @@ A_AKNC_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-knc',
     cryptocompare='KNC',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AKNC_V1)
 A_ALEND_V1 = EthereumToken.initialize(
@@ -784,7 +845,7 @@ A_ALEND_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-lend',
     cryptocompare='LEND',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_ALEND_V1)
 A_AMANA_V1 = EthereumToken.initialize(
@@ -796,7 +857,7 @@ A_AMANA_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-mana',
     cryptocompare='MANA',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AMANA_V1)
 A_AMKR_V1 = EthereumToken.initialize(
@@ -808,7 +869,7 @@ A_AMKR_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-mkr',
     cryptocompare='MKR',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AMKR_V1)
 A_AREP_V1 = EthereumToken.initialize(
@@ -820,7 +881,7 @@ A_AREP_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-rep',
     cryptocompare='REP',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AREP_V1)
 A_AREN_V1 = EthereumToken.initialize(
@@ -832,7 +893,7 @@ A_AREN_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-ren',
     cryptocompare='REN',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AREN_V1)
 A_ASNX_V1 = EthereumToken.initialize(
@@ -844,7 +905,7 @@ A_ASNX_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-snx',
     cryptocompare='SNX',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_ASNX_V1)
 A_AWBTC_V1 = EthereumToken.initialize(
@@ -856,7 +917,7 @@ A_AWBTC_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-wbtc',
     cryptocompare='WBTC',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AWBTC_V1)
 A_AYFI_V1 = EthereumToken.initialize(
@@ -868,7 +929,7 @@ A_AYFI_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='ayfi',
     cryptocompare='YFI',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AYFI_V1)
 A_AZRX_V1 = EthereumToken.initialize(
@@ -880,7 +941,7 @@ A_AZRX_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-zrx',
     cryptocompare='ZRX',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AZRX_V1)
 A_AAAVE_V1 = EthereumToken.initialize(
@@ -892,7 +953,7 @@ A_AAAVE_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave',
     cryptocompare='AAVE',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AAAVE_V1)
 A_AUNI_V1 = EthereumToken.initialize(
@@ -904,7 +965,7 @@ A_AUNI_V1 = EthereumToken.initialize(
     swapped_for=None,
     coingecko='uniswap',
     cryptocompare='UNI',
-    protocol=None,
+    protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AUNI_V1)
 
@@ -918,7 +979,7 @@ A_CDAI = EthereumToken.initialize(
     swapped_for=None,
     coingecko='cdai',
     cryptocompare=None,
-    protocol=None,
+    protocol='compound',
 )
 CONSTANT_ASSETS.append(A_CDAI)
 A_CUSDC = EthereumToken.initialize(
@@ -930,7 +991,7 @@ A_CUSDC = EthereumToken.initialize(
     swapped_for=None,
     coingecko='compound-usd-coin',
     cryptocompare=None,
-    protocol=None,
+    protocol='compound',
 )
 CONSTANT_ASSETS.append(A_CUSDC)
 A_CUSDT = EthereumToken.initialize(
@@ -942,7 +1003,7 @@ A_CUSDT = EthereumToken.initialize(
     swapped_for=None,
     coingecko='compound-usdt',
     cryptocompare=None,
-    protocol=None,
+    protocol='compound',
 )
 CONSTANT_ASSETS.append(A_CUSDT)
 A_CBAT = EthereumToken.initialize(
@@ -954,7 +1015,7 @@ A_CBAT = EthereumToken.initialize(
     swapped_for=None,
     coingecko='compound-basic-attention-token',
     cryptocompare=None,
-    protocol=None,
+    protocol='compound',
 )
 CONSTANT_ASSETS.append(A_CBAT)
 A_CETH = EthereumToken.initialize(
@@ -966,7 +1027,7 @@ A_CETH = EthereumToken.initialize(
     swapped_for=None,
     coingecko='compound-ether',
     cryptocompare=None,
-    protocol=None,
+    protocol='compound',
 )
 CONSTANT_ASSETS.append(A_CETH)
 A_CREP = EthereumToken.initialize(
@@ -978,7 +1039,7 @@ A_CREP = EthereumToken.initialize(
     swapped_for=None,
     coingecko='compound-augur',
     cryptocompare=None,
-    protocol=None,
+    protocol='compound',
 )
 CONSTANT_ASSETS.append(A_CREP)
 A_CWBTC = EthereumToken.initialize(
@@ -990,7 +1051,7 @@ A_CWBTC = EthereumToken.initialize(
     swapped_for=None,
     coingecko='compound-wrapped-btc',
     cryptocompare=None,
-    protocol=None,
+    protocol='compound',
 )
 CONSTANT_ASSETS.append(A_CWBTC)
 A_CZRX = EthereumToken.initialize(
@@ -1002,7 +1063,7 @@ A_CZRX = EthereumToken.initialize(
     swapped_for=None,
     coingecko='compound-0x',
     cryptocompare=None,
-    protocol=None,
+    protocol='compound',
 )
 CONSTANT_ASSETS.append(A_CZRX)
 
@@ -1031,7 +1092,7 @@ A_YV1_DAIUSDCTBUSD = EthereumToken.initialize(
     swapped_for=None,
     coingecko='lp-bcurve',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_DAIUSDCTBUSD)
 A_CRVP_DAIUSDCTBUSD = EthereumToken.initialize(
@@ -1055,7 +1116,7 @@ A_YV1_DAIUSDCTTUSD = EthereumToken.initialize(
     swapped_for=None,
     coingecko='yvault-lp-ycurve',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_DAIUSDCTTUSD)
 A_CRVP_DAIUSDCTTUSD = EthereumToken.initialize(
@@ -1091,7 +1152,7 @@ A_YV1_RENWSBTC = EthereumToken.initialize(
     swapped_for=None,
     coingecko='lp-renbtc-curve',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_RENWSBTC)
 A_CRV_RENWBTC = EthereumToken.initialize(
@@ -1151,7 +1212,7 @@ A_YV1_3CRV = EthereumToken.initialize(
     swapped_for=None,
     coingecko='curve-dao-token',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_3CRV)
 A_CRV_3CRVSUSD = EthereumToken.initialize(
@@ -1175,7 +1236,7 @@ A_YV1_ALINK = EthereumToken.initialize(
     swapped_for=None,
     coingecko='aave-link',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_ALINK)
 A_YV1_DAI = EthereumToken.initialize(
@@ -1187,7 +1248,7 @@ A_YV1_DAI = EthereumToken.initialize(
     swapped_for=None,
     coingecko='dai',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_DAI)
 A_YV1_WETH = EthereumToken.initialize(
@@ -1199,7 +1260,7 @@ A_YV1_WETH = EthereumToken.initialize(
     swapped_for=None,
     coingecko='weth',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_WETH)
 A_YV1_YFI = EthereumToken.initialize(
@@ -1211,7 +1272,7 @@ A_YV1_YFI = EthereumToken.initialize(
     swapped_for=None,
     coingecko='yearn-finance',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_YFI)
 A_YV1_USDT = EthereumToken.initialize(
@@ -1223,7 +1284,7 @@ A_YV1_USDT = EthereumToken.initialize(
     swapped_for=None,
     coingecko='tether',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_USDT)
 A_YV1_USDC = EthereumToken.initialize(
@@ -1235,7 +1296,7 @@ A_YV1_USDC = EthereumToken.initialize(
     swapped_for=None,
     coingecko='usd-coin',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_USDC)
 A_YV1_TUSD = EthereumToken.initialize(
@@ -1247,7 +1308,7 @@ A_YV1_TUSD = EthereumToken.initialize(
     swapped_for=None,
     coingecko='true-usd',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_TUSD)
 A_YV1_GUSD = EthereumToken.initialize(
@@ -1259,7 +1320,7 @@ A_YV1_GUSD = EthereumToken.initialize(
     swapped_for=None,
     coingecko='gemini-dollar',
     cryptocompare=None,
-    protocol=None,
+    protocol='yearn-v1',
 )
 CONSTANT_ASSETS.append(A_YV1_GUSD)
 A_FARM_USDC = EthereumToken.initialize(
@@ -2316,3 +2377,15 @@ A_RSPT = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_RSPT)
+A_FOX = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xc770EEfAd204B5180dF6a14Ee197D99d808ee52d'),
+    decimals=18,
+    name="FOX Token",
+    symbol='FOX',
+    started=Timestamp(1553639047),
+    swapped_for=None,
+    coingecko='fox-token',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_FOX)

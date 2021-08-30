@@ -1,10 +1,10 @@
+import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { MutationTree } from 'vuex';
 import { AaveBalances, AaveHistory } from '@/services/defi/types/aave';
 import {
   CompoundBalances,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import { UniswapBalances } from '@/services/defi/types/uniswap';
 import {
   YearnVaultsBalances,
   YearnVaultsHistory
@@ -15,14 +15,13 @@ import {
   Airdrops,
   AllDefiProtocols,
   BalancerBalances,
+  BalancerEvents,
   DefiState,
+  DexTrades,
   DSRBalances,
   DSRHistory,
   MakerDAOVault,
-  MakerDAOVaultDetails,
-  UniswapEvents,
-  DexTrades,
-  BalancerEvents
+  MakerDAOVaultDetails
 } from '@/store/defi/types';
 
 export const mutations: MutationTree<DefiState> = {
@@ -80,13 +79,13 @@ export const mutations: MutationTree<DefiState> = {
   ) {
     state.yearnVaultsV2History = history;
   },
-  uniswapBalances(state: DefiState, balances: UniswapBalances) {
+  uniswapBalances(state: DefiState, balances: XswapBalances) {
     state.uniswapBalances = balances;
   },
   uniswapTrades(state: DefiState, trades: DexTrades) {
     state.uniswapTrades = trades;
   },
-  uniswapEvents(state: DefiState, events: UniswapEvents) {
+  uniswapEvents(state: DefiState, events: XswapEvents) {
     state.uniswapEvents = events;
   },
   airdrops(state: DefiState, airdrops: Airdrops) {

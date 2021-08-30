@@ -93,13 +93,13 @@
 </template>
 
 <script lang="ts">
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import ConflictRow from '@/components/status/update/ConflictRow.vue';
 import {
   ConflictResolution,
-  ConflictResolutionStrategy,
-  SupportedAsset
+  ConflictResolutionStrategy
 } from '@/services/assets/types';
 import { AssetUpdateConflictResult } from '@/store/assets/types';
 import { Writeable } from '@/types';

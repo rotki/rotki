@@ -6,7 +6,7 @@
     </template>
   </progress-screen>
   <div v-else>
-    <active-modules :modules="module" class="adex__modules" />
+    <active-modules :modules="module" :class="$style.modules" />
     <adex-staking
       :history-refreshing="secondaryLoading || secondaryRefreshing"
       :refreshing="refreshing"
@@ -23,7 +23,7 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ModuleMixin from '@/mixins/module-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { AdexStaking } from '@/premium/premium';
-import { MODULE_ADEX } from '@/services/session/consts';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 
 @Component({
@@ -33,14 +33,14 @@ import { Section } from '@/store/const';
   }
 })
 export default class AdexPage extends Mixins(StatusMixin, ModuleMixin) {
-  readonly module = [MODULE_ADEX];
+  readonly module = [Module.ADEX];
   section = Section.STAKING_ADEX;
   secondSection = Section.STAKING_ADEX_HISTORY;
 
   fetchAdex!: (refresh: boolean) => Promise<void>;
 
   get moduleEnabled(): boolean {
-    return this.isModuleEnabled(MODULE_ADEX);
+    return this.isModuleEnabled(Module.ADEX);
   }
 
   async mounted() {
@@ -52,13 +52,11 @@ export default class AdexPage extends Mixins(StatusMixin, ModuleMixin) {
 }
 </script>
 
-<style scoped lang="scss">
-.adex {
-  &__modules {
-    display: inline-flex;
-    position: absolute;
-    right: 65px;
-    top: 48px;
-  }
+<style module lang="scss">
+.modules {
+  display: inline-flex;
+  position: absolute;
+  right: 65px;
+  top: 58px;
 }
 </style>

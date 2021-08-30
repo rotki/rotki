@@ -34,10 +34,12 @@ from rotkehlchen.typing import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
+from rotkehlchen.utils.version_check import check_if_version_up_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.cost_basis import CostBasisInfo
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.settings import DBSettings
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -51,6 +53,14 @@ FILENAME_LOAN_SETTLEMENTS_CSV = 'loan_settlements.csv'
 FILENAME_DEFI_EVENTS_CSV = 'defi_events.csv'
 FILENAME_LEDGER_ACTIONS_CSV = 'ledger_actions.csv'
 FILENAME_ALL_CSV = 'all_events.csv'
+
+ACCOUNTING_SETTINGS = (
+    'include_crypto2crypto',
+    'taxfree_after_period',
+    'include_gas_costs',
+    'account_for_assets_movements',
+    'calculate_past_cost_basis',
+)
 
 
 class CSVWriteError(Exception):
@@ -69,8 +79,8 @@ def _dict_to_csv_file(path: Path, dictionary_list: List) -> None:
         log.debug('Skipping writting empty CSV for {}'.format(path))
         return
 
-    with open(path, 'w') as f:
-        w = csv.DictWriter(f, dictionary_list[0].keys())
+    with open(path, 'w', newline='') as f:
+        w = csv.DictWriter(f, fieldnames=dictionary_list[0].keys())
         w.writeheader()
         try:
             for dic in dictionary_list:
@@ -100,6 +110,8 @@ class CSVExporter():
         db_settings = self.database.get_settings()
         self.dateformat = db_settings.date_display_format
         self.datelocaltime = db_settings.display_date_in_localtime
+        self.should_export_formulas = db_settings.pnl_csv_with_formulas
+        self.should_have_summary = db_settings.pnl_csv_have_summary
         if self.create_csv:
             self.trades_csv: List[Dict[str, Any]] = []
             self.loan_profits_csv: List[Dict[str, Any]] = []
@@ -118,6 +130,183 @@ class CSVExporter():
             formatstr=self.dateformat,
             treat_as_local=self.datelocaltime,
         )
+
+    def _add_if_formula(
+            self,
+            condition: str,
+            if_true: str,
+            if_false: str,
+            actual_value: FVal,
+    ) -> str:
+        if self.should_export_formulas is False:
+            return str(actual_value)
+
+        return f'=IF({condition};{if_true};{if_false})'
+
+    def _add_sumif_formula(
+            self,
+            check_range: str,
+            condition: str,
+            sum_range: str,
+            actual_value: FVal,
+    ) -> str:
+        if self.should_export_formulas is False:
+            return str(actual_value)
+
+        return f'=SUMIF({check_range};{condition};{sum_range})'
+
+    def _add_equals_formula(self, expression: str, actual_value: FVal) -> str:
+        if self.should_export_formulas is False:
+            return str(actual_value)
+
+        return f'={expression}'
+
+    def _add_settings_lines(self, db_settings: 'DBSettings', template: Dict[str, Any]) -> None:
+        for setting in ACCOUNTING_SETTINGS:
+            entry = template.copy()
+            entry['received_in_asset'] = setting
+            entry['net_profit_or_loss'] = str(getattr(db_settings, setting))
+            self.all_events_csv.append(entry)
+
+    def maybe_add_summary(
+            self,
+            ledger_actions_profit_loss: FVal,
+            defi_profit_loss: FVal,
+            loan_profit: FVal,
+            margin_position_profit_loss: FVal,
+            settlement_losses: FVal,
+            ethereum_transaction_gas_costs: FVal,
+            asset_movement_fees: FVal,
+            taxable_trade_profit_loss: FVal,
+            total_taxable_profit_loss: FVal,
+    ) -> None:
+        """Depending on given settings, adds a few summary lines at the end of
+        the all events PnL report"""
+        if self.should_have_summary is False:
+            return
+
+        length = len(self.all_events_csv) + 1
+        template: Dict[str, Any] = {
+            'type': '',
+            'location': '',
+            'paid_asset': '',
+            'paid_in_asset': '',
+            'taxable_amount': '',
+            'received_asset': '',
+            'received_in_asset': '',
+            'net_profit_or_loss': '',
+            'time': '',
+            'is_virtual': '',
+            f'paid_in_{self.profit_currency.symbol}': '',
+            f'taxable_received_in_{self.profit_currency.symbol}': '',
+            f'taxable_bought_cost_in_{self.profit_currency.symbol}': '',
+            'cost_basis': '',
+            f'total_bought_cost_in_{self.profit_currency.symbol}': '',
+            f'total_received_in_{self.profit_currency.symbol}': '',
+        }
+        self.all_events_csv.append(template)  # separate with 2 new lines
+        self.all_events_csv.append(template)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'LEDGER ACTIONS PROFIT/LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_LEDGER_ACTION}"',
+            sum_range=f'H2:H{length}',
+            actual_value=ledger_actions_profit_loss,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'DEFI PROFIT/LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_DEFI}"',
+            sum_range=f'H2:H{length}',
+            actual_value=defi_profit_loss,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'LOAN PROFIT/LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_INTEREST_PAYMENT}"',
+            sum_range=f'H2:H{length}',
+            actual_value=loan_profit,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'MARGIN POSITIONS PROFIT/LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_MARGIN_CLOSE}"',
+            sum_range=f'H2:H{length}',
+            actual_value=margin_position_profit_loss,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'SETTLEMENT LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_LOAN_SETTLE}"',
+            sum_range=f'H2:H{length}',
+            actual_value=settlement_losses,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'ETHEREUM TX GAS COST'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_TX_GAS_COST}"',
+            sum_range=f'H2:H{length}',
+            actual_value=ethereum_transaction_gas_costs,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'ASSET MOVEMENT FEES'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_ASSET_MOVE}"',
+            sum_range=f'H2:H{length}',
+            actual_value=asset_movement_fees,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'TAXABLE TRADE PROFIT/LOSS'
+        entry['net_profit_or_loss'] = self._add_sumif_formula(
+            check_range=f'A2:A{length}',
+            condition=f'"{EV_SELL}"',
+            sum_range=f'H2:H{length}',
+            actual_value=taxable_trade_profit_loss,
+        )
+        self.all_events_csv.append(entry)
+
+        entry = template.copy()
+        entry['received_in_asset'] = 'TOTAL TAXABLE PROFIT/LOSS'
+        start = length + 3
+        entry['net_profit_or_loss'] = self._add_equals_formula(
+            expression=f'H{start}+H{start + 1}+H{start + 2}+H{start + 3}+H{start + 4}+H{start + 5}+H{start + 6}+H{start + 7}',  # noqa: E501
+            actual_value=total_taxable_profit_loss,
+        )
+        self.all_events_csv.append(entry)
+
+        self.all_events_csv.append(template)  # separate with 2 new lines
+        self.all_events_csv.append(template)
+
+        version_result = check_if_version_up_to_date()
+        entry = template.copy()
+        entry['received_in_asset'] = 'rotki version'
+        entry['net_profit_or_loss'] = version_result.our_version
+        self.all_events_csv.append(entry)
+
+        db_settings = self.database.get_settings()
+        self._add_settings_lines(db_settings, template)
 
     def add_to_allevents(
             self,
@@ -146,13 +335,37 @@ class CSVExporter():
                 net_profit_or_loss = ZERO
             else:
                 net_profit_or_loss = taxable_received_in_profit_currency - taxable_bought_cost
-            net_profit_or_loss_csv = f'=IF(E{row}=0,0,L{row}-M{row})'
+
+            net_profit_or_loss_csv = self._add_if_formula(
+                condition=f'E{row}=0',
+                if_true='0',
+                if_false=f'L{row}-M{row}',
+                actual_value=net_profit_or_loss,
+            )
         elif event_type in (EV_TX_GAS_COST, EV_ASSET_MOVE, EV_LOAN_SETTLE):
-            net_profit_or_loss = paid_in_profit_currency
-            net_profit_or_loss_csv = '=-K{}'.format(row)
-        elif event_type in (EV_INTEREST_PAYMENT, EV_MARGIN_CLOSE, EV_DEFI, EV_LEDGER_ACTION):
+            net_profit_or_loss = -paid_in_profit_currency
+            net_profit_or_loss_csv = self._add_equals_formula(
+                expression=f'-K{row}',
+                actual_value=net_profit_or_loss,
+            )
+        elif event_type == EV_INTEREST_PAYMENT:
             net_profit_or_loss = taxable_received_in_profit_currency
-            net_profit_or_loss_csv = '=L{}'.format(row)
+            net_profit_or_loss_csv = self._add_equals_formula(
+                expression=f'L{row}',
+                actual_value=net_profit_or_loss,
+            )
+        elif event_type in (EV_MARGIN_CLOSE, EV_DEFI, EV_LEDGER_ACTION):
+            if total_received_in_profit_currency > ZERO:
+                net_profit_or_loss = total_received_in_profit_currency
+            else:
+                net_profit_or_loss = -paid_in_profit_currency
+
+            net_profit_or_loss_csv = self._add_if_formula(
+                condition=f'P{row}=0',  # total_received_in_profit_currency is 0
+                if_true=f'-K{row}',  # then -paid_in_profit_currency
+                if_false=f'P{row}',  # else use total_received_in_profit_currency
+                actual_value=net_profit_or_loss,
+            )
         else:
             raise ValueError('Illegal event type "{}" at add_to_allevents'.format(event_type))
 
@@ -284,7 +497,12 @@ class CSVExporter():
             selling_amount=selling_amount,
         )
         row = len(self.trades_csv) + 2
-        taxable_profit_formula = f'=IF(H{row}=0,0,L{row}-K{row})'
+        taxable_profit_csv = self._add_if_formula(
+            condition=f'H{row}=0',
+            if_true='0',
+            if_false=f'L{row}-K{row}',
+            actual_value=taxable_profit_received,
+        )
         self.trades_csv.append({
             'type': 'sell',
             'location': str(location),
@@ -298,7 +516,7 @@ class CSVExporter():
             exchange_rate_key: receiving_asset_rate_in_profit_currency,
             f'taxable_bought_cost_in_{self.profit_currency.symbol}': taxable_bought_cost,
             f'taxable_gain_in_{self.profit_currency.symbol}': taxable_profit_received,
-            f'taxable_profit_loss_in_{self.profit_currency.symbol}': taxable_profit_formula,
+            f'taxable_profit_loss_in_{self.profit_currency.symbol}': taxable_profit_csv,
             'time': self.timestamp_to_date(timestamp),
             'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'is_virtual': is_virtual,
@@ -336,19 +554,22 @@ class CSVExporter():
         if not self.create_csv:
             return
 
+        paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency
         row = len(self.loan_settlements_csv) + 2
-        loss_formula = f'=C{row}*D{row}+E{row}'
+        loss_csv = self._add_equals_formula(
+            expression=f'C{row}*D{row}+E{row}',
+            actual_value=paid_in_profit_currency,
+        )
         self.loan_settlements_csv.append({
             'asset': str(asset),
             'location': str(location),
             'amount': amount,
             f'price_in_{self.profit_currency.symbol}': rate_in_profit_currency,
             f'fee_in_{self.profit_currency.symbol}': total_fee_in_profit_currency,
-            f'loss_in_{self.profit_currency.symbol}': loss_formula,
+            f'loss_in_{self.profit_currency.symbol}': loss_csv,
             'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'time': self.timestamp_to_date(timestamp),
         })
-        paid_in_profit_currency = amount * rate_in_profit_currency + total_fee_in_profit_currency
         self.add_to_allevents(
             event_type=EV_LOAN_SETTLE,
             location=location,
@@ -421,16 +642,28 @@ class CSVExporter():
             'gain_loss_amount': gain_loss_amount,
             f'profit_loss_in_{self.profit_currency.symbol}': gain_loss_in_profit_currency,
         })
+
+        paid_in_profit_currency = ZERO
+        received_in_profit_currency = ZERO
+        paid_in_asset = ZERO
+        received_in_asset = ZERO
+        if gain_loss_amount >= ZERO:
+            received_in_profit_currency = gain_loss_in_profit_currency
+            received_in_asset = gain_loss_amount
+        else:
+            paid_in_profit_currency = -gain_loss_in_profit_currency
+            paid_in_asset = -gain_loss_amount
+
         self.add_to_allevents(
             event_type=EV_MARGIN_CLOSE,
             location=location,
-            paid_in_profit_currency=ZERO,
+            paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=S_EMPTYSTR,
-            paid_in_asset=ZERO,
+            paid_in_asset=paid_in_asset,
             received_asset=gain_loss_asset,
-            received_in_asset=gain_loss_amount,
-            taxable_received_in_profit_currency=gain_loss_in_profit_currency,
-            total_received_in_profit_currency=gain_loss_in_profit_currency,
+            received_in_asset=received_in_asset,
+            taxable_received_in_profit_currency=received_in_profit_currency,
+            total_received_in_profit_currency=received_in_profit_currency,
             timestamp=timestamp,
         )
 

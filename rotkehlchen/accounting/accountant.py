@@ -36,6 +36,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import (
     TaxableAction,
     action_get_assets,
+    action_get_identifier,
     action_get_timestamp,
     action_get_type,
 )
@@ -359,7 +360,7 @@ class Accountant():
             except PriceQueryUnsupportedAsset as e:
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
-                    f'Skipping action at '
+                    f'Skipping action with id "{action_get_identifier(action)}" at '
                     f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to an asset unknown to '
                     f'cryptocompare being involved. Check logs for details',
@@ -372,7 +373,7 @@ class Accountant():
             except NoPriceForGivenTimestamp as e:
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
-                    f'Skipping action at '
+                    f'Skipping action with id "{action_get_identifier(action)}" at '
                     f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to inability to find a price '
                     f'at that point in time: {str(e)}. Check the logs for more details',
@@ -385,7 +386,7 @@ class Accountant():
             except RemoteError as e:
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
-                    f'Skipping action at '
+                    f'Skipping action with id "{action_get_identifier(action)}" at '
                     f'{self.csvexporter.timestamp_to_date(ts)} '
                     f'during history processing due to inability to reach an external '
                     f'service at that point in time: {str(e)}. Check the logs for more details',
@@ -423,6 +424,17 @@ class Accountant():
             self.eth_transactions_gas_costs
         )
         total_taxable_pl = self.events.taxable_trade_profit_loss + sum_other_actions
+        self.events.csv_exporter.maybe_add_summary(
+            ledger_actions_profit_loss=self.events.ledger_actions_profit_loss,
+            defi_profit_loss=self.events.defi_profit_loss,
+            loan_profit=self.events.loan_profit,
+            margin_position_profit_loss=self.events.margin_positions_profit_loss,
+            settlement_losses=self.events.settlement_losses,
+            ethereum_transaction_gas_costs=self.eth_transactions_gas_costs,
+            asset_movement_fees=self.asset_movement_fees,
+            taxable_trade_profit_loss=self.events.taxable_trade_profit_loss,
+            total_taxable_profit_loss=total_taxable_pl,
+        )
         return {
             'overview': {
                 'ledger_actions_profit_loss': str(self.events.ledger_actions_profit_loss),
@@ -473,7 +485,7 @@ class Accountant():
             tx = cast(EthereumTransaction, action)
             identifier = tx.identifier
             should_ignore = tx.identifier in ignored_actionids_mapping.get(
-                ActionType.ETHEREUM_TX, [],
+                ActionType.ETHEREUM_TRANSACTION, [],
             )
 
         elif action_type == 'ledger_action':

@@ -38,19 +38,12 @@
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import DefiProtocolDetails from '@/components/helper/DefiProtocolDetails.vue';
-import {
-  DEFI_AAVE,
-  DEFI_COMPOUND,
-  DEFI_MAKERDAO,
-  DEFI_YEARN_VAULTS,
-  DEFI_YEARN_VAULTS_V2
-} from '@/services/defi/consts';
-import { SupportedDefiProtocols } from '@/services/defi/types';
+import { DefiProtocol } from '@/services/defi/consts';
 
 export interface Protocol {
   name: string;
   icon: string;
-  identifier: SupportedDefiProtocols;
+  identifier: DefiProtocol;
 }
 
 @Component({
@@ -58,43 +51,51 @@ export interface Protocol {
 })
 export default class DefiProtocolSelector extends Vue {
   @Prop({ required: true })
-  value!: SupportedDefiProtocols | null;
+  value!: DefiProtocol | null;
   @Prop({ required: false, type: Boolean, default: false })
   liabilities!: boolean;
 
   get protocols(): Protocol[] {
     if (this.liabilities) {
-      return this.dual;
+      return [...this.dual, ...this.borrowing];
     }
     return [...this.dual, ...this.lending];
   }
 
   private readonly dual: Protocol[] = [
     {
-      identifier: DEFI_AAVE,
+      identifier: DefiProtocol.AAVE,
       name: 'Aave',
       icon: require('@/assets/images/defi/aave.svg')
     },
     {
-      identifier: DEFI_MAKERDAO,
-      name: 'MakerDAO',
-      icon: require('@/assets/images/defi/makerdao.svg')
-    },
-    {
-      identifier: DEFI_COMPOUND,
+      identifier: DefiProtocol.COMPOUND,
       name: 'Compound',
       icon: require('@/assets/images/defi/compound.svg')
     }
   ];
 
+  private readonly borrowing: Protocol[] = [
+    {
+      identifier: DefiProtocol.MAKERDAO_VAULTS,
+      name: 'MakerDAO Vaults',
+      icon: require('@/assets/images/defi/makerdao.svg')
+    }
+  ];
+
   private readonly lending: Protocol[] = [
     {
-      identifier: DEFI_YEARN_VAULTS,
+      identifier: DefiProtocol.MAKERDAO_DSR,
+      name: 'MakerDAO DSR',
+      icon: require('@/assets/images/defi/makerdao.svg')
+    },
+    {
+      identifier: DefiProtocol.YEARN_VAULTS,
       name: 'yearn.finance',
       icon: require('@/assets/images/defi/yearn_vaults.svg')
     },
     {
-      identifier: DEFI_YEARN_VAULTS_V2,
+      identifier: DefiProtocol.YEARN_VAULTS_V2,
       name: 'yearn.finance v2',
       icon: require('@/assets/images/defi/yearn_vaults.svg')
     }
@@ -103,6 +104,6 @@ export default class DefiProtocolSelector extends Vue {
   search: string = '';
 
   @Emit()
-  input(_selectedProtocols: SupportedDefiProtocols | null) {}
+  input(_selectedProtocols: DefiProtocol | null) {}
 }
 </script>

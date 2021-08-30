@@ -314,84 +314,81 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             endpoint: str,
             options: Optional[Dict[str, Any]] = None,
-            pagination_next_uri: str = None,
             ignore_pagination: bool = False,
     ) -> List[Any]:
         """Performs a coinbase API Query for endpoint
 
         You can optionally provide extra arguments to the endpoint via the options argument.
-        If this is an ongoing paginating call then provide pagination_next_uri.
         If you want just the first results then set ignore_pagination to True.
         """
+        all_items: List[Any] = []
         request_verb = "GET"
-        if pagination_next_uri:
-            request_url = pagination_next_uri
-        else:
-            request_url = f'/{self.apiversion}/{endpoint}'
-            if options:
-                request_url += urlencode(options)
+        # initialize next_uri before loop
+        next_uri = f'/{self.apiversion}/{endpoint}'
+        if options:
+            next_uri += urlencode(options)
+        while True:
+            timestamp = str(int(time.time()))
+            message = timestamp + request_verb + next_uri
 
-        timestamp = str(int(time.time()))
-        message = timestamp + request_verb + request_url
+            signature = hmac.new(
+                self.secret,
+                message.encode(),
+                hashlib.sha256,
+            ).hexdigest()
+            log.debug('Coinbase API query', request_url=next_uri)
 
-        signature = hmac.new(
-            self.secret,
-            message.encode(),
-            hashlib.sha256,
-        ).hexdigest()
-        log.debug('Coinbase API query', request_url=request_url)
+            self.session.headers.update({
+                'CB-ACCESS-SIGN': signature,
+                'CB-ACCESS-TIMESTAMP': timestamp,
+                # This is needed to guarantee the up to the given date
+                # API version response.
+                'CB-VERSION': '2019-08-25',
+            })
 
-        self.session.headers.update({
-            'CB-ACCESS-SIGN': signature,
-            'CB-ACCESS-TIMESTAMP': timestamp,
-            # This is needed to guarantee the up to the given date
-            # API version response.
-            'CB-VERSION': '2019-08-25',
-        })
-        full_url = self.base_uri + request_url
-        try:
-            response = self.session.get(full_url, timeout=DEFAULT_TIMEOUT_TUPLE)
-        except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Coinbase API request failed due to {str(e)}') from e
+            full_url = self.base_uri + next_uri
+            try:
+                response = self.session.get(full_url, timeout=DEFAULT_TIMEOUT_TUPLE)
+            except requests.exceptions.RequestException as e:
+                raise RemoteError(f'Coinbase API request failed due to {str(e)}') from e
 
-        if response.status_code == 403:
-            raise CoinbasePermissionError(f'API key does not have permission for {endpoint}')
+            if response.status_code == 403:
+                raise CoinbasePermissionError(f'API key does not have permission for {endpoint}')
 
-        if response.status_code != 200:
-            raise RemoteError(
-                f'Coinbase query {full_url} responded with error status code: '
-                f'{response.status_code} and text: {response.text}',
-            )
+            if response.status_code != 200:
+                raise RemoteError(
+                    f'Coinbase query {full_url} responded with error status code: '
+                    f'{response.status_code} and text: {response.text}',
+                )
 
-        try:
-            json_ret = jsonloads_dict(response.text)
-        except JSONDecodeError as e:
-            raise RemoteError(f'Coinbase returned invalid JSON response: {response.text}') from e
+            try:
+                json_ret = jsonloads_dict(response.text)
+            except JSONDecodeError as e:
+                raise RemoteError(
+                    f'Coinbase returned invalid JSON response: {response.text}',
+                ) from e
 
-        if 'data' not in json_ret:
-            raise RemoteError(f'Coinbase json response does not contain data: {response.text}')
+            if 'data' not in json_ret:
+                raise RemoteError(f'Coinbase json response does not contain data: {response.text}')
 
-        final_data = json_ret['data']
+            # `data` attr is a list in itself
+            all_items.extend(json_ret['data'])
+            if ignore_pagination or 'pagination' not in json_ret:
+                # break out of the loop, no need to handle pagination
+                break
 
-        # If we got pagination recursively gather all the subsequent queries
-        if 'pagination' in json_ret and not ignore_pagination:
             if 'next_uri' not in json_ret['pagination']:
                 raise RemoteError('Coinbase json response contained no "next_uri" key')
 
+            # otherwise, let the loop run to gather subsequent queries
+            # this next_uri will be used in next iteration
             next_uri = json_ret['pagination']['next_uri']
             if not next_uri:
                 # As per the docs: https://developers.coinbase.com/api/v2?python#pagination
                 # once we get an empty next_uri we are done
-                return final_data
+                break
 
-            additional_data = self._api_query(
-                endpoint=endpoint,
-                options=options,
-                pagination_next_uri=next_uri,
-            )
-            final_data.extend(additional_data)
-
-        return final_data
+        return all_items
 
     @protect_with_lock()
     @cache_response_timewise()

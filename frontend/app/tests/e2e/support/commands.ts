@@ -50,4 +50,48 @@ const logout = () => {
     });
 };
 
+const updateAssets = () => {
+  cy.request({
+    url: 'http://localhost:22221/api/1/assets/updates',
+    method: 'GET'
+  })
+    .its('body')
+    .then(body => {
+      const result = body.result;
+      if (result) {
+        const version = result.remote;
+        cy.log(`Preparing asset update to: ${version}`);
+        cy.request({
+          url: 'http://localhost:22221/api/1/assets/updates',
+          method: 'POST',
+          body: {
+            up_to_version: version
+          }
+        })
+          .its('body')
+          .then(body => {
+            const conflicts = body.result;
+            const resolution: { [identifier: string]: 'remote' } = {};
+
+            if (Array.isArray(conflicts)) {
+              cy.log(`Resolving ${conflicts.length} conflicts`);
+              for (let i = 0; i < conflicts.length; i++) {
+                const conflict = conflicts[i];
+                resolution[conflict.identifier] = 'remote';
+              }
+              cy.request({
+                url: 'http://localhost:22221/api/1/assets/updates',
+                method: 'POST',
+                body: {
+                  up_to_version: version,
+                  resolution
+                }
+              });
+            }
+          });
+      }
+    });
+};
+
 Cypress.Commands.add('logout', logout);
+Cypress.Commands.add('updateAssets', updateAssets);

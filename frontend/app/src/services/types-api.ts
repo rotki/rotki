@@ -1,6 +1,6 @@
+import { Balance } from '@rotki/common';
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { AxiosInstance, AxiosTransformer } from 'axios';
-import { BigNumber } from 'bignumber.js';
-import { SupportedAsset } from '@/services/assets/types';
 import { IgnoreActionType } from '@/store/history/types';
 
 export const SYNC_UPLOAD = 'upload';
@@ -27,11 +27,6 @@ export interface LimitedResponse<T> {
 
 export class TaskNotFoundError extends Error {}
 
-export interface ActionResult<T> {
-  readonly result: T;
-  readonly message: string;
-}
-
 export interface AsyncQuery {
   readonly task_id: number;
 }
@@ -49,11 +44,6 @@ export interface LocationData {
   readonly time: number;
   readonly location: string;
   readonly usd_value: string;
-}
-
-export interface Balance {
-  readonly amount: BigNumber;
-  readonly usdValue: BigNumber;
 }
 
 export interface HasBalance {

@@ -1,11 +1,13 @@
+import { Balance } from '@rotki/common';
+import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { default as BigNumber } from 'bignumber.js';
+import { DefiProtocol } from '@/services/defi/consts';
 import {
   CollateralAssetType,
   DefiBalanceType,
   DSRMovementType,
   EventType,
-  MakerDAOVaultEventType,
-  SupportedDefiProtocols
+  MakerDAOVaultEventType
 } from '@/services/defi/types';
 import {
   AaveBalances,
@@ -19,20 +21,15 @@ import {
   CompoundEventType,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import { UniswapAsset, UniswapBalances } from '@/services/defi/types/uniswap';
 import {
   YearnEventType,
   YearnVaultsBalances,
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { TradeType } from '@/services/history/types';
-import { Balance, HasBalance } from '@/services/types-api';
-import {
-  AIRDROP_POAP,
-  AIRDROPS,
-  OVERVIEW_PROTOCOLS,
-  UNISWAP_EVENT_TYPE
-} from '@/store/defi/const';
+import { HasBalance } from '@/services/types-api';
+import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
+import { SushiswapState } from '@/store/defi/sushiswap/types';
 
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
@@ -53,10 +50,11 @@ export interface DefiState {
   yearnVaultsHistory: YearnVaultsHistory;
   yearnVaultsV2Balances: YearnVaultsBalances;
   yearnVaultsV2History: YearnVaultsHistory;
-  uniswapBalances: UniswapBalances;
+  uniswapBalances: XswapBalances;
   uniswapTrades: DexTrades;
-  uniswapEvents: UniswapEvents;
+  uniswapEvents: XswapEvents;
   airdrops: Airdrops;
+  sushiswap?: SushiswapState;
 }
 
 export interface PoapDeliveryDetails {
@@ -189,7 +187,7 @@ export interface AaveLoan
 
 export interface DefiBalance extends BaseDefiBalance {
   readonly address: string;
-  readonly protocol: SupportedDefiProtocols;
+  readonly protocol: DefiProtocol;
 }
 
 export interface BaseDefiBalance extends HasBalance {
@@ -212,14 +210,15 @@ interface HistoryExtras<T> {
 
 interface LendingHistoryExtras {
   readonly aave: {};
-  readonly makerdao: MakerDAOLendingHistoryExtras;
+  readonly makerdao_dsr: MakerDAOLendingHistoryExtras;
+  readonly makerdao_vaults: {};
   readonly compound: HistoryExtras<CompoundEventType>;
   readonly yearn_vaults: HistoryExtras<YearnEventType>;
   readonly yearn_vaults_v2: HistoryExtras<YearnEventType>;
   readonly uniswap: {};
 }
 
-export interface DefiLendingHistory<T extends SupportedDefiProtocols> {
+export interface DefiLendingHistory<T extends DefiProtocol> {
   id: string;
   eventType: EventType;
   protocol: T;
@@ -235,7 +234,7 @@ export interface DefiLendingHistory<T extends SupportedDefiProtocols> {
 
 export interface DefiLoan {
   readonly identifier: string;
-  readonly protocol: SupportedDefiProtocols;
+  readonly protocol: DefiProtocol;
   readonly asset?: string;
   readonly owner?: string;
 }
@@ -288,16 +287,6 @@ export interface ProfitLossModel {
   readonly value: Balance;
 }
 
-export interface UniswapBalance {
-  readonly account: string;
-  readonly assets: UniswapAsset[];
-  readonly poolAddress: string;
-  readonly totalSupply: BigNumber | null;
-  readonly userBalance: Balance;
-}
-
-type UniswapEventType = typeof UNISWAP_EVENT_TYPE[number];
-
 interface DexSwap {
   readonly amount0In: BigNumber;
   readonly amount0Out: BigNumber;
@@ -331,44 +320,6 @@ export interface DexTrade {
 export interface DexTrades {
   readonly [address: string]: DexTrade[];
 }
-
-interface UniswapEvent {
-  readonly amount0: BigNumber;
-  readonly amount1: BigNumber;
-  readonly eventType: UniswapEventType;
-  readonly logIndex: number;
-  readonly lpAmount: BigNumber;
-  readonly timestamp: number;
-  readonly txHash: string;
-  readonly usdPrice: BigNumber;
-}
-
-interface UniswapPoolDetails {
-  readonly address: string;
-  readonly events: UniswapEvent[];
-  readonly poolAddress: string;
-  readonly profitLoss0: BigNumber;
-  readonly profitLoss1: BigNumber;
-  readonly token0: string;
-  readonly token1: string;
-  readonly usdProfitLoss: BigNumber;
-}
-
-export interface UniswapPool {
-  readonly address: string;
-  readonly assets: string[];
-}
-
-export interface UniswapEvents {
-  readonly [address: string]: UniswapPoolDetails[];
-}
-
-export interface UniswapPoolProfit
-  extends Omit<UniswapPoolDetails, 'events' | 'address'> {}
-
-export interface UniswapEventDetails
-  extends UniswapEvent,
-    Pick<UniswapPoolDetails, 'address' | 'poolAddress' | 'token0' | 'token1'> {}
 
 export interface BalancerUnderlyingToken {
   readonly token: string;

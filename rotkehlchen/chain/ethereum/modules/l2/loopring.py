@@ -124,6 +124,7 @@ from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
@@ -138,6 +139,7 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 # Taken from https://github.com/Loopring/protocols/blob/master/packages/loopring_v3/deployment_mainnet_v3.6.md  # noqa: E501
@@ -337,7 +339,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         if options is not None:
             querystr += '?' + urlencode(options)
 
-        logger.debug(f'Querying loopring {querystr}')
+        log.debug(f'Querying loopring {querystr}')
         try:
             response = self.session.get(querystr, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
@@ -483,7 +485,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         May raise RemoteError in case of any problems
         """
         if not self.got_api_key():
-            logger.debug('Queried loopring balances without an API key. No balances returned')
+            log.debug('Queried loopring balances without an API key. No balances returned')
             return {}
 
         result = {}
@@ -491,7 +493,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
             try:
                 account_id = self.ethereum_account_to_loopring_id(l1_address=address)
             except LoopringUserNotFound:
-                logger.debug(
+                log.debug(
                     f'Skipping loopring query of address {address} '
                     f'because is not registered at loopring',
                 )
@@ -500,7 +502,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
                 self.msg_aggregator.add_warning('The Loopring API key is not a valid key.')
                 continue
             except RemoteError as e:
-                logger.debug(f'Skipping loopring query of address {address} due to {str(e)}')
+                log.debug(f'Skipping loopring query of address {address} due to {str(e)}')
                 continue
 
             try:

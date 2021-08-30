@@ -6,10 +6,10 @@
       {{ $t('balancer.loading') }}
     </template>
   </progress-screen>
-  <v-container v-else>
-    <active-modules :modules="modules" class="balancer__modules" />
+  <div v-else>
+    <active-modules :modules="modules" :class="$style.modules" />
     <balancer-balances class="mt-4" :refreshing="anyRefreshing" />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
@@ -24,8 +24,7 @@ import ModuleMixin from '@/mixins/module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { BalancerBalances } from '@/premium/premium';
-import { MODULE_BALANCER } from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 
 @Component({
@@ -51,10 +50,10 @@ export default class Balancer extends Mixins(
   readonly secondSection = Section.DEFI_BALANCER_EVENTS;
   fetchBalancerBalances!: (refresh: boolean) => Promise<void>;
   fetchBalancerEvents!: (refresh: boolean) => Promise<void>;
-  readonly modules: SupportedModules[] = [MODULE_BALANCER];
+  readonly modules: Module[] = [Module.BALANCER];
 
   get isEnabled(): boolean {
-    return this.isModuleEnabled(MODULE_BALANCER);
+    return this.isModuleEnabled(Module.BALANCER);
   }
 
   async mounted() {
@@ -66,13 +65,11 @@ export default class Balancer extends Mixins(
 }
 </script>
 
-<style scoped lang="scss">
-.balancer {
-  &__modules {
-    display: inline-flex;
-    position: absolute;
-    right: 84px;
-    top: 58px;
-  }
+<style module lang="scss">
+.modules {
+  display: inline-flex;
+  position: absolute;
+  right: 88px;
+  top: 125px;
 }
 </style>

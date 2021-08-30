@@ -1,0 +1,42 @@
+{
+  "name": "@rotki/common",
+  "version": "1.0.0",
+  "description": "Rotki common frontend code",
+  "main": "lib/index.js",
+  "module": "lib/index.es.js",
+  "files": [
+    "lib/"
+  ],
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "preinstall": "node ../check-versions.js",
+    "build": "rimraf lib && tsc",
+    "watch": "rimraf lib && tsc -w",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint:fix": "eslint --fix . --ext .js,.jsx,.ts,.tsx",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+  },
+  "author": "Rotki Solutions GmbH <info@rotki.com>",
+  "homepage": "https://rotki.com",
+  "license": "AGPL-3.0",
+  "repository": "https://github.com/rotki/rotki",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "4.28.3",
+    "@typescript-eslint/parser": "4.28.3",
+    "core-js": "3.15.2",
+    "eslint": "7.30.0",
+    "eslint-config-prettier": "8.3.0",
+    "eslint-import-resolver-alias": "1.1.2",
+    "eslint-plugin-import": "2.23.4",
+    "prettier": "2.3.2",
+    "rimraf": "3.0.2",
+    "typescript": "4.3.5"
+  },
+  "peerDependencies": {
+    "bignumber.js": "9.0.1"
+  },
+  "engines": {
+    "node": ">=14 <15",
+    "npm": ">=7.19 <8"
+  }
+}

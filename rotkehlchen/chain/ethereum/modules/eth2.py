@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 
 import gevent
 
-log = logging.getLogger(__name__)
 from rotkehlchen.accounting.structures import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.eth2_utils import scrape_validator_daily_stats
 from rotkehlchen.chain.ethereum.typing import (
@@ -18,10 +17,12 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -32,6 +33,9 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain import BeaconChain
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 ETH2_DEPOSIT = EthereumConstants().contract('ETH2_DEPOSIT')
 ETH2_DEPLOYED_TS = Timestamp(1602667372)
@@ -82,12 +86,19 @@ class Eth2(EthereumModule):
             from_block=from_block,
             to_block=to_block,
         )
-        transactions = self.ethereum.transactions.query(
+
+        filter_query = ETHTransactionsFilterQuery.make(
+            order_ascending=True,  # oldest first
+            limit=None,
+            offset=None,
             addresses=addresses,
             from_ts=from_ts,
             to_ts=to_ts,
+        )
+        transactions = self.ethereum.transactions.query(
+            filter_query=filter_query,
             with_limit=False,
-            recent_first=False,
+            only_cache=False,
         )
         deposits: List[Eth2Deposit] = []
         for transaction in transactions:
@@ -105,7 +116,7 @@ class Eth2(EthereumModule):
                     usd_price = query_usd_price_zero_if_error(
                         asset=A_ETH,
                         time=transaction.timestamp,
-                        location='Eth2 staking query',
+                        location=f'Eth2 staking tx_hash: {tx_hash}',
                         msg_aggregator=msg_aggregator,
                     )
                     normalized_amount = from_gwei(FVal(amount))

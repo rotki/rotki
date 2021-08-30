@@ -16,7 +16,7 @@ def test_check_airdrops(ethereum_accounts, data_dir):
 
     # Test data is returned for the address correctly
     assert len(data) == 2
-    assert len(data[TEST_ADDR1]) == 2
+    assert len(data[TEST_ADDR1]) == 3
     assert data[TEST_ADDR1]['uniswap'] == {
         'amount': '400',
         'asset': A_UNI,

@@ -1,5 +1,5 @@
 <template>
-  <v-row no-gutters class="mb-4">
+  <v-row no-gutters>
     <v-tooltip top open-delay="400">
       <template #activator="{ on, attrs }">
         <v-btn
@@ -38,16 +38,18 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class IgnoreButtons extends Vue {
-  @Prop({ required: false, type: Boolean, default: false })
-  disabled!: boolean;
-
-  @Emit()
-  ignore(_value: boolean) {}
-}
+export default defineComponent({
+  props: {
+    disabled: { required: false, type: Boolean, default: false }
+  },
+  setup(prop, { emit }) {
+    return {
+      ignore: (ignore: boolean) => emit('ignore', ignore)
+    };
+  }
+});
 </script>
 
 <style scoped lang="scss"></style>

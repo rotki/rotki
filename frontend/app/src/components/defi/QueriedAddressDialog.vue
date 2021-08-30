@@ -113,10 +113,10 @@ import { mapActions, mapGetters, mapState } from 'vuex';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import { Module } from '@/services/session/consts';
 import {
   QueriedAddresses,
-  QueriedAddressPayload,
-  SupportedModules
+  QueriedAddressPayload
 } from '@/services/session/types';
 import { Nullable } from '@/types';
 import { ETH, GeneralAccount, Tags } from '@/typing/types';
@@ -135,7 +135,7 @@ import { assert } from '@/utils/assertions';
 })
 export default class QueriedAddressDialog extends Vue {
   @Prop({ required: true })
-  module!: Nullable<SupportedModules>;
+  module!: Nullable<Module>;
   queriedAddresses!: QueriedAddresses;
   addQueriedAddress!: (payload: QueriedAddressPayload) => Promise<void>;
   deleteQueriedAddress!: (payload: QueriedAddressPayload) => Promise<void>;
@@ -162,7 +162,7 @@ export default class QueriedAddressDialog extends Vue {
     return this.accounts.find(value => value.address === address);
   }
 
-  addresses(module: SupportedModules): string[] {
+  addresses(module: Module): string[] {
     return this.queriedAddresses[module] ?? [];
   }
 

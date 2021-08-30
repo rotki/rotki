@@ -45,21 +45,21 @@
 <script lang="ts">
 import { Component, Emit, Mixins } from 'vue-property-decorator';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
-import { Module } from '@/components/defi/wizard/types';
+import { SupportedModule } from '@/components/defi/wizard/types';
 import ModuleMixin from '@/mixins/module-mixin';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 
 @Component({
   name: 'ModuleActivator'
 })
 export default class ModuleActivator extends Mixins(ModuleMixin) {
   readonly modules = SUPPORTED_MODULES;
-  enabledModules: SupportedModules[] = [];
+  enabledModules: Module[] = [];
 
   @Emit('update:selection')
   updateSelection(_modules: string[]) {}
 
-  hasAddresses(module: SupportedModules): boolean {
+  hasAddresses(module: Module): boolean {
     const queriedAddresses = this.queriedAddresses[module];
     if (queriedAddresses) {
       return queriedAddresses.length > 0;
@@ -67,7 +67,7 @@ export default class ModuleActivator extends Mixins(ModuleMixin) {
     return false;
   }
 
-  get visibleModules(): Module[] {
+  get visibleModules(): SupportedModule[] {
     return SUPPORTED_MODULES.filter(module => {
       const identifier = module.identifier;
       const isActive = this.activeModules.includes(identifier);

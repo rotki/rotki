@@ -1,11 +1,10 @@
 import logging
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, Dict, NamedTuple, Optional
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_optional,
@@ -14,10 +13,11 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, Tuple
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
-class LedgerActionType(Enum):
+class LedgerActionType(DBEnumMixIn):
     INCOME = 1
     EXPENSE = 2
     LOSS = 3
@@ -26,104 +26,6 @@ class LedgerActionType(Enum):
     AIRDROP = 6
     GIFT = 7
     GRANT = 8
-
-    def serialize(self) -> str:
-        return str(self)
-
-    def __str__(self) -> str:
-        if self == LedgerActionType.INCOME:
-            return 'income'
-        if self == LedgerActionType.EXPENSE:
-            return 'expense'
-        if self == LedgerActionType.LOSS:
-            return 'loss'
-        if self == LedgerActionType.DIVIDENDS_INCOME:
-            return 'dividends income'
-        if self == LedgerActionType.DONATION_RECEIVED:
-            return 'donation received'
-        if self == LedgerActionType.AIRDROP:
-            return 'airdrop'
-        if self == LedgerActionType.GIFT:
-            return 'gift'
-        if self == LedgerActionType.GRANT:
-            return 'grant'
-
-        # else
-        raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
-
-    @classmethod
-    def deserialize(cls, symbol: str) -> 'LedgerActionType':
-        """Takes a string and attempts to turn it into a LedgerActionType
-
-        Can throw DeserializationError if the symbol is not as expected
-        """
-        if not isinstance(symbol, str):
-            raise DeserializationError(
-                f'Failed to deserialize ledger action type symbol from {type(symbol)} entry',
-            )
-
-        value = LEDGER_ACTION_TYPE_MAPPING.get(symbol, None)
-        if value is None:
-            raise DeserializationError(
-                f'Failed to deserialize ledger action symbol. Unknown symbol '
-                f'{symbol} for ledger action',
-            )
-
-        return value
-
-    def serialize_for_db(self) -> str:
-        if self == LedgerActionType.INCOME:
-            return 'A'
-        if self == LedgerActionType.EXPENSE:
-            return 'B'
-        if self == LedgerActionType.LOSS:
-            return 'C'
-        if self == LedgerActionType.DIVIDENDS_INCOME:
-            return 'D'
-        if self == LedgerActionType.DONATION_RECEIVED:
-            return 'E'
-        if self == LedgerActionType.AIRDROP:
-            return 'F'
-        if self == LedgerActionType.GIFT:
-            return 'G'
-        if self == LedgerActionType.GRANT:
-            return 'H'
-
-        # else
-        raise RuntimeError(f'Corrupt value {self} for LedgerActionType -- Should never happen')
-
-    @classmethod
-    def deserialize_from_db(cls, symbol: str) -> 'LedgerActionType':
-        """Takes a string from the DB and attempts to turn it into a LedgerActionType
-
-        Can throw DeserializationError if the symbol is not as expected
-        """
-        if not isinstance(symbol, str):
-            raise DeserializationError(
-                f'Failed to deserialize ledger action type symbol from {type(symbol)} entry',
-            )
-
-        if symbol == 'A':
-            return LedgerActionType.INCOME
-        if symbol == 'B':
-            return LedgerActionType.EXPENSE
-        if symbol == 'C':
-            return LedgerActionType.LOSS
-        if symbol == 'D':
-            return LedgerActionType.DIVIDENDS_INCOME
-        if symbol == 'E':
-            return LedgerActionType.DONATION_RECEIVED
-        if symbol == 'F':
-            return LedgerActionType.AIRDROP
-        if symbol == 'G':
-            return LedgerActionType.GIFT
-        if symbol == 'H':
-            return LedgerActionType.GRANT
-        # else
-        raise DeserializationError(
-            f'Failed to deserialize ledger action type symbol. Unknown DB '
-            f'symbol {symbol} for ledger action type',
-        )
 
     def is_profitable(self) -> bool:
         return self in (
@@ -134,9 +36,6 @@ class LedgerActionType(Enum):
             LedgerActionType.GIFT,
             LedgerActionType.GRANT,
         )
-
-
-LEDGER_ACTION_TYPE_MAPPING = {str(x): x for x in LedgerActionType}
 
 
 LedgerActionDBTuple = Tuple[

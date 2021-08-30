@@ -20,10 +20,12 @@ from rotkehlchen.errors import (
     PremiumAuthenticationError,
     RemoteError,
 )
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import B64EncodedBytes, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 HANDLABLE_STATUS_CODES = [
     HTTPStatus.OK,
@@ -224,7 +226,7 @@ class Premium():
             )
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {str(e)}'
-            logger.error(msg)
+            log.error(msg)
             raise RemoteError(msg) from e
 
         return _process_dict_response(response)
@@ -250,7 +252,7 @@ class Premium():
             )
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {str(e)}'
-            logger.error(msg)
+            log.error(msg)
             raise RemoteError(msg) from e
 
         return _process_dict_response(response)
@@ -275,7 +277,7 @@ class Premium():
             )
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {str(e)}'
-            logger.error(msg)
+            log.error(msg)
             raise RemoteError(msg) from e
 
         result = _process_dict_response(response)
@@ -306,7 +308,7 @@ class Premium():
             )
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {str(e)}'
-            logger.error(msg)
+            log.error(msg)
             raise RemoteError(msg) from e
 
         result = _process_dict_response(response)
@@ -334,7 +336,7 @@ class Premium():
             )
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {str(e)}'
-            logger.error(msg)
+            log.error(msg)
             raise RemoteError(msg) from e
 
         return _decode_premium_json(response)

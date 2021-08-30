@@ -133,7 +133,8 @@ ETH_MULTICALL = EthereumConstants().contract('ETH_MULTICALL')
 ETH_MULTICALL_2 = EthereumConstants().contract('ETH_MULTICALL_2')
 
 
-AAVE_LENDING_POOL = EthereumConstants().contract('AAVE_LENDING_POOL')
+AAVE_V1_LENDING_POOL = EthereumConstants().contract('AAVE_V1_LENDING_POOL')
+AAVE_V2_LENDING_POOL = EthereumConstants().contract('AAVE_V2_LENDING_POOL')
 
 ATOKEN_ABI = EthereumConstants.abi('ATOKEN')
 ZERION_ABI = EthereumConstants.abi('ZERION_ADAPTER')
@@ -146,3 +147,5 @@ YEARN_VAULT_V2_ABI = EthereumConstants.abi('YEARN_VAULT_V2')
 
 YEARN_VAULTS_PREFIX = 'yearn_vaults_events'
 YEARN_VAULTS_V2_PREFIX = 'yearn_vaults_v2_events'
+
+LIQUITY_TROVE_MANAGER = EthereumConstants().contract('TROVE_MANAGER')

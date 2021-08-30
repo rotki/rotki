@@ -334,7 +334,7 @@ def test_upgrade_db_1_to_2(data_dir, username):
     data.db.conn.commit()
 
     # now relogin and check that the account has been re-saved as checksummed
-    with mock_dbhandler_update_owned_assets():
+    with creation_patch, target_patch(1), mock_dbhandler_update_owned_assets(), mock_dbhandler_add_globaldb_assetids(), mock_dbhandler_ensura_data_integrity():  # noqa: E501
         del data
         data = DataHandler(data_dir, msg_aggregator)
         with target_patch(target_version=2):
@@ -1140,7 +1140,7 @@ def test_upgrade_db_20_to_21(user_data_dir):
         # Check the last 3 entries to make sure no data is lost during upgrade
         if length == 1297:
             assert entry == (
-                BalanceType.ASSET.serialize_for_db(),
+                BalanceType.ASSET.serialize_for_db(),  # pylint: disable=no-member
                 1605194428,
                 'yaLINK',
                 '444.562307846438094287',
@@ -1148,7 +1148,7 @@ def test_upgrade_db_20_to_21(user_data_dir):
             )
         elif length == 1298:
             assert entry == (
-                BalanceType.ASSET.serialize_for_db(),
+                BalanceType.ASSET.serialize_for_db(),  # pylint: disable=no-member
                 1605194428,
                 'ypaxCrv',
                 '211.750728445895069118',
@@ -1156,7 +1156,7 @@ def test_upgrade_db_20_to_21(user_data_dir):
             )
         elif length == 1299:
             assert entry == (
-                BalanceType.ASSET.serialize_for_db(),
+                BalanceType.ASSET.serialize_for_db(),  # pylint: disable=no-member
                 1605194428,
                 'yyDAI+yUSDC+yUSDT+yBUSD',
                 '167.18639752015697023',
@@ -1165,7 +1165,7 @@ def test_upgrade_db_20_to_21(user_data_dir):
         length += 1
     assert length == 1300
     assert entry == (
-        BalanceType.ASSET.serialize_for_db(),
+        BalanceType.ASSET.serialize_for_db(),  # pylint: disable=no-member
         1605194428,
         'yyDAI+yUSDC+yUSDT+yBUSD',
         '167.18639752015697023',
@@ -2191,6 +2191,53 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
 
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 28
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 28 to version 29.
+
+    - Updates the primary key of blockchain accounts to take into account chain type
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v28_rotkehlchen.db')
+    db_v28 = _init_db_with_target_version(
+        target_version=28,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db_v28.conn.cursor()
+
+    expected_accounts = [
+        ('ETH', '0x57eEb11218e89C75631e9dF3ef9a34874136729B', 'test ethereum account'),
+        ('AVAX', '0x84D34f4f83a87596Cd3FB6887cFf8F17Bf5A7B83', ''),
+        ('BTC', '39bAC3Mr6RfT2V3Z8qShD7mA9JT1Phmvap', ''),
+    ]
+    expected_xpubs = [('foo', '/m/0/0', 'label1')]
+    expected_xpub_mappings = [
+        ('39bAC3Mr6RfT2V3Z8qShD7mA9JT1Phmvap', 'foo', '/m/0/0', 0, 1),
+    ]
+    # Checks before migration
+    # Migrate to v29
+    assert cursor.execute('SELECT * FROM blockchain_accounts;').fetchall() == expected_accounts
+    assert cursor.execute('SELECT * FROM xpubs;').fetchall() == expected_xpubs
+    assert cursor.execute('SELECT * FROM xpub_mappings;').fetchall() == expected_xpub_mappings
+    db = _init_db_with_target_version(
+        target_version=29,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+
+    # check same data is there
+    assert cursor.execute('SELECT * FROM blockchain_accounts;').fetchall() == expected_accounts
+    assert cursor.execute('SELECT * FROM xpubs;').fetchall() == expected_xpubs
+    assert cursor.execute(
+        'SELECT address, xpub, derivation_path, account_index, derived_index FROM xpub_mappings;',
+    ).fetchall() == expected_xpub_mappings
+
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 29
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

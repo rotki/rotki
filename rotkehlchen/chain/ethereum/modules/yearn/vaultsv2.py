@@ -1,26 +1,31 @@
-from collections import defaultdict
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.chain.ethereum.modules.yearn.vaults import YearnVaultHistory, YearnVaultBalance
 from rotkehlchen.chain.ethereum.modules.yearn.graph import YearnVaultsV2Graph
-from rotkehlchen.chain.ethereum.modules.yearn.vaults import get_usd_price_zero_if_error
+from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
+    YearnVaultBalance,
+    YearnVaultHistory,
+    get_usd_price_zero_if_error,
+)
 from rotkehlchen.chain.ethereum.structures import YearnVaultEvent
 from rotkehlchen.constants.ethereum import (
     MAX_BLOCKTIME_CACHE,
     YEARN_VAULT_V2_ABI,
     YEARN_VAULTS_V2_PREFIX,
 )
+from rotkehlchen.chain.ethereum.graph import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import ChecksumEthAddress, EthAddress, Timestamp, YEARN_VAULTS_V2_PROTOCOL
+from rotkehlchen.typing import YEARN_VAULTS_V2_PROTOCOL, ChecksumEthAddress, EthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
@@ -31,12 +36,8 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 BLOCKS_PER_YEAR = 2425846
-log = logging.getLogger(__name__)
-SUBGRAPH_REMOTE_ERROR_MSG = (
-    "Failed to request the Yearn Finance vaults v2 subgraph due to {error_msg}. "
-    "All the deposits and withdrawals history queries are not functioning until this is fixed. "  # noqa: E501
-    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
-)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class YearnVaultsV2(EthereumModule):
@@ -62,7 +63,9 @@ class YearnVaultsV2(EthereumModule):
                 msg_aggregator=msg_aggregator,
             )
         except RemoteError as e:
-            self.msg_aggregator.add_error(SUBGRAPH_REMOTE_ERROR_MSG.format(error_msg=str(e)))
+            self.msg_aggregator.add_error(
+                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Yearn V2", error_msg=str(e)),
+            )
             raise ModuleInitializationFailure('Yearn Vaults v2 Subgraph remote error') from e
 
     def _calculate_vault_roi(self, vault: EthereumToken) -> Tuple[FVal, int]:
@@ -156,7 +159,7 @@ class YearnVaultsV2(EthereumModule):
                     usd_price = get_usd_price_zero_if_error(
                         asset=event.to_asset,
                         time=event.timestamp,
-                        location='yearn vault v2 event processing',
+                        location=f'yearn vault v2 event {event.tx_hash} processing',
                         msg_aggregator=self.msg_aggregator,
                     )
                     profit = Balance(profit_amount, profit_amount * usd_price)

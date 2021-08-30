@@ -93,7 +93,7 @@ VAULT_8015 = {
         'usd_value': '0',
     },
     'collateralization_ratio': None,
-    'liquidation_ratio': '150.00%',
+    'liquidation_ratio': '145.00%',
     'liquidation_price': None,
     'stability_fee': '0.00%',
 }
@@ -324,7 +324,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
             'usd_value': ZERO,
         },
         'collateralization_ratio': None,
-        'liquidation_ratio': '150.00%',
+        'liquidation_ratio': '145.00%',
         'liquidation_price': None,
         'stability_fee': '0.00%',
     }
@@ -451,7 +451,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
         collateral=Balance(ZERO, ZERO),
         debt=Balance(ZERO, ZERO),
         collateralization_ratio=None,
-        liquidation_ratio=FVal(1.5),
+        liquidation_ratio=FVal(1.45),
         liquidation_price=None,
         stability_fee=FVal(0.02),
     )
@@ -650,7 +650,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
             'usd_value': '0',
         },
         'collateralization_ratio': None,
-        'liquidation_ratio': '150.00%',
+        'liquidation_ratio': '145.00%',
         'liquidation_price': None,
         'stability_fee': '0.00%',
     }
@@ -668,7 +668,7 @@ def test_two_vaults_same_account_same_collateral(rotkehlchen_api_server, ethereu
             'usd_value': '0',
         },
         'collateralization_ratio': None,
-        'liquidation_ratio': '150.00%',
+        'liquidation_ratio': '145.00%',
         'liquidation_price': None,
         'stability_fee': '0.00%',
     }

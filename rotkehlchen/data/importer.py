@@ -17,6 +17,7 @@ from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, AssetMovementCategory, Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
@@ -26,7 +27,8 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, TradeType
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def remap_header(fieldnames: List[str]) -> List[str]:

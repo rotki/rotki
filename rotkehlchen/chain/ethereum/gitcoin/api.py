@@ -21,6 +21,7 @@ from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import DeserializationError, InputError, RemoteError, UnknownAsset
 from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_str,
     deserialize_timestamp_from_date,
@@ -34,6 +35,7 @@ NO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class ZeroGitcoinAmount(Exception):
@@ -144,12 +146,12 @@ class GitcoinAPI():
         backoff = 1
         backoff_limit = 33
         while backoff < backoff_limit:
-            logger.debug(f'Querying gitcoin: {query_str}')
+            log.debug(f'Querying gitcoin: {query_str}')
             try:
                 response = self.session.get(query_str, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 if 'Max retries exceeded with url' in str(e):
-                    logger.debug(
+                    log.debug(
                         f'Got max retries exceeded from gitcoin. Will '
                         f'backoff for {backoff} seconds.',
                     )
@@ -301,7 +303,7 @@ class GitcoinAPI():
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
-                logger.error(
+                log.error(
                     f'Unexpected data encountered during deserialization of gitcoin api '
                     f'query: {result}. Error was: {msg}',
                 )
@@ -345,7 +347,7 @@ class GitcoinAPI():
                     'Unexpected data encountered during deserialization of a gitcoin '
                     'api query. Check logs for details.',
                 )
-                logger.error(
+                log.error(
                     f'Unexpected data encountered during deserialization of gitcoin api '
                     f'query: {transaction}. Error was: {msg}',
                 )
@@ -357,7 +359,7 @@ class GitcoinAPI():
                 )
                 continue
             except ZeroGitcoinAmount:
-                logger.warning(f'Found gitcoin event with 0 amount for grant {grant_id}. Ignoring')
+                log.warning(f'Found gitcoin event with 0 amount for grant {grant_id}. Ignoring')
                 continue
 
             actions.append(action)

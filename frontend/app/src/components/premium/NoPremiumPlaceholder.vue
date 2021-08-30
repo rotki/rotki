@@ -1,6 +1,7 @@
 <template>
   <div
     class="no-premium-placeholder__empty d-flex flex-column align-center"
+    :class="$vuetify.breakpoint.xsOnly ? 'pa-2 mt-2' : null"
     :style="`height: calc(100vh - ${top + 64}px);`"
   >
     <v-row align="center" justify="center">
@@ -26,7 +27,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator';
+import { Component, Prop, Vue } from 'vue-property-decorator';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 
 @Component({

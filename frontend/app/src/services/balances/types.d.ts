@@ -1,3 +1,4 @@
+import { Balance } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
 import {
   SUPPORTED_EXCHANGES,
@@ -5,7 +6,6 @@ import {
   EXTERNAL_EXCHANGES
 } from '@/data/defaults';
 import { TradeLocation } from '@/services/history/types';
-import { Balance } from '@/services/types-api';
 
 export type SupportedExchange = typeof SUPPORTED_EXCHANGES[number];
 export type SupportedTradeLocation = typeof SUPPORTED_TRADE_LOCATIONS[number];
@@ -37,6 +37,8 @@ export interface BlockchainBalances {
     ETH: BlockchainAssetBalances;
     BTC: BtcBalances;
     KSM: BlockchainAssetBalances;
+    DOT: BlockchainAssetBalances;
+    AVAX: BlockchainAssetBalances;
   };
   readonly totals: BlockchainTotals;
 }

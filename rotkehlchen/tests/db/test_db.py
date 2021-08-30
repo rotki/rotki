@@ -15,6 +15,7 @@ from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
@@ -29,6 +30,8 @@ from rotkehlchen.db.settings import (
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_MAIN_CURRENCY,
+    DEFAULT_PNL_CSV_HAVE_SUMMARY,
+    DEFAULT_PNL_CSV_WITH_FORMULAS,
     DEFAULT_TAXABLE_LEDGER_ACTIONS,
     DEFAULT_UI_FLOATING_PRECISION,
     ROTKEHLCHEN_DB_VERSION,
@@ -41,10 +44,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition,
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
-    deserialize_action_type,
-    deserialize_action_type_from_db,
     deserialize_asset_movement_category,
-    deserialize_asset_movement_category_from_db,
     deserialize_trade_type,
     deserialize_trade_type_from_db,
 )
@@ -323,6 +323,7 @@ def test_writing_fetching_data(data_dir, username):
         'have_premium': False,
         'eth_rpc_endpoint': 'http://localhost:8545',
         'ksm_rpc_endpoint': 'http://localhost:9933',
+        'dot_rpc_endpoint': '',
         'ui_floating_precision': DEFAULT_UI_FLOATING_PRECISION,
         'version': ROTKEHLCHEN_DB_VERSION,
         'include_crypto2crypto': DEFAULT_INCLUDE_CRYPTO2CRYPTO,
@@ -345,6 +346,8 @@ def test_writing_fetching_data(data_dir, username):
         'current_price_oracles': DEFAULT_CURRENT_PRICE_ORACLES,
         'historical_price_oracles': DEFAULT_HISTORICAL_PRICE_ORACLES,
         'taxable_ledger_actions': DEFAULT_TAXABLE_LEDGER_ACTIONS,
+        'pnl_csv_with_formulas': DEFAULT_PNL_CSV_WITH_FORMULAS,
+        'pnl_csv_have_summary': DEFAULT_PNL_CSV_HAVE_SUMMARY,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 
@@ -1016,7 +1019,8 @@ def test_add_ethereum_transactions(data_dir, username):
     warnings = msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
-    returned_transactions = data.db.get_ethereum_transactions()
+    filter_query = ETHTransactionsFilterQuery.make()
+    returned_transactions = data.db.get_ethereum_transactions(filter_query)
     assert returned_transactions == [tx1, tx2]
 
     # Add the last 2 transactions. Since tx2 already exists in the DB it should be
@@ -1026,7 +1030,7 @@ def test_add_ethereum_transactions(data_dir, username):
     warnings = msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
-    returned_transactions = data.db.get_ethereum_transactions()
+    returned_transactions = data.db.get_ethereum_transactions(filter_query)
     assert returned_transactions == [tx1, tx2, tx3]
 
 
@@ -1312,11 +1316,11 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     (TradeType, 'SELECT type, seq from trade_type',
         deserialize_trade_type_from_db, deserialize_trade_type),
     (ActionType, 'SELECT type, seq from action_type',
-        deserialize_action_type_from_db, deserialize_action_type),
+        ActionType.deserialize_from_db, ActionType.deserialize),
     (LedgerActionType, 'SELECT type, seq from ledger_action_type',
         LedgerActionType.deserialize_from_db, LedgerActionType.deserialize),
     (AssetMovementCategory, 'SELECT category, seq from asset_movement_category',
-        deserialize_asset_movement_category_from_db, deserialize_asset_movement_category),
+        AssetMovementCategory.deserialize_from_db, deserialize_asset_movement_category),
 ])
 def test_enum_in_db(database, enum_class, query, deserialize_from_db, deserialize):
     """

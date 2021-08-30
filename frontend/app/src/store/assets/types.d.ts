@@ -1,4 +1,4 @@
-import { SupportedAsset } from '@/services/assets/types';
+import { SupportedAsset } from '@rotki/common/lib/data';
 
 export interface AssetState {}
 

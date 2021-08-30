@@ -15,12 +15,13 @@ import {
   EXCHANGE_FTX,
   EXCHANGE_GEMINI,
   EXCHANGE_ICONOMI,
+  EXCHANGE_INDEPENDENTRESERVE,
   EXCHANGE_KRAKEN,
   EXCHANGE_KUCOIN,
   EXCHANGE_NEXO,
   EXCHANGE_POLONIEX,
+  EXCHANGE_SUSHISWAP,
   EXCHANGE_UNISWAP,
-  EXCHANGE_INDEPENDENTRESERVE,
   TRADE_LOCATION_BANKS,
   TRADE_LOCATION_BLOCKCHAIN,
   TRADE_LOCATION_COMMODITIES,
@@ -132,6 +133,13 @@ export const tradeLocations: TradeLocationData[] = [
     exchange: false
   },
   {
+    identifier: EXCHANGE_SUSHISWAP,
+    name: 'Sushiswap',
+    icon: require('@/assets/images/modules/sushiswap.svg'),
+    imageIcon: true,
+    exchange: false
+  },
+  {
     identifier: EXCHANGE_BLOCKFI,
     name: 'BlockFi',
     icon: require('@/assets/images/blockfi.png'),
@@ -175,7 +183,7 @@ export const tradeLocations: TradeLocationData[] = [
   },
   {
     identifier: EXCHANGE_INDEPENDENTRESERVE,
-    name: 'IndepentReserve',
+    name: 'IndependentReserve',
     icon: require('@/assets/images/exchanges/independentreserve.png'),
     imageIcon: true,
     exchange: true

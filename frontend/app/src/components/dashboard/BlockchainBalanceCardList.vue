@@ -11,7 +11,7 @@
       <v-list-item-content>
         <div class="d-flex flex-row">
           <span class="grow">
-            {{ name | capitalize }}
+            {{ capitalize(name) }}
           </span>
           <span class="text-end shrink">
             <amount-display
@@ -67,6 +67,7 @@ import { Component, Mixins, Prop } from 'vue-property-decorator';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import Fragment from '@/components/helper/Fragment';
+import { capitalize } from '@/filters';
 import AssetMixin from '@/mixins/asset-mixin';
 import { BlockchainTotal } from '@/store/balances/types';
 import {
@@ -74,6 +75,8 @@ import {
   BTC,
   ETH,
   KSM,
+  DOT,
+  AVAX,
   L2_LOOPRING,
   SupportedL2Protocol
 } from '@/typing/types';
@@ -86,6 +89,8 @@ export default class BlockchainBalanceCardList extends Mixins(AssetMixin) {
   @Prop({ required: true, type: Object })
   total!: BlockchainTotal;
 
+  readonly capitalize = capitalize;
+
   get name(): string {
     const chain = this.total.chain;
     if (chain === ETH) {
@@ -94,6 +99,10 @@ export default class BlockchainBalanceCardList extends Mixins(AssetMixin) {
       return this.$t('blockchains.btc').toString();
     } else if (chain === KSM) {
       return this.$t('blockchains.ksm').toString();
+    } else if (chain === DOT) {
+      return this.$t('blockchains.dot').toString();
+    } else if (chain === AVAX) {
+      return this.$t('blockchains.avax').toString();
     }
     return '';
   }

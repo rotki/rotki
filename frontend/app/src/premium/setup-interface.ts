@@ -1,17 +1,28 @@
+import {
+  GitcoinGrantEventsPayload,
+  GitcoinReportPayload
+} from '@rotki/common/lib/gitcoin';
+import {
+  DataUtilities,
+  DateUtilities,
+  SettingsApi
+} from '@rotki/common/lib/premium';
+import {
+  DARK_THEME,
+  LIGHT_THEME,
+  Themes,
+  TimeUnit
+} from '@rotki/common/lib/settings';
 import Chart from 'chart.js';
 import dayjs from 'dayjs';
 import Vue from 'vue';
 import Vuex from 'vuex';
-import { TIME_UNIT_DAY } from '@/components/dashboard/const';
-import { TimeUnit } from '@/components/dashboard/types';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { registerComponents } from '@/premium/register-components';
-import { DataUtilities, DateUtilities, SettingsApi } from '@/premium/types';
 import { api } from '@/services/rotkehlchen-api';
 import { HistoryActions } from '@/store/history/consts';
-import { DARK_THEME, LIGHT_THEME } from '@/store/settings/consts';
-import { FrontendSettingsPayload, Themes } from '@/store/settings/types';
+import { FrontendSettingsPayload } from '@/store/settings/types';
 import store from '@/store/store';
 
 const date: DateUtilities = {
@@ -31,7 +42,7 @@ const date: DateUtilities = {
     return dayjs(date, format).unix();
   },
   epochStartSubtract(amount: number, unit: TimeUnit): number {
-    return dayjs().subtract(amount, unit).startOf(TIME_UNIT_DAY).unix();
+    return dayjs().subtract(amount, unit).startOf(unit).unix();
   },
   toUserSelectedFormat(timestamp: number): string {
     return displayDateFormatter.format(
@@ -49,13 +60,13 @@ const data: DataUtilities = {
     return store.getters['balances/getIdentifierForSymbol'](symbol);
   },
   gitcoin: {
-    generateReport(payload) {
+    generateReport(payload: GitcoinReportPayload) {
       return api.history.generateReport(payload);
     },
-    deleteGrant(grantId) {
+    deleteGrant(grantId: number) {
       return api.history.deleteGitcoinGrantEvents(grantId);
     },
-    fetchGrantEvents(payload) {
+    fetchGrantEvents(payload: GitcoinGrantEventsPayload) {
       return store.dispatch(
         `history/${HistoryActions.FETCH_GITCOIN_GRANT}`,
         payload
@@ -89,7 +100,7 @@ export const setupPremium = () => {
   window.Vue.use(Vuex);
   window.rotki = {
     useHostComponents: true,
-    version: 12,
+    version: 13,
     utils: {
       date,
       data,

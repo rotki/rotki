@@ -1,108 +1,105 @@
 <template>
-  <v-container>
-    <card class="exchange-balances mt-8" outlined-body>
-      <template #title>
-        {{ $t('exchange_balances.title') }}
-      </template>
-      <v-btn
-        absolute
-        fab
-        top
-        right
-        dark
-        color="primary"
-        to="/settings/api-keys/exchanges"
-      >
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
-      <v-row
-        v-if="usedExchanges.length > 0"
-        no-gutters
-        class="exchange-balances__content"
-      >
-        <v-col cols="12" class="hidden-md-and-up">
-          <v-select
-            v-model="selectedExchange"
-            filled
-            :items="usedExchanges"
-            hide-details
-            :label="$t('exchange_balances.select_exchange')"
-            class="exchange-balances__content__select"
-            @change="openExchangeDetails"
-          >
-            <template #selection="{ item }">
-              <exchange-amount-row
-                :balance="exchangeBalance(item)"
-                :exchange="exchange"
-              />
-            </template>
-            <template #item="{ item }">
-              <exchange-amount-row
-                :balance="exchangeBalance(item)"
-                :exchange="exchange"
-              />
-            </template>
-          </v-select>
-        </v-col>
-        <v-col cols="2" class="hidden-sm-and-down">
-          <v-tabs
-            fixed-tabs
-            vertical
-            hide-slider
-            optional
-            class="exchange-balances__tabs"
-          >
-            <v-tab
-              v-for="(exchange, i) in usedExchanges"
-              :key="i"
-              class="exchange-balances__tab ml-3 my-3 py-3 text-none"
-              active-class="exchange-balances__tab--active"
-              :to="`/accounts-balances/exchange-balances/${exchange}`"
-              @click="selectedExchange = exchange"
-            >
-              <location-display :identifier="exchange" size="36px" />
-              <div class="exchange-balances__tab__amount d-block">
-                <amount-display
-                  show-currency="symbol"
-                  fiat-currency="USD"
-                  :value="exchangeBalance(exchange)"
-                />
-              </div>
-            </v-tab>
-          </v-tabs>
-        </v-col>
-        <v-col
-          :class="
-            $vuetify.breakpoint.mdAndUp ? 'exchange-balances__balances' : null
-          "
+  <card class="exchange-balances mt-8" outlined-body>
+    <template #title>
+      {{ $t('exchange_balances.title') }}
+    </template>
+    <v-btn
+      absolute
+      fab
+      top
+      right
+      dark
+      color="primary"
+      to="/settings/api-keys/exchanges"
+    >
+      <v-icon> mdi-plus </v-icon>
+    </v-btn>
+    <v-row
+      v-if="usedExchanges.length > 0"
+      no-gutters
+      class="exchange-balances__content"
+    >
+      <v-col cols="12" class="hidden-md-and-up">
+        <v-select
+          v-model="selectedExchange"
+          filled
+          :items="usedExchanges"
+          hide-details
+          :label="$t('exchange_balances.select_exchange')"
+          class="exchange-balances__content__select"
+          @change="openExchangeDetails"
         >
-          <asset-balances
-            v-if="exchange"
-            flat
-            :balances="exchangeBalances(exchange)"
-          />
-          <div v-else class="pa-4">
-            {{ $t('exchange_balances.select_hint') }}
-          </div>
-        </v-col>
-      </v-row>
-      <v-row v-else class="px-4 py-8">
-        <v-col>
-          <i18n path="exchange_balances.no_connected_exchanges">
-            <router-link to="/settings/api-keys/exchanges">
-              {{ $t('exchange_balances.click_here') }}
-            </router-link>
-          </i18n>
-        </v-col>
-      </v-row>
-    </card>
-  </v-container>
+          <template #selection="{ item }">
+            <exchange-amount-row
+              :balance="exchangeBalance(item)"
+              :exchange="exchange"
+            />
+          </template>
+          <template #item="{ item }">
+            <exchange-amount-row
+              :balance="exchangeBalance(item)"
+              :exchange="exchange"
+            />
+          </template>
+        </v-select>
+      </v-col>
+      <v-col cols="2" class="hidden-sm-and-down">
+        <v-tabs
+          fixed-tabs
+          vertical
+          hide-slider
+          optional
+          class="exchange-balances__tabs"
+        >
+          <v-tab
+            v-for="(exchange, i) in usedExchanges"
+            :key="i"
+            class="exchange-balances__tab ml-3 my-3 py-3 text-none"
+            active-class="exchange-balances__tab--active"
+            :to="`/accounts-balances/exchange-balances/${exchange}`"
+            @click="selectedExchange = exchange"
+          >
+            <location-display :identifier="exchange" size="36px" />
+            <div class="exchange-balances__tab__amount d-block">
+              <amount-display
+                show-currency="symbol"
+                fiat-currency="USD"
+                :value="exchangeBalance(exchange)"
+              />
+            </div>
+          </v-tab>
+        </v-tabs>
+      </v-col>
+      <v-col
+        :class="
+          $vuetify.breakpoint.mdAndUp ? 'exchange-balances__balances' : null
+        "
+      >
+        <asset-balances
+          v-if="exchange"
+          :balances="exchangeBalances(exchange)"
+        />
+        <div v-else class="pa-4">
+          {{ $t('exchange_balances.select_hint') }}
+        </div>
+      </v-col>
+    </v-row>
+    <v-row v-else class="px-4 py-8">
+      <v-col>
+        <i18n path="exchange_balances.no_connected_exchanges">
+          <router-link to="/settings/api-keys/exchanges">
+            {{ $t('exchange_balances.click_here') }}
+          </router-link>
+        </i18n>
+      </v-col>
+    </v-row>
+  </card>
 </template>
 
 <script lang="ts">
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapState, mapGetters } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { tradeLocations } from '@/components/history/consts';

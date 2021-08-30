@@ -1,6 +1,4 @@
-import json
 import warnings as test_warnings
-from pathlib import Path
 
 import pytest
 from eth_utils import is_checksum_address
@@ -14,7 +12,6 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError, UnknownAsset
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.utils.hashing import file_md5
 
 
 def test_unknown_asset():
@@ -127,6 +124,10 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0xcbb20D755ABAD34cb4a9b5fF6Dd081C76769f62e'),  # noqa: E501 # Cash Global Coin (CGC) but another CGC in CC
         ethaddress_to_identifier('0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'),  # noqa: E501 # Binance Wrapped BTC (BBTC) but another BBTC in CC
         'NRV',     # Nerve Finance (NRV) but another NRV in CC
+        'EDR-2',   # Endor Protocol Token but we have E-Dinar Coin
+        ethaddress_to_identifier('0xDa007777D86AC6d989cC9f79A73261b3fC5e0DA0'),  # noqa: E501 # Dappnode (NODE) but another NODE in CC
+        'QI',  # noqa: E501 # BENQI (QI) but another QI in CC
+        ethaddress_to_identifier('0x1A4b46696b2bB4794Eb3D4c26f1c55F9170fa4C5'),  # noqa: E501 # BitDao (BIT) but another BIT in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -295,6 +296,24 @@ def test_coingecko_identifiers_are_reachable():
         'SWARM',
         # Coingecko has aircoin and we have a different airtoken
         'AIR-2',
+        # Coingecko has Attlas Token and we have Authorship
+        ethaddress_to_identifier('0x2dAEE1AA61D60A252DC80564499A69802853583A'),
+        # Coingecko has Lever Network and we have Leverj
+        ethaddress_to_identifier('0x0F4CA92660Efad97a9a70CB0fe969c755439772C'),
+        # Coingecko has Twirl Governance Token and we have Target Coin
+        ethaddress_to_identifier('0xAc3Da587eac229C9896D919aBC235CA4Fd7f72c1'),
+        # Coingecko has MyWish and we have another WISH (ethereum addresses don't match)
+        ethaddress_to_identifier('0x1b22C32cD936cB97C28C5690a0695a82Abf688e6'),
+        # Coingecko has DroneFly and we have KlondikeCoin for symbol KDC
+        'KDC',
+        # Coingecko has CoinStarter and we have Student Coin for symbol STC
+        ethaddress_to_identifier('0x15B543e986b8c34074DFc9901136d9355a537e7E'),
+        # Coingecko has Nano Dogecoin symbol:ndc and we have NEVERDIE
+        ethaddress_to_identifier('0xA54ddC7B3CcE7FC8b1E3Fa0256D0DB80D2c10970'),
+        # Coingecko has olecoin and we have Olive
+        ethaddress_to_identifier('0x9d9223436dDD466FC247e9dbbD20207e640fEf58'),
+        # Coingecko has orica and we have origami
+        ethaddress_to_identifier('0xd2Fa8f92Ea72AbB35dBD6DECa57173d22db2BA49'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
@@ -332,24 +351,6 @@ def test_coingecko_identifiers_are_reachable():
                 msg += f'\nSuggestion: id:{s[0]} name:{s[1]} symbol:{s[2]}'
         if not found:
             test_warnings.warn(UserWarning(msg))
-
-
-def test_assets_json_meta():
-    """Test that all_assets.json md5 matches and that if md5 changes since last
-    time then version is also bumped"""
-    last_meta = {'md5': '51bddc1b4e8bd6d30027c4380cdf9d4f', 'version': 72}
-    data_dir = Path(__file__).resolve().parent.parent.parent / 'data'
-    data_md5 = file_md5(data_dir / 'all_assets.json')
-
-    with open(data_dir / 'all_assets.meta', 'r') as f:
-        saved_meta = json.loads(f.read())
-
-    assert data_md5 == saved_meta['md5']
-
-    msg = 'The last meta md5 of the test does not match the one in all_assets.meta'
-    assert saved_meta['md5'] == last_meta['md5'], msg
-    msg = 'The last meta version of the test does not match the one in all_assets.meta'
-    assert saved_meta['version'] == last_meta['version'], msg
 
 
 @pytest.mark.parametrize('mock_asset_meta_github_response', ['{"md5": "", "version": 99999999}'])

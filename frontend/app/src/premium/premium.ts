@@ -1,7 +1,7 @@
+import { RotkiPremiumInterface } from '@rotki/common/lib/premium';
 import Chart from 'chart.js';
 import Vue, { VueConstructor } from 'vue';
 import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
-import { RotkiPremiumInterface } from '@/premium/types';
 import { api } from '@/services/rotkehlchen-api';
 
 function findComponents(): string[] {
@@ -130,6 +130,10 @@ export const ThemeManager = (): Promise<VueConstructor> => {
 
 export const Grants = (): Promise<VueConstructor> => {
   return load('Grants');
+};
+
+export const Sushi = (): Promise<VueConstructor> => {
+  return load('Sushi');
 };
 
 declare global {

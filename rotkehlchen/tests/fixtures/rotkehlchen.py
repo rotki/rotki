@@ -161,6 +161,7 @@ def initialize_mock_rotkehlchen_instance(
     if start_with_valid_premium:
         rotki.premium = Premium(rotki_premium_credentials)
         rotki.premium_sync_manager.premium = rotki.premium
+        rotki.chain_manager.premium = rotki.premium
 
     if legacy_messages_via_websockets is False:
         rotki.msg_aggregator.rotki_notifier = None

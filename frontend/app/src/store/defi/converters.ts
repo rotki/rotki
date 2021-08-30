@@ -1,3 +1,4 @@
+import { DefiProtocol } from '@/services/defi/consts';
 import { ApiMakerDAOVault } from '@/services/defi/types';
 import { MakerDAOVault } from '@/store/defi/types';
 import { bigNumberify } from '@/utils/bignumbers';
@@ -8,7 +9,7 @@ export function convertMakerDAOVaults(
   return vaults.map(vault => ({
     ...vault,
     identifier: vault.identifier.toString(),
-    protocol: 'makerdao',
+    protocol: DefiProtocol.MAKERDAO_VAULTS,
     collateral: { ...vault.collateral, asset: vault.collateralAsset },
     collateralizationRatio: vault.collateralizationRatio ?? undefined,
     liquidationPrice: vault.liquidationPrice

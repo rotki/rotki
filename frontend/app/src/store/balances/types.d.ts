@@ -1,15 +1,15 @@
+import { Balance } from '@rotki/common';
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { BigNumber } from 'bignumber.js';
 import { Exchange, PriceOracles } from '@/model/action-result';
-import { SupportedAsset } from '@/services/assets/types';
 import {
   BlockchainAssetBalances,
   BtcBalances,
   ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import {
-  Balance,
   BtcAccountData,
   GeneralAccountData,
   HasBalance
@@ -47,6 +47,8 @@ export interface BalanceState {
   eth: BlockchainAssetBalances;
   btc: BtcBalances;
   ksm: BlockchainAssetBalances;
+  dot: BlockchainAssetBalances;
+  avax: BlockchainAssetBalances;
   totals: AssetBalances;
   liabilities: AssetBalances;
   usdToFiatExchangeRates: ExchangeRates;
@@ -55,6 +57,8 @@ export interface BalanceState {
   ethAccounts: GeneralAccountData[];
   btcAccounts: BtcAccountData;
   ksmAccounts: GeneralAccountData[];
+  dotAccounts: GeneralAccountData[];
+  avaxAccounts: GeneralAccountData[];
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalanceWithValue[];
   manualBalanceByLocation: BalanceByLocation;
@@ -93,7 +97,7 @@ export interface BlockchainAccountPayload extends AccountPayload {
   readonly blockchain: Blockchain;
   readonly xpub?: XpubPayload;
   readonly accounts?: string[];
-  readonly modules?: SupportedModules[];
+  readonly modules?: Module[];
 }
 
 export interface AccountPayload {
@@ -138,7 +142,7 @@ export interface AssetBalance extends Balance {
 export type AddAccountsPayload = {
   readonly blockchain: Blockchain;
   readonly payload: AccountPayload[];
-  readonly modules?: SupportedModules[];
+  readonly modules?: Module[];
 };
 
 interface L2Totals {

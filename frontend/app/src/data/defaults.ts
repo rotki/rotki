@@ -8,6 +8,7 @@ export class Defaults {
   static FLOATING_PRECISION = 2;
   static RPC_ENDPOINT = 'http://localhost:8545';
   static KSM_RPC_ENDPOINT = 'http://localhost:9933';
+  static DOT_RPC_ENDPOINT = ''; // same as Kusama, must be set by user
   static BALANCE_SAVE_FREQUENCY = 24;
   static ANONYMOUS_USAGE_ANALYTICS = true;
   static DEFAULT_QUERY_PERIOD = 5;
@@ -37,6 +38,7 @@ export const EXCHANGE_NEXO = 'nexo';
 
 export const EXCHANGE_UNISWAP = 'uniswap';
 export const EXCHANGE_BALANCER = 'balancer';
+export const EXCHANGE_SUSHISWAP = 'sushiswap';
 
 export const TRADE_LOCATION_EXTERNAL = 'external';
 export const TRADE_LOCATION_BANKS = 'banks';
@@ -70,6 +72,7 @@ export const SUPPORTED_EXCHANGES = [
 export const SUPPORTED_TRADE_LOCATIONS = [
   EXCHANGE_UNISWAP,
   EXCHANGE_BALANCER,
+  EXCHANGE_SUSHISWAP,
   EXCHANGE_CRYPTOCOM,
   EXCHANGE_BLOCKFI,
   EXCHANGE_NEXO,

@@ -1,34 +1,30 @@
 <template>
-  <v-container>
+  <div>
     <price-refresh />
-    <v-card class="blockchain-balances mt-8">
-      <v-card-title>
-        <card-title>
-          {{ $t('blockchain_balances.title') }}
-        </card-title>
-      </v-card-title>
-      <v-card-text>
-        <v-btn absolute fab top right color="primary" @click="newAccount()">
-          <v-icon> mdi-plus </v-icon>
-        </v-btn>
-        <big-dialog
-          :display="openDialog"
-          :title="dialogTitle"
-          :subtitle="dialogSubtitle"
-          :primary-action="$t('blockchain_balances.form_dialog.save')"
-          :secondary-action="$t('blockchain_balances.form_dialog.cancel')"
-          :action-disabled="!valid"
-          @confirm="save()"
-          @cancel="clearDialog()"
-        >
-          <account-form ref="form" v-model="valid" :edit="accountToEdit" />
-        </big-dialog>
-        <asset-balances
-          :title="$t('blockchain_balances.per_asset.title')"
-          :balances="blockchainAssets"
-        />
-      </v-card-text>
-    </v-card>
+    <card class="blockchain-balances mt-8" outlined-body>
+      <template #title>
+        {{ $t('blockchain_balances.title') }}
+      </template>
+      <v-btn absolute fab top right color="primary" @click="newAccount()">
+        <v-icon> mdi-plus </v-icon>
+      </v-btn>
+      <big-dialog
+        :display="openDialog"
+        :title="dialogTitle"
+        :subtitle="dialogSubtitle"
+        :primary-action="$t('blockchain_balances.form_dialog.save')"
+        :secondary-action="$t('blockchain_balances.form_dialog.cancel')"
+        :action-disabled="!valid"
+        @confirm="save()"
+        @cancel="clearDialog()"
+      >
+        <account-form ref="form" v-model="valid" :edit="accountToEdit" />
+      </big-dialog>
+      <asset-balances
+        :title="$t('blockchain_balances.per_asset.title')"
+        :balances="blockchainAssets"
+      />
+    </card>
 
     <account-balances
       v-if="ethAccounts.length > 0"
@@ -56,7 +52,25 @@
       :balances="kusamaBalances"
       @edit-account="edit($event)"
     />
-  </v-container>
+
+    <account-balances
+      v-if="polkadotBalances.length > 0"
+      class="mt-8"
+      :title="$t('blockchain_balances.balances.dot')"
+      blockchain="DOT"
+      :balances="polkadotBalances"
+      @edit-account="edit($event)"
+    />
+
+    <account-balances
+      v-if="avaxAccounts.length > 0"
+      class="mt-8"
+      :title="$t('blockchain_balances.balances.avax')"
+      blockchain="AVAX"
+      :balances="avaxAccounts"
+      @edit-account="edit($event)"
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -88,7 +102,9 @@ import {
       'ethAccounts',
       'btcAccounts',
       'blockchainAssets',
-      'kusamaBalances'
+      'kusamaBalances',
+      'polkadotBalances',
+      'avaxAccounts'
     ])
   }
 })
@@ -96,6 +112,8 @@ export default class BlockchainBalances extends Vue {
   ethAccounts!: AccountWithBalance[];
   btcAccounts!: BlockchainAccountWithBalance[];
   kusamaBalances!: AccountWithBalance[];
+  polkadotBalances!: AccountWithBalance[];
+  avaxAccounts!: AccountWithBalance[];
   blockchainAssets!: AssetBalance[];
 
   accountToEdit: BlockchainAccountWithBalance | null = null;

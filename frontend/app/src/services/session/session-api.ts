@@ -1,3 +1,4 @@
+import { ActionResult } from '@rotki/common/lib/data';
 import { AxiosInstance } from 'axios';
 import {
   QueriedAddresses,
@@ -5,7 +6,6 @@ import {
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
-import { ActionResult } from '@/services/types-api';
 import {
   validWithSessionAndExternalService,
   handleResponse,

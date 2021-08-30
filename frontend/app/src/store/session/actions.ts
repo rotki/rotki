@@ -1,3 +1,4 @@
+import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { ActionTree } from 'vuex';
 import {
   convertToAccountingSettings,
@@ -21,16 +22,11 @@ import {
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES,
   ALL_TRANSACTIONS,
-  MODULE_ADEX,
-  MODULE_BALANCER,
-  MODULE_ETH2,
-  MODULE_UNISWAP,
-  MODULES
+  Module
 } from '@/services/session/consts';
 import {
   Purgeable,
   QueriedAddressPayload,
-  SupportedModules,
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
@@ -47,7 +43,6 @@ import {
 } from '@/store/session/types';
 import {
   LAST_KNOWN_TIMEFRAME,
-  TIMEFRAME_REMEMBER,
   TIMEFRAME_SETTING
 } from '@/store/settings/consts';
 import { loadFrontendSettings } from '@/store/settings/utils';
@@ -101,7 +96,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       if (settings.frontend_settings) {
         loadFrontendSettings(commit, settings.frontend_settings);
         const timeframeSetting = rootState.settings![TIMEFRAME_SETTING];
-        if (timeframeSetting !== TIMEFRAME_REMEMBER) {
+        if (timeframeSetting !== TimeFramePersist.REMEMBER) {
           commit('setTimeframe', timeframeSetting);
         } else {
           commit('setTimeframe', rootState.settings![LAST_KNOWN_TIMEFRAME]);
@@ -396,15 +391,14 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   async enableModule(
     { state, dispatch },
     payload: {
-      readonly enable: SupportedModules[];
+      readonly enable: Module[];
       readonly addresses: string[];
     }
   ) {
     const activeModules = state.generalSettings.activeModules;
-    const modules: SupportedModules[] = [
-      ...activeModules,
-      ...payload.enable
-    ].filter(uniqueStrings);
+    const modules: Module[] = [...activeModules, ...payload.enable].filter(
+      uniqueStrings
+    );
     dispatch('updateSettings', { active_modules: modules });
 
     for (const module of payload.enable) {
@@ -583,8 +577,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         opts
       );
     } else if (purgable === ALL_DECENTRALIZED_EXCHANGES) {
-      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, MODULE_UNISWAP, opts);
-      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, MODULE_BALANCER, opts);
+      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.UNISWAP, opts);
+      await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.BALANCER, opts);
     } else if (purgable === ALL_TRANSACTIONS) {
       await dispatch(
         `history/${HistoryActions.PURGE_TRANSACTIONS}`,
@@ -603,8 +597,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         purgable,
         opts
       );
-    } else if (MODULES.includes(purgable as SupportedModules)) {
-      if ([MODULE_ETH2, MODULE_ADEX].includes(purgable)) {
+    } else if (Object.values(Module).includes(purgable as Module)) {
+      if ([Module.ETH2, Module.ADEX].includes(purgable as Module)) {
         await dispatch(`staking/${ACTION_PURGE_DATA}`, purgable, opts);
       } else {
         await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, purgable, opts);

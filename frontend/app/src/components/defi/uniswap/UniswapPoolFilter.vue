@@ -58,11 +58,11 @@
 </template>
 
 <script lang="ts">
+import { XswapPool } from '@rotki/common/lib/defi/xswap';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import AssetMixin from '@/mixins/asset-mixin';
 import { GETTER_UNISWAP_ASSETS } from '@/store/defi/const';
-import { UniswapPool } from '@/store/defi/types';
 
 @Component({
   computed: {
@@ -70,13 +70,13 @@ import { UniswapPool } from '@/store/defi/types';
   }
 })
 export default class UniswapPoolFilter extends Mixins(AssetMixin) {
-  uniswapAssets!: UniswapPool[];
+  uniswapAssets!: XswapPool[];
   @Prop({ required: true, type: Array })
   value!: string[];
   @Emit()
   input(_value: string[]) {}
 
-  filter(item: UniswapPool, queryText: string) {
+  filter(item: XswapPool, queryText: string) {
     const searchString = queryText.toLocaleLowerCase();
     const asset1 = this.getSymbol(item.assets[0]).toLocaleLowerCase();
     const asset2 = this.getSymbol(item.assets[1]).toLocaleLowerCase();
@@ -84,7 +84,7 @@ export default class UniswapPoolFilter extends Mixins(AssetMixin) {
     return name.indexOf(searchString) > -1;
   }
 
-  remove(asset: UniswapPool) {
+  remove(asset: XswapPool) {
     const addresses = [...this.value];
     const index = addresses.findIndex(address => address === asset.address);
     addresses.splice(index, 1);

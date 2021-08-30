@@ -8,13 +8,15 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.db.utils import insert_tag_mappings
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import BlockchainAccountData, BTCAddress, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class XpubData(NamedTuple):

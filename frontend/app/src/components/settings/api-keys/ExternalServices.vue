@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <div>
     <v-card>
       <v-card-title>
         <card-title>{{ $t('external_services.title') }}</card-title>
@@ -64,6 +64,24 @@
           <v-col cols="12">
             <v-sheet outlined rounded>
               <service-key
+                v-model="covalentKey"
+                class="external-services__covalent-key"
+                :title="$t('external_services.covalent.title')"
+                :description="$t('external_services.covalent.description')"
+                :label="$t('external_services.covalent.label')"
+                :hint="$t('external_services.covalent.hint')"
+                :loading="loading"
+                :tooltip="$t('external_services.covalent.delete_tooltip')"
+                @save="save('covalent', $event)"
+                @delete-key="deleteKey('covalent')"
+              />
+            </v-sheet>
+          </v-col>
+        </v-row>
+        <v-row no-gutters class="mt-8">
+          <v-col cols="12">
+            <v-sheet outlined rounded>
+              <service-key
                 v-model="loopringKey"
                 class="external-services__loopring_key"
                 :title="$t('external_services.loopring.title')"
@@ -107,7 +125,7 @@
       @confirm="confirmDelete"
       @cancel="serviceToDelete = ''"
     />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
@@ -116,8 +134,7 @@ import { mapActions, mapGetters } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { ExternalServiceKeys } from '@/model/action-result';
-import { MODULE_LOOPRING } from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Message } from '@/store/types';
 import { ExternalServiceKey, ExternalServiceName } from '@/typing/types';
 
@@ -133,26 +150,29 @@ import { ExternalServiceKey, ExternalServiceName } from '@/typing/types';
 export default class ExternalServices extends Vue {
   etherscanKey: string = '';
   cryptocompareKey: string = '';
+  covalentKey: string = '';
   beaconchainKey: string = '';
   loopringKey: string = '';
 
   serviceToDelete: ExternalServiceName | '' = '';
 
   loading: boolean = false;
-  activeModules!: SupportedModules[];
+  activeModules!: Module[];
   fetchLoopringBalances!: (refresh: boolean) => Promise<void>;
 
   get isLoopringActive(): boolean {
-    return this.activeModules.includes(MODULE_LOOPRING);
+    return this.activeModules.includes(Module.LOOPRING);
   }
 
   private updateKeys({
     cryptocompare,
+    covalent,
     etherscan,
     beaconchain,
     loopring
   }: ExternalServiceKeys) {
     this.cryptocompareKey = cryptocompare?.api_key || '';
+    this.covalentKey = covalent?.api_key || '';
     this.etherscanKey = etherscan?.api_key || '';
     this.beaconchainKey = beaconchain?.api_key || '';
     this.loopringKey = loopring?.api_key || '';

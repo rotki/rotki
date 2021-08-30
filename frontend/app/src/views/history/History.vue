@@ -1,44 +1,44 @@
 <template>
-  <v-container>
-    <base-page-header :text="$t('history.header')" />
-    <tab-navigation :tab-contents="tabs" />
-  </v-container>
+  <tab-navigation :tab-contents="tabs" />
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import BasePageHeader from '@/components/base/BasePageHeader.vue';
+import { defineComponent } from '@vue/composition-api';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
+import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 
-@Component({
-  components: { BasePageHeader, TabNavigation }
-})
-export default class History extends Vue {
-  readonly tabs: TabContent[] = [
-    {
-      name: this.$tc('history.tabs.trades'),
-      routeTo: '/history/trades'
-    },
-    {
-      name: this.$tc('history.tabs.deposits_withdrawals'),
-      routeTo: '/history/deposits-withdrawals'
-    },
-    {
-      name: this.$tc('history.tabs.transactions'),
-      routeTo: '/history/transactions'
-    },
-    {
-      name: this.$t('history.tabs.gitcoin_grants').toString(),
-      routeTo: Routes.HISTORY_GITCOIN,
-      hideHeader: true
-    },
-    {
-      name: this.$t('history.tabs.ledger_actions').toString(),
-      routeTo: Routes.HISTORY_LEDGER_ACTIONS
-    }
-  ];
-}
+const tabs: TabContent[] = [
+  {
+    name: i18n.t('history.tabs.trades').toString(),
+    routeTo: Routes.HISTORY_TRADES
+  },
+  {
+    name: i18n.t('history.tabs.deposits_withdrawals').toString(),
+    routeTo: Routes.HISTORY_DEPOSITS_WITHDRAWALS
+  },
+  {
+    name: i18n.t('history.tabs.transactions').toString(),
+    routeTo: Routes.HISTORY_TRANSACTIONS
+  },
+  {
+    name: i18n.t('history.tabs.gitcoin_grants').toString(),
+    routeTo: Routes.HISTORY_GITCOIN,
+    hideHeader: true
+  },
+  {
+    name: i18n.t('history.tabs.ledger_actions').toString(),
+    routeTo: Routes.HISTORY_LEDGER_ACTIONS
+  }
+];
+
+export default defineComponent({
+  name: 'History',
+  components: { TabNavigation },
+  setup() {
+    return { tabs };
+  }
+});
 </script>

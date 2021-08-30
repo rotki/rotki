@@ -1,7 +1,6 @@
+import { DebugSettings } from '@rotki/common/lib/settings';
 import { BackendCode } from '@/electron-main/backend-code';
 import { Level } from '@/utils/log-level';
-
-export type DebugSettings = { vuex: boolean };
 
 type MetamaskImportError = {
   readonly error: string;

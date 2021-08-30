@@ -30,11 +30,6 @@ from .typing import (
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-SUBGRAPH_REMOTE_ERROR_MSG = (
-    "Failed to request the Balancer subgraph due to {error_msg}. "
-    "All Balancer balances and historical queries are not functioning until this is fixed. "  # noqa: E501
-    "Probably will get fixed with time. If not report it to rotki's support channel"  # noqa: E501
-)
 UNISWAP_REMOTE_ERROR_MSG = (
     "Could not initialize the Uniswap subgraph due to {error_msg}. "
     "All Balancer balances and historical queries won't be able to use a "
@@ -101,7 +96,9 @@ def deserialize_bpt_event(
         ethereum_address=pool_address,
         symbol='BPT',
         protocol='balancer',
+        decimals=18,  # all BPT tokens have 18 decimals
         underlying_tokens=underlying_tokens,
+        form_with_incomplete_data=True,  # since some may not have decimals input correctly
     )
     bpt_event = BalancerBPTEvent(
         tx_hash=tx_hash,
@@ -228,7 +225,9 @@ def deserialize_pool_share(
         symbol='BPT',
         ethereum_address=pool_address,
         protocol='balancer',
+        decimals=18,  # All BPT tokens have 18 decimals
         underlying_tokens=pool_tokens,
+        form_with_incomplete_data=True,  # since some may not have had decimals input correctly
     )
     pool = BalancerPoolBalance(
         pool_token=balancer_pool_token,
@@ -284,12 +283,21 @@ def deserialize_swap(userdb: 'DBHandler', raw_swap: Dict[str, Any]) -> AMMSwap:
     if len(raw_tokens) != 0:
         try:
             raw_address_tokens = {raw_token['address']: raw_token for raw_token in raw_tokens}
-            raw_token0 = raw_address_tokens[raw_token_in_address]
-            raw_token1 = raw_address_tokens[raw_token_out_address]
-            token0_name = raw_token0['name']
-            token0_decimals = raw_token0['decimals']
-            token1_name = raw_token1['name']
-            token1_decimals = raw_token1['decimals']
+            raw_token0 = raw_address_tokens.get(raw_token_in_address)
+            raw_token1 = raw_address_tokens.get(raw_token_out_address)
+            if raw_token0 is not None:
+                token0_name = raw_token0['name']
+                token0_decimals = raw_token0['decimals']
+            else:
+                token0_name = None
+                token0_decimals = None
+            if raw_token1 is not None:
+                token1_name = raw_token1['name']
+                token1_decimals = raw_token1['decimals']
+            else:
+                token1_name = None
+                token1_decimals = None
+
         except KeyError as e:
             raise DeserializationError(f'Missing key: {str(e)}.') from e
     else:

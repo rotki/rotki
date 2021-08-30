@@ -50,11 +50,9 @@ import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_MODULES,
   ALL_TRANSACTIONS,
-  MODULE_BALANCER,
-  MODULE_UNISWAP,
-  MODULES
+  Module
 } from '@/services/session/consts';
-import { Purgeable, SupportedModules } from '@/services/session/types';
+import { Purgeable } from '@/services/session/types';
 import { ACTION_PURGE_CACHED_DATA } from '@/store/session/const';
 import { ActionStatus } from '@/store/types';
 
@@ -111,8 +109,8 @@ export default class DataManagement extends Vue {
       await this.$api.balances.deleteExchangeData();
     } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
       await Promise.all([
-        this.$api.balances.deleteModuleData(MODULE_UNISWAP),
-        this.$api.balances.deleteModuleData(MODULE_BALANCER)
+        this.$api.balances.deleteModuleData(Module.UNISWAP),
+        this.$api.balances.deleteModuleData(Module.BALANCER)
       ]);
     } else {
       if (
@@ -122,8 +120,8 @@ export default class DataManagement extends Vue {
         await this.$api.balances.deleteExchangeData(
           source as SupportedExchange
         );
-      } else if (MODULES.includes(source as any)) {
-        await this.$api.balances.deleteModuleData(source as SupportedModules);
+      } else if (Object.values(Module).includes(source as any)) {
+        await this.$api.balances.deleteModuleData(source as Module);
       }
     }
     await this[ACTION_PURGE_CACHED_DATA](source);

@@ -8,7 +8,7 @@ import '../../i18n';
 Vue.use(Vuetify);
 
 describe('NodeStatusIndicator.vue', () => {
-  let wrapper: Wrapper<NodeStatusIndicator>;
+  let wrapper: Wrapper<any>;
 
   beforeEach(() => {
     document.body.setAttribute('data-app', 'true');
@@ -25,44 +25,36 @@ describe('NodeStatusIndicator.vue', () => {
   });
 
   test('shows connected when node connections is true', async () => {
-    expect.assertions(3);
+    expect.assertions(4);
     store.commit('session/nodeConnection', true);
     await wrapper.vm.$nextTick();
-    expect(
-      wrapper.find('.node-status-indicator__icon--connected').exists()
-    ).toBe(true);
+    expect(wrapper.find('.mdi-link').exists()).toBe(true);
 
-    wrapper.find('.node-status-indicator button').trigger('click');
+    wrapper.find('[data-cy=status-indicator] button').trigger('click');
     await wrapper.vm.$nextTick();
 
-    expect(
-      wrapper.find('.node-status-indicator__content__icon--connected').exists()
-    ).toBe(true);
-    expect(
-      wrapper.find('.node-status-indicator__content__text--connected').exists()
-    ).toBe(true);
+    const icon = wrapper.find('[data-cy="status-icon"]');
+    expect(icon.exists()).toBe(true);
+    expect(icon.classes()).toContain('mdi-check-circle');
+    expect(wrapper.find('[data-cy="status-text"]').text()).toContain(
+      'connected'
+    );
   });
 
   test('shows disconnected when node connection is false', async () => {
-    expect.assertions(3);
+    expect.assertions(4);
     store.commit('session/nodeConnection', false);
     await wrapper.vm.$nextTick();
-    expect(
-      wrapper.find('.node-status-indicator__icon--disconnected').exists()
-    ).toBe(true);
+    expect(wrapper.find('.mdi-link-off').exists()).toBe(true);
 
-    wrapper.find('.node-status-indicator button').trigger('click');
+    wrapper.find('[data-cy=status-indicator] button').trigger('click');
     await wrapper.vm.$nextTick();
 
-    expect(
-      wrapper
-        .find('.node-status-indicator__content__icon--disconnected')
-        .exists()
-    ).toBe(true);
-    expect(
-      wrapper
-        .find('.node-status-indicator__content__text--disconnected')
-        .exists()
-    ).toBe(true);
+    const icon = wrapper.find('[data-cy="status-icon"]');
+    expect(icon.exists()).toBe(true);
+    expect(icon.classes()).toContain('mdi-alert');
+    expect(wrapper.find('[data-cy="status-text"]').text()).toContain(
+      'disconnected'
+    );
   });
 });

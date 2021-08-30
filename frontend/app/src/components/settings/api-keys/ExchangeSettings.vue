@@ -1,5 +1,5 @@
 <template>
-  <v-container class="exchange-settings" data-cy="exchanges">
+  <div class="exchange-settings" data-cy="exchanges">
     <card outlined-body>
       <template #title>
         {{ $t('exchange_settings.title') }}
@@ -68,7 +68,7 @@
         @update:exchange="exchange = $event"
       />
     </big-dialog>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
@@ -198,6 +198,13 @@ export default class ExchangeSettings extends Vue {
     const exchange: Writeable<ExchangePayload> = { ...this.exchange };
     if (exchange.name === exchange.newName) {
       exchange.newName = null;
+    }
+
+    if (
+      exchange.ftxSubaccount !== null &&
+      exchange.ftxSubaccount.trim().length === 0
+    ) {
+      exchange.ftxSubaccount = null;
     }
 
     const success = await this.setupExchange({

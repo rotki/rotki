@@ -21,10 +21,12 @@ from rotkehlchen.api.v1.encoding import (
     AssetSchema,
     AssetSchemaWithIdentifier,
     AssetsReplaceSchema,
+    AssetResetRequestSchema,
     AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
+    AvalancheTransactionQuerySchema,
     BaseXpubSchema,
     BinanceMarketsUserSchema,
     BlockchainAccountsDeleteSchema,
@@ -57,6 +59,7 @@ from rotkehlchen.api.v1.encoding import (
     IntegerIdentifierSchema,
     LedgerActionEditSchema,
     LedgerActionSchema,
+    LimitsCounterResetSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
     ManualPriceDeleteSchema,
@@ -91,11 +94,12 @@ from rotkehlchen.api.v1.encoding import (
     XpubAddSchema,
     XpubPatchSchema,
 )
-from rotkehlchen.api.v1.parser import resource_parser
+from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.typing import (
@@ -314,21 +318,17 @@ class ExchangesDataResource(BaseResource):
 class EthereumTransactionsResource(BaseResource):
     get_schema = EthereumTransactionQuerySchema()
 
-    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    @ignore_kwarg_parser.use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
             self,
             async_query: bool,
-            address: Optional[ChecksumEthAddress],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
             only_cache: bool,
+            filter_query: ETHTransactionsFilterQuery,
     ) -> Response:
         return self.rest_api.get_ethereum_transactions(
             async_query=async_query,
-            address=address,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
             only_cache=only_cache,
+            filter_query=filter_query,
         )
 
     def delete(self) -> Response:
@@ -446,7 +446,6 @@ class AssetsReplaceResource(BaseResource):
 class EthereumAssetsResource(BaseResource):
 
     get_schema = OptionalEthereumAddressSchema()
-    # edit_schema = ModifyEthereumTokenSchema()
     delete_schema = RequiredEthereumAddressSchema()
 
     def make_edit_schema(self) -> ModifyEthereumTokenSchema:
@@ -476,6 +475,7 @@ class AssetUpdatesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
     post_schema = AssetUpdatesRequestSchema()
+    delete_schema = AssetResetRequestSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
@@ -489,6 +489,10 @@ class AssetUpdatesResource(BaseResource):
             conflicts: Optional[Dict[Asset, Literal['remote', 'local']]],
     ) -> Response:
         return self.rest_api.perform_assets_updates(async_query, up_to_version, conflicts)
+
+    @use_kwargs(delete_schema, location='json_and_query')
+    def delete(self, reset: Literal['soft', 'hard'], ignore_warnings: bool) -> Response:
+        return self.rest_api.rebuild_assets_information(reset, ignore_warnings)
 
 
 class BlockchainBalancesResource(BaseResource):
@@ -1432,6 +1436,55 @@ class UniswapTradesHistoryResource(BaseResource):
         )
 
 
+class SushiswapBalancesResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_sushiswap_balances(async_query=async_query)
+
+
+class SushiswapEventsHistoryResource(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_sushiswap_events_history(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
+class SushiswapTradesHistoryResource(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            reset_db_data: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_sushiswap_trades_history(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
 class LoopringBalancesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
@@ -1439,6 +1492,35 @@ class LoopringBalancesResource(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_loopring_balances(async_query=async_query)
+
+
+class LiquityTroves(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_liquity_troves(async_query=async_query)
+
+
+class LiquityTrovesHistory(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+        self,
+        async_query: bool,
+        reset_db_data: bool,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_liquity_events(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
 
 
 class BalancerBalancesResource(BaseResource):
@@ -1545,10 +1627,10 @@ class AssetIconsResource(BaseResource):
 
 class CurrentAssetsPriceResource(BaseResource):
 
-    get_schema = CurrentAssetsPriceSchema()
+    post_schema = CurrentAssetsPriceSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(
+    @use_kwargs(post_schema, location='json')
+    def post(
             self,
             assets: List[Asset],
             target_asset: Asset,
@@ -1741,3 +1823,46 @@ class GitcoinReportResource(BaseResource):
             async_query=async_query,
             grant_id=grant_id,
         )
+
+
+class AvalancheTransactionsResource(BaseResource):
+    get_schema = AvalancheTransactionQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(
+        self,
+        async_query: bool,
+        address: Optional[ChecksumEthAddress],
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_avalanche_transactions(
+            async_query=async_query,
+            address=address,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
+class ERC20TokenInfoAVAX(BaseResource):
+    get_schema = ERC20InfoSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, address: ChecksumEthAddress, async_query: bool) -> Response:
+        return self.rest_api.get_avax_token_information(address, async_query)
+
+
+class NFTSResource(BaseResource):
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_nfts(async_query)
+
+
+class LimitsCounterResetResource(BaseResource):
+    post_schema = LimitsCounterResetSchema()
+
+    @use_kwargs(post_schema, location='view_args')
+    def post(self, location: str) -> Response:
+        return self.rest_api.reset_limits_counter(location)

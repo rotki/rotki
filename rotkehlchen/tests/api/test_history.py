@@ -12,8 +12,10 @@ import requests
 from rotkehlchen.accounting.accountant import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,
+    EV_BUY,
     EV_DEFI,
     EV_INTEREST_PAYMENT,
+    EV_LEDGER_ACTION,
     EV_LOAN_SETTLE,
     EV_MARGIN_CLOSE,
     EV_SELL,
@@ -287,7 +289,8 @@ def _assert_column(keys, letter, expected_column_name, location):
     assert keys[ord(letter) - ord('A')] == expected_column_name, msg
 
 
-CSV_SELL_RE = re.compile(r'=IF\(([A-Z]).*=0,0,([A-Z]).*-([A-Z]).*\)')
+CSV_SELL_RE = re.compile(r'=IF\(([A-Z]).*=0;0;([A-Z]).*-([A-Z]).*\)')
+CSV_PROFITLOSS_RE = re.compile(r'=IF\(P.*=0;-K.*;P.*\)')
 
 
 def assert_csv_formulas_trades(row, profit_currency):
@@ -352,13 +355,20 @@ def assert_csv_formulas_all_events(row, profit_currency):
             expected_column_name=f'paid_in_{profit_currency.identifier}',
             location='paid in profit currency in all events tx gas cost and more pnl',
         )
-    elif row['type'] in (EV_INTEREST_PAYMENT, EV_MARGIN_CLOSE, EV_DEFI):
+    elif row['type'] == EV_INTEREST_PAYMENT:
         _assert_column(
             keys=keys,
             letter=net_profit_loss[1],
             expected_column_name=f'taxable_received_in_{profit_currency.identifier}',
             location='gained in profit currenty in all events defi and more',
         )
+    elif row['type'] in (EV_LEDGER_ACTION, EV_MARGIN_CLOSE, EV_DEFI):
+        match = CSV_PROFITLOSS_RE.search(net_profit_loss)
+        assert match, 'entry does not match the expected formula'
+    elif row['type'] == EV_BUY:
+        pass  # nothing to check for these types
+    else:
+        raise AssertionError(f'Unexpected CSV row type {row["type"]} encountered')
 
 
 def assert_csv_export_response(response, profit_currency, csv_dir):

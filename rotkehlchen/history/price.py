@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, List, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.globaldb.manual_price_oracle import ManualPriceOracle
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset, RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.manual_price_oracle import ManualPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Price, Timestamp
@@ -39,7 +39,7 @@ def query_usd_price_or_use_default(
         )
     except (RemoteError, NoPriceForGivenTimestamp):
         log.error(
-            f'Could not query usd price for {asset.identifier} and time {time}'
+            f'Could not query usd price for {asset.identifier} and time {time} '
             f'when processing {location}. Assuming price of ${str(default_value)}',
         )
         usd_price = Price(default_value)
@@ -96,7 +96,7 @@ class PriceHistorian():
     __instance: Optional['PriceHistorian'] = None
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
-    _manual: ManualPriceOracle
+    _manual: ManualPriceOracle  # This is used when iterating through all oracles
     _oracles: Optional[List[HistoricalPriceOracle]] = None
     _oracle_instances: Optional[List[HistoricalPriceOracleInstance]] = None
 

@@ -181,7 +181,7 @@ export default class AssetTable extends Vue {
       return true;
     }
     const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
-    const name = item.name.toLocaleLowerCase().trim();
+    const name = item.name?.toLocaleLowerCase().trim() ?? '';
     const symbol = item.symbol.toLocaleLowerCase().trim();
     return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
   }

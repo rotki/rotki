@@ -18,6 +18,7 @@ declare global {
   namespace Cypress {
     interface Chainable {
       logout: () => void;
+      updateAssets: () => void;
     }
   }
 }

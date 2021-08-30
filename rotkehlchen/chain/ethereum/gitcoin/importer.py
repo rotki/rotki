@@ -13,6 +13,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.history.price import query_usd_price_zero_if_error
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_timestamp_from_date,
@@ -20,6 +21,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import Location, Price
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class GitcoinDataImporter():
@@ -59,7 +61,7 @@ class GitcoinDataImporter():
             price = query_usd_price_zero_if_error(
                 asset=asset,
                 time=timestamp,
-                location='Gitcoin CSV importer',
+                location=f'Gitcoin CSV entry {entry["txid"]}',
                 msg_aggregator=self.db.msg_aggregator,
             )
             if price == ZERO:
@@ -124,7 +126,7 @@ class GitcoinDataImporter():
                         'Unexpected data encountered during deserialization of a gitcoin CSV '
                         'entry. Check logs for details and open a bug report.',
                     )
-                    logger.error(
+                    log.error(
                         f'Unexpected data encountered during deserialization of a gitcoin '
                         f'CSV entry: {row} . Error was: {msg}',
                     )

@@ -1,5 +1,5 @@
 <template>
-  <v-app v-if="!isPlayground" id="rotki">
+  <v-app v-if="!isPlayground" id="rotki" class="app">
     <update-popup />
     <div v-if="logged" class="app__content rotki-light-grey">
       <asset-update auto />
@@ -44,7 +44,7 @@
           class="secondary--text text--lighten-2"
           @click="toggleDrawer()"
         />
-        <node-status-indicator />
+        <node-status-indicator v-if="!xsOnly" />
         <balance-saved-indicator />
         <back-button :can-navigate-back="canNavigateBack" />
         <v-spacer />
@@ -56,10 +56,14 @@
           class="app__app-bar__button"
           @click="notifications = !notifications"
         />
-        <progress-indicator class="app__app-bar__button" />
+        <progress-indicator v-if="!xsOnly" class="app__app-bar__button" />
         <currency-drop-down class="red--text app__app-bar__button" />
         <user-dropdown class="app__app-bar__button" />
-        <help-indicator :visible="help" @visible:update="help = $event" />
+        <help-indicator
+          v-if="!xsOnly"
+          :visible="help"
+          @visible:update="help = $event"
+        />
       </v-app-bar>
       <notification-sidebar
         :visible="notifications"
@@ -70,7 +74,7 @@
         @visible:update="help = $event"
         @about="showAbout = true"
       />
-      <v-main v-if="logged" class="fill-height">
+      <v-main v-if="logged">
         <router-view />
       </v-main>
     </div>
@@ -187,6 +191,10 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
   help: boolean = false;
   showAbout: boolean = false;
 
+  get xsOnly(): boolean {
+    return this.$vuetify.breakpoint.xsOnly;
+  }
+
   get canNavigateBack(): boolean {
     const canNavigateBack = this.$route.meta?.canNavigateBack ?? false;
     return canNavigateBack && window.history.length > 1;
@@ -285,6 +293,12 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
 }
 
 .app {
+  overflow: hidden;
+
+  &__content {
+    height: 100vh;
+  }
+
   &__app-bar {
     &__button {
       i {
@@ -343,14 +357,16 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
   }
 
   .v-main {
-    overflow-y: scroll;
-    margin-top: 64px;
-    padding-top: 0 !important;
-    height: calc(100vh - 64px);
+    height: 100vh;
 
     &__wrap {
-      padding-left: 25px;
+      overflow-y: scroll;
+      overflow-x: hidden;
+
+      @extend .themed-scrollbar;
     }
+
+    @extend .themed-scrollbar;
   }
 
   .v-app-bar {

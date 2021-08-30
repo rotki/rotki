@@ -2,7 +2,7 @@
   <progress-screen v-if="loading">
     <template #message>{{ $t('borrowing.loading') }}</template>
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <v-row class="mt-8">
       <v-col>
         <refresh-header
@@ -78,7 +78,7 @@
       </v-col>
     </v-row>
     <loan-info :loan="loan(selection)" />
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
@@ -94,14 +94,8 @@ import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import StatusMixin from '@/mixins/status-mixin';
-import { DEFI_PROTOCOLS } from '@/services/defi/consts';
-import { SupportedDefiProtocols } from '@/services/defi/types';
-import {
-  MODULE_AAVE,
-  MODULE_COMPOUND,
-  MODULE_MAKERDAO_VAULTS
-} from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { DefiProtocol } from '@/services/defi/consts';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 import {
   AaveLoan,
@@ -132,31 +126,32 @@ import {
 export default class Borrowing extends Mixins(StatusMixin) {
   selection?: string = '';
   loan!: (identifier?: string) => MakerDAOVaultModel | AaveLoan | null;
-  loans!: (protocol: SupportedDefiProtocols[]) => DefiLoan[];
-  loanSummary!: (protocol: SupportedDefiProtocols[]) => LoanSummary;
+  loans!: (protocol: DefiProtocol[]) => DefiLoan[];
+  loanSummary!: (protocol: DefiProtocol[]) => LoanSummary;
   fetchBorrowing!: (refreshing: boolean) => Promise<void>;
-  protocol: SupportedDefiProtocols | null = null;
+  protocol: DefiProtocol | null = null;
 
   section = Section.DEFI_BORROWING;
   secondSection = Section.DEFI_BORROWING_HISTORY;
 
-  readonly modules: SupportedModules[] = [
-    MODULE_AAVE,
-    MODULE_COMPOUND,
-    MODULE_MAKERDAO_VAULTS
+  readonly modules: Module[] = [
+    Module.AAVE,
+    Module.COMPOUND,
+    Module.MAKERDAO_VAULTS
   ];
 
-  get selectedProtocols(): SupportedDefiProtocols[] {
+  get selectedProtocols(): DefiProtocol[] {
     return this.protocol ? [this.protocol] : [];
   }
 
   async created() {
     const queryElement = this.$route.query['protocol'];
-    const protocolIndex = DEFI_PROTOCOLS.findIndex(
+    const protocols = Object.values(DefiProtocol);
+    const protocolIndex = protocols.findIndex(
       protocol => protocol === queryElement
     );
     if (protocolIndex >= 0) {
-      this.protocol = DEFI_PROTOCOLS[protocolIndex];
+      this.protocol = protocols[protocolIndex];
     }
     await this.fetchBorrowing(false);
   }

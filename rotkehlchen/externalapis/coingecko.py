@@ -173,6 +173,8 @@ DELISTED_ASSETS = [
     'FLO',
     strethaddress_to_identifier('0x06147110022B768BA8F99A8f385df11a151A9cc8'),
     strethaddress_to_identifier('0x27695E09149AdC738A978e9A678F99E4c39e9eb9'),
+    'FCN',
+    'BITB',
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [
@@ -279,7 +281,7 @@ class Coingecko():
         if subpath:
             url += subpath
 
-        logger.debug(f'Querying coingecko: {url}?{urlencode(options)}')
+        log.debug(f'Querying coingecko: {url}?{urlencode(options)}')
         tries = COINGECKO_QUERY_RETRY_TIMES
         while tries >= 0:
             try:
@@ -356,13 +358,14 @@ class Coingecko():
             options=options,
         )
 
+        # https://github.com/PyCQA/pylint/issues/4739
         try:
             parsed_data = CoingeckoAssetData(
                 identifier=gecko_id,
-                symbol=data['symbol'],
-                name=data['name'],
-                description=data['description']['en'],
-                image_url=data['image']['small'],
+                symbol=data['symbol'],  # pylint: disable=unsubscriptable-object
+                name=data['name'],  # pylint: disable=unsubscriptable-object
+                description=data['description']['en'],  # pylint: disable=unsubscriptable-object
+                image_url=data['image']['small'],  # pylint: disable=unsubscriptable-object
             )
         except KeyError as e:
             raise RemoteError(
@@ -434,8 +437,9 @@ class Coingecko():
                 'vs_currencies': vs_currency,
             })
 
+        # https://github.com/PyCQA/pylint/issues/4739
         try:
-            return Price(FVal(result[from_coingecko_id][vs_currency]))
+            return Price(FVal(result[from_coingecko_id][vs_currency]))  # pylint: disable=unsubscriptable-object  # noqa: E501
         except KeyError as e:
             log.warning(
                 f'Queried coingecko simple price from {from_asset.identifier} '
@@ -504,8 +508,9 @@ class Coingecko():
             },
         )
 
+        # https://github.com/PyCQA/pylint/issues/4739
         try:
-            price = Price(FVal(result['market_data']['current_price'][vs_currency]))
+            price = Price(FVal(result['market_data']['current_price'][vs_currency]))  # pylint: disable=unsubscriptable-object  # noqa: E501
         except KeyError as e:
             log.warning(
                 f'Queried coingecko historical price from {from_asset.identifier} '

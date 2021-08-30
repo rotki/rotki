@@ -1,3 +1,4 @@
+import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { ActionContext, ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
@@ -5,43 +6,24 @@ import { TaskType } from '@/model/task-type';
 import { balanceKeys } from '@/services/consts';
 import {
   aaveHistoryKeys,
-  DEFI_AAVE,
-  DEFI_YEARN_VAULTS,
-  DEFI_YEARN_VAULTS_V2,
+  DefiProtocol,
   dsrKeys,
-  V1,
-  V2,
+  ProtocolVersion,
   vaultDetailsKeys,
   vaultKeys
 } from '@/services/defi/consts';
-import {
-  ApiMakerDAOVault,
-  ProtocolVersion,
-  SupportedDefiProtocols
-} from '@/services/defi/types';
+import { ApiMakerDAOVault } from '@/services/defi/types';
 import { AaveBalances, AaveHistory } from '@/services/defi/types/aave';
 import {
   CompoundBalances,
   CompoundHistory
 } from '@/services/defi/types/compound';
-import { UniswapBalances } from '@/services/defi/types/uniswap';
 import {
   YearnVaultsBalances,
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  ALL_MODULES,
-  MODULE_AAVE,
-  MODULE_BALANCER,
-  MODULE_COMPOUND,
-  MODULE_MAKERDAO_DSR,
-  MODULE_MAKERDAO_VAULTS,
-  MODULE_UNISWAP,
-  MODULE_YEARN,
-  MODULE_YEARN_V2
-} from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { ALL_MODULES, Module } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import {
   ACTION_PURGE_PROTOCOL,
@@ -59,8 +41,7 @@ import {
   DexTrades,
   DSRBalances,
   DSRHistory,
-  MakerDAOVaultDetails,
-  UniswapEvents
+  MakerDAOVaultDetails
 } from '@/store/defi/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
@@ -74,7 +55,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_MAKERDAO_DSR)) {
+    if (!activeModules.includes(Module.MAKERDAO_DSR)) {
       return;
     }
     const section = Section.DEFI_DSR_BALANCES;
@@ -121,7 +102,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_MAKERDAO_DSR) || !session?.premium) {
+    if (!activeModules.includes(Module.MAKERDAO_DSR) || !session?.premium) {
       return;
     }
     const section = Section.DEFI_DSR_HISTORY;
@@ -167,7 +148,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_MAKERDAO_VAULTS)) {
+    if (!activeModules.includes(Module.MAKERDAO_VAULTS)) {
       return;
     }
     const section = Section.DEFI_MAKERDAO_VAULTS;
@@ -218,7 +199,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_MAKERDAO_VAULTS) || !session?.premium) {
+    if (!activeModules.includes(Module.MAKERDAO_VAULTS) || !session?.premium) {
       return;
     }
     const section = Section.DEFI_MAKERDAO_VAULT_DETAILS;
@@ -267,7 +248,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_AAVE)) {
+    if (!activeModules.includes(Module.AAVE)) {
       return;
     }
     const section = Section.DEFI_AAVE_BALANCES;
@@ -317,7 +298,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     payload: { refresh?: boolean; reset?: boolean }
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_AAVE) || !session?.premium) {
+    if (!activeModules.includes(Module.AAVE) || !session?.premium) {
       return;
     }
     const section = Section.DEFI_AAVE_HISTORY;
@@ -428,8 +409,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('fetchDSRBalances', refresh),
       dispatch('fetchMakerDAOVaults', refresh),
       dispatch('fetchCompoundBalances', refresh),
-      dispatch('fetchYearnVaultBalances', { refresh, version: V1 }),
-      dispatch('fetchYearnVaultBalances', { refresh, version: V2 })
+      dispatch('fetchYearnVaultBalances', {
+        refresh,
+        version: ProtocolVersion.V1
+      }),
+      dispatch('fetchYearnVaultBalances', {
+        refresh,
+        version: ProtocolVersion.V2
+      })
     ]);
 
     setStatus(Status.LOADED, section, status, commit);
@@ -462,16 +449,18 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         dispatch('fetchCompoundBalances', refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section, status, commit);
         }),
-        dispatch('fetchYearnVaultBalances', { refresh, version: V1 }).then(
-          () => {
-            setStatus(Status.PARTIALLY_LOADED, section, status, commit);
-          }
-        ),
-        dispatch('fetchYearnVaultBalances', { refresh, version: V2 }).then(
-          () => {
-            setStatus(Status.PARTIALLY_LOADED, section, status, commit);
-          }
-        )
+        dispatch('fetchYearnVaultBalances', {
+          refresh,
+          version: ProtocolVersion.V1
+        }).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        }),
+        dispatch('fetchYearnVaultBalances', {
+          refresh,
+          version: ProtocolVersion.V2
+        }).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        })
       ]);
 
       setStatus(Status.LOADED, section, status, commit);
@@ -493,8 +482,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('fetchDSRHistory', refresh),
       dispatch('fetchAaveHistory', { refresh }),
       dispatch('fetchCompoundHistory', refresh),
-      dispatch('fetchYearnVaultsHistory', { refresh, version: V1 }),
-      dispatch('fetchYearnVaultsHistory', { refresh, version: V2 })
+      dispatch('fetchYearnVaultsHistory', {
+        refresh,
+        version: ProtocolVersion.V1
+      }),
+      dispatch('fetchYearnVaultsHistory', {
+        refresh,
+        version: ProtocolVersion.V2
+      })
     ]);
 
     setStatus(Status.LOADED, premiumSection, status, commit);
@@ -502,7 +497,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
   async resetDB(
     { commit, dispatch, rootState: { session }, rootGetters: { status } },
-    protocols: SupportedDefiProtocols[]
+    protocols: DefiProtocol[]
   ) {
     const premiumSection = Section.DEFI_LENDING_HISTORY;
     const currentPremiumStatus = status(premiumSection);
@@ -515,27 +510,27 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     setStatus(Status.REFRESHING, premiumSection, status, commit);
 
     const toReset: Promise<void>[] = [];
-    if (protocols.includes(DEFI_YEARN_VAULTS)) {
+    if (protocols.includes(DefiProtocol.YEARN_VAULTS)) {
       toReset.push(
         dispatch('fetchYearnVaultsHistory', {
           refresh: true,
           reset: true,
-          version: V1
+          version: ProtocolVersion.V1
         })
       );
     }
 
-    if (protocols.includes(DEFI_YEARN_VAULTS_V2)) {
+    if (protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
       toReset.push(
         dispatch('fetchYearnVaultsHistory', {
           refresh: true,
           reset: true,
-          version: V2
+          version: ProtocolVersion.V2
         })
       );
     }
 
-    if (protocols.includes(DEFI_AAVE)) {
+    if (protocols.includes(DefiProtocol.AAVE)) {
       toReset.push(
         dispatch('fetchAaveHistory', { refresh: true, reset: true })
       );
@@ -599,7 +594,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_COMPOUND)) {
+    if (!activeModules.includes(Module.COMPOUND)) {
       return;
     }
 
@@ -651,7 +646,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
   ) {
     const { activeModules } = session!.generalSettings;
 
-    if (!activeModules.includes(MODULE_COMPOUND) || !session?.premium) {
+    if (!activeModules.includes(Module.COMPOUND) || !session?.premium) {
       return;
     }
 
@@ -701,14 +696,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     { commit, rootGetters: { status }, rootState: { session } },
     { refresh, version }: { refresh: boolean; version: ProtocolVersion } = {
       refresh: false,
-      version: V1
+      version: ProtocolVersion.V1
     }
   ) {
     const { activeModules } = session!.generalSettings;
-    const isV1 = version === V1;
-    const isV2 = version === V2;
-    const isYearnV1AndActive = activeModules.includes(MODULE_YEARN) && isV1;
-    const isYearnV2AndActive = activeModules.includes(MODULE_YEARN_V2) && isV2;
+    const isV1 = version === ProtocolVersion.V1;
+    const isV2 = version === ProtocolVersion.V2;
+    const isYearnV1AndActive = activeModules.includes(Module.YEARN) && isV1;
+    const isYearnV2AndActive = activeModules.includes(Module.YEARN_V2) && isV2;
     const isModuleActive = isYearnV1AndActive || isYearnV2AndActive;
 
     if (!isModuleActive) {
@@ -779,10 +774,10 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const reset = payload?.reset;
     const { activeModules } = session!.generalSettings;
 
-    const isV1 = payload.version === V1;
-    const isV2 = payload.version === V2;
-    const isYearnV1AndActive = activeModules.includes(MODULE_YEARN) && isV1;
-    const isYearnV2AndActive = activeModules.includes(MODULE_YEARN_V2) && isV2;
+    const isV1 = payload.version === ProtocolVersion.V1;
+    const isV2 = payload.version === ProtocolVersion.V2;
+    const isYearnV1AndActive = activeModules.includes(Module.YEARN) && isV1;
+    const isYearnV2AndActive = activeModules.includes(Module.YEARN_V2) && isV2;
     const isModuleActive = isYearnV1AndActive || isYearnV2AndActive;
 
     if (!isModuleActive || !session?.premium) {
@@ -859,7 +854,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_UNISWAP)) {
+    if (!activeModules.includes(Module.UNISWAP)) {
       return;
     }
 
@@ -887,7 +882,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<UniswapBalances, TaskMeta>(
+      const { result } = await taskCompletion<XswapBalances, TaskMeta>(
         taskType
       );
 
@@ -911,7 +906,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_UNISWAP) || !session!.premium) {
+    if (!activeModules.includes(Module.UNISWAP) || !session!.premium) {
       return;
     }
 
@@ -961,7 +956,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(MODULE_UNISWAP) || !session!.premium) {
+    if (!activeModules.includes(Module.UNISWAP) || !session!.premium) {
       return;
     }
 
@@ -989,9 +984,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<UniswapEvents, TaskMeta>(
-        taskType
-      );
+      const { result } = await taskCompletion<XswapEvents, TaskMeta>(taskType);
 
       commit('uniswapEvents', result);
     } catch (e) {
@@ -1068,7 +1061,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       mutation: 'balancerBalances',
       taskType: TaskType.BALANCER_BALANCES,
       section: Section.DEFI_BALANCER_BALANCES,
-      module: MODULE_BALANCER,
+      module: Module.BALANCER,
       meta: meta,
       refresh,
       checkPremium: true,
@@ -1101,7 +1094,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       mutation: 'balancerTrades',
       taskType: TaskType.BALANCER_TRADES,
       section: Section.DEFI_BALANCER_TRADES,
-      module: MODULE_BALANCER,
+      module: Module.BALANCER,
       meta: meta,
       checkPremium: true,
       refresh,
@@ -1139,7 +1132,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       mutation: 'balancerEvents',
       taskType: TaskType.BALANCER_EVENT,
       section: Section.DEFI_BALANCER_EVENTS,
-      module: MODULE_BALANCER,
+      module: Module.BALANCER,
       meta: meta,
       checkPremium: true,
       refresh,
@@ -1158,8 +1151,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     });
   },
   async [ACTION_PURGE_PROTOCOL](
-    { commit, rootGetters: { status } },
-    module: SupportedModules | typeof ALL_MODULES
+    { commit, rootGetters: { status }, dispatch },
+    module: Module | typeof ALL_MODULES
   ) {
     function resetStatus(section: Section) {
       setStatus(Status.NONE, section, status, commit);
@@ -1232,22 +1225,24 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       resetStatus(Section.DEFI_BALANCER_EVENTS);
     }
 
-    if (module === MODULE_MAKERDAO_DSR) {
+    if (module === Module.MAKERDAO_DSR) {
       clearDSRState();
-    } else if (module === MODULE_MAKERDAO_VAULTS) {
+    } else if (module === Module.MAKERDAO_VAULTS) {
       clearMakerDAOVaultState();
-    } else if (module === MODULE_AAVE) {
+    } else if (module === Module.AAVE) {
       clearAaveState();
-    } else if (module === MODULE_COMPOUND) {
+    } else if (module === Module.COMPOUND) {
       clearCompoundState();
-    } else if (module === MODULE_YEARN) {
+    } else if (module === Module.YEARN) {
       clearYearnVaultsState();
-    } else if (module === MODULE_YEARN_V2) {
+    } else if (module === Module.YEARN_V2) {
       clearYearnVaultsV2State();
-    } else if (module === MODULE_UNISWAP) {
+    } else if (module === Module.UNISWAP) {
       clearUniswapState();
-    } else if (module === MODULE_BALANCER) {
+    } else if (module === Module.BALANCER) {
       clearBalancerState();
+    } else if (Module.SUSHISWAP) {
+      dispatch('sushiswap/purge');
     } else if (module === ALL_MODULES) {
       clearDSRState();
       clearMakerDAOVaultState();

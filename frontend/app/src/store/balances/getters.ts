@@ -1,3 +1,4 @@
+import { Balance } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
@@ -6,7 +7,7 @@ import {
   BlockchainAssetBalances,
   SupportedExchange
 } from '@/services/balances/types';
-import { Balance, GeneralAccountData, HasBalance } from '@/services/types-api';
+import { GeneralAccountData, HasBalance } from '@/services/types-api';
 import {
   AccountAssetBalances,
   AssetBalance,
@@ -34,6 +35,8 @@ import {
   ExchangeInfo,
   GeneralAccount,
   KSM,
+  DOT,
+  AVAX,
   L2_LOOPRING
 } from '@/typing/types';
 import { assert } from '@/utils/assertions';
@@ -45,6 +48,8 @@ export interface BalanceGetters {
   ethAccounts: BlockchainAccountWithBalance[];
   btcAccounts: BlockchainAccountWithBalance[];
   kusamaBalances: BlockchainAccountWithBalance[];
+  avaxAccounts: BlockchainAccountWithBalance[];
+  polkadotBalances: BlockchainAccountWithBalance[];
   totals: AssetBalance[];
   exchangeRate: ExchangeRateGetter;
   exchanges: ExchangeInfo[];
@@ -114,6 +119,16 @@ export const getters: Getters<
   },
   kusamaBalances: ({ ksmAccounts, ksm }) => {
     return balances(ksmAccounts, ksm, KSM);
+  },
+
+  avaxAccounts: ({
+    avaxAccounts,
+    avax
+  }: BalanceState): BlockchainAccountWithBalance[] => {
+    return balances(avaxAccounts, avax, AVAX);
+  },
+  polkadotBalances: ({ dotAccounts, dot }) => {
+    return balances(dotAccounts, dot, DOT);
   },
   btcAccounts({
     btc,
@@ -358,6 +373,10 @@ export const getters: Getters<
     const btcAccounts: BlockchainAccountWithBalance[] = getters.btcAccounts;
     const kusamaBalances: BlockchainAccountWithBalance[] =
       getters.kusamaBalances;
+    const polkadotBalances: BlockchainAccountWithBalance[] =
+      getters.polkadotBalances;
+    const avaxAccounts: BlockchainAccountWithBalance[] = getters.avaxAccounts;
+
     const loopring: AccountAssetBalances = state.loopringBalances;
 
     if (ethAccounts.length > 0) {
@@ -415,6 +434,26 @@ export const getters: Getters<
         l2: [],
         usdValue: sum(kusamaBalances),
         loading: ksmStatus === Status.NONE || ksmStatus === Status.LOADING
+      });
+    }
+
+    if (avaxAccounts.length > 0) {
+      const avaxStatus = status(Section.BLOCKCHAIN_AVAX);
+      totals.push({
+        chain: AVAX,
+        l2: [],
+        usdValue: sum(avaxAccounts),
+        loading: avaxStatus === Status.NONE || avaxStatus === Status.LOADING
+      });
+    }
+
+    if (polkadotBalances.length > 0) {
+      const dotStatus = status(Section.BLOCKCHAIN_DOT);
+      totals.push({
+        chain: DOT,
+        l2: [],
+        usdValue: sum(polkadotBalances),
+        loading: dotStatus === Status.NONE || dotStatus === Status.LOADING
       });
     }
 
@@ -482,11 +521,13 @@ export const getters: Getters<
 
   accounts: (
     _,
-    { ethAccounts, btcAccounts, kusamaBalances }
+    { ethAccounts, btcAccounts, kusamaBalances, polkadotBalances, avaxAccounts }
   ): GeneralAccount[] => {
     return ethAccounts
       .concat(btcAccounts)
       .concat(kusamaBalances)
+      .concat(polkadotBalances)
+      .concat(avaxAccounts)
       .filter((account: BlockchainAccountWithBalance) => !!account.address)
       .map((account: BlockchainAccountWithBalance) => ({
         chain: account.chain,
@@ -531,6 +572,8 @@ export const getters: Getters<
     eth,
     exchangeBalances,
     ksm,
+    dot,
+    avax,
     manualBalances,
     loopringBalances
   }) => asset => {
@@ -633,6 +676,32 @@ export const getters: Getters<
       breakdown.push({
         address,
         location: KSM,
+        balance: assetBalance
+      });
+    }
+
+    for (const address in dot) {
+      const balances = dot[address];
+      const assetBalance = balances.assets[asset];
+      if (!assetBalance) {
+        continue;
+      }
+      breakdown.push({
+        address,
+        location: DOT,
+        balance: assetBalance
+      });
+    }
+
+    for (const address in avax) {
+      const balances = avax[address];
+      const assetBalance = balances.assets[asset];
+      if (!assetBalance) {
+        continue;
+      }
+      breakdown.push({
+        address,
+        location: AVAX,
         balance: assetBalance
       });
     }

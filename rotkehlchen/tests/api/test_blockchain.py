@@ -23,6 +23,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task_with_result,
 )
+from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR
 from rotkehlchen.tests.utils.blockchain import (
     assert_btc_balances_result,
     assert_eth_balances_result,
@@ -2076,3 +2077,199 @@ def test_remove_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
     # Also make sure it's removed from the DB
     db_accounts = rotki.data.db.get_blockchain_accounts()
     assert db_accounts.ksm[0] == SUBSTRATE_ACC1_KSM_ADDR
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_add_avax_blockchain_account_invalid(rotkehlchen_api_server):
+    """Test adding an invalid Avalanche blockchain account works as expected.
+    """
+    setup = setup_balances(
+        rotki=rotkehlchen_api_server.rest_api.rotkehlchen,
+        ethereum_accounts=None,
+        btc_accounts=None,
+        eth_balances=None,
+        token_balances=None,
+        btc_balances=None,
+    )
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                "blockchainsaccountsresource",
+                blockchain=SupportedBlockchain.AVALANCHE.value,
+            ),
+            json={'accounts': [{'address': SUBSTRATE_ACC1_DOT_ADDR}]},
+        )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'{SUBSTRATE_ACC1_DOT_ADDR} is not an ethereum address',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_add_avax_blockchain_account(rotkehlchen_api_server):
+    """Test adding an Avalanche blockchain account when there is none in the db
+    works as expected, by triggering the logic that attempts to connect to the
+    nodes.
+    """
+    async_query = random.choice([False, True])
+
+    setup = setup_balances(
+        rotki=rotkehlchen_api_server.rest_api.rotkehlchen,
+        ethereum_accounts=None,
+        btc_accounts=None,
+        eth_balances=None,
+        token_balances=None,
+        btc_balances=None,
+    )
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                "blockchainsaccountsresource",
+                blockchain=SupportedBlockchain.AVALANCHE.value,
+            ),
+            json={
+                'accounts': [{'address': AVALANCHE_ACC1_AVAX_ADDR}],
+                'async_query': async_query,
+            },
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+        else:
+            result = assert_proper_response_with_result(response)
+
+    # Check per account
+    account_balances = result['per_account']['AVAX'][AVALANCHE_ACC1_AVAX_ADDR]
+    assert 'liabilities' in account_balances
+    asset_avax = account_balances['assets']['AVAX']
+    assert FVal(asset_avax['amount']) >= ZERO
+    assert FVal(asset_avax['usd_value']) >= ZERO
+
+    # Check totals
+    assert 'liabilities' in result['totals']
+    total_avax = result['totals']['assets']['AVAX']
+    assert FVal(total_avax['amount']) >= ZERO
+    assert FVal(total_avax['usd_value']) >= ZERO
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server):
+    """Test adding an Avalanche blockchain account when the same account is input
+    in Ethereum works fine
+    """
+    setup = setup_balances(
+        rotki=rotkehlchen_api_server.rest_api.rotkehlchen,
+        ethereum_accounts=[AVALANCHE_ACC1_AVAX_ADDR],
+        btc_accounts=None,
+        eth_balances=['10000000000'],
+        token_balances=None,
+        btc_balances=None,
+    )
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'blockchainsaccountsresource',
+                blockchain=SupportedBlockchain.ETHEREUM.value,
+            ),
+            json={
+                'accounts': [{'address': AVALANCHE_ACC1_AVAX_ADDR}],
+            },
+        )
+        result = assert_proper_response_with_result(response)
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'blockchainsaccountsresource',
+                blockchain=SupportedBlockchain.AVALANCHE.value,
+            ),
+            json={
+                'accounts': [{'address': AVALANCHE_ACC1_AVAX_ADDR}],
+            },
+        )
+        result = assert_proper_response_with_result(response)
+
+    for chain in ('ETH', 'AVAX'):
+        # Check per account
+        account_balances = result['per_account'][chain][AVALANCHE_ACC1_AVAX_ADDR]
+        assert 'liabilities' in account_balances
+        asset_token = account_balances['assets'][chain]
+        assert FVal(asset_token['amount']) >= ZERO
+        assert FVal(asset_token['usd_value']) >= ZERO
+
+        # Check totals
+        assert 'liabilities' in result['totals']
+        total_token = result['totals']['assets'][chain]
+        assert FVal(total_token['amount']) >= ZERO
+        assert FVal(total_token['usd_value']) >= ZERO
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('avax_accounts', [[AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR]])
+def test_remove_avax_blockchain_account(rotkehlchen_api_server):
+    """Test removing a Avalanche blockchain account works as expected by returning
+    only the balances of the other Avalanche accounts.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    async_query = random.choice([False, True])
+
+    # Create AVAX accounts
+    accounts_data = [
+        BlockchainAccountData(address=AVALANCHE_ACC1_AVAX_ADDR),
+        BlockchainAccountData(address=AVALANCHE_ACC2_AVAX_ADDR),
+    ]
+    rotki.data.db.add_blockchain_accounts(
+        blockchain=SupportedBlockchain.AVALANCHE,
+        account_data=accounts_data,
+    )
+    setup = setup_balances(
+        rotki=rotki,
+        ethereum_accounts=None,
+        btc_accounts=None,
+        eth_balances=None,
+        token_balances=None,
+        btc_balances=None,
+    )
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response = requests.delete(
+            api_url_for(
+                rotkehlchen_api_server,
+                "blockchainsaccountsresource",
+                blockchain=SupportedBlockchain.AVALANCHE.value,
+            ),
+            json={
+                'accounts': [AVALANCHE_ACC2_AVAX_ADDR],
+                'async_query': async_query,
+            },
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+        else:
+            result = assert_proper_response_with_result(response)
+
+    # Check per account
+    assert AVALANCHE_ACC2_AVAX_ADDR not in result['per_account']['AVAX']
+    account_balances = result['per_account']['AVAX'][AVALANCHE_ACC1_AVAX_ADDR]
+    assert 'liabilities' in account_balances
+    asset_avax = account_balances['assets']['AVAX']
+    assert FVal(asset_avax['amount']) >= ZERO
+    assert FVal(asset_avax['usd_value']) >= ZERO
+
+    # Check totals
+    assert 'liabilities' in result['totals']
+    total_avax = result['totals']['assets']['AVAX']
+    assert FVal(total_avax['amount']) >= ZERO
+    assert FVal(total_avax['usd_value']) >= ZERO
+
+    # Also make sure it's removed from the DB
+    db_accounts = rotki.data.db.get_blockchain_accounts()
+    assert db_accounts.avax[0] == AVALANCHE_ACC1_AVAX_ADDR

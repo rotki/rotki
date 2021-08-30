@@ -234,6 +234,7 @@
 </template>
 
 <script lang="ts">
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
@@ -245,7 +246,6 @@ import FileUpload from '@/components/import/FileUpload.vue';
 import {
   EthereumToken,
   ManagedAsset,
-  SupportedAsset,
   UnderlyingToken
 } from '@/services/assets/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
@@ -389,7 +389,7 @@ export default class AssetForm extends Vue {
       return;
     }
 
-    this.name = token.name;
+    this.name = token.name ?? '';
     this.symbol = token.symbol;
     this.identifier = token.identifier ?? '';
     this.swappedFor = token.swappedFor ?? '';

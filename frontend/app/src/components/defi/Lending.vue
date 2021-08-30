@@ -2,7 +2,7 @@
   <progress-screen v-if="loading">
     <template #message>{{ $t('lending.loading') }}</template>
   </progress-screen>
-  <v-container v-else>
+  <div v-else>
     <v-row no-gutters align="center">
       <v-col>
         <refresh-header
@@ -173,7 +173,7 @@
         />
       </v-col>
     </v-row>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
@@ -203,25 +203,9 @@ import {
   LendingHistory,
   YearnVaultsProfitDetails
 } from '@/premium/premium';
-import {
-  DEFI_AAVE,
-  DEFI_COMPOUND,
-  DEFI_PROTOCOLS,
-  DEFI_YEARN_VAULTS,
-  DEFI_YEARN_VAULTS_V2,
-  V1,
-  V2
-} from '@/services/defi/consts';
-import { ProtocolVersion, SupportedDefiProtocols } from '@/services/defi/types';
+import { DefiProtocol, ProtocolVersion } from '@/services/defi/consts';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
-import {
-  MODULE_AAVE,
-  MODULE_COMPOUND,
-  MODULE_MAKERDAO_DSR,
-  MODULE_YEARN,
-  MODULE_YEARN_V2
-} from '@/services/session/consts';
-import { SupportedModules } from '@/services/session/types';
+import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 import { DefiGetterTypes } from '@/store/defi/getters';
 import { BaseDefiBalance, ProfitLossModel } from '@/store/defi/types';
@@ -273,23 +257,23 @@ export default class Lending extends Mixins(StatusMixin) {
   floatingPrecision!: number;
   selectedAccount: Account | null = null;
   totalLendingDeposit!: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => BigNumber;
-  defiAccounts!: (protocols: SupportedDefiProtocols[]) => DefiAccount[];
+  defiAccounts!: (protocols: DefiProtocol[]) => DefiAccount[];
   aggregatedLendingBalances!: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => BaseDefiBalance[];
   effectiveInterestRate!: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => string;
-  protocol: SupportedDefiProtocols | null = null;
+  protocol: DefiProtocol | null = null;
   fetchLending!: (refresh?: boolean) => Promise<void>;
-  resetDB!: (protocols: SupportedDefiProtocols[]) => Promise<void>;
+  resetDB!: (protocols: DefiProtocol[]) => Promise<void>;
   totalUsdEarned!: (
-    protocols: SupportedDefiProtocols[],
+    protocols: DefiProtocol[],
     addresses: string[]
   ) => BigNumber;
   yearnVaultsProfit!: DefiGetterTypes.YearnVaultProfitType;
@@ -298,17 +282,17 @@ export default class Lending extends Mixins(StatusMixin) {
   section = Section.DEFI_LENDING;
   secondSection = Section.DEFI_LENDING_HISTORY;
 
-  resetSelection: SupportedDefiProtocols[] = [];
+  resetSelection: DefiProtocol[] = [];
 
-  readonly AAVE = DEFI_AAVE;
-  readonly YEARN_VAULTS = DEFI_YEARN_VAULTS;
-  readonly YEARN_VAULTS_V2 = DEFI_YEARN_VAULTS_V2;
-  readonly modules: SupportedModules[] = [
-    MODULE_AAVE,
-    MODULE_COMPOUND,
-    MODULE_YEARN,
-    MODULE_YEARN_V2,
-    MODULE_MAKERDAO_DSR
+  readonly AAVE = DefiProtocol.AAVE;
+  readonly YEARN_VAULTS = DefiProtocol.YEARN_VAULTS;
+  readonly YEARN_VAULTS_V2 = DefiProtocol.YEARN_VAULTS_V2;
+  readonly modules: Module[] = [
+    Module.AAVE,
+    Module.COMPOUND,
+    Module.YEARN,
+    Module.YEARN_V2,
+    Module.MAKERDAO_DSR
   ];
 
   yearnProfit(): YearnVaultProfitLoss[] {
@@ -316,12 +300,12 @@ export default class Lending extends Mixins(StatusMixin) {
     const addresses = this.selectedAddresses;
     let v1Profit: YearnVaultProfitLoss[] = [];
     if (this.isYearnVaults || allSelected) {
-      v1Profit = this.yearnVaultsProfit(addresses, V1);
+      v1Profit = this.yearnVaultsProfit(addresses, ProtocolVersion.V1);
     }
 
     let v2Profit: YearnVaultProfitLoss[] = [];
     if (this.isYearnVaultsV2 || allSelected) {
-      v2Profit = this.yearnVaultsProfit(addresses, V2);
+      v2Profit = this.yearnVaultsProfit(addresses, ProtocolVersion.V2);
     }
     return [...v1Profit, ...v2Profit];
   }
@@ -333,15 +317,15 @@ export default class Lending extends Mixins(StatusMixin) {
   get isCompound(): boolean {
     return (
       this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DEFI_COMPOUND)
+      this.selectedProtocols.includes(DefiProtocol.COMPOUND)
     );
   }
 
   get yearnVersion(): Nullable<ProtocolVersion> {
     if (this.isYearnVaults) {
-      return V1;
+      return ProtocolVersion.V1;
     } else if (this.isYearnVaultsV2) {
-      return V2;
+      return ProtocolVersion.V2;
     }
     return null;
   }
@@ -349,21 +333,21 @@ export default class Lending extends Mixins(StatusMixin) {
   get isYearnVaults(): boolean {
     return (
       this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DEFI_YEARN_VAULTS)
+      this.selectedProtocols.includes(DefiProtocol.YEARN_VAULTS)
     );
   }
 
   get isYearnVaultsV2(): boolean {
     return (
       this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DEFI_YEARN_VAULTS_V2)
+      this.selectedProtocols.includes(DefiProtocol.YEARN_VAULTS_V2)
     );
   }
 
   get isAave(): boolean {
     return (
       this.selectedProtocols.length === 1 &&
-      this.selectedProtocols.includes(DEFI_AAVE)
+      this.selectedProtocols.includes(DefiProtocol.AAVE)
     );
   }
 
@@ -377,16 +361,17 @@ export default class Lending extends Mixins(StatusMixin) {
 
   async created() {
     const queryElement = this.$route.query['protocol'];
-    const protocolIndex = DEFI_PROTOCOLS.findIndex(
+    const protocols = Object.values(DefiProtocol);
+    const protocolIndex = protocols.findIndex(
       protocol => protocol === queryElement
     );
     if (protocolIndex >= 0) {
-      this.protocol = DEFI_PROTOCOLS[protocolIndex];
+      this.protocol = protocols[protocolIndex];
     }
     await this.fetchLending();
   }
 
-  get selectedProtocols(): SupportedDefiProtocols[] {
+  get selectedProtocols(): DefiProtocol[] {
     return this.protocol ? [this.protocol] : [];
   }
 

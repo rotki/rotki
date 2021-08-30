@@ -21,6 +21,11 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
+from rotkehlchen.chain.ethereum.interfaces.ammswap import (
+    SUSHISWAP_TRADES_PREFIX,
+    UNISWAP_TRADES_PREFIX,
+)
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.aave.constants import ATOKENV1_TO_ASSET
 from rotkehlchen.chain.ethereum.modules.adex import (
     ADEX_EVENTS_PREFIX,
@@ -36,11 +41,8 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
     BALANCER_TRADES_PREFIX,
     BalancerEvent,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap import (
-    UNISWAP_EVENTS_PREFIX,
-    UNISWAP_TRADES_PREFIX,
-    UniswapPoolEvent,
-)
+from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
+from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.structures import (
     AaveEvent,
     YearnVault,
@@ -51,6 +53,7 @@ from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import (
@@ -94,8 +97,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
-    deserialize_action_type_from_db,
-    deserialize_asset_movement_category_from_db,
     deserialize_hex_color_code,
     deserialize_timestamp,
     deserialize_trade_type_from_db,
@@ -103,6 +104,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
+    AssetMovementCategory,
     BlockchainAccountData,
     BTCAddress,
     ChecksumEthAddress,
@@ -135,6 +137,23 @@ DBTupleType = Literal[
     'ethereum_transaction',
     'amm_swap',
 ]
+
+# Tuples that contain first the name of a table and then the columns that
+# reference assets ids. This is used to query all assets that a user owns.
+TABLES_WITH_ASSETS = (
+    ('aave_events', 'asset1', 'asset2'),
+    ('yearn_vaults_events', 'from_asset', 'to_asset'),
+    ('manually_tracked_balances', 'asset'),
+    ('trades', 'base_asset', 'quote_asset', 'fee_currency'),
+    ('margin_positions', 'pl_currency', 'fee_currency'),
+    ('asset_movements', 'asset', 'fee_asset'),
+    ('ledger_actions', 'asset', 'rate_asset'),
+    ('amm_swaps', 'token0_identifier', 'token1_identifier'),
+    ('uniswap_events', 'token0_identifier', 'token1_identifier'),
+    ('adex_events', 'token'),
+    ('balancer_events', 'pool_address_token'),
+    ('timed_balances', 'currency'),
+)
 
 
 def _protect_password_sqlcipher(password: str) -> str:
@@ -178,7 +197,7 @@ def db_tuple_to_str(
         )
     if tuple_type == 'asset_movement':
         return (
-            f'{deserialize_asset_movement_category_from_db(data[2])} of '
+            f'{AssetMovementCategory.deserialize_from_db(data[2])} of '
             f'{data[4]} with id {data[0]} '
             f'in {Location.deserialize_from_db(data[1])} at timestamp {data[3]}'
         )
@@ -617,8 +636,9 @@ class DBHandler:
 
         result = []
         for q in query:
-            service = ExternalService.serialize(q[0])
-            if not service:
+            try:
+                service = ExternalService.deserialize(q[0])
+            except DeserializationError:
                 log.error(f'Unknown external service name "{q[0]}" found in the DB')
                 continue
 
@@ -731,7 +751,7 @@ class DBHandler:
         result = cursor.execute(query, tuples)
         mapping = defaultdict(list)
         for entry in result:
-            mapping[deserialize_action_type_from_db(entry[0])].append(entry[1])
+            mapping[ActionType.deserialize_from_db(entry[0])].append(entry[1])
 
         return mapping
 
@@ -798,22 +818,7 @@ class DBHandler:
     ) -> List[AaveEvent]:
         """Get aave for a single address and a single aToken"""
         cursor = self.conn.cursor()
-        querystr = (
-            'SELECT address, '
-            'event_type, '
-            'block_number, '
-            'timestamp, '
-            'tx_hash, '
-            'log_index, '
-            'asset1, '
-            'asset1_amount, '
-            'asset1_usd_value, '
-            'asset2, '
-            'asset2amount_borrowrate_feeamount, '
-            'asset2usd_value_accruedinterest_feeusdvalue, '
-            'borrow_rate_mode '
-            'FROM aave_events '
-        )
+        querystr = 'SELECT * FROM aave_events '
         values: Tuple
         if atoken is not None:  # when called by blockchain
             underlying_token = ATOKENV1_TO_ASSET.get(atoken, None)
@@ -901,25 +906,7 @@ class DBHandler:
         """Returns a list of AdEx events optionally filtered by time and address.
         """
         cursor = self.conn.cursor()
-        query = (
-            'SELECT '
-            'tx_hash, '
-            'address, '
-            'identity_address, '
-            'timestamp, '
-            'type, '
-            'pool_id, '
-            'amount, '
-            'usd_value, '
-            'bond_id, '
-            'nonce, '
-            'slashed_at, '
-            'unlock_at, '
-            'channel_id, '
-            'token, '
-            'log_index '
-            'FROM adex_events '
-        )
+        query = 'SELECT * FROM adex_events '
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
         filters = []
         if address is not None:
@@ -1084,7 +1071,7 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def add_uniswap_events(self, events: Sequence[UniswapPoolEvent]) -> None:
+    def add_amm_events(self, events: Sequence[LiquidityPoolEvent]) -> None:
         query = (
             """
             INSERT INTO uniswap_events (
@@ -1111,7 +1098,7 @@ class DBHandler:
                 cursor.execute(query, event_tuple)
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 self.msg_aggregator.add_warning(
-                    f'Tried to add a Uniswap event that already exists in the DB. '
+                    f'Tried to add an AMM event that already exists in the DB. '
                     f'Event data: {event_tuple}. Skipping event.',
                 )
                 continue
@@ -1119,53 +1106,53 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def get_uniswap_events(
+    def get_amm_events(
             self,
+            events: List[EventType],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             address: Optional[ChecksumEthAddress] = None,
-    ) -> List[UniswapPoolEvent]:
-        """Returns a list of Uniswap events optionally filtered by time, location
+    ) -> List[LiquidityPoolEvent]:
+        """Returns a list of amm events optionally filtered by time, location
         and address
         """
         cursor = self.conn.cursor()
-        query = 'SELECT * FROM uniswap_events '
-        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
-        filters = []
-        if address is not None:
-            filters.append(f'address="{address}" ')
+        events_sql_str = ", ".join([f'"{EventType.serialize_for_db(event)}"' for event in events])
+        query = f'SELECT * FROM uniswap_events WHERE uniswap_events.type IN ({events_sql_str}) '
 
-        if filters:
-            query += 'WHERE '
-            query += 'AND '.join(filters)
+        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
+        if address is not None:
+            query += f'AND address="{address}" '
 
         query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
         results = cursor.execute(query, bindings)
 
-        events = []
+        db_events = []
         for event_tuple in results:
             try:
-                event = UniswapPoolEvent.deserialize_from_db(event_tuple)
+                event = LiquidityPoolEvent.deserialize_from_db(event_tuple)
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
-                    f'Error deserializing Uniswap event from the DB. Skipping event. '
+                    f'Error deserializing AMM event from the DB. Skipping event. '
                     f'Error was: {str(e)}',
                 )
                 continue
             except UnknownAsset as e:
                 self.msg_aggregator.add_error(
-                    f'Error deserializing Uniswap event from the DB. Skipping event. '
+                    f'Error deserializing AMM event from the DB. Skipping event. '
                     f'Unknown asset {e.asset_name} found',
                 )
                 continue
-            events.append(event)
+            db_events.append(event)
 
-        return events
+        return db_events
 
     def purge_module_data(self, module_name: Optional[ModuleName]) -> None:
         if module_name is None:
             self.delete_uniswap_trades_data()
             self.delete_uniswap_events_data()
+            self.delete_sushiswap_trades_data()
+            self.delete_sushiswap_events_data()
             self.delete_balancer_trades_data()
             self.delete_balancer_events_data()
             self.delete_aave_data()
@@ -1175,12 +1162,15 @@ class DBHandler:
             self.delete_loopring_data()
             self.delete_eth2_deposits()
             self.delete_eth2_daily_stats()
-            logger.debug('Purged all module data from the DB')
+            log.debug('Purged all module data from the DB')
             return
 
         if module_name == 'uniswap':
             self.delete_uniswap_trades_data()
             self.delete_uniswap_events_data()
+        elif module_name == 'sushiswap':
+            self.delete_sushiswap_trades_data()
+            self.delete_sushiswap_events_data()
         elif module_name == 'balancer':
             self.delete_balancer_trades_data()
             self.delete_balancer_events_data()
@@ -1198,10 +1188,10 @@ class DBHandler:
             self.delete_eth2_deposits()
             self.delete_eth2_daily_stats()
         else:
-            logger.debug(f'Requested to purge {module_name} data from the DB but nothing to do')
+            log.debug(f'Requested to purge {module_name} data from the DB but nothing to do')
             return
 
-        logger.debug(f'Purged {module_name} data from the DB')
+        log.debug(f'Purged {module_name} data from the DB')
 
     def delete_uniswap_trades_data(self) -> None:
         """Delete all historical Uniswap trades data"""
@@ -1218,9 +1208,41 @@ class DBHandler:
     def delete_uniswap_events_data(self) -> None:
         """Delete all historical Uniswap events data"""
         cursor = self.conn.cursor()
-        cursor.execute('DELETE FROM uniswap_events;')
+        mint_uniswap = EventType.serialize_for_db(EventType.MINT_UNISWAP)
+        burn_uniswap = EventType.serialize_for_db(EventType.BURN_UNISWAP)
+        uniswap_types = f'"{mint_uniswap}", "{burn_uniswap}"'
+        cursor.execute(
+            f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({uniswap_types});',
+        )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_EVENTS_PREFIX}%";',
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_sushiswap_trades_data(self) -> None:
+        """Delete all historical Sushiswap trades data"""
+        cursor = self.conn.cursor()
+        cursor.execute(
+            f'DELETE FROM amm_swaps WHERE location="{Location.SUSHISWAP.serialize_for_db()}";',  # pylint: disable=no-member  # noqa: E501
+        )
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_TRADES_PREFIX}%";',
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def delete_sushiswap_events_data(self) -> None:
+        """Delete all historical Sushiswap events data"""
+        cursor = self.conn.cursor()
+        mint_sushiswap = EventType.serialize_for_db(EventType.MINT_SUSHISWAP)
+        burn_sushiswap = EventType.serialize_for_db(EventType.BURN_SUSHISWAP)
+        sushiswap_types = f'"{mint_sushiswap}", "{burn_sushiswap}"'
+        cursor.execute(
+            f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({sushiswap_types});',
+        )
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_EVENTS_PREFIX}%";',
         )
         self.conn.commit()
         self.update_last_write()
@@ -1667,6 +1689,9 @@ class DBHandler:
         eth_list = []
         btc_list = []
         ksm_list = []
+        dot_list = []
+        avax_list = []
+
         supported_blockchains = {blockchain.value for blockchain in SupportedBlockchain}
         for entry in query:
             if entry[0] not in supported_blockchains:
@@ -1688,8 +1713,12 @@ class DBHandler:
                 eth_list.append(entry[1])
             elif entry[0] == SupportedBlockchain.KUSAMA.value:
                 ksm_list.append(entry[1])
+            elif entry[0] == SupportedBlockchain.AVALANCHE.value:
+                avax_list.append(entry[1])
+            elif entry[0] == SupportedBlockchain.POLKADOT.value:
+                dot_list.append(entry[1])
 
-        return BlockchainAccounts(eth=eth_list, btc=btc_list, ksm=ksm_list)
+        return BlockchainAccounts(eth=eth_list, btc=btc_list, ksm=ksm_list, dot=dot_list, avax=avax_list)  # noqa: E501
 
     def get_blockchain_account_data(
             self,
@@ -2203,14 +2232,14 @@ class DBHandler:
                         # Also if we have transactions of one account sending to the
                         # other and both accounts are being tracked.
                         string_repr = db_tuple_to_str(entry, tuple_type)
-                        logger.debug(
+                        log.debug(
                             f'Did not add "{string_repr}" to the DB due to "{str(e)}".'
                             f'Either it already exists or some constraint was hit.',
                         )
                         continue
 
                     string_repr = db_tuple_to_str(entry, tuple_type)
-                    logger.warning(
+                    log.warning(
                         f'Did not add "{string_repr}" to the DB due to "{str(e)}".'
                         f'It either already exists or some other constraint was hit.',
                     )
@@ -2446,31 +2475,15 @@ class DBHandler:
 
     def get_ethereum_transactions(
             self,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            address: Optional[ChecksumEthAddress] = None,
+            filter_: ETHTransactionsFilterQuery,
     ) -> List[EthereumTransaction]:
         """Returns a list of ethereum transactions optionally filtered by time and/or from address
 
         The returned list is ordered from oldest to newest
         """
         cursor = self.conn.cursor()
-        query = """
-            SELECT tx_hash,
-              timestamp,
-              block_number,
-              from_address,
-              to_address,
-              value,
-              gas,
-              gas_price,
-              gas_used,
-              input_data,
-              nonce FROM ethereum_transactions
-        """
-        if address is not None:
-            query += f'WHERE (from_address="{address}" OR to_address="{address}") '
-        query, bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
+        query, bindings = filter_.prepare()
+        query = 'SELECT * FROM ethereum_transactions ' + query
         results = cursor.execute(query, bindings)
 
         ethereum_transactions = []
@@ -2876,60 +2889,36 @@ class DBHandler:
         # but think on the performance. This is a synchronous api call so if
         # it starts taking too much time the calling logic needs to change
         cursor = self.conn.cursor()
-        query = cursor.execute(
-            'SELECT DISTINCT currency FROM timed_balances ORDER BY time ASC;',
-        )
 
         results = set()
-        for result in query:
+        for table_entry in TABLES_WITH_ASSETS:
+            table_name = table_entry[0]
+            columns = table_entry[1:]
+            columns_str = ", ".join(columns)
             try:
-                results.add(Asset(result[0]))
-            except UnknownAsset:
-                self.msg_aggregator.add_warning(
-                    f'Unknown/unsupported asset {result[0]} found in the database. '
-                    f'If you believe this should be supported open an issue in github',
+                query = cursor.execute(
+                    f'SELECT DISTINCT {columns_str} FROM {table_name};',
                 )
-                continue
-            except DeserializationError:
-                self.msg_aggregator.add_error(
-                    f'Asset with non-string type {type(result[0])} found in the '
-                    f'database. Skipping it.',
-                )
-                continue
+            except sqlcipher.OperationalError as e:    # pylint: disable=no-member
+                log.error(f'Could not fetch assets from table {table_name}. {str(e)}')
 
-        query = cursor.execute(
-            'SELECT DISTINCT asset FROM manually_tracked_balances;',
-        )
-        for result in query:
-            try:
-                results.add(Asset(result[0]))
-            except UnknownAsset:
-                self.msg_aggregator.add_warning(
-                    f'Unknown/unsupported asset {result[0]} found in the database. '
-                    f'If you believe this should be supported open an issue in github',
-                )
-                continue
-            except DeserializationError:
-                self.msg_aggregator.add_error(
-                    f'Asset with non-string type {type(result[0])} found in the '
-                    f'database. Skipping it.',
-                )
-                continue
-
-        query = cursor.execute(
-            'SELECT DISTINCT base_asset, quote_asset FROM trades ORDER BY time ASC;',
-        )
-        for entry in query:
-            try:
-                asset1, asset2 = [Asset(x) for x in entry]
-            except UnknownAsset as e:
-                logger.warning(
-                    f'At processing owned assets from base/quote could not deserialize '
-                    f'asset due to {str(e)}',
-                )
-                continue
-            results.add(asset1)
-            results.add(asset2)
+            for result in query:
+                for _, asset_id in enumerate(result):
+                    try:
+                        if asset_id is not None:
+                            results.add(Asset(asset_id))
+                    except UnknownAsset:
+                        self.msg_aggregator.add_warning(
+                            f'Unknown/unsupported asset {asset_id} found in the database. '
+                            f'If you believe this should be supported open an issue in github',
+                        )
+                        continue
+                    except DeserializationError:
+                        self.msg_aggregator.add_error(
+                            f'Asset with non-string type {type(asset_id)} found in the '
+                            f'database. Skipping it.',
+                        )
+                        continue
 
         return list(results)
 
@@ -3051,7 +3040,7 @@ class DBHandler:
         """
         cursor = self.conn.cursor()
         results = cursor.execute(
-            f'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '
+            f'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '  # pylint: disable=no-member  # noqa: E501
             f'time=(SELECT MAX(time) from timed_balances) AND '
             f'category="{BalanceType.ASSET.serialize_for_db()}" ORDER BY '
             f'CAST(usd_value AS REAL) DESC;',
@@ -3466,7 +3455,7 @@ class DBHandler:
                 updates.append((actual_id, db_id))
 
         if len(updates) != 0:
-            logger.debug(
+            log.debug(
                 f'Found {len(updates)} identifier discrepancies in the DB '
                 f'for {table_name}. Correcting...',
             )
@@ -3480,9 +3469,9 @@ class DBHandler:
         changing and no longer corresponding to the calculated id.
         """
         start_time = ts_now()
-        logger.debug('Starting DB data integrity check')
+        log.debug('Starting DB data integrity check')
         self._ensure_data_integrity('trades', Trade)
         self._ensure_data_integrity('asset_movements', AssetMovement)
         self._ensure_data_integrity('margin_positions', MarginPosition)
         self.conn.commit()
-        logger.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')
+        log.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')

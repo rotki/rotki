@@ -607,6 +607,7 @@ Getting or modifying settings
    :resjson bool include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
    :resjson string eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
    :resjson string ksm_rpc_endpoint: A URL denoting the rpc endpoint for the Kusama node to use when contacting the Kusama blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
+   :resjson string dot_rpc_endpoint: A URL denoting the rpc endpoint for the Polkadot node to use when contacting the Polkadot blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :resjson string main_currency: The asset to use for all profit/loss calculation. USD by default.
    :resjson string date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :resjson int last_balance_save: The timestamp at which the balances were last saved in the database.
@@ -647,6 +648,7 @@ Getting or modifying settings
    :reqjson bool[optional] include_gas_costs: A boolean denoting whether gas costs should be counted as loss in profit/loss calculation.
    :reqjson string[optional] eth_rpc_endpoint: A URL denoting the rpc endpoint for the ethereum node to use when contacting the ethereum blockchain. If it can not be reached or if it is invalid etherscan is used instead.
    :reqjson string[optional] ksm_rpc_endpoint: A URL denoting the rpc endpoint for the Kusama node to use when contacting the Kusama blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
+   :reqjson string[optional] dot_rpc_endpoint: A URL denoting the rpc endpoint for the Polkadot node to use when contacting the Polkadot blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :reqjson string[optional] main_currency: The FIAT currency to use for all profit/loss calculation. USD by default.
    :reqjson string[optional] date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
    :reqjson bool[optional] submit_usage_analytics: A boolean denoting wether or not to submit anonymous usage analytics to the rotki server.
@@ -814,7 +816,7 @@ Query the result of an ongoing backend task
 Query the current price of assets
 ===================================
 
-.. http:get:: /api/(version)/assets/prices/current
+.. http:post:: /api/(version)/assets/prices/current
 
    Querying this endpoint with a list of assets and a target asset will return an object with the the price of the assets in the target asset currency. Providing an empty list or no target asset is an error.
 
@@ -825,7 +827,7 @@ Query the current price of assets
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/prices/current HTTP/1.1
+      POST /api/1/assets/prices/current HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -1758,6 +1760,10 @@ Querying ethereum transactions
 
       {"from_timestamp": 1514764800, "to_timestamp": 1572080165, "only_cache": false}
 
+   :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson string order_by_attribute: This is the attribute of the transaction by which to order the results.
+   :reqjson bool ascending: Should the order be aschending? This is the default. If set to false, it will be on descending order.
    :reqjson int from_timestamp: The timestamp after which to return transactions. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return transactions. If not given all transactions from ``from_timestamp`` until now are returned.
    :reqjson bool only_cache: If true then only the ethereum transactions in the DB are queried.
@@ -2058,7 +2064,7 @@ Querying onchain balances
 
 .. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH`` and ``KSM``.
+   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``KSM``, ``DOT`` and ``AVAX``.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
@@ -2894,7 +2900,7 @@ Performing an asset update
    :resjson object result: Either ``true`` if all went fine or a a list of conflicts, containing the identifier of the asset in question and the local and remote versions.
    :statuscode 200: Update was succesfully applied (if any).
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Conflicts were found during update. The conflicts should also be returned.
+   :statuscode 409: Conflicts were found during update. The conflicts should also be returned. No user is currently logged in.
    :statuscode 500: Internal rotki error
    :statuscode 502: Error while trying to reach the remote for asset updates.
 
@@ -4128,7 +4134,7 @@ Getting blockchain account data
 .. http:get:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
    Doing a GET on the blokchcains endpoint with a specific blockchain queries account data information for that blockchain.
 
@@ -5908,6 +5914,222 @@ Getting compound historical data
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
 
+Getting Liquity balances
+========================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/balances
+
+   Doing a GET on the liquity balances resource will return the balances that the user has both in troves and staked.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   .. note::
+      This endpoint will provide different information if called with a premium account or not. With premium accounts information about staking is provided.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/liquity/balances HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+            "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
+                "trove": {
+                    "collateral": {
+                        "asset": "ETH"
+                        "amount": "5.3100000000000005",
+                        "usd_value": "16161.675300000001521815"
+                    },
+                    "debt": {
+                        "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                        "amount": "6029.001719188487",
+                        "usd_value": "6089.29173638037187"
+                    },
+                    "collateralization_ratio": "268.0655281381374051287323733",
+                    "liquidation_price": "1261.435199626818912670885158",
+                    "active": true,
+                    "trove_id": 148
+                },
+                "stake": {
+                    "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                    "amount": "177.02",
+                    "usd_value": "1201.9658"
+                }
+            }
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of all accounts that currently have Liquity positions to keys ``trove`` and ``take`` for information on this places.
+
+   :statuscode 200: Liquity balances succesfully queried.
+   :statuscode 409: User is not logged in or Liquity module is not activated.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+
+Getting Liquity historical data
+===============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/events
+
+   .. note::
+      This endpoint is only available for premium users
+
+   Doing a GET on the liquity events resource will return the history of deposits, withdrawals, liquidations and trove events of each account in Liquity.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/liquity/events HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson bool reset_db_data: Boolean denoting whether all liquity event data saved in the DB are going to be deleted and rewritten after this query. False by default.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+                "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
+                    "trove": [
+                        {
+                            "kind": "trove",
+                            "tx": "0xc8ad6f6ec244a93e1d66e60d1eab2ff2cb9de1f3a1f45c7bb4e9d2f720254137",
+                            "address": "0x063c26fF1592688B73d8e2A18BA4C23654e2792E",
+                            "timestamp": 1627818194,
+                            "debt_after": {
+                                "amount": "6029.001719188487125",
+                                "usd_value": "6149.58175357225686750",
+                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                            },
+                            "debt_delta": {
+                                "amount": "6029.001719188487125",
+                                "usd_value": "6149.58175357225686750",
+                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                            },
+                            "collateral_after": {
+                                "amount": "3.5",
+                                "usd_value": "10500.0",
+                                "asset": "ETH"
+                            },
+                            "collateral_delta": {
+                                "amount": "3.5",
+                                "usd_value": "10500.0",
+                                "asset": "ETH"
+                            },
+                            "trove_operation": "Open Trove"
+                        },
+                        {
+                            "kind": "trove",
+                            "tx": "0x8c875e36737918807af1616cc89a084971a569f33006acba308897a80554983a",
+                            "address": "0x063c26fF1592688B73d8e2A18BA4C23654e2792E",
+                            "timestamp": 1627818617,
+                            "debt_after": {
+                                "amount": "6029.001719188487125",
+                                "usd_value": "6143.552751853068380375",
+                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                            },
+                            "debt_delta": {
+                                "amount": "0",
+                                "usd_value": "0.000",
+                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                            },
+                            "collateral_after": {
+                                "amount": "5.31",
+                                "usd_value": "15930.00",
+                                "asset": "ETH"
+                            },
+                            "collateral_delta": {
+                                "amount": "1.81",
+                                "usd_value": "5430.00",
+                                "asset": "ETH"
+                            },
+                            "trove_operation": "Adjust Trove"
+                        }
+                    ],
+                    "stake": [
+                        {
+                            "kind": "stake",
+                            "tx": "0xe527749c76a3af56d86c97a8f8f8ce07e191721e9e16a0f62a228f8a8ef6d295",
+                            "address": "0x063c26fF1592688B73d8e2A18BA4C23654e2792E",
+                            "timestamp": 1627827057,
+                            "stake_after": {
+                                "amount": "177.02",
+                                "usd_value": "654.974",
+                                "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                            },
+                            "stake_change": {
+                                "amount": "177.02",
+                                "usd_value": "654.974",
+                                "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                            },
+                            "issuance_gain": {
+                                "amount": "0",
+                                "usd_value": "0.00",
+                                "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                            },
+                            "redemption_gain": {
+                                "amount": "0",
+                                "usd_value": "0.00",
+                                "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                            },
+                            "stake_operation": "Stake Created"
+                        }
+                    ]
+                }
+            }
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of accounts to the Liquity history report of each account. If an account is not in the mapping rotki does not see anything ever deposited in Liquity for it.
+   :resjson resjsonarr trove: A list of Trove events. Check the fields below for the potential values.
+   :resjson resjsonarr stake: A list of Staking events. Check the fields below for the potential values.
+   :resjson string kind: "trove" if it's an action in troves and "stake" if it's a change in the staking position
+   :resjson int timestamp: The unix timestamp at which the event occured.
+   :resjson string tx: The transaction hash of the event.
+   :resjson object debt_after: Debt in the Trove after the operation
+   :resjson object collateral_after: Amount, asset and usd value of collateral at the Trove 
+   :resjson object debt_delta: Amount, asset and usd value of debt that the operation changed.
+   :resjson object collateral_delta: Amount, asset and usd value of collateral that the operation changed.
+   :resjson string trove_operation: The operation that happened in the change. Can be ``Open Trove``, ``Close Trove``, ``Adjust Trove``, ``Accrue Rewards``, ``Liquidation In Normal Mode``, ``Liquidation In Recovery Mode``, ``Redeem Collateral``
+   :resjson string stake_after: Amount, asset and usd value changed in the operation over the staked position. Amount is represented in LQTY
+   :resjson string stake_change: Amount, asset and usd value that the operation changed
+   :resjson string stake_operation: Can be ``Stake Created``, ``Stake Increased``, ``Stake Decreased``, ``Stake Removed``, ``Gains Withdrawn``
+
+   :statuscode 200: Liquity history succesfully queried.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or Liquity module is not activated.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
 Getting Uniswap balances
 ==============================
 
@@ -7085,9 +7307,9 @@ Adding blockchain accounts
 .. http:put:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
@@ -7479,9 +7701,9 @@ Editing blockchain account data
 .. http:patch:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 
    Doing a PATCH on the the blockchains endpoint with a specific blockchain URL and a list of accounts to edit will edit the label and tags for those accounts.
 
@@ -7550,9 +7772,9 @@ Removing blockchain accounts
 .. http:delete:: /api/(version)/blockchains/(name)/
 
    .. note::
-      Supported blockchains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains: ``"BTC", "ETH", "KSM", "DOT", "AVAX"``
 
-      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM"``
+      Supported blockchains with ENS domains: ``"BTC", "ETH", "KSM", "DOT"``
 
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
@@ -8750,4 +8972,106 @@ Gitcoin report
    :statuscode 200: Report succesfully generated
    :statuscode 400: Provided JSON or data is in some way malformed.
    :statuscode 409: User is not logged in.
+   :statuscode 500: Internal rotki error
+
+
+Querying  NFTs
+============================
+
+.. http:get:: /api/(version)/nfts
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a GET on the NFTs endpoint will query all NFTs for all user tracked addresses.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/nfts HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": false}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result":
+            "addresses": {
+	        "0xeE3766e4F996DC0e0F8c929954EAAFef3441de87": [{
+	            "token_identifier": "8636",
+	            "name": "BASTARD GAN PUNK V2 #8636",
+	            "background_color": null,
+	            "image_url": "https://lh3.googleusercontent.com/kwF-39qZlluEalQnNv-yMxbntzNdc3g00pK2xALkpoir9ooWttVUO2hVFWOgPtOkJOHufYRajfn-nNFdjruRQ4YaMgOYHEB8E4CdjBk",
+	            "external_link": "https://www.bastardganpunks.club/v2/8636",
+	            "price_eth": "0.025",
+	            "price_usd": "250"
+		}]
+	    },
+            "entries_found": 95,
+            "entries_limit": 500,
+        "message": ""
+      }
+
+
+   :resjson object addresses: A mapping of ethereum addresses to list of owned NFTs.
+   :resjson int entries_found: The number of NFT entries found. If non-premium and the free limit has been hit this will be equal to the limit, since we stop searching after the limit.
+   :resjson int entries_limit: The free limit for NFTs.
+   :resjson string token_identifier: The identifier of the specific NFT token for the given contract type. This is not a unique id across all NFTs.
+   :resjson string background_color: [Optional]. A color for the background of the image of the NFT. Can be Null.
+   :resjson string image_url: [Optional]. Link to the image of the NFT. Can be Null.
+   :resjson string name: [ Optional] The name of the NFT. Can be Null.
+   :resjson string external_link: [Optional]. A link to the page of the creator of the NFT. Can be Null.
+   :resjson string permalink: [Optional]. A link to the NFT in opensea.
+   :resjson string price_eth: The last known price of the NFT in ETH. Can be zero.
+   :resjson string price_usd: The last known price of the NFT in USD. Can be zero.
+   :statuscode 200: NFTs succesfully queried
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: An external service used in the query such as opensea could not be reached or returned unexpected response.
+
+Resetting limits counters
+==============================
+
+.. http:post:: /api/(version)/limits/reset/(location)
+
+   Doing a POST on this endpoint will reset the counter limits of the given location. Frontend should use it to reset limits of a location between queries, otherwise limits may become too strict.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/limits/reset/ethereum_transactions HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": true,
+        "message": ""
+      }
+
+
+   :resjson bool result: Always true.
+   :statuscode 200: Limits reset
+   :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal rotki error

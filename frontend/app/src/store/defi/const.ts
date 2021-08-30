@@ -80,7 +80,8 @@ const CHIGASTOKEN = 'Chi Gastoken by 1inch';
 const ONEINCH_LIQUIDITY = '1inch Liquidity Protocol';
 const ONEINCH_LP_STAKING = '1inch LP • Staking';
 const ZLOTFINANCE = 'zlot.finance';
-export const MAKERDAO = 'MakerDAO';
+export const MAKERDAO_DSR = 'MakerDAO DSR';
+export const MAKERDAO_VAULTS = 'MakerDAO Vaults';
 const AAVE_V2 = 'Aave V2';
 const AAVE_V2_VARIABLE_DEBT = 'Aave V2 • Variable Debt';
 const AAVE_V2_STABLE_DEBT = 'Aave V2 • Stable Debt';
@@ -103,6 +104,9 @@ const LIVEPEER = 'Livepeer';
 const COZY = 'Cozy';
 const COZY_YEARN = 'Cozy • Yearn';
 const COZY_COMPOUND = 'Cozy • Compound';
+const UNAGII = 'Unagii';
+const ORIGIN_PROTOCOL = 'Origin Protocol • OGN Staking';
+const TIMEWARP = 'TimeWarp • Staking';
 
 export const OVERVIEW_PROTOCOLS = [
   YGOVFINANCEV1,
@@ -178,7 +182,8 @@ export const OVERVIEW_PROTOCOLS = [
   AAVE,
   AAVE_STAKING,
   AAVE_UNISWAPMARKET,
-  MAKERDAO,
+  MAKERDAO_DSR,
+  MAKERDAO_VAULTS,
   AAVE_V2,
   AAVE_V2_VARIABLE_DEBT,
   AAVE_V2_STABLE_DEBT,
@@ -202,7 +207,10 @@ export const OVERVIEW_PROTOCOLS = [
   LIVEPEER,
   COZY,
   COZY_COMPOUND,
-  COZY_YEARN
+  COZY_YEARN,
+  UNAGII,
+  ORIGIN_PROTOCOL,
+  TIMEWARP
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
@@ -286,7 +294,8 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [YEARN_FINANCE_VAULTS]: 'yearn_vaults.svg',
   [YEARN_FINANCE_VAULTS_V2]: 'yearn_vaults.svg',
   [YEARN_TOKEN_VAULTS]: 'yearn_vaults.svg',
-  [MAKERDAO]: 'makerdao.svg',
+  [MAKERDAO_DSR]: 'makerdao.svg',
+  [MAKERDAO_VAULTS]: 'makerdao.svg',
   [AAVE_V2_VARIABLE_DEBT]: 'aave.svg',
   [AAVE_V2_STABLE_DEBT]: 'aave.svg',
   [SNOW_SWAP]: 'snowswap.svg',
@@ -303,20 +312,15 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [LIVEPEER]: 'livepeer.svg',
   [COZY]: 'cozy.svg',
   [COZY_COMPOUND]: 'cozy.svg',
-  [COZY_YEARN]: 'cozy.svg'
+  [COZY_YEARN]: 'cozy.svg',
+  [UNAGII]: 'unagii.svg',
+  [ORIGIN_PROTOCOL]: 'origin.png',
+  [TIMEWARP]: 'timewarp.png'
 };
 
 export function getProtcolIcon(name: OverviewDefiProtocol): string {
   return ICON_LIST[name] ?? '';
 }
-
-export const UNISWAP_EVENT_MINT = 'mint';
-export const UNISWAP_EVENT_BURN = 'burn';
-
-export const UNISWAP_EVENT_TYPE = [
-  UNISWAP_EVENT_MINT,
-  UNISWAP_EVENT_BURN
-] as const;
 
 export const uniswapNumericKeys = [
   ...balanceKeys,
@@ -355,6 +359,7 @@ export const AIRDROP_FURUCOMBO = 'furucombo';
 export const AIRDROP_CURVE = 'curve';
 export const AIRDROP_POAP = 'poap';
 export const AIRDROP_CONVEX = 'convex';
+export const AIRDROP_FOX = 'fox';
 
 export const AIRDROPS = [
   AIRDROP_1INCH,
@@ -366,5 +371,6 @@ export const AIRDROPS = [
   AIRDROP_FURUCOMBO,
   AIRDROP_CURVE,
   AIRDROP_POAP,
-  AIRDROP_CONVEX
+  AIRDROP_CONVEX,
+  AIRDROP_FOX
 ] as const;

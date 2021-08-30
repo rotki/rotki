@@ -80,6 +80,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('\\', 28);
 INSERT OR IGNORE INTO location(location, seq) VALUES (']', 29);
 /* Gitcoin */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('^', 30);
+/* Sushiswap */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('_', 31);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
@@ -265,9 +267,10 @@ CREATE TABLE IF NOT EXISTS tags (
 
 DB_CREATE_BLOCKCHAIN_ACCOUNTS = """
 CREATE TABLE IF NOT EXISTS blockchain_accounts (
-    blockchain VARCHAR[24],
-    account TEXT NOT NULL PRIMARY KEY,
-    label TEXT
+    blockchain VARCHAR[24] NOT NULL,
+    account TEXT NOT NULL,
+    label TEXT,
+    PRIMARY KEY (blockchain, account)
 );
 """
 
@@ -287,11 +290,12 @@ CREATE TABLE IF NOT EXISTS xpub_mappings (
     derivation_path TEXT NOT NULL,
     account_index INTEGER,
     derived_index INTEGER,
-    FOREIGN KEY(address) REFERENCES blockchain_accounts(account) ON DELETE CASCADE
+    blockchain TEXT GENERATED ALWAYS AS ("BTC") VIRTUAL,
+    FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE
     FOREIGN KEY(xpub, derivation_path) REFERENCES xpubs(xpub, derivation_path) ON DELETE CASCADE
     PRIMARY KEY (address, xpub, derivation_path)
 );
-"""
+"""  # noqa: E501
 
 DB_CREATE_ETHEREUM_ACCOUNTS_DETAILS = """
 CREATE TABLE IF NOT EXISTS ethereum_accounts_details (
@@ -490,7 +494,7 @@ CREATE TABLE IF NOT EXISTS amm_swaps (
 );
 """
 
-DB_CREATE_UNISWAP_EVENTS = """
+DB_CREATE_AMM_EVENTS = """
 CREATE TABLE IF NOT EXISTS uniswap_events (
     tx_hash VARCHAR[42] NOT NULL,
     log_index INTEGER NOT NULL,
@@ -626,7 +630,7 @@ PRAGMA foreign_keys=on;
     DB_CREATE_XPUBS,
     DB_CREATE_XPUB_MAPPINGS,
     DB_CREATE_AMM_SWAPS,
-    DB_CREATE_UNISWAP_EVENTS,
+    DB_CREATE_AMM_EVENTS,
     DB_CREATE_ETH2_DEPOSITS,
     DB_CREATE_ETH2_DAILY_STAKING_DETAILS,
     DB_CREATE_ADEX_EVENTS,

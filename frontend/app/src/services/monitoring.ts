@@ -12,8 +12,10 @@ class Monitoring {
   private monitors: { [monitor: string]: any } = {};
 
   private static fetch() {
-    store.dispatch('notifications/consume');
     store.dispatch('session/periodicCheck');
+    if (!websocket.connected) {
+      store.dispatch('notifications/consume');
+    }
   }
 
   private static fetchWatchers() {
@@ -36,11 +38,7 @@ class Monitoring {
   start(restarting: boolean = false) {
     const settings = store.state.settings!;
 
-    websocket.connect().then(connected => {
-      if (connected) {
-        return;
-      }
-
+    websocket.connect().then(() => {
       if (!this.monitors[PERIODIC]) {
         if (!restarting) {
           Monitoring.fetch();

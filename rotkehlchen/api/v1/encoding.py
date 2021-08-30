@@ -1,6 +1,17 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    overload,
+)
 
 import marshmallow
 import webargs
@@ -22,12 +33,19 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_btc_address,
 )
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.substrate.typing import KusamaAddress, SubstratePublicKey
+from rotkehlchen.chain.substrate.typing import (
+    KusamaAddress,
+    PolkadotAddress,
+    SubstrateChain,
+    SubstratePublicKey,
+)
 from rotkehlchen.chain.substrate.utils import (
-    get_kusama_address_from_public_key,
+    get_substrate_address_from_public_key,
     is_valid_kusama_address,
+    is_valid_polkadot_address,
 )
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
     DeserializationError,
@@ -44,8 +62,8 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_action_type,
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_hex_color_code,
@@ -75,7 +93,8 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class DelimitedOrNormalList(webargs.fields.DelimitedList):
@@ -342,6 +361,11 @@ class BlockchainField(fields.Field):
             return SupportedBlockchain.ETHEREUM
         if value in ('ksm', 'KSM'):
             return SupportedBlockchain.KUSAMA
+        if value in ('dot', 'DOT'):
+            return SupportedBlockchain.POLKADOT
+        if value in ('avax', 'AVAX'):
+            return SupportedBlockchain.AVALANCHE
+
         raise ValidationError(f'Unrecognized value {value} given for blockchain name')
 
 
@@ -510,7 +534,7 @@ class ActionTypeField(fields.Field):
             **_kwargs: Any,
     ) -> ActionType:
         try:
-            action_type = deserialize_action_type(value)
+            action_type = ActionType.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
@@ -564,9 +588,10 @@ class ExternalServiceNameField(fields.Field):
     ) -> ExternalService:
         if not isinstance(value, str):
             raise ValidationError('External service name should be a string')
-        service = ExternalService.serialize(value)
-        if not service:
-            raise ValidationError(f'External service {value} is not known')
+        try:
+            service = ExternalService.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(f'External service {value} is not known') from e
 
         return service
 
@@ -786,41 +811,81 @@ class HistoricalPriceOracleField(fields.Field):
 
 class AsyncQueryArgumentSchema(Schema):
     """A schema for getters that only have one argument enabling async query"""
-    async_query = fields.Boolean(missing=False)
+    async_query = fields.Boolean(load_default=False)
 
 
 class AsyncHistoricalQuerySchema(AsyncQueryArgumentSchema):
     """A schema for getters that have 2 arguments.
     One to enable async querying and another to force reset DB data by querying everytying again"""
-    reset_db_data = fields.Boolean(missing=False)
-    from_timestamp = TimestampField(missing=Timestamp(0))
-    to_timestamp = TimestampField(missing=ts_now)
+    reset_db_data = fields.Boolean(load_default=False)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
 
 
 class AsyncTasksQuerySchema(Schema):
-    task_id = fields.Integer(strict=True, missing=None)
+    task_id = fields.Integer(strict=True, load_default=None)
 
 
-class EthereumTransactionQuerySchema(Schema):
-    async_query = fields.Boolean(missing=False)
-    address = EthereumAddressField(missing=None)
-    from_timestamp = TimestampField(missing=Timestamp(0))
-    to_timestamp = TimestampField(missing=ts_now)
-    only_cache = fields.Boolean(missing=False)
+class OnlyCacheQuerySchema(Schema):
+    only_cache = fields.Boolean(load_default=False)
+
+
+class DBPaginationSchema(Schema):
+    limit = fields.Integer(load_default=None)
+    offset = fields.Integer(load_default=None)
+
+
+class DBOrderBySchema(Schema):
+    order_by_attribute = fields.String(load_default=None)
+    ascending = fields.Boolean(load_default=True)
+
+
+class EthereumTransactionQuerySchema(
+        AsyncQueryArgumentSchema,
+        OnlyCacheQuerySchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
+):
+    address = EthereumAddressField(load_default=None)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+
+    @post_load
+    def make_ethereum_transaction_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        address = data.get('address')
+        filter_query = ETHTransactionsFilterQuery.make(
+            order_by_attribute='timestamp',  # hard coding order by timestamp for API for now
+            order_ascending=False,  # most recent first
+            limit=data['limit'],
+            offset=data['offset'],
+            addresses=[address] if address is not None else None,
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+        )
+
+        return {
+            'async_query': data['async_query'],
+            'only_cache': data['only_cache'],
+            'filter_query': filter_query,
+        }
 
 
 class TimerangeQuerySchema(Schema):
-    from_timestamp = TimestampField(missing=Timestamp(0))
-    to_timestamp = TimestampField(missing=ts_now)
-    async_query = fields.Boolean(missing=False)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+    async_query = fields.Boolean(load_default=False)
 
 
 class TimerangeLocationQuerySchema(TimerangeQuerySchema):
-    location = LocationField(missing=None)
+    location = LocationField(load_default=None)
 
 
 class TimerangeLocationCacheQuerySchema(TimerangeLocationQuerySchema):
-    only_cache = fields.Boolean(missing=False)
+    only_cache = fields.Boolean(load_default=False)
 
 
 class GitcoinReportSchema(TimerangeQuerySchema):
@@ -830,12 +895,12 @@ class GitcoinReportSchema(TimerangeQuerySchema):
             min=1,
             error='Gitcoin grant id must be a positive integer',
         ),
-        missing=None,
+        load_default=None,
     )
 
 
 class GitcoinEventsQuerySchema(GitcoinReportSchema):
-    only_cache = fields.Boolean(missing=False)
+    only_cache = fields.Boolean(load_default=False)
 
 
 class GitcoinEventsDeleteSchema(Schema):
@@ -845,7 +910,7 @@ class GitcoinEventsDeleteSchema(Schema):
             min=1,
             error='Gitcoin grant id must be a positive integer',
         ),
-        missing=None,
+        load_default=None,
     )
 
 
@@ -857,10 +922,10 @@ class TradeSchema(Schema):
     trade_type = TradeTypeField(required=True)
     amount = PositiveAmountField(required=True)
     rate = PriceField(required=True)
-    fee = FeeField(missing=None)
-    fee_currency = AssetField(missing=None)
-    link = fields.String(missing=None)
-    notes = fields.String(missing=None)
+    fee = FeeField(load_default=None)
+    fee_currency = AssetField(load_default=None)
+    link = fields.String(load_default=None)
+    notes = fields.String(load_default=None)
 
 
 class LedgerActionSchema(Schema):
@@ -869,10 +934,10 @@ class LedgerActionSchema(Schema):
     location = LocationField(required=True)
     amount = AmountField(required=True)
     asset = AssetField(required=True)
-    rate = PriceField(missing=None)
-    rate_asset = AssetField(missing=None)
-    link = fields.String(missing=None)
-    notes = fields.String(missing=None)
+    rate = PriceField(load_default=None)
+    rate_asset = AssetField(load_default=None)
+    link = fields.String(load_default=None)
+    notes = fields.String(load_default=None)
 
 
 class LedgerActionWithIdentifierSchema(LedgerActionSchema):
@@ -904,7 +969,7 @@ class ManuallyTrackedBalanceSchema(Schema):
     label = fields.String(required=True)
     amount = PositiveAmountField(required=True)
     location = LocationField(required=True)
-    tags = fields.List(fields.String(), missing=None)
+    tags = fields.List(fields.String(), load_default=None)
 
     @post_load
     def make_manually_tracked_balances(  # pylint: disable=no-self-use
@@ -933,16 +998,16 @@ class TradeDeleteSchema(Schema):
 
 class TagSchema(Schema):
     name = fields.String(required=True)
-    description = fields.String(missing=None)
+    description = fields.String(load_default=None)
     background_color = ColorField(required=True)
     foreground_color = ColorField(required=True)
 
 
 class TagEditSchema(Schema):
     name = fields.String(required=True)
-    description = fields.String(missing=None)
-    background_color = ColorField(missing=None)
-    foreground_color = ColorField(missing=None)
+    description = fields.String(load_default=None)
+    background_color = ColorField(load_default=None)
+    foreground_color = ColorField(load_default=None)
 
 
 class TagDeleteSchema(Schema):
@@ -985,9 +1050,9 @@ def _validate_historical_price_oracles(
 
 class ModifiableSettingsSchema(Schema):
     """This is the Schema for the settings that can be modified via the API"""
-    premium_should_sync = fields.Bool(missing=None)
-    include_crypto2crypto = fields.Bool(missing=None)
-    submit_usage_analytics = fields.Bool(missing=None)
+    premium_should_sync = fields.Bool(load_default=None)
+    include_crypto2crypto = fields.Bool(load_default=None)
+    submit_usage_analytics = fields.Bool(load_default=None)
     ui_floating_precision = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
@@ -995,49 +1060,52 @@ class ModifiableSettingsSchema(Schema):
             max=8,
             error='Floating numbers precision in the UI must be between 0 and 8',
         ),
-        missing=None,
+        load_default=None,
     )
-    taxfree_after_period = TaxFreeAfterPeriodField(missing=None)
+    taxfree_after_period = TaxFreeAfterPeriodField(load_default=None)
     balance_save_frequency = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
             min=1,
             error='The number of hours after which balances should be saved should be >= 1',
         ),
-        missing=None,
+        load_default=None,
     )
-    include_gas_costs = fields.Bool(missing=None)
+    include_gas_costs = fields.Bool(load_default=None)
     # TODO: Add some validation to this field
     # even though it gets validated since we try to connect to it
-    eth_rpc_endpoint = fields.String(missing=None)
-    ksm_rpc_endpoint = fields.String(missing=None)
-    main_currency = AssetField(missing=None)
+    eth_rpc_endpoint = fields.String(load_default=None)
+    ksm_rpc_endpoint = fields.String(load_default=None)
+    dot_rpc_endpoint = fields.String(load_default=None)
+    main_currency = AssetField(load_default=None)
     # TODO: Add some validation to this field
-    date_display_format = fields.String(missing=None)
-    active_modules = fields.List(fields.String(), missing=None)
-    frontend_settings = fields.String(missing=None)
-    account_for_assets_movements = fields.Bool(missing=None)
+    date_display_format = fields.String(load_default=None)
+    active_modules = fields.List(fields.String(), load_default=None)
+    frontend_settings = fields.String(load_default=None)
+    account_for_assets_movements = fields.Bool(load_default=None)
     btc_derivation_gap_limit = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
             min=1,
             error='The bitcoin address derivation gap limit should be >= 1',
         ),
-        missing=None,
+        load_default=None,
     )
-    calculate_past_cost_basis = fields.Bool(missing=None)
-    display_date_in_localtime = fields.Bool(missing=None)
+    calculate_past_cost_basis = fields.Bool(load_default=None)
+    display_date_in_localtime = fields.Bool(load_default=None)
     current_price_oracles = fields.List(
         CurrentPriceOracleField,
         validate=_validate_current_price_oracles,
-        missing=None,
+        load_default=None,
     )
     historical_price_oracles = fields.List(
         HistoricalPriceOracleField,
         validate=_validate_historical_price_oracles,
-        missing=None,
+        load_default=None,
     )
-    taxable_ledger_actions = fields.List(LedgerActionTypeField, missing=None)
+    taxable_ledger_actions = fields.List(LedgerActionTypeField, load_default=None)
+    pnl_csv_with_formulas = fields.Bool(load_default=None)
+    pnl_csv_have_summary = fields.Bool(load_default=None)
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -1068,6 +1136,7 @@ class ModifiableSettingsSchema(Schema):
             include_gas_costs=data['include_gas_costs'],
             eth_rpc_endpoint=data['eth_rpc_endpoint'],
             ksm_rpc_endpoint=data['ksm_rpc_endpoint'],
+            dot_rpc_endpoint=data['dot_rpc_endpoint'],
             main_currency=data['main_currency'],
             date_display_format=data['date_display_format'],
             submit_usage_analytics=data['submit_usage_analytics'],
@@ -1080,6 +1149,8 @@ class ModifiableSettingsSchema(Schema):
             historical_price_oracles=data['historical_price_oracles'],
             current_price_oracles=data['current_price_oracles'],
             taxable_ledger_actions=data['taxable_ledger_actions'],
+            pnl_csv_with_formulas=data['pnl_csv_with_formulas'],
+            pnl_csv_have_summary=data['pnl_csv_have_summary'],
         )
 
 
@@ -1095,17 +1166,17 @@ class BaseUserSchema(Schema):
 class UserActionSchema(Schema):
     name = fields.String(required=True)
     # All the fields below are not needed for logout/modification so are not required=True
-    password = fields.String(missing=None)
+    password = fields.String(load_default=None)
     sync_approval = fields.String(
-        missing='unknown',
+        load_default='unknown',
         validate=webargs.validate.OneOf(choices=('unknown', 'yes', 'no')),
     )
     action = fields.String(
         validate=webargs.validate.OneOf(choices=('login', 'logout')),
-        missing=None,
+        load_default=None,
     )
-    premium_api_key = fields.String(missing='')
-    premium_api_secret = fields.String(missing='')
+    premium_api_key = fields.String(load_default='')
+    premium_api_secret = fields.String(load_default='')
 
     @validates_schema
     def validate_user_action_schema(  # pylint: disable=no-self-use
@@ -1137,15 +1208,15 @@ class UserPremiumSyncSchema(AsyncQueryArgumentSchema):
 
 
 class NewUserSchema(BaseUserSchema):
-    premium_api_key = fields.String(missing='')
-    premium_api_secret = fields.String(missing='')
-    initial_settings = fields.Nested(ModifiableSettingsSchema, missing=None)
+    premium_api_key = fields.String(load_default='')
+    premium_api_secret = fields.String(load_default='')
+    initial_settings = fields.Nested(ModifiableSettingsSchema, load_default=None)
 
 
 class AllBalancesQuerySchema(Schema):
-    async_query = fields.Boolean(missing=False)
-    save_data = fields.Boolean(missing=False)
-    ignore_cache = fields.Boolean(missing=False)
+    async_query = fields.Boolean(load_default=False)
+    save_data = fields.Boolean(load_default=False)
+    ignore_cache = fields.Boolean(load_default=False)
 
 
 class ExternalServiceSchema(Schema):
@@ -1173,13 +1244,13 @@ class ExternalServicesResourceDeleteSchema(Schema):
 class ExchangesResourceEditSchema(Schema):
     name = fields.String(required=True)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
-    new_name = fields.String(missing=None)
-    api_key = ApiKeyField(missing=None)
-    api_secret = ApiSecretField(missing=None)
-    passphrase = fields.String(missing=None)
-    kraken_account_type = KrakenAccountTypeField(missing=None)
-    binance_markets = fields.List(fields.String(), missing=None)
-    ftx_subaccount = fields.String(missing=None)
+    new_name = fields.String(load_default=None)
+    api_key = ApiKeyField(load_default=None)
+    api_secret = ApiSecretField(load_default=None)
+    passphrase = fields.String(load_default=None)
+    kraken_account_type = KrakenAccountTypeField(load_default=None)
+    binance_markets = fields.List(fields.String(), load_default=None)
+    ftx_subaccount = fields.String(load_default=None)
 
 
 class ExchangesResourceAddSchema(Schema):
@@ -1187,14 +1258,14 @@ class ExchangesResourceAddSchema(Schema):
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
     api_key = ApiKeyField(required=True)
     api_secret = ApiSecretField(required=True)
-    passphrase = fields.String(missing=None)
-    kraken_account_type = KrakenAccountTypeField(missing=None)
-    binance_markets = fields.List(fields.String(), missing=None)
-    ftx_subaccount = fields.String(missing=None)
+    passphrase = fields.String(load_default=None)
+    kraken_account_type = KrakenAccountTypeField(load_default=None)
+    binance_markets = fields.List(fields.String(), load_default=None)
+    ftx_subaccount = fields.String(load_default=None)
 
 
 class ExchangesDataResourceSchema(Schema):
-    location = LocationField(limit_to=ALL_SUPPORTED_EXCHANGES, missing=None)
+    location = LocationField(limit_to=ALL_SUPPORTED_EXCHANGES, load_default=None)
 
 
 class ExchangesResourceRemoveSchema(Schema):
@@ -1203,21 +1274,21 @@ class ExchangesResourceRemoveSchema(Schema):
 
 
 class ExchangeBalanceQuerySchema(Schema):
-    location = LocationField(limit_to=SUPPORTED_EXCHANGES, missing=None)
-    async_query = fields.Boolean(missing=False)
-    ignore_cache = fields.Boolean(missing=False)
+    location = LocationField(limit_to=SUPPORTED_EXCHANGES, load_default=None)
+    async_query = fields.Boolean(load_default=False)
+    ignore_cache = fields.Boolean(load_default=False)
 
 
 class BlockchainBalanceQuerySchema(Schema):
-    blockchain = BlockchainField(missing=None)
-    async_query = fields.Boolean(missing=False)
-    ignore_cache = fields.Boolean(missing=False)
+    blockchain = BlockchainField(load_default=None)
+    async_query = fields.Boolean(load_default=False)
+    ignore_cache = fields.Boolean(load_default=False)
 
 
 class StatisticsAssetBalanceSchema(Schema):
     asset = AssetField(required=True)
-    from_timestamp = TimestampField(missing=Timestamp(0))
-    to_timestamp = TimestampField(missing=ts_now)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
 
 
 class StatisticsValueDistributionSchema(Schema):
@@ -1228,9 +1299,9 @@ class StatisticsValueDistributionSchema(Schema):
 
 
 class HistoryProcessingSchema(Schema):
-    from_timestamp = TimestampField(missing=Timestamp(0))
-    to_timestamp = TimestampField(missing=ts_now)
-    async_query = fields.Boolean(missing=False)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+    async_query = fields.Boolean(load_default=False)
 
 
 class HistoryExportingSchema(Schema):
@@ -1239,27 +1310,27 @@ class HistoryExportingSchema(Schema):
 
 class BlockchainAccountDataSchema(Schema):
     address = fields.String(required=True)
-    label = fields.String(missing=None)
-    tags = fields.List(fields.String(), missing=None)
+    label = fields.String(load_default=None)
+    tags = fields.List(fields.String(), load_default=None)
 
 
 class BaseXpubSchema(Schema):
     xpub = XpubField(required=True)
-    derivation_path = DerivationPathField(missing=None)
-    async_query = fields.Boolean(missing=False)
+    derivation_path = DerivationPathField(load_default=None)
+    async_query = fields.Boolean(load_default=False)
 
 
 class XpubAddSchema(Schema):
     xpub = fields.String(required=True)
-    derivation_path = DerivationPathField(missing=None)
-    async_query = fields.Boolean(missing=False)
-    label = fields.String(missing=None)
+    derivation_path = DerivationPathField(load_default=None)
+    async_query = fields.Boolean(load_default=False)
+    label = fields.String(load_default=None)
     xpub_type = fields.String(
         required=False,
-        missing=None,
+        load_default=None,
         validate=webargs.validate.OneOf(choices=('p2pkh', 'p2sh_p2wpkh', 'wpkh')),
     )
-    tags = fields.List(fields.String(), missing=None)
+    tags = fields.List(fields.String(), load_default=None)
 
     @post_load
     def transform_data(  # pylint: disable=no-self-use
@@ -1283,9 +1354,9 @@ class XpubAddSchema(Schema):
 
 class XpubPatchSchema(Schema):
     xpub = XpubField(required=True)
-    derivation_path = DerivationPathField(missing=None)
-    label = fields.String(missing=None)
-    tags = fields.List(fields.String(), missing=None)
+    derivation_path = DerivationPathField(load_default=None)
+    label = fields.String(load_default=None)
+    tags = fields.List(fields.String(), load_default=None)
 
 
 class BlockchainAccountsGetSchema(Schema):
@@ -1299,8 +1370,8 @@ def _validate_blockchain_account_schemas(
     """Validates schema input for the PUT/PATCH/DELETE on blockchain account data"""
     # Make sure no duplicates addresses are given
     given_addresses = set()
-    # Make sure ethereum addresses are checksummed
-    if data['blockchain'] == SupportedBlockchain.ETHEREUM:
+    # Make sure EVM based addresses are checksummed
+    if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
         for account_data in data['accounts']:
             address_string = address_getter(account_data)
             if not address_string.endswith('.eth'):
@@ -1348,6 +1419,23 @@ def _validate_blockchain_account_schemas(
             if not address.endswith('.eth') and not is_valid_kusama_address(address):
                 raise ValidationError(
                     f'Given value {address} is not a valid kusama address',
+                    field_name='address',
+                )
+            if address in given_addresses:
+                raise ValidationError(
+                    f'Address {address} appears multiple times in the request data',
+                    field_name='address',
+                )
+            given_addresses.add(address)
+
+    # Make sure polkadot addresses are valid (either ss58 format or ENS domain)
+    elif data['blockchain'] == SupportedBlockchain.POLKADOT:
+        for account_data in data['accounts']:
+            address = address_getter(account_data)
+            # ENS domain will be checked in the transformation step
+            if not address.endswith('.eth') and not is_valid_polkadot_address(address):
+                raise ValidationError(
+                    f'Given value {address} is not a valid polkadot address',
                     field_name='address',
                 )
             if address in given_addresses:
@@ -1429,57 +1517,91 @@ def _transform_eth_address(
     return address
 
 
-def _transform_ksm_address(
+@overload
+def _transform_substrate_address(
         ethereum: EthereumManager,
         given_address: str,
+        chain: Literal['Kusama'],
 ) -> KusamaAddress:
-    """Returns a KSM address (if exists) given an ENS domain. At this point any
+    ...
+
+
+@overload
+def _transform_substrate_address(
+        ethereum: EthereumManager,
+        given_address: str,
+        chain: Literal['Polkadot'],
+) -> PolkadotAddress:
+    ...
+
+
+def _transform_substrate_address(
+        ethereum: EthereumManager,
+        given_address: str,
+        chain: Literal['Kusama', 'Polkadot'],
+) -> Union[KusamaAddress, PolkadotAddress]:
+    """Returns a DOT or KSM address (if exists) given an ENS domain. At this point any
     given address has been already validated either as an ENS name or as a
-    valid Kusama address (ss58 format).
+    valid Substrate address (ss58 format).
 
     NB: ENS domains for Substrate chains (e.g. KSM, DOT) store the Substrate
     public key. It requires to encode it with a specific ss58 format for
     obtaining the specific chain address.
 
-    Kusama/Polkadot ENS domain accounts:
+    Polkadot/Polkadot ENS domain accounts:
     https://guide.kusama.network/docs/en/mirror-ens
 
     ENS domain substrate public key encoding:
     https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
     """
     if not given_address.endswith('.eth'):
-        return KusamaAddress(given_address)
+        if chain == 'Polkadot':
+            return PolkadotAddress(given_address)
+        if chain == 'Kusama':
+            return KusamaAddress(given_address)
 
     try:
         resolved_address = ethereum.ens_lookup(
             given_address,
-            blockchain=SupportedBlockchain.KUSAMA,
+            blockchain=SupportedBlockchain.POLKADOT if chain == 'Polkadot' else SupportedBlockchain.KUSAMA,  # noqa: E501
         )
     except (RemoteError, InputError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} could not be resolved '
-            f'for Kusama due to: {str(e)}',
+            f'for {chain} due to: {str(e)}',
             field_name='address',
         ) from None
 
     if resolved_address is None:
         raise ValidationError(
-            f'Given ENS address {given_address} could not be resolved for Kusama',
+            f'Given ENS address {given_address} could not be resolved for ' + chain,
             field_name='address',
         ) from None
 
+    address: Union[PolkadotAddress, KusamaAddress]
     try:
-        address = get_kusama_address_from_public_key(SubstratePublicKey(resolved_address))
+        if chain == 'Polkadot':
+            address = get_substrate_address_from_public_key(
+                chain=SubstrateChain.POLKADOT,
+                public_key=SubstratePublicKey(resolved_address),
+            )
+            log.debug(f'Resolved polkadot ENS {given_address} to {address}')
+            return PolkadotAddress(address)
+
+        # else can only be kusama
+        address = get_substrate_address_from_public_key(
+            chain=SubstrateChain.KUSAMA,
+            public_key=SubstratePublicKey(resolved_address),
+        )
+        log.debug(f'Resolved kusama ENS {given_address} to {address}')
+        return KusamaAddress(address)
+
     except (TypeError, ValueError) as e:
         raise ValidationError(
             f'Given ENS address {given_address} does not contain a valid '
-            f"Substrate public key: {resolved_address}. Kusama address can't be obtained.",
+            f'Substrate public key: {resolved_address}. {chain} address cannot be obtained.',
             field_name='address',
         ) from e
-
-    log.debug(f'Resolved KSM ENS {given_address} to {address}')
-
-    return address
 
 
 class BlockchainAccountsPatchSchema(Schema):
@@ -1510,7 +1632,7 @@ class BlockchainAccountsPatchSchema(Schema):
                     ethereum=self.ethereum_manager,
                     given_address=account['address'],
                 )
-        if data['blockchain'] == SupportedBlockchain.ETHEREUM:
+        if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
             for idx, account in enumerate(data['accounts']):
                 data['accounts'][idx]['address'] = _transform_eth_address(
                     ethereum=self.ethereum_manager,
@@ -1518,22 +1640,30 @@ class BlockchainAccountsPatchSchema(Schema):
                 )
         if data['blockchain'] == SupportedBlockchain.KUSAMA:
             for idx, account in enumerate(data['accounts']):
-                data['accounts'][idx]['address'] = _transform_ksm_address(
+                data['accounts'][idx]['address'] = _transform_substrate_address(
                     ethereum=self.ethereum_manager,
                     given_address=account['address'],
+                    chain='Kusama',
+                )
+        if data['blockchain'] == SupportedBlockchain.POLKADOT:
+            for idx, account in enumerate(data['accounts']):
+                data['accounts'][idx]['address'] = _transform_substrate_address(
+                    ethereum=self.ethereum_manager,
+                    given_address=account['address'],
+                    chain='Polkadot',
                 )
 
         return data
 
 
 class BlockchainAccountsPutSchema(BlockchainAccountsPatchSchema):
-    async_query = fields.Boolean(missing=False)
+    async_query = fields.Boolean(load_default=False)
 
 
 class BlockchainAccountsDeleteSchema(Schema):
     blockchain = BlockchainField(required=True)
     accounts = fields.List(fields.String(), required=True)
-    async_query = fields.Boolean(missing=False)
+    async_query = fields.Boolean(load_default=False)
 
     def __init__(self, ethereum_manager: EthereumManager):
         super().__init__()
@@ -1557,13 +1687,19 @@ class BlockchainAccountsDeleteSchema(Schema):
             data['accounts'] = [
                 _transform_btc_address(self.ethereum_manager, x) for x in data['accounts']
             ]
-        if data['blockchain'] == SupportedBlockchain.ETHEREUM:
+        if data['blockchain'] in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
             data['accounts'] = [
                 _transform_eth_address(self.ethereum_manager, x) for x in data['accounts']
             ]
         if data['blockchain'] == SupportedBlockchain.KUSAMA:
             data['accounts'] = [
-                _transform_ksm_address(self.ethereum_manager, x) for x in data['accounts']
+                _transform_substrate_address(
+                    self.ethereum_manager, x, 'Kusama') for x in data['accounts']
+            ]
+        if data['blockchain'] == SupportedBlockchain.POLKADOT:
+            data['accounts'] = [
+                _transform_substrate_address(
+                    self.ethereum_manager, x, 'Polkadot') for x in data['accounts']
             ]
         return data
 
@@ -1573,7 +1709,7 @@ class IgnoredAssetsSchema(Schema):
 
 
 class IgnoredActionsGetSchema(Schema):
-    action_type = ActionTypeField(missing=None)
+    action_type = ActionTypeField(load_default=None)
 
 
 class IgnoredActionsModifySchema(Schema):
@@ -1582,7 +1718,7 @@ class IgnoredActionsModifySchema(Schema):
 
 
 class OptionalEthereumAddressSchema(Schema):
-    address = EthereumAddressField(required=False, missing=None)
+    address = EthereumAddressField(required=False, load_default=None)
 
 
 class RequiredEthereumAddressSchema(Schema):
@@ -1620,11 +1756,11 @@ class AssetSchema(Schema):
     asset_type = AssetTypeField(required=True, exclude_types=(AssetType.ETHEREUM_TOKEN,))
     name = fields.String(required=True)
     symbol = fields.String(required=True)
-    started = TimestampField(missing=None)
-    forked = AssetField(missing=None)
-    swapped_for = AssetField(missing=None)
-    coingecko = fields.String(missing=None)
-    cryptocompare = fields.String(missing=None)
+    started = TimestampField(load_default=None)
+    forked = AssetField(load_default=None)
+    swapped_for = AssetField(load_default=None)
+    coingecko = fields.String(load_default=None)
+    cryptocompare = fields.String(load_default=None)
 
     def __init__(self, coingecko: 'Coingecko', cryptocompare: 'Cryptocompare'):
         super().__init__()
@@ -1657,12 +1793,12 @@ class EthereumTokenSchema(Schema):
     )
     name = fields.String(required=True)
     symbol = fields.String(required=True)
-    started = TimestampField(missing=None)
-    swapped_for = AssetField(missing=None)
-    coingecko = fields.String(missing=None)
-    cryptocompare = fields.String(missing=None)
-    protocol = fields.String(missing=None)
-    underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), missing=None)
+    started = TimestampField(load_default=None)
+    swapped_for = AssetField(load_default=None)
+    coingecko = fields.String(load_default=None)
+    cryptocompare = fields.String(load_default=None)
+    protocol = fields.String(load_default=None)
+    underlying_tokens = fields.List(fields.Nested(UnderlyingTokenInfoSchema), load_default=None)
 
     def __init__(
             self,
@@ -1789,7 +1925,7 @@ class AssetIconUploadSchema(Schema):
 
 
 class ExchangeRatesSchema(Schema):
-    async_query = fields.Boolean(missing=False)
+    async_query = fields.Boolean(load_default=False)
     currencies = DelimitedOrNormalList(AssetField(), required=True)
 
 
@@ -1843,8 +1979,8 @@ class CurrentAssetsPriceSchema(Schema):
         validate=webargs.validate.Length(min=1),
     )
     target_asset = AssetField(required=True)
-    ignore_cache = fields.Boolean(missing=False)
-    async_query = fields.Boolean(missing=False)
+    ignore_cache = fields.Boolean(load_default=False)
+    async_query = fields.Boolean(load_default=False)
 
 
 class HistoricalAssetsPriceSchema(Schema):
@@ -1857,20 +1993,25 @@ class HistoricalAssetsPriceSchema(Schema):
         validate=webargs.validate.Length(min=1),
     )
     target_asset = AssetField(required=True)
-    async_query = fields.Boolean(missing=False)
+    async_query = fields.Boolean(load_default=False)
 
 
 class AssetUpdatesRequestSchema(Schema):
-    async_query = fields.Boolean(missing=False)
+    async_query = fields.Boolean(load_default=False)
     up_to_version = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
             min=0,
             error='Asset update target version should be >= 0',
         ),
-        missing=None,
+        load_default=None,
     )
-    conflicts = AssetConflictsField(missing=None)
+    conflicts = AssetConflictsField(load_default=None)
+
+
+class AssetResetRequestSchema(Schema):
+    reset = fields.String(required=True)
+    ignore_warnings = fields.Boolean(load_default=False)
 
 
 class NamedEthereumModuleDataSchema(Schema):
@@ -1886,8 +2027,8 @@ class NamedOracleCacheSchema(Schema):
 
 
 class NamedOracleCacheCreateSchema(NamedOracleCacheSchema):
-    purge_old = fields.Boolean(missing=False)
-    async_query = fields.Boolean(missing=False)
+    purge_old = fields.Boolean(load_default=False)
+    async_query = fields.Boolean(load_default=False)
 
 
 class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
@@ -1896,7 +2037,7 @@ class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
 
 class ERC20InfoSchema(Schema):
     address = EthereumAddressField(required=True)
-    async_query = fields.Boolean(missing=False)
+    async_query = fields.Boolean(load_default=False)
 
 
 class BinanceMarketsUserSchema(Schema):
@@ -1912,11 +2053,25 @@ class ManualPriceSchema(Schema):
 
 
 class ManualPriceRegisteredSchema(Schema):
-    from_asset = AssetField(missing=None)
-    to_asset = AssetField(missing=None)
+    from_asset = AssetField(load_default=None)
+    to_asset = AssetField(load_default=None)
 
 
 class ManualPriceDeleteSchema(Schema):
     from_asset = AssetField(required=True)
     to_asset = AssetField(required=True)
     timestamp = TimestampField(required=True)
+
+
+class AvalancheTransactionQuerySchema(Schema):
+    async_query = fields.Boolean(load_default=False)
+    address = EthereumAddressField(load_default=None)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+
+
+class LimitsCounterResetSchema(Schema):
+    location = fields.String(
+        required=True,
+        validate=webargs.validate.OneOf(choices=('ethereum_transactions',)),
+    )

@@ -1,7 +1,8 @@
-sphinx==4.0.2
+sphinx==4.1.2
 sphinx-autobuild==2021.3.14
 sphinx_rtd_theme==0.5.2
 sphinxcontrib-httpdomain==1.7.0
-sphinxcontrib-httpexample==0.11.0
+# This is our fork of sphinxcontrib-httpexample in order to handle https://github.com/rotki/rotki/issues/2612
+sphinxcontrib-httpexample-rotki==0.1.2
 # This is our fork of releases in order to handle https://github.com/rotki/rotki/issues/704
 rotki-releases
