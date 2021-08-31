@@ -10,7 +10,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.assets import CONSTANT_ASSETS
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier, translate_old_format_to_new
 from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
 from rotkehlchen.globaldb.upgrades.v2_v3 import migrate_to_v3
@@ -226,21 +226,24 @@ class GlobalDBHandler():
         else:
             result = []
         cursor = GlobalDBHandler()._conn.cursor()
+        specific_ids = [translate_old_format_to_new(id) for id in specific_ids]
         specific_ids_query = ''
         if specific_ids is not None:
             specific_ids_query = f'AND A.identifier in ({",".join("?" * len(specific_ids))})'
         querystr = f"""
-        SELECT A.identifier, A.type, B.address, B.decimals, C.name, C.symbol, A.started, null, A.swapped_for, A.coingecko, A.cryptocompare, B.protocol from assets as A LEFT OUTER JOIN evm_tokens as B
-        ON B.address = A.details_reference LEFT OUTER JOIN common_asset_details AS C ON common_asset_details.identifier = B.identifier WHERE A.type=? {specific_ids_query}
+        SELECT A.identifier, A.type, B.address, B.decimals, C.name, C.symbol, A.started, null, A.swapped_for, C.coingecko, C.cryptocompare, B.protocol FROM assets as A JOIN evm_tokens as B
+        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type=? {specific_ids_query}
         UNION ALL
-        SELECT A.identifier, A.type, null, null, A.name, A.symbol, A.started, B.forked, A.swapped_for, A.coingecko, A.cryptocompare, null from assets as A LEFT OUTER JOIN common_asset_details as B
-        ON B.asset_id = A.identifier WHERE A.type!=? {specific_ids_query};
+        SELECT A.identifier, A.type, null, null, B.name, B.symbol, A.started, B.forked, A.swapped_for, B.coingecko, B.cryptocompare, null from assets as A JOIN common_asset_details as B
+        ON B.identifier = A.identifier WHERE A.type!=? {specific_ids_query};
         """  # noqa: E501
+
         eth_token_type = AssetType.ETHEREUM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         if specific_ids is not None:
             bindings = (eth_token_type, *specific_ids, eth_token_type, *specific_ids)
         else:
             bindings = (eth_token_type, eth_token_type)
+
         query = cursor.execute(querystr, bindings)
         for entry in query:
             asset_type = AssetType.deserialize_from_db(entry[1])
@@ -279,13 +282,17 @@ class GlobalDBHandler():
 
         Returns None if identifier can't be matched to an asset
         """
+        # TODO: This is a safe for the identifier and need to be removed
+        identifier = translate_old_format_to_new(identifier)
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT identifier, type, name, symbol, started, swapped_for, coingecko, '
-            'cryptocompare, details_reference from assets WHERE identifier=?;',
+            'SELECT A.identifier, A.type, B.name, B.symbol, A.started, A.swapped_for, B.coingecko, '
+            'B.cryptocompare, A.common_details_id from assets AS A JOIN common_asset_details '
+            'AS B ON A.identifier = B.identifier WHERE A.identifier=?;',
             (identifier,),
         )
         result = query.fetchone()
+
         if result is None:
             return None
 
@@ -302,7 +309,7 @@ class GlobalDBHandler():
         forked = None
         decimals = None
         protocol = None
-        ethereum_address = None
+        evm_address = None
 
         try:
             asset_type = AssetType.deserialize_from_db(db_serialized_type)
@@ -313,11 +320,17 @@ class GlobalDBHandler():
             )
             return None
 
-        if asset_type == AssetType.ETHEREUM_TOKEN:
-            ethereum_address = details_reference
+        evm_assets = (
+            AssetType.ETHEREUM_TOKEN,
+            AssetType.POLYGON_TOKEN,
+            AssetType.XDAI_TOKEN,
+            AssetType.AVALANCHE_TOKEN,
+        )
+
+        if asset_type in evm_assets:
             cursor.execute(
-                'SELECT decimals, protocol from ethereum_tokens '
-                'WHERE address=?', (ethereum_address,),
+                'SELECT decimals, protocol, address from evm_tokens '
+                'WHERE identifier=?', (saved_identifier,),
             )
             result = query.fetchone()
             if result is None:
@@ -329,18 +342,19 @@ class GlobalDBHandler():
 
             decimals = result[0]
             protocol = result[1]
+            evm_address = result[2]
             missing_basic_data = name is None or symbol is None or decimals is None
             if missing_basic_data and form_with_incomplete_data is False:
                 log.debug(
-                    f'Considering ethereum token with address {details_reference} '
+                    f'Considering ethereum token with address {saved_identifier} '
                     f'as unknown since its missing either decimals or name or symbol',
                 )
                 return None
         else:
             cursor = GlobalDBHandler()._conn.cursor()
             query = cursor.execute(
-                'SELECT forked FROM common_asset_details WHERE asset_id = ?;',
-                (details_reference,),
+                'SELECT forked FROM common_asset_details WHERE identifier = ?;',
+                (saved_identifier,),
             )
             result = query.fetchone()
             if result is None:
@@ -359,7 +373,7 @@ class GlobalDBHandler():
             started=started,
             forked=forked,
             swapped_for=swapped_for,
-            ethereum_address=ethereum_address,
+            ethereum_address=evm_address,
             decimals=decimals,
             coingecko=coingecko,
             cryptocompare=cryptocompare,
@@ -1210,11 +1224,10 @@ class GlobalDBHandler():
 
 def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
     """Reloads the details of the constant declared assets after reading from the DB"""
-    identifiers = [x.identifier for x in CONSTANT_ASSETS]
+    identifiers = [translate_old_format_to_new(x.identifier) for x in CONSTANT_ASSETS]
     db_data = globaldb.get_all_asset_data(mapping=True, serialized=False, specific_ids=identifiers)  # type: ignore  # noqa: E501
-
     for entry in CONSTANT_ASSETS:
-        db_entry = db_data.get(entry.identifier)
+        db_entry = db_data.get(translate_old_format_to_new(entry.identifier))
         if db_entry is None:
             log.critical(
                 f'Constant declared asset with id {entry.identifier} has no corresponding DB entry'

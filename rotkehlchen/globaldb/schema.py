@@ -3,9 +3,9 @@ CREATE TABLE IF NOT EXISTS underlying_tokens_list (
     address VARCHAR[42] NOT NULL,
     weight TEXT NOT NULL,
     parent_token_entry TEXT NOT NULL,
-    FOREIGN KEY(parent_token_entry) REFERENCES ethereum_tokens(address)
+    FOREIGN KEY(parent_token_entry) REFERENCES evm_tokens(identifier)
         ON DELETE CASCADE ON UPDATE CASCADE
-    FOREIGN KEY(address) REFERENCES ethereum_tokens(address) ON UPDATE CASCADE
+    FOREIGN KEY(address) REFERENCES evm_tokens(address) ON UPDATE CASCADE
     PRIMARY KEY(address, parent_token_entry)
 );
 """  # noqa: E501
@@ -75,9 +75,9 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('X', 24);
 /* SOLANA TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Y', 25);
 /* POLYGON TOKEN */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 25);
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 26);
 /* XDAI TOKEN */
-INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('[', 25);
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('[', 27);
 """
 
 # Using asset_id as a primary key here since nothing else is guaranteed to be unique

@@ -622,7 +622,7 @@ class HasEthereumToken(Asset):
         object.__setattr__(self, 'decimals', data.decimals)
         object.__setattr__(self, 'protocol', data.protocol)
 
-        underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(data.ethereum_address)
+        underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(data.identifier)
         object.__setattr__(self, 'underlying_tokens', underlying_tokens)
 
     def serialize_all_info(self) -> Dict[str, Any]:

@@ -32,6 +32,8 @@ class AssetType(DBEnumMixIn):
     OTHER = 23
     AVALANCHE_TOKEN = 24
     SOLANA_TOKEN = 25
+    POLYGON_TOKEN = 26
+    XDAI_TOKEN = 27
 
 
 class AssetData(NamedTuple):

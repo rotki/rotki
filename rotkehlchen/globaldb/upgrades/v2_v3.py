@@ -7,22 +7,26 @@ import random
 from eth_utils import to_checksum_address
 import requests
 
-from rotkehlchen.constants.resolver import CHAIN_ID, EVM_TOKEN_KIND, evm_address_to_identifier
+from rotkehlchen.constants.resolver import (
+    CHAIN_ID,
+    EVM_TOKEN_KIND,
+    VALID_EVM_CHAINS,
+    EVM_CHAINS_TO_DATABASE,
+    evm_address_to_identifier,
+)
 from rotkehlchen.globaldb.schema import (
     DB_V3_CREATE_COMMON_ASSETS_DETAILS,
     DB_V3_CREATE_ASSETS,
     DB_V3_CREATE_EVM_TOKENS,
     DB_V3_CREATE_ASSETS_EVM_TOKENS,
     DB_V3_CREATE_MULTIASSETS,
+    DB_CREATE_ETHEREUM_TOKENS_LIST,
 )
 
 log = logging.getLogger(__name__)
 
-VALID_EVM_CHAINS = {
-    'S': CHAIN_ID.BINANCE_CHAIN_IDENTIFIER,
-    'X': CHAIN_ID.AVALANCHE_CHAIN_IDENTIFIER,
-}
-EVM_CHAINS_TO_DATABASE = {v: k for k, v in VALID_EVM_CHAINS.items()}
+
+
 COMMON_ASSETS_INSERT = (
     """INSERT OR IGNORE INTO common_asset_details(
         identifier, name, symbol, coingecko, cryptocompare, forked
@@ -42,6 +46,7 @@ MIGRATION_CACHE = deque([])
 
 def coingecko_hack() -> Dict[CHAIN_ID, str]:
     """Avoid querying coingecko for now"""
+    # TODO ASSETS: Remove this hack
     addr = '0x' + "".join(random.choices('0123456789ABCDEFabcdef', k=40))
     return {k.value: addr for k in CHAIN_ID}
 
@@ -123,7 +128,7 @@ def evm_compatible_assets_create_tuples(
     assets_tuple = []
     common_asset_details = []
 
-    for entry in query.fetchall()[:10]:
+    for entry in query:
         chain = VALID_EVM_CHAINS.get(entry[1])
         try:
             ids = query_coingecko_for_addresses(entry[6])
@@ -233,6 +238,12 @@ def upgrade_ethereum_asset_ids_v3(connection: sqlite3.Connection) -> None:
 
     return upgrade_ethereum_assets(result)
 
+def translate_underlying_table(connection: sqlite3.Connection) -> None:
+    curosr = connection.cursor()
+    query = cursor.execute('SELECT address, weight, parent_token_entry FROM underlying_tokens_list;')
+    for row in query:
+        pass
+
 def migrate_to_v3(connection: sqlite3.Connection) -> None:
     """Upgrade assets information and migrate globaldb to version 3"""
 
@@ -265,6 +276,7 @@ def migrate_to_v3(connection: sqlite3.Connection) -> None:
     cursor.execute(DB_V3_CREATE_EVM_TOKENS)
     cursor.execute(DB_V3_CREATE_ASSETS_EVM_TOKENS)
     cursor.execute(DB_V3_CREATE_MULTIASSETS)
+    cursor.execute(DB_CREATE_ETHEREUM_TOKENS_LIST)
 
     cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details)
     cursor.executemany(ASSETS_INSERT, assets_tuple)
@@ -277,4 +289,3 @@ def migrate_to_v3(connection: sqlite3.Connection) -> None:
     #)
 
     connection.commit()
-    print('DONE')

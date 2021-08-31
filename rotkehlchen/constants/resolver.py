@@ -31,6 +31,13 @@ class EVM_TOKEN_KIND(Enum):
     ERC20 = 'erc20'
     ERC721 = 'erc721'
 
+
+VALID_EVM_CHAINS = {
+    'S': CHAIN_ID.BINANCE_CHAIN_IDENTIFIER,
+    'X': CHAIN_ID.AVALANCHE_CHAIN_IDENTIFIER,
+}
+EVM_CHAINS_TO_DATABASE = {v: k for k, v in VALID_EVM_CHAINS.items()}
+
 def ethaddress_to_identifier(address: ChecksumEthAddress) -> str:
     return ETHEREUM_DIRECTIVE + address
 
@@ -42,9 +49,14 @@ def evm_address_to_identifier(
     address: str,
     chain: CHAIN_ID,
     token_type: EVM_TOKEN_KIND,
-    collectible_id: Optional[str]
+    collectible_id: Optional[str]=None,
 ) -> str:
     ident = f'{EVM_CHAIN_DIRECTIVE}:{chain.value}/{token_type.value}:{address}'
-    if collectible_id:
+    if collectible_id is not None:
         return ident + f'/{collectible_id}'
     return ident
+
+def translate_old_format_to_new(id: str):
+    if id.startswith(ETHEREUM_DIRECTIVE):
+        return evm_address_to_identifier(id[6:], CHAIN_ID.ETHEREUM_CHAIN_IDENTIFIER, EVM_TOKEN_KIND.ERC20)
+    return id
