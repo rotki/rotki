@@ -24,7 +24,7 @@ from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
-from rotkehlchen.typing import Location
+from rotkehlchen.typing import AVAILABLE_MODULES_MAP, Location
 
 
 @pytest.fixture(name='max_tasks_num')
@@ -162,6 +162,11 @@ def initialize_mock_rotkehlchen_instance(
         rotki.premium = Premium(rotki_premium_credentials)
         rotki.premium_sync_manager.premium = rotki.premium
         rotki.chain_manager.premium = rotki.premium
+        # Add premium to all the modules
+        for module_name in AVAILABLE_MODULES_MAP:
+            module = rotki.chain_manager.get_module(module_name)
+            if module is not None:
+                module.premium = rotki.premium
 
     if legacy_messages_via_websockets is False:
         rotki.msg_aggregator.rotki_notifier = None

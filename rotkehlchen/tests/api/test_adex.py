@@ -11,7 +11,6 @@ from rotkehlchen.chain.ethereum.modules.adex.typing import Bond, ChannelWithdraw
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_ADX
 from rotkehlchen.fval import FVal
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -45,23 +44,12 @@ def test_get_balances_module_not_activated(
 @pytest.mark.parametrize('ethereum_modules', [['adex']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_balances_premium(
-        rotkehlchen_api_server,
-        ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
+    rotkehlchen_api_server,
+    ethereum_accounts,  # pylint: disable=unused-argument
 ):
-    """Test get balances for premium users works as expected
-    """
+    """Test get balances for premium users works as expected"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
-    # Set module premium is required for calling `get_balances()`
-    premium = None
-    if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials)
-
-    adex = rotki.chain_manager.get_module('adex')
-    adex.premium = premium
 
     setup = setup_balances(
         rotki,
@@ -100,22 +88,9 @@ def test_get_balances_premium(
 @pytest.mark.parametrize('ethereum_modules', [['adex']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(2)])
-def test_get_events(
-        rotkehlchen_api_server,
-        ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
-):
+def test_get_events(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
-    # Set module premium is required for calling `get_balances()`
-    premium = None
-    if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials)
-
-    adex = rotki.chain_manager.get_module('adex')
-    adex.premium = premium
 
     setup = setup_balances(
         rotki,

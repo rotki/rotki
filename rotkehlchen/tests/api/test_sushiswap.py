@@ -17,7 +17,6 @@ from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -60,7 +59,6 @@ def test_get_balances_module_not_activated(
 def test_get_balances(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,
         start_with_valid_premium,
 ):
     """Check querying the sushiswap balances endpoint works. Uses real data
@@ -69,16 +67,6 @@ def test_get_balances(
     onchain queries (without premium)
     """
     async_query = random.choice([False, True])
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
-    premium = None
-    if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials)
-
-    # Set module premium attribute
-    sushiswap = rotki.chain_manager.get_module('sushiswap')
-    sushiswap.premium = premium
-
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'sushiswapbalancesresource'),
         json={'async_query': async_query},
@@ -365,8 +353,6 @@ def _query_and_assert_simple_sushiswap_trades(setup, api_server, async_query):
 def test_get_sushiswap_trades_history(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
 ):
     """Test that the last 11/23 sushiswap trades of the account since 1605437542
     are parsed and returned correctly
@@ -428,8 +414,6 @@ EXPECTED_EVENTS_BALANCES_1 = [
 def test_get_events_history_filtering_by_timestamp(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
 ):
     """Test the events balances from 1627401169 to 1627401170 (both included)."""
     # Call time range
