@@ -711,6 +711,8 @@ The list of currently supported airdrops is:
 Historical events
 ************************
 
+.. _adding-manual-trade:
+
 Adding manual trades
 ====================
 
@@ -729,6 +731,8 @@ In the ``amount`` field you can register the amount of the base asset bought or 
 In the Trades page you can see a table of all your external trades. You can edit or delete a trade by clicking on the appropriate icon at the rightmost part of each trade under the "Actions" column.
 
 Currently rotki tracks your balance by querying the different supported protocols, exchanges and blockchains. If you manually add information about a trade your balances will not be updated since trades are not consulted when updating the accounts' balances. If you want to manually update your balance for an asset please refer to the :ref:`manual balances section <track_balances>`.
+
+.. _adding-ledgeraction:
 
 Adding ledger actions
 =====================
@@ -1031,13 +1035,16 @@ The currently supported DEXes are:
 Creating a profit/loss report
 *****************************
 
-rotki creates a profit/loss report for you based on your trades and other events and the provided accounting settings. This is essentially a calculation of profit or loss for all your events based on the given dates. Before getting into the details of generating a report, here's a few important details regarding the report generation algorithm:
+rotki creates a profit/loss report (called PnL for short) for you based on your trades and other events and the provided accounting settings. This is essentially a calculation of profit or loss for all your events based on the given dates. Before getting into the details of generating a report, here's a few important details regarding the report generation algorithm:
 
 - By default, rotki uses an accounting strategy called "First In - First Out" (short: FIFO). There are plans to implement other strategies (e.g. `"Last In - First Out" <https://github.com/rotki/rotki/issues/44>`_).
 - rotki allows users in jurisdictions offering a tax free holding period (e.g. Germany with 1 year) to specify the period in days. To adjust this value, see the section `Customizing the account settings <#tax-free-period>`_.
 - When generating a report for a custom period, where rotki is aware of the user's previous crypto holdings (e.g. we trade BTC between the years 2017 - 2019 but we ask for a report between 2018 - 2019), it takes all prior crypto holdings into account to calculate a starting balance for the given period. For example, say you traded BTC between 2017 - 2019 with a balance of 0.1 BTC on December 31, 2017. When generating a pnl report for 2018 - 2019, rotki will take the 0.1 BTC from December 31, 2017 as a start balance for its calculations in the period of 2018.
 
-To create a profit loss report click on the "Profit and Loss Report" button from the left menu. Choose a period for the report (or click on Custom to set a custom time range) and press on "Generate" to start the report.
+How to run the PnL report
+==========================
+
+To create a PnL report click on the "Profit and Loss Report" button from the left menu. Choose a period for the report (or click on Custom to set a custom time range) and press on "Generate" to start the report.
 
 .. image:: images/sc_pnl_report1.png
    :alt: Overview of the profit/loss report
@@ -1046,6 +1053,9 @@ To create a profit loss report click on the "Profit and Loss Report" button from
 The calculation may take some time. You can also see a summary of the accounting setting the report is running with in the "Accounting settings" section.
 
 If you encounter any problems during the profit/loss report check out the :ref:`troubleshooting-pnl-report` section.
+
+Results of the PnL report
+=========================
 
 Once done you have an overview of the profit/loss for the given period, how much of that is taxable, and how much each taxable event category contributes to the total.
 
@@ -1075,6 +1085,63 @@ Finally you can get a CSV export by pressing the "Export CSV" button. This expor
 
 .. note::
    To learn more about `profit_currency` or to adjust it, see the section :ref:`change_profit_currency`
+
+
+Cost basis
+=============
+
+Cost basis is a really important aspect of accounting. For each sell event it lets you know what was the price at which the sold asset was acquired depending on a number of settings.
+
+Cost basis is calculated in rotki for all trades/events we support. Trades/events that rotki recognizes are:
+
+- All trades performed in our supported centralized exchanges
+- All trades done in our supported AMMs. As of this writing this is uniswap, sushiswap, balancer.
+- All manual trades inserted by the user.
+- Not strictly trades, but income/expense events by manual inserted ledger actions.
+
+  
+For all those trades you can see the cost basis when you create a profit loss report by:
+
+1. Either navigating to the trade in the generated table after the PnL report and pressing the arrow to show more details.
+
+.. image:: images/sc_costbasis_pnltable.png
+   :alt: Cost basis in PnL report table
+   :align: center
+
+2. Export the report to CSV and import it in a spreadsheet tool. We have tested it works with google spreadsheets and libreoffice. The cost basis column contains the info you seek.
+
+.. image:: images/sc_costbasis_spreadsheet.png
+   :alt: Cost basis in PnL report spreadsheet
+   :align: center
+
+
+
+.. _troubleshooting-pnl-report:
+
+PnL report creation problems
+===========================================
+
+No documented acquisition found
+---------------------------------
+
+It's possible that rotki is not able to find an acquisition event for a sale. In which case it will warn you and ask you to fix it.
+
+Example warning:
+
+.. image:: images/sc_acquisition_notfound.png
+   :alt: No documented acquisition found for asset
+   :align: center
+
+This can happen for many reasons. The asset may have been acquired in a non-supported exchange/protocol, some event not detected etc.
+
+
+The way to fix it is to add either a :ref:`manual trade<adding-manual-trade>` or a :ref:`manual income/expense<adding-ledgeraction>` event to tell rotki how you acquired that asset.
+
+
+Timeout or price not found for timestamp
+-------------------------------------------------
+
+Figure out which asset caused the price not found. Then check the historical price caches and make sure you have the historical price cache for that asset pair created. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. See :ref:`manage-historical-price-cache` on how to do it.
 
 
 Analytics
@@ -1213,13 +1280,3 @@ Data with multiple accounts/devices is not synced
 ===================================================
 
 Please, make sure all your accounts have the "Allow data sync with rotki Server" switched on, and that on each log-in you make the appropriate choice when prompted to replace the local database. See the section :ref:`sync-data-with-rotki-server` for more information about how to sync data with multiple accounts/devices.
-
-.. _troubleshooting-pnl-report:
-
-Profit/loss report creation problems
-===========================================
-
-Timeout or price not found for timestamp
--------------------------------------------------
-
-Figure out which asset caused the price not found. Then check the historical price caches and make sure you have the historical price cache for that asset pair created. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. See :ref:`manage-historical-price-cache` on how to do it.
