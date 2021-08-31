@@ -1,17 +1,19 @@
 import logging
 from collections import defaultdict
-from typing import DefaultDict, Dict, List, Optional
+from typing import TYPE_CHECKING, DefaultDict, Dict, List, Optional
 
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -23,14 +25,12 @@ class EthTransactions(LockableQueryMixIn):
 
     def __init__(
             self,
-            database: DBHandler,
-            etherscan: Etherscan,
-            msg_aggregator: MessagesAggregator,
+            ethereum: 'EthereumManager',
+            database: 'DBHandler',
     ) -> None:
         super().__init__()
+        self.ethereum = ethereum
         self.database = database
-        self.etherscan = etherscan
-        self.msg_aggregator = msg_aggregator
         self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
 
     def reset_count(self) -> None:
@@ -83,14 +83,14 @@ class EthTransactions(LockableQueryMixIn):
         for query_start_ts, query_end_ts in ranges_to_query:
             for internal in (False, True):
                 try:
-                    new_transactions.extend(self.etherscan.get_transactions(
+                    new_transactions.extend(self.ethereum.etherscan.get_transactions(
                         account=address,
                         internal=internal,
                         from_ts=query_start_ts,
                         to_ts=query_end_ts,
                     ))
                 except RemoteError as e:
-                    self.msg_aggregator.add_error(
+                    self.ethereum.msg_aggregator.add_error(
                         f'Got error "{str(e)}" while querying ethereum transactions '
                         f'from Etherscan. Transactions not added to the DB '
                         f'from_ts: {query_start_ts} '

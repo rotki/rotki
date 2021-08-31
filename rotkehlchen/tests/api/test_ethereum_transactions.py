@@ -347,7 +347,6 @@ def test_query_transactions_over_limit(
 
     # Check that we get all transactions correctly even if we query two times
     for _ in range(2):
-        # rotki.chain_manager.ethereum.transactions.reset_count()
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,

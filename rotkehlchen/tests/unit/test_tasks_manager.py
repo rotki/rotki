@@ -8,8 +8,8 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.tasks.manager import TaskManager
-from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.typing import Location
+from rotkehlchen.utils.misc import ts_now
 
 
 class MockPremiumSyncManager():
@@ -69,9 +69,8 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
         assert start_ts == 0
         assert end_ts >= now
 
-    tx_query_patch = patch.object(
-        task_manager.chain_manager.ethereum.transactions,
-        'single_address_query_transactions',
+    tx_query_patch = patch(
+        'rotkehlchen.tasks.manager.EthTransactions.single_address_query_transactions',
         wraps=tx_query_mock,
     )
 

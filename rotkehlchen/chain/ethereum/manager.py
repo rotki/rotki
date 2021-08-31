@@ -21,13 +21,12 @@ from web3.exceptions import BadFunctionCallOutput
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import FilterParams
 
+from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2 import ETH2_DEPOSIT
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     BlockchainQueryError,
     DeserializationError,
@@ -48,7 +47,6 @@ from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestam
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 from rotkehlchen.utils.network import request_get_dict
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 
 from .typing import NodeName
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
@@ -196,7 +194,6 @@ class EthereumManager():
             self,
             ethrpc_endpoint: str,
             etherscan: Etherscan,
-            database: DBHandler,
             msg_aggregator: MessagesAggregator,
             greenlet_manager: GreenletManager,
             connect_at_start: Sequence[NodeName],
@@ -209,11 +206,6 @@ class EthereumManager():
         self.etherscan = etherscan
         self.msg_aggregator = msg_aggregator
         self.eth_rpc_timeout = eth_rpc_timeout
-        self.transactions = EthTransactions(
-            database=database,
-            etherscan=etherscan,
-            msg_aggregator=msg_aggregator,
-        )
         for node in connect_at_start:
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,

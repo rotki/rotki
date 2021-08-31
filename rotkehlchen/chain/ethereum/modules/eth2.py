@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.typing import (
     ValidatorDetails,
 )
 from rotkehlchen.chain.ethereum.utils import decode_event_data
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -95,7 +96,8 @@ class Eth2(EthereumModule):
             from_ts=from_ts,
             to_ts=to_ts,
         )
-        transactions = self.ethereum.transactions.query(
+        tx_module = EthTransactions(ethereum=self.ethereum, database=self.database)
+        transactions = tx_module.query(
             filter_query=filter_query,
             with_limit=False,
             only_cache=False,

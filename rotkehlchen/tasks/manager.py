@@ -7,6 +7,7 @@ import gevent
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.manager import ExchangeManager
@@ -197,6 +198,10 @@ class TaskManager():
         if len(queriable_accounts) == 0:
             return
 
+        tx_module = EthTransactions(
+            ethereum=self.chain_manager.ethereum,
+            database=self.database,
+        )
         address = random.choice(queriable_accounts)
         task_name = f'Query ethereum transactions for {address}'
         log.debug(f'Scheduling task to {task_name}')
@@ -204,7 +209,7 @@ class TaskManager():
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=self.chain_manager.ethereum.transactions.single_address_query_transactions,
+            method=tx_module.single_address_query_transactions,
             address=address,
             start_ts=0,
             end_ts=now,

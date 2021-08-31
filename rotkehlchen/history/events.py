@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union, cast
 
 from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -210,7 +211,8 @@ class EventsHistorian():
                 from_ts=Timestamp(0),
                 to_ts=end_ts,
             )
-            eth_transactions = self.chain_manager.ethereum.transactions.query(
+            ethtx_module = EthTransactions(ethereum=self.chain_manager.ethereum, database=self.db)
+            eth_transactions = ethtx_module.query(
                 filter_query=filter_query,
                 with_limit=False,  # at the moment ignore the limit for historical processing
                 only_cache=False,
