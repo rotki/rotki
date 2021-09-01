@@ -286,9 +286,9 @@ class GlobalDBHandler():
         identifier = translate_old_format_to_new(identifier)
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT A.identifier, A.type, B.name, B.symbol, A.started, A.swapped_for, B.coingecko, '
-            'B.cryptocompare, A.common_details_id from assets AS A JOIN common_asset_details '
-            'AS B ON A.identifier = B.identifier WHERE A.identifier=?;',
+            'SELECT A.identifier, A.type, B.name, B.symbol, A.started, A.swapped_for, '
+            'B.coingecko, B.cryptocompare, A.common_details_id from assets AS A JOIN  '
+            'common_asset_details AS B ON A.identifier = B.identifier WHERE A.identifier=?;',
             (identifier,),
         )
         result = query.fetchone()
@@ -305,7 +305,6 @@ class GlobalDBHandler():
         swapped_for = result[5]
         coingecko = result[6]
         cryptocompare = result[7]
-        details_reference = result[8]
         forked = None
         decimals = None
         protocol = None

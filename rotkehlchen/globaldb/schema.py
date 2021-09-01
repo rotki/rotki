@@ -1,12 +1,12 @@
 DB_CREATE_ETHEREUM_TOKENS_LIST = """
 CREATE TABLE IF NOT EXISTS underlying_tokens_list (
-    address VARCHAR[42] NOT NULL,
+    identifier TEXT NOT NULL,
     weight TEXT NOT NULL,
     parent_token_entry TEXT NOT NULL,
     FOREIGN KEY(parent_token_entry) REFERENCES evm_tokens(identifier)
         ON DELETE CASCADE ON UPDATE CASCADE
-    FOREIGN KEY(address) REFERENCES evm_tokens(address) ON UPDATE CASCADE
-    PRIMARY KEY(address, parent_token_entry)
+    FOREIGN KEY(identifier) REFERENCES evm_tokens(identifier) ON UPDATE CASCADE
+    PRIMARY KEY(identifier, parent_token_entry)
 );
 """  # noqa: E501
 
@@ -74,10 +74,18 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('W', 23);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('X', 24);
 /* SOLANA TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Y', 25);
-/* POLYGON TOKEN */
+/* MATIC TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 26);
 /* XDAI TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('[', 27);
+/* OKEX TOKEN */
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('\', 28);
+/* FANTOM TOKEN */
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES (']', 29);
+/* ARBITRIUM TOKEN */
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('^', 30);
+/* OPTIMISM TOKEN */
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('_', 31);
 """
 
 # Using asset_id as a primary key here since nothing else is guaranteed to be unique
@@ -118,7 +126,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 DB_CREATE_USER_OWNED_ASSETS = """
 CREATE TABLE IF NOT EXISTS user_owned_assets (
-    asset_id VARCHAR[24] NOT NULL PRIMARY KEY,
+    asset_id TEXT NOT NULL PRIMARY KEY,
     FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
@@ -179,7 +187,7 @@ DB_V3_CREATE_EVM_TOKENS = """
 CREATE TABLE IF NOT EXISTS evm_tokens (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
     token_type TEXT NOT NULL,
-    chain TEXT NOT NULL,	       
+    chain TEXT NOT NULL,
     address VARCHAR[42] NOT NULL,
     decimals INTEGER,
     protocol TEXT
@@ -198,7 +206,7 @@ CREATE TABLE IF NOT EXISTS assets_evm_tokens(
 
 DB_V3_CREATE_MULTIASSETS = """
 CREATE TABLE IF NOT EXISTS multiasset_collector(
-    identifier TEXT NOT NULL,	   
+    identifier TEXT NOT NULL,
     child_asset_id TEXT,
     FOREIGN KEY(child_asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE
     PRIMARY KEY(identifier, child_asset_id)
