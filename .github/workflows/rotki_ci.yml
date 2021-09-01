@@ -6,6 +6,7 @@ on:
       - master
       - develop
       - bugfixes
+      - multichain_globaldb_hell
 
 jobs:
   check-changes:
