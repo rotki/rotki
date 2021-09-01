@@ -30,7 +30,7 @@ class CHAINID(Enum):
         if chain == 'polygon-pos':
             return CHAINID.MATIC_CHAIN_IDENTIFIER
 
-        return KeyError
+        raise KeyError(f'Unknown chain {chain}')
 
 
 class EvmTokenKind(Enum):
@@ -66,15 +66,15 @@ def evm_address_to_identifier(
     return ident
 
 
-def translate_old_format_to_new(id: str):
+def translate_old_format_to_new(identifier: str) -> str:
     """
     Given a identifier that is either in the _ceth_ format transalate it to the new format,
     otherwise leave it unmodified.
     """
-    if id.startswith(ETHEREUM_DIRECTIVE):
+    if identifier.startswith(ETHEREUM_DIRECTIVE):
         return evm_address_to_identifier(
-            id[6:],
+            identifier[6:],
             CHAINID.ETHEREUM_CHAIN_IDENTIFIER,
             EvmTokenKind.ERC20,
         )
-    return id
+    return identifier

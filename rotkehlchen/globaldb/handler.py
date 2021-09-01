@@ -226,7 +226,8 @@ class GlobalDBHandler():
         else:
             result = []
         cursor = GlobalDBHandler()._conn.cursor()
-        specific_ids = [translate_old_format_to_new(id) for id in specific_ids]
+        if specific_ids is not None:
+            specific_ids = [translate_old_format_to_new(id) for id in specific_ids]
         specific_ids_query = ''
         if specific_ids is not None:
             specific_ids_query = f'AND A.identifier in ({",".join("?" * len(specific_ids))})'
@@ -381,12 +382,15 @@ class GlobalDBHandler():
 
     @staticmethod
     def fetch_underlying_tokens(
-            address: ChecksumEthAddress,
+            address: str,
     ) -> Optional[List[UnderlyingToken]]:
-        """Fetch underlying tokens for a token address if they exist"""
+        """
+        Fetch underlying tokens for a token address if they exist.
+        TODO assets: review type of argument. Shouldn't be str
+        """
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(
-            'SELECT address, weight from underlying_tokens_list WHERE parent_token_entry=?;',
+            'SELECT identifier, weight from underlying_tokens_list WHERE parent_token_entry=?;',
             (address,),
         )
         results = query.fetchall()

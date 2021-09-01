@@ -72,34 +72,11 @@ def test_upgrade_v2_v3(globaldb):
     cursor = globaldb._conn.cursor()
     # Test that the assets where correctly translated
     query = 'SELECT COUNT(*) from evm_tokens where chain = "1"'
-    assert cursor.execute(query).fetchone()[0] == 1749
+    assert cursor.execute(query).fetchone()[0] == 1758
     query = 'SELECT COUNT(*) from evm_tokens where chain = "43114"'
     assert cursor.execute(query).fetchone()[0] == 3
 
     # Test that we have the same amount of assets
-    assert cursor.execute('SELECT COUNT(*) FROM assets;').fetchone()[0] == 2465
-    # Make sure that populated underlying assets are still there
-    query = cursor.execute('SELECT * from underlying_tokens_list;')
-    assert query.fetchall() == [
-        ('0x42Fa37aC7c115bf17ca5DDfcb94b73b91B10B61B', '0.5', '0xBBc2AE13b23d715c30720F079fcd9B4a74093505'),  # noqa: E501
-        ('0x647C4CD779043b3f00a4ccdec550F35Dd18792b3', '0.5', '0xBBc2AE13b23d715c30720F079fcd9B4a74093505'),  # noqa: E501
-    ]
-    # Make sure that the previous custom assets are still in the DB
-    query = cursor.execute(
-        'SELECT COUNT(*) from assets where identifier IN (?, ?, ?, ?);',
-        ('_ceth_0x35bD01FC9d6D5D81CA9E055Db88Dc49aa2c699A8',
-         '_ceth_0xBBc2AE13b23d715c30720F079fcd9B4a74093505',
-         '_ceth_0x42Fa37aC7c115bf17ca5DDfcb94b73b91B10B61B',
-         '_ceth_0x647C4CD779043b3f00a4ccdec550F35Dd18792b3',
-         ),
-    )
-    assert query.fetchone()[0] == 4
-    query = cursor.execute(
-        'SELECT COUNT(*) from ethereum_tokens where address IN (?, ?, ?, ?);',
-        ('0x35bD01FC9d6D5D81CA9E055Db88Dc49aa2c699A8',
-         '0xBBc2AE13b23d715c30720F079fcd9B4a74093505',
-         '0x42Fa37aC7c115bf17ca5DDfcb94b73b91B10B61B',
-         '0x647C4CD779043b3f00a4ccdec550F35Dd18792b3',
-         ),
-    )
-    assert query.fetchone()[0] == 4
+    assert cursor.execute('SELECT COUNT(*) FROM common_asset_details;').fetchone()[0] == 2465
+    assert cursor.execute('SELECT COUNT(*) FROM user_owned_assets;').fetchone()[0] == 33
+    assert cursor.execute('SELECT COUNT(*) FROM underlying_tokens_list;').fetchone()[0] == 87
