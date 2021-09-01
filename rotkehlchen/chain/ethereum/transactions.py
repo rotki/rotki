@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, DefaultDict, Dict, List, Optional
 
+from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
@@ -80,6 +81,7 @@ class EthTransactions(LockableQueryMixIn):
             end_ts=end_ts,
         )
         new_transactions = []
+        dbethtx = DBEthTx(self.database)
         for query_start_ts, query_end_ts in ranges_to_query:
             for internal in (False, True):
                 try:
@@ -100,7 +102,7 @@ class EthTransactions(LockableQueryMixIn):
 
         # add new transactions to the DB
         if new_transactions != []:
-            self.database.add_ethereum_transactions(new_transactions, from_etherscan=True)
+            dbethtx.add_ethereum_transactions(new_transactions, from_etherscan=True)
 
         # and also set the last queried timestamps for the address
         ranges.update_used_query_range(
@@ -152,7 +154,8 @@ class EthTransactions(LockableQueryMixIn):
                     end_ts=to_ts,
                 )
 
-        transactions = self.database.get_ethereum_transactions(filter_=filter_query)
+        dbethtx = DBEthTx(self.database)
+        transactions = dbethtx.get_ethereum_transactions(filter_=filter_query)
         return self._return_transactions_maybe_limit(
             requested_addresses=query_addresses,
             transactions=transactions,

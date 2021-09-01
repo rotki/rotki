@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
+from rotkehlchen.db.ethx import DBEthTx
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.tests.utils.api import (
@@ -332,7 +333,8 @@ def test_query_transactions_over_limit(
         nonce=x,
     ) for x in range(60)])
 
-    db.add_ethereum_transactions(transactions, from_etherscan=True)
+    dbethtx = DBEthTx(db)
+    dbethtx.add_ethereum_transactions(transactions, from_etherscan=True)
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -516,7 +518,8 @@ def test_query_transactions_removed_address(
         input_data=b'',
         nonce=0,
     )]
-    db.add_ethereum_transactions(transactions, from_etherscan=True)
+    dbethtx = DBEthTx(db)
+    dbethtx.add_ethereum_transactions(transactions, from_etherscan=True)
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(

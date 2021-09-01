@@ -150,6 +150,9 @@ def generate_address_via_create2(
 
     EIP-1014:
     https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1014.md
+
+    May raise:
+    - DeserializationError
     """
     contract_address = Web3.keccak(
         hexstring_to_bytes('0xff') +

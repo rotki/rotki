@@ -203,7 +203,11 @@ def taxable_gain_for_sell(
 
 
 def hexstring_to_bytes(hexstr: str) -> bytes:
-    return bytes.fromhex(hexstr.replace("0x", ""))
+    """May raise DeserializationError"""
+    try:
+        return bytes.fromhex(hexstr.replace("0x", ""))
+    except ValueError as e:
+        raise DeserializationError(f'Failed to turn {hexstr} to bytes') from e
 
 
 def get_system_spec() -> Dict[str, str]:

@@ -52,6 +52,7 @@ from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT, EthTransa
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -2739,7 +2740,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def purge_ethereum_transaction_data(self) -> Response:
-        self.rotkehlchen.data.db.purge_ethereum_transaction_data()
+        DBEthTx(self.rotkehlchen.data.db).purge_ethereum_transaction_data()
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_ethereum_transactions(
