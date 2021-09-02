@@ -441,20 +441,19 @@ CREATE TABLE IF NOT EXISTS gitcoin_grant_metadata (
 
 DB_CREATE_ETHEREUM_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS ethereum_transactions (
-    tx_hash BLOB,
-    timestamp INTEGER,
-    block_number INTEGER,
-    from_address TEXT,
+    tx_hash BLOB NOT NULL PRIMARY KEY,
+    timestamp INTEGER NOT NULL,
+    block_number INTEGER NOT NULL,
+    from_address TEXT NOT NULL,
     to_address TEXT,
-    value TEXT,
-    gas TEXT,
-    gas_price TEXT,
-    gas_used TEXT,
-    input_data BLOB,
-    nonce INTEGER,
-    /* we determine uniqueness for ethereum internal transactions by using an
-    increasingly negative number */
-    PRIMARY KEY (tx_hash, nonce, from_address)
+    value TEXT NOT NULL,
+    gas TEXT NOT NULL,
+    gas_price TEXT NOT NULL,
+    gas_used TEXT NOT NULL,
+    input_data BLOB NOT NULL,
+    nonce INTEGER NOT NULL
+);
+"""
 );
 """
 

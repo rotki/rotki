@@ -32,23 +32,19 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def deserialize_transaction_from_etherscan(
-        data: Dict[str, Any],
-        internal: bool,
-) -> EthereumTransaction:
+def deserialize_transaction_from_etherscan(data: Dict[str, Any]) -> EthereumTransaction:
     """Reads dict data of a transaction from etherscan and deserializes it
 
     Can raise DeserializationError if something is wrong
     """
     try:
-        # internal tx list contains no gasprice
-        gas_price = -1 if internal else read_integer(data, 'gasPrice')
+        gas_price = read_integer(data, 'gasPrice')
         tx_hash = read_hash(data, 'hash')
         input_data = read_hash(data, 'input')
         timestamp = deserialize_timestamp(data['timeStamp'])
 
         block_number = read_integer(data, 'blockNumber')
-        nonce = -1 if internal else read_integer(data, 'nonce')
+        nonce = read_integer(data, 'nonce')
 
         return EthereumTransaction(
             timestamp=timestamp,
@@ -245,7 +241,6 @@ class Etherscan(ExternalServiceWithApiKey):
     def get_transactions(
             self,
             account: ChecksumEthAddress,
-            internal: bool,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> List[EthereumTransaction]:
@@ -262,14 +257,13 @@ class Etherscan(ExternalServiceWithApiKey):
         if to_ts is not None:
             to_block = self.get_blocknumber_by_time(to_ts)
             options['endBlock'] = str(to_block)
-        action: Literal['txlistinternal', 'txlist'] = 'txlistinternal' if internal else 'txlist'
 
         transactions = []
         while True:
-            result = self._query(module='account', action=action, options=options)
+            result = self._query(module='account', action='txlist', options=options)
             for entry in result:
                 try:
-                    tx = deserialize_transaction_from_etherscan(data=entry, internal=internal)
+                    tx = deserialize_transaction_from_etherscan(data=entry)
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
                     continue

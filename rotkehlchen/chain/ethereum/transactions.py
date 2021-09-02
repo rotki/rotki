@@ -83,22 +83,19 @@ class EthTransactions(LockableQueryMixIn):
         new_transactions = []
         dbethtx = DBEthTx(self.database)
         for query_start_ts, query_end_ts in ranges_to_query:
-            for internal in (False, True):
-                try:
-                    new_transactions.extend(self.ethereum.etherscan.get_transactions(
-                        account=address,
-                        internal=internal,
-                        from_ts=query_start_ts,
-                        to_ts=query_end_ts,
-                    ))
-                except RemoteError as e:
-                    self.ethereum.msg_aggregator.add_error(
-                        f'Got error "{str(e)}" while querying ethereum transactions '
-                        f'from Etherscan. Transactions not added to the DB '
-                        f'from_ts: {query_start_ts} '
-                        f'to_ts: {query_end_ts} '
-                        f'internal: {internal}',
-                    )
+            try:
+                new_transactions.extend(self.ethereum.etherscan.get_transactions(
+                    account=address,
+                    from_ts=query_start_ts,
+                    to_ts=query_end_ts,
+                ))
+            except RemoteError as e:
+                self.ethereum.msg_aggregator.add_error(
+                    f'Got error "{str(e)}" while querying ethereum transactions '
+                    f'from Etherscan. Transactions not added to the DB '
+                    f'from_ts: {query_start_ts} '
+                    f'to_ts: {query_end_ts} '
+                )
 
         # add new transactions to the DB
         if new_transactions != []:

@@ -2171,46 +2171,11 @@ class DBHandler:
             # That means that one of the tuples hit a constraint, most probably
             # already existing in the DB, in which case we resort to writing them
             # one by one to only reject the duplicates
-
-            nonces_set: Set[int] = set()
-            if tuple_type == 'ethereum_transaction':
-                nonces_set = set(range(len([t for t in tuples if t[10] == -1])))
-
             for entry in tuples:
                 try:
                     cursor.execute(query, entry)
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                     if tuple_type == 'ethereum_transaction':
-                        nonce = entry[10]
-                        # If it's not an internal transaction with the same hash
-                        # ignore it. That is since it's indeed a duplicate because
-                        # when we query etherscan we get all transactions where
-                        # the given address is either the from or the to.
-                        if nonce != -1:
-                            continue
-
-                        if 'from_etherscan' in kwargs and kwargs['from_etherscan'] is True:
-                            # If it's an internal transaction with the same hash then
-                            # still input it as there is no way to distinguish between
-                            # multiple etherscan internal transactions with the same
-                            # original transaction hash. Here we trust the data source.
-                            # To differentiate between them in Rotkehlchen we use a
-                            # more negative nonce
-                            entry_list = list(entry)
-                            # Make sure that the internal etherscan transaction nonce
-                            # is increasingly negative (> -1)
-                            # If a key error is thrown here due to popping from an empty
-                            # set then something is really wrong so not catching it
-                            entry_list[10] = -1 - nonces_set.pop() - 1
-                            entry = tuple(entry_list)
-                            try:
-                                cursor.execute(query, entry)
-                                # Success so just go to the next entry
-                                continue
-                            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                                # the error is logged right below
-                                pass
-
                         # if we reach here it means the transaction is already in the DB
                         # But this can't be avoided with the way we query etherscan
                         # right now since we don't query transactions in a specific
