@@ -21,7 +21,7 @@
   },
   "active_modules": {
     "activate": "Activate the {name} module",
-    "view_addresses": "View the queried addresses for the {name}",
+    "view_addresses": "View the queried addresses for {name}",
     "enable": {
       "description": "Would you like to enable the {name} module?",
       "title": "Enabled module"
