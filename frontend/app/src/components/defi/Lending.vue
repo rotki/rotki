@@ -130,19 +130,13 @@
         </stat-card>
       </v-col>
     </v-row>
-    <v-row
+    <yearn-assets-table
       v-if="isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0"
       class="mt-8"
-      no-gutters
-    >
-      <v-col>
-        <yearn-assets-table
-          :version="yearnVersion"
-          :loading="refreshing"
-          :selected-addresses="selectedAddresses"
-        />
-      </v-col>
-    </v-row>
+      :version="yearnVersion"
+      :loading="refreshing"
+      :selected-addresses="selectedAddresses"
+    />
     <compound-lending-details
       v-if="premium && isCompound"
       class="mt-8"
