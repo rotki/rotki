@@ -8,11 +8,12 @@ from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Timestamp
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -94,7 +95,7 @@ class EthTransactions(LockableQueryMixIn):
                     f'Got error "{str(e)}" while querying ethereum transactions '
                     f'from Etherscan. Transactions not added to the DB '
                     f'from_ts: {query_start_ts} '
-                    f'to_ts: {query_end_ts} '
+                    f'to_ts: {query_end_ts} ',
                 )
 
         # add new transactions to the DB
@@ -158,3 +159,27 @@ class EthTransactions(LockableQueryMixIn):
             transactions=transactions,
             with_limit=with_limit,
         )
+
+    def get_transaction_receipt(
+            self,
+            tx_hash: str,
+    ) -> Optional['EthereumTxReceipt']:
+        """
+        This assumes the transaction has been queried and is in the DB
+
+        May raise:
+
+        - DeserializationError
+        - RemoteError
+        """
+        tx_hash_b = hexstring_to_bytes(tx_hash)
+        dbethtx = DBEthTx(self.database)
+        tx_receipt = dbethtx.get_receipt(tx_hash_b)
+        if tx_receipt is not None:
+            return tx_receipt
+
+        # not in the DB, so we need to query the chain for it
+        tx_receipt_data = self.ethereum.get_transaction_receipt(tx_hash=tx_hash)
+        dbethtx.add_receipt_data(tx_receipt_data)
+        tx_receipt = dbethtx.get_receipt(tx_hash_b)
+        return tx_receipt

@@ -203,7 +203,7 @@ def taxable_gain_for_sell(
 
 
 def hexstring_to_bytes(hexstr: str) -> bytes:
-    """May raise DeserializationError"""
+    """May raise DeserializationError if it can't convert"""
     try:
         return bytes.fromhex(hexstr.replace("0x", ""))
     except ValueError as e:
@@ -240,13 +240,13 @@ def hexstr_to_int(value: str) -> int:
     """Turns a hexstring into an int
 
     May raise:
-    - ConversionError if it can't convert a value to an int or if an unexpected
+    - DeserializationError if it can't convert a value to an int or if an unexpected
     type is given.
     """
     try:
         int_value = int(value, 16)
     except ValueError as e:
-        raise ConversionError(f'Could not convert string "{value}" to an int') from e
+        raise DeserializationError(f'Could not convert string "{value}" to an int') from e
 
     return int_value
 
@@ -282,10 +282,13 @@ def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
     """Turns a 32bit bytes/HexBytes or a hexstring into an address
 
     May raise:
-    - ConversionError if it can't convert a value to an int or if an unexpected
+    - DeserializationError if it can't convert a value to an int or if an unexpected
     type is given.
     """
-    hexstr = hex_or_bytes_to_str(value)
+    try:
+        hexstr = hex_or_bytes_to_str(value)
+    except ConversionError as e:
+        raise DeserializationError(f'Could not turn {value!r} to an ethereum address') from e
     return ChecksumEthAddress(to_checksum_address('0x' + hexstr[26:]))
 
 

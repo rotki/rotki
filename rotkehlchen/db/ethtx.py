@@ -1,11 +1,16 @@
 import logging
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_timestamp
+from rotkehlchen.serialization.deserialize import (
+    deserialize_ethereum_address,
+    deserialize_timestamp,
+)
 from rotkehlchen.typing import EthereumTransaction
+from rotkehlchen.utils.misc import hexstr_to_int, hexstring_to_bytes
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -108,3 +113,95 @@ class DBEthTx():
         cursor.execute('DELETE FROM ethereum_transactions;')
         self.db.conn.commit()
         self.db.update_last_write()
+
+    def add_receipt_data(self, data: Dict[str, Any]) -> None:
+        """Add tx receipt data as they are returned by the chain to the DB
+
+        This assumes the transaction is already in the DB.
+
+        May raise:
+        - Key Error if any of the expected fields are missing
+        - DeserializationError if there is a problem deserializing a value
+        - sqlcipher.DatabaseError if the transaction hash is not in the DB
+          or if the receipt already exists in the DB. TODO: Differentiate?
+        """
+        tx_hash_b = hexstring_to_bytes(data['transactionHash'])
+        tx_type = hexstr_to_int(data['type'])
+        cursor = self.db.conn.cursor()
+        contract_address = deserialize_ethereum_address(data['contractAddress']) if data['contractAddress'] else None  # noqa: E501
+        cursor.execute(
+            'INSERT INTO ethtx_receipts (tx_hash, contract_address, status, type) '
+            'VALUES(?, ?, ?, ?) ',
+            (tx_hash_b, contract_address, data['status'], tx_type),
+        )
+
+        log_tuples = []
+        topic_tuples = []
+        for log_entry in data['logs']:
+            log_index = log_entry['logIndex']
+            log_tuples.append((
+                tx_hash_b,
+                log_index,
+                hexstring_to_bytes(log_entry['data']),
+                deserialize_ethereum_address(log_entry['address']),
+                int(log_entry['removed']),
+            ))
+
+            for topic in log_entry['topics']:
+                topic_tuples.append((
+                    tx_hash_b,
+                    log_index,
+                    topic,
+                ))
+
+        if len(log_tuples) != 0:
+            cursor.executemany(
+                'INSERT INTO ethtx_receipt_logs (tx_hash, log_index, data, address, removed) '
+                'VALUES(? ,? ,? ,? ,?)',
+                log_tuples,
+            )
+
+            if len(topic_tuples) != 0:
+                cursor.executemany(
+                    'INSERT INTO ethtx_receipt_log_topics (tx_hash, log_index, topic) '
+                    'VALUES(? ,? ,?)',
+                    topic_tuples,
+                )
+
+        self.db.conn.commit()
+        self.db.update_last_write()
+
+    def get_receipt(self, tx_hash: bytes) -> Optional[EthereumTxReceipt]:
+        cursor = self.db.conn.cursor()
+        results = cursor.execute('SELECT * from ethtx_receipts WHERE tx_hash=?', (tx_hash,))
+        result = results.fetchone()
+        if result is None:
+            return None
+
+        tx_receipt = EthereumTxReceipt(
+            tx_hash=tx_hash,
+            contract_address=result[1],
+            status=bool(result[2]),  # works since value is either 0 or 1
+            type=result[3],
+        )
+
+        results = cursor.execute('SELECT * from ethtx_receipt_logs WHERE tx_hash=?', (tx_hash,)).fetchall()  # noqa: E501
+        # we do a fetchall since in each loop iteration another query of the cursor happens
+        for result in results:
+            log_index = result[1]
+            tx_receipt_log = EthereumTxReceiptLog(
+                log_index=log_index,
+                data=result[2],
+                address=result[3],
+                removed=bool(result[4]),  # works since value is either 0 or 1
+            )
+            topic_results = cursor.execute(
+                'SELECT topic from ethtx_receipt_log_topics WHERE tx_hash=? AND log_index=?',
+                (tx_hash, log_index),
+            )
+            for topic_result in topic_results:
+                tx_receipt_log.topics.append(topic_result[0])
+
+            tx_receipt.logs.append(tx_receipt_log)
+
+        return tx_receipt
