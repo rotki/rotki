@@ -113,7 +113,6 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
             input_data=bytes(),
             nonce=1,
         )],
-        from_etherscan=True,
     )
     filter_ = ETHTransactionsFilterQuery.make()
 

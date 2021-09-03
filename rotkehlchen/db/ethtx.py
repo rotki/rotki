@@ -19,18 +19,8 @@ class DBEthTx():
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
-    def add_ethereum_transactions(
-            self,
-            ethereum_transactions: List[EthereumTransaction],
-            from_etherscan: bool,
-    ) -> None:
-        """Adds ethereum transactions to the database
-
-        If from_etherscan is True then this means that the source of the transactions
-        is an etherscan query. This is used to determine how we should handle the
-        transactions with nonce "-1" as this is how we currently identify internal
-        ethereum transactions from etherscan.
-        """
+    def add_ethereum_transactions(self, ethereum_transactions: List[EthereumTransaction]) -> None:
+        """Adds ethereum transactions to the database"""
         tx_tuples: List[Tuple[Any, ...]] = []
         for tx in ethereum_transactions:
             tx_tuples.append((
@@ -66,7 +56,6 @@ class DBEthTx():
             tuple_type='ethereum_transaction',
             query=query,
             tuples=tx_tuples,
-            from_etherscan=from_etherscan,
         )
 
     def get_ethereum_transactions(

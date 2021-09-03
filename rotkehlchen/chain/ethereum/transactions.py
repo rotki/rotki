@@ -99,7 +99,7 @@ class EthTransactions(LockableQueryMixIn):
 
         # add new transactions to the DB
         if new_transactions != []:
-            dbethtx.add_ethereum_transactions(new_transactions, from_etherscan=True)
+            dbethtx.add_ethereum_transactions(new_transactions)
 
         # and also set the last queried timestamps for the address
         ranges.update_used_query_range(

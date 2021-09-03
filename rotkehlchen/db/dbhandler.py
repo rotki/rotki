@@ -2162,7 +2162,6 @@ class DBHandler:
             tuple_type: DBTupleType,
             query: str,
             tuples: List[Tuple[Any, ...]],
-            **kwargs: Any,
     ) -> None:
         cursor = self.conn.cursor()
         try:

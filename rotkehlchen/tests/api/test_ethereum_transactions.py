@@ -334,7 +334,7 @@ def test_query_transactions_over_limit(
     ) for x in range(60)])
 
     dbethtx = DBEthTx(db)
-    dbethtx.add_ethereum_transactions(transactions, from_etherscan=True)
+    dbethtx.add_ethereum_transactions(transactions)
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -422,7 +422,7 @@ def test_query_transactions_from_to_address(
         input_data=b'',
         nonce=55,
     )]
-    db.add_ethereum_transactions(transactions, from_etherscan=True)
+    db.add_ethereum_transactions(transactions)
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -519,7 +519,7 @@ def test_query_transactions_removed_address(
         nonce=0,
     )]
     dbethtx = DBEthTx(db)
-    dbethtx.add_ethereum_transactions(transactions, from_etherscan=True)
+    dbethtx.add_ethereum_transactions(transactions)
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
