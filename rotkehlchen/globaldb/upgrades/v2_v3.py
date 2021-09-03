@@ -4,11 +4,9 @@ from collections import deque
 from typing import Deque, Dict, Tuple, Any, List
 import random
 
-# from eth_utils import to_checksum_address
-# import requests
-
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.resolver import (
-    CHAINID,
+    ChainID,
     EvmTokenKind,
     VALID_EVM_CHAINS,
     EVM_CHAINS_TO_DATABASE,
@@ -19,34 +17,31 @@ from rotkehlchen.globaldb.schema import (
     DB_V3_CREATE_COMMON_ASSETS_DETAILS,
     DB_V3_CREATE_ASSETS,
     DB_V3_CREATE_EVM_TOKENS,
-    DB_V3_CREATE_ASSETS_EVM_TOKENS,
     DB_V3_CREATE_MULTIASSETS,
     DB_CREATE_ETHEREUM_TOKENS_LIST,
     DB_CREATE_USER_OWNED_ASSETS,
 )
+from rotkehlchen.typing import ChecksumEthAddress
 
 log = logging.getLogger(__name__)
 
 
-COMMON_ASSETS_INSERT = (
-    """INSERT OR IGNORE INTO common_asset_details(
-        identifier, name, symbol, coingecko, cryptocompare, forked
-        ) VALUES(?, ?, ?, ?, ?, ?)"""
-)
-ASSETS_INSERT = (
-    """INSERT OR IGNORE INTO assets(
-            identifier, type, started, swapped_for, common_details_id
-        )VALUES(?, ?, ?, ?, ?);"""
-)
-EVM_TOKEN_INSERT = (
-    """INSERT OR IGNORE INTO evm_tokens(
-            identifier, token_type, chain, address, decimals, protocol
-        ) VALUES(?, ?, ?, ?, ?, ?)"""
-)
-UNDERLYING_TOKEN_INSERT = (
-    """INSERT OR IGNORE INTO underlying_tokens_list(identifier, weight, parent_token_entry)
-        VALUES (?, ?, ?)"""
-)
+COMMON_ASSETS_INSERT = """INSERT OR IGNORE INTO common_asset_details(
+    identifier, name, symbol, coingecko, cryptocompare, forked
+    ) VALUES(?, ?, ?, ?, ?, ?)
+"""
+ASSETS_INSERT = """INSERT OR IGNORE INTO assets(
+        identifier, type, started, swapped_for, common_details_id
+    )VALUES(?, ?, ?, ?, ?);
+"""
+EVM_TOKEN_INSERT = """INSERT OR IGNORE INTO evm_tokens(
+        identifier, token_type, chain, address, decimals, protocol
+    ) VALUES(?, ?, ?, ?, ?, ?)
+"""
+UNDERLYING_TOKEN_INSERT = """INSERT OR IGNORE INTO
+    underlying_tokens_list(identifier, weight, parent_token_entry)
+    VALUES (?, ?, ?)
+"""
 OWNED_ASSETS_INSERT = 'INSERT OR IGNORE INTO user_owned_assets(asset_id) VALUES (?);'
 MIGRATION_CACHE: Deque[Any] = deque([])
 
@@ -66,32 +61,13 @@ ASSET_CREATION_TYPE = (
 )
 
 
-def coingecko_hack() -> Dict[str, str]:
+def coingecko_hack() -> Dict[str, ChecksumEthAddress]:
     """Avoid querying coingecko for now"""
-    # TODO ASSETS: Remove this hack
-    addr = '0x' + "".join(random.choices('0123456789ABCDEFabcdef', k=40))
-    return {k.value: addr for k in CHAINID}
-
-
-def query_coingecko_for_addresses(identifier: str) -> Dict[str, str]:  # noqa: E501 pylint: disable=unused-argument
-    """
-    Call coingecko API to obtain asset addresses in other chains.
-    Can raise:
-    - RemoteError
-    - KeyError
-    """
-    # Hack this function for now since we need this mapping for the migration
-    """
-    url = 'https://api.coingecko.com/api/v3/coins/{coin_id}?tickers=false&market_data=false&developer_data=true&sparkline=false'  # noqa: E501
-    req = requests.get(url.format(coin_id=identifier))
-    data = req.json()
-    output = {}
-    for platform, addr in data['platforms'].items():
-        if len(addr):
-            output[CHAINID.deserialize_from_coingecko(platform).value] = to_checksum_address(addr)
-    return output
-    """
-    return coingecko_hack()
+    # TODO assets: This is a hack just for having a fist implementation
+    addr = string_to_ethereum_address(
+        '0x' + "".join(random.choices('0123456789ABCDEFabcdef', k=40)),
+    )
+    return {str(k.value): addr for k in ChainID}
 
 
 def upgrade_ethereum_assets(query: List[Any]) -> EVM_TUPLES_CREATION_TYPE:
@@ -104,7 +80,7 @@ def upgrade_ethereum_assets(query: List[Any]) -> EVM_TUPLES_CREATION_TYPE:
     for entry in query:
         new_id = evm_address_to_identifier(
             address=entry[0],
-            chain=CHAINID.ETHEREUM_CHAIN_IDENTIFIER,
+            chain=ChainID.ETHEREUM,
             token_type=EvmTokenKind.ERC20,
             collectible_id=None,
         )
@@ -115,7 +91,7 @@ def upgrade_ethereum_assets(query: List[Any]) -> EVM_TUPLES_CREATION_TYPE:
         evm_tuples.append((
             entry[0],  # identifier
             EvmTokenKind.ERC20.value,  # token type
-            CHAINID.ETHEREUM_CHAIN_IDENTIFIER.value,  # chain
+            ChainID.ETHEREUM.value,  # chain
             entry[1],  # address
             entry[2],  # decimals
             entry[3],  # protocol
@@ -155,19 +131,14 @@ def evm_compatible_assets_create_tuples(
 
     for entry in query:
         try:
-            ids = query_coingecko_for_addresses(entry[6])
+            ids = coingecko_hack(entry[6])
             asset_chain = VALID_EVM_CHAINS[entry[1]]
         except KeyError as e:
             msg = str(e)
             log.error(f'Failed to fetch coingecko information for EVM asset {entry[0]}. {msg}')
-        # For the new addresses we got we have to add them later
-        for pair in ids.items():
-            # TODO assets: This logic has to be implemented but maybe outside this cycle
-            # of events.
-            MIGRATION_CACHE.append((*pair, *entry))
 
         # Continue with the migration
-        address = ids[asset_chain.value]
+        address = ids[str(asset_chain)]
         new_id = evm_address_to_identifier(
             address=address,  # We have to query for this
             chain=asset_chain,
@@ -269,13 +240,13 @@ def translate_underlying_table(connection: sqlite3.Connection) -> List[Tuple[str
     for row in query:
         new_address = evm_address_to_identifier(
             address=row[0],
-            chain=CHAINID.ETHEREUM_CHAIN_IDENTIFIER,
+            chain=ChainID.ETHEREUM,
             token_type=EvmTokenKind.ERC20,
             collectible_id=None,
         )
         new_parent = evm_address_to_identifier(
             address=row[2],
-            chain=CHAINID.ETHEREUM_CHAIN_IDENTIFIER,
+            chain=ChainID.ETHEREUM,
             token_type=EvmTokenKind.ERC20,
             collectible_id=None,
         )
@@ -292,7 +263,7 @@ def translate_user_owned_assets(connection: sqlite3.Connection) -> List[Tuple[st
     owned_assets = []
     for entry in query:
         if VALID_EVM_CHAINS.get(entry[1]) is not None:
-            ids = query_coingecko_for_addresses(entry[0])
+            ids = coingecko_hack(entry[0])
             asset_chain = VALID_EVM_CHAINS[entry[1]]
             # TODO assets: This can be broken now for EVM assets since we use random generated
             # addresses. After a proper implementation should work always
@@ -316,7 +287,7 @@ def migrate_to_v3(connection: sqlite3.Connection) -> None:
     cursor = connection.cursor()
     # Obtain information for ethereum assets
     evm_tuples, assets_tuple, common_asset_details = upgrade_ethereum_asset_ids_v3(connection)
-    # Obtain information for chains that are evm compatibles already in the database
+    # Obtain information for chains that are evm compatible already in the database
     output = upgrade_evm_compatible_assets(connection)
     evm_tuples_other, assets_tuple_other, common_asset_details_other = output
     # Obtain information for other assets
@@ -347,7 +318,6 @@ def migrate_to_v3(connection: sqlite3.Connection) -> None:
     cursor.execute(DB_V3_CREATE_COMMON_ASSETS_DETAILS)
     cursor.execute(DB_V3_CREATE_ASSETS)
     cursor.execute(DB_V3_CREATE_EVM_TOKENS)
-    cursor.execute(DB_V3_CREATE_ASSETS_EVM_TOKENS)
     cursor.execute(DB_V3_CREATE_MULTIASSETS)
     cursor.execute(DB_CREATE_ETHEREUM_TOKENS_LIST)
     cursor.execute(DB_CREATE_USER_OWNED_ASSETS)

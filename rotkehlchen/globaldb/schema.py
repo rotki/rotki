@@ -82,7 +82,7 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('[', 27);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('\', 28);
 /* FANTOM TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES (']', 29);
-/* ARBITRIUM TOKEN */
+/* ARBITRUM TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('^', 30);
 /* OPTIMISM TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('_', 31);
@@ -187,20 +187,10 @@ DB_V3_CREATE_EVM_TOKENS = """
 CREATE TABLE IF NOT EXISTS evm_tokens (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
     token_type TEXT NOT NULL,
-    chain TEXT NOT NULL,
+    chain INTEGER NOT NULL,
     address VARCHAR[42] NOT NULL,
     decimals INTEGER,
     protocol TEXT
-);
-"""
-
-DB_V3_CREATE_ASSETS_EVM_TOKENS = """
-CREATE TABLE IF NOT EXISTS assets_evm_tokens(
-    asset_id TEXT,
-    evm_token_id TEXT,
-    FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
-    FOREIGN KEY(evm_token_id) REFERENCES evm_tokens(identifier) ON UPDATE CASCADE ON DELETE CASCADE
-    PRIMARY KEY(asset_id, evm_token_id)
 );
 """
 

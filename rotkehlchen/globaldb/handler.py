@@ -38,7 +38,6 @@ def _get_setting_value(cursor: sqlite3.Cursor, name: str, default_value: int) ->
 
 def initialize_globaldb(dbpath: Path) -> sqlite3.Connection:
     connection = sqlite3.connect(dbpath)
-    print(dbpath)
     connection.executescript(DB_SCRIPT_CREATE_TABLES)
     cursor = connection.cursor()
     db_version = _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
@@ -293,7 +292,6 @@ class GlobalDBHandler():
             (identifier,),
         )
         result = query.fetchone()
-
         if result is None:
             return None
 
@@ -320,12 +318,7 @@ class GlobalDBHandler():
             )
             return None
 
-        evm_assets = (
-            AssetType.ETHEREUM_TOKEN,
-            AssetType.POLYGON_TOKEN,
-            AssetType.XDAI_TOKEN,
-            AssetType.AVALANCHE_TOKEN,
-        )
+        evm_assets = AssetType.evm_assets()
 
         if asset_type in evm_assets:
             cursor.execute(
@@ -346,7 +339,7 @@ class GlobalDBHandler():
             missing_basic_data = name is None or symbol is None or decimals is None
             if missing_basic_data and form_with_incomplete_data is False:
                 log.debug(
-                    f'Considering ethereum token with address {saved_identifier} '
+                    f'Considering evm token with identifier {saved_identifier} '
                     f'as unknown since its missing either decimals or name or symbol',
                 )
                 return None

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Tuple
 
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
@@ -34,6 +34,22 @@ class AssetType(DBEnumMixIn):
     SOLANA_TOKEN = 25
     POLYGON_TOKEN = 26
     XDAI_TOKEN = 27
+    OKEX_TOKEN = 28
+    FANTOM_TOKEN = 29
+    ARBITRUM_TOKEN = 30
+    OPTIMISM_TOKEN = 31
+
+    def evm_assets(self) -> Tuple['AssetType', ...]:
+        return (
+            AssetType.ETHEREUM_TOKEN,
+            AssetType.POLYGON_TOKEN,
+            AssetType.XDAI_TOKEN,
+            AssetType.AVALANCHE_TOKEN,
+            AssetType.OKEX_TOKEN,
+            AssetType.FANTOM_TOKEN,
+            AssetType.ARBITRUM_TOKEN,
+            AssetType.OPTIMISM_TOKEN,
+        )
 
 
 class AssetData(NamedTuple):
