@@ -1,4 +1,5 @@
-import { ActionContext, Commit } from 'vuex';
+import { inject } from '@vue/composition-api';
+import { ActionContext, Commit, Store } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { Section, Status } from '@/store/const';
@@ -7,6 +8,7 @@ import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
 import { Message, RotkehlchenState, StatusPayload } from '@/store/types';
 import { FetchPayload } from '@/store/typing';
+import { assert } from '@/utils/assertions';
 
 export async function fetchAsync<S, T extends TaskMeta, R>(
   {
@@ -111,4 +113,10 @@ export function filterAddresses<T>(
     }
     item(entries[address]);
   }
+}
+
+export function useStore(): Store<RotkehlchenState> {
+  const store = inject<Store<RotkehlchenState>>('vuex-store');
+  assert(store);
+  return store;
 }

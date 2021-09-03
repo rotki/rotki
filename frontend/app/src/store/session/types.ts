@@ -50,3 +50,24 @@ export interface ChangePasswordPayload {
   readonly currentPassword: string;
   readonly newPassword: string;
 }
+
+export interface Nft {
+  readonly tokenIdentifier: string;
+  readonly name: string;
+  readonly backgroundColor?: any;
+  readonly imageUrl: string;
+  readonly externalLink: string;
+  readonly permalink: string;
+  readonly priceEth: string;
+  readonly priceUsd: string;
+}
+
+export interface Nfts {
+  readonly [address: string]: Nft[];
+}
+
+export interface NftResponse {
+  addresses: Nfts;
+  entriesFound: number;
+  entriesLimit: number;
+}

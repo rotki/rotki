@@ -1,3 +1,4 @@
+import { ActionResult } from '@rotki/common/lib/data';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { ActionTree } from 'vuex';
 import {
@@ -35,9 +36,13 @@ import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { HistoryActions } from '@/store/history/consts';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { ACTION_PURGE_CACHED_DATA } from '@/store/session/const';
+import {
+  ACTION_PURGE_CACHED_DATA,
+  SessionActions
+} from '@/store/session/const';
 import {
   ChangePasswordPayload,
+  NftResponse,
   PremiumCredentialsPayload,
   SessionState
 } from '@/store/session/types';
@@ -603,6 +608,31 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       } else {
         await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, purgable, opts);
       }
+    }
+  },
+
+  async [SessionActions.FETCH_NFTS]({
+    commit
+  }): Promise<ActionResult<NftResponse | null>> {
+    try {
+      const taskType = TaskType.FETCH_NFTS;
+      const { taskId } = await api.fetchNfts();
+      const task = createTask(taskId, taskType, {
+        title: i18n.t('actions.session.fetch_nfts.task.title').toString(),
+        ignoreResult: false,
+        numericKeys: ['price_eth', 'price_usd']
+      });
+      commit('tasks/add', task, { root: true });
+      const { result } = await taskCompletion<NftResponse, TaskMeta>(taskType);
+      return {
+        result,
+        message: ''
+      };
+    } catch (e: any) {
+      return {
+        result: null,
+        message: e.message
+      };
     }
   }
 };
