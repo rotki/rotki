@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, DefaultDict, Dict, List, Optional
+from typing import TYPE_CHECKING, DefaultDict, List, Optional
 
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
@@ -33,7 +33,6 @@ class EthTransactions(LockableQueryMixIn):
         super().__init__()
         self.ethereum = ethereum
         self.database = database
-        self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
 
     def reset_count(self) -> None:
         """Reset the limit counter for ethereum transactions
@@ -41,7 +40,7 @@ class EthTransactions(LockableQueryMixIn):
         This should be done by the frontend for non-premium users at the start
         of any batch of transaction queries.
         """
-        self.tx_per_address = defaultdict(int)
+        self.ethereum.tx_per_address = defaultdict(int)
 
     def _return_transactions_maybe_limit(
             self,
@@ -57,10 +56,10 @@ class EthTransactions(LockableQueryMixIn):
             count_map[tx.from_address] += 1
 
         for address, count in count_map.items():
-            self.tx_per_address[address] = count
+            self.ethereum.tx_per_address[address] = count
 
         if requested_addresses is not None:
-            transactions_for_other_addies = sum(x for addy, x in self.tx_per_address.items() if addy not in requested_addresses)  # noqa: E501
+            transactions_for_other_addies = sum(x for addy, x in self.ethereum.tx_per_address.items() if addy not in requested_addresses)  # noqa: E501
             remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_for_other_addies
             returning_tx_length = min(remaining_num_tx, len(transactions))
         else:
@@ -130,9 +129,6 @@ class EthTransactions(LockableQueryMixIn):
         - RemoteError if etherscan is used and there is a problem with reaching it or
         with parsing the response.
         """
-        # Reset the counter for each query. Makes it easier to cheat when querying each
-        # address sep
-        # self.tx_per_address = defaultdict(int)
         query_addresses = filter_query.addresses
 
         if query_addresses is not None:
