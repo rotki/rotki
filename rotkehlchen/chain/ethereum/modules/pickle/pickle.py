@@ -65,7 +65,6 @@ class PickleFinance(EthereumModule):
             abi=PICKLE_DILL.abi,
             deployed_block=PICKLE_DILL.deployed_block,
         )
-
         rewards_calls = [
             (
                 PICKLE_DILL_REWARDS.address,
@@ -77,7 +76,6 @@ class PickleFinance(EthereumModule):
             (PICKLE_DILL.address, dill_contract.encode(method_name='locked', arguments=[x]))
             for x in addresses
         ]
-
         reward_outputs = multicall_2(
             ethereum=self.ethereum,
             require_success=False,
@@ -90,7 +88,6 @@ class PickleFinance(EthereumModule):
         )
 
         pickle_price = Inquirer().find_usd_price(A_PICKLE)
-
         for idx, output in enumerate(reward_outputs):
             status_rewards, result = output
             status_dill, result_dill = dill_outputs[idx]

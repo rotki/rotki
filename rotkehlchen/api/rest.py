@@ -2672,7 +2672,7 @@ class RestAPI():
             async_query=async_query,
             module_name='pickle_finance',
             method='get_dill',
-            query_specific_balances_before=None,
+            query_specific_balances_before=['defi'],
             addresses=addresses,
         )
 
