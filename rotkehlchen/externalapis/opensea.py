@@ -24,6 +24,21 @@ MAX_LIMIT = 50  # according to opensea docs
 logger = logging.getLogger(__name__)
 
 
+class Collection(NamedTuple):
+    name: str
+    banner_image: str
+    description: str
+    large_image: str
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            'name': self.name,
+            'banner_image': self.banner_image,
+            'description': self.description,
+            'large_image': self.large_image,
+        }
+
+
 class NFT(NamedTuple):
     token_identifier: str
     background_color: Optional[str]
@@ -33,6 +48,7 @@ class NFT(NamedTuple):
     permalink: Optional[str]
     price_eth: FVal
     price_usd: FVal
+    collection: Collection
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -44,6 +60,7 @@ class NFT(NamedTuple):
             'permalink': self.permalink,
             'price_eth': str(self.price_eth),
             'price_usd': str(self.price_usd),
+            'collection': self.collection.serialize(),
         }
 
     @staticmethod
@@ -77,6 +94,16 @@ class NFT(NamedTuple):
                 price_in_eth = ZERO
                 price_in_usd = ZERO
 
+            # NFT might not be part of a collection
+            if 'collection' in entry:
+                collection_data = entry['collection']
+                collection = Collection(
+                    name=collection_data['name'],
+                    banner_image=collection_data['banner_image_url'],
+                    description=collection_data['description'],
+                    large_image=collection_data['large_image_url'],
+                )
+
             return NFT(
                 token_identifier=entry['token_id'],
                 background_color=entry['background_color'],
@@ -86,6 +113,7 @@ class NFT(NamedTuple):
                 permalink=entry['permalink'],
                 price_eth=price_in_eth,
                 price_usd=price_in_usd,
+                collection=collection,
             )
         except KeyError as e:
             raise DeserializationError(f'Could not find key {str(e)} when processing Opensea NFT data') from e  # noqa: E501
