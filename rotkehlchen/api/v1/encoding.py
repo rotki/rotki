@@ -1913,6 +1913,7 @@ class DataImportSchema(Schema):
                 'blockfi-transactions',
                 'blockfi-trades',
                 'nexo',
+                'shapeshift-trades',
             ),
         ),
     )

@@ -66,7 +66,8 @@ const SOURCES = [
   'nexo',
   'blockfi-transactions',
   'blockfi-trades',
-  'gitcoin'
+  'gitcoin',
+  'shapeshift-trades'
 ];
 
 @Component({})

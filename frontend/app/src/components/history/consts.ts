@@ -20,6 +20,7 @@ import {
   EXCHANGE_KUCOIN,
   EXCHANGE_NEXO,
   EXCHANGE_POLONIEX,
+  EXCHANGE_SHAPESHIFT,
   EXCHANGE_SUSHISWAP,
   EXCHANGE_UNISWAP,
   TRADE_LOCATION_BANKS,
@@ -178,6 +179,13 @@ export const tradeLocations: TradeLocationData[] = [
     identifier: EXCHANGE_FTX,
     name: 'FTX',
     icon: require('@/assets/images/exchanges/ftx.png'),
+    imageIcon: true,
+    exchange: true
+  },
+  {
+    identifier: EXCHANGE_SHAPESHIFT,
+    name: 'ShapeShift',
+    icon: require('@/assets/images/shapeshift-fox.svg'),
     imageIcon: true,
     exchange: true
   },

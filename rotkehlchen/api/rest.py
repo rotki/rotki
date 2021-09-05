@@ -2099,6 +2099,11 @@ class RestAPI():
 
             gitcoin_importer = GitcoinDataImporter(db=self.rotkehlchen.data.db)
             gitcoin_importer.import_gitcoin_csv(filepath)
+        elif source == 'shapeshift-trades':
+            success, msg = self.rotkehlchen.data_importer.import_shapeshift_trades_csv(filepath)
+            if not success:
+                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
+                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 

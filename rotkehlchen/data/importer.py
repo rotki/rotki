@@ -934,3 +934,61 @@ class DataImporter():
                 except KeyError as e:
                     return False, str(e)
         return True, ''
+
+    def _consume_shapeshift_trade(self, csv_row: Dict[str, Any]) -> None:
+        """
+        Consume the file containing only trades from ShapeShift.
+        """
+        timestamp = deserialize_timestamp_from_date(
+            date=csv_row['timestamp'],
+            formatstr='iso8601',
+            location='ShapeShift'
+        )
+        buy_asset = symbol_to_asset_or_token(csv_row['outputCurrency'])
+        buy_amount = deserialize_asset_amount(csv_row['outputAmount'])
+        sold_asset = symbol_to_asset_or_token(csv_row['inputCurrency'])
+        sold_amount = deserialize_asset_amount(csv_row['inputAmount'])
+        if sold_amount == ZERO:
+            log.debug(f'Ignoring ShapeShift trade with sold_amount equal to zero. {csv_row}')
+            return
+        rate = deserialize_asset_amount(csv_row['rate'])
+        fee = deserialize_fee(csv_row['minerFee'])
+        trade = Trade(
+            timestamp=timestamp,
+            location=Location.SHAPESHIFT,
+            base_asset=buy_asset,
+            quote_asset=sold_asset,
+            trade_type=TradeType.BUY,
+            amount=buy_amount,
+            rate=rate,
+            fee=Fee(fee),
+            fee_currency=symbol_to_asset_or_token(csv_row['outputCurrency']),  # assume minerFee is in buy_asset
+            link='',
+            notes='Trade from ShapeShift',
+        )
+        self.db.add_trades([trade])
+
+    def import_shapeshift_trades_csv(self, filepath: Path) -> Tuple[bool, str]:
+        """
+        Information for the values that the columns can have has been obtained from sample CSVs
+        """
+        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+            data = csv.DictReader(csvfile)
+            for row in data:
+                try:
+                    self._consume_shapeshift_trade(row)
+                except UnknownAsset as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'During ShapeShift CSV import found action with unknown '
+                        f'asset {e.asset_name}. Ignoring entry',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'Deserialization error during ShapeShift CSV import. '
+                        f'{str(e)}. Ignoring entry',
+                    )
+                    continue
+                except KeyError as e:
+                    return False, str(e)
+        return True, ''

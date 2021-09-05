@@ -35,6 +35,7 @@ export const EXCHANGE_FTX = 'ftx';
 export const EXCHANGE_INDEPENDENTRESERVE = 'independentreserve';
 export const EXCHANGE_BLOCKFI = 'blockfi';
 export const EXCHANGE_NEXO = 'nexo';
+export const EXCHANGE_SHAPESHIFT = 'shapeshift';
 
 export const EXCHANGE_UNISWAP = 'uniswap';
 export const EXCHANGE_BALANCER = 'balancer';
@@ -76,6 +77,7 @@ export const SUPPORTED_TRADE_LOCATIONS = [
   EXCHANGE_CRYPTOCOM,
   EXCHANGE_BLOCKFI,
   EXCHANGE_NEXO,
+  EXCHANGE_SHAPESHIFT,
   TRADE_LOCATION_EXTERNAL,
   TRADE_LOCATION_BANKS,
   TRADE_LOCATION_EQUITIES,
@@ -92,5 +94,6 @@ export const ALL_TRADE_LOCATIONS = [
 export const EXTERNAL_EXCHANGES = [
   EXCHANGE_CRYPTOCOM,
   EXCHANGE_BLOCKFI,
-  EXCHANGE_NEXO
+  EXCHANGE_NEXO,
+  EXCHANGE_SHAPESHIFT
 ];
