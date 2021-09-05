@@ -12,6 +12,17 @@ def upgrade_v20_to_v21(db: 'DBHandler') -> None:
     Upgrades the timed balances to also contain the balance type (category).
     Defaults to ASSET right now, but opens up the way to store liabilities too
     """
+    # Create balance category table that's added in this upgrade
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS balance_category (
+    category    CHAR(1)       PRIMARY KEY NOT NULL,
+    seq     INTEGER UNIQUE
+    );
+    /* Asset Category */
+    INSERT OR IGNORE INTO balance_category(category, seq) VALUES ('A', 1);
+    /* Liability Category */
+    INSERT OR IGNORE INTO balance_category(category, seq) VALUES ('B', 2);
+    """)
     cursor = db.conn.cursor()
     # Get the old data, appending the default value of ASSET for balance category
     query = cursor.execute('SELECT time, currency, amount, usd_value FROM timed_balances;')

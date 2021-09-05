@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 from contextlib import ExitStack, contextmanager
@@ -63,9 +64,17 @@ def target_patch(target_version: int):
         'rotkehlchen.db.upgrade_manager.UPGRADES_LIST',
         new=new_upgrades_list,
     )
+    if target_version <= 5:
+        # For tests where no old DB exists we need to first create tables
+        d = patch(
+            'rotkehlchen.db.dbhandler.PASSWORDCHECK_STATEMENT',
+            new=OLD_DB_SCRIPT_CREATE_TABLES,
+        )
+    else:
+        d = contextlib.nullcontext()  # type: ignore
 
-    with a, b, c:
-        yield (a, b, c)
+    with a, b, c, d:
+        yield (a, b, c, d)
 
 
 def _init_db_with_target_version(

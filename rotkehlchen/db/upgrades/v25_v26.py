@@ -4,7 +4,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
-    from sqlite3 import Cursor
+    from sqlite3 import Connection, Cursor
 
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -36,6 +36,24 @@ class V25V26UpgradeHelper():
         globaldb_cursor = globaldb_conn.cursor()
         query = globaldb_cursor.execute('SELECT identifier from assets;')
         self.all_asset_ids = {x[0] for x in query}
+
+    @staticmethod
+    def create_tables(conn: 'Connection') -> None:
+        """Create tables that are used in this upgrade"""
+        conn.executescript("""
+        CREATE TABLE IF NOT EXISTS user_credentials_mappings (
+        credential_name TEXT NOT NULL,
+        credential_location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+        setting_name TEXT NOT NULL,
+        setting_value TEXT NOT NULL,
+        FOREIGN KEY(credential_name, credential_location) REFERENCES user_credentials(name, location) ON DELETE CASCADE ON UPDATE CASCADE,
+        PRIMARY KEY (credential_name, credential_location, setting_name)
+        );""")  # noqa: E501
+        conn.executescript("""
+        CREATE TABLE IF NOT EXISTS assets (
+        identifier TEXT NOT NULL PRIMARY KEY
+        );
+        """)
 
     def upgrade_user_credentials(self, cursor: 'Cursor') -> None:
         # get old data
@@ -497,6 +515,7 @@ def upgrade_v25_to_v26(db: 'DBHandler') -> None:
     - Introduce assets table and foreign key relationships for assets
     """
     helper = V25V26UpgradeHelper(db.msg_aggregator)
+    helper.create_tables(db.conn)
     cursor = db.conn.cursor()
     helper.upgrade_user_credentials(cursor)
     helper.migrate_kraken_account_type(cursor)

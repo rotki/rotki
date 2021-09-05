@@ -126,6 +126,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
+PASSWORDCHECK_STATEMENT = 'SELECT name FROM sqlite_master WHERE type="table";'
 
 DBTupleType = Literal[
     'trade',
@@ -282,15 +283,17 @@ class DBHandler:
         """Perform the actions that are needed after the first DB connection
 
         Such as:
-            - Create tables that are missing
+            - Check encryption password works
             - DB Upgrades
+            - Create tables that are missing for new version
 
         May raise:
         - AuthenticationError if a wrong password is given or if the DB is corrupt
         - DBUpgradeError if there is a problem with DB upgrading
         """
+        # Check password is correct
         try:
-            self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
+            self.conn.executescript(PASSWORDCHECK_STATEMENT)
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             errstr = str(e)
             migrated = False
@@ -311,6 +314,8 @@ class DBHandler:
 
         # Run upgrades if needed
         DBUpgradeManager(self).run_upgrades()
+        # create tables if needed (first run - or some new tables)
+        self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
 
     def get_md5hash(self) -> str:
         """Get the md5hash of the DB

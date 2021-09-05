@@ -38,6 +38,92 @@ def _remove_cache_files(user_data_dir: Path) -> None:
         pass
 
 
+def _create_new_tables(db: 'DBHandler') -> None:
+    # Create the trade type table that's added in this upgrade
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS trade_type (
+    type    CHAR(1)       PRIMARY KEY NOT NULL,
+    seq     INTEGER UNIQUE
+    );
+    /* Buy Type */
+    INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('A', 1);
+    /* Sell Type */
+    INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('B', 2);
+    /* Settlement Buy Type */
+    INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('C', 3);
+    /* Settlement Sell Type */
+    INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('D', 4);""")
+    # Create location table that's added in this upgrade
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS location (
+    location    CHAR(1)       PRIMARY KEY NOT NULL,
+    seq     INTEGER UNIQUE
+    );
+    /* External */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('A', 1);
+    /* Kraken */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('B', 2);
+    /* Poloniex */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('C', 3);
+    /* Bittrex */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('D', 4);
+    /* Binance */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('E', 5);
+    /* Bitmex */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('F', 6);
+    /* Coinbase */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('G', 7);
+    /* Total */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('H', 8);
+    /* Banks */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('I', 9);
+    /* Blockchain */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('J', 10);
+    /* Coinbase Pro */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('K', 11);
+    /* Gemini */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('L', 12);
+    /* Equities */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('M', 13);
+    /* Real estate */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('N', 14);
+    /* Commodities */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('O', 15);
+    /* Crypto.com */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('P', 16);
+    /* Uniswap */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('Q', 17);
+    /* Bitstamp */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('R', 18);
+    /* Binance US */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('S', 19);
+    /* Bitfinex */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('T', 20);
+    /* Bitcoin.de */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('U', 21);
+    /* ICONOMI */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('V', 22);
+    /* KUCOIN */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('W', 23);
+    /* BALANCER */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('X', 24);
+    /* LOOPRING */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('Y', 25);
+    /* FTX */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('Z', 26);
+    /* NEXO */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('[', 27);
+    /* BlockFI */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('\\', 28);
+    /* IndependentReserve */
+    INSERT OR IGNORE INTO location(location, seq) VALUES (']', 29);
+    /* Gitcoin */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('^', 30);
+    /* Sushiswap */
+    INSERT OR IGNORE INTO location(location, seq) VALUES ('_', 31);
+    """)
+
+
 def _upgrade_trades_table(db: 'DBHandler') -> None:
     cursor = db.conn.cursor()
     # This is the data trades table at v5
@@ -192,5 +278,6 @@ def upgrade_v5_to_v6(db: 'DBHandler') -> None:
     - upgrades timed_location_data table to use an enum table for location
     """
     _remove_cache_files(db.user_data_dir)
+    _create_new_tables(db)
     _upgrade_trades_table(db)
     _upgrade_timed_location_data(db)
