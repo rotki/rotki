@@ -968,7 +968,7 @@ class DataImporter():
             amount=buy_amount,
             rate=Price(rate),
             fee=Fee(fee),
-            fee_currency=buy_asset,  # Assumption that mineFee is denominated in outputCurrency
+            fee_currency=buy_asset,  # Assumption that minerFee is denominated in outputCurrency
             link='',
             notes='Trade from ShapeShift',
         )
