@@ -185,7 +185,7 @@ export const tradeLocations: TradeLocationData[] = [
   {
     identifier: EXCHANGE_SHAPESHIFT,
     name: 'ShapeShift',
-    icon: require('@/assets/images/shapeshift-fox.svg'),
+    icon: require('@/assets/images/airdrops/FOX_Icon_dark.svg'),
     imageIcon: true,
     exchange: true
   },

@@ -952,13 +952,32 @@ class DataImporter():
         fee = deserialize_fee(csv_row['minerFee'])
         in_addr = csv_row['inputAddress']
         out_addr = csv_row['outputAddress']
-
+        # TODO: determine exact time ShapeShift started using SAI with trades in csv exports
+        sai_sunset_timestamp = deserialize_timestamp_from_date(
+            date='2019-11-18T00:00:00Z',
+            formatstr='iso8601',
+            location='ShapeShift',
+        )
+        notes = f'''
+Trade from ShapeShift with ShapeShift Deposit Address: {csv_row['inputAddress']}, and
+ Transaction ID: {csv_row['inputTxid']}.
+  Refund Address: {csv_row['refundAddress']}, and
+ Transaction ID: {csv_row['refundTxid']}.
+  Destination Address: {csv_row['outputAddress']}, and
+ Transaction ID: {csv_row['outputTxid']}.
+'''
         if sold_amount == ZERO:
             log.debug(f'Ignoring ShapeShift trade with sold_amount equal to zero. {csv_row}')
             return
         if in_addr == '' or out_addr == '':
             log.debug(f'Ignoring ShapeShift trade which was performed on DEX. {csv_row}')
             return
+        # Assuming that as DAI contract tx date only SAI existed.
+        # Converting DAI to SAI in buy_asset and sell_asset.
+        if buy_asset == symbol_to_asset_or_token('DAI') and timestamp <= sai_sunset_timestamp:
+            buy_asset = symbol_to_asset_or_token('SAI')
+        if sold_asset == symbol_to_asset_or_token('DAI') and timestamp <= sai_sunset_timestamp:
+            sold_asset = symbol_to_asset_or_token('SAI')
         trade = Trade(
             timestamp=timestamp,
             location=Location.SHAPESHIFT,
@@ -970,7 +989,7 @@ class DataImporter():
             fee=Fee(fee),
             fee_currency=buy_asset,  # Assumption that minerFee is denominated in outputCurrency
             link='',
-            notes='Trade from ShapeShift',
+            notes=notes,
         )
         self.db.add_trades([trade])
 
