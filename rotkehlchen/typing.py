@@ -378,5 +378,6 @@ class ExchangeApiCredentials(NamedTuple):
     passphrase: Optional[str] = None
 
 
-EXTERNAL_EXCHANGES: List = [Location.CRYPTOCOM, Location.BLOCKFI, Location.NEXO, Location.SHAPESHIFT]
+EXTERNAL_EXCHANGES: List = [Location.CRYPTOCOM, Location.BLOCKFI, Location.NEXO,
+                            Location.SHAPESHIFT]
 EXTERNAL_LOCATION = [Location.EXTERNAL] + EXTERNAL_EXCHANGES

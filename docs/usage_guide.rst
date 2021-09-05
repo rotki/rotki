@@ -549,6 +549,13 @@ rotki can import any trade CSV data exported from cointracking.info. But in gene
    :alt: Importing data from cointracking.info
    :align: center
 
+ShapeShift.com
+====================
+
+You can import trade CSV data exported from shapeshift.com.  Transactions will come from adding your Blockchain Accounts used with ShapeShift to rotki.
+
+Import data in the same section as the image above in the prior heading.  When exporting trades from ShapeShift, the selected wallet may show DEX trades in the user interface.  If it is not the Native wallet, DEX trades may not show up in the user interface, but they still export to CSV.  This importer ignores DEX trades, as they are covered by premium support for Uniswap and SushiSwap.
+
 Loopring balances
 ===================
 
@@ -581,7 +588,7 @@ Moving data to another system
 
 If you want to move your data to another system then you will need to do some manual steps. First identify the :ref:`rotki_data_directory` in both the source and the destination system. Then move the entire data directory from the source system to the destination system and make sure that the same rotki version is used in both syste
 
-.. _track_balances: 
+.. _track_balances:
 
 Tracking accounts and balances
 **********************************
@@ -1099,7 +1106,7 @@ Cost basis is calculated in rotki for all trades/events we support. Trades/event
 - All manual trades inserted by the user.
 - Not strictly trades, but income/expense events by manual inserted ledger actions.
 
-  
+
 For all those trades you can see the cost basis when you create a profit loss report by:
 
 1. Either navigating to the trade in the generated table after the PnL report and pressing the arrow to show more details.

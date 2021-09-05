@@ -942,17 +942,23 @@ class DataImporter():
         timestamp = deserialize_timestamp_from_date(
             date=csv_row['timestamp'],
             formatstr='iso8601',
-            location='ShapeShift'
+            location='ShapeShift',
         )
         buy_asset = symbol_to_asset_or_token(csv_row['outputCurrency'])
         buy_amount = deserialize_asset_amount(csv_row['outputAmount'])
         sold_asset = symbol_to_asset_or_token(csv_row['inputCurrency'])
         sold_amount = deserialize_asset_amount(csv_row['inputAmount'])
+        rate = deserialize_asset_amount(csv_row['rate'])
+        fee = deserialize_fee(csv_row['minerFee'])
+        in_addr = csv_row['inputAddress']
+        out_addr = csv_row['outputAddress']
+
         if sold_amount == ZERO:
             log.debug(f'Ignoring ShapeShift trade with sold_amount equal to zero. {csv_row}')
             return
-        rate = deserialize_asset_amount(csv_row['rate'])
-        fee = deserialize_fee(csv_row['minerFee'])
+        if in_addr == '' or out_addr == '':
+            log.debug(f'Ignoring ShapeShift trade which was performed on DEX. {csv_row}')
+            return
         trade = Trade(
             timestamp=timestamp,
             location=Location.SHAPESHIFT,
@@ -960,9 +966,9 @@ class DataImporter():
             quote_asset=sold_asset,
             trade_type=TradeType.BUY,
             amount=buy_amount,
-            rate=rate,
+            rate=Price(rate),
             fee=Fee(fee),
-            fee_currency=symbol_to_asset_or_token(csv_row['outputCurrency']),  # assume minerFee is in buy_asset
+            fee_currency=buy_asset,  # Assumption that mineFee is denominated in outputCurrency
             link='',
             notes='Trade from ShapeShift',
         )

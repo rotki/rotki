@@ -595,3 +595,26 @@ def assert_nexo_results(rotki: Rotkehlchen):
 
     assert ledger_actions == expected_actions
     assert asset_movements == expected_movements
+
+
+def assert_shapeshift_trades_import_results(rotki: Rotkehlchen):
+    """A utility function to help assert on correctness of importing trades data from shapeshift"""
+    trades = rotki.data.db.get_trades()
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    expected_trades = [Trade(
+        timestamp=Timestamp(1623778524000),
+        location=Location.SHAPESHIFT,
+        base_asset=symbol_to_asset_or_token('USDC'),
+        quote_asset=symbol_to_asset_or_token('ETH'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('0.06198721')),
+        rate=Price(FVal('0.00065004')),
+        fee=Fee(FVal('0.0042')),
+        fee_currency=symbol_to_asset_or_token('ETH'),
+        link='',
+        notes='Trade from ShapeShift',
+    )]
+    assert trades == expected_trades
