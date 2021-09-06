@@ -1,8 +1,8 @@
 <template>
-  <progress-screen v-if="loading && nfts.length === 0">
+  <progress-screen v-if="loading && visibleNfts.length === 0">
     {{ $t('nft_gallery.loading') }}
   </progress-screen>
-  <div v-else class="mt-8">
+  <div v-else class="mt-2">
     <v-row justify="end">
       <v-col cols="auto">
         <refresh-button
@@ -14,7 +14,7 @@
     </v-row>
     <v-row>
       <v-col
-        v-for="item in nfts"
+        v-for="item in visibleNfts"
         :key="item.tokenIdentifier"
         cols="12"
         sm="6"
@@ -25,16 +25,23 @@
         <nft-gallery-item :item="item" />
       </v-col>
     </v-row>
+    <v-pagination v-model="page" :length="pages" class="mt-5" />
   </div>
 </template>
 
 <script lang="ts">
 import { ActionResult } from '@rotki/common/lib/data';
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  ref
+} from '@vue/composition-api';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { NftWithAddress } from '@/components/nft/types';
+import { setupThemeCheck } from '@/composables/theme';
 import { SessionActions } from '@/store/session/const';
 import { NftResponse } from '@/store/session/types';
 import { useStore } from '@/store/utils';
@@ -43,12 +50,24 @@ export default defineComponent({
   name: 'NftGallery',
   components: { RefreshButton, ProgressScreen, NftGalleryItem },
   setup() {
+    const { isMobile } = setupThemeCheck();
     const { dispatch } = useStore();
     const total = ref(0);
     const limit = ref(0);
     const error = ref('');
     const loading = ref(true);
+    const page = ref(1);
     const nfts = ref<NftWithAddress[]>([]);
+    const itemsPerPage = computed(() => (isMobile.value ? 1 : 8));
+
+    const pages = computed(() => {
+      return Math.ceil(nfts.value.length / itemsPerPage.value);
+    });
+
+    const visibleNfts = computed(() => {
+      const start = (page.value - 1) * itemsPerPage.value;
+      return nfts.value.slice(start, start + itemsPerPage.value);
+    });
 
     const fetchNfts = async () => {
       loading.value = true;
@@ -79,9 +98,11 @@ export default defineComponent({
     return {
       total,
       limit,
-      nfts,
+      visibleNfts,
       fetchNfts,
-      loading
+      loading,
+      page,
+      pages
     };
   }
 });
