@@ -359,7 +359,7 @@ rotki uses an encrypted database called `SQLCipher <https://www.zetetic.net/sqlc
 
     $ brew update
     $ cd "$(brew --repo homebrew/core)"
-    $ git checkout 2731bfdc785e85de8242b164acbf4fcb627a91e2 Formula/sqlcipher.rb #This formula installs 4.4.0 of sqlcipher
+    $ git checkout 31f4d9cef46b1c39cdbe2f72ab682b5d0b02cf67 Formula/sqlcipher.rb #This formula installs 4.4.3 of sqlcipher
     $ brew install sqlcipher
 
 Also these are some dependencies that may or may not be properly installed in your system so make sure you have them. ::
