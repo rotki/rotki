@@ -959,7 +959,8 @@ class DataImporter():
             location='ShapeShift',
         )
         notes = f'''
-Trade from ShapeShift with ShapeShift Deposit Address: {csv_row['inputAddress']}, and
+Trade from ShapeShift with ShapeShift Deposit Address:
+ {csv_row['inputAddress']}, and
  Transaction ID: {csv_row['inputTxid']}.
   Refund Address: {csv_row['refundAddress']}, and
  Transaction ID: {csv_row['refundTxid']}.

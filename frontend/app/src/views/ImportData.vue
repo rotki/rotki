@@ -181,10 +181,7 @@
           <v-row>
             <v-col cols="12">
               <div class="import-data__crypto-com">
-                <v-img
-                  max-width="200"
-                  :src="require('@/assets/images/import/shapeshift.svg')"
-                />
+                <shape-shift-horizontal/>
               </div>
             </v-col>
           </v-row>
@@ -267,11 +264,12 @@
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
+import ShapeShiftHorizontal from "@/components/images/ShapeShiftHorizontal.vue";
 import FileUpload from '@/components/import/FileUpload.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 
 @Component({
-  components: { FileUpload, ExternalLink }
+  components: {ShapeShiftHorizontal, FileUpload, ExternalLink }
 })
 export default class ImportData extends Mixins(PremiumMixin) {}
 </script>

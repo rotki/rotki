@@ -602,28 +602,53 @@ def assert_shapeshift_trades_import_results(rotki: Rotkehlchen):
     trades = rotki.data.db.get_trades()
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
-    notes = f'''
+    notes1 = '''
 Trade from ShapeShift with ShapeShift Deposit Address:
- {'0xbc7b968df007c6b4d7507763e17971c7c8cb4812'}, and
- Transaction ID: {'0xaf026f6f53521563bb5d16e781f26f8ecd885010e5a731c6059902e01a8500a3'}.
-  Refund Address: {''}, and
- Transaction ID: {'0x59383b5c0834d76118f7d4e3d283e512d05cbfa7d0127084642f0eb4e0188f70'}.
-  Destination Address: {'0xf7ee0f8a9a1c67558c7fce768ab40cd0771c882a2'}, and
-Transaction ID: {'0x5395176bf37a198b7df9e7ace0f45f4cdcad0cf78a593912eae1a2fd6c40f7b9'}.
+ 0xc181da8187a37f8c518a2d12733c763a491a873c, and
+ Transaction ID: 0xcd4b53bd1991c387558e4274fc49604487708c3878abc1a419b6120d1f489881.
+  Refund Address: , and
+ Transaction ID: .
+  Destination Address: JWPKHH2j5YubGNpexkRrElg7D0yuCusu0Q, and
+ Transaction ID: 9f9d6bb29d896080202f9f51ee1c767527bf88c468bd5e40cd568ecbad3cde61.
+'''
+    notes2 = '''
+Trade from ShapeShift with ShapeShift Deposit Address:
+ 0xbc7b968df007c6b4d7507763e17971c7c8cb4812, and
+ Transaction ID: 0xaf026f6f53521563bb5d16e781f26f8ecd885010e5a731c6059902e01a8500a3.
+  Refund Address: , and
+ Transaction ID: 0x59383b5c0834d76118f7d4e3d283e512d05cbfa7d0127084642f0eb4e0188f70.
+  Destination Address: 0xf7ee0f8a9a1c67558c7fce768ab40cd0771c882a2, and
+ Transaction ID: 0x5395176bf37a198b7df9e7ace0f45f4cdcad0cf78a593912eae1a2fd6c40f7b9.
 '''
     assert len(errors) == 0
     assert len(warnings) == 0
-    expected_trades = [Trade(
-        timestamp=Timestamp(1623778524000),
-        location=Location.SHAPESHIFT,
-        base_asset=symbol_to_asset_or_token('USDC'),
-        quote_asset=symbol_to_asset_or_token('ETH'),
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('0.06198721')),
-        rate=Price(FVal('0.00065004')),
-        fee=Fee(FVal('0.0042')),
-        fee_currency=symbol_to_asset_or_token('ETH'),
-        link='',
-        notes=notes,
-    )]
+    expected_trades = [
+        Trade(
+            timestamp=Timestamp(1561551116),
+            location=Location.SHAPESHIFT,
+            base_asset=symbol_to_asset_or_token('DASH'),
+            quote_asset=symbol_to_asset_or_token('SAI'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.59420343')),
+            rate=Price(FVal('0.00578758')),
+            fee=Fee(FVal('0.002')),
+            fee_currency=symbol_to_asset_or_token('DASH'),
+            link='',
+            notes=notes1,
+        ),
+        Trade(
+            timestamp=Timestamp(1630856301),
+            location=Location.SHAPESHIFT,
+            base_asset=symbol_to_asset_or_token('ETH'),
+            quote_asset=symbol_to_asset_or_token('USDC'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.06198721')),
+            rate=Price(FVal('0.00065004')),
+            fee=Fee(FVal('0.0042')),
+            fee_currency=symbol_to_asset_or_token('ETH'),
+            link='',
+            notes=notes2,
+        )]
+    assert trades[0].timestamp == expected_trades[0].timestamp
+    assert len(trades) == 2
     assert trades == expected_trades

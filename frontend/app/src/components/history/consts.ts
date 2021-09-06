@@ -1,4 +1,5 @@
 import { TradeLocationData } from '@/components/history/type';
+import FOXIcon from '@/components/icons/FOXIcon.vue';
 import {
   EXCHANGE_BALANCER,
   EXCHANGE_BINANCE,
@@ -40,6 +41,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Kraken',
     icon: require('@/assets/images/kraken.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -47,6 +49,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Poloniex',
     icon: require('@/assets/images/poloniex.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -54,6 +57,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Bitmex',
     icon: require('@/assets/images/bitmex.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -61,6 +65,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Binance',
     icon: require('@/assets/images/binance.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -68,6 +73,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Binance US',
     icon: require('@/assets/images/binance.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -75,6 +81,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Bittrex',
     icon: require('@/assets/images/bittrex.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -82,6 +89,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Bitfinex',
     icon: require('@/assets/images/bitfinex.svg'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -89,6 +97,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'bitcoin.de',
     icon: require('@/assets/images/btcde.svg'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -96,6 +105,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Iconomi',
     icon: require('@/assets/images/iconomi.svg'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -103,6 +113,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Gemini',
     icon: require('@/assets/images/gemini.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -110,6 +121,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Coinbase',
     icon: require('@/assets/images/coinbase.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -117,6 +129,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Coinbase Pro',
     icon: require('@/assets/images/coinbasepro.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -124,6 +137,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Uniswap',
     icon: require('@/assets/images/defi/uniswap.svg'),
     imageIcon: true,
+    component: false,
     exchange: false
   },
   {
@@ -131,6 +145,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Balancer',
     icon: require('@/assets/images/defi/balancer.svg'),
     imageIcon: true,
+    component: false,
     exchange: false
   },
   {
@@ -138,6 +153,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Sushiswap',
     icon: require('@/assets/images/modules/sushiswap.svg'),
     imageIcon: true,
+    component: false,
     exchange: false
   },
   {
@@ -145,6 +161,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'BlockFi',
     icon: require('@/assets/images/blockfi.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -152,6 +169,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Crypto.com',
     icon: require('@/assets/images/crypto.com.png'),
     imageIcon: true,
+    component: false,
     exchange: false
   },
   {
@@ -159,6 +177,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Nexo',
     icon: require('@/assets/images/nexo.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -166,6 +185,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Bitstamp',
     icon: require('@/assets/images/bitstamp.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -173,6 +193,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'KuCoin',
     icon: require('@/assets/images/exchanges/kucoin.svg'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -180,13 +201,15 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'FTX',
     icon: require('@/assets/images/exchanges/ftx.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
     identifier: EXCHANGE_SHAPESHIFT,
     name: 'ShapeShift',
-    icon: require('@/assets/images/airdrops/FOX_Icon_dark.svg'),
-    imageIcon: true,
+    icon: '',
+    imageIcon: false,
+    component: FOXIcon,
     exchange: true
   },
   {
@@ -194,6 +217,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'IndependentReserve',
     icon: require('@/assets/images/exchanges/independentreserve.png'),
     imageIcon: true,
+    component: false,
     exchange: true
   },
   {
@@ -201,6 +225,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: i18n.t('trade_location.external').toString(),
     icon: 'mdi-book',
     imageIcon: false,
+    component: false,
     exchange: false
   },
   {
@@ -208,6 +233,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: i18n.t('trade_location.banks').toString(),
     icon: 'mdi-bank',
     imageIcon: false,
+    component: false,
     exchange: false
   },
   {
@@ -215,6 +241,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Blockchain',
     icon: 'mdi-link',
     imageIcon: false,
+    component: false,
     exchange: false
   },
   {
@@ -222,6 +249,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: i18n.t('trade_location.equities').toString(),
     icon: 'mdi-bag-suitcase',
     imageIcon: false,
+    component: false,
     exchange: false
   },
   {
@@ -229,6 +257,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: i18n.t('trade_location.real_estate').toString(),
     icon: 'mdi-home',
     imageIcon: false,
+    component: false,
     exchange: false
   },
   {
@@ -236,6 +265,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: i18n.t('trade_location.commodities').toString(),
     icon: 'mdi-basket',
     imageIcon: false,
+    component: false,
     exchange: false
   },
   {
@@ -243,6 +273,7 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Gitcoin',
     icon: require('@/assets/images/gitcoin.png'),
     imageIcon: true,
+    component: false,
     exchange: false
   }
 ];
