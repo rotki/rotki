@@ -240,6 +240,7 @@ class DataImporter():
             'referral_card_cashback',
             'card_cashback_reverted',
             'reimbursement',
+            'viban_purchase',
         ):
             # variable mapping to raw data
             currency = csv_row['Currency']
@@ -281,8 +282,13 @@ class DataImporter():
             )
             self.db.add_trades([trade])
 
-        elif row_type in ('crypto_withdrawal', 'crypto_deposit'):
-            if row_type == 'crypto_withdrawal':
+        elif row_type in (
+            'crypto_withdrawal',
+            'crypto_deposit',
+            'viban_deposit',
+            'viban_card_top_up',
+        ):
+            if row_type in ('crypto_withdrawal', 'viban_deposit', 'viban_card_top_up'):
                 category = AssetMovementCategory.WITHDRAWAL
                 amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
             else:
@@ -406,18 +412,41 @@ class DataImporter():
         investments_withdrawals: Dict[str, List[Any]] = defaultdict(list)
         debited_row = None
         credited_row = None
+        expects_debited = False
+        credited_timestamp = None
         for row in data:
+            # If we don't have the corresponding debited entry ignore them
+            # and warn the user
+            if (
+                expects_debited is True and
+                row['Transaction Kind'] != f'{tx_kind}_debited'
+            ):
+                self.db.msg_aggregator.add_warning(
+                    f'Error during cryptocom CSV import consumption. Found {tx_kind}_credited '
+                    f'but no amount debited after at date {row["Timestamp (UTC)"]}',
+                )
+                # Pop the last debited event as it's invalid
+                multiple_rows.pop(credited_timestamp, None)
+                # reset expects_credited value
+                expects_debited = False
             if row['Transaction Kind'] == f'{tx_kind}_debited':
                 timestamp = deserialize_timestamp_from_date(
                     date=row['Timestamp (UTC)'],
                     formatstr='%Y-%m-%d %H:%M:%S',
                     location='cryptocom',
                 )
+                if expects_debited is False and timestamp != credited_timestamp:
+                    self.db.msg_aggregator.add_warning(
+                        f'Error during cryptocom CSV import consumption. Found {tx_kind}_debited'
+                        f' but no amount credited before at date {row["Timestamp (UTC)"]}',
+                    )
+                    continue
                 if timestamp not in multiple_rows:
                     multiple_rows[timestamp] = {}
                 if 'debited' not in multiple_rows[timestamp]:
                     multiple_rows[timestamp]['debited'] = []
                 multiple_rows[timestamp]['debited'].append(row)
+                expects_debited = False
             elif row['Transaction Kind'] == f'{tx_kind}_credited':
                 # They only is one credited row
                 timestamp = deserialize_timestamp_from_date(
@@ -427,6 +456,8 @@ class DataImporter():
                 )
                 if timestamp not in multiple_rows:
                     multiple_rows[timestamp] = {}
+                expects_debited = True
+                credited_timestamp = timestamp
                 multiple_rows[timestamp]['credited'] = row
             elif row['Transaction Kind'] == f'{tx_kind}_deposit':
                 asset = row['Currency']
@@ -439,8 +470,14 @@ class DataImporter():
             # When we convert multiple assets dust to CRO
             # in one time, it will create multiple debited rows with
             # the same timestamp
-            debited_rows = multiple_rows[timestamp]['debited']
-            credited_row = multiple_rows[timestamp]['credited']
+            try:
+                debited_rows = multiple_rows[timestamp]['debited']
+                credited_row = multiple_rows[timestamp]['credited']
+            except KeyError as e:
+                self.db.msg_aggregator.add_warning(
+                    f'Failed to get {str(e)} event at timestamp {timestamp}.',
+                )
+                continue
             total_debited_usd = functools.reduce(
                 lambda acc, row:
                     acc +
