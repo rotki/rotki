@@ -872,7 +872,8 @@ There are two possible situations where you might need to merge two assets into 
 1. You added a custom asset that was later officially supported on rotki. In this case you should merge your
 custom asset to the the officially supported one. If you don't do this might split balances between entries,
 especially for supported exchanges that will use the officially supported entry.
-2. There was an issue and an Unknown asset notification is now visible.
+
+2. There was an issue and an Unknown asset notification is now visible. This can happen if you somehow end up deleting your global DB of assets. This way all your custom assets will be unknown. In this case you would need to re-add the deleted assets, and merge the old asset id that errors to the new one that you created.
 
 .. image:: images/rotki_merge_assets.png
    :alt: Optional information when adding a custom token
