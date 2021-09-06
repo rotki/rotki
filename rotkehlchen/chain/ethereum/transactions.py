@@ -156,12 +156,15 @@ class EthTransactions(LockableQueryMixIn):
             with_limit=with_limit,
         )
 
-    def get_transaction_receipt(
+    def get_or_query_transaction_receipt(
             self,
             tx_hash: str,
     ) -> Optional['EthereumTxReceipt']:
         """
-        This assumes the transaction has been queried and is in the DB
+        Gets the receipt from the DB if it exist. If not queries the chain for it,
+        saves it in the DB and then returns it.
+
+        Also if the actual transaction does not exist in the DB it queries it and saves it there.
 
         May raise:
 
@@ -170,6 +173,15 @@ class EthTransactions(LockableQueryMixIn):
         """
         tx_hash_b = hexstring_to_bytes(tx_hash)
         dbethtx = DBEthTx(self.database)
+        # If the transaction is not in the DB then query it and add it
+        result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx_hash_b))  # noqa: E501
+        if len(result) == 0:
+            transaction = self.ethereum.get_transaction_by_hash(tx_hash)
+            if transaction is None:
+                return None  # hash does not correspond to a transaction
+
+            dbethtx.add_ethereum_transactions([transaction])
+
         tx_receipt = dbethtx.get_receipt(tx_hash_b)
         if tx_receipt is not None:
             return tx_receipt

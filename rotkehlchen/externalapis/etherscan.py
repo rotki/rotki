@@ -14,12 +14,10 @@ from rotkehlchen.constants.timing import (
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
-from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_ethereum_address,
+    deserialize_ethereum_transaction,
     deserialize_int_from_str,
-    deserialize_timestamp,
 )
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -30,39 +28,6 @@ ETHERSCAN_TX_QUERY_LIMIT = 10000
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def deserialize_transaction_from_etherscan(data: Dict[str, Any]) -> EthereumTransaction:
-    """Reads dict data of a transaction from etherscan and deserializes it
-
-    Can raise DeserializationError if something is wrong
-    """
-    try:
-        gas_price = read_integer(data, 'gasPrice')
-        tx_hash = read_hash(data, 'hash')
-        input_data = read_hash(data, 'input')
-        timestamp = deserialize_timestamp(data['timeStamp'])
-
-        block_number = read_integer(data, 'blockNumber')
-        nonce = read_integer(data, 'nonce')
-
-        return EthereumTransaction(
-            timestamp=timestamp,
-            block_number=block_number,
-            tx_hash=tx_hash,
-            from_address=deserialize_ethereum_address(data['from']),
-            to_address=deserialize_ethereum_address(data['to']) if data['to'] != '' else None,
-            value=read_integer(data, 'value'),
-            gas=read_integer(data, 'gas'),
-            gas_price=gas_price,
-            gas_used=read_integer(data, 'gasUsed'),
-            input_data=input_data,
-            nonce=nonce,
-        )
-    except KeyError as e:
-        raise DeserializationError(
-            f'Etherscan ethereum transaction missing expected key {str(e)}',
-        ) from e
 
 
 class Etherscan(ExternalServiceWithApiKey):
@@ -93,7 +58,11 @@ class Etherscan(ExternalServiceWithApiKey):
     def _query(  # pylint: disable=no-self-use
             self,
             module: str,
-            action: Literal['eth_getBlockByNumber', 'eth_getTransactionReceipt'],
+            action: Literal[
+                'eth_getBlockByNumber',
+                'eth_getTransactionReceipt',
+                'eth_getTransactionByHash',
+            ],
             options: Optional[Dict[str, Any]] = None,
             timeout: Optional[Tuple[int, int]] = None,
     ) -> Dict[str, Any]:
@@ -263,7 +232,7 @@ class Etherscan(ExternalServiceWithApiKey):
             result = self._query(module='account', action='txlist', options=options)
             for entry in result:
                 try:
-                    tx = deserialize_transaction_from_etherscan(data=entry)
+                    tx = deserialize_ethereum_transaction(data=entry, ethereum=None)
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
                     continue
@@ -308,6 +277,17 @@ class Etherscan(ExternalServiceWithApiKey):
         block_data['number'] = hex_or_bytes_to_int(block_data['number'])  # pylint: disable=unsubscriptable-object  # noqa: E501
 
         return block_data
+
+    def get_transaction_by_hash(self, tx_hash: str) -> Dict[str, Any]:
+        """
+        Gets a transaction object by hash
+
+        May raise:
+        - RemoteError due to self._query().
+        """
+        options = {'txhash': tx_hash}
+        transaction_data = self._query(module='proxy', action='eth_getTransactionByHash', options=options)  # noqa: E501
+        return transaction_data
 
     def get_code(self, account: ChecksumEthAddress) -> str:
         """Gets the deployment bytecode at the given address

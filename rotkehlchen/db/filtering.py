@@ -163,24 +163,30 @@ class DBFilterQuery():
 class ETHTransactionsFilterQuery(DBFilterQuery):
 
     @property
-    def address_filter(self) -> DBETHTransactionAddressFilter:
-        assert len(self.filters) == 2
-        assert isinstance(self.filters[0], DBETHTransactionAddressFilter)
-        return self.filters[0]
+    def address_filter(self) -> Optional[DBETHTransactionAddressFilter]:
+        if len(self.filters) >= 1 and isinstance(self.filters[0], DBETHTransactionAddressFilter):
+            return self.filters[0]
+        return None
 
     @property
     def timestamp_filter(self) -> DBTimestampFilter:
-        assert len(self.filters) == 2
-        assert isinstance(self.filters[1], DBTimestampFilter)
-        return self.filters[1]
+        if len(self.filters) >= 2 and isinstance(self.filters[1], DBTimestampFilter):
+            return self.filters[1]
+        return DBTimestampFilter(and_op=True)  # no range specified
 
     @property
     def addresses(self) -> Optional[List[ChecksumEthAddress]]:
-        return self.address_filter.addresses
+        address_filter = self.address_filter
+        if address_filter is None:
+            return None
+        return address_filter.addresses
 
     @addresses.setter
     def addresses(self, addresses: Optional[List[ChecksumEthAddress]]) -> None:
-        self.address_filter.addresses = addresses
+        address_filter = self.address_filter
+        if address_filter is None:
+            return
+        address_filter.addresses = addresses
 
     @property
     def from_ts(self) -> Optional[Timestamp]:

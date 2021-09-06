@@ -174,6 +174,8 @@ def convert_to_int(
         # Since float string are not converted to int we have to first convert
         # to float and try to convert to int afterwards
         try:
+            if isinstance(val, str) and val.startswith('0x'):
+                return int(val, 16)
             return int(val)
         except ValueError:
             # else also try to turn it into a float

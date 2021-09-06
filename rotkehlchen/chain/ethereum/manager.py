@@ -41,10 +41,16 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
+    deserialize_ethereum_transaction,
     deserialize_int_from_hex,
 )
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestamp
+from rotkehlchen.typing import (
+    ChecksumEthAddress,
+    EthereumTransaction,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 from rotkehlchen.utils.network import request_get_dict
@@ -735,6 +741,36 @@ class EthereumManager():
     ) -> Dict[str, Any]:
         return self.query(
             method=self._get_transaction_receipt,
+            call_order=call_order if call_order is not None else self.default_call_order(),
+            tx_hash=tx_hash,
+        )
+
+    def _get_transaction_by_hash(
+            self,
+            web3: Optional[Web3],
+            tx_hash: str,
+    ) -> Optional[EthereumTransaction]:
+        if web3 is None:
+            tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
+        else:
+            tx_data = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
+
+        try:
+            transaction = deserialize_ethereum_transaction(data=tx_data, ethereum=self)
+        except (DeserializationError, ValueError) as e:
+            raise RemoteError(
+                f'Couldnt deserialize ethereum transaction data from {tx_data}. Error: {str(e)}',
+            ) from e
+
+        return transaction
+
+    def get_transaction_by_hash(
+            self,
+            tx_hash: str,
+            call_order: Optional[Sequence[NodeName]] = None,
+    ) -> Optional[EthereumTransaction]:
+        return self.query(
+            method=self._get_transaction_by_hash,
             call_order=call_order if call_order is not None else self.default_call_order(),
             tx_hash=tx_hash,
         )

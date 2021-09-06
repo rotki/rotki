@@ -3,14 +3,16 @@ import pytest
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.tests.utils.ethereum import ETHERSCAN_AND_INFURA_PARAMS
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Timestamp
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 
 @pytest.mark.parametrize(*ETHERSCAN_AND_INFURA_PARAMS)
-def test_get_transaction_receipt(database, ethereum_manager, call_order):  # pylint: disable=unused-argument  # noqa: E501
-    """Test that getting a transaction receipt from the network and saving it in theDB works"""
+@pytest.mark.parametrize('transaction_already_queried', [True, False])
+def test_get_transaction_receipt(database, ethereum_manager, call_order, transaction_already_queried):  # pylint: disable=unused-argument  # noqa: E501
+    """Test that getting a transaction receipt from the network and saving it in the DB works"""
     dbethtx = DBEthTx(database)
     tx_hash = '0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda'
     tx_hash_b = hexstring_to_bytes(tx_hash)
@@ -21,14 +23,15 @@ def test_get_transaction_receipt(database, ethereum_manager, call_order):  # pyl
         block_number=13142218,
         from_address=ChecksumEthAddress('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea'),
         to_address=ChecksumEthAddress('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        value=10 * 10**18,
+        value=int(10 * 10**18),
         gas=194928,
-        gas_price=0.000000204 * 10**18,
+        gas_price=int(0.000000204 * 10**18),
         gas_used=136675,
         input_data=input_data_b,
         nonce=13,
     )
-    dbethtx.add_ethereum_transactions(ethereum_transactions=[transaction])
+    if transaction_already_queried is True:
+        dbethtx.add_ethereum_transactions(ethereum_transactions=[transaction])
 
     expected_receipt = EthereumTxReceipt(
         tx_hash=tx_hash_b,
@@ -71,5 +74,8 @@ def test_get_transaction_receipt(database, ethereum_manager, call_order):  # pyl
     )
 
     txmodule = EthTransactions(ethereum=ethereum_manager, database=database)
-    receipt = txmodule.get_transaction_receipt(tx_hash)
+    receipt = txmodule.get_or_query_transaction_receipt(tx_hash)
     assert receipt == expected_receipt
+    results = txmodule.query(ETHTransactionsFilterQuery.make(tx_hash=tx_hash), only_cache=True)
+    assert len(results) == 1
+    assert results[0] == transaction
