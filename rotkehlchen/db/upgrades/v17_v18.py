@@ -6,6 +6,28 @@ if TYPE_CHECKING:
 ICN_NAME = 'yyDAI+yUSDC+yUSDT+yTUSD'
 
 
+def _create_new_tables(db: 'DBHandler') -> None:
+    """Create new tables added in this upgrade"""
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS xpubs (
+    xpub TEXT NOT NULL,
+    derivation_path TEXT NOT NULL,
+    label TEXT,
+    PRIMARY KEY (xpub, derivation_path)
+    );""")
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS xpub_mappings (
+    address TEXT NOT NULL,
+    xpub TEXT NOT NULL,
+    derivation_path TEXT NOT NULL,
+    account_index INTEGER,
+    derived_index INTEGER,
+    FOREIGN KEY(address) REFERENCES blockchain_accounts(account) ON DELETE CASCADE
+    FOREIGN KEY(xpub, derivation_path) REFERENCES xpubs(xpub, derivation_path) ON DELETE CASCADE
+    PRIMARY KEY (address, xpub, derivation_path)
+    );""")  # noqa: E501
+
+
 def _delete_cached_yusd_icons(db: 'DBHandler') -> None:
     datadir = db.user_data_dir.parent
     icons_dir = datadir / 'icons'
@@ -30,5 +52,6 @@ def upgrade_v17_to_v18(db: 'DBHandler') -> None:
     cursor = db.conn.cursor()
     cursor.execute('DELETE FROM aave_events;')
     cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
+    _create_new_tables(db)
     db.conn.commit()
     _delete_cached_yusd_icons(db)

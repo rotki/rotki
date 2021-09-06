@@ -4,6 +4,17 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
+def _create_new_tables(db: 'DBHandler') -> None:
+    """Create new tables added in this upgrade"""
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS manually_tracked_balances (
+    asset TEXT NOT NULL,
+    label TEXT NOT NULL PRIMARY KEY,
+    amount TEXT,
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location)
+    );""")
+
+
 def _upgrade_blockchain_accounts_table(db: 'DBHandler') -> None:
     cursor = db.conn.cursor()
     # This is the user credentiaals trades table at v10
@@ -37,3 +48,4 @@ def upgrade_v10_to_v11(db: 'DBHandler') -> None:
     - Adds the label column to blockchain accounts
     """
     _upgrade_blockchain_accounts_table(db)
+    _create_new_tables(db)

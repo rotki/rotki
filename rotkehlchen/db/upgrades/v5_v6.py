@@ -122,6 +122,66 @@ def _create_new_tables(db: 'DBHandler') -> None:
     /* Sushiswap */
     INSERT OR IGNORE INTO location(location, seq) VALUES ('_', 31);
     """)
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS asset_movement_category (
+    category    CHAR(1)       PRIMARY KEY NOT NULL,
+    seq     INTEGER UNIQUE
+    );
+    /* Deposit Category */
+    INSERT OR IGNORE INTO asset_movement_category(category, seq) VALUES ('A', 1);
+    /* Withdrawal Category */
+    INSERT OR IGNORE INTO asset_movement_category(category, seq) VALUES ('B', 2);
+    """)
+    db.conn.executescript("""
+CREATE TABLE IF NOT EXISTS asset_movements (
+    id TEXT PRIMARY KEY,
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    category CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_movement_category(category),
+    address TEXT,
+    transaction_id TEXT,
+    time INTEGER,
+    asset TEXT NOT NULL,
+    amount TEXT,
+    fee_asset TEXT,
+    fee TEXT,
+    link TEXT
+    );""")
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS used_query_ranges (
+    name VARCHAR[24] NOT NULL PRIMARY KEY,
+    start_ts INTEGER,
+    end_ts INTEGER
+    );""")
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS ethereum_transactions (
+    tx_hash BLOB,
+    timestamp INTEGER,
+    block_number INTEGER,
+    from_address TEXT,
+    to_address TEXT,
+    value TEXT,
+    gas TEXT,
+    gas_price TEXT,
+    gas_used TEXT,
+    input_data BLOB,
+    nonce INTEGER,
+    /* we determine uniqueness for ethereum internal transactions by using an
+    increasingly negative number */
+    PRIMARY KEY (tx_hash, nonce, from_address)
+    );""")
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS margin_positions (
+    id TEXT PRIMARY KEY,
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    open_time INTEGER,
+    close_time INTEGER,
+    profit_loss TEXT,
+    pl_currency TEXT NOT NULL,
+    fee TEXT,
+    fee_currency TEXT,
+    link TEXT,
+    notes TEXT
+    );""")
 
 
 def _upgrade_trades_table(db: 'DBHandler') -> None:

@@ -4,6 +4,30 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
+def _create_new_tables(db: 'DBHandler') -> None:
+    """Create new tables added in this upgrade"""
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS balancer_events (
+    tx_hash VARCHAR[42] NOT NULL,
+    log_index INTEGER NOT NULL,
+    address VARCHAR[42] NOT NULL,
+    timestamp INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    pool_address_token TEXT NOT NULL,
+    lp_amount TEXT NOT NULL,
+    usd_value TEXT NOT NULL,
+    amount0 TEXT NOT NULL,
+    amount1 TEXT NOT NULL,
+    amount2 TEXT,
+    amount3 TEXT,
+    amount4 TEXT,
+    amount5 TEXT,
+    amount6 TEXT,
+    amount7 TEXT,
+    PRIMARY KEY (tx_hash, log_index)
+    );""")
+
+
 def upgrade_v23_to_v24(db: 'DBHandler') -> None:
     """Upgrades the DB from v23 to v24
 
@@ -34,4 +58,5 @@ def upgrade_v23_to_v24(db: 'DBHandler') -> None:
         log_index INTEGER,
         PRIMARY KEY (tx_hash, address, type, log_index));
     """)
+    _create_new_tables(db)
     db.conn.commit()

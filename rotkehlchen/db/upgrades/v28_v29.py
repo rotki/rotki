@@ -2,6 +2,41 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from sqlite3 import Connection
+
+
+def _create_new_tables(conn: 'Connection') -> None:
+    """Create new tables added at this upgrade
+
+    Should be called at the end of the upgrade as it depends on the changes
+    done to the transactions table
+    """
+    conn.executescript("""
+    CREATE TABLE IF NOT EXISTS ethtx_receipts (
+    tx_hash BLOB NOT NULL PRIMARY KEY,
+    contract_address TEXT, /* can be null */
+    status INTEGER NOT NULL CHECK (status IN (0, 1)),
+    type INTEGER NOT NULL,
+    FOREIGN KEY(tx_hash) REFERENCES ethereum_transactions(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE
+    );""")  # noqa: E501
+    conn.executescript("""
+    CREATE TABLE IF NOT EXISTS ethtx_receipt_logs (
+    tx_hash BLOB NOT NULL,
+    log_index INTEGER NOT NULL,
+    data BLOB NOT NULL,
+    address TEXT NOT NULL,
+    removed INTEGER NOT NULL CHECK (removed IN (0, 1)),
+    FOREIGN KEY(tx_hash) REFERENCES ethtx_receipts(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(tx_hash, log_index)
+    );""")
+    conn.executescript("""
+    CREATE TABLE IF NOT EXISTS ethtx_receipt_log_topics (
+    tx_hash BLOB NOT NULL,
+    log_index INTEGER NOT NULL,
+    topic BLOB NOT NULL,
+    FOREIGN KEY(tx_hash, log_index) REFERENCES ethtx_receipt_logs(tx_hash, log_index) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(tx_hash, log_index, topic)
+    );""")  # noqa: E501
 
 
 def upgrade_v28_to_v29(db: 'DBHandler') -> None:
@@ -72,4 +107,6 @@ def upgrade_v28_to_v29(db: 'DBHandler') -> None:
         'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
         transactions_data,
     )
+
+    _create_new_tables(db.conn)
     db.conn.commit()

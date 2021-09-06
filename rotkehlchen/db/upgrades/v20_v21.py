@@ -6,6 +6,43 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
+def _create_new_tables(db: 'DBHandler') -> None:
+    """Create new tables added in this upgrade"""
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS amm_swaps (
+    tx_hash VARCHAR[42] NOT NULL,
+    log_index INTEGER NOT NULL,
+    address VARCHAR[42] NOT NULL,
+    from_address VARCHAR[42] NOT NULL,
+    to_address VARCHAR[42] NOT NULL,
+    timestamp INTEGER NOT NULL,
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    token0_identifier TEXT NOT NULL,
+    token1_identifier TEXT NOT NULL,
+    amount0_in TEXT,
+    amount1_in TEXT,
+    amount0_out TEXT,
+    amount1_out TEXT,
+    PRIMARY KEY (tx_hash, log_index)
+    );""")
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS uniswap_events (
+    tx_hash VARCHAR[42] NOT NULL,
+    log_index INTEGER NOT NULL,
+    address VARCHAR[42] NOT NULL,
+    timestamp INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    pool_address VARCHAR[42] NOT NULL,
+    token0_identifier TEXT NOT NULL,
+    token1_identifier TEXT NOT NULL,
+    amount0 TEXT,
+    amount1 TEXT,
+    usd_price TEXT,
+    lp_amount TEXT,
+    PRIMARY KEY (tx_hash, log_index)
+    );""")
+
+
 def upgrade_v20_to_v21(db: 'DBHandler') -> None:
     """Upgrades the DB from v20 to v21
 
@@ -53,4 +90,5 @@ CREATE TABLE IF NOT EXISTS timed_balances (
         'VALUES (?, ?, ?, ?, ?)',
         balances,
     )
+    _create_new_tables(db)
     db.conn.commit()

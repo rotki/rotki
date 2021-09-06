@@ -49,10 +49,16 @@ def _migrate_fiat_balances(db: 'DBHandler') -> None:
 def _delete_unneeded_data(db: 'DBHandler') -> None:
     """Delete owned eth tokens and alethio credentials"""
     cursor = db.conn.cursor()
-    # Remove all owned eth tokens as this setting is no longer going to be used
-    cursor.execute('DELETE FROM multisettings WHERE name="eth_token";')
-    # If the user had any alethio credentials remove them.
-    cursor.execute('DELETE FROM external_service_credentials WHERE name="alethio";')
+    try:
+        # Remove all owned eth tokens as this setting is no longer going to be used
+        cursor.execute('DELETE FROM multisettings WHERE name="eth_token";')
+    except sqlcipher.OperationalError:  # pylint: disable=no-member
+        pass  # if the table was not yet created, nothing to delete
+    try:
+        # If the user had any alethio credentials remove them.
+        cursor.execute('DELETE FROM external_service_credentials WHERE name="alethio";')
+    except sqlcipher.OperationalError:  # pylint: disable=no-member
+        pass  # if the table was not yet created, nothing to delete
     db.conn.commit()
 
 
