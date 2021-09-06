@@ -9,14 +9,41 @@
       }"
     />
     <v-card-title>
-      <span class="text-truncate">{{ item.name }}</span>
-      <v-spacer />
-      <amount-display
-        class="text--secondary"
-        :value="item.priceEth"
-        asset="ETH"
-      />
+      <v-row align="center" no-gutters>
+        <v-col class="text-truncate">
+          {{ name }}
+        </v-col>
+        <v-col cols="auto" class="text-subtitle-2">
+          <amount-display
+            class="text--secondary"
+            :value="item.priceEth"
+            asset="ETH"
+          />
+        </v-col>
+      </v-row>
     </v-card-title>
+    <v-card-subtitle>
+      <v-row align="center" no-gutters>
+        <v-col>
+          <v-tooltip top open-delay="400" max-width="450">
+            <template #activator="{ on, attrs }">
+              <span v-bind="attrs" class="text-truncate" v-on="on">
+                {{ item.collection.name }}
+              </span>
+            </template>
+            <span> {{ item.collection.description }}</span>
+          </v-tooltip>
+        </v-col>
+        <v-col cols="auto" class="text-subtitle-2">
+          <amount-display
+            class="text--secondary"
+            :value="item.priceUsd"
+            show-currency="ticker"
+            fiat-currency="USD"
+          />
+        </v-col>
+      </v-row>
+    </v-card-subtitle>
     <v-card-actions>
       <v-spacer />
       <icon-link :url="item.permalink" />
@@ -25,7 +52,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import IconLink from '@/components/base/IconLink.vue';
 import { NftWithAddress } from '@/components/nft/types';
 
@@ -37,8 +69,13 @@ export default defineComponent({
       required: true,
       type: Object as PropType<NftWithAddress>
     }
+  },
+  setup(props) {
+    const { item } = toRefs(props);
+    const name = computed(() =>
+      item.value.name ? item.value.name : item.value.collection.name
+    );
+    return { name };
   }
 });
 </script>
-
-<style scoped></style>

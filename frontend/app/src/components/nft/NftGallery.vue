@@ -1,5 +1,17 @@
 <template>
-  <div>
+  <progress-screen v-if="loading && nfts.length === 0">
+    {{ $t('nft_gallery.loading') }}
+  </progress-screen>
+  <div v-else class="mt-8">
+    <v-row justify="end">
+      <v-col cols="auto">
+        <refresh-button
+          :loading="loading"
+          :tooltip="$t('nft_gallery.refresh_tooltip')"
+          @refresh="fetchNfts"
+        />
+      </v-col>
+    </v-row>
     <v-row>
       <v-col
         v-for="item in nfts"
@@ -7,7 +19,8 @@
         cols="12"
         sm="6"
         md="6"
-        lg="3"
+        lg="4"
+        xl="3"
       >
         <nft-gallery-item :item="item" />
       </v-col>
@@ -18,6 +31,8 @@
 <script lang="ts">
 import { ActionResult } from '@rotki/common/lib/data';
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { NftWithAddress } from '@/components/nft/types';
 import { SessionActions } from '@/store/session/const';
@@ -26,15 +41,17 @@ import { useStore } from '@/store/utils';
 
 export default defineComponent({
   name: 'NftGallery',
-  components: { NftGalleryItem },
+  components: { RefreshButton, ProgressScreen, NftGalleryItem },
   setup() {
     const { dispatch } = useStore();
     const total = ref(0);
     const limit = ref(0);
     const error = ref('');
+    const loading = ref(true);
     const nfts = ref<NftWithAddress[]>([]);
 
     const fetchNfts = async () => {
+      loading.value = true;
       const { message, result }: ActionResult<NftResponse> = await dispatch(
         `session/${SessionActions.FETCH_NFTS}`
       );
@@ -54,6 +71,7 @@ export default defineComponent({
       } else {
         error.value = message;
       }
+      loading.value = false;
     };
 
     onMounted(fetchNfts);
@@ -61,7 +79,9 @@ export default defineComponent({
     return {
       total,
       limit,
-      nfts
+      nfts,
+      fetchNfts,
+      loading
     };
   }
 });

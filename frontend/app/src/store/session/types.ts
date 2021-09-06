@@ -51,9 +51,17 @@ export interface ChangePasswordPayload {
   readonly newPassword: string;
 }
 
+interface NftCollectionInfo {
+  readonly bannerImage: string;
+  readonly description: string;
+  readonly name: string;
+  readonly largeImage: string;
+}
+
 export interface Nft {
   readonly tokenIdentifier: string;
   readonly name: string;
+  readonly collection: NftCollectionInfo;
   readonly backgroundColor?: any;
   readonly imageUrl: string;
   readonly externalLink: string;

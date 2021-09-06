@@ -446,6 +446,10 @@
     "subtitle": "Select which modules should be queried for this account",
     "title": "Enabled modules"
   },
+  "nft_gallery": {
+    "loading": "Loading NFTs",
+    "refresh_tooltip": "Reload NFTs"
+  },
   "no_filter_available": {
     "hint": {
       "description": "* type the filter and then press enter e.g.",
