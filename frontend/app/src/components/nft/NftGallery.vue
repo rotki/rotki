@@ -2,8 +2,20 @@
   <progress-screen v-if="loading && visibleNfts.length === 0">
     {{ $t('nft_gallery.loading') }}
   </progress-screen>
-  <div v-else class="mt-2">
-    <v-row justify="end">
+  <div v-else>
+    <v-row justify="space-between">
+      <v-col>
+        <blockchain-account-selector
+          v-model="selectedAccount"
+          :chains="['ETH']"
+          dense
+          outlined
+          no-padding
+          flat
+          :usable-addresses="availableAddresses"
+          max-width="350px"
+        />
+      </v-col>
       <v-col cols="auto">
         <refresh-button
           :loading="loading"
@@ -25,7 +37,11 @@
         <nft-gallery-item :item="item" />
       </v-col>
     </v-row>
-    <v-pagination v-model="page" :length="pages" class="mt-5" />
+    <v-pagination
+      v-model="page"
+      :length="pages"
+      :class="isMobile ? 'mt-2' : 'mt-5'"
+    />
   </div>
 </template>
 
@@ -45,6 +61,7 @@ import { setupThemeCheck } from '@/composables/theme';
 import { SessionActions } from '@/store/session/const';
 import { NftResponse } from '@/store/session/types';
 import { useStore } from '@/store/utils';
+import { GeneralAccount } from '@/typing/types';
 
 export default defineComponent({
   name: 'NftGallery',
@@ -58,15 +75,25 @@ export default defineComponent({
     const loading = ref(true);
     const page = ref(1);
     const nfts = ref<NftWithAddress[]>([]);
+    const availableAddresses = ref<string>([]);
     const itemsPerPage = computed(() => (isMobile.value ? 1 : 8));
+    const selectedAccount = ref<GeneralAccount | null>(null);
+
+    const items = computed(() =>
+      selectedAccount.value
+        ? nfts.value.filter(
+            ({ address }) => address === selectedAccount.value.address
+          )
+        : nfts.value
+    );
 
     const pages = computed(() => {
-      return Math.ceil(nfts.value.length / itemsPerPage.value);
+      return Math.ceil(items.value.length / itemsPerPage.value);
     });
 
     const visibleNfts = computed(() => {
       const start = (page.value - 1) * itemsPerPage.value;
-      return nfts.value.slice(start, start + itemsPerPage.value);
+      return items.value.slice(start, start + itemsPerPage.value);
     });
 
     const fetchNfts = async () => {
@@ -80,6 +107,7 @@ export default defineComponent({
 
         const allNfts: NftWithAddress[] = [];
         const { addresses } = result;
+        availableAddresses.value = Object.keys(addresses);
         for (const address in addresses) {
           const addressNfts = addresses[address];
           for (const nft of addressNfts) {
@@ -100,9 +128,12 @@ export default defineComponent({
       limit,
       visibleNfts,
       fetchNfts,
+      availableAddresses,
+      selectedAccount,
       loading,
       page,
-      pages
+      pages,
+      isMobile
     };
   }
 });
