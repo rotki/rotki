@@ -39,7 +39,8 @@ class AssetType(DBEnumMixIn):
     ARBITRUM_TOKEN = 30
     OPTIMISM_TOKEN = 31
 
-    def evm_assets(self) -> Tuple['AssetType', ...]:
+    @classmethod
+    def evm_assets(cls) -> Tuple['AssetType', ...]:
         return (
             AssetType.ETHEREUM_TOKEN,
             AssetType.POLYGON_TOKEN,

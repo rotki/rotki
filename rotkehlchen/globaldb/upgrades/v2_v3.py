@@ -67,7 +67,7 @@ def coingecko_hack() -> Dict[str, ChecksumEthAddress]:
     addr = string_to_ethereum_address(
         '0x' + "".join(random.choices('0123456789ABCDEFabcdef', k=40)),
     )
-    return {str(k.value): addr for k in ChainID}
+    return {str(k): addr for k in ChainID}
 
 
 def upgrade_ethereum_assets(query: List[Any]) -> EVM_TUPLES_CREATION_TYPE:
@@ -90,8 +90,8 @@ def upgrade_ethereum_assets(query: List[Any]) -> EVM_TUPLES_CREATION_TYPE:
     for entry in old_ethereum_data:
         evm_tuples.append((
             entry[0],  # identifier
-            EvmTokenKind.ERC20.value,  # token type
-            ChainID.ETHEREUM.value,  # chain
+            str(EvmTokenKind.ERC20),  # token type
+            str(ChainID.ETHEREUM),  # chain
             entry[1],  # address
             entry[2],  # decimals
             entry[3],  # protocol
@@ -131,7 +131,7 @@ def evm_compatible_assets_create_tuples(
 
     for entry in query:
         try:
-            ids = coingecko_hack(entry[6])
+            ids = coingecko_hack()
             asset_chain = VALID_EVM_CHAINS[entry[1]]
         except KeyError as e:
             msg = str(e)
@@ -150,8 +150,8 @@ def evm_compatible_assets_create_tuples(
         new_swapped_for = old_id_to_new.get(entry[8], entry[8])
         evm_tuples.append((
             new_id,  # identifier
-            EvmTokenKind.ERC20.value,  # token type
-            asset_chain.value,  # chain
+            str(EvmTokenKind.ERC20),  # token type
+            str(asset_chain),  # chain
             address,  # address
             None,  # decimals TODO: We have to query this information
             None,  # protocol
@@ -263,11 +263,11 @@ def translate_user_owned_assets(connection: sqlite3.Connection) -> List[Tuple[st
     owned_assets = []
     for entry in query:
         if VALID_EVM_CHAINS.get(entry[1]) is not None:
-            ids = coingecko_hack(entry[0])
+            ids = coingecko_hack()
             asset_chain = VALID_EVM_CHAINS[entry[1]]
             # TODO assets: This can be broken now for EVM assets since we use random generated
             # addresses. After a proper implementation should work always
-            address = ids[asset_chain.value]
+            address = ids[str(asset_chain)]
             idenfifier = evm_address_to_identifier(
                 address=address,  # We have to query for this
                 chain=asset_chain,

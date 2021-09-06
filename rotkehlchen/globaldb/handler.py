@@ -282,7 +282,8 @@ class GlobalDBHandler():
 
         Returns None if identifier can't be matched to an asset
         """
-        # TODO: This is a safe for the identifier and need to be removed
+        # TODO: This is to ensure that identifier gets traslated in places
+        # where we call with the old id. Needs to be removed later
         identifier = translate_old_format_to_new(identifier)
         cursor = GlobalDBHandler()._conn.cursor()
         query = cursor.execute(

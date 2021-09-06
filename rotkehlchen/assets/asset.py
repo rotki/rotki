@@ -615,7 +615,7 @@ class HasEthereumToken(Asset):
 
         if not data.ethereum_address:
             raise DeserializationError(
-                'Tried to initialize a non Ethereum asset as Ethereum Token',
+                'Tried to initialize a non EVM token asset as an EVM Token',
             )
 
         object.__setattr__(self, 'ethereum_address', data.ethereum_address)
