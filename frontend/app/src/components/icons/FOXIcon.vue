@@ -41,6 +41,7 @@ export default defineComponent({
 .opacity {
   opacity: 1;
 }
+
 .icon {
   width: 100%;
   height: 100%;

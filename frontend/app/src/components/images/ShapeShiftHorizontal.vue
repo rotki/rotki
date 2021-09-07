@@ -9,7 +9,7 @@
   >
     <g>
       <g>
-        <path class="st0" d="M636,141.7h8V94h-8V141.7z" :fill="color"/>
+        <path class="st0" d="M636,141.7h8V94h-8V141.7z" :fill="color" />
         <rect x="636" y="79.7" class="st0" width="8" height="8" :fill="color" />
         <path
           class="st0"
@@ -61,7 +61,11 @@
           :fill="color"
         />
         <g>
-          <polygon class="st0" points="659.4,141.9 659.4,141.8 659.3,141.8 			" :fill="color"/>
+          <polygon
+            class="st0"
+            points="659.4,141.9 659.4,141.8 659.3,141.8 			"
+            :fill="color"
+          />
           <path
             class="st0"
             d="M668.9,90.1c0-7.2,3.3-10.5,8.5-10.5c0.1,0,0.2,0,0.3,0l1.8-6.9c-0.8-0.1-1.5-0.2-2.3-0.2
@@ -110,6 +114,7 @@ export default defineComponent({
 .opacity {
   opacity: 1;
 }
+
 .icon {
   width: 100%;
   height: 100%;

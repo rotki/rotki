@@ -1,4 +1,4 @@
-import {VueConstructor} from "vue";
+import { VueConstructor } from 'vue';
 import { TradeLocation } from '@/services/history/types';
 
 export type TradeLocationData = {
