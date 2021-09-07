@@ -453,7 +453,8 @@
     "loading": "Loading NFTs",
     "refresh_tooltip": "Reload NFTs",
     "select_collection": "Select collection",
-    "select_account": "Select account"
+    "select_account": "Select account",
+    "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
   },
   "no_filter_available": {
     "hint": {

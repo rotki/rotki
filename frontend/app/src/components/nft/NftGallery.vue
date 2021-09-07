@@ -9,7 +9,7 @@
     </span>
   </no-data-screen>
   <div v-else>
-    <v-row justify="space-between">
+    <v-row justify="space-between" align="center">
       <v-col>
         <v-row align="center">
           <v-col :cols="isMobile ? '12' : 'auto'">
@@ -56,6 +56,19 @@
         />
       </v-col>
     </v-row>
+    <v-row v-if="!premium && visibleNfts.length > 0" justify="center">
+      <v-col cols="auto">
+        <i18n path="nft_gallery.upgrade">
+          <template #limit> {{ limit }}</template>
+          <template #link>
+            <base-external-link
+              :text="$t('upgrade_row.rotki_premium')"
+              :href="$interop.premiumURL"
+            />
+          </template>
+        </i18n>
+      </v-col>
+    </v-row>
     <v-row
       v-if="visibleNfts.length === 0"
       align="center"
@@ -93,6 +106,7 @@ import {
   watch
 } from '@vue/composition-api';
 import { Dispatch } from 'vuex';
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -194,16 +208,23 @@ const setupNfts = (
 
 export default defineComponent({
   name: 'NftGallery',
-  components: { NoDataScreen, RefreshButton, ProgressScreen, NftGalleryItem },
+  components: {
+    BaseExternalLink,
+    NoDataScreen,
+    RefreshButton,
+    ProgressScreen,
+    NftGalleryItem
+  },
   setup() {
     const { isMobile } = setupThemeCheck();
-    const { dispatch } = useStore();
+    const { dispatch, state } = useStore();
 
     const page = ref(1);
 
     const itemsPerPage = computed(() => (isMobile.value ? 1 : 8));
     const selectedAccount = ref<GeneralAccount | null>(null);
     const selectedCollection = ref<string | null>(null);
+    const premium = computed(() => state.session?.premium);
 
     watch(selectedAccount, () => (page.value = 1));
     watch(selectedCollection, () => (page.value = 1));
@@ -213,6 +234,7 @@ export default defineComponent({
       selectedCollection,
       page,
       isMobile,
+      premium,
       ...setupNfts(
         dispatch,
         selectedAccount,
