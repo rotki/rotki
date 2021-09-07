@@ -18,7 +18,7 @@
       />
       <component
         :is="item.component"
-        v-else-if="typeof item.component !== 'boolean'"
+        v-else-if="typeof item.component !== 'undefined'"
       />
       <v-icon v-else color="accent"> {{ item.icon }} </v-icon>
     </span>

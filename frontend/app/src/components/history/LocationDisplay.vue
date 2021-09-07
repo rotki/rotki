@@ -36,8 +36,7 @@ export default class LocationDisplay extends Mixins(AssetMixin) {
         identifier: this.identifier,
         exchange: false,
         imageIcon: true,
-        icon: `${this.$api.serverUrl}/api/1/assets/${this.identifier}/icon`,
-        component: false
+        icon: `${this.$api.serverUrl}/api/1/assets/${this.identifier}/icon`
       };
     }
 
