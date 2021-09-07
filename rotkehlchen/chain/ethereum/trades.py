@@ -22,8 +22,8 @@ from rotkehlchen.typing import (
 )
 
 # Quick lookup for AMMTrade locations
-AMMTradeLocations = {Location.BALANCER, Location.UNISWAP}
-AMMTRADE_LOCATION_NAMES = Literal['balancer', 'uniswap']
+AMMTradeLocations = {Location.BALANCER, Location.UNISWAP, Location.SUSHISWAP}
+AMMTRADE_LOCATION_NAMES = Literal['balancer', 'uniswap', 'sushiswap']
 AMMSwapDBTuple = (
     Tuple[
         str,  # tx_hash
