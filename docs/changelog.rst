@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1097` Users will now be able to view their NFTs.
 * :feature:`2764` Users will now be able to restore the local assets database to its initial state.
 * :feature:`2847` Users will now be able to use a combination of filters in the search for trades and deposits/withdrawals.
 * :feature:`3254` Users can now add a custom Covalent API key in rotki.
