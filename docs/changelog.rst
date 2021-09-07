@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`3406` Sushiswap events will now be taken into account during the profit and loss report.
+
 * :release:`1.20.1 <2021-08-27>`
 * :bug:`3349` Defi swaps trade now shows in trade history.
 * :bug:`3329` Users will now properly see their sushiswap trades in the history page if they have the sushiswap module activated.
