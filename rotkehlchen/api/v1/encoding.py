@@ -400,6 +400,39 @@ class AssetField(fields.Field):
         return asset
 
 
+class MaybeAssetField(fields.Field):
+
+    def __init__(self, *, form_with_incomplete_data: bool = False, **kwargs: Any) -> None:  # noqa: E501
+        self.form_with_incomplete_data = form_with_incomplete_data
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _serialize(
+            value: Asset,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Optional[str]:
+        # Asset can be missing so we need to handle None when serializing from schema
+        return str(value.identifier) if value else None
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Optional[Asset]:
+        try:
+            asset = Asset(value, form_with_incomplete_data=self.form_with_incomplete_data)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+        except UnknownAsset:
+            log.error(f'Failed to deserialize asset {value}')
+            return None
+        return asset
+
+
 class EthereumAddressField(fields.Field):
 
     @staticmethod
@@ -1926,7 +1959,7 @@ class AssetIconUploadSchema(Schema):
 
 class ExchangeRatesSchema(Schema):
     async_query = fields.Boolean(load_default=False)
-    currencies = DelimitedOrNormalList(AssetField(), required=True)
+    currencies = DelimitedOrNormalList(MaybeAssetField(), required=True)
 
 
 class WatcherSchema(Schema):
