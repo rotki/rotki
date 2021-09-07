@@ -1,7 +1,7 @@
 <template>
   <v-card class="mx-auto">
     <v-img
-      :src="item.imageUrl"
+      :src="imageUrl"
       contain
       aspect-ratio="1"
       :style="{
@@ -75,7 +75,10 @@ export default defineComponent({
     const name = computed(() =>
       item.value.name ? item.value.name : item.value.collection.name
     );
-    return { name };
+    const imageUrl = computed(() => {
+      return item.value.imageUrl ?? require('@/assets/images/placeholder.svg');
+    });
+    return { name, imageUrl };
   }
 });
 </script>
