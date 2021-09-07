@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
     from sqlite3 import Connection
+
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def _create_new_tables(conn: 'Connection') -> None:
@@ -34,8 +35,9 @@ def _create_new_tables(conn: 'Connection') -> None:
     tx_hash BLOB NOT NULL,
     log_index INTEGER NOT NULL,
     topic BLOB NOT NULL,
+    topic_index INTEGER NOT NULL,
     FOREIGN KEY(tx_hash, log_index) REFERENCES ethtx_receipt_logs(tx_hash, log_index) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY(tx_hash, log_index, topic)
+    PRIMARY KEY(tx_hash, log_index, topic_index)
     );""")  # noqa: E501
 
 

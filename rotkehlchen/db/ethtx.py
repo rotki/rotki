@@ -147,11 +147,12 @@ class DBEthTx():
                 int(log_entry['removed']),
             ))
 
-            for topic in log_entry['topics']:
+            for idx, topic in enumerate(log_entry['topics']):
                 topic_tuples.append((
                     tx_hash_b,
                     log_index,
-                    topic,
+                    hexstring_to_bytes(topic),
+                    idx,
                 ))
 
         if len(log_tuples) != 0:
@@ -163,8 +164,8 @@ class DBEthTx():
 
             if len(topic_tuples) != 0:
                 cursor.executemany(
-                    'INSERT INTO ethtx_receipt_log_topics (tx_hash, log_index, topic) '
-                    'VALUES(? ,? ,?)',
+                    'INSERT INTO ethtx_receipt_log_topics (tx_hash, log_index, topic, topic_index) '  # noqa: E501
+                    'VALUES(? ,? ,?, ?)',
                     topic_tuples,
                 )
 
@@ -196,7 +197,8 @@ class DBEthTx():
                 removed=bool(result[4]),  # works since value is either 0 or 1
             )
             topic_results = cursor.execute(
-                'SELECT topic from ethtx_receipt_log_topics WHERE tx_hash=? AND log_index=?',
+                'SELECT topic from ethtx_receipt_log_topics WHERE tx_hash=? AND log_index=? '
+                'ORDER BY topic_index ASC',
                 (tx_hash, log_index),
             )
             for topic_result in topic_results:

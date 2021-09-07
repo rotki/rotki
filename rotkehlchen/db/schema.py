@@ -482,8 +482,9 @@ CREATE TABLE IF NOT EXISTS ethtx_receipt_log_topics (
     tx_hash BLOB NOT NULL,
     log_index INTEGER NOT NULL,
     topic BLOB NOT NULL,
+    topic_index INTEGER NOT NULL,
     FOREIGN KEY(tx_hash, log_index) REFERENCES ethtx_receipt_logs(tx_hash, log_index) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY(tx_hash, log_index, topic)
+    PRIMARY KEY(tx_hash, log_index, topic_index)
 );
 """  # noqa: E501
 
