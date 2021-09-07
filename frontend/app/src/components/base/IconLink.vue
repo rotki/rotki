@@ -3,16 +3,18 @@
     <template #activator="{ on, attrs }">
       <v-btn
         small
-        icon
+        :icon="!text"
+        :text="!!text"
         v-bind="attrs"
         color="primary"
         class="ml-2"
-        :class="dark ? null : 'grey lighten-4'"
+        :class="dark || text ? null : 'grey lighten-4'"
         :href="href"
         :target="target"
         v-on="on"
         @click="openLink"
       >
+        <span v-if="text" class="mr-2"> {{ text }}</span>
         <v-icon :small="true"> mdi-launch </v-icon>
       </v-btn>
     </template>
@@ -29,6 +31,11 @@ export default defineComponent({
   name: 'IconLink',
   mixins: [ThemeMixin],
   props: {
+    text: {
+      type: String,
+      required: false,
+      default: ''
+    },
     url: {
       type: String,
       required: true

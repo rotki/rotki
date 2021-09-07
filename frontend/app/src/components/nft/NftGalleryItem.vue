@@ -1,13 +1,15 @@
 <template>
   <v-card class="mx-auto">
-    <v-img
-      :src="imageUrl"
-      contain
-      aspect-ratio="1"
-      :style="{
-        'background-color': `#${item.backgroundColor}`
-      }"
-    />
+    <base-external-link :href="item.externalLink">
+      <v-img
+        :src="imageUrl"
+        contain
+        aspect-ratio="1"
+        :style="{
+          'background-color': `#${item.backgroundColor}`
+        }"
+      />
+    </base-external-link>
     <v-card-title>
       <v-row align="center" no-gutters>
         <v-col class="text-truncate">
@@ -46,7 +48,7 @@
     </v-card-subtitle>
     <v-card-actions>
       <v-spacer />
-      <icon-link :url="item.permalink" />
+      <icon-link :url="item.permalink" text="Open in OpenSea" />
     </v-card-actions>
   </v-card>
 </template>
@@ -58,12 +60,13 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import IconLink from '@/components/base/IconLink.vue';
 import { NftWithAddress } from '@/components/nft/types';
 
 export default defineComponent({
   name: 'NftGalleryItem',
-  components: { IconLink },
+  components: { BaseExternalLink, IconLink },
   props: {
     item: {
       required: true,
