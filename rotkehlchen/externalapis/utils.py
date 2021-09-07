@@ -9,7 +9,7 @@ DEFAULT_API = 'etherscan'
 def read_hash(data: Dict[str, Any], key: str, api: str = DEFAULT_API) -> bytes:
     try:
         result = hexstring_to_bytes(data[key])
-    except ValueError as e:
+    except DeserializationError as e:
         raise DeserializationError(
             f'Failed to read {key} as a hash during {api} transaction query',
         ) from e

@@ -1,6 +1,7 @@
 import json
 import logging
 import random
+from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, overload
 from urllib.parse import urlparse
 
@@ -21,13 +22,12 @@ from web3.exceptions import BadFunctionCallOutput
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import FilterParams
 
+from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2 import ETH2_DEPOSIT
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     BlockchainQueryError,
     DeserializationError,
@@ -41,14 +41,19 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
+    deserialize_ethereum_transaction,
     deserialize_int_from_hex,
 )
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestamp
+from rotkehlchen.typing import (
+    ChecksumEthAddress,
+    EthereumTransaction,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 from rotkehlchen.utils.network import request_get_dict
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 
 from .typing import NodeName
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
@@ -196,7 +201,6 @@ class EthereumManager():
             self,
             ethrpc_endpoint: str,
             etherscan: Etherscan,
-            database: DBHandler,
             msg_aggregator: MessagesAggregator,
             greenlet_manager: GreenletManager,
             connect_at_start: Sequence[NodeName],
@@ -209,11 +213,6 @@ class EthereumManager():
         self.etherscan = etherscan
         self.msg_aggregator = msg_aggregator
         self.eth_rpc_timeout = eth_rpc_timeout
-        self.transactions = EthTransactions(
-            database=database,
-            etherscan=etherscan,
-            msg_aggregator=msg_aggregator,
-        )
         for node in connect_at_start:
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
@@ -227,6 +226,10 @@ class EthereumManager():
         self.blocks_subgraph = Graph(
             'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks',
         )
+        # Used by the transactions class. Can't be instantiated there since that is
+        # stateless object and thus wouldn't persist.
+        # Not really happy with this approach but well ...
+        self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
 
     def connected_to_any_web3(self) -> bool:
         return (
@@ -738,6 +741,36 @@ class EthereumManager():
     ) -> Dict[str, Any]:
         return self.query(
             method=self._get_transaction_receipt,
+            call_order=call_order if call_order is not None else self.default_call_order(),
+            tx_hash=tx_hash,
+        )
+
+    def _get_transaction_by_hash(
+            self,
+            web3: Optional[Web3],
+            tx_hash: str,
+    ) -> Optional[EthereumTransaction]:
+        if web3 is None:
+            tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
+        else:
+            tx_data = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
+
+        try:
+            transaction = deserialize_ethereum_transaction(data=tx_data, ethereum=self)
+        except (DeserializationError, ValueError) as e:
+            raise RemoteError(
+                f'Couldnt deserialize ethereum transaction data from {tx_data}. Error: {str(e)}',
+            ) from e
+
+        return transaction
+
+    def get_transaction_by_hash(
+            self,
+            tx_hash: str,
+            call_order: Optional[Sequence[NodeName]] = None,
+    ) -> Optional[EthereumTransaction]:
+        return self.query(
+            method=self._get_transaction_by_hash,
             call_order=call_order if call_order is not None else self.default_call_order(),
             tx_hash=tx_hash,
         )

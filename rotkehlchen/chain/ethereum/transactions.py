@@ -1,17 +1,21 @@
 import logging
 from collections import defaultdict
-from typing import DefaultDict, Dict, List, Optional
+from typing import TYPE_CHECKING, DefaultDict, List, Optional
 
-from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -23,15 +27,12 @@ class EthTransactions(LockableQueryMixIn):
 
     def __init__(
             self,
-            database: DBHandler,
-            etherscan: Etherscan,
-            msg_aggregator: MessagesAggregator,
+            ethereum: 'EthereumManager',
+            database: 'DBHandler',
     ) -> None:
         super().__init__()
+        self.ethereum = ethereum
         self.database = database
-        self.etherscan = etherscan
-        self.msg_aggregator = msg_aggregator
-        self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
 
     def reset_count(self) -> None:
         """Reset the limit counter for ethereum transactions
@@ -39,7 +40,7 @@ class EthTransactions(LockableQueryMixIn):
         This should be done by the frontend for non-premium users at the start
         of any batch of transaction queries.
         """
-        self.tx_per_address = defaultdict(int)
+        self.ethereum.tx_per_address = defaultdict(int)
 
     def _return_transactions_maybe_limit(
             self,
@@ -55,10 +56,10 @@ class EthTransactions(LockableQueryMixIn):
             count_map[tx.from_address] += 1
 
         for address, count in count_map.items():
-            self.tx_per_address[address] = count
+            self.ethereum.tx_per_address[address] = count
 
         if requested_addresses is not None:
-            transactions_for_other_addies = sum(x for addy, x in self.tx_per_address.items() if addy not in requested_addresses)  # noqa: E501
+            transactions_for_other_addies = sum(x for addy, x in self.ethereum.tx_per_address.items() if addy not in requested_addresses)  # noqa: E501
             remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_for_other_addies
             returning_tx_length = min(remaining_num_tx, len(transactions))
         else:
@@ -80,27 +81,25 @@ class EthTransactions(LockableQueryMixIn):
             end_ts=end_ts,
         )
         new_transactions = []
+        dbethtx = DBEthTx(self.database)
         for query_start_ts, query_end_ts in ranges_to_query:
-            for internal in (False, True):
-                try:
-                    new_transactions.extend(self.etherscan.get_transactions(
-                        account=address,
-                        internal=internal,
-                        from_ts=query_start_ts,
-                        to_ts=query_end_ts,
-                    ))
-                except RemoteError as e:
-                    self.msg_aggregator.add_error(
-                        f'Got error "{str(e)}" while querying ethereum transactions '
-                        f'from Etherscan. Transactions not added to the DB '
-                        f'from_ts: {query_start_ts} '
-                        f'to_ts: {query_end_ts} '
-                        f'internal: {internal}',
-                    )
+            try:
+                new_transactions.extend(self.ethereum.etherscan.get_transactions(
+                    account=address,
+                    from_ts=query_start_ts,
+                    to_ts=query_end_ts,
+                ))
+            except RemoteError as e:
+                self.ethereum.msg_aggregator.add_error(
+                    f'Got error "{str(e)}" while querying ethereum transactions '
+                    f'from Etherscan. Transactions not added to the DB '
+                    f'from_ts: {query_start_ts} '
+                    f'to_ts: {query_end_ts} ',
+                )
 
         # add new transactions to the DB
         if new_transactions != []:
-            self.database.add_ethereum_transactions(new_transactions, from_etherscan=True)
+            dbethtx.add_ethereum_transactions(new_transactions)
 
         # and also set the last queried timestamps for the address
         ranges.update_used_query_range(
@@ -130,9 +129,6 @@ class EthTransactions(LockableQueryMixIn):
         - RemoteError if etherscan is used and there is a problem with reaching it or
         with parsing the response.
         """
-        # Reset the counter for each query. Makes it easier to cheat when querying each
-        # address sep
-        # self.tx_per_address = defaultdict(int)
         query_addresses = filter_query.addresses
 
         if query_addresses is not None:
@@ -152,9 +148,46 @@ class EthTransactions(LockableQueryMixIn):
                     end_ts=to_ts,
                 )
 
-        transactions = self.database.get_ethereum_transactions(filter_=filter_query)
+        dbethtx = DBEthTx(self.database)
+        transactions = dbethtx.get_ethereum_transactions(filter_=filter_query)
         return self._return_transactions_maybe_limit(
             requested_addresses=query_addresses,
             transactions=transactions,
             with_limit=with_limit,
         )
+
+    def get_or_query_transaction_receipt(
+            self,
+            tx_hash: str,
+    ) -> Optional['EthereumTxReceipt']:
+        """
+        Gets the receipt from the DB if it exist. If not queries the chain for it,
+        saves it in the DB and then returns it.
+
+        Also if the actual transaction does not exist in the DB it queries it and saves it there.
+
+        May raise:
+
+        - DeserializationError
+        - RemoteError
+        """
+        tx_hash_b = hexstring_to_bytes(tx_hash)
+        dbethtx = DBEthTx(self.database)
+        # If the transaction is not in the DB then query it and add it
+        result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx_hash_b))  # noqa: E501
+        if len(result) == 0:
+            transaction = self.ethereum.get_transaction_by_hash(tx_hash)
+            if transaction is None:
+                return None  # hash does not correspond to a transaction
+
+            dbethtx.add_ethereum_transactions([transaction])
+
+        tx_receipt = dbethtx.get_receipt(tx_hash_b)
+        if tx_receipt is not None:
+            return tx_receipt
+
+        # not in the DB, so we need to query the chain for it
+        tx_receipt_data = self.ethereum.get_transaction_receipt(tx_hash=tx_hash)
+        dbethtx.add_receipt_data(tx_receipt_data)
+        tx_receipt = dbethtx.get_receipt(tx_hash_b)
+        return tx_receipt

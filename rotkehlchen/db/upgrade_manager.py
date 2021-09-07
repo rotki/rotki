@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
 
 from eth_utils.address import to_checksum_address
+from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.asset_rename import rename_assets_in_db
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
@@ -215,7 +216,11 @@ class DBUpgradeManager():
         - DBUpgradeError if the user uses a newer version than the one we
         upgrade to or if there is a problem during upgrade.
         """
-        our_version = self.db.get_version()
+        try:
+            our_version = self.db.get_version()
+        except sqlcipher.OperationalError:  # pylint: disable=no-member
+            return  # fresh database. Nothing to upgrade.
+
         if our_version > ROTKEHLCHEN_DB_VERSION:
             raise DBUpgradeError(
                 'Your database version is newer than the version expected by the '

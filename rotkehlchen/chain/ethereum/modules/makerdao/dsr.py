@@ -9,7 +9,7 @@ from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import MAKERDAO_DAI_JOIN, MAKERDAO_POT
-from rotkehlchen.errors import ConversionError, RemoteError
+from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
@@ -200,7 +200,7 @@ class MakerdaoDsr(MakerdaoCommon):
                 try:
                     value = hexstr_to_int(event['topics'][3])
                     break
-                except ConversionError:
+                except DeserializationError:
                     value = None
         return value * RAY  # turn it from DAI to RAD
 
@@ -234,7 +234,7 @@ class MakerdaoDsr(MakerdaoCommon):
         for join_event in join_events:
             try:
                 wad_val = hexstr_to_int(join_event['topics'][2])
-            except ConversionError as e:
+            except DeserializationError as e:
                 msg = f'Error at reading DSR join event topics. {str(e)}. Skipping event...'
                 self.msg_aggregator.add_error(msg)
                 continue
@@ -288,7 +288,7 @@ class MakerdaoDsr(MakerdaoCommon):
         for exit_event in exit_events:
             try:
                 wad_val = hexstr_to_int(exit_event['topics'][2])
-            except ConversionError as e:
+            except DeserializationError as e:
                 msg = f'Error at reading DSR exit event topics. {str(e)}. Skipping event...'
                 self.msg_aggregator.add_error(msg)
                 continue

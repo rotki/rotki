@@ -48,10 +48,11 @@ from rotkehlchen.chain.ethereum.gitcoin.api import GitcoinAPI
 from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter
 from rotkehlchen.chain.ethereum.gitcoin.processor import GitcoinProcessor
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
-from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
+from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT, EthTransactions
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -2739,7 +2740,7 @@ class RestAPI():
 
     @require_loggedin_user()
     def purge_ethereum_transaction_data(self) -> Response:
-        self.rotkehlchen.data.db.purge_ethereum_transaction_data()
+        DBEthTx(self.rotkehlchen.data.db).purge_ethereum_transaction_data()
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_ethereum_transactions(
@@ -2747,9 +2748,13 @@ class RestAPI():
             only_cache: bool,
             filter_query: ETHTransactionsFilterQuery,
     ) -> Dict[str, Any]:
+        tx_module = EthTransactions(
+            ethereum=self.rotkehlchen.chain_manager.ethereum,
+            database=self.rotkehlchen.data.db,
+        )
         transactions: Optional[List[EthereumTransaction]]
         try:
-            transactions = self.rotkehlchen.chain_manager.ethereum.transactions.query(
+            transactions = tx_module.query(
                 only_cache=only_cache,
                 filter_query=filter_query,
                 with_limit=self.rotkehlchen.premium is None,
@@ -3479,6 +3484,10 @@ class RestAPI():
 
     @require_loggedin_user()
     def reset_limits_counter(self, location: str) -> Response:  # pylint: disable=unused-argument
+        tx_module = EthTransactions(
+            ethereum=self.rotkehlchen.chain_manager.ethereum,
+            database=self.rotkehlchen.data.db,
+        )
         # at the moment only location is ethereum_transactions and is checked by marshmallow
-        self.rotkehlchen.chain_manager.ethereum.transactions.reset_count()
+        tx_module.reset_count()
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)

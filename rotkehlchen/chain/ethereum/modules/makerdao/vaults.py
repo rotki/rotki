@@ -359,7 +359,7 @@ class MakerdaoVaults(MakerdaoCommon):
             urn: ChecksumEthAddress,
     ) -> Optional[MakerdaoVaultDetails]:
         # They can raise:
-        # ConversionError due to hex_or_bytes_to_address, hexstr_to_int
+        # DeserializationError due to hex_or_bytes_to_address, hexstr_to_int
         # RemoteError due to external query errors
         events = self.ethereum.get_logs(
             contract_address=MAKERDAO_CDP_MANAGER.address,

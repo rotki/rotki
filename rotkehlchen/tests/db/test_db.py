@@ -15,7 +15,6 @@ from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
@@ -58,10 +57,6 @@ from rotkehlchen.tests.utils.constants import (
     A_SUSHI,
     A_XMR,
     DEFAULT_TESTS_MAIN_CURRENCY,
-    ETH_ADDRESS1,
-    ETH_ADDRESS2,
-    ETH_ADDRESS3,
-    MOCK_INPUT_DATA,
 )
 from rotkehlchen.tests.utils.database import mock_dbhandler_update_owned_assets
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
@@ -71,7 +66,6 @@ from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
     BlockchainAccountData,
-    EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -101,6 +95,9 @@ TABLES_AT_INIT = [
     'multisettings',
     'trades',
     'ethereum_transactions',
+    'ethtx_receipts',
+    'ethtx_receipt_logs',
+    'ethtx_receipt_log_topics',
     'manually_tracked_balances',
     'trade_type',
     'location',
@@ -962,76 +959,6 @@ def test_add_asset_movements(data_dir, username, caplog):
     ) in caplog.text
     returned_movements = data.db.get_asset_movements()
     assert returned_movements == [movement1, movement2, movement3]
-
-
-def test_add_ethereum_transactions(data_dir, username):
-    """Test that adding and retrieving ethereum transactions from the DB works fine.
-
-    Also duplicates should be ignored and an error returned
-    """
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
-
-    tx1 = EthereumTransaction(
-        tx_hash=b'1',
-        timestamp=Timestamp(1451606400),
-        block_number=1,
-        from_address=ETH_ADDRESS1,
-        to_address=ETH_ADDRESS3,
-        value=FVal('2000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
-        input_data=MOCK_INPUT_DATA,
-        nonce=1,
-    )
-    tx2 = EthereumTransaction(
-        tx_hash=b'2',
-        timestamp=Timestamp(1451706400),
-        block_number=3,
-        from_address=ETH_ADDRESS2,
-        to_address=ETH_ADDRESS3,
-        value=FVal('4000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
-        input_data=MOCK_INPUT_DATA,
-        nonce=1,
-    )
-    tx3 = EthereumTransaction(
-        tx_hash=b'3',
-        timestamp=Timestamp(1452806400),
-        block_number=5,
-        from_address=ETH_ADDRESS3,
-        to_address=ETH_ADDRESS1,
-        value=FVal('1000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
-        input_data=MOCK_INPUT_DATA,
-        nonce=3,
-    )
-
-    # Add and retrieve the first 2 margins. All should be fine.
-    data.db.add_ethereum_transactions([tx1, tx2], from_etherscan=True)
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    filter_query = ETHTransactionsFilterQuery.make()
-    returned_transactions = data.db.get_ethereum_transactions(filter_query)
-    assert returned_transactions == [tx1, tx2]
-
-    # Add the last 2 transactions. Since tx2 already exists in the DB it should be
-    # ignored (no errors shown for attempting to add already existing transaction)
-    data.db.add_ethereum_transactions([tx2, tx3], from_etherscan=True)
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    returned_transactions = data.db.get_ethereum_transactions(filter_query)
-    assert returned_transactions == [tx1, tx2, tx3]
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[]])

@@ -1,4 +1,4 @@
-from typing import Callable, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple, TypeVar, Union
 
 from eth_utils import to_checksum_address
 
@@ -11,11 +11,13 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnprocessableTradePair,
 )
+from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
     ChecksumEthAddress,
+    EthereumTransaction,
     Fee,
     HexColorCode,
     Optional,
@@ -24,6 +26,9 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 
 def deserialize_fee(fee: Optional[str]) -> Fee:
@@ -506,3 +511,56 @@ def deserialize_optional(input_val: Optional[X], fn: Callable[[X], Y]) -> Option
         return None
 
     return fn(input_val)
+
+
+def deserialize_ethereum_transaction(
+        data: Dict[str, Any],
+        ethereum: Optional['EthereumManager'] = None,
+) -> EthereumTransaction:
+    """Reads dict data of a transaction and deserializes it.
+    If the transaction is not from etherscan then it's missing some data
+    so ethereum manager is used to fetch it.
+
+    Can raise DeserializationError if something is wrong
+    """
+    source = 'etherscan' if ethereum is None else 'web3'
+    try:
+        gas_price = read_integer(data, 'gasPrice', source)
+        tx_hash = read_hash(data, 'hash', source)
+        input_data = read_hash(data, 'input', source)
+        block_number = read_integer(data, 'blockNumber', source)
+        if 'timeStamp' not in data:
+            if ethereum is None:
+                raise DeserializationError('Got in deserialize ethereum transaction without timestamp and without ethereum manager')  # noqa: E501
+
+            block_data = ethereum.get_block_by_number(block_number)
+            timestamp = Timestamp(read_integer(block_data, 'timestamp', source))
+        else:
+            timestamp = deserialize_timestamp(data['timeStamp'])
+
+        if 'gasUsed' not in data:
+            if ethereum is None:
+                raise DeserializationError('Got in deserialize ethereum transaction without gasUsed and without ethereum manager')  # noqa: E501
+            receipt_data = ethereum.get_transaction_receipt(data['hash'])
+            gas_used = read_integer(receipt_data, 'gasUsed', source)
+        else:
+            gas_used = read_integer(data, 'gasUsed', source)
+
+        nonce = read_integer(data, 'nonce', source)
+        return EthereumTransaction(
+            timestamp=timestamp,
+            block_number=block_number,
+            tx_hash=tx_hash,
+            from_address=deserialize_ethereum_address(data['from']),
+            to_address=deserialize_ethereum_address(data['to']) if data['to'] != '' else None,
+            value=read_integer(data, 'value', source),
+            gas=read_integer(data, 'gas', source),
+            gas_price=gas_price,
+            gas_used=gas_used,
+            input_data=input_data,
+            nonce=nonce,
+        )
+    except KeyError as e:
+        raise DeserializationError(
+            f'ethereum transaction from {source} missing expected key {str(e)}',
+        ) from e

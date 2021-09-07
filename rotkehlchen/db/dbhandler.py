@@ -53,7 +53,6 @@ from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import (
@@ -98,7 +97,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
     deserialize_hex_color_code,
-    deserialize_timestamp,
     deserialize_trade_type_from_db,
 )
 from rotkehlchen.typing import (
@@ -108,7 +106,6 @@ from rotkehlchen.typing import (
     BlockchainAccountData,
     BTCAddress,
     ChecksumEthAddress,
-    EthereumTransaction,
     ExchangeApiCredentials,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -129,6 +126,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
+PASSWORDCHECK_STATEMENT = 'SELECT name FROM sqlite_master WHERE type="table";'
 
 DBTupleType = Literal[
     'trade',
@@ -285,15 +283,17 @@ class DBHandler:
         """Perform the actions that are needed after the first DB connection
 
         Such as:
-            - Create tables that are missing
+            - Check encryption password works
             - DB Upgrades
+            - Create tables that are missing for new version
 
         May raise:
         - AuthenticationError if a wrong password is given or if the DB is corrupt
         - DBUpgradeError if there is a problem with DB upgrading
         """
+        # Check password is correct
         try:
-            self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
+            self.conn.executescript(PASSWORDCHECK_STATEMENT)
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             errstr = str(e)
             migrated = False
@@ -314,6 +314,8 @@ class DBHandler:
 
         # Run upgrades if needed
         DBUpgradeManager(self).run_upgrades()
+        # create tables if needed (first run - or some new tables)
+        self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
 
     def get_md5hash(self) -> str:
         """Get the md5hash of the DB
@@ -1403,17 +1405,6 @@ class DBHandler:
         self.conn.commit()
         self.update_last_write()
 
-    def purge_ethereum_transaction_data(self) -> None:
-        """Deletes all ethereum transaction related data from the DB"""
-        cursor = self.conn.cursor()
-        cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            ('ethtxs\\_%', '\\'),
-        )
-        cursor.execute('DELETE FROM ethereum_transactions;')
-        self.conn.commit()
-        self.update_last_write()
-
     def update_used_query_range(self, name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:
         cursor = self.conn.cursor()
         cursor.execute(
@@ -2176,7 +2167,6 @@ class DBHandler:
             tuple_type: DBTupleType,
             query: str,
             tuples: List[Tuple[Any, ...]],
-            **kwargs: Any,
     ) -> None:
         cursor = self.conn.cursor()
         try:
@@ -2185,46 +2175,11 @@ class DBHandler:
             # That means that one of the tuples hit a constraint, most probably
             # already existing in the DB, in which case we resort to writing them
             # one by one to only reject the duplicates
-
-            nonces_set: Set[int] = set()
-            if tuple_type == 'ethereum_transaction':
-                nonces_set = set(range(len([t for t in tuples if t[10] == -1])))
-
             for entry in tuples:
                 try:
                     cursor.execute(query, entry)
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                     if tuple_type == 'ethereum_transaction':
-                        nonce = entry[10]
-                        # If it's not an internal transaction with the same hash
-                        # ignore it. That is since it's indeed a duplicate because
-                        # when we query etherscan we get all transactions where
-                        # the given address is either the from or the to.
-                        if nonce != -1:
-                            continue
-
-                        if 'from_etherscan' in kwargs and kwargs['from_etherscan'] is True:
-                            # If it's an internal transaction with the same hash then
-                            # still input it as there is no way to distinguish between
-                            # multiple etherscan internal transactions with the same
-                            # original transaction hash. Here we trust the data source.
-                            # To differentiate between them in Rotkehlchen we use a
-                            # more negative nonce
-                            entry_list = list(entry)
-                            # Make sure that the internal etherscan transaction nonce
-                            # is increasingly negative (> -1)
-                            # If a key error is thrown here due to popping from an empty
-                            # set then something is really wrong so not catching it
-                            entry_list[10] = -1 - nonces_set.pop() - 1
-                            entry = tuple(entry_list)
-                            try:
-                                cursor.execute(query, entry)
-                                # Success so just go to the next entry
-                                continue
-                            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                                # the error is logged right below
-                                pass
-
                         # if we reach here it means the transaction is already in the DB
                         # But this can't be avoided with the way we query etherscan
                         # right now since we don't query transactions in a specific
@@ -2422,96 +2377,6 @@ class DBHandler:
         cursorstr += ';'
         query = cursor.execute(cursorstr)
         return query.fetchone()[0]
-
-    def add_ethereum_transactions(
-            self,
-            ethereum_transactions: List[EthereumTransaction],
-            from_etherscan: bool,
-    ) -> None:
-        """Adds ethereum transactions to the database
-
-        If from_etherscan is True then this means that the source of the transactions
-        is an etherscan query. This is used to determine how we should handle the
-        transactions with nonce "-1" as this is how we currently identify internal
-        ethereum transactions from etherscan.
-        """
-        tx_tuples: List[Tuple[Any, ...]] = []
-        for tx in ethereum_transactions:
-            tx_tuples.append((
-                tx.tx_hash,
-                tx.timestamp,
-                tx.block_number,
-                tx.from_address,
-                tx.to_address,
-                str(tx.value),
-                str(tx.gas),
-                str(tx.gas_price),
-                str(tx.gas_used),
-                tx.input_data,
-                tx.nonce,
-            ))
-
-        query = """
-            INSERT INTO ethereum_transactions(
-              tx_hash,
-              timestamp,
-              block_number,
-              from_address,
-              to_address,
-              value,
-              gas,
-              gas_price,
-              gas_used,
-              input_data,
-              nonce)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        self.write_tuples(
-            tuple_type='ethereum_transaction',
-            query=query,
-            tuples=tx_tuples,
-            from_etherscan=from_etherscan,
-        )
-
-    def get_ethereum_transactions(
-            self,
-            filter_: ETHTransactionsFilterQuery,
-    ) -> List[EthereumTransaction]:
-        """Returns a list of ethereum transactions optionally filtered by time and/or from address
-
-        The returned list is ordered from oldest to newest
-        """
-        cursor = self.conn.cursor()
-        query, bindings = filter_.prepare()
-        query = 'SELECT * FROM ethereum_transactions ' + query
-        results = cursor.execute(query, bindings)
-
-        ethereum_transactions = []
-        for result in results:
-            try:
-                tx = EthereumTransaction(
-                    tx_hash=result[0],
-                    timestamp=deserialize_timestamp(result[1]),
-                    block_number=result[2],
-                    from_address=result[3],
-                    to_address=result[4],
-                    value=int(result[5]),
-                    gas=int(result[6]),
-                    gas_price=int(result[7]),
-                    gas_used=int(result[8]),
-                    input_data=result[9],
-                    nonce=result[10],
-                )
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing ethereum transaction from the DB. '
-                    f'Skipping it. Error was: {str(e)}',
-                )
-                continue
-
-            ethereum_transactions.append(tx)
-
-        return ethereum_transactions
 
     def delete_data_for_ethereum_address(self, address: ChecksumEthAddress) -> None:
         """Deletes all ethereum related data from the DB for a single ethereum address"""

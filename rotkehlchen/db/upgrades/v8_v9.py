@@ -4,6 +4,16 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
+def _create_new_tables(db: 'DBHandler') -> None:
+    """Create new tables added in this upgrade"""
+    db.conn.executescript("""
+    CREATE TABLE IF NOT EXISTS external_service_credentials (
+    name VARCHAR[30] NOT NULL PRIMARY KEY,
+    api_key TEXT
+    );
+    """)
+
+
 def _upgrade_user_credentials_table(db: 'DBHandler') -> None:
     cursor = db.conn.cursor()
     # This is the user credentiaals trades table at v8
@@ -39,3 +49,4 @@ def upgrade_v8_to_v9(db: 'DBHandler') -> None:
     - All previous user credentials get a null passphrase
     """
     _upgrade_user_credentials_table(db)
+    _create_new_tables(db)
