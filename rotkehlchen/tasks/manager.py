@@ -10,6 +10,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -84,6 +85,7 @@ class TaskManager():
             self._maybe_schedule_xpub_derivation,
             self._maybe_query_ethereum_transactions,
             self._maybe_schedule_exchange_history_query,
+            self._maybe_schedule_ethereum_txreceipts,
         ]
 
     def _prepare_cryptocompare_queries(self) -> None:
@@ -215,6 +217,33 @@ class TaskManager():
             end_ts=now,
         )
         self.last_eth_tx_query_ts[address] = now
+
+    def _run_ethereum_txreceipts_query(self, hash_results: List[Tuple]) -> None:
+        dbethtx = DBEthTx(self.database)
+        for entry in hash_results:
+            tx_hash = '0x' + entry[0].hex()
+            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=tx_hash)
+            dbethtx.add_receipt_data(tx_receipt_data)
+
+    def _maybe_schedule_ethereum_txreceipts(self) -> None:
+        """Schedules the ethereum transaction receipts query task"""
+        cursor = self.database.conn.cursor()
+        result = cursor.execute(
+            'SELECT tx_hash from ethereum_transactions WHERE tx_hash NOT IN '
+            '(SELECT tx_hash from ethtx_receipts) LIMIT 100;',
+        ).fetchall()
+        if len(result) == 0:
+            return
+
+        task_name = f'Query {len(result)} ethereum transactions receipts'
+        log.debug(f'Scheduling task to {task_name}')
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name=task_name,
+            exception_is_error=True,
+            method=self._run_ethereum_txreceipts_query,
+            hash_results=result,
+        )
 
     def _maybe_schedule_exchange_history_query(self) -> None:
         """Schedules the exchange history query task if enough time has passed"""

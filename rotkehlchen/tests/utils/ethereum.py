@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import gevent
 
@@ -9,8 +9,9 @@ from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxR
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Timestamp
+from rotkehlchen.typing import EthereumTransaction, Timestamp
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 NODE_CONNECTION_TIMEOUT = 10
@@ -69,16 +70,45 @@ def wait_until_all_nodes_connected(
         )
 
 
+def txreceipt_to_data(receipt: EthereumTxReceipt) -> Dict[str, Any]:
+    """Turns it to receipt data as would be returned by web3
+
+    Is here since this would only be done in test. In actual
+    serialization snake case would be used.
+    """
+    data: Dict[str, Any] = {
+        'transactionHash': '0x' + receipt.tx_hash.hex(),
+        'type': hex(receipt.type),
+        'contractAddress': receipt.contract_address,
+        'status': int(receipt.status),
+        'logs': [],
+    }
+    for log_entry in receipt.logs:
+        log_data = {
+            'logIndex': log_entry.log_index,
+            'address': log_entry.address,
+            'removed': log_entry.removed,
+            'data': '0x' + log_entry.data.hex(),
+            'topics': [],
+        }
+        for topic in log_entry.topics:
+            log_data['topics'].append('0x' + topic.hex())  # type: ignore
+
+        data['logs'].append(log_data)
+
+    return data
+
+
 def setup_ethereum_transactions_test(
         database: DBHandler,
         transaction_already_queried: bool,
+        one_receipt_in_db: bool = False,
 ) -> Tuple[List[EthereumTransaction], List[EthereumTxReceipt]]:
     dbethtx = DBEthTx(database)
-    tx_hash = '0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda'
-    tx_hash_b = hexstring_to_bytes(tx_hash)
-    input_data_b = hexstring_to_bytes('0x7ff36ab5000000000000000000000000000000000000000000000367469995d0723279510000000000000000000000000000000000000000000000000000000000000080000000000000000000000000443e1f9b1c866e54e914822b7d3d7165edb6e9ea00000000000000000000000000000000000000000000000000000000612ff9b50000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000002a3bff78b79a009976eea096a51a948a3dc00e34')  # noqa: E501
-    transaction = EthereumTransaction(
-        tx_hash=tx_hash_b,
+    tx_hash1 = '0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda'
+    tx_hash1_b = hexstring_to_bytes(tx_hash1)
+    transaction1 = EthereumTransaction(
+        tx_hash=tx_hash1_b,
         timestamp=Timestamp(1630532276),
         block_number=13142218,
         from_address=string_to_ethereum_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea'),
@@ -87,14 +117,31 @@ def setup_ethereum_transactions_test(
         gas=194928,
         gas_price=int(0.000000204 * 10**18),
         gas_used=136675,
-        input_data=input_data_b,
+        input_data=hexstring_to_bytes('0x7ff36ab5000000000000000000000000000000000000000000000367469995d0723279510000000000000000000000000000000000000000000000000000000000000080000000000000000000000000443e1f9b1c866e54e914822b7d3d7165edb6e9ea00000000000000000000000000000000000000000000000000000000612ff9b50000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000002a3bff78b79a009976eea096a51a948a3dc00e34'),  # noqa: E501
         nonce=13,
     )
+    tx_hash2 = '0x6beab9409a8f3bd11f82081e99e856466a7daf5f04cca173192f79e78ed53a77'
+    tx_hash2_b = hexstring_to_bytes(tx_hash2)
+    transaction2 = EthereumTransaction(
+        tx_hash=tx_hash2_b,
+        timestamp=Timestamp(1631013757),
+        block_number=13178342,
+        from_address=string_to_ethereum_address('0x442068F934BE670aDAb81242C87144a851d56d16'),
+        to_address=string_to_ethereum_address('0xEaDD9B69F96140283F9fF75DA5FD33bcF54E6296'),
+        value=0,
+        gas=77373,
+        gas_price=int(0.000000100314697497 * 10**18),
+        gas_used=46782,
+        input_data=hexstring_to_bytes('0xa9059cbb00000000000000000000000020c8032d4f7d4a380385f87aeadf05bed84504cb000000000000000000000000000000000000000000000000000000003b9deec6'),  # noqa: E501
+        nonce=3,
+    )
+    transactions = [transaction1, transaction2]
     if transaction_already_queried is True:
-        dbethtx.add_ethereum_transactions(ethereum_transactions=[transaction])
+        dbethtx.add_ethereum_transactions(ethereum_transactions=transactions)
+        assert dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make()) == transactions
 
-    expected_receipt = EthereumTxReceipt(
-        tx_hash=tx_hash_b,
+    expected_receipt1 = EthereumTxReceipt(
+        tx_hash=tx_hash1_b,
         contract_address=None,
         status=True,
         type=0,
@@ -147,4 +194,27 @@ def setup_ethereum_transactions_test(
             ),
         ],
     )
-    return [transaction], [expected_receipt]
+    expected_receipt2 = EthereumTxReceipt(
+        tx_hash=tx_hash2_b,
+        contract_address=None,
+        status=True,
+        type=2,
+        logs=[
+            EthereumTxReceiptLog(
+                log_index=438,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000003b9deec6'),  # noqa: E501
+                address=string_to_ethereum_address('0xEaDD9B69F96140283F9fF75DA5FD33bcF54E6296'),
+                removed=False,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
+                    hexstring_to_bytes('0x000000000000000000000000442068f934be670adab81242c87144a851d56d16'),  # noqa: E501
+                    hexstring_to_bytes('0x00000000000000000000000020c8032d4f7d4a380385f87aeadf05bed84504cb'),  # noqa: E501
+                ],
+            ),
+        ],
+    )
+
+    if one_receipt_in_db:
+        dbethtx.add_receipt_data(txreceipt_to_data(expected_receipt1))
+
+    return transactions, [expected_receipt1, expected_receipt2]
