@@ -2,7 +2,7 @@
   <progress-screen v-if="loading && visibleNfts.length === 0">
     {{ $t('nft_gallery.loading') }}
   </progress-screen>
-  <no-data-screen v-else-if="visibleNfts.length === 0">
+  <no-data-screen v-else-if="noData">
     <template #title>{{ $t('nft_gallery.empty_title') }}</template>
     <span class="text-subtitle-2 text--secondary">
       {{ $t('nft_gallery.empty_subtitle') }}
@@ -11,16 +11,39 @@
   <div v-else>
     <v-row justify="space-between">
       <v-col>
-        <blockchain-account-selector
-          v-model="selectedAccount"
-          :chains="['ETH']"
-          dense
-          outlined
-          no-padding
-          flat
-          :usable-addresses="availableAddresses"
-          max-width="350px"
-        />
+        <v-row>
+          <v-col cols="auto">
+            <blockchain-account-selector
+              v-model="selectedAccount"
+              :label="$t('nft_gallery.select_account')"
+              :chains="['ETH']"
+              dense
+              outlined
+              no-padding
+              flat
+              :usable-addresses="availableAddresses"
+              max-width="250px"
+            />
+          </v-col>
+          <v-col cols="auto">
+            <v-card flat max-width="250px">
+              <div>
+                <v-autocomplete
+                  v-model="selectedCollection"
+                  :label="$t('nft_gallery.select_collection')"
+                  single-line
+                  clearable
+                  hide-details
+                  hide-selected
+                  :items="collections"
+                  outlined
+                  background-color=""
+                  dense
+                />
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
       </v-col>
       <v-col cols="auto">
         <refresh-button
@@ -30,7 +53,17 @@
         />
       </v-col>
     </v-row>
-    <v-row>
+    <v-row
+      v-if="visibleNfts.length === 0"
+      align="center"
+      justify="center"
+      :class="$style.empty"
+    >
+      <v-col cols="auto" class="text--secondary text-h6">
+        {{ $t('nft_gallery.empty_filter') }}
+      </v-col>
+    </v-row>
+    <v-row v-else>
       <v-col
         v-for="item in visibleNfts"
         :key="item.tokenIdentifier"
@@ -44,6 +77,7 @@
       </v-col>
     </v-row>
     <v-pagination
+      v-if="pages > 0"
       v-model="page"
       :length="pages"
       :class="isMobile ? 'mt-2' : 'mt-5'"
@@ -57,8 +91,11 @@ import {
   computed,
   defineComponent,
   onMounted,
-  ref
+  Ref,
+  ref,
+  watch
 } from '@vue/composition-api';
+import { Dispatch } from 'vuex';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -70,78 +107,129 @@ import { NftResponse } from '@/store/session/types';
 import { useStore } from '@/store/utils';
 import { GeneralAccount } from '@/typing/types';
 
+const setupNfts = (
+  dispatch: Dispatch,
+  selectedAccount: Ref<GeneralAccount | null>,
+  selectedCollection: Ref<string | null>,
+  itemsPerPage: Ref<number>,
+  page: Ref<number>
+) => {
+  const total = ref(0);
+  const limit = ref(0);
+  const error = ref('');
+  const loading = ref(true);
+  const availableAddresses = ref<string[]>([]);
+  const nfts = ref<NftWithAddress[]>([]);
+  const collections = ref<string[]>([]);
+
+  const items = computed(() => {
+    const account = selectedAccount.value;
+    const selection = selectedCollection.value;
+    if (account || selection) {
+      return nfts.value.filter(({ address, collection }) => {
+        const sameAccount = account ? address === account.address : true;
+        const sameCollection = selection ? selection === collection.name : true;
+        return sameAccount && sameCollection;
+      });
+    }
+    return nfts.value;
+  });
+
+  const pages = computed(() => {
+    return Math.ceil(items.value.length / itemsPerPage.value);
+  });
+
+  const visibleNfts = computed(() => {
+    const start = (page.value - 1) * itemsPerPage.value;
+    return items.value.slice(start, start + itemsPerPage.value);
+  });
+
+  const fetchNfts = async () => {
+    loading.value = true;
+    const { message, result }: ActionResult<NftResponse> = await dispatch(
+      `session/${SessionActions.FETCH_NFTS}`
+    );
+    if (result) {
+      total.value = result.entriesFound;
+      limit.value = result.entriesLimit;
+
+      const allNfts: NftWithAddress[] = [];
+      const allCollections: string[] = [];
+      const { addresses } = result;
+      availableAddresses.value = Object.keys(addresses);
+      for (const address in addresses) {
+        const addressNfts = addresses[address];
+        for (const nft of addressNfts) {
+          if (!allCollections.includes(nft.collection.name)) {
+            allCollections.push(nft.collection.name);
+          }
+          allNfts.push({ ...nft, address });
+        }
+      }
+      nfts.value = allNfts;
+      collections.value = allCollections;
+    } else {
+      error.value = message;
+    }
+    loading.value = false;
+  };
+
+  const noData = computed(
+    () =>
+      visibleNfts.value.length === 0 &&
+      !(selectedCollection.value || selectedAccount.value)
+  );
+
+  onMounted(fetchNfts);
+
+  return {
+    total,
+    limit,
+    visibleNfts,
+    fetchNfts,
+    pages,
+    availableAddresses,
+    collections,
+    noData,
+    loading
+  };
+};
+
 export default defineComponent({
   name: 'NftGallery',
   components: { NoDataScreen, RefreshButton, ProgressScreen, NftGalleryItem },
   setup() {
     const { isMobile } = setupThemeCheck();
     const { dispatch } = useStore();
-    const total = ref(0);
-    const limit = ref(0);
-    const error = ref('');
-    const loading = ref(true);
+
     const page = ref(1);
-    const nfts = ref<NftWithAddress[]>([]);
-    const availableAddresses = ref<string[]>([]);
+
     const itemsPerPage = computed(() => (isMobile.value ? 1 : 8));
     const selectedAccount = ref<GeneralAccount | null>(null);
+    const selectedCollection = ref<string | null>(null);
 
-    const items = computed(() => {
-      const value = selectedAccount.value;
-      if (value) {
-        return nfts.value.filter(({ address }) => address === value.address);
-      }
-      return nfts.value;
-    });
-
-    const pages = computed(() => {
-      return Math.ceil(items.value.length / itemsPerPage.value);
-    });
-
-    const visibleNfts = computed(() => {
-      const start = (page.value - 1) * itemsPerPage.value;
-      return items.value.slice(start, start + itemsPerPage.value);
-    });
-
-    const fetchNfts = async () => {
-      loading.value = true;
-      const { message, result }: ActionResult<NftResponse> = await dispatch(
-        `session/${SessionActions.FETCH_NFTS}`
-      );
-      if (result) {
-        total.value = result.entriesFound;
-        limit.value = result.entriesLimit;
-
-        const allNfts: NftWithAddress[] = [];
-        const { addresses } = result;
-        availableAddresses.value = Object.keys(addresses);
-        for (const address in addresses) {
-          const addressNfts = addresses[address];
-          for (const nft of addressNfts) {
-            allNfts.push({ ...nft, address });
-          }
-        }
-        nfts.value = allNfts;
-      } else {
-        error.value = message;
-      }
-      loading.value = false;
-    };
-
-    onMounted(fetchNfts);
+    watch(selectedAccount, () => (page.value = 1));
+    watch(selectedCollection, () => (page.value = 1));
 
     return {
-      total,
-      limit,
-      visibleNfts,
-      fetchNfts,
-      availableAddresses,
       selectedAccount,
-      loading,
+      selectedCollection,
       page,
-      pages,
-      isMobile
+      isMobile,
+      ...setupNfts(
+        dispatch,
+        selectedAccount,
+        selectedCollection,
+        itemsPerPage,
+        page
+      )
     };
   }
 });
 </script>
+
+<style module lang="scss">
+.empty {
+  min-height: 80vh;
+}
+</style>

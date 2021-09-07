@@ -447,10 +447,13 @@
     "title": "Enabled modules"
   },
   "nft_gallery": {
+    "empty_filter": "No NFTs matching the filter parameters",
     "empty_subtitle": "No NFTs have been detected",
     "empty_title": "No NFTs detected",
     "loading": "Loading NFTs",
-    "refresh_tooltip": "Reload NFTs"
+    "refresh_tooltip": "Reload NFTs",
+    "select_collection": "Select collection",
+    "select_account": "Select account"
   },
   "no_filter_available": {
     "hint": {
