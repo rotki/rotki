@@ -62,7 +62,7 @@ def test_querying_exchange_rates_errors(rotkehlchen_api_server):
     """Make sure that querying exchange rates with wrong input is handled"""
 
     # Test with invalid type for currency
-    data = {'currencies': [4234324.21]}
+    data = {'currencies': [4234324.21], 'async_query': False}
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'exchangeratesresource'), json=data,
     )
@@ -72,13 +72,9 @@ def test_querying_exchange_rates_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # Test with invalid asset
-    data = {'currencies': ['DDSAS']}
+    # Test with unknown assets
+    data = {'currencies': ['DDSAS', 'EUR'], 'async_query': False}
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'exchangeratesresource'), json=data,
     )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Unknown asset DDSAS provided',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+    assert_proper_response_with_result(response)
