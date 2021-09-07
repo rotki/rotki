@@ -447,6 +447,8 @@
     "title": "Enabled modules"
   },
   "nft_gallery": {
+    "empty_subtitle": "No NFTs have been detected",
+    "empty_title": "No NFTs detected",
     "loading": "Loading NFTs",
     "refresh_tooltip": "Reload NFTs"
   },

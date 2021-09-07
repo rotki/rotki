@@ -2,6 +2,12 @@
   <progress-screen v-if="loading && visibleNfts.length === 0">
     {{ $t('nft_gallery.loading') }}
   </progress-screen>
+  <no-data-screen v-else-if="visibleNfts.length === 0">
+    <template #title>{{ $t('nft_gallery.empty_title') }}</template>
+    <span class="text-subtitle-2 text--secondary">
+      {{ $t('nft_gallery.empty_subtitle') }}
+    </span>
+  </no-data-screen>
   <div v-else>
     <v-row justify="space-between">
       <v-col>
@@ -53,11 +59,12 @@ import {
   onMounted,
   ref
 } from '@vue/composition-api';
+import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { NftWithAddress } from '@/components/nft/types';
-import { setupThemeCheck } from '@/composables/theme';
+import { setupThemeCheck } from '@/composables/common';
 import { SessionActions } from '@/store/session/const';
 import { NftResponse } from '@/store/session/types';
 import { useStore } from '@/store/utils';
@@ -65,7 +72,7 @@ import { GeneralAccount } from '@/typing/types';
 
 export default defineComponent({
   name: 'NftGallery',
-  components: { RefreshButton, ProgressScreen, NftGalleryItem },
+  components: { NoDataScreen, RefreshButton, ProgressScreen, NftGalleryItem },
   setup() {
     const { isMobile } = setupThemeCheck();
     const { dispatch } = useStore();
@@ -75,17 +82,17 @@ export default defineComponent({
     const loading = ref(true);
     const page = ref(1);
     const nfts = ref<NftWithAddress[]>([]);
-    const availableAddresses = ref<string>([]);
+    const availableAddresses = ref<string[]>([]);
     const itemsPerPage = computed(() => (isMobile.value ? 1 : 8));
     const selectedAccount = ref<GeneralAccount | null>(null);
 
-    const items = computed(() =>
-      selectedAccount.value
-        ? nfts.value.filter(
-            ({ address }) => address === selectedAccount.value.address
-          )
-        : nfts.value
-    );
+    const items = computed(() => {
+      const value = selectedAccount.value;
+      if (value) {
+        return nfts.value.filter(({ address }) => address === value.address);
+      }
+      return nfts.value;
+    });
 
     const pages = computed(() => {
       return Math.ceil(items.value.length / itemsPerPage.value);
@@ -138,5 +145,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style scoped></style>
