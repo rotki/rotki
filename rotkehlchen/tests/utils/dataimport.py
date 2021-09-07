@@ -1,6 +1,16 @@
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_DOT, A_ETH, A_EUR, A_UNI, A_USD
+from rotkehlchen.constants.assets import (
+    A_BTC,
+    A_DAI,
+    A_SAI,
+    A_USDC,
+    A_DOT,
+    A_ETH,
+    A_EUR,
+    A_UNI,
+    A_USD,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
@@ -602,7 +612,7 @@ def assert_shapeshift_trades_import_results(rotki: Rotkehlchen):
     trades = rotki.data.db.get_trades()
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
-    notes1 = '''
+    notes1 = """
 Trade from ShapeShift with ShapeShift Deposit Address:
  0xc181da8187a37f8c518a2d12733c763a491a873c, and
  Transaction ID: 0xcd4b53bd1991c387558e4274fc49604487708c3878abc1a419b6120d1f489881.
@@ -610,8 +620,8 @@ Trade from ShapeShift with ShapeShift Deposit Address:
  Transaction ID: .
   Destination Address: JWPKHH2j5YubGNpexkRrElg7D0yuCusu0Q, and
  Transaction ID: 9f9d6bb29d896080202f9f51ee1c767527bf88c468bd5e40cd568ecbad3cde61.
-'''
-    notes2 = '''
+"""
+    notes2 = """
 Trade from ShapeShift with ShapeShift Deposit Address:
  0xbc7b968df007c6b4d7507763e17971c7c8cb4812, and
  Transaction ID: 0xaf026f6f53521563bb5d16e781f26f8ecd885010e5a731c6059902e01a8500a3.
@@ -619,7 +629,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
  Transaction ID: 0x59383b5c0834d76118f7d4e3d283e512d05cbfa7d0127084642f0eb4e0188f70.
   Destination Address: 0xf7ee0f8a9a1c67558c7fce768ab40cd0771c882a2, and
  Transaction ID: 0x5395176bf37a198b7df9e7ace0f45f4cdcad0cf78a593912eae1a2fd6c40f7b9.
-'''
+"""
     assert len(errors) == 0
     assert len(warnings) == 0
     expected_trades = [
@@ -627,7 +637,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             timestamp=Timestamp(1561551116),
             location=Location.SHAPESHIFT,
             base_asset=symbol_to_asset_or_token('DASH'),
-            quote_asset=symbol_to_asset_or_token('SAI'),
+            quote_asset=A_SAI,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal('0.59420343')),
             rate=Price(FVal('0.00578758')),
@@ -639,13 +649,13 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         Trade(
             timestamp=Timestamp(1630856301),
             location=Location.SHAPESHIFT,
-            base_asset=symbol_to_asset_or_token('ETH'),
-            quote_asset=symbol_to_asset_or_token('USDC'),
+            base_asset=A_ETH,
+            quote_asset=A_USDC,
             trade_type=TradeType.BUY,
             amount=AssetAmount(FVal('0.06198721')),
             rate=Price(FVal('0.00065004')),
             fee=Fee(FVal('0.0042')),
-            fee_currency=symbol_to_asset_or_token('ETH'),
+            fee_currency=A_ETH,
             link='',
             notes=notes2,
         )]
