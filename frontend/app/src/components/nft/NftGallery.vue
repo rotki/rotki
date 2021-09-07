@@ -11,8 +11,8 @@
   <div v-else>
     <v-row justify="space-between">
       <v-col>
-        <v-row>
-          <v-col cols="auto">
+        <v-row align="center">
+          <v-col :cols="isMobile ? '12' : 'auto'">
             <blockchain-account-selector
               v-model="selectedAccount"
               :label="$t('nft_gallery.select_account')"
@@ -22,11 +22,11 @@
               no-padding
               flat
               :usable-addresses="availableAddresses"
-              max-width="250px"
+              :max-width="isMobile ? '100%' : '250px'"
             />
           </v-col>
-          <v-col cols="auto">
-            <v-card flat max-width="250px">
+          <v-col :cols="isMobile ? '12' : 'auto'">
+            <v-card flat :max-width="isMobile ? '100%' : '250px'">
               <div>
                 <v-autocomplete
                   v-model="selectedCollection"
@@ -42,6 +42,9 @@
                 />
               </div>
             </v-card>
+          </v-col>
+          <v-col :cols="isMobile ? '12' : 'auto'">
+            <v-pagination v-if="pages > 0" v-model="page" :length="pages" />
           </v-col>
         </v-row>
       </v-col>
@@ -76,12 +79,6 @@
         <nft-gallery-item :item="item" />
       </v-col>
     </v-row>
-    <v-pagination
-      v-if="pages > 0"
-      v-model="page"
-      :length="pages"
-      :class="isMobile ? 'mt-2' : 'mt-5'"
-    />
   </div>
 </template>
 
