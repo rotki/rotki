@@ -178,6 +178,62 @@
             </v-col>
           </v-row>
           <v-divider class="mt-2 mb-4" />
+          <v-row>
+            <v-col cols="12">
+              <div class="import-data__crypto-com">
+                <shape-shift-horizontal />
+              </div>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <i18n tag="span" path="import_data.shapeshift.import">
+                <strong v-text="$t('import_data.shapeshift.import_trade')" />
+              </i18n>
+              <file-upload source="shapeshift-trades" class="mt-2" />
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <i18n tag="span" path="import_data.shapeshift.note">
+                <strong v-text="$t('import_data.shapeshift.name')" />
+              </i18n>
+              <ul>
+                <li>{{ $t('import_data.shapeshift.line_one') }}</li>
+                <li>{{ $t('import_data.shapeshift.line_two') }}</li>
+              </ul>
+            </v-col>
+          </v-row>
+          <v-divider class="mt-2 mb-4" />
+          <v-row>
+            <v-col cols="12">
+              <div class="import-data__crypto-com">
+                <v-img
+                  max-width="200"
+                  :src="require('@/assets/images/import/nexo.svg')"
+                />
+              </div>
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <i18n tag="span" path="import_data.nexo.import">
+                <strong v-text="$t('import_data.nexo.import_transactions')" />
+              </i18n>
+              <file-upload source="nexo" class="mt-2" />
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <i18n tag="span" path="import_data.nexo.note">
+                <strong v-text="$t('import_data.nexo.name')" />
+              </i18n>
+              <ul>
+                <li>{{ $t('import_data.nexo.line_one') }}</li>
+              </ul>
+            </v-col>
+          </v-row>
+          <v-divider class="mt-2 mb-4" />
           <div v-if="premium">
             <v-row>
               <v-col cols="12">
@@ -208,11 +264,12 @@
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
+import ShapeShiftHorizontal from '@/components/images/ShapeShiftHorizontal.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 
 @Component({
-  components: { FileUpload, ExternalLink }
+  components: { ShapeShiftHorizontal, FileUpload, ExternalLink }
 })
 export default class ImportData extends Mixins(PremiumMixin) {}
 </script>

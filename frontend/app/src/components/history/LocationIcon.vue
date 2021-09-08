@@ -16,6 +16,10 @@
         :max-height="size"
         :src="item.icon"
       />
+      <component
+        :is="item.component"
+        v-else-if="typeof item.component !== 'undefined'"
+      />
       <v-icon v-else color="accent"> {{ item.icon }} </v-icon>
     </span>
     <span v-if="!icon" :class="horizontal ? 'ml-3' : null" class="mt-1">

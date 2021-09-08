@@ -5,6 +5,7 @@ Changelog
 * :feature:`2764` Users will now be able to restore the local assets database to its initial state.
 * :feature:`2847` Users will now be able to use a combination of filters in the search for trades and deposits/withdrawals.
 * :feature:`3254` Users can now add a custom Covalent API key in rotki.
+* :feature:`3416` Users will now be able to import ShapeShift trade history CSVs exported from shapeshift.com.
 * :bug:`3266` Users will now be able to properly access most of the top bar content using a mobile device.
 * :bug:`3268` Users will now be able to properly scroll to the hidden tabs when using a mobile device.
 * :bug:`3267` Frontend will now occupy all the available screen when accessed from a mobile device.
@@ -14,10 +15,10 @@ Changelog
 * :feature:`3349` AMM swaps now have a transaction hash link in the trade history section.
 * :bug:`3329` Users will now properly see their sushiswap trades in the history page if they have the sushiswap module activated.
 * :bug:`3310` For the edge case of a MakerDAO vault event containing a zero amount the MakerDAO DeFi section and PnL report should no longer get an error.
-* :bug:`3311` The PnL CSV export in Windows should now now longer contain the double number of lines and as such the formulas at the summary should be correct. 
+* :bug:`3311` The PnL CSV export in Windows should now now longer contain the double number of lines and as such the formulas at the summary should be correct.
 * :bug:`3313` Discrepancies on the sign of net_profit_loss in PnL CSV export between exports with and without formulas should now be fixed.
 * :bug:`3355` Yearn V2 vaults should now display a correct price.
-* :bug:`3373` The form to add a FTX account will now work correctly when the subaccount field is modified and then cleared. 
+* :bug:`3373` The form to add a FTX account will now work correctly when the subaccount field is modified and then cleared.
 
 * :release:`1.20.0 <2021-08-06>`
 * :feature:`2426` Sushiswap is now supported. Premium users can see their LP balances, swaps history and LP pool join/exits. Finally the balancer trades are now taken into account in the profit/loss report.
@@ -49,7 +50,7 @@ Changelog
 * :feature:`1666` Users will now be able to see their yearn v2 vaults in in the defi section.
 * :feature:`2456` Users will now be able to correctly retrieve prices for Curve LP tokens.
 * :feature:`2778` Users will now be able to enable modules and queried addresses when adding an ethereum account
-* :feature:`1857` Premium users will now be able to query Aave V2 events. 
+* :feature:`1857` Premium users will now be able to query Aave V2 events.
 * :feature:`2722` The sync conflict dialog dates will now be consistent with the user specified date format.
 * :feature:`3114` Users can easily check and manage which addresses are queried for each defi module directly from the respective module page.
 * :feature:`3069` When adding an asset coingecko/cryptocompare identifiers will now be validated and non-existing ones will be rejected.

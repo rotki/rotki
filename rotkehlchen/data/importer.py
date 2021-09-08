@@ -10,7 +10,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_USD, A_SAI, A_DAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -29,6 +29,8 @@ from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, Tra
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+SAI_TIMESTAMP = 1574035200
 
 
 def remap_header(fieldnames: List[str]) -> List[str]:
@@ -930,6 +932,84 @@ class DataImporter():
                     continue
                 except UnsupportedCSVEntry as e:
                     self.db.msg_aggregator.add_warning(str(e))
+                    continue
+                except KeyError as e:
+                    return False, str(e)
+        return True, ''
+
+    def _consume_shapeshift_trade(self, csv_row: Dict[str, Any]) -> None:
+        """
+        Consume the file containing only trades from ShapeShift.
+        """
+        timestamp = deserialize_timestamp_from_date(
+            date=csv_row['timestamp'],
+            formatstr='iso8601',
+            location='ShapeShift',
+        )
+        buy_asset = symbol_to_asset_or_token(csv_row['outputCurrency'])
+        buy_amount = deserialize_asset_amount(csv_row['outputAmount'])
+        sold_asset = symbol_to_asset_or_token(csv_row['inputCurrency'])
+        sold_amount = deserialize_asset_amount(csv_row['inputAmount'])
+        rate = deserialize_asset_amount(csv_row['rate'])
+        fee = deserialize_fee(csv_row['minerFee'])
+        in_addr = csv_row['inputAddress']
+        out_addr = csv_row['outputAddress']
+        notes = f"""
+Trade from ShapeShift with ShapeShift Deposit Address:
+ {csv_row['inputAddress']}, and
+ Transaction ID: {csv_row['inputTxid']}.
+  Refund Address: {csv_row['refundAddress']}, and
+ Transaction ID: {csv_row['refundTxid']}.
+  Destination Address: {csv_row['outputAddress']}, and
+ Transaction ID: {csv_row['outputTxid']}.
+"""
+        if sold_amount == ZERO:
+            log.debug(f'Ignoring ShapeShift trade with sold_amount equal to zero. {csv_row}')
+            return
+        if in_addr == '' or out_addr == '':
+            log.debug(f'Ignoring ShapeShift trade which was performed on DEX. {csv_row}')
+            return
+        # Assuming that before launch of multi collateral dai everything was SAI.
+        # Converting DAI to SAI in buy_asset and sell_asset.
+        if buy_asset == A_DAI and timestamp <= SAI_TIMESTAMP:
+            buy_asset = A_SAI
+        if sold_asset == A_DAI and timestamp <= SAI_TIMESTAMP:
+            sold_asset = A_SAI
+        trade = Trade(
+            timestamp=timestamp,
+            location=Location.SHAPESHIFT,
+            base_asset=buy_asset,
+            quote_asset=sold_asset,
+            trade_type=TradeType.BUY,
+            amount=buy_amount,
+            rate=Price(rate),
+            fee=Fee(fee),
+            fee_currency=buy_asset,  # Assumption that minerFee is denominated in outputCurrency
+            link='',
+            notes=notes,
+        )
+        self.db.add_trades([trade])
+
+    def import_shapeshift_trades_csv(self, filepath: Path) -> Tuple[bool, str]:
+        """
+        Information for the values that the columns can have has been obtained from sample CSVs
+        """
+        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+            data = csv.DictReader(csvfile)
+            for row in data:
+                try:
+                    self._consume_shapeshift_trade(row)
+                except UnknownAsset as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'During ShapeShift CSV import found action with unknown '
+                        f'asset {e.asset_name}. Ignoring entry',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'Deserialization error during ShapeShift CSV import. '
+                        f'{str(e)}. Ignoring entry',
+                    )
                     continue
                 except KeyError as e:
                     return False, str(e)

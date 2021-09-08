@@ -1,4 +1,5 @@
 import { TradeLocationData } from '@/components/history/type';
+import FOXIcon from '@/components/icons/FOXIcon.vue';
 import {
   EXCHANGE_BALANCER,
   EXCHANGE_BINANCE,
@@ -20,6 +21,7 @@ import {
   EXCHANGE_KUCOIN,
   EXCHANGE_NEXO,
   EXCHANGE_POLONIEX,
+  EXCHANGE_SHAPESHIFT,
   EXCHANGE_SUSHISWAP,
   EXCHANGE_UNISWAP,
   TRADE_LOCATION_BANKS,
@@ -179,6 +181,14 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'FTX',
     icon: require('@/assets/images/exchanges/ftx.png'),
     imageIcon: true,
+    exchange: true
+  },
+  {
+    identifier: EXCHANGE_SHAPESHIFT,
+    name: 'ShapeShift',
+    icon: '',
+    imageIcon: false,
+    component: FOXIcon,
     exchange: true
   },
   {
