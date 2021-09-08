@@ -11,44 +11,66 @@
       />
     </base-external-link>
     <v-card-title>
-      <v-row align="center" no-gutters>
-        <v-col class="text-truncate">
-          {{ name }}
-        </v-col>
-        <v-col cols="auto" class="text-subtitle-2">
-          <amount-display
-            class="text--secondary"
-            :value="item.priceEth"
-            asset="ETH"
-          />
-        </v-col>
-      </v-row>
+      <div :class="$style.title">
+        <v-row align="center" justify="space-between" class="flex-nowrap">
+          <v-col
+            class="text-truncate text-subtitle-1 font-weight-medium"
+            cols="8"
+            sm="6"
+            lg="7"
+            xl="8"
+          >
+            <v-tooltip top open-delay="400" max-width="450">
+              <template #activator="{ on, attrs }">
+                <span v-bind="attrs" v-on="on">
+                  {{ name }}
+                </span>
+              </template>
+              <span> {{ name }}</span>
+            </v-tooltip>
+          </v-col>
+          <v-col cols="auto" class="text-subtitle-2">
+            <amount-display
+              class="text--secondary"
+              :value="item.priceEth"
+              asset="ETH"
+            />
+          </v-col>
+        </v-row>
+      </div>
     </v-card-title>
     <v-card-subtitle>
-      <v-row align="center" no-gutters>
-        <v-col>
-          <v-tooltip top open-delay="400" max-width="450">
-            <template #activator="{ on, attrs }">
-              <span v-bind="attrs" class="text-truncate" v-on="on">
-                {{ item.collection.name }}
-              </span>
-            </template>
-            <span> {{ item.collection.description }}</span>
-          </v-tooltip>
-        </v-col>
-        <v-col cols="auto" class="text-subtitle-2">
-          <amount-display
-            class="text--secondary"
-            :value="item.priceUsd"
-            show-currency="ticker"
-            fiat-currency="USD"
-          />
-        </v-col>
-      </v-row>
+      <div :class="$style.title">
+        <v-row
+          align="center"
+          no-gutters
+          justify="space-between"
+          class="flex-nowrap"
+        >
+          <v-col cols="8" sm="6" lg="7" xl="8" class="text-truncate">
+            <v-tooltip top open-delay="400" max-width="450">
+              <template #activator="{ on, attrs }">
+                <span v-bind="attrs" v-on="on">
+                  {{ item.collection.name }}
+                </span>
+              </template>
+              <span> {{ item.collection.description }}</span>
+            </v-tooltip>
+          </v-col>
+          <v-col cols="auto" class="text-subtitle-2">
+            <amount-display
+              class="text--secondary"
+              :value="item.priceUsd"
+              show-currency="ticker"
+              fiat-currency="USD"
+            />
+          </v-col>
+        </v-row>
+      </div>
     </v-card-subtitle>
     <v-card-actions>
       <v-spacer />
-      <icon-link :url="item.permalink" text="Open in OpenSea" />
+      <icon-link :url="item.permalink" text="OpenSea" />
     </v-card-actions>
   </v-card>
 </template>
@@ -85,3 +107,9 @@ export default defineComponent({
   }
 });
 </script>
+
+<style lang="scss" module>
+.title {
+  width: 100%;
+}
+</style>

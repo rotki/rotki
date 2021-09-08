@@ -86,8 +86,8 @@
         cols="12"
         sm="6"
         md="6"
-        lg="4"
-        xl="3"
+        lg="3"
+        :class="$style.xl"
       >
         <nft-gallery-item :item="item" />
       </v-col>
@@ -216,12 +216,19 @@ export default defineComponent({
     NftGalleryItem
   },
   setup() {
-    const { isMobile } = setupThemeCheck();
+    const { isMobile, breakpoint } = setupThemeCheck();
     const { dispatch, state } = useStore();
 
     const page = ref(1);
 
-    const itemsPerPage = computed(() => (isMobile.value ? 1 : 8));
+    const itemsPerPage = computed(() => {
+      if (isMobile.value) {
+        return 1;
+      } else if (breakpoint.value === 'xl') {
+        return 10;
+      }
+      return 8;
+    });
     const selectedAccount = ref<GeneralAccount | null>(null);
     const selectedCollection = ref<string | null>(null);
     const premium = computed(() => state.session?.premium);
@@ -250,5 +257,12 @@ export default defineComponent({
 <style module lang="scss">
 .empty {
   min-height: 80vh;
+}
+
+.xl {
+  @media only screen and (min-width: 1920px) {
+    flex: 0 0 20% !important;
+    max-width: 20% !important;
+  }
 }
 </style>

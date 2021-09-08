@@ -11,8 +11,10 @@ export const setupThemeCheck = () => {
   const { $vuetify } = useProxy();
   const isMobile = computed(() => $vuetify.breakpoint.mobile);
   const dark = computed(() => $vuetify.theme.dark);
+  const breakpoint = computed(() => $vuetify.breakpoint.name);
   return {
     isMobile,
-    dark
+    dark,
+    breakpoint
   };
 };
