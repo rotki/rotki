@@ -30,7 +30,7 @@ class ChainID(Enum):
         if chain == 'polygon-pos':
             return ChainID.MATIC
 
-        raise KeyError(f'Unknown chain {chain}')
+        raise RuntimeError(f'Unknown chain {chain}')
 
 
 class EvmTokenKind(Enum):

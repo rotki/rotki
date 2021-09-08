@@ -71,9 +71,9 @@ def test_upgrade_v2_v3(globaldb):
 
     cursor = globaldb._conn.cursor()
     # Test that the assets where correctly translated
-    query = 'SELECT COUNT(*) from evm_tokens where chain = "1"'
+    query = 'SELECT COUNT(*) from evm_tokens where chain = 1'
     assert cursor.execute(query).fetchone()[0] == 1758
-    query = 'SELECT COUNT(*) from evm_tokens where chain = "43114"'
+    query = 'SELECT COUNT(*) from evm_tokens where chain = 43114'
     assert cursor.execute(query).fetchone()[0] == 3
 
     # Test that we have the same amount of assets

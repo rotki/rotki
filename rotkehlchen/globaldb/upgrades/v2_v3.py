@@ -18,7 +18,7 @@ from rotkehlchen.globaldb.schema import (
     DB_V3_CREATE_ASSETS,
     DB_V3_CREATE_EVM_TOKENS,
     DB_V3_CREATE_MULTIASSETS,
-    DB_CREATE_ETHEREUM_TOKENS_LIST,
+    DB_CREATE_EVM_TOKENS_LIST,
     DB_CREATE_USER_OWNED_ASSETS,
 )
 from rotkehlchen.typing import ChecksumEthAddress
@@ -47,7 +47,7 @@ MIGRATION_CACHE: Deque[Any] = deque([])
 
 EVM_TUPLES_CREATION_TYPE = (
     Tuple[
-        List[Tuple[Any, str, str, Any, Any, Any]],
+        List[Tuple[Any, int, int, Any, Any, Any]],
         List[Tuple[Any, str, Any, str, Any]],
         List[Tuple[Any, Any, Any, Any, Any, None]],
     ]
@@ -90,8 +90,8 @@ def upgrade_ethereum_assets(query: List[Any]) -> EVM_TUPLES_CREATION_TYPE:
     for entry in old_ethereum_data:
         evm_tuples.append((
             entry[0],  # identifier
-            str(EvmTokenKind.ERC20),  # token type
-            str(ChainID.ETHEREUM),  # chain
+            EvmTokenKind.ERC20.value,  # token type
+            ChainID.ETHEREUM.value,  # chain
             entry[1],  # address
             entry[2],  # decimals
             entry[3],  # protocol
@@ -150,8 +150,8 @@ def evm_compatible_assets_create_tuples(
         new_swapped_for = old_id_to_new.get(entry[8], entry[8])
         evm_tuples.append((
             new_id,  # identifier
-            str(EvmTokenKind.ERC20),  # token type
-            str(asset_chain),  # chain
+            EvmTokenKind.ERC20.value,  # token type
+            asset_chain.value,  # chain
             address,  # address
             None,  # decimals TODO: We have to query this information
             None,  # protocol
@@ -319,7 +319,7 @@ def migrate_to_v3(connection: sqlite3.Connection) -> None:
     cursor.execute(DB_V3_CREATE_ASSETS)
     cursor.execute(DB_V3_CREATE_EVM_TOKENS)
     cursor.execute(DB_V3_CREATE_MULTIASSETS)
-    cursor.execute(DB_CREATE_ETHEREUM_TOKENS_LIST)
+    cursor.execute(DB_CREATE_EVM_TOKENS_LIST)
     cursor.execute(DB_CREATE_USER_OWNED_ASSETS)
 
     cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details)

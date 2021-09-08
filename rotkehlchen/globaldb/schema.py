@@ -1,4 +1,4 @@
-DB_CREATE_ETHEREUM_TOKENS_LIST = """
+DB_CREATE_EVM_TOKENS_LIST = """
 CREATE TABLE IF NOT EXISTS underlying_tokens_list (
     identifier TEXT NOT NULL,
     weight TEXT NOT NULL,
@@ -9,15 +9,6 @@ CREATE TABLE IF NOT EXISTS underlying_tokens_list (
     PRIMARY KEY(identifier, parent_token_entry)
 );
 """  # noqa: E501
-
-DB_CREATE_ETHEREUM_TOKENS = """
-CREATE TABLE IF NOT EXISTS ethereum_tokens (
-    address VARCHAR[42] PRIMARY KEY NOT NULL,
-    decimals INTEGER,
-    protocol TEXT
-);
-"""
-
 # Custom enum table for asset types
 DB_CREATE_ASSET_TYPES = """
 CREATE TABLE IF NOT EXISTS asset_types (
@@ -186,7 +177,7 @@ CREATE TABLE IF NOT EXISTS assets (
 DB_V3_CREATE_EVM_TOKENS = """
 CREATE TABLE IF NOT EXISTS evm_tokens (
     identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
-    token_type TEXT NOT NULL,
+    token_type INTEGER NOT NULL,
     chain INTEGER NOT NULL,
     address VARCHAR[42] NOT NULL,
     decimals INTEGER,
@@ -206,12 +197,11 @@ CREATE TABLE IF NOT EXISTS multiasset_collector(
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{}{}{}{}{}{}{}{}{}
+{}{}{}{}{}{}{}{}
 COMMIT;
 PRAGMA foreign_keys=on;
 """.format(
-    DB_CREATE_ETHEREUM_TOKENS,
-    DB_CREATE_ETHEREUM_TOKENS_LIST,
+    DB_CREATE_EVM_TOKENS_LIST,
     DB_CREATE_SETTINGS,
     DB_CREATE_ASSET_TYPES,
     DB_CREATE_ASSETS,
