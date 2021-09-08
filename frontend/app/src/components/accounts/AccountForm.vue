@@ -527,7 +527,7 @@ export default class AccountForm extends Vue {
         modules: this.selectedModules
       });
       return true;
-    } catch (e) {
+    } catch (e: any) {
       const title = this.$tc('blockchain_balances.metamask_import.error.title');
       const description = this.$tc(
         'blockchain_balances.metamask_import.error.description',
@@ -585,7 +585,7 @@ export default class AccountForm extends Vue {
       }
 
       this.reset();
-    } catch (e) {
+    } catch (e: any) {
       const apiErrorMessage = deserializeApiErrorMessage(e.message);
       if (apiErrorMessage && Object.keys(apiErrorMessage).length > 0) {
         const errors: ValidationErrors = validationErrors();

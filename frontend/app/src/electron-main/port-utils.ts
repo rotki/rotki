@@ -25,7 +25,7 @@ export async function selectPort(
   for (let portNumber = startPort; portNumber <= 65535; portNumber++) {
     try {
       return await checkAvailability(portNumber);
-    } catch (e) {
+    } catch (e: any) {
       if (!['EADDRINUSE', 'EACCES'].includes(e.code)) {
         throw e;
       }

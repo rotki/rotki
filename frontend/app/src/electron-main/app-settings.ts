@@ -25,7 +25,7 @@ class AppSettingManager {
     const json = JSON.stringify(settings);
     try {
       fs.writeFileSync(appConfig, json, { encoding: 'utf8' });
-    } catch (e) {
+    } catch (e: any) {
       console.error(e, 'Could not write the app settings file');
     }
   }
@@ -46,7 +46,7 @@ class AppSettingManager {
             settings[key] = loadedSettings[key];
           }
         }
-      } catch (e) {
+      } catch (e: any) {
         console.log(e);
       }
     }

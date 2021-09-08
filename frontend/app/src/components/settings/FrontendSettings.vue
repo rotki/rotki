@@ -245,7 +245,7 @@ export default class FrontendSettings extends Mixins<
     try {
       commit('session/scrambleData', enabled);
       success = true;
-    } catch (error) {
+    } catch (error: any) {
       this.scrambleData = previousValue;
       message = error.message;
     }

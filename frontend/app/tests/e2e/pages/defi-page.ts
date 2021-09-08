@@ -21,7 +21,7 @@ export class DefiPage {
 
       cy.get(`#defi-module-${module}`).scrollIntoView();
       cy.get(`#defi-module-${module}`).find('button').click();
-      cy.get(`#defi-module-${module}`).should('not.be.visible');
+      cy.get(`#defi-module-${module}`).should('not.exist');
     }
     cy.get(`#defi-module-${Module.AAVE}`).should('be.visible');
     cy.get('.defi-wizard__select-accounts').click();

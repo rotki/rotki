@@ -93,7 +93,7 @@ export const setupJsonTransformer: (
       try {
         result = JSON.parse(data, reviver);
         // eslint-disable-next-line no-empty
-      } catch (e) {}
+      } catch (e: any) {}
     }
     return result;
   };

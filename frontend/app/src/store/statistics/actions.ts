@@ -11,7 +11,7 @@ export const actions: ActionTree<StatisticsState, RotkehlchenState> = {
     try {
       const netValue = await api.queryNetvalueData();
       commit('netValue', netValue);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.statistics.net_value.error.message', {

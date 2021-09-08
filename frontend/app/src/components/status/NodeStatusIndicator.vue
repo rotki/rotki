@@ -12,7 +12,8 @@
         class-name="secondary--text text--lighten-2"
         :on-menu="on"
       >
-        <v-icon v-text="nodeConnection ? 'mdi-link' : 'mdi-link-off'" />
+        <v-icon v-if="nodeConnection">mdi-link</v-icon>
+        <v-icon v-else>mdi-link-off</v-icon>
       </menu-tooltip-button>
     </template>
     <node-status :connected="nodeConnection" />

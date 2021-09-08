@@ -82,7 +82,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       commit('tasks/add', task, { root: true });
       const { result } = await taskCompletion<DSRBalances, TaskMeta>(taskType);
       commit('dsrBalances', result);
-    } catch (e) {
+    } catch (e: any) {
       const message = i18n.tc(
         'actions.defi.dsr_balances.error.description',
         undefined,
@@ -129,7 +129,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       commit('tasks/add', task, { root: true });
       const { result } = await taskCompletion<DSRHistory, TaskMeta>(taskType);
       commit('dsrHistory', result);
-    } catch (e) {
+    } catch (e: any) {
       const message = i18n.tc(
         'actions.defi.dsr_history.error.description',
         undefined,
@@ -180,7 +180,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         TaskMeta
       >(taskType);
       commit('makerDAOVaults', convertMakerDAOVaults(makerDAOVaults));
-    } catch (e) {
+    } catch (e: any) {
       const message = i18n.tc(
         'actions.defi.makerdao_vaults.error.description',
         undefined,
@@ -230,7 +230,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
 
       commit('makerDAOVaultDetails', result);
-    } catch (e) {
+    } catch (e: any) {
       const message = i18n.tc(
         'actions.defi.makerdao_vault_details.error.description',
         undefined,
@@ -278,7 +278,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { result } = await taskCompletion<AaveBalances, TaskMeta>(taskType);
 
       commit('aaveBalances', result);
-    } catch (e) {
+    } catch (e: any) {
       const message = i18n.tc(
         'actions.defi.aave_balances.error.description',
         undefined,
@@ -330,7 +330,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { result } = await taskCompletion<AaveHistory, TaskMeta>(taskType);
 
       commit('aaveHistory', result);
-    } catch (e) {
+    } catch (e: any) {
       const message = i18n.tc(
         'actions.defi.aave_history.error.description',
         undefined,
@@ -374,7 +374,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
 
       commit('allDefiProtocols', result);
-    } catch (e) {
+    } catch (e: any) {
       const title = i18n.tc('actions.defi.balances.error.title');
       const message = i18n.tc(
         'actions.defi.balances.error.description',
@@ -627,7 +627,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
 
       commit('compoundBalances', result);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n.tc('actions.defi.compound.error.description', undefined, {
           error: e.message
@@ -679,7 +679,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
 
       commit('compoundHistory', result);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n.tc('actions.defi.compound_history.error.description', undefined, {
           error: e.message
@@ -750,7 +750,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
           : DefiMutations.YEARN_VAULTS_V2_BALANCES,
         result
       );
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.defi.yearn_vaults.error.description', {
@@ -829,7 +829,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
           : DefiMutations.YEARN_VAULTS_V2_HISTORY,
         result
       );
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.defi.yearn_vaults_history.error.description', {
@@ -887,7 +887,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
 
       commit('uniswapBalances', result);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n.tc('actions.defi.uniswap.error.description', undefined, {
           error: e.message
@@ -937,7 +937,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { result } = await taskCompletion<DexTrades, TaskMeta>(taskType);
 
       commit('uniswapTrades', result);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n.tc('actions.defi.uniswap_trades.error.description', undefined, {
           error: e.message
@@ -987,7 +987,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { result } = await taskCompletion<XswapEvents, TaskMeta>(taskType);
 
       commit('uniswapEvents', result);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n.tc('actions.defi.uniswap_events.error.description', undefined, {
           error: e.message
@@ -1032,7 +1032,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       const { result } = await taskCompletion<Airdrops, TaskMeta>(taskType);
 
       commit('airdrops', result);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.defi.airdrops.error.description', {

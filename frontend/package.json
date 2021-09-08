@@ -20,11 +20,15 @@
     "build": "npm run build --workspace=@rotki/common && npm run build --workspace rotki",
     "docker:build": "npm run build -w @rotki/common && npm run build -w rotki -- --mode docker",
     "lint": "npm run lint -w @rotki/common && npm run lint:check -w rotki",
-    "check": "npm run lint && npm run build && npm run test:unit --workspace=rotki && npm run test:integration-ci --workspace=rotki",
+    "lint:fix": "npm run lint:fix -w @rotki/common && npm run lint -w rotki",
+    "check": "npm run lint && npm run build && npm run test:unit --workspace=rotki",
+    "check:all": "npm run lint && npm run build && npm run test:unit --workspace=rotki && npm run test:integration-ci --workspace=rotki",
+    "clean:modules": "rimraf node_modules app/node_modules common/node_modules",
     "dev": "node start-dev.js"
   },
   "devDependencies": {
     "dotenv": "10.0.0",
+    "rimraf": "3.0.2",
     "semver": "7.3.5"
   }
 }

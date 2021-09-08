@@ -171,7 +171,7 @@ export default class ProfitLossReport extends Vue {
           );
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       const description = e.message;
       this.showMessage(description);
     }

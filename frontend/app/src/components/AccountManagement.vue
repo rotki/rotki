@@ -183,7 +183,7 @@ export default class AccountManagement extends Mixins(BackendMixin) {
         }
       }
       // eslint-disable-next-line no-empty
-    } catch (e) {
+    } catch (e: any) {
     } finally {
       this.autolog = false;
     }

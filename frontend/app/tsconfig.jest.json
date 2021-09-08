@@ -15,7 +15,9 @@
     "types": [
       "vuetify",
       "webpack",
-      "webpack-env"
+      "webpack-env",
+      "jest",
+      "@types/testing-library__jest-dom"
     ],
     "paths": {
       "@/*": [
@@ -29,17 +31,17 @@
       "scripthost"
     ],
     "typeRoots": [
-      "node_modules/@types"
+      "../node_modules/@types"
     ]
   },
   "exclude": [
     "node_modules",
     "node_modules/vuetify",
-    "tests"
   ],
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    "src/**/*.vue"
+    "src/**/*.vue",
+    "tests/unit/**/*.ts"
   ]
 }

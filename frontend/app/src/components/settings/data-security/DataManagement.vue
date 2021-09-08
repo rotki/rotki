@@ -88,7 +88,7 @@ export default class DataManagement extends Vue {
         success: true
       };
       setTimeout(() => (this.status = null), 5000);
-    } catch (e) {
+    } catch (e: any) {
       this.status = {
         message: this.$t('data_management.error', {
           source: this.sourceLabel

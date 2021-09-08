@@ -202,7 +202,7 @@ export default class ExternalServices extends Vue {
       if (serviceName === 'loopring') {
         await this.fetchLoopringBalances(true);
       }
-    } catch (e) {
+    } catch (e: any) {
       this.$store.commit('setMessage', {
         title: this.$t('external_services.set.error.title').toString(),
         description: this.$t('external_services.set.error.message', {
@@ -227,7 +227,7 @@ export default class ExternalServices extends Vue {
       this.updateKeys(
         await this.$api.deleteExternalServices(this.serviceToDelete)
       );
-    } catch (e) {
+    } catch (e: any) {
       this.$store.commit('setMessage', {
         title: this.$t('external_services.delete_error.title').toString(),
         description: this.$t('external_services.delete_error.description', {

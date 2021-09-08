@@ -77,7 +77,7 @@ function handleAddresses(
       cb(payload.addresses);
       res.writeHead(STATUS_OK);
       res.end();
-    } catch (e) {
+    } catch (e: any) {
       invalidRequest(res, 'Malformed JSON');
     }
   });
@@ -138,7 +138,7 @@ function handleRequests(
         );
         return;
       }
-    } catch (e) {
+    } catch (e: any) {
       invalidRequest(
         res,
         'No valid content length',

@@ -60,7 +60,7 @@ function manipulateResponse(res: Response, callback: (original: any) => any) {
       // @ts-ignore
       _write.call(res, payload);
       return true;
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       return false;
     }
@@ -281,7 +281,7 @@ function mockPreflight(res: Response) {
       // @ts-ignore
       _write.call(res, chunk);
       return true;
-    } catch (e) {
+    } catch (e: any) {
       return false;
     }
   };

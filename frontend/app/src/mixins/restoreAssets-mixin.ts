@@ -36,7 +36,7 @@ export default class RestoreAssetsDatabase extends Mixins(BackendMixin) {
         this.done = true;
         this.restoreHard = false;
       }
-    } catch (e) {
+    } catch (e: any) {
       const title = this.$t('asset_update.restore.title').toString();
       const message = e.toString();
       if (message.includes('There are assets that can not')) {

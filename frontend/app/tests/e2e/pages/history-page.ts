@@ -25,14 +25,14 @@ export class HistoryPage {
       .parent()
       .parent()
       .find('.v-progress-linear')
-      .should('not.be.visible');
+      .should('not.exist');
     cy.get('[data-cy=rate]').type(`{selectall}{backspace}${trade.rate}`);
     cy.get('[data-cy=fee]').type(trade.fee);
     selectAsset('[data-cy=fee-currency]', trade.fee_currency, trade.fee_id);
     cy.get('[data-cy=link]').type(trade.link);
     cy.get('[data-cy=notes]').type(trade.notes);
     cy.get('.big-dialog__buttons__confirm').click();
-    cy.get('[data-cy=trade-form]').should('not.be.visible');
+    cy.get('[data-cy=trade-form]').should('not.exist');
   }
 
   confirmDelete() {
@@ -81,7 +81,7 @@ export class HistoryPage {
     cy.get('[data-cy=amount]').type(amount);
 
     cy.get('.big-dialog__buttons__confirm').click();
-    cy.get('[data-cy=trade-form]').should('not.be.visible');
+    cy.get('[data-cy=trade-form]').should('not.exist');
   }
 
   deleteTrade(position: number) {

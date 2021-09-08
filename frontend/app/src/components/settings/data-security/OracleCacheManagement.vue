@@ -251,7 +251,7 @@ export default class OracleCacheManagement extends Vue {
         toAsset
       );
       await this.load();
-    } catch (e) {
+    } catch (e: any) {
       const title = this.$t(
         'oracle_cache_management.notification.title'
       ).toString();
