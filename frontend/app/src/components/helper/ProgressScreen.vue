@@ -66,7 +66,7 @@ export default class ProgressScreen extends Vue {
     try {
       const number = parseFloat(this.progress);
       return number.toFixed(2);
-    } catch (e) {
+    } catch (e: any) {
       return this.progress;
     }
   }

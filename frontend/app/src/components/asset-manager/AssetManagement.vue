@@ -192,7 +192,7 @@ export default class AssetManagement extends Mixins(RestoreAssetsDatabase) {
       if (success) {
         await this.refresh();
       }
-    } catch (e) {
+    } catch (e: any) {
       showError(
         this.$t('asset_management.delete_error', {
           address,
@@ -208,7 +208,7 @@ export default class AssetManagement extends Mixins(RestoreAssetsDatabase) {
       if (success) {
         await this.refresh();
       }
-    } catch (e) {
+    } catch (e: any) {
       showError(
         this.$t('asset_management.delete_error', {
           address: identifier,

@@ -62,7 +62,7 @@ export const actions: ActionTree<NotificationState, RotkehlchenState> = {
         return;
       }
       commit('update', notifications);
-    } catch (e) {
+    } catch (e: any) {
       const message = e.message || e;
       commit('update', [
         createNotification(getters.nextId, {

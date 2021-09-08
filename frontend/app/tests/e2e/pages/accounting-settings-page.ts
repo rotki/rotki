@@ -74,7 +74,7 @@ export class AccountingSettingsPage {
         messageContains
       );
     }
-    cy.get(`${target} .v-messages__message`).should('not.be.visible');
+    cy.get(`${target} .v-messages__message`).should('not.exist');
   }
 
   confirmInlineFailure(target: string, messageContains?: string) {
@@ -89,6 +89,6 @@ export class AccountingSettingsPage {
         messageContains
       );
     }
-    cy.get(`${target} .v-messages__message`).should('not.be.visible');
+    cy.get(`${target} .v-messages__message`).should('not.exist');
   }
 }

@@ -43,7 +43,7 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
     commit('tasks/add', task, { root: true });
     const { result } = await taskCompletion<R, T>(payload.taskType);
     commit(payload.mutation, result);
-  } catch (e) {
+  } catch (e: any) {
     notify(
       payload.onError.error(e.message),
       payload.onError.title,

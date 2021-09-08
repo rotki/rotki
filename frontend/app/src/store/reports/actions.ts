@@ -96,7 +96,7 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
         firstProcessedTimestamp
       };
       commit('set', report);
-    } catch (e) {
+    } catch (e: any) {
       commit(MUTATION_REPORT_ERROR, {
         error: e.message,
         message: i18n.t('actions.reports.generate.error.description').toString()
@@ -122,7 +122,7 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
           : i18n.t('actions.reports.csv_export.message.failure').toString(),
         success
       };
-    } catch (e) {
+    } catch (e: any) {
       message = {
         title: i18n.t('actions.reports.csv_export.title').toString(),
         description: e.message,

@@ -65,7 +65,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
         );
 
         commit(ETH2_DETAILS, result);
-      } catch (e) {
+      } catch (e: any) {
         notify(
           i18n.tc('actions.staking.eth2.error.description', undefined, {
             error: e.message
@@ -98,7 +98,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
         );
 
         commit(ETH2_DEPOSITS, result);
-      } catch (e) {
+      } catch (e: any) {
         notify(
           `${i18n.t('actions.staking.eth2_deposits.error.description', {
             error: e.message
@@ -149,7 +149,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
       const { result } = await taskCompletion<AdexBalances, TaskMeta>(taskType);
 
       commit(ADEX_BALANCES, result);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         `${i18n.t('actions.staking.adex_balances.error.description', {
           error: e.message
@@ -177,7 +177,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
       const { result } = await taskCompletion<AdexHistory, TaskMeta>(taskType);
 
       commit(ADEX_HISTORY, result);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         `${i18n.t('actions.staking.adex_history.error.description', {
           error: e.message

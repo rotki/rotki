@@ -128,7 +128,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         dispatch('balances/refreshPrices', false, options)
       );
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       if (e instanceof SyncConflictError) {
         commit('syncConflict', { message: e.message, payload: e.payload });
         return { success: false, message: '' };
@@ -168,7 +168,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       if (lastDataUploadTs !== lastDataUpload) {
         commit('updateLastDataUpload', lastDataUploadTs);
       }
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.session.periodic_query.error.message', {
@@ -188,7 +188,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       await api.logout(state.username);
       await dispatch('stop');
-    } catch (e) {
+    } catch (e: any) {
       showError(e.message, 'Logout failed');
     }
   },
@@ -200,7 +200,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         await api.logout(user);
       }
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       showError(e.message, 'Logout failed');
       return { success: false, message: e.message };
     }
@@ -228,7 +228,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       return {
         success: true
       };
-    } catch (e) {
+    } catch (e: any) {
       showError(
         e.message,
         i18n.t('actions.session.tag_add.error.title').toString()
@@ -243,7 +243,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   async editTag({ commit }, tag: Tag) {
     try {
       commit('tags', await api.editTag(tag));
-    } catch (e) {
+    } catch (e: any) {
       showError(
         e.message,
         i18n.t('actions.session.tag_edit.error.title').toString()
@@ -254,7 +254,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   async deleteTag({ commit, dispatch }, tagName: string) {
     try {
       commit('tags', await api.deleteTag(tagName));
-    } catch (e) {
+    } catch (e: any) {
       showError(
         e.message,
         i18n.t('actions.session.tag_delete.error.title').toString()
@@ -282,7 +282,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         } as Message,
         { root: true }
       );
-    } catch (e) {
+    } catch (e: any) {
       showError(
         e.message,
         i18n.t('actions.session.kraken_account.error.title').toString()
@@ -321,7 +321,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('generalSettings', convertToGeneralSettings(settings));
       commit('accountingSettings', convertToAccountingSettings(settings));
       success = true;
-    } catch (e) {
+    } catch (e: any) {
       message = e.message;
     }
     return {
@@ -338,7 +338,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const watchers = await api.session.watchers();
       commit('watchers', watchers);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.session.fetch_watchers.error.message', {
@@ -377,7 +377,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const queriedAddresses = await api.session.queriedAddresses();
       commit('queriedAddresses', queriedAddresses);
-    } catch (e) {
+    } catch (e: any) {
       showError(
         i18n
           .t('actions.session.fetch_queriable_address.error.message', {
@@ -415,7 +415,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const queriedAddresses = await api.session.addQueriedAddress(payload);
       commit('queriedAddresses', queriedAddresses);
-    } catch (e) {
+    } catch (e: any) {
       showError(
         i18n
           .t('actions.session.add_queriable_address.error.message', {
@@ -430,7 +430,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const queriedAddresses = await api.session.deleteQueriedAddress(payload);
       commit('queriedAddresses', queriedAddresses);
-    } catch (e) {
+    } catch (e: any) {
       showError(
         i18n
           .t('actions.session.delete_queriable_address.error.message', {
@@ -456,7 +456,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         commit('premium', true);
       }
       return { success };
-    } catch (e) {
+    } catch (e: any) {
       return {
         success: false,
         message: e.message
@@ -471,7 +471,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         commit('premium', false);
       }
       return { success };
-    } catch (e) {
+    } catch (e: any) {
       return {
         success: false,
         message: e.message
@@ -493,7 +493,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       return {
         success
       };
-    } catch (e) {
+    } catch (e: any) {
       showError(i18n.t('actions.session.password_change.error').toString());
       return {
         success: false,
@@ -506,7 +506,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const ignoredAssets = await api.assets.ignoredAssets();
       commit('ignoreAssets', ignoredAssets);
-    } catch (e) {
+    } catch (e: any) {
       const title = i18n.tc('actions.session.ignored_assets.error.title');
       const message = i18n.tc(
         'actions.session.ignored_assets.error.message',
@@ -523,7 +523,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const ignoredAssets = await api.assets.modifyAsset(true, asset);
       commit('ignoreAssets', ignoredAssets);
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       return { success: false, message: e.message };
     }
   },
@@ -532,7 +532,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const ignoredAssets = await api.assets.modifyAsset(false, asset);
       commit('ignoreAssets', ignoredAssets);
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       return { success: false, message: e.message };
     }
   },
@@ -560,7 +560,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       if (action === SYNC_DOWNLOAD) {
         await dispatch('logout');
       }
-    } catch (e) {
+    } catch (e: any) {
       const title = i18n.tc('actions.session.force_sync.error.title');
       const message = i18n.tc('actions.session.force_sync.error.message', 0, {
         error: e.message

@@ -76,7 +76,7 @@ const priceRetrieval = (store: Store<RotkehlchenState>) => {
     loading.value = true;
     try {
       prices.value = await api.assets.historicalPrices(payload);
-    } catch (e) {
+    } catch (e: any) {
       const notification: NotificationPayload = {
         title: i18n.t('price_table.fetch.failure.title').toString(),
         message: i18n
@@ -115,7 +115,7 @@ const priceDeletion = (
     try {
       await api.assets.deleteHistoricalPrice(payload);
       await refresh();
-    } catch (e) {
+    } catch (e: any) {
       const notification: NotificationPayload = {
         title: i18n.t('price_table.delete.failure.title').toString(),
         message: i18n

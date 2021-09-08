@@ -277,7 +277,7 @@ export default class WatcherDialog extends Vue {
       );
       this.clear();
       this.updateLoadedWatchers(updatedWatchers);
-    } catch (e) {
+    } catch (e: any) {
       this.validateSettingChange(
         'error',
         this.$t('watcher_dialog.delete_error', {
@@ -324,7 +324,7 @@ export default class WatcherDialog extends Vue {
           );
           this.changeEditMode(watcher.identifier);
           this.updateLoadedWatchers(updatedWatchers);
-        } catch (e) {
+        } catch (e: any) {
           this.validateSettingChange(
             'error',
             this.$t('watcher_dialog.edit_error', {
@@ -367,7 +367,7 @@ export default class WatcherDialog extends Vue {
       );
       this.clear();
       this.updateLoadedWatchers(updatedWatchers);
-    } catch (e) {
+    } catch (e: any) {
       this.validateSettingChange(
         'error',
         this.$t('watcher_dialog.add_error', { message: e.message }).toString()

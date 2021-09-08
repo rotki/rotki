@@ -97,7 +97,7 @@ const managePrice = (
       if (!refresh.value) {
         refresh.value = true;
       }
-    } catch (e) {
+    } catch (e: any) {
       const values = { message: e.message };
       const title = edit
         ? i18n.t('price_management.edit.error.title')

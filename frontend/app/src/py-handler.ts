@@ -28,7 +28,7 @@ async function streamToString(givenStream: stream.Readable): Promise<string> {
       if (bufferChunks.length > 0) {
         try {
           stringChunks.push(Buffer.concat(bufferChunks).toString('utf8'));
-        } catch (e) {
+        } catch (e: any) {
           stringChunks.push(e.message);
         }
       }

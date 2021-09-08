@@ -198,7 +198,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         await api.history.addExternalTrade(trade)
       );
       success = true;
-    } catch (e) {
+    } catch (e: any) {
       message = e.message;
     }
     return { success, message };
@@ -221,7 +221,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       };
       commit(HistoryMutations.UPDATE_TRADE, payload);
       success = true;
-    } catch (e) {
+    } catch (e: any) {
       message = e.message;
     }
     return { success, message };
@@ -238,7 +238,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       if (success) {
         commit(HistoryMutations.DELETE_TRADE, tradeId);
       }
-    } catch (e) {
+    } catch (e: any) {
       message = e.message;
     }
     return { success, message };
@@ -535,7 +535,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         found: result.entriesFound
       };
       commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
-    } catch (e) {
+    } catch (e: any) {
       const message = i18n
         .t('actions.ledger_actions.error.description', {
           error: e.message
@@ -569,7 +569,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         identifier
       } as LedgerAction);
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       return { success: false, message: e.message };
     }
   },
@@ -590,7 +590,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       };
       commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       return { success: false, message: e.message };
     }
   },
@@ -611,7 +611,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       };
       commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       return { success: false, message: e.message };
     }
   },
@@ -626,7 +626,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       const entries = result[type];
       assert(entries, `expected entry for ${type} but there where non`);
       strings = entries;
-    } catch (e) {
+    } catch (e: any) {
       commit(
         'setMessage',
         {
@@ -711,7 +711,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     try {
       const result = await api.unignoreActions(actionIds, type);
       strings = result[type] ?? [];
-    } catch (e) {
+    } catch (e: any) {
       commit(
         'setMessage',
         {
@@ -875,7 +875,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       const { result } = await taskCompletion<GitcoinGrants, TaskMeta>(type);
 
       return { result, message: '' };
-    } catch (e) {
+    } catch (e: any) {
       return {
         result: {},
         message: e.message

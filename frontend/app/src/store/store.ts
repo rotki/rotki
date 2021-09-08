@@ -124,7 +124,7 @@ const store: StoreOptions<RotkehlchenState> = {
             await dispatch('version');
           }
           // eslint-disable-next-line no-empty
-        } catch (e) {
+        } catch (e: any) {
         } finally {
           count++;
           if (count > 20) {

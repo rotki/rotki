@@ -146,7 +146,7 @@ export default class FileUpload extends Vue {
     try {
       await this.$api.importDataFrom(this.source, file);
       this.done();
-    } catch (e) {
+    } catch (e: any) {
       this.onError(e.message);
     }
   }

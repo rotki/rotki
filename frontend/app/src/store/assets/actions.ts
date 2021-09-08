@@ -35,7 +35,7 @@ export const actions: ActionTree<AssetState, RotkehlchenState> = {
         updateAvailable: result.local < result.remote,
         versions: result
       };
-    } catch (e) {
+    } catch (e: any) {
       const title = i18n.t('actions.assets.versions.task.title').toString();
       const description = i18n
         .t('actions.assets.versions.error.description', { message: e.message })
@@ -73,7 +73,7 @@ export const actions: ActionTree<AssetState, RotkehlchenState> = {
         done: false,
         conflicts: result
       };
-    } catch (e) {
+    } catch (e: any) {
       const title = i18n.t('actions.assets.update.task.title').toString();
       const description = i18n
         .t('actions.assets.update.error.description', { message: e.message })
@@ -97,7 +97,7 @@ export const actions: ActionTree<AssetState, RotkehlchenState> = {
       return {
         success
       };
-    } catch (e) {
+    } catch (e: any) {
       return {
         success: false,
         message: e.message

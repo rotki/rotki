@@ -25,7 +25,7 @@
       </v-row>
     </template>
     <data-table
-      :headers="headers"
+      :headers="tableHeaders"
       :items="visibleItems"
       show-expand
       single-expand
@@ -143,7 +143,7 @@ enum DepositWithdrawalFilters {
   END = 'end'
 }
 
-const headers: DataTableHeader[] = [
+const tableHeaders: DataTableHeader[] = [
   { text: '', value: 'selection', width: '34px', sortable: false },
   {
     text: i18n.t('deposits_withdrawals.headers.location').toString(),
@@ -399,7 +399,7 @@ export default defineComponent({
     const selectionMode = setupSelectionMode(items, item => item.identifier);
 
     return {
-      headers,
+      tableHeaders,
       visibleItems,
       page,
       showUpgradeRow,

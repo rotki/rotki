@@ -31,7 +31,7 @@ export const actions: ActionTree<SettingsState, RotkehlchenState> & Actions = {
         frontend_settings: JSON.stringify(axiosSnakeCaseTransformer(state))
       });
       success = true;
-    } catch (e) {
+    } catch (e: any) {
       message = e.message;
     }
     return {

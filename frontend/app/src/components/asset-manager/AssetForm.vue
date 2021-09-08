@@ -375,7 +375,7 @@ export default class AssetForm extends Vue {
   async created() {
     try {
       this.types = await this.$api.assets.assetTypes();
-    } catch (e) {
+    } catch (e: any) {
       showError(
         this.$t('asset_form.types.error', { message: e.message }).toString()
       );
@@ -428,7 +428,7 @@ export default class AssetForm extends Vue {
         await this.$api.assets.uploadIcon(identifier, this.icon);
       }
       success = true;
-    } catch (e) {
+    } catch (e: any) {
       message = e.message;
     }
 
@@ -451,7 +451,7 @@ export default class AssetForm extends Vue {
       await this.saveIcon(identifier);
       await this.fetchSupportedAssets(true);
       return true;
-    } catch (e) {
+    } catch (e: any) {
       const message = deserializeApiErrorMessage(e.message) as any;
       if (!message) {
         showError(

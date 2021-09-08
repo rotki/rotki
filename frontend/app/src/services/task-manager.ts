@@ -86,7 +86,7 @@ class TaskManager {
       const result = await api.queryTaskResult(task.id, task.meta.numericKeys);
       assert(result !== null);
       this.handleResult(result, task);
-    } catch (e) {
+    } catch (e: any) {
       if (e instanceof TaskNotFoundError) {
         this.remove(task.id);
         this.handleResult(error(task, e.message), task);
@@ -113,7 +113,7 @@ class TaskManager {
 
     try {
       handler(result, task.meta);
-    } catch (e) {
+    } catch (e: any) {
       handler(error(task, e.message), task.meta);
     }
     this.remove(task.id);
