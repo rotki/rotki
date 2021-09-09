@@ -6,12 +6,16 @@
       </v-avatar>
     </v-col>
 
-    <v-col class="font-weight-bold mr-1 account-display__label">
+    <v-col class="font-weight-bold mr-1 account-display__label text-no-wrap">
       <span class="text-truncate">
         {{ account.label }}
       </span>
     </v-col>
-    <v-col cols="auto" :class="privacyMode ? 'blur-content' : ''">
+    <v-col
+      cols="auto"
+      :class="privacyMode ? 'blur-content' : ''"
+      class="text-no-wrap"
+    >
       ({{ truncateAddress(address) }})
     </v-col>
   </v-row>

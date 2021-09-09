@@ -20,6 +20,7 @@ import { HistoryApi } from '@/services/history/history-api';
 import { SessionApi } from '@/services/session/session-api';
 import {
   AsyncQuery,
+  BackendInfo,
   BtcAccountData,
   DBAssetBalance,
   GeneralAccountData,
@@ -32,8 +33,7 @@ import {
   SingleAssetBalance,
   SyncAction,
   TaskNotFoundError,
-  TaskStatus,
-  BackendInfo
+  TaskStatus
 } from '@/services/types-api';
 import {
   handleResponse,
@@ -998,6 +998,18 @@ export class RotkehlchenApi {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true,
           address
+        }),
+        validateStatus: validWithoutSessionStatus,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async fetchNfts(): Promise<PendingTask> {
+    return this.axios
+      .get<ActionResult<PendingTask>>('/nfts', {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true
         }),
         validateStatus: validWithoutSessionStatus,
         transformResponse: basicAxiosTransformer

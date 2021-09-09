@@ -446,6 +446,16 @@
     "subtitle": "Select which modules should be queried for this account",
     "title": "Enabled modules"
   },
+  "nft_gallery": {
+    "empty_filter": "No NFTs matching the filter parameters",
+    "empty_subtitle": "No NFTs have been detected",
+    "empty_title": "No NFTs detected",
+    "loading": "Loading NFTs",
+    "refresh_tooltip": "Reload NFTs",
+    "select_collection": "Select collection",
+    "select_account": "Select account",
+    "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
+  },
   "no_filter_available": {
     "hint": {
       "description": "* type the filter and then press enter e.g.",
@@ -2013,6 +2023,11 @@
           "message": "Failure to delete a queriable address: {message}"
         }
       },
+      "fetch_nfts": {
+        "task": {
+          "title": "Querying NFTs"
+        }
+      },
       "fetch_prices": {
         "error": {
           "message": "Failed to fetch prices: {error}",
@@ -2152,6 +2167,7 @@
     },
     "defi": "DeFi",
     "manage_prices": "Manage Prices",
+    "nfts": "NFTs",
     "statistics": "Statistics",
     "profit_loss_report": "Profit and Loss Report",
     "defi_sub": {

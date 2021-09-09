@@ -46,5 +46,6 @@ export enum TaskType {
   GITCOIN_GRANT_EVENTS = 'gitcoin_grant_events',
   SUSHISWAP_BALANCES = 'sushiswap_balances',
   SUSHISWAP_TRADES = 'sushiswap_trades',
-  SUSHISWAP_EVENTS = 'sushiswap_events'
+  SUSHISWAP_EVENTS = 'sushiswap_events',
+  FETCH_NFTS = 'fetch_nfts'
 }

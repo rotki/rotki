@@ -21,6 +21,11 @@ export default new Router({
       component: () => import('../views/Dashboard.vue')
     },
     {
+      path: Routes.NFTS,
+      name: 'nfts',
+      component: () => import('../views/Nft.vue')
+    },
+    {
       path: '/statistics',
       name: 'statistics',
       component: () => import('../views/Statistics.vue')
