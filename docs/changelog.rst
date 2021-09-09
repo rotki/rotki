@@ -6,6 +6,7 @@ Changelog
 * :feature:`2847` Users will now be able to use a combination of filters in the search for trades and deposits/withdrawals.
 * :feature:`3254` Users can now add a custom Covalent API key in rotki.
 * :feature:`3416` Users will now be able to import ShapeShift trade history CSVs exported from shapeshift.com.
+* :bug:`3340` Users will now be able to properly see the favicon when accessing the frontend using Firefox.
 * :bug:`3266` Users will now be able to properly access most of the top bar content using a mobile device.
 * :bug:`3268` Users will now be able to properly scroll to the hidden tabs when using a mobile device.
 * :bug:`3267` Frontend will now occupy all the available screen when accessed from a mobile device.
