@@ -24,6 +24,7 @@ ModuleName = Literal[
     'eth2',
     'sushiswap',
     'liquity',
+    'pickle_finance',
 ]
 
 # TODO: Turn this into some kind of light data structure and not just a mapping
@@ -42,6 +43,7 @@ AVAILABLE_MODULES_MAP = {
     'eth2': 'Eth2',
     'sushiswap': 'Sushiswap',
     'liquity': 'Liquity',
+    'pickle_finance': 'Pickle Finance',
 }
 
 

@@ -49,6 +49,7 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaults,
     YearnVaultsV2,
     Liquity,
+    PickleFinance,
 )
 from rotkehlchen.chain.ethereum.nft import NFTManager
 from rotkehlchen.chain.ethereum.tokens import EthTokens
@@ -59,7 +60,16 @@ from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODE_CONNECTION_TIMEOUT,
     POLKADOT_NODE_CONNECTION_TIMEOUT,
 )
-from rotkehlchen.constants.assets import A_ADX, A_AVAX, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
+from rotkehlchen.constants.assets import (
+    A_ADX,
+    A_AVAX,
+    A_BTC,
+    A_DAI,
+    A_DOT,
+    A_ETH,
+    A_ETH2,
+    A_KSM,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -475,6 +485,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_module(self, module_name: Literal['liquity']) -> Optional[Liquity]:
+        ...
+
+    @overload
+    def get_module(self, module_name: Literal['pickle_finance']) -> Optional[PickleFinance]:
         ...
 
     def get_module(self, module_name: ModuleName) -> Optional[Any]:
@@ -1391,6 +1405,16 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             for address, balance in adex_balances.items():
                 eth_balances[address].assets[A_ADX] += balance
                 self.totals.assets[A_ADX] += balance
+
+        pickle_module = self.get_module('pickle_finance')
+        if pickle_module is not None:
+            pickle_balances_per_address = pickle_module.balances_in_protocol(
+                addresses=self.queried_addresses_for_module('pickle_finance'),
+            )
+            for address, pickle_balances in pickle_balances_per_address.items():
+                for asset_balance in pickle_balances:
+                    eth_balances[address].assets[asset_balance.asset] += asset_balance.balance
+                    self.totals.assets[asset_balance.asset] += asset_balance.balance
 
         # Count ETH staked in Eth2 beacon chain
         self.account_for_staked_eth2_balances(addresses=self.queried_addresses_for_module('eth2'))
