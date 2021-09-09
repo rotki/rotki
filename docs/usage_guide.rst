@@ -674,6 +674,14 @@ You can filter the tables by a combination of tags.
 
 Simply add the tags you wish to filter by in the filter textbox above the tables.
 
+NFTs
+=====================
+Rotki provides an NFT gallery where you can view the NFTs owned by your accounts.
+
+.. image:: images/sc_nfts.png
+   :alt: NFT Gallery
+   :align: center
+
 ETH2 Staking
 =====================
 
