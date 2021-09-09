@@ -402,6 +402,10 @@ WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
 }
 
+WORLD_TO_COINBASE = {
+    'SOL-2': 'SOL',
+}
+
 # Create a generic variable that can be 'Asset', or any subclass.
 Z = TypeVar('Z', bound='Asset')
 
