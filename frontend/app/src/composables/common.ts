@@ -12,9 +12,11 @@ export const setupThemeCheck = () => {
   const isMobile = computed(() => $vuetify.breakpoint.mobile);
   const dark = computed(() => $vuetify.theme.dark);
   const breakpoint = computed(() => $vuetify.breakpoint.name);
+  const width = computed(() => $vuetify.breakpoint.width);
   return {
     isMobile,
     dark,
-    breakpoint
+    breakpoint,
+    width
   };
 };

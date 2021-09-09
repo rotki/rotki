@@ -216,15 +216,17 @@ export default defineComponent({
     NftGalleryItem
   },
   setup() {
-    const { isMobile, breakpoint } = setupThemeCheck();
+    const { isMobile, breakpoint, width } = setupThemeCheck();
     const { dispatch, state } = useStore();
 
     const page = ref(1);
 
     const itemsPerPage = computed(() => {
-      if (isMobile.value) {
+      if (breakpoint.value === 'xs') {
         return 1;
-      } else if (breakpoint.value === 'xl') {
+      } else if (breakpoint.value === 'sm') {
+        return 2;
+      } else if (width.value >= 1600) {
         return 10;
       }
       return 8;
@@ -260,7 +262,7 @@ export default defineComponent({
 }
 
 .xl {
-  @media only screen and (min-width: 1920px) {
+  @media only screen and (min-width: 1600px) {
     flex: 0 0 20% !important;
     max-width: 20% !important;
   }
