@@ -1,4 +1,5 @@
 import Vue from 'vue';
+import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -67,4 +68,6 @@ export function registerComponents() {
   Vue.component('ConfirmDialog', ConfirmDialog);
   // Version 13 - 1.20
   Vue.component('UniswapPoolDetails', UniswapPoolDetails);
+  // Version 14 - 1.21
+  Vue.component('PaginatedCards', PaginatedCards);
 }

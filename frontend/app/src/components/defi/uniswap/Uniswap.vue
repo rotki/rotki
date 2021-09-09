@@ -37,33 +37,30 @@
         <uniswap-pool-filter v-model="selectedPools" />
       </v-col>
     </v-row>
-    <v-row class="mt-4">
-      <v-col
-        v-for="entry in balances"
-        :key="entry.address"
-        cols="12"
-        sm="6"
-        lg="6"
-        xl="4"
-      >
+    <paginated-cards
+      :identifier="item => item.address"
+      :items="balances"
+      class="mt-4"
+    >
+      <template #item="{ item }">
         <card>
           <template #title>
             {{
               $t('uniswap.pool_header', {
-                asset1: getSymbol(entry.assets[0].asset),
-                asset2: getSymbol(entry.assets[1].asset)
+                asset1: getSymbol(item.assets[0].asset),
+                asset2: getSymbol(item.assets[1].asset)
               })
             }}
           </template>
           <template #details>
-            <uniswap-pool-details :balance="entry" />
+            <uniswap-pool-details :balance="item" />
           </template>
           <template #subtitle>
-            <hash-link :text="entry.address" />
+            <hash-link :text="item.address" />
           </template>
           <template #icon>
             <uniswap-pool-asset
-              :assets="entry.assets.map(({ asset }) => asset)"
+              :assets="item.assets.map(({ asset }) => asset)"
             />
           </template>
           <v-row align="center">
@@ -75,7 +72,7 @@
             <v-col class="d-flex flex-column">
               <balance-display
                 class="text-h5 mt-1 text"
-                :value="entry.userBalance"
+                :value="item.userBalance"
                 no-icon
                 :min-width="0"
                 asset=""
@@ -85,8 +82,8 @@
           </v-row>
 
           <v-row
-            v-for="asset in entry.assets"
-            :key="`${asset.asset}-${entry.address}-balances`"
+            v-for="asset in item.assets"
+            :key="`${asset.asset}-${item.address}-balances`"
             class="uniswap__tokens"
             align="center"
             justify="end"
@@ -110,8 +107,9 @@
             </v-col>
           </v-row>
         </card>
-      </v-col>
-    </v-row>
+      </template>
+    </paginated-cards>
+
     <uniswap-details
       v-if="premium"
       :loading="secondaryLoading"
@@ -126,6 +124,7 @@ import { XswapBalance } from '@rotki/common/lib/defi/xswap';
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
@@ -144,6 +143,7 @@ import { ETH, GeneralAccount } from '@/typing/types';
 
 @Component({
   components: {
+    PaginatedCards,
     ActiveModules,
     UniswapPoolDetails,
     UniswapPoolFilter,
