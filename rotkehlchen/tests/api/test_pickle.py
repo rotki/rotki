@@ -24,7 +24,7 @@ def test_pickle_dill(
     async_query = random.choice([False, True])
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        'pickledill',
+        'pickledillresource',
     ), json={'async_query': async_query})
     if async_query:
         task_id = assert_ok_async_response(response)

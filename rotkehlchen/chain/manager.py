@@ -69,7 +69,6 @@ from rotkehlchen.constants.assets import (
     A_ETH,
     A_ETH2,
     A_KSM,
-    A_PICKLE,
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -1409,13 +1408,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         pickle_module = self.get_module('pickle_finance')
         if pickle_module is not None:
-            dill_balances = pickle_module.get_dill(
+            pickle_balances_per_address = pickle_module.balances_in_protocol(
                 addresses=self.queried_addresses_for_module('pickle_finance'),
             )
-            for address, dill_balance in dill_balances.items():
-                pickles = dill_balance.dill_amount.balance + dill_balance.pending_rewards.balance
-                eth_balances[address].assets[A_PICKLE] += pickles
-                self.totals.assets[A_PICKLE] += pickles
+            for address, pickle_balances in pickle_balances_per_address.items():
+                for asset_balance in pickle_balances:
+                    eth_balances[address].assets[asset_balance.asset] += asset_balance.balance
+                    self.totals.assets[asset_balance.asset] += asset_balance.balance
 
         # Count ETH staked in Eth2 beacon chain
         self.account_for_staked_eth2_balances(addresses=self.queried_addresses_for_module('eth2'))

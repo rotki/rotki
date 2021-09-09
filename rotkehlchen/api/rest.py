@@ -2671,7 +2671,7 @@ class RestAPI():
         return self._api_query_for_eth_module(
             async_query=async_query,
             module_name='pickle_finance',
-            method='get_dill',
+            method='get_dill_balances',
             query_specific_balances_before=['defi'],
             addresses=addresses,
         )

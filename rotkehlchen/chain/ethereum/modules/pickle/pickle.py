@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Any, Dict, List, NamedTuple, Optional, TYPE_CHECKING
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance
@@ -44,8 +45,18 @@ class PickleFinance(EthereumModule):
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
+        self.rewards_contract = EthereumContract(
+            address=PICKLE_DILL_REWARDS.address,
+            abi=PICKLE_DILL_REWARDS.abi,
+            deployed_block=PICKLE_DILL_REWARDS.deployed_block,
+        )
+        self.dill_contract = EthereumContract(
+            address=PICKLE_DILL.address,
+            abi=PICKLE_DILL.abi,
+            deployed_block=PICKLE_DILL.deployed_block,
+        )
 
-    def get_dill(
+    def get_dill_balances(
         self,
         addresses: List[ChecksumEthAddress],
     ) -> Dict[ChecksumEthAddress, DillBalance]:
@@ -54,38 +65,23 @@ class PickleFinance(EthereumModule):
         for Pickle's dill.
         """
         api_output = {}
-
-        rewards_contract = EthereumContract(
-            address=PICKLE_DILL_REWARDS.address,
-            abi=PICKLE_DILL_REWARDS.abi,
-            deployed_block=PICKLE_DILL_REWARDS.deployed_block,
-        )
-        dill_contract = EthereumContract(
-            address=PICKLE_DILL.address,
-            abi=PICKLE_DILL.abi,
-            deployed_block=PICKLE_DILL.deployed_block,
-        )
         rewards_calls = [
             (
                 PICKLE_DILL_REWARDS.address,
-                rewards_contract.encode(method_name='claim', arguments=[x]),
+                self.rewards_contract.encode(method_name='claim', arguments=[x]),
             )
             for x in addresses
         ]
         balance_calls = [
-            (PICKLE_DILL.address, dill_contract.encode(method_name='locked', arguments=[x]))
+            (PICKLE_DILL.address, self.dill_contract.encode(method_name='locked', arguments=[x]))
             for x in addresses
         ]
-        reward_outputs = multicall_2(
+        outputs = multicall_2(
             ethereum=self.ethereum,
             require_success=False,
-            calls=rewards_calls,
+            calls=rewards_calls + balance_calls,
         )
-        dill_outputs = multicall_2(
-            ethereum=self.ethereum,
-            require_success=False,
-            calls=balance_calls,
-        )
+        reward_outputs, dill_outputs = outputs[:len(addresses)], outputs[len(addresses):]
 
         pickle_price = Inquirer().find_usd_price(A_PICKLE)
         for idx, output in enumerate(reward_outputs):
@@ -94,8 +90,8 @@ class PickleFinance(EthereumModule):
             address = addresses[idx]
             if all((status_rewards, status_dill)):
                 try:
-                    rewards = rewards_contract.decode(result, 'claim', arguments=[address])
-                    dill_amounts = dill_contract.decode(
+                    rewards = self.rewards_contract.decode(result, 'claim', arguments=[address])
+                    dill_amounts = self.dill_contract.decode(
                         result_dill,
                         'locked',
                         arguments=[address],
@@ -133,12 +129,24 @@ class PickleFinance(EthereumModule):
 
         return api_output
 
+    def balances_in_protocol(
+        self,
+        addresses: List[ChecksumEthAddress],
+    ) -> Dict[ChecksumEthAddress, List['AssetBalance']]:
+        """Queries all the pickles deposited and available to claim in the protocol"""
+        dill_balances = self.get_dill_balances(addresses)
+        balances_per_address: Dict[ChecksumEthAddress, List['AssetBalance']] = defaultdict(list)
+        for address, dill_balance in dill_balances.items():
+            pickles = dill_balance.dill_amount + dill_balance.pending_rewards
+            balances_per_address[address] += [pickles]
+        return balances_per_address
+
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
         pass
 
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
-        pass
+        return self.balances_in_protocol([address]).get(address, None)
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         pass

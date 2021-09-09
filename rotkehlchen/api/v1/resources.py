@@ -1523,7 +1523,7 @@ class LiquityTrovesHistory(BaseResource):
         )
 
 
-class PickleDill(BaseResource):
+class PickleDillResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
 
