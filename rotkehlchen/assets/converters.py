@@ -817,7 +817,6 @@ def asset_from_binance(binance_name: str) -> Asset:
 def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     # During the transition from DAI(SAI) to MCDAI(DAI) coinbase introduced an MCDAI
