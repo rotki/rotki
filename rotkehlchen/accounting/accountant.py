@@ -82,6 +82,9 @@ class Accountant():
         del self.events
         del self.csvexporter
 
+    def activate_premium_status(self, premium: Premium) -> None:
+        self.premium = premium
+
     def deactivate_premium_status(self) -> None:
         self.premium = None
 

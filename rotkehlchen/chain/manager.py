@@ -41,15 +41,15 @@ from rotkehlchen.chain.ethereum.modules import (
     Balancer,
     Compound,
     Eth2,
+    Liquity,
     Loopring,
     MakerdaoDsr,
     MakerdaoVaults,
+    PickleFinance,
     Sushiswap,
     Uniswap,
     YearnVaults,
     YearnVaultsV2,
-    Liquity,
-    PickleFinance,
 )
 from rotkehlchen.chain.ethereum.nft import NFTManager
 from rotkehlchen.chain.ethereum.tokens import EthTokens
@@ -60,16 +60,7 @@ from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODE_CONNECTION_TIMEOUT,
     POLKADOT_NODE_CONNECTION_TIMEOUT,
 )
-from rotkehlchen.constants.assets import (
-    A_ADX,
-    A_AVAX,
-    A_BTC,
-    A_DAI,
-    A_DOT,
-    A_ETH,
-    A_ETH2,
-    A_KSM,
-)
+from rotkehlchen.constants.assets import A_ADX, A_AVAX, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -361,7 +352,14 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def set_dot_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
         return self.polkadot.set_rpc_endpoint(endpoint)
 
+    def activate_premium_status(self, premium: Premium) -> None:
+        self.premium = premium
+        for _, module in self.iterate_modules():
+            if getattr(module, 'premium', None):
+                module.premium = premium  # type: ignore
+
     def deactivate_premium_status(self) -> None:
+        self.premium = None
         for _, module in self.iterate_modules():
             if getattr(module, 'premium', None):
                 module.premium = None  # type: ignore
