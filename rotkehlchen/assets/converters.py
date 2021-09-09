@@ -5,6 +5,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_BITFINEX,
     WORLD_TO_BITTREX,
     WORLD_TO_COINBASE_PRO,
+    WORLD_TO_COINBASE,
     WORLD_TO_FTX,
     WORLD_TO_ICONOMI,
     WORLD_TO_KRAKEN,
@@ -661,6 +662,7 @@ KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
 KUCOIN_TO_WORLD = {v: k for k, v, in WORLD_TO_KUCOIN.items()}
 ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
 COINBASE_PRO_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE_PRO.items()}
+COINBASE_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -813,7 +815,9 @@ def asset_from_binance(binance_name: str) -> Asset:
 
 
 def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset:
-    """May raise UnknownAsset
+    """May raise:
+    - DeserializationError
+    - UnknownAsset
     """
     # During the transition from DAI(SAI) to MCDAI(DAI) coinbase introduced an MCDAI
     # wallet for the new DAI during the transition period. We should be able to handle this
@@ -827,11 +831,13 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
         if time < COINBASE_DAI_UPGRADE_END_TS:
             # Then it should be the single collateral version
             return A_SAI
-        # else
         return A_DAI
 
-    # else
-    return symbol_to_asset_or_token(cb_name)
+    if not isinstance(cb_name, str):
+        raise DeserializationError(f'Got non-string type {type(cb_name)} for coinbase asset')
+
+    name = COINBASE_TO_WORLD.get(cb_name, cb_name)
+    return symbol_to_asset_or_token(name)
 
 
 def asset_from_ftx(ftx_name: str) -> Asset:
