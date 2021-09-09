@@ -23,49 +23,51 @@ export const getters: Getters<
   RotkehlchenState,
   any
 > = {
-  netValue: (
-    state,
-    getters,
-    _rootState,
-    {
-      'balances/exchangeRate': exchangeRate,
-      'session/currencySymbol': currency
-    }
-  ) => (startingDate: number): NetValue => {
-    function convert(value: string | number | BigNumber): number {
-      const bigNumber =
-        typeof value === 'string' || typeof value === 'number'
-          ? bigNumberify(value)
-          : value;
-      const convertedValue =
-        currency === 'USD'
-          ? bigNumber
-          : bigNumber.multipliedBy(exchangeRate(currency));
-      return convertedValue.toNumber();
-    }
-
-    const { times, data } = state.netValue;
-    const netValue: NetValue = { times: [], data: [] };
-    if (times.length === 0 && data.length === 0) {
-      return netValue;
-    }
-
-    for (let i = 0; i < times.length; i++) {
-      const time = times[i];
-      if (time < startingDate) {
-        continue;
+  netValue:
+    (
+      state,
+      getters,
+      _rootState,
+      {
+        'balances/exchangeRate': exchangeRate,
+        'session/currencySymbol': currency
       }
-      netValue.times.push(time);
-      netValue.data.push(convert(data[i]));
-    }
+    ) =>
+    (startingDate: number): NetValue => {
+      function convert(value: string | number | BigNumber): number {
+        const bigNumber =
+          typeof value === 'string' || typeof value === 'number'
+            ? bigNumberify(value)
+            : value;
+        const convertedValue =
+          currency === 'USD'
+            ? bigNumber
+            : bigNumber.multipliedBy(exchangeRate(currency));
+        return convertedValue.toNumber();
+      }
 
-    const now = Math.floor(new Date().getTime() / 1000);
-    const netWorth = getters.totalNetWorth.toNumber();
-    return {
-      times: netWorth > 0 ? [...netValue.times, now] : [...netValue.times],
-      data: netWorth > 0 ? [...netValue.data, netWorth] : [...netValue.data]
-    };
-  },
+      const { times, data } = state.netValue;
+      const netValue: NetValue = { times: [], data: [] };
+      if (times.length === 0 && data.length === 0) {
+        return netValue;
+      }
+
+      for (let i = 0; i < times.length; i++) {
+        const time = times[i];
+        if (time < startingDate) {
+          continue;
+        }
+        netValue.times.push(time);
+        netValue.data.push(convert(data[i]));
+      }
+
+      const now = Math.floor(new Date().getTime() / 1000);
+      const netWorth = getters.totalNetWorth.toNumber();
+      return {
+        times: netWorth > 0 ? [...netValue.times, now] : [...netValue.times],
+        data: netWorth > 0 ? [...netValue.data, netWorth] : [...netValue.data]
+      };
+    },
 
   totalNetWorth: (
     state,

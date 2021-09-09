@@ -19,17 +19,21 @@ type GettersDefinition<S = TaskState, G = TaskGetters> = {
 
 export const getters: GetterTree<TaskState, RotkehlchenState> &
   GettersDefinition = {
-  isTaskRunning: (state: TaskState) => (type: TaskType): boolean => {
-    return !!find(state.tasks, item => item.type === type);
-  },
+  isTaskRunning:
+    (state: TaskState) =>
+    (type: TaskType): boolean => {
+      return !!find(state.tasks, item => item.type === type);
+    },
 
-  metadata: (state: TaskState) => (type: TaskType): TaskMeta | undefined => {
-    const task = find(state.tasks, item => item.type === type);
-    if (task) {
-      return task.meta;
-    }
-    return undefined;
-  },
+  metadata:
+    (state: TaskState) =>
+    (type: TaskType): TaskMeta | undefined => {
+      const task = find(state.tasks, item => item.type === type);
+      if (task) {
+        return task.meta;
+      }
+      return undefined;
+    },
 
   hasRunningTasks: (state: TaskState): boolean => {
     return Object.keys(state.tasks).length > 0;

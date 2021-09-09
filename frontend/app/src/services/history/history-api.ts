@@ -37,9 +37,8 @@ import { assert } from '@/utils/assertions';
 
 export class HistoryApi {
   private readonly axios: AxiosInstance;
-  private readonly responseTransformer: AxiosTransformer[] = setupTransformer(
-    tradeNumericKeys
-  );
+  private readonly responseTransformer: AxiosTransformer[] =
+    setupTransformer(tradeNumericKeys);
   private readonly requestTransformer: AxiosTransformer[];
 
   constructor(axios: AxiosInstance) {

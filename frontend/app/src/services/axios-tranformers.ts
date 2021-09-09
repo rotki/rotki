@@ -3,29 +3,29 @@ import { default as BigNumber } from 'bignumber.js';
 
 const isNumber = /^-?\d+(\.\d+)?((\d(.\d+)?)?[Ee][-+]\d+)?$/;
 
-const createReviver = (
-  numericKeys: string[] | null
-): ((key: string, value: any) => any) => (key: string, value: any) => {
-  const checkForBN = numericKeys === null || numericKeys.includes(key);
-  if (
-    checkForBN &&
-    value &&
-    typeof value === 'string' &&
-    isNumber.test(value)
-  ) {
-    return new BigNumber(value);
-  }
+const createReviver =
+  (numericKeys: string[] | null): ((key: string, value: any) => any) =>
+  (key: string, value: any) => {
+    const checkForBN = numericKeys === null || numericKeys.includes(key);
+    if (
+      checkForBN &&
+      value &&
+      typeof value === 'string' &&
+      isNumber.test(value)
+    ) {
+      return new BigNumber(value);
+    }
 
-  if (numericKeys?.includes(key) && isObject(value)) {
-    for (const sub of Object.keys(value)) {
-      const valueElement = value[sub];
-      if (typeof valueElement === 'string' && isNumber.test(valueElement)) {
-        value[sub] = new BigNumber(valueElement);
+    if (numericKeys?.includes(key) && isObject(value)) {
+      for (const sub of Object.keys(value)) {
+        const valueElement = value[sub];
+        if (typeof valueElement === 'string' && isNumber.test(valueElement)) {
+          value[sub] = new BigNumber(valueElement);
+        }
       }
     }
-  }
-  return value;
-};
+    return value;
+  };
 
 const isObject = (data: any): boolean =>
   typeof data === 'object' &&

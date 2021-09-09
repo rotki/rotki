@@ -284,8 +284,10 @@ export default class Accounting extends Mixins<
       this.taxFreePeriod = false;
       this.taxFreeAfterPeriod = null;
     }
-    this.accountForAssetsMovements = this.accountingSettings.accountForAssetsMovements;
-    this.calculatePastCostBasis = this.accountingSettings.calculatePastCostBasis;
+    this.accountForAssetsMovements =
+      this.accountingSettings.accountForAssetsMovements;
+    this.calculatePastCostBasis =
+      this.accountingSettings.calculatePastCostBasis;
   }
 
   onTaxFreeChange(enabled: boolean) {

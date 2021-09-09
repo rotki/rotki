@@ -29,7 +29,11 @@
       </v-card-subtitle>
       <v-card-text class="font-weight-light error-screen__description">
         <pre
-          class="font-weight-regular text-caption text-wrap error-screen__description__message"
+          class="
+            font-weight-regular
+            text-caption text-wrap
+            error-screen__description__message
+          "
         >
           {{ message }}
           <v-divider v-if="error" class="mt-4 mb-2"/>

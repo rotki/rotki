@@ -51,7 +51,12 @@
         </template>
         <template #item="data">
           <div
-            class="blockchain-account-selector__list__item d-flex justify-space-between flex-grow-1"
+            class="
+              blockchain-account-selector__list__item
+              d-flex
+              justify-space-between
+              flex-grow-1
+            "
           >
             <div class="blockchain-account-selector__list__item__address-label">
               <v-chip

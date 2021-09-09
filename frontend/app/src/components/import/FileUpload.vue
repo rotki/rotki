@@ -33,7 +33,13 @@
           />
           <i18n
             path="file_upload.drop_area"
-            class="mt-2 text-caption text--secondary d-flex flex-column text-center"
+            class="
+              mt-2
+              text-caption text--secondary
+              d-flex
+              flex-column
+              text-center
+            "
             tag="div"
           >
             <v-btn

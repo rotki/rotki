@@ -525,9 +525,10 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
   }
 
   promptForDelete(trade: TradeEntry) {
-    const prep = (trade.tradeType === 'buy'
-      ? this.$t('closed_trades.description.with').toString()
-      : this.$t('closed_trades.description.for').toString()
+    const prep = (
+      trade.tradeType === 'buy'
+        ? this.$t('closed_trades.description.with').toString()
+        : this.$t('closed_trades.description.for').toString()
     ).toLocaleLowerCase();
     this.confirmationMessage = this.$t('closed_trades.confirmation.message', {
       pair: `${this.getSymbol(trade.baseAsset)} ${prep} ${this.getSymbol(

@@ -126,9 +126,10 @@ export class AccountBalancesPage {
                     $amount.text().replace(',', '')
                   );
                 } else {
-                  balanceLocation.renderedValue = balanceLocation.renderedValue.plus(
-                    bigNumberify($amount.text().replace(',', ''))
-                  );
+                  balanceLocation.renderedValue =
+                    balanceLocation.renderedValue.plus(
+                      bigNumberify($amount.text().replace(',', ''))
+                    );
                 }
               });
           });

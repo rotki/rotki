@@ -39,7 +39,12 @@
         </template>
         <template #item="data">
           <div
-            class="binance-market-selector__list__item d-flex justify-space-between flex-grow-1"
+            class="
+              binance-market-selector__list__item
+              d-flex
+              justify-space-between
+              flex-grow-1
+            "
           >
             <div class="binance-market-selector__list__item__address-label">
               <v-chip :color="dark ? null : 'grey lighten-3'" filter>
