@@ -9103,7 +9103,7 @@ Querying  NFTs
    :resjson string price_usd: The last known price of the NFT in USD. Can be zero.
    :statuscode 200: NFTs succesfully queried
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: User is not logged in or some other error. Check error message for details.
+   :statuscode 409: User is not logged in or nft module is not activated.
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as opensea could not be reached or returned unexpected response.
 

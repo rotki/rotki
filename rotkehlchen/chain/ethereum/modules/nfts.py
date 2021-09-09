@@ -1,9 +1,14 @@
-from typing import Any, Dict, List, NamedTuple
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.opensea import NFT, Opensea
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures import AssetBalance
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
 
 FREE_NFT_LIMIT = 5
 
@@ -21,21 +26,22 @@ class NFTResult(NamedTuple):
         }
 
 
-class NFTManager():
+class Nfts():
 
     def __init__(
             self,
-            database: DBHandler,
+            ethereum_manager: 'EthereumManager',
+            database: 'DBHandler',
+            premium: Optional['Premium'],
             msg_aggregator: MessagesAggregator,
     ) -> None:
+        self.msg_aggregator = msg_aggregator
+        self.ethereum = ethereum_manager
+        self.premium = premium
         self.opensea = Opensea(database=database, msg_aggregator=msg_aggregator)
 
-    def get_all_nfts(
-            self,
-            addresses: List[ChecksumEthAddress],
-            has_premium: bool,
-    ) -> NFTResult:
-        """Gets all NFTs of the given addresses
+    def get_all_info(self, addresses: List[ChecksumEthAddress]) -> NFTResult:
+        """Gets info for all NFTs of the given addresses
 
         Returns a tuple with:
         - Mapping of addresses to list of NFTs
@@ -52,7 +58,7 @@ class NFTManager():
             nfts = self.opensea.get_account_nfts(address)
             nfts_num = len(nfts)
             if nfts_num != 0:
-                if has_premium is False:
+                if self.premium is None:
                     if nfts_num + total_nfts_num > FREE_NFT_LIMIT:
                         remaining_size = FREE_NFT_LIMIT - total_nfts_num
                     else:
@@ -71,3 +77,16 @@ class NFTManager():
             entries_found=total_nfts_num,
             entries_limit=FREE_NFT_LIMIT,
         )
+
+    # -- Methods following the EthereumModule interface -- #
+    def on_startup(self) -> None:
+        pass
+
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
+        pass
+
+    def on_account_removal(self, address: ChecksumEthAddress) -> None:
+        pass
+
+    def deactivate(self) -> None:
+        pass

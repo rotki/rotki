@@ -7,7 +7,8 @@ export enum DefiProtocol {
   MAKERDAO_DSR = 'makerdao_dsr',
   MAKERDAO_VAULTS = 'makerdao_vaults',
   COMPOUND = 'compound',
-  UNISWAP = 'uniswap'
+  UNISWAP = 'uniswap',
+  NFTS = 'nfts'
 }
 
 export const DEFI_EVENT_REPAY = 'repay';

@@ -4,7 +4,7 @@ import warnings as test_warnings
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.nft import FREE_NFT_LIMIT
+from rotkehlchen.chain.ethereum.modules.nfts import FREE_NFT_LIMIT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
