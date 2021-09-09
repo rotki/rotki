@@ -15,6 +15,7 @@ from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.typing import Location
 
 
+@pytest.mark.skip('Skipped due to: https://github.com/rotki/rotki/issues/3434')
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
@@ -115,6 +116,7 @@ def test_get_grant_events(rotkehlchen_api_server, start_with_valid_premium):
     )
 
 
+@pytest.mark.skip('Skipped due to: https://github.com/rotki/rotki/issues/3434')
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_delete_grant_events(rotkehlchen_api_server):
@@ -229,6 +231,7 @@ def test_delete_grant_events(rotkehlchen_api_server):
     assert ledgerdb.get_gitcoin_grant_metadata() == {}
 
 
+@pytest.mark.skip('Skipped due to: https://github.com/rotki/rotki/issues/3434')
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
