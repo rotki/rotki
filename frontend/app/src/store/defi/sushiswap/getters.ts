@@ -29,15 +29,21 @@ export const getters: Getters<
   RotkehlchenState,
   any
 > = {
-  balances: ({ balances }) => addresses => {
-    return getBalances(balances, addresses);
-  },
-  poolProfit: ({ events }) => addresses => {
-    return getPoolProfit(events, addresses);
-  },
-  events: ({ events }) => addresses => {
-    return getEventDetails(events, addresses);
-  },
+  balances:
+    ({ balances }) =>
+    addresses => {
+      return getBalances(balances, addresses);
+    },
+  poolProfit:
+    ({ events }) =>
+    addresses => {
+      return getPoolProfit(events, addresses);
+    },
+  events:
+    ({ events }) =>
+    addresses => {
+      return getEventDetails(events, addresses);
+    },
   addresses: ({ events, balances }) => {
     return Object.keys(balances)
       .concat(Object.keys(events))

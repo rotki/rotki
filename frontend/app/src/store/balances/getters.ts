@@ -213,24 +213,24 @@ export const getters: Getters<
       .sort((a, b) => b.total.minus(a.total).toNumber());
   },
 
-  exchangeBalances: (state: BalanceState, _, { session }) => (
-    exchange: string
-  ): AssetBalance[] => {
-    const ignoredAssets = session!.ignoredAssets;
-    const exchangeBalances = state.exchangeBalances[exchange];
-    return exchangeBalances
-      ? Object.keys(exchangeBalances)
-          .filter(asset => !ignoredAssets.includes(asset))
-          .map(
-            asset =>
-              ({
-                asset,
-                amount: exchangeBalances[asset].amount,
-                usdValue: exchangeBalances[asset].usdValue
-              } as AssetBalance)
-          )
-      : [];
-  },
+  exchangeBalances:
+    (state: BalanceState, _, { session }) =>
+    (exchange: string): AssetBalance[] => {
+      const ignoredAssets = session!.ignoredAssets;
+      const exchangeBalances = state.exchangeBalances[exchange];
+      return exchangeBalances
+        ? Object.keys(exchangeBalances)
+            .filter(asset => !ignoredAssets.includes(asset))
+            .map(
+              asset =>
+                ({
+                  asset,
+                  amount: exchangeBalances[asset].amount,
+                  usdValue: exchangeBalances[asset].usdValue
+                } as AssetBalance)
+            )
+        : [];
+    },
 
   aggregatedBalances: (
     { connectedExchanges, manualBalances, loopringBalances }: BalanceState,
@@ -310,9 +310,8 @@ export const getters: Getters<
       if (mainCurrency === perLocationBalance.asset) {
         convertedValue = perLocationBalance.amount;
       } else {
-        convertedValue = perLocationBalance.usdValue.multipliedBy(
-          currentExchangeRate
-        );
+        convertedValue =
+          perLocationBalance.usdValue.multipliedBy(currentExchangeRate);
       }
 
       // to avoid double-conversion, we take as usdValue the amount property when the original asset type and
@@ -325,22 +324,23 @@ export const getters: Getters<
     });
 
     // Aggregate all balances per location
-    const aggregateManualBalancesByLocation: BalanceByLocation = simplifyManualBalances.reduce(
-      (result: BalanceByLocation, manualBalance: LocationBalance) => {
-        if (result[manualBalance.location]) {
-          // if the location exists on the reduced object, add the usdValue of the current item to the previous total
-          result[manualBalance.location] = result[manualBalance.location].plus(
-            manualBalance.usdValue
-          );
-        } else {
-          // otherwise create the location and initiate its value
-          result[manualBalance.location] = manualBalance.usdValue;
-        }
+    const aggregateManualBalancesByLocation: BalanceByLocation =
+      simplifyManualBalances.reduce(
+        (result: BalanceByLocation, manualBalance: LocationBalance) => {
+          if (result[manualBalance.location]) {
+            // if the location exists on the reduced object, add the usdValue of the current item to the previous total
+            result[manualBalance.location] = result[
+              manualBalance.location
+            ].plus(manualBalance.usdValue);
+          } else {
+            // otherwise create the location and initiate its value
+            result[manualBalance.location] = manualBalance.usdValue;
+          }
 
-        return result;
-      },
-      {}
-    );
+          return result;
+        },
+        {}
+      );
 
     return Object.keys(aggregateManualBalancesByLocation)
       .map(location => ({
@@ -460,45 +460,47 @@ export const getters: Getters<
     return totals.sort((a, b) => b.usdValue.minus(a.usdValue).toNumber());
   },
 
-  accountAssets: (state: BalanceState, _, { session }) => (account: string) => {
-    const ignoredAssets = session!.ignoredAssets;
-    const ethAccount = state.eth[account];
-    if (!ethAccount || isEmpty(ethAccount)) {
-      return [];
-    }
+  accountAssets:
+    (state: BalanceState, _, { session }) =>
+    (account: string) => {
+      const ignoredAssets = session!.ignoredAssets;
+      const ethAccount = state.eth[account];
+      if (!ethAccount || isEmpty(ethAccount)) {
+        return [];
+      }
 
-    return Object.entries(ethAccount.assets)
-      .filter(([asset]) => !ignoredAssets.includes(asset))
-      .map(
-        ([key, asset_data]) =>
-          ({
-            asset: key,
-            amount: asset_data.amount,
-            usdValue: asset_data.usdValue
-          } as AssetBalance)
-      );
-  },
+      return Object.entries(ethAccount.assets)
+        .filter(([asset]) => !ignoredAssets.includes(asset))
+        .map(
+          ([key, asset_data]) =>
+            ({
+              asset: key,
+              amount: asset_data.amount,
+              usdValue: asset_data.usdValue
+            } as AssetBalance)
+        );
+    },
 
-  accountLiabilities: (state: BalanceState, _, { session }) => (
-    account: string
-  ) => {
-    const ignoredAssets = session!.ignoredAssets;
-    const ethAccount = state.eth[account];
-    if (!ethAccount || isEmpty(ethAccount)) {
-      return [];
-    }
+  accountLiabilities:
+    (state: BalanceState, _, { session }) =>
+    (account: string) => {
+      const ignoredAssets = session!.ignoredAssets;
+      const ethAccount = state.eth[account];
+      if (!ethAccount || isEmpty(ethAccount)) {
+        return [];
+      }
 
-    return Object.entries(ethAccount.liabilities)
-      .filter(([asset]) => !ignoredAssets.includes(asset))
-      .map(
-        ([key, asset_data]) =>
-          ({
-            asset: key,
-            amount: asset_data.amount,
-            usdValue: asset_data.usdValue
-          } as AssetBalance)
-      );
-  },
+      return Object.entries(ethAccount.liabilities)
+        .filter(([asset]) => !ignoredAssets.includes(asset))
+        .map(
+          ([key, asset_data]) =>
+            ({
+              asset: key,
+              amount: asset_data.amount,
+              usdValue: asset_data.usdValue
+            } as AssetBalance)
+        );
+    },
 
   hasDetails: (state: BalanceState) => (account: string) => {
     const ethAccount = state.eth[account];
@@ -515,9 +517,11 @@ export const getters: Getters<
     return manualBalances.map(value => value.label);
   },
 
-  assetInfo: ({ supportedAssets }: BalanceState) => (identifier: string) => {
-    return supportedAssets.find(asset => asset.identifier === identifier);
-  },
+  assetInfo:
+    ({ supportedAssets }: BalanceState) =>
+    (identifier: string) => {
+      return supportedAssets.find(asset => asset.identifier === identifier);
+    },
 
   accounts: (
     _,
@@ -542,15 +546,17 @@ export const getters: Getters<
     return accounts.find(acc => acc.address === address);
   },
 
-  isEthereumToken: ({ supportedAssets }) => (asset: string) => {
-    const match = supportedAssets.find(
-      supportedAsset => supportedAsset.identifier === asset
-    );
-    if (match) {
-      return match.assetType === 'ethereum token';
-    }
-    return false;
-  },
+  isEthereumToken:
+    ({ supportedAssets }) =>
+    (asset: string) => {
+      const match = supportedAssets.find(
+        supportedAsset => supportedAsset.identifier === asset
+      );
+      if (match) {
+        return match.assetType === 'ethereum token';
+      }
+      return false;
+    },
   aggregatedAssets: (_, getters) => {
     const liabilities = getters.liabilities.map(({ asset }) => asset);
     const assets = getters.aggregatedBalances.map(({ asset }) => asset);
@@ -567,96 +573,84 @@ export const getters: Getters<
       usdValue: assetValue?.usdValue ?? Zero
     };
   },
-  breakdown: ({
-    btc: { standalone, xpubs },
-    eth,
-    exchangeBalances,
-    ksm,
-    dot,
-    avax,
-    manualBalances,
-    loopringBalances
-  }) => asset => {
-    const breakdown: AssetBreakdown[] = [];
+  breakdown:
+    ({
+      btc: { standalone, xpubs },
+      eth,
+      exchangeBalances,
+      ksm,
+      dot,
+      avax,
+      manualBalances,
+      loopringBalances
+    }) =>
+    asset => {
+      const breakdown: AssetBreakdown[] = [];
 
-    for (const exchange in exchangeBalances) {
-      const exchangeData = exchangeBalances[exchange];
-      if (!exchangeData[asset]) {
-        continue;
-      }
-
-      breakdown.push({
-        address: '',
-        location: exchange,
-        balance: exchangeData[asset]
-      });
-    }
-
-    for (let i = 0; i < manualBalances.length; i++) {
-      const manualBalance = manualBalances[i];
-      if (manualBalance.asset !== asset) {
-        continue;
-      }
-      breakdown.push({
-        address: '',
-        location: manualBalance.location,
-        balance: {
-          amount: manualBalance.amount,
-          usdValue: manualBalance.usdValue
+      for (const exchange in exchangeBalances) {
+        const exchangeData = exchangeBalances[exchange];
+        if (!exchangeData[asset]) {
+          continue;
         }
-      });
-    }
 
-    for (const address in eth) {
-      const ethBalances = eth[address];
-      const assetBalance = ethBalances.assets[asset];
-      if (!assetBalance) {
-        continue;
+        breakdown.push({
+          address: '',
+          location: exchange,
+          balance: exchangeData[asset]
+        });
       }
-      breakdown.push({
-        address,
-        location: ETH,
-        balance: assetBalance
-      });
-    }
 
-    for (const address in loopringBalances) {
-      const existing: Writeable<AssetBreakdown> | undefined = breakdown.find(
-        value => value.address === address
-      );
-      const balanceElement = loopringBalances[address][asset];
-      if (!balanceElement) {
-        continue;
+      for (let i = 0; i < manualBalances.length; i++) {
+        const manualBalance = manualBalances[i];
+        if (manualBalance.asset !== asset) {
+          continue;
+        }
+        breakdown.push({
+          address: '',
+          location: manualBalance.location,
+          balance: {
+            amount: manualBalance.amount,
+            usdValue: manualBalance.usdValue
+          }
+        });
       }
-      if (existing) {
-        existing.balance = balanceSum(existing.balance, balanceElement);
-      } else {
+
+      for (const address in eth) {
+        const ethBalances = eth[address];
+        const assetBalance = ethBalances.assets[asset];
+        if (!assetBalance) {
+          continue;
+        }
         breakdown.push({
           address,
           location: ETH,
-          balance: loopringBalances[address][asset]
+          balance: assetBalance
         });
       }
-    }
 
-    if (asset === BTC) {
-      if (standalone) {
-        for (const address in standalone) {
-          const btcBalance = standalone[address];
+      for (const address in loopringBalances) {
+        const existing: Writeable<AssetBreakdown> | undefined = breakdown.find(
+          value => value.address === address
+        );
+        const balanceElement = loopringBalances[address][asset];
+        if (!balanceElement) {
+          continue;
+        }
+        if (existing) {
+          existing.balance = balanceSum(existing.balance, balanceElement);
+        } else {
           breakdown.push({
             address,
-            location: BTC,
-            balance: btcBalance
+            location: ETH,
+            balance: loopringBalances[address][asset]
           });
         }
       }
 
-      if (xpubs) {
-        for (let i = 0; i < xpubs.length; i++) {
-          const xpub = xpubs[i];
-          const addresses = xpub.addresses;
-          for (const address in addresses) {
-            const btcBalance = addresses[address];
+      if (asset === BTC) {
+        if (standalone) {
+          for (const address in standalone) {
+            const btcBalance = standalone[address];
             breakdown.push({
               address,
               location: BTC,
@@ -664,50 +658,64 @@ export const getters: Getters<
             });
           }
         }
-      }
-    }
 
-    for (const address in ksm) {
-      const balances = ksm[address];
-      const assetBalance = balances.assets[asset];
-      if (!assetBalance) {
-        continue;
+        if (xpubs) {
+          for (let i = 0; i < xpubs.length; i++) {
+            const xpub = xpubs[i];
+            const addresses = xpub.addresses;
+            for (const address in addresses) {
+              const btcBalance = addresses[address];
+              breakdown.push({
+                address,
+                location: BTC,
+                balance: btcBalance
+              });
+            }
+          }
+        }
       }
-      breakdown.push({
-        address,
-        location: KSM,
-        balance: assetBalance
-      });
-    }
 
-    for (const address in dot) {
-      const balances = dot[address];
-      const assetBalance = balances.assets[asset];
-      if (!assetBalance) {
-        continue;
+      for (const address in ksm) {
+        const balances = ksm[address];
+        const assetBalance = balances.assets[asset];
+        if (!assetBalance) {
+          continue;
+        }
+        breakdown.push({
+          address,
+          location: KSM,
+          balance: assetBalance
+        });
       }
-      breakdown.push({
-        address,
-        location: DOT,
-        balance: assetBalance
-      });
-    }
 
-    for (const address in avax) {
-      const balances = avax[address];
-      const assetBalance = balances.assets[asset];
-      if (!assetBalance) {
-        continue;
+      for (const address in dot) {
+        const balances = dot[address];
+        const assetBalance = balances.assets[asset];
+        if (!assetBalance) {
+          continue;
+        }
+        breakdown.push({
+          address,
+          location: DOT,
+          balance: assetBalance
+        });
       }
-      breakdown.push({
-        address,
-        location: AVAX,
-        balance: assetBalance
-      });
-    }
 
-    return breakdown;
-  },
+      for (const address in avax) {
+        const balances = avax[address];
+        const assetBalance = balances.assets[asset];
+        if (!assetBalance) {
+          continue;
+        }
+        breakdown.push({
+          address,
+          location: AVAX,
+          balance: assetBalance
+        });
+      }
+
+      return breakdown;
+    },
   loopringBalances: state => address => {
     const balances: AssetBalance[] = [];
     const loopringBalance = state.loopringBalances[address];
@@ -731,9 +739,8 @@ export const getters: Getters<
         if (ignoredAssets.includes(asset)) {
           continue;
         }
-        const existing:
-          | Writeable<AssetBalance>
-          | undefined = blockchainTotal.find(value => value.asset === asset);
+        const existing: Writeable<AssetBalance> | undefined =
+          blockchainTotal.find(value => value.asset === asset);
         if (!existing) {
           blockchainTotal.push({
             asset,
@@ -752,10 +759,12 @@ export const getters: Getters<
     const asset = state.supportedAssets.find(asset => asset.symbol === symbol);
     return asset?.identifier;
   },
-  assetSymbol: (_bs, { assetInfo }) => identifier => {
-    const asset = assetInfo(identifier);
-    return asset?.symbol ?? identifier;
-  },
+  assetSymbol:
+    (_bs, { assetInfo }) =>
+    identifier => {
+      const asset = assetInfo(identifier);
+      return asset?.symbol ?? identifier;
+    },
   byLocation: (
     state,
     { blockchainTotal, exchanges, manualBalanceByLocation: manual }
@@ -784,7 +793,11 @@ export const getters: Getters<
 
     return byLocation;
   },
-  exchangeNonce: ({ connectedExchanges: exchanges }) => exchange => {
-    return exchanges.filter(({ location }) => location === exchange).length + 1;
-  }
+  exchangeNonce:
+    ({ connectedExchanges: exchanges }) =>
+    exchange => {
+      return (
+        exchanges.filter(({ location }) => location === exchange).length + 1
+      );
+    }
 };

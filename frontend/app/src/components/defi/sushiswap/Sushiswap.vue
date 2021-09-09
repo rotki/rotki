@@ -52,7 +52,7 @@ export default defineComponent({
   },
   computed: {
     isEnabled(): boolean {
-      const mixin = (this as any) as ModuleMixin;
+      const mixin = this as any as ModuleMixin;
       return mixin.isModuleEnabled(Module.SUSHISWAP);
     }
   },

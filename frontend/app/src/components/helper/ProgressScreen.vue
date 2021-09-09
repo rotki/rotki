@@ -33,7 +33,11 @@
     </v-row>
     <v-row align="center" justify="center">
       <p
-        class="text-center font-weight-light progress-screen__progress__description"
+        class="
+          text-center
+          font-weight-light
+          progress-screen__progress__description
+        "
       >
         <slot name="message" />
       </p>

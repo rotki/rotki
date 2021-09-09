@@ -43,7 +43,7 @@ export default defineComponent({
 
     getTokenSymbol(token: BalancerUnderlyingToken | string): string {
       const identifier = typeof token === 'string' ? token : token.token;
-      return ((this as unknown) as AssetMixin).getSymbol(identifier);
+      return (this as unknown as AssetMixin).getSymbol(identifier);
     }
   }
 });

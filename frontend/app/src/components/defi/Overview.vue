@@ -8,7 +8,14 @@
   >
     <div v-if="summary.liabilitiesUrl">
       <span
-        class="text-subtitle-1 font-weight-bold pb-2 d-flex flex-row justify-space-between"
+        class="
+          text-subtitle-1
+          font-weight-bold
+          pb-2
+          d-flex
+          flex-row
+          justify-space-between
+        "
       >
         {{ $t('overview.stat_card.headers.borrowing') }}
         <v-btn :to="summary.liabilitiesUrl" icon small color="primary">
@@ -28,7 +35,14 @@
       <v-divider class="my-4" />
     </div>
     <div
-      class="pb-2 d-flex flex-row justify-space-between text-subtitle-1 font-weight-medium"
+      class="
+        pb-2
+        d-flex
+        flex-row
+        justify-space-between
+        text-subtitle-1
+        font-weight-medium
+      "
     >
       {{ $t('overview.stat_card.headers.lending') }}
       <v-btn

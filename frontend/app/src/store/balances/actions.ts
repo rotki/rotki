@@ -680,19 +680,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async accounts({ commit }) {
     try {
-      const [
-        ethAccounts,
-        btcAccounts,
-        ksmAccounts,
-        dotAccounts,
-        avaxAccounts
-      ] = await Promise.all([
-        api.accounts(ETH),
-        api.btcAccounts(),
-        api.accounts(KSM),
-        api.accounts(DOT),
-        api.accounts(AVAX)
-      ]);
+      const [ethAccounts, btcAccounts, ksmAccounts, dotAccounts, avaxAccounts] =
+        await Promise.all([
+          api.accounts(ETH),
+          api.btcAccounts(),
+          api.accounts(KSM),
+          api.accounts(DOT),
+          api.accounts(AVAX)
+        ]);
 
       commit('ethAccounts', ethAccounts);
       commit('btcAccounts', btcAccounts);

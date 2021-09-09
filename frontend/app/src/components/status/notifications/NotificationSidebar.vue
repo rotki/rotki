@@ -32,7 +32,11 @@
       </v-col>
       <v-col>
         <span
-          class="text-uppercase text--secondary text-caption font-weight-medium pl-1"
+          class="
+            text-uppercase text--secondary text-caption
+            font-weight-medium
+            pl-1
+          "
           v-text="$t('notification_sidebar.title')"
         />
       </v-col>
