@@ -837,10 +837,6 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
     if not isinstance(cb_name, str):
         raise DeserializationError(f'Got non-string type {type(cb_name)} for coinbase asset')
 
-    # Currently no unsupported assets
-    # if cb_name in UNSUPPORTED_CB_ASSETS:
-    #    raise UnsupportedAsset(cb_name)
-
     name = COINBASE_TO_WORLD.get(cb_name, cb_name)
     return symbol_to_asset_or_token(name)
 
