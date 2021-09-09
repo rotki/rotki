@@ -5,7 +5,7 @@ Changelog
 * :bug:`3406` Sushiswap events will now be taken into account during the profit and loss report.
 * :bug:`3407` Users will now see correctly reported their amount of xSUSHI.
 * :bug:`3421` Users will now be able to see solana properly in coinbase assets
-* :bug:`3418` Users importing data from crypto.com will now have a better experience when dust is not credited.
+* :bug:`3418` Users will now be able to finish import from crypto.com's CSV files when there is a time mismatch between rows.
 * :bug:`3056` Users will now be better notified when an error occurred while importing information from crypto.com on credit/debit events with special cases.
 
 * :release:`1.20.1 <2021-08-27>`

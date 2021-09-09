@@ -425,7 +425,10 @@ class DataImporter():
                     f'Error during cryptocom CSV import consumption. Found {tx_kind}_credited '
                     f'but no amount debited afterwards at date {row["Timestamp (UTC)"]}',
                 )
-                # Pop the last debited event as it's invalid
+                # Pop the last credited event as it's invalid. We always assume to be at least
+                # one debited event and one credited event. If we don't find the debited event
+                # we have to remove the credit at the right timestamp or our logic will break.
+                # We notify the user about this issue so (s)he can take actions.
                 multiple_rows.pop(credited_timestamp, None)
                 # reset expects_debited value
                 expects_debited = False
