@@ -127,9 +127,4 @@ export class DefiApi {
     const url = 'blockchains/ETH/modules/sushiswap/history/events';
     return fetchExternalAsync(this.api, url);
   }
-
-  async fetchPickleBalances(): Promise<PendingTask> {
-    const url = 'blockchains/ETH/modules/pickle/dill';
-    return fetchExternalAsync(this.api, url);
-  }
 }
