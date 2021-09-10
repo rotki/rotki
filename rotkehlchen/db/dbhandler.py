@@ -26,7 +26,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap import (
     UNISWAP_TRADES_PREFIX,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType, LiquidityPoolEvent
-from rotkehlchen.chain.ethereum.modules.aave.constants import ATOKENV1_TO_ASSET
+from rotkehlchen.chain.ethereum.modules.aave.common import atoken_to_asset
 from rotkehlchen.chain.ethereum.modules.adex import (
     ADEX_EVENTS_PREFIX,
     AdexEventType,
@@ -798,7 +798,7 @@ class DBHandler:
             address: ChecksumEthAddress,
             atoken: Optional[EthereumToken] = None,
     ) -> List[AaveEvent]:
-        """Get aave for a single address and a single aToken"""
+        """Get aave for a single address and a single aToken """
         cursor = self.conn.cursor()
         querystr = (
             'SELECT address, '
@@ -818,7 +818,7 @@ class DBHandler:
         )
         values: Tuple
         if atoken is not None:  # when called by blockchain
-            underlying_token = ATOKENV1_TO_ASSET.get(atoken, None)
+            underlying_token = atoken_to_asset(atoken)
             if underlying_token is None:  # should never happen
                 self.msg_aggregator.add_error(
                     'Tried to query aave events for atoken with no underlying token. '
