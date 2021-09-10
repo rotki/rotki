@@ -35,7 +35,7 @@ if (startDevProxy) {
 }
 
 process.stdout.write("Starting @rotki/common watch \n");
-const commonProcesses = spawn("npm run watch -w @rotki/common", {
+const commonProcesses = spawn("sleep 30 && npm run watch -w @rotki/common", {
   shell: true,
   stdio: [process.stdin, process.stdout, process.stderr]
 });
