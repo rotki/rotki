@@ -38,7 +38,7 @@ $BUILD_DEPS_DIR = $PWD
 
 if (-not (Test-Path $TCLTK -PathType Container)) {
     echo "Setting up TCL/TK $TCLTK"
-    curl.exe -L -O "https://bitbucket.org/tombert/tcltk/downloads/$TCLTK.tgz"
+    curl.exe -L -O "https://github.com/rotki/rotki-win-build/raw/main/$TCLTK.tgz"
     ExitOnFailure("Failed to download tcl/tk")
     tar -xf "$TCLTK.tgz"
     ExitOnFailure("Failed to untar tcl/tk")
@@ -156,7 +156,8 @@ if (-not (Test-Path pysqlcipher3 -PathType Container)) {
 cd pysqlcipher3
 $PYSQLCIPHER3_DIR = $PWD
 
-if (-not (git rev-parse HEAD) -match $PYSQLCIPHER3_VERSION) {
+if (-not ((git rev-parse HEAD) -match $PYSQLCIPHER3_VERSION)) {
+    echo "Checking out PySQLCipher3 $PYSQLCIPHER3_VERSION"
     git checkout $PYSQLCIPHER3_VERSION
     ExitOnFailure("Failed to checkout pysqlcipher3 $PYSQLCIPHER3_VERSION")
 }
