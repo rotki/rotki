@@ -208,15 +208,15 @@ interface HistoryExtras<T> {
   readonly realizedPnl?: Balance;
 }
 
-interface LendingHistoryExtras {
-  readonly aave: {};
-  readonly makerdao_dsr: MakerDAOLendingHistoryExtras;
-  readonly makerdao_vaults: {};
-  readonly compound: HistoryExtras<CompoundEventType>;
-  readonly yearn_vaults: HistoryExtras<YearnEventType>;
-  readonly yearn_vaults_v2: HistoryExtras<YearnEventType>;
-  readonly uniswap: {};
-}
+type LendingHistoryExtras = {
+  readonly [DefiProtocol.AAVE]: {};
+  readonly [DefiProtocol.MAKERDAO_VAULTS]: {};
+  readonly [DefiProtocol.MAKERDAO_DSR]: MakerDAOLendingHistoryExtras;
+  readonly [DefiProtocol.COMPOUND]: HistoryExtras<CompoundEventType>;
+  readonly [DefiProtocol.YEARN_VAULTS]: HistoryExtras<YearnEventType>;
+  readonly [DefiProtocol.YEARN_VAULTS_V2]: HistoryExtras<YearnEventType>;
+  readonly [DefiProtocol.UNISWAP]: {};
+};
 
 export interface DefiLendingHistory<T extends DefiProtocol> {
   id: string;
