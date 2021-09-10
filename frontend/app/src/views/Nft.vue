@@ -1,15 +1,27 @@
 <template>
   <v-container>
-    <nft-gallery />
+    <module-not-active v-if="!isEnabled" :modules="modules" />
+    <nft-gallery v-else />
   </v-container>
 </template>
 
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api';
+import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import NftGallery from '@/components/nft/NftGallery.vue';
+import { setupModuleEnabled } from '@/composables/session';
+import { Module } from '@/services/session/consts';
 
 export default defineComponent({
   name: 'Nft',
-  components: { NftGallery }
+  components: { ModuleNotActive, NftGallery },
+  setup() {
+    const module = Module.NFTS;
+    const { isModuleEnabled } = setupModuleEnabled();
+    return {
+      isEnabled: isModuleEnabled(module),
+      modules: [module]
+    };
+  }
 });
 </script>
