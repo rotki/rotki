@@ -1,4 +1,4 @@
-import { Balance } from '@rotki/common';
+import { AddressIndexed, Balance } from '@rotki/common';
 import {
   XswapBalance,
   XswapEventDetails,
@@ -234,53 +234,99 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   defiAccounts:
-    ({ aaveBalances, aaveHistory, dsrBalances, dsrHistory }: DefiState) =>
+    ({
+      aaveBalances,
+      aaveHistory,
+      dsrBalances,
+      dsrHistory,
+      compoundBalances,
+      compoundHistory,
+      yearnVaultsBalances,
+      yearnVaultsHistory,
+      yearnVaultsV2Balances,
+      yearnVaultsV2History
+    }: DefiState) =>
     (protocols: DefiProtocol[]): DefiAccount[] => {
-      const aaveAddresses: string[] = [];
-      const makerAddresses: string[] = [];
-      if (protocols.length === 0 || protocols.includes(DefiProtocol.AAVE)) {
-        const uniqueAddresses: string[] = [
-          ...Object.keys(aaveBalances),
-          ...Object.keys(aaveHistory)
-        ].filter(uniqueStrings);
-        aaveAddresses.push(...uniqueAddresses);
-      }
-
-      if (
-        protocols.length === 0 ||
-        protocols.includes(DefiProtocol.MAKERDAO_DSR)
-      ) {
-        const uniqueAddresses: string[] = [
-          ...Object.keys(dsrHistory),
-          ...Object.keys(dsrBalances.balances)
-        ].filter(uniqueStrings);
-        makerAddresses.push(...uniqueAddresses);
-      }
-
-      const accounts: DefiAccount[] = [];
-      for (const address of aaveAddresses) {
-        const protocols: DefiProtocol[] = [DefiProtocol.AAVE];
-        const index = makerAddresses.indexOf(address);
-        if (index >= 0) {
-          protocols.push(DefiProtocol.MAKERDAO_DSR);
-          makerAddresses.splice(index, 1);
+      const getProtocolAddresses = (
+        protocol: DefiProtocol,
+        balances: AddressIndexed<any>,
+        history: AddressIndexed<any> | string[]
+      ) => {
+        const addresses: string[] = [];
+        if (protocols.length === 0 || protocols.includes(protocol)) {
+          const uniqueAddresses: string[] = [
+            ...Object.keys(balances),
+            ...(Array.isArray(history) ? history : Object.keys(history))
+          ].filter(uniqueStrings);
+          addresses.push(...uniqueAddresses);
         }
-        accounts.push({
-          address,
-          chain: ETH,
-          protocols
-        });
+        return addresses;
+      };
+
+      const addresses: {
+        [key in Exclude<
+          DefiProtocol,
+          DefiProtocol.MAKERDAO_VAULTS | DefiProtocol.UNISWAP
+        >]: string[];
+      } = {
+        [DefiProtocol.MAKERDAO_DSR]: [],
+        [DefiProtocol.AAVE]: [],
+        [DefiProtocol.COMPOUND]: [],
+        [DefiProtocol.YEARN_VAULTS]: [],
+        [DefiProtocol.YEARN_VAULTS_V2]: []
+      };
+
+      addresses[DefiProtocol.AAVE] = getProtocolAddresses(
+        DefiProtocol.AAVE,
+        aaveBalances,
+        aaveHistory
+      );
+
+      addresses[DefiProtocol.COMPOUND] = getProtocolAddresses(
+        DefiProtocol.COMPOUND,
+        compoundBalances,
+        compoundHistory.events.map(({ address }) => address)
+      );
+
+      addresses[DefiProtocol.YEARN_VAULTS] = getProtocolAddresses(
+        DefiProtocol.YEARN_VAULTS,
+        yearnVaultsBalances,
+        yearnVaultsHistory
+      );
+
+      addresses[DefiProtocol.YEARN_VAULTS_V2] = getProtocolAddresses(
+        DefiProtocol.YEARN_VAULTS_V2,
+        yearnVaultsV2Balances,
+        yearnVaultsV2History
+      );
+
+      addresses[DefiProtocol.MAKERDAO_DSR] = getProtocolAddresses(
+        DefiProtocol.MAKERDAO_DSR,
+        dsrBalances.balances,
+        dsrHistory
+      );
+
+      const accounts: { [address: string]: DefiAccount } = {};
+      for (const protocol in addresses) {
+        const selectedProtocol = protocol as Exclude<
+          DefiProtocol,
+          DefiProtocol.MAKERDAO_VAULTS | DefiProtocol.UNISWAP
+        >;
+        const perProtocolAddresses = addresses[selectedProtocol];
+        for (const address of perProtocolAddresses) {
+          if (accounts[address]) {
+            accounts[address].protocols.push(selectedProtocol);
+          } else {
+            accounts[address] = {
+              address,
+              chain: ETH,
+              protocols: [selectedProtocol]
+            };
+          }
+        }
       }
 
-      for (const address of makerAddresses) {
-        accounts.push({
-          address,
-          chain: ETH,
-          protocols: [DefiProtocol.MAKERDAO_DSR]
-        });
-      }
-
-      return accounts;
+      return Object.values(accounts);
     },
 
   loans:
