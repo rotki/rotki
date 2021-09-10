@@ -627,7 +627,9 @@ class Liquity(EthereumModule):
             changes = self._process_trove_events(trove['changes'], from_timestamp, to_timestamp)
             result.append(changes)
         # Flatten the result (list of lists to list)
-        return reduce(add, result)
+        if result:
+            return reduce(add, result)
+        return []
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:
