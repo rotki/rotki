@@ -450,6 +450,7 @@
     "empty_filter": "No NFTs matching the filter parameters",
     "empty_subtitle": "No NFTs have been detected",
     "empty_title": "No NFTs detected",
+    "error_title": "Error while loading NFTs",
     "loading": "Loading NFTs",
     "refresh_tooltip": "Reload NFTs",
     "select_collection": "Select collection",
