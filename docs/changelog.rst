@@ -8,6 +8,7 @@ Changelog
 * :feature:`2847` Users will now be able to use a combination of filters in the search for trades and deposits/withdrawals.
 * :feature:`3254` Users can now add a custom Covalent API key in rotki.
 * :feature:`3416` Users will now be able to import ShapeShift trade history CSVs exported from shapeshift.com.
+* :feature:`1345` Users will now be able to import uphold transaction history CSVs exported from uphold.com.
 * :bug:`3239` Users will now see only the relevant addresses suggested when filtering DeFi deposits.
 * :bug:`3340` Users will now be able to properly see the favicon when accessing the frontend using Firefox.
 * :bug:`3266` Users will now be able to properly access most of the top bar content using a mobile device.
