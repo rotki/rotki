@@ -248,7 +248,7 @@ import { Account, DefiAccount } from '@/typing/types';
     ...mapActions('defi', ['fetchLending', 'resetDB'])
   }
 })
-export default class Lending extends Mixins(StatusMixin) {
+export default class Deposits extends Mixins(StatusMixin) {
   premium!: boolean;
   floatingPrecision!: number;
   selectedAccount: Account | null = null;
