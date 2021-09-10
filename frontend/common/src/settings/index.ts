@@ -15,7 +15,8 @@ export enum TimeUnit {
   YEAR = 'year',
   MONTH = 'month',
   WEEK = 'week',
-  DAY = 'day'
+  DAY = 'day',
+  HOUR = 'hour'
 }
 
 export const DARK_MODE_ENABLED = 'darkModeEnabled' as const;

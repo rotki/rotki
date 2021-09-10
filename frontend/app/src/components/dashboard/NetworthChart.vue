@@ -186,7 +186,7 @@ export default class NetWorthChart extends Vue {
       month: labelFormat(TimeFramePeriod.ALL),
       week: labelFormat(TimeFramePeriod.MONTH),
       day: labelFormat(TimeFramePeriod.WEEK),
-      hour: labelFormat(TimeFramePeriod.WEEK)
+      hour: labelFormat(TimeFramePeriod.DAY)
     };
 
     const time: TimeScale = {

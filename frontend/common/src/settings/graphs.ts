@@ -6,7 +6,8 @@ export enum TimeFramePeriod  {
   THREE_MONTHS = '3M',
   MONTH = '1M',
   TWO_WEEKS = '2W',
-  WEEK = '1W'
+  WEEK = '1W',
+  DAY = '1D'
 }
 
 export enum TimeFramePersist {
@@ -53,6 +54,12 @@ function unitDefaults(timeUnit: TimeUnit): TimeframeDefaults {
       xAxisLabelDisplayFormat: 'MMMM YYYY',
       tooltipTimeFormat: 'MMMM D, YYYY'
     };
+  } else if (timeUnit === TimeUnit.HOUR) {
+    return {
+      xAxisTimeUnit: timeUnit,
+      xAxisLabelDisplayFormat: 'HH:mm',
+      tooltipTimeFormat: 'D, HH:mm'
+    };
   }
   throw new Error(`Invalid time unit selected: ${timeUnit}`);
 }
@@ -74,6 +81,8 @@ function createTimeframe(
       startUnit = TimeUnit.MONTH;
     } else if ([TimeFramePeriod.WEEK, TimeFramePeriod.TWO_WEEKS].includes(frame)) {
       startUnit = TimeUnit.WEEK;
+    } else if ([TimeFramePeriod.DAY].includes(frame)) {
+      startUnit = TimeUnit.HOUR;
     } else {
       throw new Error(`unsupported timeframe: ${frame}`);
     }
@@ -101,7 +110,8 @@ export const timeframes: (startingDate: StartingDateCalculator) => Timeframes = 
     ),
     [TimeFramePeriod.MONTH]: createTimeframe(startingDate, TimeFramePeriod.MONTH, TimeUnit.WEEK),
     [TimeFramePeriod.TWO_WEEKS]: createTimeframe(startingDate, TimeFramePeriod.TWO_WEEKS, TimeUnit.DAY, 2),
-    [TimeFramePeriod.WEEK]: createTimeframe(startingDate, TimeFramePeriod.WEEK, TimeUnit.DAY)
+    [TimeFramePeriod.WEEK]: createTimeframe(startingDate, TimeFramePeriod.WEEK, TimeUnit.DAY),
+    [TimeFramePeriod.DAY]: createTimeframe(startingDate, TimeFramePeriod.DAY, TimeUnit.HOUR)
   }
 };
 

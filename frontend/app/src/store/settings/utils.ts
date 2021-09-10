@@ -32,6 +32,8 @@ export function loadFrontendSettings(commit: Commit, value: string) {
 
 export function isPeriodAllowed(period: TimeFrameSetting): boolean {
   return (
-    period === TimeFramePeriod.WEEK || period === TimeFramePeriod.TWO_WEEKS
+    period === TimeFramePeriod.WEEK ||
+    period === TimeFramePeriod.TWO_WEEKS ||
+    period === TimeFramePeriod.DAY
   );
 }
