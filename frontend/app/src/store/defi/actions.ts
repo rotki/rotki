@@ -409,6 +409,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('fetchDSRBalances', refresh),
       dispatch('fetchMakerDAOVaults', refresh),
       dispatch('fetchCompoundBalances', refresh),
+      dispatch('fetchPickleBalances', refresh),
       dispatch('fetchYearnVaultBalances', {
         refresh,
         version: ProtocolVersion.V1

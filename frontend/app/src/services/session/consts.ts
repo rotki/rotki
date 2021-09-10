@@ -13,7 +13,8 @@ export enum Module {
   LOOPRING = 'loopring',
   ETH2 = 'eth2',
   SUSHISWAP = 'sushiswap',
-  NFTS = 'nfts'
+  NFTS = 'nfts',
+  PICKLE = 'pickle_finance'
 }
 
 export const ALL_CENTRALIZED_EXCHANGES = 'all_exchanges';
