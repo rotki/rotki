@@ -123,7 +123,7 @@ import {
     ProgressScreen
   }
 })
-export default class Borrowing extends Mixins(StatusMixin) {
+export default class Liabilities extends Mixins(StatusMixin) {
   selection?: string = '';
   loan!: (identifier?: string) => MakerDAOVaultModel | AaveLoan | null;
   loans!: (protocol: DefiProtocol[]) => DefiLoan[];

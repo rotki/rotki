@@ -1,17 +1,17 @@
 <template>
   <module-not-active v-if="!anyModuleEnabled" :modules="modules" />
-  <borrowing v-else />
+  <liabilities v-else />
 </template>
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
-import Borrowing from '@/components/defi/Borrowing.vue';
+import Liabilities from '@/components/defi/Liabilities.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ModuleMixin from '@/mixins/module-mixin';
 import { Module } from '@/services/session/consts';
 
 @Component({
-  components: { ModuleNotActive, Borrowing }
+  components: { ModuleNotActive, Liabilities }
 })
 export default class DecentralizedBorrowing extends Mixins(ModuleMixin) {
   readonly modules: Module[] = [

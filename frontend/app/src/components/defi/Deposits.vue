@@ -111,7 +111,9 @@
           v-model="selectedAccount"
           hint
           :chains="['ETH']"
-          :usable-accounts="defiAccounts(selectedProtocols)"
+          :usable-addresses="
+            defiAccounts(selectedProtocols).map(({ address }) => address)
+          "
         />
       </v-col>
       <v-col cols="12" sm="6" class="ps-sm-4 pt-4 pt-sm-0">
@@ -246,7 +248,7 @@ import { Account, DefiAccount } from '@/typing/types';
     ...mapActions('defi', ['fetchLending', 'resetDB'])
   }
 })
-export default class Lending extends Mixins(StatusMixin) {
+export default class Deposits extends Mixins(StatusMixin) {
   premium!: boolean;
   floatingPrecision!: number;
   selectedAccount: Account | null = null;
