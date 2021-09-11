@@ -10,13 +10,13 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.modules.aave.constants import A_ALINK_V1
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_AAVE,
     A_AC,
     A_ADX,
+    A_ALINK_V1,
     A_AMP,
     A_AUC,
     A_AUSDC_V1,

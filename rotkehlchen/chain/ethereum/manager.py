@@ -21,6 +21,7 @@ from web3.exceptions import BadFunctionCallOutput
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import FilterParams
 
+from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2 import ETH2_DEPOSIT
@@ -48,7 +49,6 @@ from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestam
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 from rotkehlchen.utils.network import request_get_dict
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 
 from .typing import NodeName
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
@@ -397,7 +397,12 @@ class EthereumManager():
 
             try:
                 result = method(web3, **kwargs)
-            except (RemoteError, BlockchainQueryError, requests.exceptions.RequestException) as e:
+            except (
+                    RemoteError,
+                    BlockchainQueryError,
+                    requests.exceptions.RequestException,
+                    KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
+            ) as e:  # noqa: E501
                 log.warning(f'Failed to query {node} for {str(method)} due to {str(e)}')
                 # Catch all possible errors here and just try next node call
                 continue

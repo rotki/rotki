@@ -128,7 +128,6 @@ class Aave(EthereumModule):
             for balance_entry in balance_entries:
                 # Aave also has "Aave • Staking" and "Aave • Uniswap Market" but
                 # here we are only querying the balances in the lending protocol
-                # if balance_entry.protocol.name not in ('Aave', 'Aave V2'):
                 if balance_entry.protocol.name not in ('Aave', 'Aave V2'):
                     continue
 
@@ -179,12 +178,14 @@ class Aave(EthereumModule):
                     lending_map[token] = AaveLendingBalance(
                         balance=balance,
                         apy=reserve_data.liquidity_rate,
+                        version=1 if balance_entry.protocol.name == 'Aave' else 2,
                     )
                 else:  # 'Debt'
                     borrowing_map[token] = AaveBorrowingBalance(
                         balance=balance,
                         variable_apr=reserve_data.variable_borrow_rate,
                         stable_apr=reserve_data.stable_borrow_rate,
+                        version=1 if balance_entry.protocol.name == 'Aave' else 2,
                     )
 
             if lending_map == {} and borrowing_map == {}:

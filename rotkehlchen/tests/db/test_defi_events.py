@@ -8,9 +8,10 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveRepayEvent,
     YearnVaultEvent,
 )
-from rotkehlchen.constants.assets import A_ADAI_V1, A_DAI, A_ETH, A_MANA, A_WBTC, A_YV1_DAI
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_MANA, A_WBTC, A_YV1_DAI
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.aave import A_ADAI_V1
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.typing import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
