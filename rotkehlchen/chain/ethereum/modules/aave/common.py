@@ -110,7 +110,6 @@ def asset_to_atoken(asset: Asset, version: int) -> Optional[EthereumToken]:
     if asset == A_ETH:
         return A_AETH_V1
 
-    cursor = GlobalDBHandler()._conn.cursor()
     protocol = 'aave' if version == 1 else 'aave-v2'
     cursor = GlobalDBHandler()._conn.cursor()
     result = cursor.execute(

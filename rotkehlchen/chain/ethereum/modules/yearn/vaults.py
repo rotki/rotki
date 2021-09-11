@@ -4,10 +4,10 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.chain.ethereum.modules.aave.constants import A_ALINK_V1
 from rotkehlchen.chain.ethereum.structures import YearnVault, YearnVaultEvent
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import (
+    A_ALINK_V1,
     A_CRV_3CRV,
     A_CRVP_DAIUSDCTBUSD,
     A_CRVP_DAIUSDCTTUSD,

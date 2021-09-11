@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveRepayEvent,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.constants.ethereum import ATOKEN_ABI
+from rotkehlchen.constants.ethereum import ATOKEN_ABI, ATOKEN_V2_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
@@ -582,10 +582,17 @@ class AaveGraphInquirer(AaveInquirer):
                 )
                 continue
 
+            if lending_balance.version == 1:
+                method = 'principalBalanceOf'
+                abi = ATOKEN_ABI
+            else:
+                method = 'scaledBalanceOf'
+                abi = ATOKEN_V2_ABI
+
             principal_balance = self.ethereum.call_contract(
                 contract_address=atoken.ethereum_address,
-                abi=ATOKEN_ABI,
-                method_name='principalBalanceOf',
+                abi=abi,
+                method_name=method,
                 arguments=[user_address],
             )
             unpaid_interest = lending_balance.balance.amount - (principal_balance / (FVal(10) ** FVal(atoken.decimals)))  # noqa: E501

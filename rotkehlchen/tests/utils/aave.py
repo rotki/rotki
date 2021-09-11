@@ -64,6 +64,8 @@ A_AZRX_V1 = EthereumToken('0x6Fb0855c404E09c47C3fBCA25f08d4E41f9F062f')
 A_AAAVE_V1 = EthereumToken('0xba3D9687Cf50fE253cd2e1cFeEdE1d6787344Ed5')
 A_AUNI_V1 = EthereumToken('0xB124541127A0A657f056D9Dd06188c4F1b0e5aab')
 
+A_ALINK_V2 = EthereumToken('0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0')
+
 ATOKENV1_TO_ASSET = {
     A_AETH_V1: A_ETH,
     A_AENJ_V1: A_ENJ,
@@ -455,11 +457,12 @@ expected_aave_liquidation_test_events = [
     ),
 ]
 
+
 expected_aave_v2_events = [
     AaveDepositWithdrawalEvent(
         event_type='deposit',
         asset=A_LINK,
-        atoken=A_ALINK_V1,
+        atoken=A_ALINK_V2,
         value=Balance(
             amount=FVal('12629.998670888732814733'),
             usd_value=FVal('12629.998670888732814733'),
@@ -496,7 +499,7 @@ expected_aave_v2_events = [
         log_index=4,
     ), AaveInterestEvent(
         event_type='interest',
-        asset=A_ALINK_V1,
+        asset=A_ALINK_V2,
         value=Balance(
             amount=FVal('0.092486713379308309'),
             usd_value=FVal('0.092486713379308309'),
@@ -508,7 +511,7 @@ expected_aave_v2_events = [
     ), AaveDepositWithdrawalEvent(
         event_type='withdrawal',
         asset=A_LINK,
-        atoken=A_ALINK_V1,
+        atoken=A_ALINK_V2,
         value=Balance(
             amount=FVal('12630.091157602112123042'),
             usd_value=FVal('12630.091157602112123042'),
