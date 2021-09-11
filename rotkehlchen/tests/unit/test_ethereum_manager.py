@@ -69,17 +69,21 @@ def test_get_transaction_receipt(ethereum_manager, call_order, ethereum_manager_
     ),
 ])
 def test_use_open_nodes(ethereum_manager, call_order, ethereum_manager_connect_at_start):
-    """Test that we can connect to and use the open nodes (except from etherscan)"""
+    """Test that we can connect to and use the open nodes (except from etherscan)
+
+    Note: If this fails with transaction not found probably open nodes started pruning.
+    Change test to use a more recent transaction.
+    """
     # Wait until all nodes are connected
     wait_until_all_nodes_connected(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         ethereum=ethereum_manager,
     )
     result = ethereum_manager.get_transaction_receipt(
-        '0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89',
+        '0x1470187132df3b6755ed30774a772ec8bbc1cd27f10a8a6b7f6095dd95560f20',
         call_order=call_order,
     )
-    block_hash = '0x6f3a7838a8788c3371b88df170c3643d19bad896c915a7368681292882b6ad61'
+    block_hash = '0x23daab1980fd238778750bf9ac732fa1bb45e3439fa208ac47f5995efb5924e3'
     assert result['blockHash'] == block_hash
 
 

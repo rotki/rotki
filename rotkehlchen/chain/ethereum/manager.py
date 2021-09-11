@@ -397,7 +397,12 @@ class EthereumManager():
 
             try:
                 result = method(web3, **kwargs)
-            except (RemoteError, BlockchainQueryError, requests.exceptions.RequestException) as e:
+            except (
+                    RemoteError,
+                    BlockchainQueryError,
+                    requests.exceptions.RequestException,
+                    KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
+            ) as e:  # noqa: E501
                 log.warning(f'Failed to query {node} for {str(method)} due to {str(e)}')
                 # Catch all possible errors here and just try next node call
                 continue
