@@ -1947,6 +1947,7 @@ class DataImportSchema(Schema):
                 'blockfi-trades',
                 'nexo',
                 'shapeshift-trades',
+                'uphold',
             ),
         ),
     )

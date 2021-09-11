@@ -73,7 +73,8 @@ const SOURCES = [
   'blockfi-transactions',
   'blockfi-trades',
   'gitcoin',
-  'shapeshift-trades'
+  'shapeshift-trades',
+  'uphold'
 ];
 
 @Component({})

@@ -7,9 +7,12 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_DOT,
     A_ETH,
+    A_LTC,
     A_EUR,
     A_UNI,
     A_USD,
+    A_XRP,
+    A_BAT,
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -662,3 +665,129 @@ Trade from ShapeShift with ShapeShift Deposit Address:
     assert trades[0].timestamp == expected_trades[0].timestamp
     assert len(trades) == 2
     assert trades == expected_trades
+
+
+def assert_uphold_transactions_import_results(rotki: Rotkehlchen):
+    """A utility function to help assert on correctness of importing trades data from uphold"""
+    trades = rotki.data.db.get_trades()
+    asset_movements = rotki.data.db.get_asset_movements()
+    ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
+    ledger_actions = ledger_db.get_ledger_actions(None, None, None)
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    notes1 = """
+Activity from uphold with uphold transaction id:
+ 1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d, origin: credit-card,
+ and destination: uphold.
+  Type: in.
+  Status: completed.
+"""
+    notes2 = """
+Activity from uphold with uphold transaction id:
+ 1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d, origin: uphold,
+ and destination: uphold.
+  Type: transfer.
+  Status: completed.
+"""
+    notes3 = """
+Activity from uphold with uphold transaction id:
+ 1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d, origin: uphold,
+ and destination: litecoin.
+  Type: out.
+  Status: completed.
+"""
+    notes4 = """
+Activity from uphold with uphold transaction id:
+ 1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d, origin: uphold,
+ and destination: xrp-ledger.
+  Type: out.
+  Status: completed.
+"""
+    notes5 = """
+Activity from uphold with uphold transaction id:
+ 1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d, origin: uphold,
+ and destination: uphold.
+  Type: in.
+  Status: completed.
+"""
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    expected_trades = [Trade(
+        timestamp=Timestamp(1581426837),
+        location=Location.UPHOLD,
+        base_asset=A_BTC,
+        quote_asset=symbol_to_asset_or_token('GBP'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('0.00331961')),
+        rate=Price(FVal('7531.005148195119306183557707')),
+        fee=Fee(FVal('0.0')),
+        fee_currency=symbol_to_asset_or_token('GBP'),
+        link='',
+        notes=notes1,
+    ), Trade(
+        timestamp=Timestamp(1585484504),
+        location=Location.UPHOLD,
+        base_asset=symbol_to_asset_or_token('GBP'),
+        quote_asset=A_BTC,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('24.65')),
+        rate=Price(FVal('0.0001707910750507099391480730223')),
+        fee=Fee(FVal('0.0')),
+        fee_currency=A_BTC,
+        link='',
+        notes=notes2,
+    ), Trade(
+        timestamp=Timestamp(1589940026),
+        location=Location.UPHOLD,
+        base_asset=symbol_to_asset_or_token('NANO'),
+        quote_asset=A_LTC,
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal('133.362002	')),
+        rate=Price(FVal('0.009459633186970303580175708520')),
+        fee=Fee(FVal('0.111123')),
+        fee_currency=symbol_to_asset_or_token('NANO'),
+        link='',
+        notes=notes3,
+    ), Trade(
+        timestamp=Timestamp(1590516388),
+        location=Location.UPHOLD,
+        base_asset=A_BTC,
+        quote_asset=A_XRP,
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal('0.00714216')),
+        rate=Price(FVal('44054.19382931774141156176843')),
+        fee=Fee(FVal('0.0000021')),
+        fee_currency=A_BTC,
+        link='',
+        notes=notes4,
+    )]
+    expected_movements = [AssetMovement(
+        location=Location.UPHOLD,
+        category=AssetMovementCategory.WITHDRAWAL,
+        timestamp=Timestamp(1589376604),
+        address=None,
+        transaction_id=None,
+        asset=symbol_to_asset_or_token('GBP'),
+        amount=AssetAmount(FVal('24.65')),
+        fee_asset=symbol_to_asset_or_token('GBP'),
+        fee=Fee(ZERO),
+        link='',
+    )]
+    expected_ledger_actions = [LedgerAction(
+        identifier=ledger_actions[0].identifier,
+        location=Location.UPHOLD,
+        action_type=LedgerActionType.INCOME,
+        timestamp=Timestamp(1576780809),
+        asset=A_BAT,
+        amount=AssetAmount(FVal('5.15')),
+        rate=None,
+        rate_asset=None,
+        link='',
+        notes=notes5,
+    )]
+    assert len(trades) == 4
+    assert trades == expected_trades
+    assert len(asset_movements) == 1
+    assert asset_movements == expected_movements
+    assert len(ledger_actions) == 1
+    assert ledger_actions == expected_ledger_actions

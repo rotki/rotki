@@ -84,6 +84,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('^', 30);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('_', 31);
 /* ShapeShift */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('`', 32);
+/* Uphold */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('a', 33);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
