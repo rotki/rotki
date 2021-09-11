@@ -19,6 +19,7 @@ TEST_ACC1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('start_with_valid_premium', [bool(random.getrandbits(1))])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
 def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
     async_query = bool(random.getrandbits(1))
     response = requests.get(api_url_for(
