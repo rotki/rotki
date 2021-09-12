@@ -8,11 +8,13 @@ import pytest
 import requests
 
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.constants.assets import A_ADAI_V1, A_AWBTC_V1, A_BUSD, A_WBTC
+from rotkehlchen.constants.assets import A_BUSD, A_WBTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.aave import (
+    A_ADAI_V1,
+    A_AWBTC_V1,
     AAVE_TEST_ACC_1,
     AAVE_TEST_ACC_2,
     AAVE_TEST_ACC_3,
@@ -229,9 +231,9 @@ def _query_simple_aave_history_test_v2(
     assert len(total_lost) == 1
     assert len(total_earned_liquidations) == 0
     assert len(total_earned_interest) == 1
-    assert len(total_earned_interest['_ceth_0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84']) == 2
-    assert FVal(total_earned_interest['_ceth_0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84']['amount']) >= FVal('0.09')  # noqa: E501
-    assert FVal(total_earned_interest['_ceth_0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84']['usd_value']) >= FVal('0.09248')  # noqa: E501
+    assert len(total_earned_interest['_ceth_0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0']) == 2
+    assert FVal(total_earned_interest['_ceth_0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0']['amount']) >= FVal('0.09')  # noqa: E501
+    assert FVal(total_earned_interest['_ceth_0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0']['usd_value']) >= FVal('0.09248')  # noqa: E501
 
     assert_serialized_lists_equal(
         a=events[:len(expected_aave_v2_events)],
@@ -248,6 +250,36 @@ def _query_simple_aave_history_test_v2(
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 @pytest.mark.parametrize('aave_use_graph', [True, False])  # Try both with blockchain and graph
 def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
+    """Check querying the aave histoy endpoint works. Uses real data.
+
+    Since this actually queries real blockchain data for aave it is a very slow test
+    due to the sheer amount of log queries. We also use graph in 2nd version of test.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=ethereum_accounts,
+        btc_accounts=None,
+        original_queries=['zerion', 'logs', 'blocknobytime'],
+    )
+    # Since this test is slow we don't run both async and sync in the same test run
+    # Instead we randomly choose one. Eventually both cases will be covered.
+    async_query = random.choice([True, False])
+
+    _query_simple_aave_history_test(setup, rotkehlchen_api_server, async_query, aave_use_graph)
+
+    if aave_use_graph:  # run it once more for graph to make sure DB querying gives same results
+        _query_simple_aave_history_test(setup, rotkehlchen_api_server, async_query, aave_use_graph)
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_2]])
+@pytest.mark.parametrize('ethereum_modules', [['aave']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
+@pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('aave_use_graph', [True])  # Try both with blockchain and graph
+def test_query_aave_history2(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data.
 
     Since this actually queries real blockchain data for aave it is a very slow test

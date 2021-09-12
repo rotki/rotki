@@ -6,7 +6,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.chain.ethereum.trades import AMMTrade
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LTC
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LTC, A_USDC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -135,6 +135,11 @@ prices = {
             1624798800: FVal(1983.33),
         },
     },
+    A_USDC.identifier: {
+        'EUR': {
+            1612051199: FVal(0.8241),
+        },
+    },
     strethaddress_to_identifier('0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6'): {
         'EUR': {
             1512561942: ZERO,
@@ -149,6 +154,7 @@ prices = {
         'EUR': {
             1493650800: FVal(14.07),
             1493737200: FVal(14.56),
+            1612051199: FVal(109.99),
         },
     },
     'XMR': {

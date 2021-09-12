@@ -322,6 +322,34 @@ def assert_csv_formulas_trades(row, profit_currency):
         )
 
 
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_query_history_external_exchanges(rotkehlchen_api_server):
+    """Test that history is processed for external exchanges too"""
+    start_ts = 0
+    end_ts = 1631455982
+
+    # import blockfi trades
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'blockfi-trades.csv'
+    json_data = {'source': 'blockfi-trades', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+
+    # Query history processing to start the history processing
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server, 'historyprocessingresource'),
+        json={'from_timestamp': start_ts, 'to_timestamp': end_ts},
+    )
+    outcome = assert_proper_response_with_result(response)
+    assert len(outcome['all_events']) == 2
+    assert FVal(outcome['overview']['total_taxable_profit_loss']) == FVal('5278.03086')
+
+
 def assert_csv_formulas_all_events(row, profit_currency):
     keys = list(row.keys())
     net_profit_loss = row['net_profit_or_loss']

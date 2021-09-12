@@ -14,6 +14,14 @@ Changelog
 * :bug:`3268` Users will now be able to properly scroll to the hidden tabs when using a mobile device.
 * :bug:`3267` Frontend will now occupy all the available screen when accessed from a mobile device.
 * :bug:`3208` Rotki is now able to accept and track the same account for different blockchain types.
+* :bug:`3448` Improve Kucoin api rate limit handling. Recognize CFG asset in Kucoin as WCFG.
+* :bug:`3452` Trades from externally imported exchanges (blockfi, crypto.com etc.) should now be properly taken into accounting in the PnL report again.
+* :bug:`3437` Fix a bug where for some active aave v2 lending positions the entire aToken balance would be shown as profit.
+* :bug:`3406` Sushiswap events will now be taken into account during the profit and loss report.
+* :bug:`3407` Users will now see correctly reported their amount of xSUSHI.
+* :bug:`3421` Users will now be able to see solana properly in coinbase assets
+* :bug:`3418` Users will now be able to finish import from crypto.com's CSV files when there is a time mismatch between rows.
+* :bug:`3056` Users will now be better notified when an error occurred while importing information from crypto.com on credit/debit events with special cases.
 
 * :release:`1.20.1 <2021-08-27>`
 * :feature:`3349` AMM swaps now have a transaction hash link in the trade history section.

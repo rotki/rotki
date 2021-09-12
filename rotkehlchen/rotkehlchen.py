@@ -6,18 +6,7 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    DefaultDict,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union
 
 import gevent
 from typing_extensions import Literal
@@ -33,7 +22,6 @@ from rotkehlchen.chain.ethereum.manager import (
     EthereumManager,
     NodeName,
 )
-from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.typing import SubstrateChain
@@ -53,9 +41,7 @@ from rotkehlchen.errors import (
     RemoteError,
     SystemPermissionError,
 )
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
-from rotkehlchen.exchanges.exchange import ExchangeInterface
-from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, ExchangeManager
+from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.covalent import Covalent, chains_id
@@ -65,7 +51,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.globaldb.updates import AssetsUpdater
 from rotkehlchen.greenlets import GreenletManager
-from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT, EventsHistorian
+from rotkehlchen.history.events import EventsHistorian
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
@@ -75,8 +61,6 @@ from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_cre
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.typing import (
-    EXTERNAL_EXCHANGES,
-    EXTERNAL_LOCATION,
     ApiKey,
     ApiSecret,
     BlockchainAccountData,
@@ -97,20 +81,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 MAIN_LOOP_SECS_DELAY = 10
-FREE_TRADES_LIMIT = 250
-FREE_ASSET_MOVEMENTS_LIMIT = 100
 
-LIMITS_MAPPING = {
-    'trade': FREE_TRADES_LIMIT,
-    'asset_movement': FREE_ASSET_MOVEMENTS_LIMIT,
-    'ledger_action': FREE_LEDGER_ACTIONS_LIMIT,
-}
 
 ICONS_BATCH_SIZE = 3
 ICONS_QUERY_SLEEP = 60
-
-
-TRADES_LIST = List[Union[Trade, AMMTrade]]
 
 
 class Rotkehlchen():
@@ -161,11 +135,6 @@ class Rotkehlchen():
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
         )
-        # Keeps how many trades we have found per location. Used for free user limiting
-        self.actions_per_location: Dict[str, Dict[Location, int]] = {
-            'trade': defaultdict(int),
-            'asset_movement': defaultdict(int),
-        }
         self.task_manager: Optional[TaskManager] = None
         self.shutdown_event = gevent.event.Event()
 
@@ -607,195 +576,6 @@ class Rotkehlchen():
         )
         return result, error_or_empty
 
-    @overload
-    def _apply_actions_limit(
-            self,
-            location: Location,
-            action_type: Literal['trade'],
-            location_actions: TRADES_LIST,
-            all_actions: TRADES_LIST,
-    ) -> TRADES_LIST:
-        ...
-
-    @overload
-    def _apply_actions_limit(
-            self,
-            location: Location,
-            action_type: Literal['asset_movement'],
-            location_actions: List[AssetMovement],
-            all_actions: List[AssetMovement],
-    ) -> List[AssetMovement]:
-        ...
-
-    def _apply_actions_limit(
-            self,
-            location: Location,
-            action_type: Literal['trade', 'asset_movement'],
-            location_actions: Union[TRADES_LIST, List[AssetMovement]],
-            all_actions: Union[TRADES_LIST, List[AssetMovement]],
-    ) -> Union[TRADES_LIST, List[AssetMovement]]:
-        """Take as many actions from location actions and add them to all actions as the limit permits
-
-        Returns the modified (or not) all_actions
-        """
-        # If we are already at or above the limit return current actions disregarding this location
-        actions_mapping = self.actions_per_location[action_type]
-        current_num_actions = sum(x for _, x in actions_mapping.items())
-        limit = LIMITS_MAPPING[action_type]
-        if current_num_actions >= limit:
-            return all_actions
-
-        # Find out how many more actions can we return, and depending on that get
-        # the number of actions from the location actions and add them to the total
-        remaining_num_actions = limit - current_num_actions
-        if remaining_num_actions < 0:
-            remaining_num_actions = 0
-
-        num_actions_to_take = min(len(location_actions), remaining_num_actions)
-
-        actions_mapping[location] = num_actions_to_take
-        all_actions.extend(location_actions[0:num_actions_to_take])  # type: ignore
-        return all_actions
-
-    def query_trades(
-            self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-            location: Optional[Location],
-            only_cache: bool,
-    ) -> TRADES_LIST:
-        """Queries trades for the given location and time range.
-        If no location is given then all external, all exchange and DEX trades are queried.
-
-        If only_cache is given then only trades cached in the DB are returned.
-        No service is queried.
-
-        DEX Trades are queried only if the user has premium
-        If the user does not have premium then a trade limit is applied.
-
-        May raise:
-        - RemoteError: If there are problems connecting to any of the remote exchanges
-        """
-        trades: TRADES_LIST
-        if location is not None:
-            # clear the trades queried for this location
-            self.actions_per_location['trade'][location] = 0
-            trades = self.query_location_trades(from_ts, to_ts, location, only_cache)
-        else:
-            for given_location in ALL_SUPPORTED_EXCHANGES + [Location.EXTERNAL]:
-                # clear the trades queried for this location
-                self.actions_per_location['trade'][given_location] = 0
-            trades = self.query_location_trades(from_ts, to_ts, Location.EXTERNAL, only_cache)
-            # Look for trades that might be imported from CSV files
-            for csv_location in EXTERNAL_EXCHANGES:
-                trades.extend(self.query_location_trades(
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                    location=csv_location,
-                    only_cache=only_cache,
-                ))
-
-            for exchange in self.exchange_manager.iterate_exchanges():
-                all_set = {x.identifier for x in trades}
-                exchange_trades = exchange.query_trade_history(
-                    start_ts=from_ts,
-                    end_ts=to_ts,
-                    only_cache=only_cache,
-                )
-                # TODO: Really dirty. Figure out a better way.
-                # Since some of the trades may already be in the DB if multiple
-                # keys are used for a single exchange.
-                exchange_trades = [x for x in exchange_trades if x.identifier not in all_set]
-                if self.premium is None:
-                    trades = self._apply_actions_limit(
-                        location=exchange.location,
-                        action_type='trade',
-                        location_actions=exchange_trades,
-                        all_actions=trades,
-                    )
-                else:
-                    trades.extend(exchange_trades)
-
-            # for all trades we also need the trades from the amm protocols
-            if self.premium is not None:
-                for amm_location in AMMTradeLocations:
-                    amm_module_name = cast(AMMTRADE_LOCATION_NAMES, str(amm_location))
-                    amm_module = self.chain_manager.get_module(amm_module_name)
-                    if amm_module is not None:
-                        trades.extend(
-                            amm_module.get_trades(
-                                addresses=self.chain_manager.queried_addresses_for_module(amm_module_name),  # noqa: E501
-                                from_timestamp=from_ts,
-                                to_timestamp=to_ts,
-                                only_cache=only_cache,
-                            ),
-                        )
-        # return trades with most recent first
-        trades.sort(key=lambda x: x.timestamp, reverse=True)
-        return trades
-
-    def query_location_trades(
-            self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-            location: Location,
-            only_cache: bool,
-    ) -> TRADES_LIST:
-        location_trades: TRADES_LIST
-        if location in EXTERNAL_LOCATION:
-            location_trades = self.data.db.get_trades(  # type: ignore  # list invariance
-                from_ts=from_ts,
-                to_ts=to_ts,
-                location=location,
-            )
-        elif location in AMMTradeLocations:
-            if self.premium is not None:
-                amm_module_name = cast(AMMTRADE_LOCATION_NAMES, str(location))
-                amm_module = self.chain_manager.get_module(amm_module_name)
-                if amm_module is not None:
-                    location_trades = amm_module.get_trades(  # type: ignore  # list invariance
-                        addresses=self.chain_manager.queried_addresses_for_module(amm_module_name),
-                        from_timestamp=from_ts,
-                        to_timestamp=to_ts,
-                        only_cache=only_cache,
-                    )
-        else:
-            # should only be an exchange
-            exchanges_list = self.exchange_manager.connected_exchanges.get(location)
-            if exchanges_list is None:
-                log.warning(
-                    f'Tried to query trades from {str(location)} which is either not an '
-                    f'exchange or not an exchange the user has connected to',
-                )
-                return []
-
-            location_trades = []
-            for exchange in exchanges_list:
-                all_set = {x.identifier for x in location_trades}
-                new_trades = exchange.query_trade_history(
-                    start_ts=from_ts,
-                    end_ts=to_ts,
-                    only_cache=only_cache,
-                )
-                # TODO: Really dirty. Figure out a better way.
-                # Since some of the trades may already be in the DB if multiple
-                # keys are used for a single exchange.
-                new_trades = [x for x in new_trades if x.identifier not in all_set]
-                location_trades.extend(new_trades)
-
-        trades: TRADES_LIST = []
-        if self.premium is None:
-            trades = self._apply_actions_limit(
-                location=location,
-                action_type='trade',
-                location_actions=location_trades,
-                all_actions=trades,
-            )
-        else:
-            trades = location_trades
-
-        return trades
-
     def query_balances(
             self,
             requested_save_data: bool = False,
@@ -918,126 +698,6 @@ class Rotkehlchen():
             )
 
         return result_dict
-
-    def _query_and_populate_exchange_asset_movements(
-            self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-            all_movements: List[AssetMovement],
-            exchange: Union[ExchangeInterface, Location],
-            only_cache: bool,
-    ) -> List[AssetMovement]:
-        """Queries exchange for asset movements and adds it to all_movements"""
-        all_set = {x.identifier for x in all_movements}
-        if isinstance(exchange, ExchangeInterface):
-            location = exchange.location
-            location_movements = exchange.query_deposits_withdrawals(
-                start_ts=from_ts,
-                end_ts=to_ts,
-                only_cache=only_cache,
-            )
-            # TODO: Really dirty. Figure out a better way.
-            # Since some of the asset movements may already be in the DB if multiple
-            # keys are used for a single exchange.
-            location_movements = [x for x in location_movements if x.identifier not in all_set]
-        else:
-            assert isinstance(exchange, Location), 'only a location should make it here'
-            assert exchange in EXTERNAL_EXCHANGES, 'only csv supported exchanges should get here'  # noqa : E501
-            location = exchange
-            # We might have no exchange information but CSV imported information
-            self.actions_per_location['asset_movement'][location] = 0
-            location_movements = self.data.db.get_asset_movements(
-                from_ts=from_ts,
-                to_ts=to_ts,
-                location=location,
-            )
-
-        movements: List[AssetMovement] = []
-        if self.premium is None:
-            movements = self._apply_actions_limit(
-                location=location,
-                action_type='asset_movement',
-                location_actions=location_movements,
-                all_actions=all_movements,
-            )
-        else:
-            all_movements.extend(location_movements)
-            movements = all_movements
-
-        return movements
-
-    def query_asset_movements(
-            self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-            location: Optional[Location],
-            only_cache: bool,
-    ) -> List[AssetMovement]:
-        """Queries AssetMovements for the given location and time range.
-
-        If no location is given then all exchange asset movements are queried.
-        If only_cache is True then only what is already in the DB is returned.
-        If the user does not have premium then a limit is applied.
-        May raise:
-        - RemoteError: If there are problems connecting to any of the remote exchanges
-        """
-        movements: List[AssetMovement] = []
-        if location is not None:
-            # clear the asset movements queried for this exchange
-            self.actions_per_location['asset_movement'][location] = 0
-            if location in EXTERNAL_EXCHANGES:
-                movements = self._query_and_populate_exchange_asset_movements(
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                    all_movements=movements,
-                    exchange=location,
-                    only_cache=only_cache,
-                )
-            else:
-                exchanges_list = self.exchange_manager.connected_exchanges.get(location)
-                if exchanges_list is None:
-                    log.warning(
-                        f'Tried to query deposits/withdrawals from {str(location)} which is '
-                        f'either not an exchange or not an exchange the user has connected to',
-                    )
-                    return []
-
-                # clear the asset movements queried for this exchange
-                self.actions_per_location['asset_movement'][location] = 0
-                for exchange in exchanges_list:
-                    self._query_and_populate_exchange_asset_movements(
-                        from_ts=from_ts,
-                        to_ts=to_ts,
-                        all_movements=movements,
-                        exchange=exchange,
-                        only_cache=only_cache,
-                    )
-        else:
-            for exchange_location in ALL_SUPPORTED_EXCHANGES:
-                # clear the asset movements queried for this exchange
-                self.actions_per_location['asset_movement'][exchange_location] = 0
-            # we may have DB entries due to csv import from supported locations
-            for external_location in EXTERNAL_EXCHANGES:
-
-                movements = self._query_and_populate_exchange_asset_movements(
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                    all_movements=movements,
-                    exchange=external_location,
-                    only_cache=only_cache,
-                )
-            for exchange in self.exchange_manager.iterate_exchanges():
-                self._query_and_populate_exchange_asset_movements(
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                    all_movements=movements,
-                    exchange=exchange,
-                    only_cache=only_cache,
-                )
-
-        # return movements with most recent first
-        movements.sort(key=lambda x: x.timestamp, reverse=True)
-        return movements
 
     def set_settings(self, settings: ModifiableDBSettings) -> Tuple[bool, str]:
         """Tries to set new settings. Returns True in success or False with message if error"""

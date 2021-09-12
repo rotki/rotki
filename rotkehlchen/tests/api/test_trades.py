@@ -8,7 +8,7 @@ from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_WETH
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.rotkehlchen import FREE_TRADES_LIMIT
+from rotkehlchen.history.events import FREE_TRADES_LIMIT
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,

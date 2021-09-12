@@ -7,19 +7,19 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType
 from rotkehlchen.chain.ethereum.manager import NodeName
-from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import (
+    UNISWAP_EVENTS_PREFIX,
     UniswapPoolEvent,
     UniswapPoolEventsBalance,
 )
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
-from rotkehlchen.constants.assets import A_ADAI_V1, A_DAI, A_LEND, A_USDC, A_WETH
+from rotkehlchen.constants.assets import A_DAI, A_LEND, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.aave import AAVE_TEST_ACC_1
+from rotkehlchen.tests.utils.aave import A_ADAI_V1, AAVE_TEST_ACC_1
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
