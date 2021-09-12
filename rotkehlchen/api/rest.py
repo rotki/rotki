@@ -77,13 +77,17 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
-from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.history.events import (
+    FREE_ASSET_MOVEMENTS_LIMIT,
+    FREE_LEDGER_ACTIONS_LIMIT,
+    FREE_TRADES_LIMIT,
+)
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.rotkehlchen import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT, Rotkehlchen
+from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
     AVAILABLE_MODULES_MAP,
@@ -716,7 +720,7 @@ class RestAPI():
             only_cache: bool,
     ) -> Dict[str, Any]:
         try:
-            trades = self.rotkehlchen.query_trades(
+            trades = self.rotkehlchen.events_historian.query_trades(
                 from_ts=from_ts,
                 to_ts=to_ts,
                 location=location,
@@ -877,7 +881,7 @@ class RestAPI():
         status_code = HTTPStatus.OK
         result = None
         try:
-            movements = self.rotkehlchen.query_asset_movements(
+            movements = self.rotkehlchen.events_historian.query_asset_movements(
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
                 location=location,

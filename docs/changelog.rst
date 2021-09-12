@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3452` Trades from externally imported exchanges (blockfi, crypto.com etc.) should now be properly taken into accounting in the PnL report again.
 * :bug:`3437` Fix a bug where for some active aave v2 lending positions the entire aToken balance would be shown as profit.
 * :bug:`3406` Sushiswap events will now be taken into account during the profit and loss report.
 * :bug:`3407` Users will now see correctly reported their amount of xSUSHI.
