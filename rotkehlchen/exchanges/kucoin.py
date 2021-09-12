@@ -30,7 +30,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, MONTH_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -82,10 +82,10 @@ API_KEY_ERROR_CODE_ACTION = {
     411100: 'Contact KuCoin support to unfreeze your account',
 }
 API_PAGE_SIZE_LIMIT = 500
-# Rate limit is 1800 requests per minute, exceed it multiple times the system
-# will restrict the IP
-API_REQUEST_RETRY_TIMES = 2
-API_REQUEST_RETRIES_AFTER_SECONDS = 1
+# Once the rate limit is exceeded, the system will restrict your use of your IP or account for 10s.
+# https://docs.kucoin.com/#request-rate-limit
+API_REQUEST_RETRY_TIMES = 4
+API_REQUEST_RETRIES_AFTER_SECONDS = 10
 
 API_V2_TIMESTART = Timestamp(1550448000)  # 2019-02-18T00:00:00Z
 API_V2_TIMESTART_MS = API_V2_TIMESTART * 1000

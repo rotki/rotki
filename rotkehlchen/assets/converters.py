@@ -625,7 +625,6 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'DAPPX',  # no cryptocompare/coingecko data
     'OOE',  # no cryptocompare/coingecko data
     'SPHRI',  # no cryptocompare/coingecko data SpheriumFinance
-    'CFG',  # not released yet. TODO: Review this one later
     'MUSH',  # Couldn't find a listing post saying what asset is this one
     'MOVR',  # Moonriver not in CC and shown as preview on coingecko. TODO yabir: review this one
     'MAKI',  # Couldn't find information about this asset at kucoin. Seems like is not public yet
