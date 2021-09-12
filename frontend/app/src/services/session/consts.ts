@@ -12,7 +12,8 @@ export enum Module {
   ADEX = 'adex',
   LOOPRING = 'loopring',
   ETH2 = 'eth2',
-  SUSHISWAP = 'sushiswap'
+  SUSHISWAP = 'sushiswap',
+  NFTS = 'nfts'
 }
 
 export const ALL_CENTRALIZED_EXCHANGES = 'all_exchanges';

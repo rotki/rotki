@@ -3473,28 +3473,14 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
-    def _get_nfts(self) -> Dict[str, Any]:
-        result: Optional[Dict[str, Any]]
-        try:
-            result = self.rotkehlchen.chain_manager.get_all_nfts()
-            msg = ''
-            status_code = HTTPStatus.OK
-        except RemoteError as e:
-            result = None
-            msg = str(e)
-            status_code = HTTPStatus.BAD_GATEWAY
-
-        return {'result': result, 'message': msg, 'status_code': status_code}
-
     @require_loggedin_user()
     def get_nfts(self, async_query: bool) -> Response:
-        if async_query:
-            return self._query_async(command='_get_nfts')
-
-        response = self._get_nfts()
-        return api_response(
-            result={'result': response['result'], 'message': response['message']},
-            status_code=response['status_code'],
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='nfts',
+            method='get_all_info',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('nfts'),
         )
 
     @require_loggedin_user()

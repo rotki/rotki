@@ -41,17 +41,16 @@ from rotkehlchen.chain.ethereum.modules import (
     Balancer,
     Compound,
     Eth2,
+    Liquity,
     Loopring,
     MakerdaoDsr,
     MakerdaoVaults,
+    PickleFinance,
     Sushiswap,
     Uniswap,
     YearnVaults,
     YearnVaultsV2,
-    Liquity,
-    PickleFinance,
 )
-from rotkehlchen.chain.ethereum.nft import NFTManager
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
@@ -60,16 +59,7 @@ from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODE_CONNECTION_TIMEOUT,
     POLKADOT_NODE_CONNECTION_TIMEOUT,
 )
-from rotkehlchen.constants.assets import (
-    A_ADX,
-    A_AVAX,
-    A_BTC,
-    A_DAI,
-    A_DOT,
-    A_ETH,
-    A_ETH2,
-    A_KSM,
-)
+from rotkehlchen.constants.assets import A_ADX, A_AVAX, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -104,6 +94,7 @@ from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_l
 if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.modules.nfts import Nfts
     from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDetails
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -347,7 +338,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             ethereum_manager=self.ethereum,
             msg_aggregator=self.msg_aggregator,
         )
-        self.nft_manager = NFTManager(database=self.database, msg_aggregator=self.msg_aggregator)
 
     def __del__(self) -> None:
         del self.ethereum
@@ -361,7 +351,14 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def set_dot_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
         return self.polkadot.set_rpc_endpoint(endpoint)
 
+    def activate_premium_status(self, premium: Premium) -> None:
+        self.premium = premium
+        for _, module in self.iterate_modules():
+            if getattr(module, 'premium', None):
+                module.premium = premium  # type: ignore
+
     def deactivate_premium_status(self) -> None:
+        self.premium = None
         for _, module in self.iterate_modules():
             if getattr(module, 'premium', None):
                 module.premium = None  # type: ignore
@@ -491,6 +488,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def get_module(self, module_name: Literal['pickle_finance']) -> Optional[PickleFinance]:
         ...
 
+    @overload
+    def get_module(self, module_name: Literal['nfts']) -> Optional['Nfts']:
+        ...
+
     def get_module(self, module_name: ModuleName) -> Optional[Any]:
         instance = self.eth_modules.get(module_name, None)
         if instance is None:  # not activated
@@ -519,13 +520,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             raise InputError(
                 f'Blockchain account/s {",".join(existing_accounts)} already exist',
             )
-
-    def get_all_nfts(self) -> Dict[str, Any]:
-        result = self.nft_manager.get_all_nfts(
-            addresses=self.accounts.eth,
-            has_premium=self.premium is not None,
-        )
-        return result.serialize()
 
     @protect_with_lock(arguments_matter=True)
     @cache_response_timewise()

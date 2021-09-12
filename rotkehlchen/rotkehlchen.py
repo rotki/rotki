@@ -392,10 +392,19 @@ class Rotkehlchen():
             self.premium.set_credentials(credentials)
         else:
             self.premium = premium_create_and_verify(credentials)
-            self.premium_sync_manager.premium = self.premium
-            self.accountant.premium = self.premium
+
+        self.premium_sync_manager.premium = self.premium
+        self.accountant.activate_premium_status(self.premium)
+        self.chain_manager.activate_premium_status(self.premium)
 
         self.data.db.set_rotkehlchen_premium(credentials)
+
+    def deactivate_premium_status(self) -> None:
+        """Deactivate premium in the current session"""
+        self.premium = None
+        self.premium_sync_manager.premium = None
+        self.accountant.deactivate_premium_status()
+        self.chain_manager.deactivate_premium_status()
 
     def delete_premium_credentials(self) -> Tuple[bool, str]:
         """Deletes the premium credentials for rotki"""
@@ -406,13 +415,6 @@ class Rotkehlchen():
             msg = 'The database was unable to delete the Premium keys for the logged-in user'
         self.deactivate_premium_status()
         return success, msg
-
-    def deactivate_premium_status(self) -> None:
-        """Deactivate premium in the current session"""
-        self.premium = None
-        self.premium_sync_manager.premium = None
-        self.chain_manager.deactivate_premium_status()
-        self.accountant.deactivate_premium_status()
 
     def start(self) -> gevent.Greenlet:
         assert not self.main_loop_spawned, 'Tried to spawn the main loop twice'

@@ -25,6 +25,7 @@ ModuleName = Literal[
     'sushiswap',
     'liquity',
     'pickle_finance',
+    'nfts',
 ]
 
 # TODO: Turn this into some kind of light data structure and not just a mapping
@@ -44,6 +45,7 @@ AVAILABLE_MODULES_MAP = {
     'sushiswap': 'Sushiswap',
     'liquity': 'Liquity',
     'pickle_finance': 'Pickle Finance',
+    'nfts': 'NFTs',
 }
 
 

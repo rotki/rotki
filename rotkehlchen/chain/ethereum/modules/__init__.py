@@ -13,19 +13,21 @@ __all__ = [
     'Sushiswap',
     'Liquity',
     'PickleFinance',
+    'Nfts',
 ]
 
 from .aave.aave import Aave
 from .adex.adex import Adex
 from .balancer.balancer import Balancer
 from .compound import Compound
+from .eth2 import Eth2
 from .l2.loopring import Loopring
+from .liquity.trove import Liquity
 from .makerdao.dsr import MakerdaoDsr
 from .makerdao.vaults import MakerdaoVaults
+from .nfts import Nfts
+from .pickle import PickleFinance
+from .sushiswap.sushiswap import Sushiswap
 from .uniswap.uniswap import Uniswap
 from .yearn.vaults import YearnVaults
-from .eth2 import Eth2
 from .yearn.vaultsv2 import YearnVaultsV2
-from .sushiswap.sushiswap import Sushiswap
-from .liquity.trove import Liquity
-from .pickle import PickleFinance

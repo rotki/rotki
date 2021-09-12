@@ -3,9 +3,13 @@
     {{ $t('nft_gallery.loading') }}
   </progress-screen>
   <no-data-screen v-else-if="noData">
-    <template #title>{{ $t('nft_gallery.empty_title') }}</template>
+    <template #title>
+      {{
+        error ? $t('nft_gallery.error_title') : $t('nft_gallery.empty_title')
+      }}
+    </template>
     <span class="text-subtitle-2 text--secondary">
-      {{ $t('nft_gallery.empty_subtitle') }}
+      {{ error ? error : $t('nft_gallery.empty_subtitle') }}
     </span>
   </no-data-screen>
   <div v-else>
@@ -199,6 +203,7 @@ const setupNfts = (
     visibleNfts,
     fetchNfts,
     pages,
+    error,
     availableAddresses,
     collections,
     noData,
