@@ -1,12 +1,9 @@
-import warnings as test_warnings
-
 from rotkehlchen.assets.converters import asset_from_uphold, UPHOLD_TO_WORLD
-from rotkehlchen.errors import UnknownAsset
 
 
 def test_uphold_all_symbols_are_known():
     """
-    Test that the uphold symbols are all supported by rotki
+    Test that the hardcoded uphold symbols are all supported by rotki
     May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -14,12 +11,5 @@ def test_uphold_all_symbols_are_known():
     """
     symbols = list(UPHOLD_TO_WORLD.keys())
     for symbol in symbols:
-        asset = None
-        try:
-            asset = asset_from_uphold(symbol)
-        except UnknownAsset as e:
-            test_warnings.warn(UserWarning(
-                f'Unknown uphold asset detected. {e}',
-            ))
-
+        asset = asset_from_uphold(symbol)
         assert asset is not None
