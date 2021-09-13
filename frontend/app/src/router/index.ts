@@ -254,7 +254,8 @@ export default new Router({
     },
     {
       path: Routes.ASSET_MANAGER,
-      component: () => import('../views/AssetManager.vue')
+      component: () => import('../views/AssetManager.vue'),
+      props: route => ({ identifier: route.query.id ?? null })
     },
     ...(process.env.NODE_ENV === 'development'
       ? [

@@ -1,19 +1,15 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import BackendMixin from '@/mixins/backend-mixin';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 
 @Component({
-  components: {
-    ConfirmDialog
-  },
   methods: {
     ...mapActions('session', ['logout'])
   }
 })
-export default class RestoreAssetsDatabase extends Mixins(BackendMixin) {
+export default class RestoreAssetsDatabaseMixin extends Mixins(BackendMixin) {
   confirmRestore: boolean = false;
   done: boolean = false;
   restoreMode: string = 'hard';
