@@ -29,7 +29,10 @@
       "
       class="tab-navigation__tabs__tab-item"
     >
-      <keep-alive>
+      <v-container v-if="isDev">
+        <router-view v-if="isRouterVisible($route.path, tab)" />
+      </v-container>
+      <keep-alive v-else>
         <v-container>
           <router-view v-if="isRouterVisible($route.path, tab)" />
         </v-container>
@@ -74,7 +77,9 @@ export default defineComponent({
         route.indexOf(tab.routeTo) >= 0 && tab.routeTo === selectedTab.value
       );
     };
+
     return {
+      isDev: process.env.NODE_ENV === 'development',
       visibleTabs,
       selectedTab,
       getClass,

@@ -3,17 +3,19 @@
     class="d-flex flex-row balance_display shrink pt-1 pb-1 align-center"
     :class="{
       'justify-end': !noJustify,
-      'balance-display--gain': mode === 'gain',
-      'balance-display--loss': mode === 'loss'
+      [$style.gain]: mode === 'gain',
+      [$style.loss]: mode === 'loss'
     }"
   >
-    <asset-icon
-      v-if="!noIcon"
-      :identifier="asset"
-      :symbol="getSymbol(asset)"
-      size="24px"
-      class="mr-1"
-    />
+    <asset-link icon :asset="asset">
+      <asset-icon
+        v-if="!noIcon"
+        :identifier="asset"
+        :symbol="getSymbol(asset)"
+        size="24px"
+        class="mr-1"
+      />
+    </asset-link>
     <div
       class="ml-1 d-flex flex-column align-end"
       :style="{ 'min-width': `${minWidth}ch` }"
@@ -38,36 +40,40 @@
 
 <script lang="ts">
 import { Balance } from '@rotki/common';
-import { Component, Mixins, Prop } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
+import AssetLink from '@/components/assets/AssetLink.vue';
 import AssetMixin from '@/mixins/asset-mixin';
 
-@Component({})
-export default class BalanceDisplay extends Mixins(AssetMixin) {
-  @Prop({ required: true })
-  asset!: string;
-  @Prop({ required: true })
-  value!: Balance | null;
-  @Prop({ required: false, type: Boolean, default: false })
-  noIcon!: boolean;
-  @Prop({ required: false, type: Number, default: 16 })
-  minWidth!: number;
-  @Prop({ required: false, type: Boolean, default: false })
-  noJustify!: boolean;
-  @Prop({ required: false, type: String, default: '' })
-  mode!: 'gain' | 'loss' | '';
-  @Prop({ required: false, type: Number, default: 5 })
-  assetPadding!: number;
-}
+export default defineComponent({
+  name: 'BalanceDisplay',
+  components: { AssetLink },
+  mixins: [AssetMixin],
+  props: {
+    asset: { required: true, type: String },
+    value: {
+      required: false,
+      type: Object as PropType<Balance>,
+      default: null
+    },
+    noIcon: { required: false, type: Boolean, default: false },
+    minWidth: { required: false, type: Number, default: 16 },
+    noJustify: { required: false, type: Boolean, default: false },
+    mode: {
+      required: false,
+      type: String as PropType<'gain' | 'loss' | ''>,
+      default: ''
+    },
+    assetPadding: { required: false, type: Number, default: 5 }
+  }
+});
 </script>
 
-<style scoped lang="scss">
-.balance-display {
-  &--gain {
-    color: #4caf50 !important;
-  }
+<style module lang="scss">
+.gain {
+  color: #4caf50 !important;
+}
 
-  &--loss {
-    color: #d32f2f !important;
-  }
+.loss {
+  color: #d32f2f !important;
 }
 </style>

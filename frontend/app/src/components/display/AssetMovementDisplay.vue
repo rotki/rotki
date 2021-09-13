@@ -3,68 +3,64 @@
     align="center"
     justify="end"
     no-gutters
-    :class="
-      $vuetify.breakpoint.mdAndUp && !$vuetify.breakpoint.mobile
-        ? 'asset-movement-display--row'
-        : null
-    "
+    :class="{
+      [$style.row]: small
+    }"
   >
     <v-col cols="auto">
       <balance-display
         :asset="movement.asset"
         :value="movement.value"
-        :mode="gainLoss ? 'gain' : null"
+        :mode="gainLoss ? 'gain' : ''"
       />
     </v-col>
     <v-col
       v-if="!gainLoss"
       sm="12"
-      :md="$vuetify.breakpoint.mobile ? '12' : 'auto'"
+      :md="isMobile ? '12' : 'auto'"
       cols="12"
-      :class="
-        $vuetify.breakpoint.mdAndUp && !$vuetify.breakpoint.mobile
-          ? 'mr-6'
-          : null
-      "
+      :class="small ? 'mr-6' : null"
     >
-      <v-icon
-        v-if="$vuetify.breakpoint.mdAndUp && !$vuetify.breakpoint.mobile"
-        color="grey"
-      >
-        mdi-chevron-right
-      </v-icon>
+      <v-icon v-if="small" color="grey"> mdi-chevron-right </v-icon>
       <v-icon v-else>mdi-chevron-down</v-icon>
     </v-col>
     <v-col cols="auto">
       <balance-display
         :asset="movement.toAsset"
         :value="movement.toValue"
-        :mode="gainLoss ? 'loss' : null"
+        :mode="gainLoss ? 'loss' : ''"
       />
     </v-col>
   </v-row>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { computed, defineComponent, PropType } from '@vue/composition-api';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { AssetMovement } from '@/components/display/types';
+import { setupThemeCheck } from '@/composables/common';
 
-@Component({
-  components: { BalanceDisplay }
-})
-export default class AssetMovementDisplay extends Vue {
-  @Prop({ required: true, type: Object })
-  movement!: AssetMovement;
-  @Prop({ required: false, type: Boolean, default: false })
-  gainLoss!: boolean;
-}
+export default defineComponent({
+  components: { BalanceDisplay },
+  props: {
+    movement: { required: true, type: Object as PropType<AssetMovement> },
+    gainLoss: { required: false, type: Boolean, default: false }
+  },
+  setup() {
+    const { breakpoint, isMobile } = setupThemeCheck();
+    const small = computed(
+      () => !(['xs', 'sm'].includes(breakpoint.value) || isMobile.value)
+    );
+    return {
+      small,
+      isMobile
+    };
+  }
+});
 </script>
 
-<style scoped lang="scss">
-.asset-movement-display {
-  &--row {
-    min-width: 380px;
-  }
+<style module lang="scss">
+.row {
+  min-width: 380px;
 }
 </style>

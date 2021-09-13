@@ -35,12 +35,12 @@ if (startDevProxy) {
 }
 
 process.stdout.write("Starting @rotki/common watch \n");
-const commonProcesses = spawn("sleep 30 && npm run watch -w @rotki/common", {
+const commonProcesses = spawn("npm run watch -w @rotki/common", {
   shell: true,
   stdio: [process.stdin, process.stdout, process.stderr]
 });
 process.stdout.write("Starting rotki dev mode \n");
-const devRotkiProcess = spawn("npm run electron:serve -w rotki", {
+const devRotkiProcess = spawn("sleep 20 && npm run electron:serve -w rotki", {
   shell: true,
   stdio: [process.stdin, process.stdout, process.stderr]
 });

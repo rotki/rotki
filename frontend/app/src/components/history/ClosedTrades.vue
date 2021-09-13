@@ -60,6 +60,7 @@
         <template #item.baseAsset="{ item }">
           <asset-details
             data-cy="trade_base"
+            opens-details
             hide-name
             :asset="item.baseAsset"
           />
@@ -67,6 +68,7 @@
         <template #item.quoteAsset="{ item }">
           <asset-details
             hide-name
+            opens-details
             :asset="item.quoteAsset"
             data-cy="trade_quote"
           />
