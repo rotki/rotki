@@ -66,6 +66,11 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     identifier: Module.NFTS,
     name: 'NFTs',
     icon: require('@/assets/images/nfts.png')
+  },
+  {
+    identifier: Module.PICKLE,
+    name: 'Pickle Finance',
+    icon: require('@/assets/images/modules/pickle.svg')
   }
 ];
 
