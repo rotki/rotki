@@ -317,7 +317,7 @@ class Rotkehlchen():
         self.user_is_logged_in = True
         log.debug('User unlocking complete')
 
-    def logout(self) -> None:
+    def _logout(self) -> None:
         if not self.user_is_logged_in:
             return
         user = self.data.username
@@ -349,6 +349,13 @@ class Rotkehlchen():
             'User successfully logged out',
             user=user,
         )
+
+    def logout(self) -> None:
+        if self.task_manager is None:  # no user logged in?
+            return
+
+        with self.task_manager.schedule_lock:
+            self._logout()
 
     def set_premium_credentials(self, credentials: PremiumCredentials) -> None:
         """
