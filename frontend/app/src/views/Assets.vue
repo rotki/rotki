@@ -1,5 +1,5 @@
 ﻿<template>
-  <div>
+  <v-container>
     <v-row align="center" class="mt-12">
       <v-col cols="auto">
         <asset-icon :identifier="icon" size="48px" :symbol="symbol" />
@@ -19,7 +19,7 @@
       :asset="identifier"
     />
     <asset-locations class="mt-8" :identifier="identifier" />
-  </div>
+  </v-container>
 </template>
 
 <script lang="ts">

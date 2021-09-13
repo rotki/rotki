@@ -7,6 +7,11 @@ export const useProxy = () => {
   return currentInstance.proxy;
 };
 
+export const useRouter = () => {
+  const { $router } = useProxy();
+  return $router;
+};
+
 export const setupThemeCheck = () => {
   const { $vuetify } = useProxy();
   const isMobile = computed(() => $vuetify.breakpoint.mobile);

@@ -1,4 +1,5 @@
 import Vue from 'vue';
+import AssetLink from '@/components/assets/AssetLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
@@ -70,4 +71,5 @@ export function registerComponents() {
   Vue.component('UniswapPoolDetails', UniswapPoolDetails);
   // Version 14 - 1.21
   Vue.component('PaginatedCards', PaginatedCards);
+  Vue.component('AssetLink', AssetLink);
 }
