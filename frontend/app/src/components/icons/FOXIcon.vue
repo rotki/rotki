@@ -43,7 +43,7 @@ export default defineComponent({
 }
 
 .icon {
-  width: 100%;
-  height: 100%;
+  width: 40px;
+  height: 44px;
 }
 </style>

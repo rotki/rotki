@@ -11,6 +11,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_KRAKEN,
     WORLD_TO_KUCOIN,
     WORLD_TO_POLONIEX,
+    WORLD_TO_UPHOLD,
     Asset,
 )
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -651,7 +652,6 @@ BITFINEX_EXCHANGE_TEST_ASSETS = (
     'TESTUSDTF0',
 )
 
-
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
@@ -662,6 +662,7 @@ KUCOIN_TO_WORLD = {v: k for k, v, in WORLD_TO_KUCOIN.items()}
 ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
 COINBASE_PRO_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE_PRO.items()}
 COINBASE_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE.items()}
+UPHOLD_TO_WORLD = {v: k for k, v in WORLD_TO_UPHOLD.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -894,4 +895,17 @@ def asset_from_iconomi(symbol: str) -> Asset:
     if symbol in UNSUPPORTED_ICONOMI_ASSETS:
         raise UnsupportedAsset(symbol)
     name = ICONOMI_TO_WORLD.get(symbol, symbol)
+    return symbol_to_asset_or_token(name)
+
+
+def asset_from_uphold(symbol: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(f'Got non-string type {type(symbol)} for uphold asset')
+
+    name = UPHOLD_TO_WORLD.get(symbol, symbol)
     return symbol_to_asset_or_token(name)

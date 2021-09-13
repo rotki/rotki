@@ -27,6 +27,7 @@
     <block-fi-import class="mt-8" />
     <nexo-import class="mt-8" />
     <shapeshift-import class="mt-8" />
+    <uphold-import class="mt-8" />
     <import-source
       v-if="premium"
       class="mt-8"
@@ -47,10 +48,12 @@ import CryptoComImport from '@/components/import/CryptoComImport.vue';
 import ImportSource from '@/components/import/ImportSource.vue';
 import NexoImport from '@/components/import/NexoImport.vue';
 import ShapeshiftImport from '@/components/import/ShapeshiftImport.vue';
+import UpholdImport from '@/components/import/UpholdImport.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 
 export default defineComponent({
   components: {
+    UpholdImport,
     ShapeshiftImport,
     NexoImport,
     BlockFiImport,

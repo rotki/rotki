@@ -20,6 +20,7 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_blockfi_trades_import_results,
     assert_nexo_results,
     assert_shapeshift_trades_import_results,
+    assert_uphold_transactions_import_results,
 )
 
 
@@ -177,8 +178,28 @@ def test_data_import_shapeshift_trades(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert result is True
-    # And also assert data was imported succesfully
+    # And also assert data was imported successfully
     assert_shapeshift_trades_import_results(rotki)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_data_import_uphold_transactions(rotkehlchen_api_server):
+    """Test that the data import endpoint works successfully for uphold trades"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'uphold-transaction-history.csv'
+
+    json_data = {'source': 'uphold', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    result = assert_proper_response_with_result(response)
+    assert result is True
+    # And also assert data was imported successfully
+    assert_uphold_transactions_import_results(rotki)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

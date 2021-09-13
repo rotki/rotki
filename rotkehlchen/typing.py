@@ -57,6 +57,7 @@ IMPORTABLE_LOCATIONS = Literal[
     'nexo',
     'gitcoin',
     'shapeshift-trades',
+    'uphold',
 ]
 
 UNISWAP_PROTOCOL = 'UNI-V2'
@@ -356,6 +357,7 @@ class Location(DBEnumMixIn):
     GITCOIN = 30
     SUSHISWAP = 31
     SHAPESHIFT = 32
+    UPHOLD = 33
 
 
 class AssetMovementCategory(DBEnumMixIn):
@@ -382,6 +384,11 @@ class ExchangeApiCredentials(NamedTuple):
     passphrase: Optional[str] = None
 
 
-EXTERNAL_EXCHANGES: List = [Location.CRYPTOCOM, Location.BLOCKFI, Location.NEXO,
-                            Location.SHAPESHIFT]
+EXTERNAL_EXCHANGES: List = [
+    Location.CRYPTOCOM,
+    Location.BLOCKFI,
+    Location.NEXO,
+    Location.SHAPESHIFT,
+    Location.UPHOLD,
+]
 EXTERNAL_LOCATION = [Location.EXTERNAL] + EXTERNAL_EXCHANGES

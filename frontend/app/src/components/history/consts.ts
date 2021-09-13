@@ -1,5 +1,6 @@
 import { TradeLocationData } from '@/components/history/type';
 import FOXIcon from '@/components/icons/FOXIcon.vue';
+import UpholdIcon from '@/components/icons/UpholdIcon.vue';
 import {
   EXCHANGE_BALANCER,
   EXCHANGE_BINANCE,
@@ -24,6 +25,7 @@ import {
   EXCHANGE_SHAPESHIFT,
   EXCHANGE_SUSHISWAP,
   EXCHANGE_UNISWAP,
+  EXCHANGE_UPHOLD,
   TRADE_LOCATION_BANKS,
   TRADE_LOCATION_BLOCKCHAIN,
   TRADE_LOCATION_COMMODITIES,
@@ -196,6 +198,14 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'IndependentReserve',
     icon: require('@/assets/images/exchanges/independentreserve.png'),
     imageIcon: true,
+    exchange: true
+  },
+  {
+    identifier: EXCHANGE_UPHOLD,
+    name: 'uphold',
+    icon: '',
+    imageIcon: false,
+    component: UpholdIcon,
     exchange: true
   },
   {
