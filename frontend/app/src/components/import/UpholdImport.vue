@@ -1,7 +1,7 @@
 <template>
   <import-source source="uphold-trades">
     <template #image>
-      <uphold-horizontal/>
+      <uphold-horizontal />
     </template>
     <template #upload-title>
       <i18n tag="span" path="import_data.uphold.import">
@@ -18,12 +18,12 @@
   </import-source>
 </template>
 <script lang="ts">
-import {defineComponent} from '@vue/composition-api';
+import { defineComponent } from '@vue/composition-api';
 import UpholdHorizontal from '@/components/images/UpholdHorizontal.vue';
 import ImportSource from '@/components/import/ImportSource.vue';
 
 export default defineComponent({
   name: 'UpholdImport',
-  components: {ImportSource, UpholdHorizontal}
+  components: { ImportSource, UpholdHorizontal }
 });
 </script>

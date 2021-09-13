@@ -27,7 +27,7 @@
     <block-fi-import class="mt-8" />
     <nexo-import class="mt-8" />
     <shapeshift-import class="mt-8" />
-    <uphold-import class="mt-8"/>
+    <uphold-import class="mt-8" />
     <import-source
       v-if="premium"
       class="mt-8"
