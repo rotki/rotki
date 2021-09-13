@@ -1,4 +1,3 @@
 node_modules
 package.json
 package-lock.json
-**/common/lib/**
