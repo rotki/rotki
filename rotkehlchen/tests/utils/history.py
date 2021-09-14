@@ -240,6 +240,10 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             payload = '[]'
         elif 'capital/withdraw' in url:
             payload = '[]'
+        elif 'fiat/orders' in url:
+            payload = '[]'
+        elif 'fiat/payments' in url:
+            payload = '[]'
         else:
             raise RuntimeError(f'Binance test mock got unexpected/unmocked url {url}')
 
