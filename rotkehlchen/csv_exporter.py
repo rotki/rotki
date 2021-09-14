@@ -392,6 +392,8 @@ class CSVExporter():
             'time': timestamp,
             'cost_basis': cost_basis_info.serialize() if cost_basis_info else None,
             'is_virtual': is_virtual,
+            'link': link,
+            'notes': notes,
         }
         log.debug('csv event', **entry)
         self.all_events.append(entry)
@@ -585,6 +587,8 @@ class CSVExporter():
             f'loss_in_{self.profit_currency.symbol}': loss_csv,
             'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'time': self.timestamp_to_date(timestamp),
+            'link': link,
+            'notes': notes,
         })
         self.add_to_allevents(
             event_type=EV_LOAN_SETTLE,
@@ -625,6 +629,8 @@ class CSVExporter():
             'gained_amount': gained_amount,
             'lent_amount': lent_amount,
             f'profit_in_{self.profit_currency.symbol}': gain_in_profit_currency,
+            'link': link,
+            'notes': notes,
         })
         self.add_to_allevents(
             location=location,
@@ -665,6 +671,8 @@ class CSVExporter():
             'gain_loss_asset': str(gain_loss_asset),
             'gain_loss_amount': gain_loss_amount,
             f'profit_loss_in_{self.profit_currency.symbol}': gain_loss_in_profit_currency,
+            'link': link,
+            'notes': notes,
         })
 
         paid_in_profit_currency = ZERO
@@ -713,6 +721,7 @@ class CSVExporter():
             'moving_asset': str(asset),
             'fee_in_asset': fee,
             f'fee_in_{self.profit_currency.symbol}': fee * rate,
+            'link': link,
         })
         self.add_to_allevents(
             event_type=EV_ASSET_MOVE,

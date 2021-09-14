@@ -50,6 +50,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 FREE_PNL_EVENTS_LIMIT = 1000
+ETH_EXPLORER = 'https://etherscan.io/tx/'
 
 
 class Accountant():
@@ -622,7 +623,19 @@ class Accountant():
             self.events.add_ledger_action(action)
             return True, prev_time
 
-        # else if we get here it's a trade
+        if isinstance(action, AMMTrade):
+            link = f'{ETH_EXPLORER}{action.tx_hash}'
+        elif hasattr(action, 'link'):
+            link = action.link  # type: ignore
+        else:
+            link = ''
+
+        if hasattr(action, 'note'):
+            notes = action.notes  # type: ignore
+        else:
+            notes = ''
+
+        # if we get here it's a trade
         trade = cast(Trade, action)
         # When you buy, you buy with the cost_currency and receive the other one
         # When you sell, you sell the amount in non-cost_currency and receive
@@ -648,8 +661,8 @@ class Accountant():
                 fee_currency=trade.fee_currency,
                 fee_amount=trade.fee,
                 timestamp=trade.timestamp,
-                link=trade.link,
-                notes=trade.notes,
+                link=link,
+                notes=notes,
             )
         elif trade.trade_type == TradeType.SELL:
             self.trade_add_to_sell_events(trade, False)
@@ -684,8 +697,8 @@ class Accountant():
                 rate_in_profit_currency=selling_asset_rate,
                 timestamp=trade.timestamp,
                 loan_settlement=True,
-                link=trade.link,
-                notes=trade.notes,
+                link=link,
+                notes=notes,
             )
         else:
             # Should never happen
