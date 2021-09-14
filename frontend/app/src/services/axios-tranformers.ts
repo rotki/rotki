@@ -38,11 +38,11 @@ const isObject = (data: any): boolean =>
 function getUpdatedKey(key: string, camelCase: boolean) {
   if (camelCase) {
     return key.includes('_')
-      ? key.replace(/_(.)/gu, (_, p1) => p1.toLocaleUpperCase())
+      ? key.replace(/_(.)/gu, (_, p1) => p1.toUpperCase())
       : key;
   }
 
-  return key.replace(/([A-Z])/gu, (_, p1) => `_${p1.toLocaleLowerCase()}`);
+  return key.replace(/([A-Z])/gu, (_, p1) => `_${p1.toLowerCase()}`);
 }
 
 export const convertKeys = (
