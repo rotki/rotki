@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2362` Binance users will now be able to query their fiat deposit/withdrawals and fiat orders and have it taken into account in rotki.
 * :feature:`3326` Introduces pagination for liquidity pool balances to help users with a great number of lps.
 * :feature:`1097` Users will now be able to view their NFTs.
 * :feature:`2764` Users will now be able to restore the local assets database to its initial state.
