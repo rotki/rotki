@@ -87,6 +87,7 @@ class TaskManager():
             self._maybe_schedule_exchange_history_query,
             self._maybe_schedule_ethereum_txreceipts,
         ]
+        self.schedule_lock = gevent.lock.Semaphore()
 
     def _prepare_cryptocompare_queries(self) -> None:
         """Prepare the queries to do to cryptocompare
@@ -278,7 +279,7 @@ class TaskManager():
         )
         self.last_exchange_query_ts[exchange.location_id()] = now
 
-    def schedule(self) -> None:
+    def _schedule(self) -> None:
         """Schedules background tasks"""
         self.greenlet_manager.clear_finished()
         current_greenlets = len(self.greenlet_manager.greenlets) + len(self.api_task_greenlets)
@@ -298,3 +299,12 @@ class TaskManager():
 
         for callable_fn in callables:
             callable_fn()  # type: ignore
+
+    def schedule(self) -> None:
+        """Schedules background task while holding the scheduling lock
+
+        Used during logout to make sure no task is being scheduled at the same time
+        as logging out
+        """
+        with self.schedule_lock:
+            self._schedule()
