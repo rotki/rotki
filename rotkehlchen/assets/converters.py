@@ -3,6 +3,7 @@ from typing import Dict, Optional
 from rotkehlchen.assets.asset import (
     WORLD_TO_BINANCE,
     WORLD_TO_BITFINEX,
+    WORLD_TO_BITSTAMP,
     WORLD_TO_BITTREX,
     WORLD_TO_COINBASE_PRO,
     WORLD_TO_COINBASE,
@@ -361,6 +362,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # https://global.bittrex.com/Market/Index?MarketName=BTC-CTC
     'CTC',
     'DAF',  # neither in coingecko nor cryptocompare
+    'DATA',  # Couldn't find what token this is
     # Foresting. As of 22/03/2019 no data found.
     # Only exists in bittrex. Perhaps it will soon be added to other APIs.
     # https://international.bittrex.com/Market/Index?MarketName=BTC-PTON
@@ -422,6 +424,8 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # All ECOC data refer to a different coin called EcoCoin
     'ECOC',
     'EDG',
+    'EXO',  # neither in coingecko nor cryptocompare
+    'EXVA',  # neither in coingecko nor cryptocompare
     # As of 28/08/2020 the following assets don't have prices listed anywhere
     'FME',
     'FOL',  # neither in coingecko nor cryptocompare
@@ -438,6 +442,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'SMBSWAP',  # neither in coingecko nor cryptocompare
     'UPCO2',  # neither in coingecko nor cryptocompare
     'VIL',  # neither in coingecko nor cryptocompare (VICDeal)
+    'WIHC',  # neither in coingecko nor cryptocompare
     'WXBTC',  # neither in coingecko nor cryptocompare
     'XBN',  # neither in coingecko nor cryptocompare
     'ZILD',  # neither in coingecko nor cryptocompare
@@ -627,8 +632,9 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'OOE',  # no cryptocompare/coingecko data
     'SPHRI',  # no cryptocompare/coingecko data SpheriumFinance
     'MUSH',  # Couldn't find a listing post saying what asset is this one
-    'MOVR',  # Moonriver not in CC and shown as preview on coingecko. TODO yabir: review this one
     'MAKI',  # Couldn't find information about this asset at kucoin. Seems like is not public yet
+    'PBX',  # no cryptocompare/coingecko data
+    'XNL',  # no cryptocompare/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
@@ -663,6 +669,7 @@ ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
 COINBASE_PRO_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE_PRO.items()}
 COINBASE_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE.items()}
 UPHOLD_TO_WORLD = {v: k for k, v in WORLD_TO_UPHOLD.items()}
+BITSTAMP_TO_WORLD = {v: k for k, v in WORLD_TO_BITSTAMP.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -761,7 +768,8 @@ def asset_from_bitstamp(bitstamp_name: str) -> Asset:
     if not isinstance(bitstamp_name, str):
         raise DeserializationError(f'Got non-string type {type(bitstamp_name)} for bitstamp asset')
 
-    return symbol_to_asset_or_token(bitstamp_name)
+    name = BITSTAMP_TO_WORLD.get(bitstamp_name, bitstamp_name)
+    return symbol_to_asset_or_token(name)
 
 
 def asset_from_bittrex(bittrex_name: str) -> Asset:
