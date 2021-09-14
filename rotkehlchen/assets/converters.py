@@ -595,6 +595,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'BTCP',  # delisted
     'CADH',  # no cryptocompare/coingecko data
     'CBC',  # neither in coingecko nor cryptocompare
+    'DOGE3L',  # no cryptocompare/coingecko data
+    'DOGE3S',  # no cryptocompare/coingecko data
     'EOS3L',  # no cryptocompare/coingecko data
     'EOS3S',  # no cryptocompare/coingecko data
     'EPRX',  # delisted and no cryptocompare/coingecko data
@@ -609,6 +611,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'HOTCROSS',  # no cryptocompare/coingecko data
     'KTS',  # delisted
     'LITH',  # no cryptocompare/coingecko data
+    'LUNA3L',  # no cryptocompare/coingecko data
+    'LUNA3S',  # no cryptocompare/coingecko data
     'LOL',  # delisted
     'LSS',  # no cryptocompare/coingecko data
     'LTC3L',  # no cryptocompare/coingecko data
@@ -635,6 +639,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'MAKI',  # Couldn't find information about this asset at kucoin. Seems like is not public yet
     'PBX',  # no cryptocompare/coingecko data
     'XNL',  # no cryptocompare/coingecko data
+    'XRP3L',  # no cryptocompare/coingecko data
+    'XRP3S',  # no cryptocompare/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets

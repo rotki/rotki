@@ -260,6 +260,8 @@ WORLD_TO_KRAKEN = {
     strethaddress_to_identifier('0x09a3EcAFa817268f77BE1283176B946C4ff2E608'): 'MIR',
     strethaddress_to_identifier('0xBA11D00c5f74255f56a5E366F4F77f5A186d7f55'): 'BAND',
     strethaddress_to_identifier('0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30'): 'INJ',
+    'MOVR': 'MOVR',
+    'SDN': 'SDN',
 }
 
 WORLD_TO_BINANCE = {
