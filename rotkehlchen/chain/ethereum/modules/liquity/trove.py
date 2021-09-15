@@ -236,6 +236,9 @@ class Liquity(EthereumModule):
             if status is True:
                 try:
                     trove_info = contract.decode(result, 'Troves', arguments=[addresses[idx]])
+                    trove_is_active = bool(trove_info[3])  # pylint: disable=unsubscriptable-object
+                    if not trove_is_active:
+                        continue
                     collateral = deserialize_asset_amount(
                         token_normalized_value_decimals(trove_info[1], 18),  # noqa: E501 pylint: disable=unsubscriptable-object
                     )
@@ -274,7 +277,7 @@ class Liquity(EthereumModule):
                         debt=debt_balance,
                         collateralization_ratio=collateralization_ratio,
                         liquidation_price=liquidation_price,
-                        active=bool(trove_info[3]),  # pylint: disable=unsubscriptable-object
+                        active=trove_is_active,
                         trove_id=trove_info[4],  # pylint: disable=unsubscriptable-object
                     )
                 except DeserializationError as e:
