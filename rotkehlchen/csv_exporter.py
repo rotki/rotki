@@ -53,6 +53,7 @@ FILENAME_LOAN_SETTLEMENTS_CSV = 'loan_settlements.csv'
 FILENAME_DEFI_EVENTS_CSV = 'defi_events.csv'
 FILENAME_LEDGER_ACTIONS_CSV = 'ledger_actions.csv'
 FILENAME_ALL_CSV = 'all_events.csv'
+ETH_EXPLORER = 'https://etherscan.io/tx/'
 
 ACCOUNTING_SETTINGS = (
     'include_crypto2crypto',
@@ -398,6 +399,9 @@ class CSVExporter():
         log.debug('csv event', **entry)
         self.all_events.append(entry)
         new_entry = entry.copy()
+        # deleting and read link and notes for them to be at the end
+        del new_entry['link']
+        del new_entry['notes']
         new_entry['net_profit_or_loss'] = net_profit_or_loss_csv
         new_entry['time'] = self.timestamp_to_date(timestamp)
         new_entry[f'paid_in_{self.profit_currency.symbol}'] = paid_in_profit_currency
@@ -414,6 +418,8 @@ class CSVExporter():
         del new_entry['paid_in_profit_currency']
         del new_entry['taxable_received_in_profit_currency']
         del new_entry['taxable_bought_cost_in_profit_currency']
+        new_entry['link'] = link
+        new_entry['notes'] = notes
         self.all_events_csv.append(new_entry)
 
     def add_buy(
@@ -722,6 +728,7 @@ class CSVExporter():
             'fee_in_asset': fee,
             f'fee_in_{self.profit_currency.symbol}': fee * rate,
             'link': link,
+            'notes': '',
         })
         self.add_to_allevents(
             event_type=EV_ASSET_MOVE,
@@ -778,6 +785,7 @@ class CSVExporter():
             return
 
         profit_loss_sum = FVal(sum(profit_loss_in_profit_currency_list))
+        link = f'{ETH_EXPLORER}{event.tx_hash}'
         self.defi_events_csv.append({
             'time': self.timestamp_to_date(event.timestamp),
             'type': str(event.event_type),
@@ -788,6 +796,8 @@ class CSVExporter():
             f'profit_loss_in_{self.profit_currency.symbol}': profit_loss_sum,
             'tx_hash': event.tx_hash if event.tx_hash else '',
             'description': event.to_string(timestamp_converter=self.timestamp_to_date),
+            'link': link,
+            'notes': '',
         })
 
         paid_asset: Union[EmptyStr, Asset]
@@ -824,7 +834,7 @@ class CSVExporter():
                 taxable_received_in_profit_currency=received_in_profit_currency,
                 total_received_in_profit_currency=received_in_profit_currency,
                 timestamp=event.timestamp,
-                link='',
+                link=link,
                 notes='',
             )
 

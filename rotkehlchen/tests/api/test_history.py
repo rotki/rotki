@@ -413,7 +413,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         count = 0
         for row in reader:
             assert_csv_formulas_trades(row, profit_currency)
-            assert len(row) == 17
+            assert len(row) == 19
             assert row['location'] in ('kraken', 'bittrex', 'binance', 'poloniex')
             assert row['type'] in ('buy', 'sell')
             assert row['asset'] is not None
@@ -434,6 +434,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert row['cost_basis'] is not None
             assert row['is_virtual'] in ('True', 'False')
             assert row[f'total_bought_cost_in_{profit_currency.identifier}'] is not None
+            assert 'link' in row and 'notes' in row
 
             count += 1
     num_trades = 19
@@ -443,7 +444,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 7
+            assert len(row) == 9
             assert row['location'] == 'poloniex'
             assert create_timestamp(row['open_time'], '%d/%m/%Y %H:%M:%S') > 0
             assert create_timestamp(row['close_time'], '%d/%m/%Y %H:%M:%S') > 0
@@ -459,13 +460,15 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 6
+            assert len(row) == 8
             assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
             assert row['exchange'] in [str(x) for x in SUPPORTED_EXCHANGES]
             assert row['type'] in ('deposit', 'withdrawal')
             assert row['moving_asset'] is not None
             assert FVal(row['fee_in_asset']) >= ZERO
             assert FVal(row[f'fee_in_{profit_currency.identifier}']) >= ZERO
+            assert row['link'] != ''
+            assert row['notes'] == ''
             count += 1
     num_asset_movements = 11
     assert count == num_asset_movements, 'Incorrect amount of asset movement CSV entries found'
@@ -487,13 +490,14 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 6
+            assert len(row) == 8
             assert row['location'] == 'bitmex'
             assert row['name'] is not None
             assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
             assert row['gain_loss_asset'] is not None
             assert FVal(row['gain_loss_amount']) is not None
             assert FVal(row[f'profit_loss_in_{profit_currency.identifier}']) is not None
+            assert 'link' in row and 'notes' in row
             count += 1
     num_margins = 2
     assert count == num_margins, 'Incorrect amount of margin CSV entries found'
@@ -519,7 +523,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         count = 0
         for row in reader:
             assert_csv_formulas_all_events(row, profit_currency)
-            assert len(row) == 16
+            assert len(row) == 18
             assert row['location'] in (
                 'kraken',
                 'bittrex',
@@ -550,6 +554,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert row['cost_basis'] is not None
             assert row[f'total_bought_cost_in_{profit_currency.identifier}'] is not None
             assert row[f'total_received_in_{profit_currency.identifier}'] is not None
+            assert 'link' in row and 'notes' in row
             count += 1
     assert count == (
         num_trades + num_loans + num_asset_movements + num_transactions + num_margins
