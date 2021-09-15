@@ -42,7 +42,17 @@ function getUpdatedKey(key: string, camelCase: boolean) {
       : key;
   }
 
-  return key.replace(/([A-Z])/gu, (_, p1) => `_${p1.toLocaleLowerCase()}`);
+  return key.replace(/([A-Z])/gu, (_, p1, offset, string) => {
+    const nextCharOffset = offset + 1;
+    if (
+      (nextCharOffset < string.length &&
+        /([A-Z])/.test(string[nextCharOffset])) ||
+      nextCharOffset === string.length
+    ) {
+      return p1;
+    }
+    return `_${p1.toLocaleLowerCase()}`;
+  });
 }
 
 export const convertKeys = (
