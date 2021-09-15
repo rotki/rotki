@@ -50,7 +50,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 FREE_PNL_EVENTS_LIMIT = 1000
-ETH_EXPLORER = 'https://etherscan.io/tx/'
 
 
 class Accountant():
@@ -623,9 +622,9 @@ class Accountant():
             self.events.add_ledger_action(action)
             return True, prev_time
 
-        if isinstance(action, AMMTrade):
-            link = f'{ETH_EXPLORER}{action.tx_hash}'
-        elif hasattr(action, 'link'):
+        if isinstance(action, AMMTrade) and action.tx_hash:
+            link = f'{self.csvexporter.eth_explorer}{action.tx_hash}'
+        elif hasattr(action, 'link') and action.link:  # type: ignore
             link = action.link  # type: ignore
         else:
             link = ''

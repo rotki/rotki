@@ -1,4 +1,5 @@
 import csv
+import json
 import logging
 from pathlib import Path
 from tempfile import mkdtemp
@@ -103,6 +104,21 @@ class CSVExporter():
         self.create_csv = create_csv
         self.all_events: List[Dict[str, Any]] = []
         self.reset()
+
+        # get setting for prefered eth explorer
+        user_settings = self.database.get_settings()
+        try:
+            frontend_settings = json.loads(user_settings.frontend_settings)
+            if (
+                'explorers' in frontend_settings and
+                'ETH' in frontend_settings['explorers'] and
+                'transaction' in frontend_settings['explorers']['ETH']
+            ):
+                self.eth_explorer = frontend_settings['explorers']['ETH']['transaction']
+            else:
+                self.eth_explorer = ETH_EXPLORER
+        except json.decoder.JSONDecodeError:
+            self.eth_explorer = ETH_EXPLORER
 
     def reset(self) -> None:
         """Resets the CSVExporter and prepares it for a new profit/loss run"""
@@ -785,7 +801,10 @@ class CSVExporter():
             return
 
         profit_loss_sum = FVal(sum(profit_loss_in_profit_currency_list))
-        link = f'{ETH_EXPLORER}{event.tx_hash}'
+        if event.tx_hash:
+            link = f'{self.eth_explorer}{event.tx_hash}'
+        else:
+            link = ''
         self.defi_events_csv.append({
             'time': self.timestamp_to_date(event.timestamp),
             'type': str(event.event_type),
