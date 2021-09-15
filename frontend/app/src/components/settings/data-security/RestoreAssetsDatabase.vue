@@ -39,12 +39,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import Fragment from '@/components/helper/Fragment';
-import RestoreAssetsDatabase from '@/mixins/restoreAssets-mixin';
+import RestoreAssetsDatabaseMixin from '@/mixins/restore-assets-database-mixin';
 
-@Component({
-  components: { Fragment }
-})
-export default class RestoreAssets extends Mixins(RestoreAssetsDatabase) {}
+export default defineComponent({
+  components: { Fragment },
+  mixins: [RestoreAssetsDatabaseMixin]
+});
 </script>

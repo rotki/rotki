@@ -1,15 +1,16 @@
 <template>
-  <asset-management />
+  <asset-management :identifier="identifier" />
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import AssetManagement from '@/components/asset-manager/AssetManagement.vue';
 
-@Component({
-  components: { AssetManagement }
-})
-export default class AssetManager extends Vue {}
+export default defineComponent({
+  name: 'AssetManager',
+  components: { AssetManagement },
+  props: {
+    identifier: { required: false, type: String, default: null }
+  }
+});
 </script>
-
-<style scoped lang="scss"></style>
