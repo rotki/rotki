@@ -23,6 +23,8 @@ const LiquityBalance = z.object({
   stake: AssetValue.optional()
 })
 
+export type LiquityBalance = z.infer<typeof LiquityBalance>
+
 export const LiquityBalances = z.record(LiquityBalance)
 
 export type LiquityBalances = z.infer<typeof LiquityBalances>
@@ -54,11 +56,13 @@ const StakeEvent = z.object({
 
 const StakeEvents = z.array(StakeEvent)
 
-const LiquityEvent = z.object({
+const LiquityAccountEvents = z.object({
   trove: TroveEvents,
   stake: StakeEvents
 });
 
-export const LiquityEvents = z.record(LiquityEvent)
+export type LiquityAccountEvents = z.infer<typeof LiquityAccountEvents>
+
+export const LiquityEvents = z.record(LiquityAccountEvents)
 
 export type LiquityEvents = z.infer<typeof LiquityEvents>

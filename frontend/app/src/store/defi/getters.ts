@@ -45,6 +45,7 @@ import {
   YEARN_FINANCE_VAULTS,
   YEARN_FINANCE_VAULTS_V2
 } from '@/store/defi/const';
+import { LiquityLoan } from '@/store/defi/liquity/types';
 import {
   AaveLoan,
   Airdrop,
@@ -83,6 +84,7 @@ import { Getters } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
 import { Writeable } from '@/types';
 import { DefiAccount, ETH } from '@/typing/types';
+import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
@@ -112,7 +114,7 @@ interface DefiGetters {
   ) => BigNumber;
   loan: (
     identifier: string
-  ) => MakerDAOVaultModel | AaveLoan | CompoundLoan | null;
+  ) => MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan | null;
   defiAccounts: (protocols: DefiProtocol[]) => DefiAccount[];
   loans: (protocols: DefiProtocol[]) => DefiLoan[];
   loanSummary: (protocol: DefiProtocol[]) => LoanSummary;
@@ -266,7 +268,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       const addresses: {
         [key in Exclude<
           DefiProtocol,
-          DefiProtocol.MAKERDAO_VAULTS | DefiProtocol.UNISWAP
+          | DefiProtocol.MAKERDAO_VAULTS
+          | DefiProtocol.UNISWAP
+          | DefiProtocol.LIQUITY
         >]: string[];
       } = {
         [DefiProtocol.MAKERDAO_DSR]: [],
@@ -310,7 +314,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       for (const protocol in addresses) {
         const selectedProtocol = protocol as Exclude<
           DefiProtocol,
-          DefiProtocol.MAKERDAO_VAULTS | DefiProtocol.UNISWAP
+          | DefiProtocol.MAKERDAO_VAULTS
+          | DefiProtocol.UNISWAP
+          | DefiProtocol.LIQUITY
         >;
         const perProtocolAddresses = addresses[selectedProtocol];
         for (const address of perProtocolAddresses) {
@@ -336,7 +342,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         aaveHistory,
         makerDAOVaults,
         compoundBalances,
-        compoundHistory: { events }
+        compoundHistory: { events },
+        liquity
       }: DefiState,
       _dg,
       _rs,
@@ -441,6 +448,24 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           });
       }
 
+      if (showAll || protocols.includes(DefiProtocol.LIQUITY)) {
+        assert(liquity);
+        const { events, balances } = liquity;
+        const balanceAddress = Object.keys(balances);
+        const eventAddresses = Object.keys(events);
+
+        loans.push(
+          ...[...balanceAddress, ...eventAddresses]
+            .filter(uniqueStrings)
+            .map(address => ({
+              identifier: `Trove - ${truncateAddress(address, 6)}`,
+              protocol: DefiProtocol.LIQUITY,
+              owner: address,
+              asset: ''
+            }))
+        );
+      }
+
       return sortBy(loans, 'identifier');
     },
 
@@ -452,13 +477,14 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         aaveBalances,
         aaveHistory,
         compoundBalances,
-        compoundHistory: { events }
+        compoundHistory: { events },
+        liquity
       }: DefiState,
       { loans }
     ) =>
     (
       identifier?: string
-    ): MakerDAOVaultModel | AaveLoan | CompoundLoan | null => {
+    ): MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan | null => {
       const id = identifier?.toLocaleLowerCase();
       const loan = loans([]).find(
         loan => loan.identifier.toLocaleLowerCase() === id
@@ -621,6 +647,22 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
               id: `${value.txHash}-${value.logIndex}`
             }))
         } as CompoundLoan;
+      }
+
+      if (loan.protocol === DefiProtocol.LIQUITY) {
+        assert(liquity);
+        assert(loan.owner);
+        const { owner } = loan;
+        const { balances, events } = liquity;
+
+        console.log(events);
+
+        return {
+          owner: owner,
+          protocol: loan.protocol,
+          balances: balances[owner],
+          events: events[owner]
+        };
       }
 
       return null;

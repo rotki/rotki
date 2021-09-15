@@ -75,7 +75,7 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
   {
     identifier: Module.LIQUITY,
     name: 'Liquity',
-    icon: require('@/assets/images/modules/liquity.svg')
+    icon: require('@/assets/images/defi/liquity.svg')
   }
 ];
 

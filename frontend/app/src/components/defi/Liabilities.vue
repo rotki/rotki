@@ -82,7 +82,8 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
+import { PropType } from 'vue';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
@@ -134,11 +135,8 @@ export default class Liabilities extends Mixins(StatusMixin) {
   section = Section.DEFI_BORROWING;
   secondSection = Section.DEFI_BORROWING_HISTORY;
 
-  readonly modules: Module[] = [
-    Module.AAVE,
-    Module.COMPOUND,
-    Module.MAKERDAO_VAULTS
-  ];
+  @Prop({ required: true, type: Array as PropType<Module[]> })
+  modules!: Module[];
 
   get selectedProtocols(): DefiProtocol[] {
     return this.protocol ? [this.protocol] : [];
