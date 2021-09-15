@@ -1769,6 +1769,26 @@
           "description": "Failed to retrieve DSR history: {error}"
         }
       },
+      "liquity": {
+        "task": {
+          "title": "Querying Liquity Balances"
+        }
+      },
+      "liquity_balances": {
+        "error": {
+          "description": "actions.defi.liquity_balances.error.description",
+          "title": "actions.defi.liquity_balances.error.title"
+        }
+      },
+      "liquity_events": {
+        "error": {
+          "description": "actions.defi.liquity_events.error.description",
+          "title": "actions.defi.liquity_events.error.title"
+        },
+        "task": {
+          "title": "actions.defi.liquity_events.task.title"
+        }
+      },
       "makerdao_vaults": {
         "task": {
           "title": "Querying MakerDAO Vaults"

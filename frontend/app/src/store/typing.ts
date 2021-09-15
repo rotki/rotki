@@ -20,7 +20,7 @@ type OnError = {
   readonly error: (message: string) => string;
 };
 
-export interface FetchPayload<T extends TaskMeta> {
+export interface FetchPayload<T extends TaskMeta, R> {
   readonly module: Module;
   readonly section: Section;
   readonly refresh: boolean;
@@ -30,4 +30,5 @@ export interface FetchPayload<T extends TaskMeta> {
   readonly mutation: string;
   readonly checkPremium: boolean;
   readonly onError: OnError;
+  readonly parser?: (result: any) => R;
 }

@@ -14,7 +14,8 @@ export enum Module {
   ETH2 = 'eth2',
   SUSHISWAP = 'sushiswap',
   NFTS = 'nfts',
-  PICKLE = 'pickle_finance'
+  PICKLE = 'pickle_finance',
+  LIQUITY = 'liquity'
 }
 
 export const ALL_CENTRALIZED_EXCHANGES = 'all_exchanges';
