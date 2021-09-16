@@ -1,19 +1,17 @@
-import { BigNumber } from "bignumber.js";
 import { z } from "zod";
-
-const numericString = z.string().transform(arg => new BigNumber(arg));
+import { NumericString } from "../index";
 
 const AssetValue = z.object({
   asset: z.string().nonempty(),
-  amount: numericString,
-  usdValue: numericString
+  amount: NumericString,
+  usdValue: NumericString
 })
 
 const Trove = z.object({
   collateral: AssetValue,
   debt: AssetValue,
-  collateralizationRatio: numericString.nullable(),
-  liquidationPrice: numericString.nullable(),
+  collateralizationRatio: NumericString.nullable(),
+  liquidationPrice: NumericString.nullable(),
   active: z.boolean(),
   troveId: z.number()
 })

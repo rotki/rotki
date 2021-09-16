@@ -655,8 +655,6 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         const { owner } = loan;
         const { balances, events } = liquity;
 
-        console.log(events);
-
         return {
           owner: owner,
           protocol: loan.protocol,

@@ -77,7 +77,7 @@
         <defi-protocol-selector v-model="protocol" liabilities />
       </v-col>
     </v-row>
-    <loan-info :loan="loan(selection)" />
+    <loan-info v-if="selection" :loan="loan(selection)" />
   </div>
 </template>
 

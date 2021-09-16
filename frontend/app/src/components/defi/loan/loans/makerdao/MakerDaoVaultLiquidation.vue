@@ -1,41 +1,38 @@
 <template>
-  <stat-card :title="$t('loan_liquidation.title')" class="liquidation">
-    <div class="liquidation__upper pb-5">
+  <stat-card :title="$t('loan_liquidation.title')" :class="$style.liquidation">
+    <div class="pb-5" :class="$style.upper">
       <loan-row :title="$t('loan_liquidation.liquidation_price')">
-        <amount-display fiat-currency="USD" :value="loan.liquidationPrice" />
+        <amount-display fiat-currency="USD" :value="vault.liquidationPrice" />
       </loan-row>
       <v-divider class="my-4" />
       <loan-row :title="$t('loan_liquidation.minimum_ratio')" :medium="false">
-        <percentage-display :value="loan.liquidationRatio" />
+        <percentage-display :value="vault.liquidationRatio" />
       </loan-row>
     </div>
     <div>
-      <span class="liquidation__liquidation-events__header" :style="fontStyle">
+      <span :class="$style.header" :style="fontStyle">
         {{ $t('loan_liquidation.liquidation_events') }}
       </span>
       <v-skeleton-loader
         v-if="premium"
-        :loading="typeof loan.totalLiquidated === 'undefined'"
+        :loading="typeof vault.totalLiquidated === 'undefined'"
         class="mx-auto pt-3"
         max-width="450"
         type="paragraph"
       >
-        <div
-          v-if="loan.totalLiquidated && loan.totalLiquidated.amount.gt(0)"
-          class="liquidation-events__content"
-        >
-          <div class="liquidation-events__content__liquidated-collateral mb-2">
+        <div v-if="vault.totalLiquidated && vault.totalLiquidated.amount.gt(0)">
+          <div class="mb-2">
             <loan-row :title="$t('loan_liquidation.liquidated_collateral')">
               <amount-display
                 :asset-padding="assetPadding"
-                :value="loan.totalLiquidated.amount"
-                :asset="loan.collateral.asset"
+                :value="vault.totalLiquidated.amount"
+                :asset="vault.collateral.asset"
               />
             </loan-row>
             <loan-row :medium="false">
               <amount-display
                 :asset-padding="assetPadding"
-                :value="loan.totalLiquidated.usdValue"
+                :value="vault.totalLiquidated.usdValue"
                 fiat-currency="USD"
               />
             </loan-row>
@@ -43,7 +40,7 @@
           <loan-row :title="$t('loan_liquidation.outstanding_debt')">
             <amount-display
               :asset-padding="assetPadding"
-              :value="loan.totalInterestOwed"
+              :value="vault.totalInterestOwed"
               asset="DAI"
             />
           </loan-row>
@@ -52,7 +49,7 @@
             <amount-display
               :asset-padding="assetPadding"
               :value="
-                loan.totalLiquidated.usdValue.plus(loan.totalInterestOwed)
+                vault.totalLiquidated.usdValue.plus(vault.totalInterestOwed)
               "
               fiat-currency="USD"
             />
@@ -67,44 +64,58 @@
   </stat-card>
 </template>
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
-import LoanDisplayMixin from '@/components/defi/loan/loan-display-mixin';
+import { computed, defineComponent, PropType } from '@vue/composition-api';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
-import PremiumMixin from '@/mixins/premium-mixin';
 import ThemeMixin from '@/mixins/theme-mixin';
+import { MakerDAOVaultModel } from '@/store/defi/types';
+import { useStore } from '@/store/utils';
 
-@Component({
+export default defineComponent({
+  name: 'MakerDaoVaultLiquidation',
   components: {
     PercentageDisplay,
     LoanRow,
     AmountDisplay,
     PremiumLock,
     StatCard
+  },
+  mixins: [ThemeMixin],
+  props: {
+    vault: {
+      required: true,
+      type: Object as PropType<MakerDAOVaultModel>
+    }
+  },
+  setup() {
+    const store = useStore();
+    const premium = computed(() => store.state.session!!.premium);
+    return {
+      premium,
+      assetPadding: 3
+    };
   }
-})
-export default class LoanLiquidation extends Mixins(
-  PremiumMixin,
-  LoanDisplayMixin,
-  ThemeMixin
-) {
-  readonly assetPadding: number = 3;
-}
+});
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss" module>
+.header {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.upper {
+  min-height: 100px;
+  height: 45%;
+}
+
 .liquidation {
   height: 100%;
   display: flex;
   flex-direction: column;
-
-  &__upper {
-    min-height: 100px;
-    height: 45%;
-  }
 
   ::v-deep {
     .v-card {
@@ -112,13 +123,6 @@ export default class LoanLiquidation extends Mixins(
         display: flex;
         flex-direction: column;
       }
-    }
-  }
-
-  &__liquidation-events {
-    &__header {
-      font-size: 20px;
-      font-weight: 500;
     }
   }
 }
