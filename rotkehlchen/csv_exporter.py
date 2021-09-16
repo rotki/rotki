@@ -117,7 +117,7 @@ class CSVExporter():
                 self.eth_explorer = frontend_settings['explorers']['ETH']['transaction']
             else:
                 self.eth_explorer = ETH_EXPLORER
-        except json.decoder.JSONDecodeError:
+        except (json.decoder.JSONDecodeError, KeyError):
             self.eth_explorer = ETH_EXPLORER
 
     def reset(self) -> None:
