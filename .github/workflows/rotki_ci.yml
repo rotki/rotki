@@ -256,7 +256,7 @@ jobs:
         if: always()
         with:
           name: backend-logs-${{ runner.os }}
-          path: ~/rotkehlchen-e2e.log
+          path: ~/*.log
       - uses: actions/upload-artifact@v2
         if: always()
         with:
