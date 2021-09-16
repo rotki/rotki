@@ -673,7 +673,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   loanSummary:
-    ({ makerDAOVaults, aaveBalances, compoundBalances }: DefiState) =>
+    ({ makerDAOVaults, aaveBalances, compoundBalances, liquity }: DefiState) =>
     (protocols: DefiProtocol[]): LoanSummary => {
       let totalCollateralUsd = Zero;
       let totalDebt = Zero;
@@ -717,6 +717,16 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           totalDebt = balanceUsdValueSum(Object.values(borrowing)).plus(
             totalDebt
           );
+        }
+      }
+
+      if (showAll || protocols.includes(DefiProtocol.LIQUITY)) {
+        const balances = liquity!!.balances;
+        for (const address in balances) {
+          const balance = balances[address];
+          const { collateral, debt } = balance.trove;
+          totalCollateralUsd = collateral.usdValue.plus(totalCollateralUsd);
+          totalDebt = debt.usdValue.plus(totalDebt);
         }
       }
 
