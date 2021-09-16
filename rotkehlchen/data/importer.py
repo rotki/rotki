@@ -11,7 +11,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.converters import asset_from_uphold
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.constants.assets import A_USD, A_SAI, A_DAI, A_BAT
+from rotkehlchen.constants.assets import A_USD, A_SAI, A_DAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -1093,10 +1093,7 @@ Activity from uphold with uphold transaction id:
                 if transaction_type == 'in':
                     action_type = LedgerActionType.INCOME
                 elif transaction_type == 'out':
-                    if destination_asset == A_BAT:
-                        action_type = LedgerActionType.GIFT
-                    else:
-                        action_type = LedgerActionType.EXPENSE
+                    action_type = LedgerActionType.EXPENSE
                 else:
                     log.debug(f'Ignoring uncaught transaction type of {transaction_type}.')
                     return
