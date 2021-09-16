@@ -7,6 +7,8 @@ const AssetValue = z.object({
   usdValue: NumericString
 })
 
+export type AssetValue = z.infer<typeof AssetValue>
+
 const Trove = z.object({
   collateral: AssetValue,
   debt: AssetValue,

@@ -417,6 +417,10 @@
     },
     "tooltip": "Help"
   },
+  "loan_stake": {
+    "stake": "Staked amount",
+    "title": "Stake"
+  },
   "macos_unsupported": {
     "header": "Unsupported macOS Version",
     "terminate": "Terminate",
@@ -2278,6 +2282,7 @@
     "vault": "Maker Vault"
   },
   "loan_header": {
+    "liquity": "Liquity Trove {troveId}",
     "owned_by": "Owned by:",
     "aave_loan": "Aave Loan ({asset})",
     "maker_vault": "Maker Vault #{identifier} ({collateralType})",
@@ -2328,7 +2333,9 @@
     "history": "History"
   },
   "loan_collateral": {
+    "liquidation_price": "Liquidation Price",
     "per_asset": "Collateral Assets",
+    "ratio": "Collateralization Ratio",
     "title": "Collateral",
     "locked_collateral": "Locked up collateral",
     "current_ratio": "Current ratio",

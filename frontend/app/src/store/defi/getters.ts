@@ -457,12 +457,18 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         loans.push(
           ...[...balanceAddress, ...eventAddresses]
             .filter(uniqueStrings)
-            .map(address => ({
-              identifier: `Trove - ${truncateAddress(address, 6)}`,
-              protocol: DefiProtocol.LIQUITY,
-              owner: address,
-              asset: ''
-            }))
+            .map(address => {
+              let troveId = 0;
+              if (balances[address]) {
+                troveId = balances[address].trove.troveId;
+              }
+              return {
+                identifier: `Trove ${troveId} - ${truncateAddress(address, 6)}`,
+                protocol: DefiProtocol.LIQUITY,
+                owner: address,
+                asset: ''
+              };
+            })
         );
       }
 

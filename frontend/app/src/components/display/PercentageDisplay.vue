@@ -25,7 +25,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Mixins } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import PrivacyMixin from '@/mixins/privacy-mixin';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 
@@ -36,6 +36,7 @@ export default class PercentageDisplay extends Mixins(
 ) {
   @Prop({
     required: true,
+    type: String,
     validator: (value: any) => typeof value === 'string' || value === null
   })
   value!: string | null;
