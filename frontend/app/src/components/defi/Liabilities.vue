@@ -78,6 +78,11 @@
       </v-col>
     </v-row>
     <loan-info v-if="selection" :loan="loan(selection)" />
+    <full-size-content>
+      <v-row align="center" justify="center">
+        <v-col class="text-h6">{{ $t('liabilities.no_selection') }}</v-col>
+      </v-row>
+    </full-size-content>
   </div>
 </template>
 
@@ -85,6 +90,7 @@
 import { PropType } from 'vue';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
 import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
@@ -113,6 +119,7 @@ import {
     ...mapActions('defi', ['fetchBorrowing'])
   },
   components: {
+    FullSizeContent,
     ActiveModules,
     DefiSelectorItem,
     DefiProtocolSelector,

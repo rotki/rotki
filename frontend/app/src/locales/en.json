@@ -425,6 +425,9 @@
     },
     "tooltip": "Help"
   },
+  "liabilities": {
+    "no_selection": "Select a loan to view more information"
+  },
   "liquity_lending": {
     "header": "Liquity Trove {troveId}",
     "stake": "Stake",
