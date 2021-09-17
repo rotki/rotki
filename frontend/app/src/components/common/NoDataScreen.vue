@@ -1,12 +1,5 @@
 <template>
-  <div
-    class="d-flex flex-column align-center"
-    :class="{
-      [$style.empty]: true,
-      'pa-2 mt-2': $vuetify.breakpoint.xsOnly
-    }"
-    :style="`height: calc(100vh - ${top + 64}px);`"
-  >
+  <full-size-content>
     <v-row align="center" justify="center">
       <v-col cols="auto" :class="$style.logo">
         <slot name="logo">
@@ -26,26 +19,16 @@
         <slot />
       </v-col>
     </v-row>
-  </div>
+  </full-size-content>
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
-import { useProxy } from '@/composables/common';
+import { defineComponent } from '@vue/composition-api';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
 
 export default defineComponent({
-  setup() {
-    const top = ref(0);
-    const proxy = useProxy();
-    onMounted(() => {
-      const { top: topBound } = proxy.$el.getBoundingClientRect();
-      top.value = topBound;
-    });
-
-    return {
-      top
-    };
-  }
+  name: 'NoDataScreen',
+  components: { FullSizeContent }
 });
 </script>
 
@@ -54,9 +37,5 @@ export default defineComponent({
   padding: 80px;
   border-radius: 50%;
   background-color: var(--v-rotki-light-grey-darken1);
-}
-
-.empty {
-  height: 100%;
 }
 </style>

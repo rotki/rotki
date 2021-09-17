@@ -1,7 +1,9 @@
 import { RotkiPremiumInterface } from '@rotki/common/lib/premium';
 import Chart from 'chart.js';
 import Vue, { VueConstructor } from 'vue';
-import PremiumLoadingFailed from '@/components/display/PremiumLoadingFailed.vue';
+import PremiumLoading from '@/components/premium/PremiumLoading.vue';
+import PremiumLoadingError from '@/components/premium/PremiumLoadingError.vue';
+import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
 import { api } from '@/services/rotkehlchen-api';
 
 function findComponents(): string[] {
@@ -59,89 +61,103 @@ function load(name: string): Promise<VueConstructor> {
     if (library[name]) {
       resolve(library[name]);
     } else {
-      resolve(PremiumLoadingFailed);
+      resolve(PremiumLoadingError);
     }
   });
 }
 
-export const PremiumStatistics = (): Promise<VueConstructor> => {
-  return load('PremiumStatistics');
+const createFactory = (
+  component: Promise<VueConstructor>,
+  options?: { loading?: VueConstructor; error?: VueConstructor }
+) => ({
+  component: component,
+  loading: options?.loading ?? PremiumLoading,
+  error: options?.error ?? PremiumLoadingError,
+  delay: 100,
+  timeout: 30000
+});
+
+export const PremiumStatistics = () => {
+  return createFactory(load('PremiumStatistics'));
 };
 
-export const VaultEventsList = (): Promise<VueConstructor> => {
-  return load('VaultEventsList');
+export const VaultEventsList = () => {
+  return createFactory(load('VaultEventsList'));
 };
 
-export const LendingHistory = (): Promise<VueConstructor> => {
-  return load('LendingHistory');
+export const LendingHistory = () => {
+  return createFactory(load('LendingHistory'));
 };
 
-export const CompoundLendingDetails = (): Promise<VueConstructor> => {
-  return load('CompoundLendingDetails');
+export const CompoundLendingDetails = () => {
+  return createFactory(load('CompoundLendingDetails'));
 };
 
-export const CompoundBorrowingDetails = (): Promise<VueConstructor> => {
-  return load('CompoundBorrowingDetails');
+export const CompoundBorrowingDetails = () => {
+  return createFactory(load('CompoundBorrowingDetails'));
 };
 
-export const YearnVaultsProfitDetails = (): Promise<VueConstructor> => {
-  return load('YearnVaultsProfitDetails');
+export const YearnVaultsProfitDetails = () => {
+  return createFactory(load('YearnVaultsProfitDetails'));
 };
 
-export const AaveBorrowingDetails = (): Promise<VueConstructor> => {
-  return load('AaveBorrowingDetails');
+export const AaveBorrowingDetails = () => {
+  return createFactory(load('AaveBorrowingDetails'));
 };
 
-export const AaveEarnedDetails = (): Promise<VueConstructor> => {
-  return load('AaveEarnedDetails');
+export const AaveEarnedDetails = () => {
+  return createFactory(load('AaveEarnedDetails'));
 };
 
-export const Eth2Staking = (): Promise<VueConstructor> => {
-  return load('Eth2Staking');
+export const Eth2Staking = () => {
+  return createFactory(load('Eth2Staking'));
 };
 
-export const DexTradesTable = (): Promise<VueConstructor> => {
-  return load('DexTradesTable');
+export const DexTradesTable = () => {
+  return createFactory(load('DexTradesTable'));
 };
 
-export const UniswapDetails = (): Promise<VueConstructor> => {
-  return load('UniswapDetails');
+export const UniswapDetails = () => {
+  return createFactory(load('UniswapDetails'));
 };
 
-export const AdexStaking = (): Promise<VueConstructor> => {
-  return load('AdexStaking');
+export const AdexStaking = () => {
+  return createFactory(load('AdexStaking'));
 };
 
-export const AssetAmountAndValueOverTime = (): Promise<VueConstructor> => {
-  return load('AssetAmountAndValueOverTime');
+export const AssetAmountAndValueOverTime = () => {
+  return createFactory(load('AssetAmountAndValueOverTime'));
 };
 
-export const BalancerBalances = (): Promise<VueConstructor> => {
-  return load('BalancerBalances');
+export const BalancerBalances = () => {
+  return createFactory(load('BalancerBalances'));
 };
 
-export const ThemeSwitch = (): Promise<VueConstructor> => {
-  return load('ThemeSwitch');
+export const ThemeSwitch = () => {
+  return createFactory(load('ThemeSwitch'), {
+    loading: ThemeSwitchLock,
+    error: ThemeSwitchLock
+  });
 };
 
-export const ThemeManager = (): Promise<VueConstructor> => {
-  return load('ThemeManager');
+export const ThemeManager = () => {
+  return createFactory(load('ThemeManager'));
 };
 
-export const Grants = (): Promise<VueConstructor> => {
-  return load('Grants');
+export const Grants = () => {
+  return createFactory(load('Grants'));
 };
 
-export const Sushi = (): Promise<VueConstructor> => {
-  return load('Sushi');
+export const Sushi = () => {
+  return createFactory(load('Sushi'));
 };
 
 export const LiquityTroveEvents = () => {
-  return load('LiquityTroveEvents');
+  return createFactory(load('LiquityTroveEvents'));
 };
 
 export const LiquityStakeEvents = () => {
-  return load('LiquityStakeEvents');
+  return createFactory(load('LiquityStakeEvents'));
 };
 
 declare global {
