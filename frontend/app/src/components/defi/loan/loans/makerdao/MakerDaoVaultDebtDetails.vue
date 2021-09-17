@@ -28,12 +28,12 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from '@vue/composition-api';
 import { BigNumber } from 'bignumber.js';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
-import { useStore } from '@/store/utils';
+import { getPremium } from '@/composables/session';
 
 export default defineComponent({
   name: 'MakerDaoVaultDebtDetails',
@@ -49,8 +49,7 @@ export default defineComponent({
     }
   },
   setup() {
-    const store = useStore();
-    const premium = computed(() => store.state.session!!.premium);
+    const premium = getPremium();
     return {
       premium,
       assetPadding: 4

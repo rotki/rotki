@@ -136,6 +136,14 @@ export const Sushi = (): Promise<VueConstructor> => {
   return load('Sushi');
 };
 
+export const LiquityTroveEvents = () => {
+  return load('LiquityTroveEvents');
+};
+
+export const LiquityStakeEvents = () => {
+  return load('LiquityStakeEvents');
+};
+
 declare global {
   interface Window {
     Vue: any;

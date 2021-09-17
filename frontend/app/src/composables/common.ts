@@ -1,4 +1,6 @@
 import { computed, getCurrentInstance } from '@vue/composition-api';
+import { Section, Status } from '@/store/const';
+import { useStore } from '@/store/utils';
 import { assert } from '@/utils/assertions';
 
 export const useProxy = () => {
@@ -24,4 +26,9 @@ export const setupThemeCheck = () => {
     breakpoint,
     width
   };
+};
+
+export const isSectionLoading = (section: Section) => {
+  const store = useStore();
+  return computed(() => store.getters['status'](section) === Status.LOADING);
 };

@@ -40,6 +40,8 @@ const TroveEvent = z.object({
   troveOperation: z.string()
 })
 
+export type TroveEvent = z.infer<typeof TroveEvent>
+
 const TroveEvents = z.array(TroveEvent)
 
 const StakeEvent = z.object({
@@ -53,6 +55,8 @@ const StakeEvent = z.object({
   redemptionGain: AssetValue,
   stakeOperation: z.string()
 })
+
+export type StakeEvent = z.infer<typeof StakeEvent>
 
 const StakeEvents = z.array(StakeEvent)
 

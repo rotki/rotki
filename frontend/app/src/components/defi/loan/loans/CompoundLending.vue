@@ -38,10 +38,10 @@ import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import CompoundCollateral from '@/components/defi/loan/loans/compound/CompoundCollateral.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
+import { getPremium } from '@/composables/session';
 import AssetMixin from '@/mixins/asset-mixin';
 import { CompoundBorrowingDetails } from '@/premium/premium';
 import { CompoundLoan } from '@/services/defi/types/compound';
-import { useStore } from '@/store/utils';
 import { uniqueStrings } from '@/utils/data';
 
 export default defineComponent({
@@ -61,8 +61,7 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const store = useStore();
-    const premium = computed(() => store.state.session!!.premium);
+    const premium = getPremium();
 
     const { loan } = toRefs(props);
     const assets = computed(() => {

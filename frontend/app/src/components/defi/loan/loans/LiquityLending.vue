@@ -26,7 +26,14 @@
       </v-row>
       <v-row no-gutters class="mt-8">
         <v-col cols="12">
-          <!--          <premium-card v-if="!premium" title="Aave History" />-->
+          <premium-card v-if="!premium" title="Trove Events" />
+          <liquity-trove-events v-else :events="loan.events.trove" />
+        </v-col>
+      </v-row>
+      <v-row no-gutters class="mt-8">
+        <v-col cols="12">
+          <premium-card v-if="!premium" title="Stake Events" />
+          <liquity-stake-events v-else :events="loan.events.stake" />
         </v-col>
       </v-row>
     </v-col>
@@ -46,8 +53,9 @@ import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityColla
 import LiquityLiquidation from '@/components/defi/loan/loans/liquity/LiquityLiquidation.vue';
 import LiquityStake from '@/components/defi/loan/loans/liquity/LiquityStake.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
+import { getPremium } from '@/composables/session';
+import { LiquityStakeEvents, LiquityTroveEvents } from '@/premium/premium';
 import { LiquityLoan } from '@/store/defi/liquity/types';
-import { useStore } from '@/store/utils';
 
 export default defineComponent({
   name: 'LiquityLending',
@@ -56,6 +64,8 @@ export default defineComponent({
     PremiumCard,
     LiquityLiquidation,
     LiquityCollateral,
+    LiquityTroveEvents,
+    LiquityStakeEvents,
     LoanDebt,
     LoanHeader
   },
@@ -75,8 +85,7 @@ export default defineComponent({
     const liquidationPrice = computed(
       () => loan.value.balances.trove.liquidationPrice
     );
-    const store = useStore();
-    const premium = computed(() => store.state.session!!.premium);
+    const premium = getPremium();
     return {
       debt,
       collateral,

@@ -31,16 +31,17 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from '@vue/composition-api';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import AaveCollateral from '@/components/defi/loan/loans/aave/AaveCollateral.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
+import { isSectionLoading } from '@/composables/common';
+import { getPremium } from '@/composables/session';
 import AssetMixin from '@/mixins/asset-mixin';
 import { AaveBorrowingDetails } from '@/premium/premium';
-import { Section, Status } from '@/store/const';
+import { Section } from '@/store/const';
 import { AaveLoan } from '@/store/defi/types';
-import { useStore } from '@/store/utils';
 
 export default defineComponent({
   name: 'AaveLending',
@@ -59,12 +60,8 @@ export default defineComponent({
     }
   },
   setup() {
-    const store = useStore();
-    const premium = computed(() => store.state.session!!.premium);
-    const aaveHistoryLoading = computed(
-      () =>
-        store.getters['status'](Section.DEFI_AAVE_HISTORY) === Status.LOADING
-    );
+    const premium = getPremium();
+    const aaveHistoryLoading = isSectionLoading(Section.DEFI_AAVE_HISTORY);
     return {
       premium,
       aaveHistoryLoading

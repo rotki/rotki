@@ -64,15 +64,15 @@
   </stat-card>
 </template>
 <script lang="ts">
-import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType } from '@vue/composition-api';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
+import { getPremium } from '@/composables/session';
 import ThemeMixin from '@/mixins/theme-mixin';
 import { MakerDAOVaultModel } from '@/store/defi/types';
-import { useStore } from '@/store/utils';
 
 export default defineComponent({
   name: 'MakerDaoVaultLiquidation',
@@ -91,8 +91,7 @@ export default defineComponent({
     }
   },
   setup() {
-    const store = useStore();
-    const premium = computed(() => store.state.session!!.premium);
+    const premium = getPremium();
     return {
       premium,
       assetPadding: 3

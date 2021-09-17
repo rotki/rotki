@@ -47,6 +47,7 @@ import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { setupThemeCheck } from '@/composables/common';
+import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { MakerDAOVaultModel } from '@/store/defi/types';
 import { useStore } from '@/store/utils';
@@ -66,7 +67,7 @@ export default defineComponent({
     const { vault } = toRefs(props);
     const store = useStore();
     const loanWatchers = computed(() => store.state.session!!.watchers);
-    const premium = computed(() => store.state.session!!.premium);
+    const premium = getPremium();
     const watchers = computed(() => {
       const { identifier } = vault.value;
       return loanWatchers.value.filter(watcher => {
