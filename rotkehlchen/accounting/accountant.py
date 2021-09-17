@@ -178,6 +178,7 @@ class Accountant():
             fee=movement.fee,
             rate=fee_rate,
             timestamp=timestamp,
+            link=movement.link,
         )
 
     def account_for_gas_costs(
@@ -263,6 +264,8 @@ class Accountant():
                 trade_rate=trade.rate,
                 rate_in_profit_currency=selling_rate,
                 timestamp=trade.timestamp,
+                link=trade.link,
+                notes=trade.notes,
             )
         else:
             self.events.add_sell(
@@ -279,6 +282,8 @@ class Accountant():
                 timestamp=trade.timestamp,
                 loan_settlement=True,
                 is_virtual=False,
+                link=trade.link,
+                notes=trade.notes,
             )
 
     def process_history(
@@ -592,6 +597,8 @@ class Accountant():
                 fee_in_asset=action.fee,
                 open_time=action.open_time,
                 close_time=timestamp,
+                link=None,
+                notes=None,
             )
             return True, prev_time
         if action_type == 'asset_movement':
@@ -615,7 +622,19 @@ class Accountant():
             self.events.add_ledger_action(action)
             return True, prev_time
 
-        # else if we get here it's a trade
+        if isinstance(action, AMMTrade) and action.tx_hash:
+            link = f'{self.csvexporter.eth_explorer}{action.tx_hash}'
+        elif hasattr(action, 'link') and action.link:  # type: ignore
+            link = action.link  # type: ignore
+        else:
+            link = ''
+
+        if hasattr(action, 'note'):
+            notes = action.notes  # type: ignore
+        else:
+            notes = ''
+
+        # if we get here it's a trade
         trade = cast(Trade, action)
         # When you buy, you buy with the cost_currency and receive the other one
         # When you sell, you sell the amount in non-cost_currency and receive
@@ -641,6 +660,8 @@ class Accountant():
                 fee_currency=trade.fee_currency,
                 fee_amount=trade.fee,
                 timestamp=trade.timestamp,
+                link=link,
+                notes=notes,
             )
         elif trade.trade_type == TradeType.SELL:
             self.trade_add_to_sell_events(trade, False)
@@ -675,6 +696,8 @@ class Accountant():
                 rate_in_profit_currency=selling_asset_rate,
                 timestamp=trade.timestamp,
                 loan_settlement=True,
+                link=link,
+                notes=notes,
             )
         else:
             # Should never happen

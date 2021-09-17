@@ -797,6 +797,8 @@ def test_defi_event_zero_amount(accountant):
         'taxable_received_in_profit_currency': ZERO,
         'time': 1467279735,
         'type': 'defi_event',
+        'link': 'https://etherscan.io/tx/0x49c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',  # noqa: E501
+        'notes': '',
     }
 
 

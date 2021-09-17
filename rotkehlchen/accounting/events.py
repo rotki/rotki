@@ -108,6 +108,8 @@ class TaxableEvents():
             fee_in_profit_currency: Fee,
             timestamp: Timestamp,
             is_from_prefork_virtual_buy: bool,
+            link: Optional[str],
+            notes: Optional[str],
     ) -> None:
         if is_from_prefork_virtual_buy:
             # This way we avoid double counting. For example BTC before BCH/BSV fork
@@ -128,6 +130,8 @@ class TaxableEvents():
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
+                link=link,
+                notes=notes,
             )
 
         if bought_asset == A_BTC and timestamp < BTC_BCH_FORK_TS:
@@ -144,6 +148,8 @@ class TaxableEvents():
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
+                link=link,
+                notes=notes,
             )
             self.add_buy(
                 location=location,
@@ -157,6 +163,8 @@ class TaxableEvents():
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
+                link=link,
+                notes=notes,
             )
 
         if bought_asset == A_BCH and timestamp < BCH_BSV_FORK_TS:
@@ -173,6 +181,8 @@ class TaxableEvents():
                 timestamp=timestamp,
                 is_virtual=True,
                 is_from_prefork_virtual_buy=True,
+                link=link,
+                notes=notes,
             )
 
     def handle_prefork_asset_sells(
@@ -224,6 +234,8 @@ class TaxableEvents():
             fee_currency: Optional[Asset],
             fee_amount: Optional[Fee],
             timestamp: Timestamp,
+            link: Optional[str],
+            notes: Optional[str],
     ) -> None:
         """
         Account for the given buy and the corresponding sell if it's a crypto to crypto
@@ -246,6 +258,8 @@ class TaxableEvents():
             fee_amount=fee_amount,
             timestamp=timestamp,
             is_virtual=False,
+            link=link,
+            notes=notes,
         )
 
         if paid_with_asset.is_fiat() or not self.include_crypto2crypto:
@@ -307,6 +321,8 @@ class TaxableEvents():
             fee_amount=Fee(ZERO),
             timestamp=timestamp,
             is_virtual=True,
+            link=link,
+            notes=notes,
         )
 
     def add_buy(
@@ -322,6 +338,8 @@ class TaxableEvents():
             timestamp: Timestamp,
             is_virtual: bool = False,
             is_from_prefork_virtual_buy: bool = False,
+            link: Optional[str] = '',
+            notes: Optional[str] = '',
     ) -> None:
         """
         Account for the given buy
@@ -358,6 +376,8 @@ class TaxableEvents():
             fee_in_profit_currency=fee_in_profit_currency,
             timestamp=timestamp,
             is_from_prefork_virtual_buy=is_from_prefork_virtual_buy,
+            link=link,
+            notes=notes,
         )
 
         gross_cost = bought_amount * buy_rate
@@ -392,6 +412,8 @@ class TaxableEvents():
                 paid_with_asset_amount=trade_rate * bought_amount,
                 timestamp=timestamp,
                 is_virtual=is_virtual,
+                link=link,
+                notes=notes,
             )
 
     def add_sell_and_corresponding_buy(
@@ -408,6 +430,8 @@ class TaxableEvents():
             trade_rate: FVal,
             rate_in_profit_currency: FVal,
             timestamp: Timestamp,
+            link: Optional[str],
+            notes: Optional[str],
     ) -> None:
         """
         Account for the given sell and the corresponding buy if it's a crypto to crypto
@@ -447,6 +471,8 @@ class TaxableEvents():
             rate_in_profit_currency=rate_in_profit_currency,
             timestamp=timestamp,
             is_virtual=False,
+            link=link,
+            notes=notes,
         )
 
         if receiving_asset.is_fiat() or not self.include_crypto2crypto:
@@ -468,6 +494,8 @@ class TaxableEvents():
             fee_amount=Fee(ZERO),
             timestamp=timestamp,
             is_virtual=True,
+            link=link,
+            notes=notes,
         )
 
     def add_sell(
@@ -485,6 +513,8 @@ class TaxableEvents():
             timestamp: Timestamp,
             loan_settlement: bool = False,
             is_virtual: bool = False,
+            link: Optional[str] = '',
+            notes: Optional[str] = '',
     ) -> None:
         """Account for the given sell action
 
@@ -617,6 +647,8 @@ class TaxableEvents():
                     total_fee_in_profit_currency=total_fee_in_profit_currency,
                     timestamp=timestamp,
                     cost_basis_info=cost_basis_info,
+                    link=link,
+                    notes=notes,
                 )
             else:
                 assert receiving_asset, 'Here receiving asset should have a value'
@@ -639,6 +671,8 @@ class TaxableEvents():
                     cost_basis_info=cost_basis_info,
                     is_virtual=is_virtual,
                     total_bought_cost=total_bought_cost_in_profit_currency,
+                    link=link,
+                    notes=notes,
                 )
 
     def add_loan_gain(
@@ -650,6 +684,8 @@ class TaxableEvents():
             lent_amount: FVal,
             open_time: Timestamp,
             close_time: Timestamp,
+            link: Optional[str],
+            notes: Optional[str],
     ) -> None:
         """Account for gains from the given loan
         May raise:
@@ -697,6 +733,8 @@ class TaxableEvents():
                 lent_amount=lent_amount,
                 open_time=open_time,
                 close_time=close_time,
+                link=link,
+                notes=notes,
             )
 
     def add_margin_position(self, margin: MarginPosition) -> None:
@@ -765,6 +803,8 @@ class TaxableEvents():
                 gain_loss_amount=margin.profit_loss,
                 gain_loss_in_profit_currency=net_gain_loss_in_profit_currency,
                 timestamp=margin.close_time,
+                link=margin.link,
+                notes=margin.notes,
             )
 
     def add_defi_event(self, event: DefiEvent) -> None:
