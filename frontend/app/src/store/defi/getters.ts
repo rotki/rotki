@@ -664,8 +664,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         return {
           owner: owner,
           protocol: loan.protocol,
-          balances: balances[owner],
-          events: events[owner]
+          balances: balances[owner] ?? [],
+          events: events[owner] ?? []
         };
       }
 

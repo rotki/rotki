@@ -2,7 +2,7 @@
   <v-row>
     <v-col cols="12">
       <loan-header class="mt-8 mb-6" :owner="loan.owner">
-        {{ $t('loan_header.compound_loan', { asset: getSymbol(loan.asset) }) }}
+        {{ $t('compound_lending.header', { asset: getSymbol(loan.asset) }) }}
       </loan-header>
       <v-row no-gutters>
         <v-col cols="12" md="6" class="pe-md-4">
@@ -14,7 +14,10 @@
       </v-row>
       <v-row no-gutters class="mt-8">
         <v-col cols="12">
-          <premium-card v-if="!premium" title="Compound History" />
+          <premium-card
+            v-if="!premium"
+            :title="$t('compound_lending.history')"
+          />
           <compound-borrowing-details
             v-else
             :events="loan.events"

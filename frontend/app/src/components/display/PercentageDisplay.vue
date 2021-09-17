@@ -36,7 +36,6 @@ export default class PercentageDisplay extends Mixins(
 ) {
   @Prop({
     required: true,
-    type: String,
     validator: (value: any) => typeof value === 'string' || value === null
   })
   value!: string | null;

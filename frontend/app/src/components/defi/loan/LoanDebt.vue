@@ -1,6 +1,6 @@
 <template>
-  <stat-card title="Debt" :class="$style.debt">
-    <loan-row title="Outstanding debt">
+  <stat-card :title="$t('loan_debt.title')" :class="$style.debt">
+    <loan-row :title="$t('loan_debt.outstanding_debt')">
       <amount-display
         :asset-padding="assetPadding"
         :value="debt.amount"

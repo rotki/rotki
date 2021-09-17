@@ -1,22 +1,15 @@
 <template>
   <fragment>
     <v-divider class="my-4" />
-    <loan-row title="Stability fee" class="mb-2">
+    <loan-row :title="$t('makerdao_vault_debt.stability_fee')" class="mb-2">
       <percentage-display :value="stabilityFee" :asset-padding="assetPadding" />
     </loan-row>
-    <loan-row title="Total lost due to interest">
+    <loan-row :title="$t('makerdao_vault_debt.total_lost')">
       <div v-if="premium">
         <amount-display
-          v-if="totalInterestOwed && !totalInterestOwed.isNegative()"
           :asset-padding="assetPadding"
-          :value="totalInterestOwed"
-          asset="DAI"
-        />
-        <amount-display
-          v-else
-          :asset-padding="assetPadding"
-          :loading="totalInterestOwed === undefined"
-          :value="'0.00'"
+          :value="interest"
+          :loading="loading"
           asset="DAI"
         />
       </div>
@@ -28,12 +21,18 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import { BigNumber } from 'bignumber.js';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { getPremium } from '@/composables/session';
+import { Zero } from '@/utils/bignumbers';
 
 export default defineComponent({
   name: 'MakerDaoVaultDebtDetails',
@@ -46,11 +45,23 @@ export default defineComponent({
     stabilityFee: {
       type: String,
       required: true
+    },
+    loading: {
+      type: Boolean,
+      required: true
     }
   },
-  setup() {
+  setup(props) {
     const premium = getPremium();
+    const { totalInterestOwed } = toRefs(props);
+    const interest = computed(() => {
+      if (totalInterestOwed.value.isNegative()) {
+        return Zero;
+      }
+      return totalInterestOwed.value;
+    });
     return {
+      interest,
       premium,
       assetPadding: 4
     };

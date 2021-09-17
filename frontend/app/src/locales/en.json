@@ -1,4 +1,8 @@
 {
+  "aave_lending": {
+    "history": "Aave History",
+    "header": "Aave Loan ({asset})"
+  },
   "about": {
     "copy_tooltip": "Copy the application information",
     "data_directory": "Data Directory:",
@@ -218,6 +222,10 @@
       "password_missmatch": "The password confirmation does not match the provided password"
     }
   },
+  "compound_lending": {
+    "history": "Compound History",
+    "header": "Compound Loan ({asset})"
+  },
   "conflict_dialog": {
     "action": {
       "local": "Local",
@@ -417,6 +425,16 @@
     },
     "tooltip": "Help"
   },
+  "liquity_lending": {
+    "header": "Liquity Trove {troveId}",
+    "stake": "Stake",
+    "stake_events": "Stake Events",
+    "trove_events": "Trove Events"
+  },
+  "loan_debt": {
+    "outstanding_debt": "Outstanding debt",
+    "title": "Debt"
+  },
   "loan_stake": {
     "stake": "Staked amount",
     "title": "Stake"
@@ -425,6 +443,14 @@
     "header": "Unsupported macOS Version",
     "terminate": "Terminate",
     "message": "rotki's minimum supported macOs version is Mojave(10.14)"
+  },
+  "maker_dao_vault_loan": {
+    "header": "Maker Vault #{identifier} ({collateralType})",
+    "borrowing_history": "Borrowing History"
+  },
+  "makerdao_vault_debt": {
+    "stability_fee": "Stability fee",
+    "total_lost": "Total lost due to interest"
   },
   "merge_dialog": {
     "cancel": "Cancel",
@@ -1780,17 +1806,17 @@
       },
       "liquity_balances": {
         "error": {
-          "description": "actions.defi.liquity_balances.error.description",
-          "title": "actions.defi.liquity_balances.error.title"
+          "description": "Failed to retrieve Liquity balances: {message}",
+          "title": "Liquity Balances"
         }
       },
       "liquity_events": {
         "error": {
-          "description": "actions.defi.liquity_events.error.description",
-          "title": "actions.defi.liquity_events.error.title"
+          "description": "Failed to retrieve Liquity events: {message}",
+          "title": "Liquity Events"
         },
         "task": {
-          "title": "actions.defi.liquity_events.task.title"
+          "title": "Querying Liquity Events"
         }
       },
       "makerdao_vaults": {
@@ -2282,11 +2308,7 @@
     "vault": "Maker Vault"
   },
   "loan_header": {
-    "liquity": "Liquity Trove {troveId}",
-    "owned_by": "Owned by:",
-    "aave_loan": "Aave Loan ({asset})",
-    "maker_vault": "Maker Vault #{identifier} ({collateralType})",
-    "compound_loan": "Compound Loan ({asset})"
+    "owned_by": "Owned by:"
   },
   "borrowing": {
     "loading": "Please wait while your liabilities are getting loaded...",
