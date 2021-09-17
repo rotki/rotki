@@ -78,7 +78,7 @@
       </v-col>
     </v-row>
     <loan-info v-if="selection" :loan="loan(selection)" />
-    <full-size-content>
+    <full-size-content v-else>
       <v-row align="center" justify="center">
         <v-col class="text-h6">{{ $t('liabilities.no_selection') }}</v-col>
       </v-row>

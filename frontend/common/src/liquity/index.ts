@@ -62,7 +62,7 @@ const StakeEvents = z.array(StakeEvent)
 
 const LiquityAccountEvents = z.object({
   trove: TroveEvents,
-  stake: StakeEvents
+  stake: StakeEvents.optional()
 });
 
 export type LiquityAccountEvents = z.infer<typeof LiquityAccountEvents>

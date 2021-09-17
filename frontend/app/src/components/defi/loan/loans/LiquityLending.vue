@@ -19,7 +19,12 @@
         <v-col cols="12" md="6" class="ps-md-0 pt-8 pe-md-4">
           <loan-debt :debt="debt" :asset="debt.asset" />
         </v-col>
-        <v-col cols="12" md="6" class="ps-md-4 pt-8 pt-md-8">
+        <v-col
+          v-if="premium && loan.balances.stake"
+          cols="12"
+          md="6"
+          class="ps-md-4 pt-8 pt-md-8"
+        >
           <premium-card v-if="!premium" :title="$t('liquity_lending.stake')" />
           <liquity-stake :stake="loan.balances.stake" />
         </v-col>
@@ -37,7 +42,7 @@
           />
         </v-col>
       </v-row>
-      <v-row no-gutters class="mt-8">
+      <v-row v-if="premium && loan.events.stake" no-gutters class="mt-8">
         <v-col cols="12">
           <premium-card
             v-if="!premium"
