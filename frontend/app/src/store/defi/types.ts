@@ -260,6 +260,8 @@ export interface DefiProtocolSummary {
   readonly balanceUsd?: BigNumber;
   readonly assets: DefiAsset[];
   readonly tokenInfo: TokenInfo | null;
+  readonly deposits: boolean;
+  readonly liabilities: boolean;
   readonly depositsUrl?: string;
   readonly liabilitiesUrl?: string;
   readonly totalCollateralUsd: BigNumber;

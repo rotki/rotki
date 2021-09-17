@@ -40,6 +40,7 @@ import {
   getProtcolIcon,
   GETTER_BALANCER_BALANCES,
   GETTER_UNISWAP_ASSETS,
+  LIQUITY,
   MAKERDAO_DSR,
   MAKERDAO_VAULTS,
   YEARN_FINANCE_VAULTS,
@@ -1144,7 +1145,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       protocol: DefiProtocol,
       section: Section,
       name: OverviewDefiProtocol,
-      noLiabilities?: boolean
+      noLiabilities?: boolean,
+      noDeposits?: boolean
     ): DefiProtocolSummary | undefined => {
       const currentStatus = status(section);
       if (
@@ -1162,15 +1164,21 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           name: name,
           icon: getProtcolIcon(name)
         },
+        liabilities: !noLiabilities,
+        deposits: !noDeposits,
         tokenInfo: null,
         assets: [],
         liabilitiesUrl: noLiabilities
           ? undefined
           : `/defi/liabilities?protocol=${protocol}`,
-        depositsUrl: `/defi/deposits?protocol=${protocol}`,
+        depositsUrl: noDeposits
+          ? undefined
+          : `/defi/deposits?protocol=${protocol}`,
         totalCollateralUsd,
         totalDebtUsd: totalDebt,
-        totalLendingDepositUsd: totalLendingDeposit(filter, [])
+        totalLendingDepositUsd: noDeposits
+          ? Zero
+          : totalLendingDeposit(filter, [])
       };
     };
     const summary: { [protocol: string]: Writeable<DefiProtocolSummary> } = {};
@@ -1221,6 +1229,22 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           continue;
         }
 
+        if (protocol === LIQUITY) {
+          const liquity = protocolSummary(
+            DefiProtocol.LIQUITY,
+            Section.DEFI_LIQUITY_BALANCES,
+            protocol,
+            false,
+            true
+          );
+
+          if (liquity && shouldDisplay(liquity)) {
+            summary[protocol] = liquity;
+          }
+
+          continue;
+        }
+
         if (!summary[protocol]) {
           summary[protocol] = {
             protocol: {
@@ -1232,6 +1256,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
               tokenSymbol: entry.baseBalance.tokenSymbol
             },
             assets: [],
+            deposits: false,
+            liabilities: false,
             totalCollateralUsd: Zero,
             totalDebtUsd: Zero,
             totalLendingDepositUsd: Zero
@@ -1285,6 +1311,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         tokenInfo: null,
         assets: [],
         depositsUrl: '/defi/deposits?protocol=makerdao',
+        deposits: true,
+        liabilities: false,
         totalCollateralUsd: Zero,
         totalDebtUsd: Zero,
         totalLendingDepositUsd: totalLendingDeposit(filter, [])
@@ -1300,6 +1328,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         },
         tokenInfo: null,
         assets: [],
+        deposits: false,
+        liabilities: true,
         liabilitiesUrl: '/defi/liabilities?protocol=makerdao',
         totalDebtUsd: totalDebt,
         totalCollateralUsd,
@@ -1325,7 +1355,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
 
-    return sortBy(Object.values(summary), 'protocol.name');
+    return sortBy(Object.values(summary), 'protocol.name').filter(
+      value => value.balanceUsd || value.deposits || value.liabilities
+    );
   },
 
   compoundRewards: ({ compoundHistory }): ProfitLossModel[] => {
