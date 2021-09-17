@@ -710,7 +710,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         except DeserializationError as e:
             raise RemoteError(f'Could not read Kucoin error code {error_code} as an int') from e
 
-        if error_code in API_KEY_ERROR_CODE_ACTION.keys():
+        if error_code in API_KEY_ERROR_CODE_ACTION:
             msg = API_KEY_ERROR_CODE_ACTION[error_code]
         else:
             reason = response_dict.get('msg', None) or response.text
