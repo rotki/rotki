@@ -872,6 +872,132 @@ Query the current price of assets
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
+Get assets which have manual price set
+=============================================
+
+.. http:get:: /api/(version)/assets/prices/current
+
+   Get all assets which have had custom current prices specified along with their current prices.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/prices/current HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+	      {
+	          "asset": "nft_uniqueid1",
+		  "usd_price": "150.55"
+	      }, {
+	          "asset": "nft_uniqueid2",
+		  "usd_price": "250.55"
+	      }]
+          "message": ""
+      }
+
+   :resjson object result: A list of results of assets along with their uds prices
+   :statuscode 200: Succesfull query
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
+
+Add manual current price for an asset
+=============================================
+
+.. http:put:: /api/(version)/assets/prices/current
+
+   Giving a unique asset identifier and a price via this endpoint stores the current price for an asset. If given, this overrides all other current prices. At the moment this will only work for non fungible assets.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/prices/current HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "from_asset": "nft_unique_id",
+          "to_asset": "EUR",
+	  "price": "150.55"
+      }
+
+   :reqjson string from_asset: The asset for which the price is given.
+   :reqjson string to_asset: The asset against which the price is given.
+   :reqjson string price: Custom price for the asset.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true
+          "message": ""
+      }
+
+   :resjson bool result: boolean for success
+   :statuscode 200: Price succesfully added
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
+
+Delete an asset that has manual price set
+=============================================
+
+.. http:delete:: /api/(version)/assets/prices/current
+
+   Deletes an asset that has as manual price set. IF the asset is not found or a manual price is not set a 409 is returned.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/assets/prices/current HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"asset": "uniquenftid1"}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true
+          "message": ""
+      }
+
+   :resjson bool result: boolean for success
+   :statuscode 200: Succesfull deletion
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: Asset not found or no manual price exists.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
+
 Query the current exchange rate for select assets
 ======================================================
 
@@ -9055,7 +9181,10 @@ Querying  NFTs
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": false}
+      {"async_query": false, "ignore_cache": true}
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
 
 
    **Example Response**:
@@ -9105,6 +9234,64 @@ Querying  NFTs
    :resjson string price_eth: The last known price of the NFT in ETH. Can be zero.
    :resjson string price_usd: The last known price of the NFT in USD. Can be zero.
    :statuscode 200: NFTs succesfully queried
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: User is not logged in or nft module is not activated.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: An external service used in the query such as opensea could not be reached or returned unexpected response.
+
+
+Show NFT Balances
+=======================
+
+.. http:get:: /api/(version)/nfts/balances
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a GET on the NFTs balances endpoint will query all NFTs for all user tracked addresses and return those whose price can be detected.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/nfts/balances HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": false, "ignore_cache": false}
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+        {
+            "result": {
+                "0xeE3766e4F996DC0e0F8c929954EAAFef3441de87": [{
+                    "id": "unique id",
+		    "name": "a name",
+                    "price_usd": "250"
+                }, {
+                    "id": "unique id 2",
+		    "name": null,
+                    "price_usd": "150"
+                }],
+            },
+            "message": ""
+        }
+
+
+   :resjson object addresses: A mapping of ethereum addresses to list assets and balances. Name can also be null.
+   :statuscode 200: NFT balances succesfully queried
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: User is not logged in or nft module is not activated.
    :statuscode 500: Internal rotki error
