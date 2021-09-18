@@ -32,6 +32,7 @@ Changelog
 * :feature:`-` Users will now be able to track balances locked in pickle's DILL.
 * :feature:`2891` Users will now see notes and links for trades in the exported CSV files.
 * :feature:`2836` Users will now be able to track Liquity's troves and staking in the Liquity protocol.
+* :feature:`3474` Users of coinbase will now see deposits for coinbase earn and inflation rewards.
 * :bug:`3239` Users will now see only the relevant addresses suggested when filtering DeFi deposits.
 * :bug:`3340` Users will now be able to properly see the favicon when accessing the frontend using Firefox.
 * :bug:`3266` Users will now be able to properly access most of the top bar content using a mobile device.
