@@ -604,16 +604,24 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             # movement_category: Union[Literal['deposit'], Literal['withdrawal']]
             if 'type' in raw_data:
                 # Then this should be a "send" which is the way Coinbase uses to send
-                # crypto outside of the exchange
+                # crypto outside of the exchange, or from one user to another.
                 # https://developers.coinbase.com/api/v2?python#transaction-resource
-                if raw_data['type'] != 'send':
+                movement_category = AssetMovementCategory.WITHDRAWAL
+                raw_type = raw_data.get('type', '')
+                if raw_type == 'send':
+                    movement_category = AssetMovementCategory.WITHDRAWAL
+                elif raw_type == 'inflation_reward':
+                    movement_category = AssetMovementCategory.DEPOSIT
+                else:
                     log.error(
                         f'In a coinbase deposit/withdrawal we got non send type {raw_data["type"]}'
                         f'. This means either api is broken or we called it wrong',
                     )
                     return None
-
-                movement_category = AssetMovementCategory.WITHDRAWAL
+                raw_from = raw_data.get('from', None)
+                if raw_from:  # Covers transactions from other coinbase users.
+                    if raw_from.get('resource', False) == 'user' and raw_from.get('id', False):
+                        movement_category = AssetMovementCategory.DEPOSIT
                 # Can't see the fee being charged from the "send" resource
 
                 amount = deserialize_asset_amount_force_positive(raw_data['amount']['amount'])
@@ -623,7 +631,6 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 raw_network = raw_data.get('network', None)
                 if raw_network:
                     raw_fee = raw_network.get('transaction_fee', None)
-
                     if raw_fee:
                         # Since this is a withdrawal the fee should be the same as the moved asset
                         if asset != asset_from_coinbase(raw_fee['currency'], time=timestamp):
@@ -702,6 +709,8 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if 'type' not in tx:
                     continue
                 if tx['type'] == 'send':
+                    raw_data.append(tx)
+                if tx['type'] == 'inflation_reward':
                     raw_data.append(tx)
 
         log.debug('coinbase deposits/withdrawals history result', results_num=len(raw_data))
