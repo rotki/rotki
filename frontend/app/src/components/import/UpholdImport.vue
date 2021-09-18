@@ -1,5 +1,5 @@
 <template>
-  <import-source source="uphold-trades">
+  <import-source source="uphold">
     <template #image>
       <uphold-horizontal />
     </template>
