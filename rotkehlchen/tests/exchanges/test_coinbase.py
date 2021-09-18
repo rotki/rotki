@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
-from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_USD, A_USDC
+from rotkehlchen.assets.converters import asset_from_coinbase
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_USD, A_USDC, A_NMR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.coinbase import Coinbase, trade_from_conversion
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
@@ -436,6 +437,70 @@ TRANSACTIONS_RESPONSE = """{
     },
     "idem": "zzzz",
     "details": {"title": "Sent Ethereum", "subtitle": "To Ethereum address"}
+},{
+  "id": "id3",
+  "type": "send",
+  "status": "completed",
+  "amount": {
+    "amount": "0.02762431",
+    "currency": "NMR"
+  },
+  "native_amount": {
+    "amount": "1.01",
+    "currency": "USD"
+  },
+  "description": null,
+  "created_at": "2021-01-23T18:23:53Z",
+  "updated_at": "2021-01-23T18:23:53Z",
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/boo",
+  "instant_exchange": false,
+  "off_chain_status": "completed",
+  "network": {"status": "off_blockchain", "status_description": null},
+  "from": {
+    "id": "idb",
+    "resource": "user",
+    "resource_path": "/v2/users/idb",
+    "currency": "NMR"
+  },
+  "details": {
+    "title": "Received Numeraire",
+    "subtitle": "From Coinbase Earn",
+    "header": "Received 0.02762431 NMR ($1.01)",
+    "health": "positive"
+  },
+  "hide_native_amount": false
+},{
+  "id": "id4",
+  "type": "inflation_reward",
+  "status": "completed",
+  "amount": {
+    "amount": "0.000076",
+    "currency": "ALGO"
+  },
+  "native_amount": {
+    "amount": "0.00",
+    "currency": "USD"
+  },
+  "description": null,
+  "created_at": "2021-01-05T20:11:54Z",
+  "updated_at": "2021-01-05T20:11:54Z",
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/boo",
+  "instant_exchange": false,
+  "from": {
+    "id": "idc",
+    "resource": "user",
+    "resource_path": "/v2/users/idc",
+    "currency": "ALGO"
+  },
+  "details": {
+    "title": "Algorand reward",
+    "subtitle": "From Coinbase",
+    "header": "Received 0.000076 ALGO ($0.00)",
+    "health": "positive"
+  },
+  "hide_native_amount": false
 }]}"""
 
 
@@ -726,14 +791,14 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
         movements = coinbase.query_online_deposits_withdrawals(
             start_ts=0,
-            end_ts=1576726126,
+            end_ts=1611426233,
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()
     errors = coinbase.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
-    assert len(movements) == 4
+    assert len(movements) == 6
     expected_movements = [AssetMovement(
         location=Location.COINBASE,
         category=AssetMovementCategory.DEPOSIT,
@@ -778,6 +843,28 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         fee_asset=A_ETH,
         fee=ZERO,
         link='id2',
+    ), AssetMovement(
+        location=Location.COINBASE,
+        category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
+        timestamp=1611426233,
+        asset=A_NMR,
+        amount=FVal('0.02762431'),
+        fee_asset=A_NMR,
+        fee=ZERO,
+        link='id3',
+    ), AssetMovement(
+        location=Location.COINBASE,
+        category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
+        timestamp=1609877514,
+        asset=asset_from_coinbase('ALGO'),
+        amount=FVal('0.000076'),
+        fee_asset=asset_from_coinbase('ALGO'),
+        fee=ZERO,
+        link='id4',
     )]
     assert expected_movements == movements
 
@@ -785,18 +872,22 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
         movements = coinbase.query_online_deposits_withdrawals(
             start_ts=0,
-            end_ts=1519001650,
+            end_ts=1609877514,
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()
     errors = coinbase.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
-    assert len(movements) == 2
+    assert len(movements) == 4
     assert movements[0].category == AssetMovementCategory.DEPOSIT
     assert movements[0].timestamp == 1519001640
     assert movements[1].category == AssetMovementCategory.WITHDRAWAL
     assert movements[1].timestamp == 1485895742
+    assert movements[2].category == AssetMovementCategory.WITHDRAWAL
+    assert movements[2].timestamp == 1566726126
+    assert movements[3].category == AssetMovementCategory.DEPOSIT
+    assert movements[3].timestamp == 1609877514
 
 
 def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinbase):
