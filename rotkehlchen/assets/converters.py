@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_ICONOMI,
     WORLD_TO_KRAKEN,
     WORLD_TO_KUCOIN,
+    WORLD_TO_NEXO,
     WORLD_TO_POLONIEX,
     Asset,
 )
@@ -662,6 +663,7 @@ KUCOIN_TO_WORLD = {v: k for k, v, in WORLD_TO_KUCOIN.items()}
 ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
 COINBASE_PRO_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE_PRO.items()}
 COINBASE_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE.items()}
+NEXO_TO_WORLD = {v: k for k, v in WORLD_TO_NEXO.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -895,3 +897,16 @@ def asset_from_iconomi(symbol: str) -> Asset:
         raise UnsupportedAsset(symbol)
     name = ICONOMI_TO_WORLD.get(symbol, symbol)
     return symbol_to_asset_or_token(name)
+
+
+def asset_from_nexo(nexo_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(nexo_name, str):
+        raise DeserializationError(f'Got non-string type {type(nexo_name)} for nexo asset')
+
+    our_name = NEXO_TO_WORLD.get(nexo_name, nexo_name)
+    return symbol_to_asset_or_token(our_name)
