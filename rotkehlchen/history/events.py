@@ -11,6 +11,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, ExchangeManager
@@ -29,14 +30,12 @@ from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.ledger_actions import LedgerAction
     from rotkehlchen.accounting.structures import DefiEvent
     from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
 
 # Number of steps excluding the connected exchanges. Current query steps:
 # eth transactions
@@ -199,6 +198,7 @@ class EventsHistorian():
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             location: Optional[Location] = None,
+            new_exchange_ledger_actions: Optional[List['LedgerAction']] = None,
     ) -> Tuple[List['LedgerAction'], int]:
         """Queries the ledger actions from the DB and applies the free version limit
 
@@ -206,8 +206,15 @@ class EventsHistorian():
         batch querying by time then we need to amend the logic of limiting here.
         Would need to use the same logic we do with trades. Using db entries count
         and count what all calls return and what is sums up to
+        :param location: Location parameter to filter query results
+        :param to_ts: End timestamp to filter query results
+        :param from_ts: Start timestamp to filter query results
+        :param has_premium: Boolean True if user has a premium subscription
+        :param new_exchange_ledger_actions: Additional exchange online ledger actions
         """
         db = DBLedgerActions(self.db, self.msg_aggregator)
+        if new_exchange_ledger_actions and len(new_exchange_ledger_actions):
+            db.add_ledger_actions(new_exchange_ledger_actions)
         actions = db.get_ledger_actions(from_ts=from_ts, to_ts=to_ts, location=location)
         original_length = len(actions)
         if has_premium is False:
@@ -453,7 +460,6 @@ class EventsHistorian():
                 self.actions_per_location['asset_movement'][exchange_location] = 0
             # we may have DB entries due to csv import from supported locations
             for external_location in EXTERNAL_EXCHANGES:
-
                 movements = self._query_and_populate_exchange_asset_movements(
                     from_ts=from_ts,
                     to_ts=to_ts,
@@ -492,6 +498,7 @@ class EventsHistorian():
         # start creating the all trades history list
         history: List[Union[Trade, MarginPosition, AMMTrade]] = []
         asset_movements = []
+        ledger_actions: List[LedgerAction] = []
         loans = []
         empty_or_error = ''
 
@@ -507,15 +514,18 @@ class EventsHistorian():
             asset_movements.extend(result_asset_movements)
 
             if exchange_specific_data:
-                # This can only be poloniex at the moment
-                polo_loans_data = exchange_specific_data
-                loans.extend(process_polo_loans(
-                    msg_aggregator=self.msg_aggregator,
-                    data=polo_loans_data,
-                    # We need to have history of loans since before the range
-                    start_ts=Timestamp(0),
-                    end_ts=end_ts,
-                ))
+                if all(isinstance(i, LedgerAction) for i in exchange_specific_data):
+                    ledger_actions.extend(exchange_specific_data)
+                else:
+                    # Only other case is poloniex.
+                    polo_loans_data = exchange_specific_data
+                    loans.extend(process_polo_loans(
+                        msg_aggregator=self.msg_aggregator,
+                        data=polo_loans_data,
+                        # We need to have history of loans since before the range
+                        start_ts=Timestamp(0),
+                        end_ts=end_ts,
+                    ))
 
         def fail_history_cb(error_msg: str) -> None:
             """This callback will run for failure in exchange history query"""
@@ -577,7 +587,13 @@ class EventsHistorian():
 
         # include the ledger actions
         self.processing_state_name = 'Querying ledger actions history'
-        ledger_actions, _ = self.query_ledger_actions(has_premium, from_ts=None, to_ts=end_ts)
+        # Query ledger actions taking into account premium limits.
+        ledger_actions, _ = self.query_ledger_actions(
+            has_premium,
+            from_ts=None,
+            to_ts=end_ts,
+            new_exchange_ledger_actions=ledger_actions,
+        )
         step = self._increase_progress(step, total_steps)
 
         # include AMM trades: balancer, uniswap
