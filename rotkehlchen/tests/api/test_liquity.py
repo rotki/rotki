@@ -105,6 +105,7 @@ def test_trove_events(rotkehlchen_api_server):
     assert trove_action['trove_operation'] == 'Open Trove'
     assert trove_action['collateral_after']['amount'] == trove_action['collateral_delta']['amount']
     assert trove_action['collateral_delta']['amount'] == '3.5'
+    assert trove_action['sequence_number'] == '51647'
     trove_stake = result[LQTY_ADDR]['stake'][0]
     tx_id = '0xe527749c76a3af56d86c97a8f8f8ce07e191721e9e16a0f62a228f8a8ef6d295'
     assert trove_stake['tx'] == tx_id
@@ -115,6 +116,7 @@ def test_trove_events(rotkehlchen_api_server):
     assert asset == '_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'
     assert trove_stake['stake_after']['amount'] == '177.02'
     assert trove_stake['stake_operation'] == 'stake created'
+    assert trove_stake['sequence_number'] == '51676'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xA0446D8804611944F1B527eCD37d7dcbE442caba']])
