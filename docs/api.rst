@@ -6045,7 +6045,8 @@ Getting Liquity historical data
                                 "usd_value": "10500.0",
                                 "asset": "ETH"
                             },
-                            "trove_operation": "Open Trove"
+                            "trove_operation": "Open Trove",
+                            "sequence_number": "51647"
                         },
                         {
                             "kind": "trove",
@@ -6072,7 +6073,8 @@ Getting Liquity historical data
                                 "usd_value": "5430.00",
                                 "asset": "ETH"
                             },
-                            "trove_operation": "Adjust Trove"
+                            "trove_operation": "Adjust Trove",
+                            "sequence_number": "51747"
                         }
                     ],
                     "stake": [
@@ -6101,7 +6103,8 @@ Getting Liquity historical data
                                 "usd_value": "0.00",
                                 "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
                             },
-                            "stake_operation": "Stake Created"
+                            "stake_operation": "Stake Created",
+                            "sequence_number": "51676"
                         }
                     ]
                 }

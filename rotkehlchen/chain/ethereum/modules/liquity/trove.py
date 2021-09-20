@@ -112,11 +112,13 @@ class LiquityEvent:
     tx: str
     address: str
     timestamp: Timestamp
+    sequence_number: str
 
     def serialize(self) -> Dict[str, Any]:
         return {
             'kind': self.kind,
             'tx': self.tx,
+            'sequence_number': self.sequence_number,
             'address': self.address,
             'timestamp': self.timestamp,
         }
@@ -533,6 +535,7 @@ class Liquity(EthereumModule):
                             ),
                         ),
                         trove_operation=operation,
+                        sequence_number=str(change['transaction']['sequenceNumber']),
                     )
                     result[owner]['trove'].append(event)
                 except (DeserializationError, KeyError) as e:
@@ -604,6 +607,7 @@ class Liquity(EthereumModule):
                             ),
                         ),
                         stake_operation=operation_stake,
+                        sequence_number=str(change['transaction']['sequenceNumber']),
                     )
                     result[owner]['stake'].append(stake_event)
                 except (DeserializationError, KeyError) as e:
