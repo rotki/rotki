@@ -164,6 +164,7 @@ declare global {
   interface Window {
     Vue: any;
     Chart: typeof Chart;
+    '@vue/composition-api': any;
     rotki: RotkiPremiumInterface;
   }
 }

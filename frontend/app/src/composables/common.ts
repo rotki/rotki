@@ -30,5 +30,8 @@ export const setupThemeCheck = () => {
 
 export const isSectionLoading = (section: Section) => {
   const store = useStore();
-  return computed(() => store.getters['status'](section) === Status.LOADING);
+  return computed(() => {
+    const status = store.getters['status'](section);
+    return status !== Status.LOADED && status !== Status.PARTIALLY_LOADED;
+  });
 };

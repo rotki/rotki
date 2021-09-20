@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { NumericString } from "../index";
+import { Balance, NumericString } from "../index";
 
-const AssetValue = z.object({
+const AssetEntry = z.object({
   asset: z.string().nonempty(),
-  amount: NumericString,
-  usdValue: NumericString
-})
+});
+
+const AssetValue = Balance.merge(AssetEntry)
 
 export type AssetValue = z.infer<typeof AssetValue>
 
@@ -31,11 +31,13 @@ export type LiquityBalances = z.infer<typeof LiquityBalances>
 
 const TroveEvent = z.object({
   kind: z.literal('trove'),
+  sequenceNumber: z.string(),
   tx: z.string(),
   address: z.string(),
   timestamp: z.number(),
   debtAfter: AssetValue,
   debtDelta: AssetValue,
+  collateralAfter: AssetValue,
   collateralDelta: AssetValue,
   troveOperation: z.string()
 })
