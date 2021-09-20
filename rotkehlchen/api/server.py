@@ -80,6 +80,7 @@ from rotkehlchen.api.v1.resources import (
     MessagesResource,
     NamedEthereumModuleDataResource,
     NamedOracleCacheResource,
+    NFTSBalanceResource,
     NFTSResource,
     OraclesResource,
     OwnedAssetsResource,
@@ -238,6 +239,7 @@ URLS_V1: URLS = [
     ('/gitcoin/events', GitcoinEventsResource),
     ('/gitcoin/report', GitcoinReportResource),
     ('/nfts', NFTSResource),
+    ('/nfts/balances', NFTSBalanceResource),
     ('/limits/reset/<string:location>', LimitsCounterResetResource),
 ]
 

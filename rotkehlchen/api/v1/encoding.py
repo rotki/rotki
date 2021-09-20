@@ -847,6 +847,11 @@ class AsyncQueryArgumentSchema(Schema):
     async_query = fields.Boolean(load_default=False)
 
 
+class AsyncIgnoreCacheQueryArgumentSchema(Schema):
+    async_query = fields.Boolean(load_default=False)
+    ignore_cache = fields.Boolean(load_default=False)
+
+
 class AsyncHistoricalQuerySchema(AsyncQueryArgumentSchema):
     """A schema for getters that have 2 arguments.
     One to enable async querying and another to force reset DB data by querying everytying again"""

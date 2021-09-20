@@ -18,12 +18,13 @@ from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
     AssetIconsSchema,
     AssetIconUploadSchema,
+    AssetResetRequestSchema,
     AssetSchema,
     AssetSchemaWithIdentifier,
     AssetsReplaceSchema,
-    AssetResetRequestSchema,
     AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
+    AsyncIgnoreCacheQueryArgumentSchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
     AvalancheTransactionQuerySchema,
@@ -1863,11 +1864,19 @@ class ERC20TokenInfoAVAX(BaseResource):
 
 
 class NFTSResource(BaseResource):
-    get_schema = AsyncQueryArgumentSchema()
+    get_schema = AsyncIgnoreCacheQueryArgumentSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_nfts(async_query)
+    def get(self, async_query: bool, ignore_cache: bool) -> Response:
+        return self.rest_api.get_nfts(async_query=async_query, ignore_cache=ignore_cache)
+
+
+class NFTSBalanceResource(BaseResource):
+    get_schema = AsyncIgnoreCacheQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool, ignore_cache: bool) -> Response:
+        return self.rest_api.get_nfts_balances(async_query=async_query, ignore_cache=ignore_cache)
 
 
 class LimitsCounterResetResource(BaseResource):
