@@ -3,6 +3,8 @@ import { z } from "zod";
 
 export type Nullable<T> = T | null;
 
+export type SemiPartial<T, Ps extends keyof T> = Pick<T, Ps> & Partial<T>;
+
 export type AddressIndexed<T> = {
   readonly [address: string]: T
 }

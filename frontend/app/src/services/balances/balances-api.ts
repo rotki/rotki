@@ -2,7 +2,10 @@ import { Nullable } from '@rotki/common';
 import { ActionResult } from '@rotki/common/lib/data';
 import { AxiosInstance } from 'axios';
 import { PriceOracles } from '@/model/action-result';
-import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
+import {
+  axiosSnakeCaseTransformer,
+  setupTransformer
+} from '@/services/axios-tranformers';
 import {
   ManualBalance,
   ManualBalances,
@@ -14,8 +17,9 @@ import {
   basicAxiosTransformer
 } from '@/services/consts';
 import { Module } from '@/services/session/consts';
-import { PendingTask } from '@/services/types-api';
+import { ApiImplementation, PendingTask } from '@/services/types-api';
 import {
+  fetchExternalAsync,
   handleResponse,
   validStatus,
   validWithParamsSessionAndExternalService,
@@ -28,6 +32,13 @@ export class BalancesApi {
 
   constructor(axios: AxiosInstance) {
     this.axios = axios;
+  }
+
+  private get api(): ApiImplementation {
+    return {
+      axios: this.axios,
+      baseTransformer: setupTransformer()
+    };
   }
 
   deleteExchangeData(name: SupportedExchange | '' = ''): Promise<boolean> {
@@ -230,5 +241,10 @@ export class BalancesApi {
         }
       )
       .then(handleResponse);
+  }
+
+  async fetchNftBalances(): Promise<PendingTask> {
+    const url = '/nfts/balances';
+    return fetchExternalAsync(this.api, url);
   }
 }

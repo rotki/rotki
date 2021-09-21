@@ -26,7 +26,8 @@ export const defaultState = (): BalanceState => ({
   manualBalances: [],
   manualBalanceByLocation: {},
   prices: {},
-  loopringBalances: {}
+  loopringBalances: {},
+  nfts: {}
 });
 
 export const state: BalanceState = defaultState();

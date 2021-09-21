@@ -15,28 +15,28 @@ import {
   AssetInfoGetter,
   AssetPriceInfo,
   AssetSymbolGetter,
+  BalanceByLocation,
   BalanceState,
   BlockchainAccountWithBalance,
   BlockchainTotal,
   ExchangeRateGetter,
   IdentifierForSymbolGetter,
   L2Totals,
-  LocationBalance,
-  BalanceByLocation
+  LocationBalance
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { Writeable } from '@/types';
 import {
+  AVAX,
   Blockchain,
   BTC,
+  DOT,
   ETH,
   ExchangeInfo,
   GeneralAccount,
   KSM,
-  DOT,
-  AVAX,
   L2_LOOPRING
 } from '@/typing/types';
 import { assert } from '@/utils/assertions';
@@ -76,6 +76,7 @@ export interface BalanceGetters {
   getIdentifierForSymbol: IdentifierForSymbolGetter;
   byLocation: BalanceByLocation;
   exchangeNonce: (exchange: SupportedExchange) => number;
+  nftTotalValue: BigNumber;
 }
 
 function balances(
@@ -799,5 +800,15 @@ export const getters: Getters<
       return (
         exchanges.filter(({ location }) => location === exchange).length + 1
       );
+    },
+  nftTotalValue: ({ nfts }) => {
+    let sum = Zero;
+    for (const address in nfts) {
+      const addressNfts = nfts[address];
+      for (const nft of addressNfts) {
+        sum = sum.plus(nft.priceUsd);
+      }
     }
+    return sum;
+  }
 };

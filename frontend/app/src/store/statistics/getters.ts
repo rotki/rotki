@@ -76,6 +76,7 @@ export const getters: Getters<
     {
       'balances/aggregatedBalances': aggregatedBalances,
       'balances/liabilities': liabilities,
+      'balances/nftTotalValue': nftTotalValue,
       'balances/exchangeRate': exchangeRate,
       'session/floatingPrecision': floatingPrecision,
       'session/currencySymbol': mainCurrency
@@ -89,7 +90,7 @@ export const getters: Getters<
       mainCurrency,
       exchangeRate(mainCurrency),
       floatingPrecision
-    );
+    ).plus(nftTotalValue);
     const liabilitySum = aggregateTotal(
       totalLiabilities,
       mainCurrency,

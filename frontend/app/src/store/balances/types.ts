@@ -1,6 +1,7 @@
-import { Balance } from '@rotki/common';
+import { Balance, NumericString } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { BigNumber } from 'bignumber.js';
+import { z } from 'zod';
 import { Exchange, PriceOracles } from '@/model/action-result';
 import {
   BlockchainAssetBalances,
@@ -63,6 +64,7 @@ export interface BalanceState {
   manualBalances: ManualBalanceWithValue[];
   manualBalanceByLocation: BalanceByLocation;
   prices: AssetPrices;
+  nfts: NftBalances;
 }
 
 export interface EditExchange {
@@ -87,7 +89,7 @@ export interface ExchangePayload {
   readonly ftxSubaccount: Nullable<string>;
 }
 
-interface XpubPayload {
+export interface XpubPayload {
   readonly xpub: string;
   readonly derivationPath: string;
   readonly xpubType: string;
@@ -125,7 +127,7 @@ export interface AccountWithBalance extends GeneralAccount, HasBalance {}
 
 interface XpubAccount extends GeneralAccount, XpubPayload {}
 
-interface XpubAccountWithBalance extends XpubAccount, HasBalance {}
+export interface XpubAccountWithBalance extends XpubAccount, HasBalance {}
 
 export type BlockchainAccount = GeneralAccount | XpubAccount;
 
@@ -145,7 +147,7 @@ export type AddAccountsPayload = {
   readonly modules?: Module[];
 };
 
-interface L2Totals {
+export interface L2Totals {
   readonly protocol: SupportedL2Protocol;
   readonly usdValue: BigNumber;
   readonly loading: boolean;
@@ -218,3 +220,15 @@ export type IdentifierForSymbolGetter = (symbol: string) => string | undefined;
 export type AssetSymbolGetter = (identifier: string) => string;
 
 export type KrakenAccountType = typeof KRAKEN_ACCOUNT_TYPES[number];
+
+const NftBalance = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  priceUsd: NumericString
+});
+
+const NftBalanceArray = z.array(NftBalance);
+
+export const NftBalances = z.record(NftBalanceArray);
+
+export type NftBalances = z.infer<typeof NftBalances>;

@@ -1670,6 +1670,15 @@
         "title": "Deposits & withdrawals for {exchange}"
       }
     },
+    "nft_balances": {
+      "error": {
+        "message": "An error occurred while querying the NFT balances: {message}",
+        "title": "NFT balance querying"
+      },
+      "task": {
+        "title": "Querying NFT balances"
+      }
+    },
     "notifications": {
       "consume": {
         "message_title": "Backend messages"

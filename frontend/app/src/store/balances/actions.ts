@@ -25,11 +25,9 @@ import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { Module } from '@/services/session/consts';
 import { XpubAccountData } from '@/services/types-api';
+import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
-import {
-  MUTATION_UPDATE_LOOPRING_BALANCES,
-  MUTATION_UPDATE_PRICES
-} from '@/store/balances/mutation-types';
+import { BalanceMutations } from '@/store/balances/mutation-types';
 import {
   AccountAssetBalances,
   AccountPayload,
@@ -46,12 +44,13 @@ import {
   ExchangeSetupPayload,
   HistoricPricePayload,
   HistoricPrices,
+  NftBalances,
   OracleCachePayload,
   XpubPayload
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
+import { notify, userNotify } from '@/store/notifications/utils';
 import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
 import { isLoading, setStatus, showError } from '@/store/utils';
 import { Writeable } from '@/types';
@@ -69,6 +68,7 @@ import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 import { chunkArray } from '@/utils/data';
 import { convertFromTimestamp } from '@/utils/date';
+import { logger } from '@/utils/logging';
 
 function removeTag(tags: string[] | null, tagName: string): string[] | null {
   if (!tags) {
@@ -362,6 +362,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       await dispatch('addExchanges', exchanges);
     }
     await dispatch('fetchBlockchainBalances');
+    await dispatch(BalanceActions.FETCH_NFT_BALANCES);
   },
 
   async updateBalances(
@@ -1078,7 +1079,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         taskType,
         `${taskId}`
       );
-      commit(MUTATION_UPDATE_PRICES, {
+      commit(BalanceMutations.UPDATE_PRICES, {
         ...state.prices,
         ...result.assets
       });
@@ -1257,7 +1258,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         taskType
       );
 
-      commit(MUTATION_UPDATE_LOOPRING_BALANCES, result);
+      commit(BalanceMutations.UPDATE_LOOPRING_BALANCES, result);
     } catch (e: any) {
       notify(
         i18n
@@ -1301,6 +1302,32 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         true
       );
       return {};
+    }
+  },
+
+  async [BalanceActions.FETCH_NFT_BALANCES]({ commit }): Promise<void> {
+    try {
+      const taskType = TaskType.NFT_BALANCES;
+      const { taskId } = await api.balances.fetchNftBalances();
+      const task = createTask(taskId, taskType, {
+        title: i18n.t('actions.nft_balances.task.title').toString(),
+        ignoreResult: false,
+        numericKeys: []
+      });
+      commit('tasks/add', task, { root: true });
+      const { result } = await taskCompletion<NftBalances, TaskMeta>(taskType);
+      commit(BalanceMutations.UPDATE_NFT_BALANCES, NftBalances.parse(result));
+    } catch (e: any) {
+      logger.error(e);
+      await userNotify({
+        title: i18n.t('actions.nft_balances.error.title').toString(),
+        message: i18n
+          .t('actions.nft_balances.error.message', {
+            message: e.message
+          })
+          .toString(),
+        display: true
+      });
     }
   }
 };
