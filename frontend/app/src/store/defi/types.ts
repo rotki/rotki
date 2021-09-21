@@ -29,6 +29,7 @@ import {
 import { TradeType } from '@/services/history/types';
 import { HasBalance } from '@/services/types-api';
 import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
+import { LiquitityState } from '@/store/defi/liquity/types';
 import { SushiswapState } from '@/store/defi/sushiswap/types';
 
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
@@ -55,6 +56,7 @@ export interface DefiState {
   uniswapEvents: XswapEvents;
   airdrops: Airdrops;
   sushiswap?: SushiswapState;
+  liquity?: LiquitityState;
 }
 
 export interface PoapDeliveryDetails {
@@ -216,6 +218,7 @@ type LendingHistoryExtras = {
   readonly [DefiProtocol.YEARN_VAULTS]: HistoryExtras<YearnEventType>;
   readonly [DefiProtocol.YEARN_VAULTS_V2]: HistoryExtras<YearnEventType>;
   readonly [DefiProtocol.UNISWAP]: {};
+  readonly [DefiProtocol.LIQUITY]: {};
 };
 
 export interface DefiLendingHistory<T extends DefiProtocol> {
@@ -257,6 +260,8 @@ export interface DefiProtocolSummary {
   readonly balanceUsd?: BigNumber;
   readonly assets: DefiAsset[];
   readonly tokenInfo: TokenInfo | null;
+  readonly deposits: boolean;
+  readonly liabilities: boolean;
   readonly depositsUrl?: string;
   readonly liabilitiesUrl?: string;
   readonly totalCollateralUsd: BigNumber;

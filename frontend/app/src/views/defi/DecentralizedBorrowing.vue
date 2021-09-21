@@ -1,6 +1,6 @@
 <template>
   <module-not-active v-if="!anyModuleEnabled" :modules="modules" />
-  <liabilities v-else />
+  <liabilities v-else :modules="modules" />
 </template>
 
 <script lang="ts">
@@ -18,7 +18,7 @@ export default class DecentralizedBorrowing extends Mixins(ModuleMixin) {
     Module.AAVE,
     Module.COMPOUND,
     Module.MAKERDAO_VAULTS,
-    Module.YEARN
+    Module.LIQUITY
   ];
 
   get anyModuleEnabled(): boolean {

@@ -416,7 +416,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('fetchYearnVaultBalances', {
         refresh,
         version: ProtocolVersion.V2
-      })
+      }),
+      dispatch('liquity/fetchBalances', refresh)
     ]);
 
     setStatus(Status.LOADED, section, status, commit);
@@ -562,6 +563,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         }),
         dispatch('fetchCompoundBalances', refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        }),
+        dispatch('fetchAaveBalances', refresh).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+        }),
+        dispatch('liquity/fetchBalances', refresh).then(() => {
+          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
         })
       ]);
 
@@ -583,7 +590,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     await Promise.all([
       dispatch('fetchMakerDAOVaultDetails', refresh),
       dispatch('fetchCompoundHistory', refresh),
-      dispatch('fetchAaveHistory', refresh)
+      dispatch('fetchAaveHistory', refresh),
+      dispatch('liquity/fetchEvents', refresh)
     ]);
 
     setStatus(Status.LOADED, premiumSection, status, commit);

@@ -1,4 +1,5 @@
 import { inject } from '@vue/composition-api';
+import * as logger from 'loglevel';
 import { ActionContext, Commit, Store } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
@@ -16,7 +17,7 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
     rootGetters: { status },
     rootState: { session }
   }: ActionContext<S, RotkehlchenState>,
-  payload: FetchPayload<T>
+  payload: FetchPayload<T, R>
 ): Promise<void> {
   const { activeModules } = session!.generalSettings;
   if (
@@ -44,8 +45,9 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
     const task = createTask(taskId, payload.taskType, payload.meta);
     commit('tasks/add', task, { root: true });
     const { result } = await taskCompletion<R, T>(payload.taskType);
-    commit(payload.mutation, result);
+    commit(payload.mutation, payload.parser ? payload.parser(result) : result);
   } catch (e: any) {
+    logger.error(`actions failure ${payload.taskType}:`, e);
     notify(
       payload.onError.error(e.message),
       payload.onError.title,

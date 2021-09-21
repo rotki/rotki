@@ -47,5 +47,7 @@ export enum TaskType {
   SUSHISWAP_BALANCES = 'sushiswap_balances',
   SUSHISWAP_TRADES = 'sushiswap_trades',
   SUSHISWAP_EVENTS = 'sushiswap_events',
-  FETCH_NFTS = 'fetch_nfts'
+  FETCH_NFTS = 'fetch_nfts',
+  LIQUITY_BALANCES = 'liquity_balances',
+  LIQUITY_EVENTS = 'liquity_events'
 }

@@ -71,6 +71,11 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     identifier: Module.PICKLE,
     name: 'Pickle Finance',
     icon: require('@/assets/images/modules/pickle.svg')
+  },
+  {
+    identifier: Module.LIQUITY,
+    name: 'Liquity',
+    icon: require('@/assets/images/defi/liquity.svg')
   }
 ];
 

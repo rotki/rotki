@@ -77,13 +77,20 @@
         <defi-protocol-selector v-model="protocol" liabilities />
       </v-col>
     </v-row>
-    <loan-info :loan="loan(selection)" />
+    <loan-info v-if="selection" :loan="loan(selection)" />
+    <full-size-content v-else>
+      <v-row align="center" justify="center">
+        <v-col class="text-h6">{{ $t('liabilities.no_selection') }}</v-col>
+      </v-row>
+    </full-size-content>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
+import { PropType } from 'vue';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import DefiSelectorItem from '@/components/defi/DefiSelectorItem.vue';
 import LoanInfo from '@/components/defi/loan/LoanInfo.vue';
@@ -112,6 +119,7 @@ import {
     ...mapActions('defi', ['fetchBorrowing'])
   },
   components: {
+    FullSizeContent,
     ActiveModules,
     DefiSelectorItem,
     DefiProtocolSelector,
@@ -134,11 +142,8 @@ export default class Liabilities extends Mixins(StatusMixin) {
   section = Section.DEFI_BORROWING;
   secondSection = Section.DEFI_BORROWING_HISTORY;
 
-  readonly modules: Module[] = [
-    Module.AAVE,
-    Module.COMPOUND,
-    Module.MAKERDAO_VAULTS
-  ];
+  @Prop({ required: true, type: Array as PropType<Module[]> })
+  modules!: Module[];
 
   get selectedProtocols(): DefiProtocol[] {
     return this.protocol ? [this.protocol] : [];

@@ -1,73 +1,56 @@
 <template>
-  <stat-card class="loan-debt" title="Debt">
-    <loan-row title="Outstanding debt">
+  <stat-card :title="$t('loan_debt.title')" :class="$style.debt">
+    <loan-row :title="$t('loan_debt.outstanding_debt')">
       <amount-display
         :asset-padding="assetPadding"
-        :value="loan.debt.amount"
-        :asset="loan.asset"
+        :value="debt.amount"
+        :asset="asset"
       />
     </loan-row>
     <loan-row :medium="false">
       <amount-display
         :asset-padding="assetPadding"
-        class="loan-debt__usd-value"
-        :value="loan.debt.usdValue"
+        :value="debt.usdValue"
         fiat-currency="USD"
       />
     </loan-row>
-    <v-divider v-if="isVault" class="my-4" />
-    <loan-row
-      v-if="isVault"
-      title="Stability fee"
-      class="loan-debt__stability-fee mb-2"
-    >
-      <percentage-display
-        :value="loan.stabilityFee"
-        :asset-padding="assetPadding"
-      />
-    </loan-row>
-    <loan-row v-if="isVault" title="Total lost due to interest">
-      <div v-if="premium">
-        <amount-display
-          v-if="loan.totalInterestOwed && !loan.totalInterestOwed.isNegative()"
-          :asset-padding="assetPadding"
-          :value="loan.totalInterestOwed"
-          asset="DAI"
-        />
-        <amount-display
-          v-else
-          :asset-padding="assetPadding"
-          :loading="loan.totalInterestOwed === undefined"
-          :value="'0.00'"
-          asset="DAI"
-        />
-      </div>
-      <div v-else>
-        <premium-lock />
-      </div>
-    </loan-row>
+    <slot />
   </stat-card>
 </template>
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
-import LoanDisplayMixin from '@/components/defi/loan/loan-display-mixin';
+import { Balance } from '@rotki/common';
+import { defineComponent, PropType } from '@vue/composition-api';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import PremiumLock from '@/components/premium/PremiumLock.vue';
-import PremiumMixin from '@/mixins/premium-mixin';
 
-@Component({
+export default defineComponent({
+  name: 'LoanDebt',
   components: {
-    PercentageDisplay,
     LoanRow,
     AmountDisplay,
-    PremiumLock,
     StatCard
+  },
+  props: {
+    debt: {
+      required: true,
+      type: Object as PropType<Balance>
+    },
+    asset: {
+      required: true,
+      type: String
+    }
+  },
+  setup() {
+    return {
+      assetPadding: 4
+    };
   }
-})
-export default class LoanDebt extends Mixins(PremiumMixin, LoanDisplayMixin) {
-  readonly assetPadding: number = 4;
-}
+});
 </script>
+
+<style module lang="scss">
+.debt {
+  height: 100%;
+}
+</style>

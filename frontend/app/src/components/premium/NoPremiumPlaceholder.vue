@@ -1,11 +1,7 @@
 <template>
-  <div
-    class="no-premium-placeholder__empty d-flex flex-column align-center"
-    :class="$vuetify.breakpoint.xsOnly ? 'pa-2 mt-2' : null"
-    :style="`height: calc(100vh - ${top + 64}px);`"
-  >
+  <full-size-content>
     <v-row align="center" justify="center">
-      <v-col cols="auto" class="no-premium-placeholder__logo">
+      <v-col cols="auto" :class="$style.logo">
         <v-img
           contain
           :max-width="$vuetify.breakpoint.mobile ? '100px' : '200px'"
@@ -23,39 +19,30 @@
         </i18n>
       </v-col>
     </v-row>
-  </div>
+  </full-size-content>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
 
-@Component({
-  components: { BaseExternalLink }
-})
-export default class NoPremiumPlaceholder extends Vue {
-  @Prop({ required: true, type: String })
-  text!: string;
-
-  private top: number = -1;
-
-  mounted() {
-    const { top } = this.$el.getBoundingClientRect();
-    this.top = top;
+export default defineComponent({
+  name: 'NoPremiumPlaceholder',
+  components: { FullSizeContent, BaseExternalLink },
+  props: {
+    text: {
+      type: String,
+      required: true
+    }
   }
-}
+});
 </script>
 
-<style scoped lang="scss">
-.no-premium-placeholder {
-  &__logo {
-    padding: 80px;
-    border-radius: 50%;
-    background-color: var(--v-rotki-light-grey-darken1);
-  }
-
-  &__empty {
-    height: 100%;
-  }
+<style module lang="scss">
+.logo {
+  padding: 80px;
+  border-radius: 50%;
+  background-color: var(--v-rotki-light-grey-darken1);
 }
 </style>

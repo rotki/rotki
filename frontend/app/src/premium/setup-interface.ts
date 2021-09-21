@@ -13,6 +13,7 @@ import {
   Themes,
   TimeUnit
 } from '@rotki/common/lib/settings';
+import * as CompositionAPI from '@vue/composition-api';
 import Chart from 'chart.js';
 import dayjs from 'dayjs';
 import Vue from 'vue';
@@ -98,6 +99,7 @@ export const setupPremium = () => {
   window.Vue = Vue;
   window.Chart = Chart;
   window.Vue.use(Vuex);
+  window['@vue/composition-api'] = CompositionAPI;
   window.rotki = {
     useHostComponents: true,
     version: 14,
