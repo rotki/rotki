@@ -318,6 +318,8 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x9d9223436dDD466FC247e9dbbD20207e640fEf58'),
         # Coingecko has orica and we have origami
         ethaddress_to_identifier('0xd2Fa8f92Ea72AbB35dBD6DECa57173d22db2BA49'),
+        # Coingeckop has a different storm token
+        ethaddress_to_identifier('0xD0a4b8946Cb52f0661273bfbC6fD0E0C75Fc6433'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

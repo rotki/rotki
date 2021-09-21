@@ -262,6 +262,7 @@ WORLD_TO_KRAKEN = {
     strethaddress_to_identifier('0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30'): 'INJ',
     'MOVR': 'MOVR',
     'SDN': 'SDN',
+    strethaddress_to_identifier('0x92D6C1e31e14520e676a687F0a93788B716BEff5'): 'DYDX',
 }
 
 WORLD_TO_BINANCE = {

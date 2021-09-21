@@ -175,6 +175,17 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0x27695E09149AdC738A978e9A678F99E4c39e9eb9'),
     'FCN',
     'BITB',
+    'SMC',
+    'POP',
+    'DRM',
+    'CRYPT',
+    'CPC-2',
+    'BSD',
+    'BITS',
+    strethaddress_to_identifier('0x1695936d6a953df699C38CA21c2140d497C08BD9'),
+    strethaddress_to_identifier('0xD6014EA05BDe904448B743833dDF07c3C7837481'),
+    strethaddress_to_identifier('0x054C64741dBafDC19784505494029823D89c3b13'),
+    strethaddress_to_identifier('0x2ecB13A8c458c379c4d9a7259e202De03c8F3D19'),
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [
