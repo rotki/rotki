@@ -100,24 +100,19 @@
         <price-refresh />
       </v-col>
     </v-row>
-    <v-row>
-      <v-col cols="12">
-        <dashboard-asset-table
-          :title="$t('dashboard.per_asset_balances.title')"
-          :loading="anyIsLoading"
-          :balances="aggregatedBalances"
-        />
-      </v-col>
-    </v-row>
-    <v-row v-if="liabilities.length > 0" no-gutters class="mt-8">
-      <v-col>
-        <dashboard-asset-table
-          :title="$t('dashboard.liabilities.title')"
-          :loading="anyIsLoading"
-          :balances="liabilities"
-        />
-      </v-col>
-    </v-row>
+    <dashboard-asset-table
+      :title="$t('dashboard.per_asset_balances.title')"
+      :loading="anyIsLoading"
+      :balances="aggregatedBalances"
+    />
+    <dashboard-asset-table
+      v-if="liabilities.length > 0"
+      class="mt-8"
+      :title="$t('dashboard.liabilities.title')"
+      :loading="anyIsLoading"
+      :balances="liabilities"
+    />
+    <nft-balance-table class="mt-8" />
   </v-container>
 </template>
 
@@ -128,6 +123,7 @@ import BlockchainBalanceCardList from '@/components/dashboard/BlockchainBalanceC
 import DashboardAssetTable from '@/components/dashboard/DashboardAssetTable.vue';
 import ExchangeBox from '@/components/dashboard/ExchangeBox.vue';
 import ManualBalanceCardList from '@/components/dashboard/ManualBalanceCardList.vue';
+import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import SummaryCard from '@/components/dashboard/SummaryCard.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
@@ -143,6 +139,7 @@ import { ExchangeInfo } from '@/typing/types';
 
 @Component({
   components: {
+    NftBalanceTable,
     PriceRefresh,
     DashboardAssetTable,
     OverallBalances,

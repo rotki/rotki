@@ -479,6 +479,14 @@
     "subtitle": "Select which modules should be queried for this account",
     "title": "Enabled modules"
   },
+  "nft_balance_table": {
+    "column": {
+      "id": "Id",
+      "name": "Name",
+      "price": "Price"
+    },
+    "title": "NFT Balances"
+  },
   "nft_gallery": {
     "empty_filter": "No NFTs matching the filter parameters",
     "empty_subtitle": "No NFTs have been detected",

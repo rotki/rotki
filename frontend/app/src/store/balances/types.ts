@@ -227,6 +227,8 @@ const NftBalance = z.object({
   priceUsd: NumericString
 });
 
+export type NftBalance = z.infer<typeof NftBalance>;
+
 const NftBalanceArray = z.array(NftBalance);
 
 export const NftBalances = z.record(NftBalanceArray);

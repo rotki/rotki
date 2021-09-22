@@ -22,7 +22,8 @@ import {
   ExchangeRateGetter,
   IdentifierForSymbolGetter,
   L2Totals,
-  LocationBalance
+  LocationBalance,
+  NftBalance
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
@@ -77,6 +78,7 @@ export interface BalanceGetters {
   byLocation: BalanceByLocation;
   exchangeNonce: (exchange: SupportedExchange) => number;
   nftTotalValue: BigNumber;
+  nftBalances: NftBalance[];
 }
 
 function balances(
@@ -810,5 +812,13 @@ export const getters: Getters<
       }
     }
     return sum;
+  },
+  nftBalances: ({ nfts }) => {
+    const nftBalances: NftBalance[] = [];
+    for (const address in nfts) {
+      const addressNfts = nfts[address];
+      nftBalances.push(...addressNfts);
+    }
+    return nftBalances;
   }
 };
