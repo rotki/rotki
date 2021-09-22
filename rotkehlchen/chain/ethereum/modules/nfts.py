@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Opti
 
 from gevent.lock import Semaphore
 
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
 from rotkehlchen.externalapis.opensea import NFT, Opensea
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
@@ -43,6 +43,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):
     ) -> None:
         super().__init__()
         self.msg_aggregator = msg_aggregator
+        self.db = database
         self.ethereum = ethereum_manager
         self.premium = premium
         self.opensea = Opensea(database=database, msg_aggregator=msg_aggregator)
@@ -107,14 +108,38 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):
     ) -> Dict[ChecksumEthAddress, List[Dict[str, Any]]]:
         result: DefaultDict[ChecksumEthAddress, List[Dict[str, Any]]] = defaultdict(list)
         nft_results, _ = self._get_all_nft_data(addresses, ignore_cache=ignore_cache)
+        db_data = []
         for address, nfts in nft_results.items():
             for nft in nfts:
+                identifier = NFT_DIRECTIVE + nft.token_identifier
+                usd_price = None
                 if nft.price_usd != ZERO:
+                    usd_price = nft.price_usd
                     result[address].append({
-                        'id': nft.token_identifier,
+                        'id': identifier,
                         'name': nft.name,
-                        'usd_price': str(nft.price_usd),
+                        'usd_price': usd_price,
                     })
+                db_data.append((identifier, nft.name, usd_price))
+
+        # save data in the DB
+        if len(db_data) != 0:
+            cursor = self.db.conn.cursor()
+            cursor.executemany(
+                'INSERT OR IGNORE INTO assets(identifier) VALUES(?)',
+                [x[0] for x in db_data],
+            )
+            for entry in db_data:
+                cursor.execute(
+                    'INSERT OR IGNORE INTO nfts(identifier, name, last_price) '
+                    'VALUES(?, ?, ?)',
+                    entry,
+                )
+                if cursor.rowcount != 1 and entry[2] is not None:  # update price
+                    cursor.execute(
+                        'UPDATE nfts SET last_price=? WHERE identifier=?',
+                        (entry[2], entry[0]),
+                    )
 
         return result
 

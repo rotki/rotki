@@ -3,6 +3,7 @@ from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type, TypeVar
 
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import (
     ETHEREUM_DIRECTIVE,
     ETHEREUM_DIRECTIVE_LENGTH,
@@ -504,6 +505,12 @@ class Asset():
             raise DeserializationError(
                 'Tried to initialize an asset out of a non-string identifier',
             )
+
+        if self.identifier.startswith(NFT_DIRECTIVE):  # probably should subclass better
+            object.__setattr__(self, 'name', f'nft with id {self.identifier}')
+            object.__setattr__(self, 'symbol', self.identifier[len(NFT_DIRECTIVE):])
+            object.__setattr__(self, 'asset_type', AssetType.NFT)
+            return
 
         if direct_field_initialization:
             return

@@ -32,6 +32,7 @@ class AssetType(DBEnumMixIn):
     OTHER = 23
     AVALANCHE_TOKEN = 24
     SOLANA_TOKEN = 25
+    NFT = 26
 
 
 class AssetData(NamedTuple):

@@ -74,6 +74,8 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('W', 23);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('X', 24);
 /* SOLANA TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Y', 25);
+/* NFT */
+INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 26);
 """
 
 # Using asset_id as a primary key here since nothing else is guaranteed to be unique
