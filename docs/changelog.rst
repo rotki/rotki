@@ -11,6 +11,7 @@ Changelog
 * :bug:`3421` Users will now be able to see solana properly in coinbase assets
 * :bug:`3418` Users will now be able to finish import from crypto.com's CSV files when there is a time mismatch between rows.
 * :bug:`3056` Users will now be better notified when an error occurred while importing information from crypto.com on credit/debit events with special cases.
+* :bug:`3493` Users of Bitstamp will see correctly imported assets movements with fees in any coin.
 
 * :release:`1.20.1 <2021-08-27>`
 * :bug:`3349` Defi swaps trade now shows in trade history.
