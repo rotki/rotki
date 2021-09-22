@@ -2008,7 +2008,7 @@ class WatchersDeleteSchema(Schema):
     watchers = fields.List(fields.String(required=True), required=True)
 
 
-class AssetIconsSchema(Schema):
+class SingleAssetIdentifierSchema(Schema):
     asset = AssetField(required=True, form_with_incomplete_data=True)
 
 
@@ -2089,6 +2089,9 @@ class ManualPriceSchema(Schema):
     from_asset = AssetField(required=True)
     to_asset = AssetField(required=True)
     price = PriceField(required=True)
+
+
+class TimedManualPriceSchema(ManualPriceSchema):
     timestamp = TimestampField(required=True)
 
 

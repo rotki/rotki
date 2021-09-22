@@ -1,11 +1,16 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Optional, Tuple
 
+import sqlcipher
 from gevent.lock import Semaphore
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
+from rotkehlchen.errors import InputError, RemoteError
 from rotkehlchen.externalapis.opensea import NFT, Opensea
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
@@ -142,6 +147,58 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):
                     )
 
         return result
+
+    def get_nfts_with_price(self) -> List[Dict[str, Any]]:
+        cursor = self.db.conn.cursor()
+        query = cursor.execute('SELECT identifier, last_price from nfts WHERE last_price IS NOT NULL')  # noqa: E501
+        result = []
+        for entry in query:
+            result.append({'asset': entry[0], 'usd_price': entry[1]})
+
+        return result
+
+    def add_nft_with_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            price: Price,
+    ) -> bool:
+        """May raise:
+         - RemoteError
+         - InputError
+        """
+        if to_asset != A_USD:
+            to_asset_usd_price = Inquirer().find_usd_price(to_asset)
+            if to_asset_usd_price == ZERO:
+                raise RemoteError(f'Could not find current usd price for {to_asset}')
+            price = price * to_asset_usd_price  # type: ignore
+
+        cursor = self.db.conn.cursor()
+        try:
+            cursor.execute(
+                'UPDATE nfts SET last_price=? WHERE identifier=?',
+                (str(price), from_asset.identifier),
+            )
+        except sqlcipher.DatabaseError as e:
+            raise InputError(f'Failed to write price for {from_asset.identifier} due to {str(e)}') from e  # noqa: E501
+        if cursor.rowcount != 1:
+            raise InputError(f'Failed to write price for unknown asset {from_asset.identifier}')
+
+        return True
+
+    def delete_price_for_nft(self, asset: Asset) -> bool:
+        cursor = self.db.conn.cursor()
+        try:
+            cursor.execute(
+                'UPDATE nfts SET last_price=? WHERE identifier=?',
+                (None, asset.identifier),
+            )
+        except sqlcipher.DatabaseError as e:
+            raise InputError(f'Failed to delete price for {asset.identifier} due to {str(e)}') from e  # noqa: E501
+        if cursor.rowcount != 1:
+            raise InputError(f'Failed to delete price for unknown asset {asset.identifier}')
+
+        return True
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:

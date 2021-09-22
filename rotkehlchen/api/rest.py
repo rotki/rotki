@@ -2275,6 +2275,9 @@ class RestAPI():
         except RemoteError as e:
             msg = str(e)
             status_code = HTTPStatus.BAD_GATEWAY
+        except InputError as e:
+            msg = str(e)
+            status_code = HTTPStatus.CONFLICT
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
@@ -3502,6 +3505,42 @@ class RestAPI():
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('nfts'),
             ignore_cache=ignore_cache,
+        )
+
+    @require_loggedin_user()
+    def get_nfts_with_price(self) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=False,
+            module_name='nfts',
+            method='get_nfts_with_price',
+            query_specific_balances_before=None,
+        )
+
+    @require_loggedin_user()
+    def add_manual_current_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            price: Price,
+    ) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=False,
+            module_name='nfts',
+            method='add_nft_with_price',
+            query_specific_balances_before=None,
+            from_asset=from_asset,
+            to_asset=to_asset,
+            price=price,
+        )
+
+    @require_loggedin_user()
+    def delete_manual_current_price(self, asset: Asset) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=False,
+            module_name='nfts',
+            method='delete_price_for_nft',
+            query_specific_balances_before=None,
+            asset=asset,
         )
 
     @require_loggedin_user()

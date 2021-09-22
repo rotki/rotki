@@ -877,7 +877,7 @@ Get assets which have manual price set
 
 .. http:get:: /api/(version)/assets/prices/current
 
-   Get all assets which have had custom current prices specified along with their current prices.
+   Get all assets which have had custom current prices specified along with their current prices. At the moment this only works for nfts.
 
 
    **Example Request**:
@@ -900,19 +900,20 @@ Get assets which have manual price set
 
       {
           "result": [
-	      {
-	          "asset": "nft_uniqueid1",
-		  "usd_price": "150.55"
-	      }, {
-	          "asset": "nft_uniqueid2",
-		  "usd_price": "250.55"
-	      }]
+              {
+                  "asset": "nft_uniqueid1",
+                  "usd_price": "150.55"
+              }, {
+                  "asset": "nft_uniqueid2",
+                  "usd_price": "250.55"
+              }]
           "message": ""
       }
 
    :resjson object result: A list of results of assets along with their uds prices
    :statuscode 200: Succesfull query
    :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: Nft module is not activated.
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
@@ -935,7 +936,7 @@ Add manual current price for an asset
       {
           "from_asset": "nft_unique_id",
           "to_asset": "EUR",
-	  "price": "150.55"
+          "price": "150.55"
       }
 
    :reqjson string from_asset: The asset for which the price is given.
@@ -957,6 +958,7 @@ Add manual current price for an asset
    :resjson bool result: boolean for success
    :statuscode 200: Price succesfully added
    :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: Nft module is not activated.
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
@@ -965,7 +967,7 @@ Delete an asset that has manual price set
 
 .. http:delete:: /api/(version)/assets/prices/current
 
-   Deletes an asset that has as manual price set. IF the asset is not found or a manual price is not set a 409 is returned.
+   Deletes an asset that has as manual price set. IF the asset is not found or a manual price is not set a 409 is returned. At the moment this only works for nfts.
 
 
    **Example Request**:
@@ -994,7 +996,7 @@ Delete an asset that has manual price set
    :resjson bool result: boolean for success
    :statuscode 200: Succesfull deletion
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: Asset not found or no manual price exists.
+   :statuscode 409: Asset not found or no manual price exists or nft module not activated.
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
@@ -9278,11 +9280,11 @@ Show NFT Balances
             "result": {
                 "0xeE3766e4F996DC0e0F8c929954EAAFef3441de87": [{
                     "id": "unique id",
-		    "name": "a name",
+                    "name": "a name",
                     "price_usd": "250"
                 }, {
                     "id": "unique id 2",
-		    "name": null,
+                    "name": null,
                     "price_usd": "150"
                 }],
             },

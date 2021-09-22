@@ -16,7 +16,6 @@ from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
-    AssetIconsSchema,
     AssetIconUploadSchema,
     AssetResetRequestSchema,
     AssetSchema,
@@ -75,12 +74,14 @@ from rotkehlchen.api.v1.encoding import (
     OptionalEthereumAddressSchema,
     QueriedAddressesSchema,
     RequiredEthereumAddressSchema,
+    SingleAssetIdentifierSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
     StringIdentifierSchema,
     TagDeleteSchema,
     TagEditSchema,
     TagSchema,
+    TimedManualPriceSchema,
     TimerangeLocationCacheQuerySchema,
     TimerangeLocationQuerySchema,
     TradeDeleteSchema,
@@ -1607,7 +1608,7 @@ class WatchersResource(BaseResource):
 
 class AssetIconsResource(BaseResource):
 
-    get_schema = AssetIconsSchema()
+    get_schema = SingleAssetIdentifierSchema()
     upload_schema = AssetIconUploadSchema()
 
     @use_kwargs(get_schema, location='view_args')
@@ -1638,7 +1639,25 @@ class AssetIconsResource(BaseResource):
 
 class CurrentAssetsPriceResource(BaseResource):
 
+    put_schema = ManualPriceSchema
     post_schema = CurrentAssetsPriceSchema()
+    delete_schema = SingleAssetIdentifierSchema()
+
+    def get(self) -> Response:
+        return self.rest_api.get_nfts_with_price()
+
+    @use_kwargs(put_schema, location='json')
+    def put(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            price: Price,
+    ) -> Response:
+        return self.rest_api.add_manual_current_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            price=price,
+        )
 
     @use_kwargs(post_schema, location='json')
     def post(
@@ -1655,12 +1674,16 @@ class CurrentAssetsPriceResource(BaseResource):
             async_query=async_query,
         )
 
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, asset: Asset) -> Response:
+        return self.rest_api.delete_manual_current_price(asset)
+
 
 class HistoricalAssetsPriceResource(BaseResource):
 
     post_schema = HistoricalAssetsPriceSchema()
-    put_schema = ManualPriceSchema()
-    patch_schema = ManualPriceSchema()
+    put_schema = TimedManualPriceSchema()
+    patch_schema = TimedManualPriceSchema()
     get_schema = ManualPriceRegisteredSchema()
     delete_schema = ManualPriceDeleteSchema()
 
