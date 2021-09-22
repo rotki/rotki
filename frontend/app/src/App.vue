@@ -48,6 +48,9 @@
         <balance-saved-indicator />
         <back-button :can-navigate-back="canNavigateBack" />
         <v-spacer />
+        <v-btn v-if="isDevelopment" to="/playground" icon>
+          <v-icon>mdi-crane</v-icon>
+        </v-btn>
         <update-indicator />
         <theme-switch v-if="premium" />
         <theme-switch-lock v-else />
@@ -240,6 +243,10 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
     }
   }
 
+  get isDevelopment(): boolean {
+    return process.env.NODE_ENV === 'development';
+  }
+
   async created(): Promise<void> {
     this.$interop.onError((backendOutput: string, code: BackendCode) => {
       if (code === BackendCode.TERMINATED) {
@@ -256,7 +263,7 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
     });
 
     await this.$store.dispatch('connect');
-    if (process.env.NODE_ENV === 'development' && this.logged) {
+    if (this.isDevelopment && this.logged) {
       monitor.start();
     }
     this.$store.watch(
