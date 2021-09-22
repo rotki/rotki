@@ -224,6 +224,9 @@ class TaskManager():
         for entry in hash_results:
             tx_hash = '0x' + entry[0].hex()
             tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=tx_hash)
+            # add_receipt_data expects the transactionHash to be a string and
+            # get_transaction_receipt returns bytes for this field.
+            tx_receipt_data['transactionHash'] = tx_receipt_data['transactionHash'].hex()
             dbethtx.add_receipt_data(tx_receipt_data)
 
     def _maybe_schedule_ethereum_txreceipts(self) -> None:
