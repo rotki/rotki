@@ -21,15 +21,15 @@ class ResultCache(NamedTuple):
 CACHE_RESPONSE_FOR_SECS = 600
 
 
-class CacheableMixIn():
+class CacheableMixIn:
     """Interface for objects that can use timewise caches
 
     Any object that adheres to this MixIn's interface can have its functions
     use the @cache_response_timewise decorator
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)  # type: ignore  # https://github.com/python/mypy/issues/5887  # noqa: E501
         self.results_cache: Dict[int, ResultCache] = {}
         # Can also be 0 which means cache is disabled.
         self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS

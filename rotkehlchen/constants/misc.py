@@ -19,6 +19,8 @@ CURRENCYCONVERTER_API_KEY = '7ad371210f296db27c19'
 ZERO = FVal(0)
 ONE = FVal(1)
 
+NFT_DIRECTIVE = '_nft_'
+
 # API URLS
 KRAKEN_BASE_URL = 'https://api.kraken.com'
 KRAKEN_API_VERSION = '0'

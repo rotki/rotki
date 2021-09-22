@@ -1873,7 +1873,7 @@ class DBHandler:
         self.conn.commit()
 
     def save_balances_data(self, data: Dict[str, Any], timestamp: Timestamp) -> None:
-        """ The keys of the data dictionary can be any kind of asset plus 'location'
+        """The keys of the data dictionary can be any kind of asset plus 'location'
         and 'net_usd'. This gives us the balance data per assets, the balance data
         per location and finally the total balance
 
@@ -1892,6 +1892,7 @@ class DBHandler:
                 amount=str(val['amount']),
                 usd_value=str(val['usd_value']),
             ))
+
         for key, val in data['liabilities'].items():
             msg = f'at this point the key should be of Asset type and not {type(key)} {str(key)}'
             assert isinstance(key, Asset), msg
@@ -2911,9 +2912,9 @@ class DBHandler:
             f'CAST(usd_value AS REAL) DESC;',
         )
         results = results.fetchall()
-        assets = []
+        asset_balances = []
         for result in results:
-            assets.append(
+            asset_balances.append(
                 DBAssetBalance(
                     time=result[0],
                     asset=Asset(result[1]),
@@ -2923,7 +2924,7 @@ class DBHandler:
                 ),
             )
 
-        return assets
+        return asset_balances
 
     def get_tags(self) -> Dict[str, Tag]:
         cursor = self.conn.cursor()

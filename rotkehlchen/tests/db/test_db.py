@@ -122,6 +122,7 @@ TABLES_AT_INIT = [
     'ledger_actions_gitcoin_data',
     'gitcoin_tx_type',
     'gitcoin_grant_metadata',
+    'nfts',
 ]
 
 

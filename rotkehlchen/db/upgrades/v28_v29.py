@@ -39,6 +39,12 @@ def _create_new_tables(conn: 'Connection') -> None:
     FOREIGN KEY(tx_hash, log_index) REFERENCES ethtx_receipt_logs(tx_hash, log_index) ON DELETE CASCADE ON UPDATE CASCADE,
     PRIMARY KEY(tx_hash, log_index, topic_index)
     );""")  # noqa: E501
+    conn.executescript("""CREATE TABLE IF NOT EXISTS nfts (
+    identifier TEXT NOT NULL PRIMARY KEY,
+    name TEXT,
+    last_price TEXT,
+    FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE
+    );""")  # noqa: E501
 
 
 def upgrade_v28_to_v29(db: 'DBHandler') -> None:

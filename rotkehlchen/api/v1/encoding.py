@@ -847,6 +847,11 @@ class AsyncQueryArgumentSchema(Schema):
     async_query = fields.Boolean(load_default=False)
 
 
+class AsyncIgnoreCacheQueryArgumentSchema(Schema):
+    async_query = fields.Boolean(load_default=False)
+    ignore_cache = fields.Boolean(load_default=False)
+
+
 class AsyncHistoricalQuerySchema(AsyncQueryArgumentSchema):
     """A schema for getters that have 2 arguments.
     One to enable async querying and another to force reset DB data by querying everytying again"""
@@ -2003,7 +2008,7 @@ class WatchersDeleteSchema(Schema):
     watchers = fields.List(fields.String(required=True), required=True)
 
 
-class AssetIconsSchema(Schema):
+class SingleAssetIdentifierSchema(Schema):
     asset = AssetField(required=True, form_with_incomplete_data=True)
 
 
@@ -2084,6 +2089,9 @@ class ManualPriceSchema(Schema):
     from_asset = AssetField(required=True)
     to_asset = AssetField(required=True)
     price = PriceField(required=True)
+
+
+class TimedManualPriceSchema(ManualPriceSchema):
     timestamp = TimestampField(required=True)
 
 

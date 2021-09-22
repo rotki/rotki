@@ -641,6 +641,24 @@ class Rotkehlchen():
             if len(loopring_balances) != 0:
                 balances[str(Location.LOOPRING)] = loopring_balances
 
+        # retrieve nft balances if module is activated
+        nfts = self.chain_manager.get_module('nfts')
+        if nfts is not None:
+            nft_mapping = nfts.get_balances(
+                addresses=self.chain_manager.queried_addresses_for_module('nfts'),
+                ignore_cache=False,
+            )
+            if len(nft_mapping) != 0:
+                if str(Location.BLOCKCHAIN) not in balances:
+                    balances[str(Location.BLOCKCHAIN)] = {}
+
+                for _, nft_balances in nft_mapping.items():
+                    for balance_entry in nft_balances:
+                        balances[str(Location.BLOCKCHAIN)][Asset(balance_entry['id'])] = Balance(
+                            amount=FVal(1),
+                            usd_value=balance_entry['usd_price'],
+                        )
+
         balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
 
         # Calculate usd totals
