@@ -641,8 +641,6 @@ class Rotkehlchen():
             if len(loopring_balances) != 0:
                 balances[str(Location.LOOPRING)] = loopring_balances
 
-        balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
-
         # retrieve nft balances if module is activated
         nfts = self.chain_manager.get_module('nfts')
         if nfts is not None:

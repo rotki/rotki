@@ -1,8 +1,8 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Optional, Tuple
 
-import sqlcipher
 from gevent.lock import Semaphore
+from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
@@ -37,7 +37,7 @@ class NFTResult(NamedTuple):
         }
 
 
-class Nfts(CacheableMixIn, LockableQueryMixIn):
+class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init]
 
     def __init__(
             self,
@@ -179,7 +179,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):
                 'UPDATE nfts SET last_price=? WHERE identifier=?',
                 (str(price), from_asset.identifier),
             )
-        except sqlcipher.DatabaseError as e:
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             raise InputError(f'Failed to write price for {from_asset.identifier} due to {str(e)}') from e  # noqa: E501
         if cursor.rowcount != 1:
             raise InputError(f'Failed to write price for unknown asset {from_asset.identifier}')
@@ -193,7 +193,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):
                 'UPDATE nfts SET last_price=? WHERE identifier=?',
                 (None, asset.identifier),
             )
-        except sqlcipher.DatabaseError as e:
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             raise InputError(f'Failed to delete price for {asset.identifier} due to {str(e)}') from e  # noqa: E501
         if cursor.rowcount != 1:
             raise InputError(f'Failed to delete price for unknown asset {asset.identifier}')

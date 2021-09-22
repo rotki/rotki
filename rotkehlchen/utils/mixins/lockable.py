@@ -14,8 +14,8 @@ class LockableQueryMixIn():
     use the @protect_with_lock decorator
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)  # type: ignore  # https://github.com/python/mypy/issues/5887  # noqa: E501
         self.query_locks_map: Dict[int, Semaphore] = defaultdict(Semaphore)
         # Accessing and writing to the query_locks map also needs to be protected
         self.query_locks_map_lock = Semaphore()
