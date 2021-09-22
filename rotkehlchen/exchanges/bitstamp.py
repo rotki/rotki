@@ -552,7 +552,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         for symbol in BITSTAMP_ASSET_MOVEMENT_SYMBOLS:
             amount = deserialize_asset_amount(raw_movement.get(symbol, '0'))
             if amount != ZERO:
-                fee_asset = Asset(symbol)
+                fee_asset = asset_from_bitstamp(symbol)
                 break
 
         if amount == ZERO:

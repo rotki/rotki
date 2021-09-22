@@ -9,7 +9,7 @@ import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.converters import asset_from_bitstamp
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD, A_USDC
 from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.exchanges.bitstamp import (
     API_ERR_AUTH_NONCE_CODE,
@@ -846,6 +846,33 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp):
         'gbp': '1000.51',
     }
     asset = A_GBP
+    movement = AssetMovement(
+        timestamp=1521614766,
+        location=Location.BITSTAMP,
+        category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
+        asset=asset,
+        amount=FVal('1000.51'),
+        fee_asset=asset,
+        fee=Fee(FVal('0.1')),
+        link='3',
+    )
+    expected_movement = mock_bitstamp._deserialize_asset_movement(raw_movement)
+    assert movement == expected_movement
+
+    raw_movement = {
+        'id': 3,
+        'type': '0',
+        'datetime': '2018-03-21 06:46:06.559877',
+        'btc': '0',
+        'usd': '0.00000000',
+        'btc_usd': '0.00',
+        'fee': '0.1',
+        'order_id': 2,
+        'usdc': '1000.51',
+    }
+    asset = A_USDC
     movement = AssetMovement(
         timestamp=1521614766,
         location=Location.BITSTAMP,
