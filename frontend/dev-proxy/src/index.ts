@@ -30,7 +30,7 @@ if (
   );
 }
 
-let mockedAsyncCalls = {};
+let mockedAsyncCalls: { [url: string]: any } = {};
 if (fs.existsSync('async-mock.json')) {
   try {
     console.info('Loading mock data from async-mock.json');
@@ -287,6 +287,11 @@ function mockPreflight(res: Response) {
   };
 }
 
+function hasResponse(req: Request) {
+  const mockResponse = mockedAsyncCalls[req.url];
+  return !!mockResponse && !!mockResponse[req.method];
+}
+
 function onProxyRes(
   proxyRes: http.IncomingMessage,
   req: Request,
@@ -309,6 +314,21 @@ function onProxyRes(
     handled = true;
   } else if (isPreflight(req)) {
     mockPreflight(res);
+    handled = true;
+  } else if (hasResponse(req)) {
+    manipulateResponse(res, () => {
+      const response = mockedAsyncCalls[req.url][req.method];
+      if (Array.isArray(response)) {
+        const index = getCounter(req.url, req.method);
+        let responseIndex = index;
+        if (index > response.length - 1) {
+          responseIndex = response.length - 1;
+        }
+        increaseCounter(req.url, req.method);
+        return response[responseIndex];
+      }
+      return response;
+    });
     handled = true;
   }
 
