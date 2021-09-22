@@ -134,6 +134,7 @@
 </template>
 
 <script lang="ts">
+import { AssetBalance } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
@@ -142,11 +143,7 @@ import DataTable from '@/components/helper/DataTable.vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import AssetMixin from '@/mixins/asset-mixin';
-import {
-  AssetBalance,
-  AssetPrices,
-  ExchangeRateGetter
-} from '@/store/balances/types';
+import { AssetPrices, ExchangeRateGetter } from '@/store/balances/types';
 import { Nullable } from '@/types';
 
 @Component({

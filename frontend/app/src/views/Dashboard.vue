@@ -117,6 +117,7 @@
 </template>
 
 <script lang="ts">
+import { AssetBalance } from '@rotki/common';
 import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import BlockchainBalanceCardList from '@/components/dashboard/BlockchainBalanceCardList.vue';
@@ -129,7 +130,6 @@ import SummaryCard from '@/components/dashboard/SummaryCard.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import { TaskType } from '@/model/task-type';
 import {
-  AssetBalance,
   BlockchainBalancePayload,
   BlockchainTotal,
   ExchangeBalancePayload,

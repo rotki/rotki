@@ -80,6 +80,7 @@
 </template>
 
 <script lang="ts">
+import { AssetBalance } from '@rotki/common';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
@@ -89,11 +90,7 @@ import { CURRENCY_USD } from '@/data/currencies';
 import { balanceSum } from '@/filters';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
-import {
-  AssetBalance,
-  AssetPrices,
-  ExchangeRateGetter
-} from '@/store/balances/types';
+import { AssetPrices, ExchangeRateGetter } from '@/store/balances/types';
 
 @Component({
   components: { DataTable, AmountDisplay },

@@ -1,4 +1,4 @@
-import { Balance } from '@rotki/common';
+import { AssetBalance, Balance } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
@@ -10,7 +10,6 @@ import {
 import { GeneralAccountData, HasBalance } from '@/services/types-api';
 import {
   AccountAssetBalances,
-  AssetBalance,
   AssetBreakdown,
   AssetInfoGetter,
   AssetPriceInfo,

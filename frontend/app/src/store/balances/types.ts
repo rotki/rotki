@@ -135,12 +135,6 @@ export type BlockchainAccountWithBalance =
   | XpubAccountWithBalance
   | AccountWithBalance;
 
-export interface AssetBalance extends Balance {
-  readonly asset: string;
-  readonly amount: BigNumber;
-  readonly usdValue: BigNumber;
-}
-
 export type AddAccountsPayload = {
   readonly blockchain: Blockchain;
   readonly payload: AccountPayload[];

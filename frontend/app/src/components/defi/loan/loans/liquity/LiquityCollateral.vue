@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts">
-import { AssetValue } from '@rotki/common/lib/liquity';
+import { AssetBalance } from '@rotki/common';
 import { defineComponent, PropType } from '@vue/composition-api';
 import { BigNumber } from 'bignumber.js';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
@@ -29,7 +29,7 @@ export default defineComponent({
   props: {
     collateral: {
       required: true,
-      type: Object as PropType<AssetValue>
+      type: Object as PropType<AssetBalance>
     },
     ratio: {
       required: false,

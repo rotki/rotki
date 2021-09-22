@@ -17,3 +17,8 @@ export const Balance = z.object({
 })
 
 export type Balance = z.infer<typeof Balance>
+const AssetEntry = z.object({
+  asset: z.string().nonempty()
+});
+export const AssetBalance = Balance.merge(AssetEntry);
+export type AssetBalance = z.infer<typeof AssetBalance>

@@ -1,17 +1,9 @@
 import { z } from "zod";
-import { Balance, NumericString } from "../index";
-
-const AssetEntry = z.object({
-  asset: z.string().nonempty(),
-});
-
-const AssetValue = Balance.merge(AssetEntry)
-
-export type AssetValue = z.infer<typeof AssetValue>
+import { AssetBalance, NumericString } from "../index";
 
 const Trove = z.object({
-  collateral: AssetValue,
-  debt: AssetValue,
+  collateral: AssetBalance,
+  debt: AssetBalance,
   collateralizationRatio: NumericString.nullable(),
   liquidationPrice: NumericString.nullable(),
   active: z.boolean(),
@@ -20,7 +12,7 @@ const Trove = z.object({
 
 const LiquityBalance = z.object({
   trove: Trove,
-  stake: AssetValue.optional()
+  stake: AssetBalance.optional()
 })
 
 export type LiquityBalance = z.infer<typeof LiquityBalance>
@@ -35,10 +27,10 @@ const TroveEvent = z.object({
   tx: z.string(),
   address: z.string(),
   timestamp: z.number(),
-  debtAfter: AssetValue,
-  debtDelta: AssetValue,
-  collateralAfter: AssetValue,
-  collateralDelta: AssetValue,
+  debtAfter: AssetBalance,
+  debtDelta: AssetBalance,
+  collateralAfter: AssetBalance,
+  collateralDelta: AssetBalance,
   troveOperation: z.string()
 })
 
@@ -51,10 +43,10 @@ const StakeEvent = z.object({
   tx: z.string(),
   address: z.string(),
   timestamp: z.number(),
-  stakeAfter: AssetValue,
-  stakeChange: AssetValue,
-  issuanceGain: AssetValue,
-  redemptionGain: AssetValue,
+  stakeAfter: AssetBalance,
+  stakeChange: AssetBalance,
+  issuanceGain: AssetBalance,
+  redemptionGain: AssetBalance,
   stakeOperation: z.string()
 })
 
