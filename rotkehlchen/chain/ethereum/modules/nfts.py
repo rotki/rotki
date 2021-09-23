@@ -125,14 +125,14 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                         'name': nft.name,
                         'usd_price': usd_price,
                     })
-                db_data.append((identifier, nft.name, usd_price))
+                db_data.append((identifier, nft.name, str(usd_price)))
 
         # save data in the DB
         if len(db_data) != 0:
             cursor = self.db.conn.cursor()
             cursor.executemany(
                 'INSERT OR IGNORE INTO assets(identifier) VALUES(?)',
-                [x[0] for x in db_data],
+                [(x[0],) for x in db_data],
             )
             for entry in db_data:
                 cursor.execute(

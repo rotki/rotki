@@ -216,8 +216,9 @@ class Opensea(ExternalServiceWithApiKey):
 
             price_in_eth = max(last_price_in_eth, floor_price)
             price_in_usd = price_in_eth * eth_usd_price
+            token_id = entry['asset_contract']['address'] + '_' + entry['token_id']
             return NFT(
-                token_identifier=entry['token_id'],
+                token_identifier=token_id,
                 background_color=entry['background_color'],
                 image_url=entry['image_url'],
                 name=entry['name'],
