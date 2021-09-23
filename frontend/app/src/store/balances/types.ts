@@ -64,7 +64,7 @@ export interface BalanceState {
   manualBalances: ManualBalanceWithValue[];
   manualBalanceByLocation: BalanceByLocation;
   prices: AssetPrices;
-  nfts: NftBalances;
+  nonFungibleBalances: NonFungibleBalances;
 }
 
 export interface EditExchange {
@@ -215,16 +215,16 @@ export type AssetSymbolGetter = (identifier: string) => string;
 
 export type KrakenAccountType = typeof KRAKEN_ACCOUNT_TYPES[number];
 
-const NftBalance = z.object({
+const NonFungibleBalance = z.object({
   id: z.string(),
   name: z.string().nullable(),
-  priceUsd: NumericString
+  usdPrice: NumericString
 });
 
-export type NftBalance = z.infer<typeof NftBalance>;
+export type NonFungibleBalance = z.infer<typeof NonFungibleBalance>;
 
-const NftBalanceArray = z.array(NftBalance);
+const NonFungibleBalanceArray = z.array(NonFungibleBalance);
 
-export const NftBalances = z.record(NftBalanceArray);
+export const NonFungibleBalances = z.record(NonFungibleBalanceArray);
 
-export type NftBalances = z.infer<typeof NftBalances>;
+export type NonFungibleBalances = z.infer<typeof NonFungibleBalances>;

@@ -479,13 +479,44 @@
     "subtitle": "Select which modules should be queried for this account",
     "title": "Enabled modules"
   },
+  "non_fungible_balance": {
+    "column": {
+      "actions": "Actions",
+      "custom_price": "Custom Price",
+      "name": "Name",
+      "price": "Price"
+    }
+  },
+  "non_fungible_balance_edit": {
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "price": "Price",
+    "title": "Edit or set the price for the asset"
+  },
   "nft_balance_table": {
     "column": {
-      "id": "Id",
       "name": "Name",
+      "percentage": "% of net Value",
       "price": "Price"
     },
     "title": "NFT Balances"
+  },
+  "non_fungible_balances": {
+    "delete": {
+      "error": {
+        "message": "Could not delete the current price for {confirmId}",
+        "title": "Deleting custom current price"
+      },
+      "message": "Are you sure wou want to delete the custom price for {confirmId}?",
+      "title": "Delete custom price"
+    },
+    "row": {
+      "delete": "Delete the custom price",
+      "edit": "Edit or set the custom price"
+    },
+    "title": "Non Fungible Balances"
   },
   "nft_gallery": {
     "empty_filter": "No NFTs matching the filter parameters",
@@ -2351,6 +2382,9 @@
       "actions": "Actions",
       "usd_value_eth": "Total {symbol} value of account's assets",
       "usd_value": "{symbol} value"
+    },
+    "tabs": {
+      "nonfungible": "Non Fungible Balances"
     },
     "total": "Total",
     "confirm_delete": {

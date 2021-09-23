@@ -2,6 +2,7 @@ import { ActionResult, SupportedAsset } from '@rotki/common/lib/data';
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import {
   AssetIdResponse,
+  AssetPriceArray,
   ConflictResolution,
   EthereumToken,
   HistoricalPrice,
@@ -298,6 +299,48 @@ export class AssetApi {
         validateStatus: validStatus,
         transformResponse: this.baseTransformer
       })
+      .then(handleResponse);
+  }
+
+  fetchCurrentPrices(): Promise<AssetPriceArray> {
+    return this.axios
+      .get<ActionResult<AssetPriceArray>>('/assets/prices/current', {
+        validateStatus: validStatus,
+        transformResponse: this.baseTransformer
+      })
+      .then(handleResponse);
+  }
+
+  deleteCurrentPrice(asset: string): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>('/assets/prices/current', {
+        validateStatus: validStatus,
+        data: {
+          asset
+        },
+        transformResponse: this.baseTransformer
+      })
+      .then(handleResponse);
+  }
+
+  setCurrentPrice(
+    fromAsset: string,
+    toAsset: string,
+    price: string
+  ): Promise<boolean> {
+    return this.axios
+      .put<ActionResult<boolean>>(
+        '/assets/prices/current',
+        axiosSnakeCaseTransformer({
+          fromAsset,
+          toAsset,
+          price
+        }),
+        {
+          validateStatus: validStatus,
+          transformResponse: this.baseTransformer
+        }
+      )
       .then(handleResponse);
   }
 }

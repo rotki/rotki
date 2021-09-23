@@ -15,7 +15,7 @@ import {
   AssetPrices,
   BalanceState,
   EditExchange,
-  NftBalances
+  NonFungibleBalances
 } from '@/store/balances/types';
 import { ExchangeData, ExchangeInfo, ExchangeRates } from '@/typing/types';
 
@@ -127,11 +127,11 @@ export const mutations: MutationTree<BalanceState> = {
   ) {
     state.loopringBalances = balances;
   },
-  [BalanceMutations.UPDATE_NFT_BALANCES](
+  [BalanceMutations.UPDATE_NF_BALANCES](
     state: BalanceState,
-    balances: NftBalances
+    balances: NonFungibleBalances
   ) {
-    state.nfts = balances;
+    state.nonFungibleBalances = balances;
   },
   reset(state: BalanceState) {
     Object.assign(state, defaultState());

@@ -1,10 +1,11 @@
+import { AssetBalance } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import sortBy from 'lodash/sortBy';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { BtcBalances } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
 import { BalanceGetters, getters } from '@/store/balances/getters';
-import { AssetBalance, BalanceState } from '@/store/balances/types';
+import { BalanceState } from '@/store/balances/types';
 import { SessionState } from '@/store/session/types';
 import store from '@/store/store';
 import { RotkehlchenState } from '@/store/types';

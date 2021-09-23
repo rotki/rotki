@@ -54,7 +54,8 @@ export enum Section {
   DEFI_SUSHISWAP_TRADES = 'sushiswap_trades',
   DEFI_SUSHISWAP_EVENTS = 'sushiswap_events',
   DEFI_LIQUITY_BALANCES = 'liquity_balances',
-  DEFI_LIQUITY_EVENTS = 'liquity_events'
+  DEFI_LIQUITY_EVENTS = 'liquity_events',
+  NON_FUNGIBLE_BALANCES = 'nfb'
 }
 
 export const defiSections: Section[] = [

@@ -22,7 +22,7 @@ import {
   IdentifierForSymbolGetter,
   L2Totals,
   LocationBalance,
-  NftBalance
+  NonFungibleBalance
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
@@ -76,8 +76,8 @@ export interface BalanceGetters {
   getIdentifierForSymbol: IdentifierForSymbolGetter;
   byLocation: BalanceByLocation;
   exchangeNonce: (exchange: SupportedExchange) => number;
-  nftTotalValue: BigNumber;
-  nftBalances: NftBalance[];
+  nfTotalValue: BigNumber;
+  nfBalances: NonFungibleBalance[];
 }
 
 function balances(
@@ -802,22 +802,22 @@ export const getters: Getters<
         exchanges.filter(({ location }) => location === exchange).length + 1
       );
     },
-  nftTotalValue: ({ nfts }) => {
+  nfTotalValue: ({ nonFungibleBalances }) => {
     let sum = Zero;
-    for (const address in nfts) {
-      const addressNfts = nfts[address];
+    for (const address in nonFungibleBalances) {
+      const addressNfts = nonFungibleBalances[address];
       for (const nft of addressNfts) {
-        sum = sum.plus(nft.priceUsd);
+        sum = sum.plus(nft.usdPrice);
       }
     }
     return sum;
   },
-  nftBalances: ({ nfts }) => {
-    const nftBalances: NftBalance[] = [];
-    for (const address in nfts) {
-      const addressNfts = nfts[address];
-      nftBalances.push(...addressNfts);
+  nfBalances: ({ nonFungibleBalances }) => {
+    const nfBalances: NonFungibleBalance[] = [];
+    for (const address in nonFungibleBalances) {
+      const addressNfBalance = nonFungibleBalances[address];
+      nfBalances.push(...addressNfBalance);
     }
-    return nftBalances;
+    return nfBalances;
   }
 };

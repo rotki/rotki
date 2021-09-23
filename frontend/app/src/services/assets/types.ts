@@ -1,5 +1,7 @@
+import { AssetEntry, NumericString } from '@rotki/common';
 import { BaseAsset, SupportedAsset } from '@rotki/common/lib/data';
 import { BigNumber } from 'bignumber.js';
+import { z } from 'zod';
 import { CONFLICT_RESOLUTION } from '@/services/assets/consts';
 
 export interface UnderlyingToken {
@@ -48,3 +50,13 @@ export interface HistoricalPricePayload {
   readonly fromAsset: string;
   readonly toAsset: string;
 }
+
+const AssetPrice = z
+  .object({
+    usdPrice: NumericString
+  })
+  .merge(AssetEntry);
+
+export const AssetPriceArray = z.array(AssetPrice);
+
+export type AssetPriceArray = z.infer<typeof AssetPriceArray>;

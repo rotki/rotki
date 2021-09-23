@@ -1,5 +1,5 @@
 <template>
-  <span>
+  <span :class="$style.actions">
     <v-tooltip top>
       <template #activator="{ on, attrs }">
         <v-btn
@@ -49,6 +49,7 @@ export default defineComponent({
     deleteTooltip: { required: false, type: String, default: '' },
     noDelete: { required: false, type: Boolean, default: false }
   },
+  emits: ['edit-click', 'delete-click'],
   setup(_, { emit }) {
     return {
       editClick: () => emit('edit-click'),
@@ -57,3 +58,11 @@ export default defineComponent({
   }
 });
 </script>
+
+<style module lang="scss">
+.actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+}
+</style>

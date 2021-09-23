@@ -1,3 +1,3 @@
 export enum BalanceActions {
-  FETCH_NFT_BALANCES = 'fetchNftBalances'
+  FETCH_NF_BALANCES = 'fetchNfBalances'
 }

@@ -243,7 +243,7 @@ export class BalancesApi {
       .then(handleResponse);
   }
 
-  async fetchNftBalances(): Promise<PendingTask> {
+  async fetchNfBalances(): Promise<PendingTask> {
     const url = '/nfts/balances';
     return fetchExternalAsync(this.api, url);
   }

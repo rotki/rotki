@@ -24,5 +24,6 @@ export const Routes = {
   HISTORY_TRANSACTIONS: '/history/transactions',
   HISTORY_TRADES: '/history/trades',
   HISTORY_DEPOSITS_WITHDRAWALS: '/history/deposits-withdrawals',
-  NFTS: '/nfts'
+  NFTS: '/nfts',
+  NON_FUNGIBLE: '/accounts-balances/nonfungible'
 };

@@ -44,7 +44,7 @@ import {
   ExchangeSetupPayload,
   HistoricPricePayload,
   HistoricPrices,
-  NftBalances,
+  NonFungibleBalances,
   OracleCachePayload,
   XpubPayload
 } from '@/store/balances/types';
@@ -362,7 +362,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       await dispatch('addExchanges', exchanges);
     }
     await dispatch('fetchBlockchainBalances');
-    await dispatch(BalanceActions.FETCH_NFT_BALANCES);
+    await dispatch(BalanceActions.FETCH_NF_BALANCES);
   },
 
   async updateBalances(
@@ -1305,18 +1305,29 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async [BalanceActions.FETCH_NFT_BALANCES]({ commit }): Promise<void> {
+  async [BalanceActions.FETCH_NF_BALANCES]({
+    commit,
+    rootGetters: { status }
+  }): Promise<void> {
+    const section = Section.NON_FUNGIBLE_BALANCES;
     try {
-      const taskType = TaskType.NFT_BALANCES;
-      const { taskId } = await api.balances.fetchNftBalances();
+      setStatus(Status.LOADING, section, status, commit);
+      const taskType = TaskType.NF_BALANCES;
+      const { taskId } = await api.balances.fetchNfBalances();
       const task = createTask(taskId, taskType, {
         title: i18n.t('actions.nft_balances.task.title').toString(),
         ignoreResult: false,
         numericKeys: []
       });
       commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<NftBalances, TaskMeta>(taskType);
-      commit(BalanceMutations.UPDATE_NFT_BALANCES, NftBalances.parse(result));
+      const { result } = await taskCompletion<NonFungibleBalances, TaskMeta>(
+        taskType
+      );
+      commit(
+        BalanceMutations.UPDATE_NF_BALANCES,
+        NonFungibleBalances.parse(result)
+      );
+      setStatus(Status.LOADED, section, status, commit);
     } catch (e: any) {
       logger.error(e);
       await userNotify({
@@ -1328,6 +1339,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           .toString(),
         display: true
       });
+      setStatus(Status.NONE, section, status, commit);
     }
   }
 };
