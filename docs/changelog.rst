@@ -12,6 +12,7 @@ Changelog
 * :bug:`3418` Users will now be able to finish import from crypto.com's CSV files when there is a time mismatch between rows.
 * :bug:`3056` Users will now be better notified when an error occurred while importing information from crypto.com on credit/debit events with special cases.
 * :bug:`3493` Users of Bitstamp will see correctly imported assets movements with fees in any coin.
+* :bug:`3491` Coinbasepro users who own Barnbridge governance token (BOND) will now be able to properly see it in balances, trades and deposits/withdrawals.
 
 * :release:`1.20.1 <2021-08-27>`
 * :bug:`3349` Defi swaps trade now shows in trade history.
