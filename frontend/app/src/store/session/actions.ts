@@ -620,12 +620,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const task = createTask(taskId, taskType, {
         title: i18n.t('actions.session.fetch_nfts.task.title').toString(),
         ignoreResult: false,
-        numericKeys: ['price_eth', 'price_usd']
+        numericKeys: []
       });
       commit('tasks/add', task, { root: true });
       const { result } = await taskCompletion<NftResponse, TaskMeta>(taskType);
       return {
-        result,
+        result: NftResponse.parse(result),
         message: ''
       };
     } catch (e: any) {
