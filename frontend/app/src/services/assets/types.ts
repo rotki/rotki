@@ -51,11 +51,16 @@ export interface HistoricalPricePayload {
   readonly toAsset: string;
 }
 
-const AssetPrice = z
+export const AssetPrice = z
   .object({
-    usdPrice: NumericString
+    usdPrice: NumericString,
+    manuallyInput: z.boolean(),
+    priceAsset: z.string().nonempty(),
+    priceInAsset: NumericString
   })
   .merge(AssetEntry);
+
+export type AssetPrice = z.infer<typeof AssetPrice>;
 
 export const AssetPriceArray = z.array(AssetPrice);
 

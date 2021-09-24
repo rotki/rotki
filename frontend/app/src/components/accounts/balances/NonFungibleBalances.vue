@@ -6,9 +6,16 @@
         mdi-spin mdi-loading
       </v-icon>
     </template>
-    <data-table :headers="tableHeaders" :items="balances">
+    <template #details>
+      <refresh-button
+        :loading="loading"
+        :tooltip="$t('non_fungible_balances.refresh')"
+        @refresh="refresh"
+      />
+    </template>
+    <data-table :headers="tableHeaders" :items="balances" sort-by="usdPrice">
       <template #item.name="{ item }">
-        {{ item.name ? item.name : item.id }}
+        {{ item.name ? item.name : item.asset }}
       </template>
       <template #item.usdPrice="{ item }">
         <amount-display
@@ -21,12 +28,13 @@
         <row-action
           :delete-tooltip="$t('non_fungible_balances.row.delete')"
           :edit-tooltip="$t('non_fungible_balances.row.edit')"
-          @delete-click="confirmId = item.id"
+          :delete-disabled="!item.manuallyInput"
+          @delete-click="confirmDelete = item"
           @edit-click="edit = item"
         />
       </template>
-      <template #item.hasPrice="{ item }">
-        <v-icon v-if="item.hasPrice" color="green">mdi-check</v-icon>
+      <template #item.manuallyInput="{ item }">
+        <v-icon v-if="item.manuallyInput" color="green">mdi-check</v-icon>
       </template>
     </data-table>
 
@@ -37,11 +45,15 @@
       @save="setPrice($event.price, $event.asset)"
     />
     <confirm-dialog
-      :display="!!confirmId"
+      :display="!!confirmDelete"
       :title="$t('non_fungible_balances.delete.title')"
-      :message="$t('non_fungible_balances.delete.message', { confirmId })"
+      :message="
+        $t('non_fungible_balances.delete.message', {
+          asset: getAsset(confirmDelete)
+        })
+      "
       @confirm="deletePrice"
-      @cancel="confirmId = ''"
+      @cancel="confirmDelete = null"
     />
   </card>
 </template>
@@ -55,11 +67,12 @@ import {
 } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';
-import { PricedNonFungibleBalance } from '@/components/accounts/balances/types';
+import { NonFungiblePrice } from '@/components/accounts/balances/types';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import { isSectionLoading } from '@/composables/common';
 import i18n from '@/i18n';
-import { AssetPriceArray } from '@/services/assets/types';
+import { AssetPrice, AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { NonFungibleBalance } from '@/store/balances/types';
@@ -82,7 +95,7 @@ const tableHeaders: DataTableHeader[] = [
   },
   {
     text: i18n.t('non_fungible_balance.column.custom_price').toString(),
-    value: 'hasPrice'
+    value: 'manuallyInput'
   },
   {
     text: i18n.t('non_fungible_balance.column.actions').toString(),
@@ -92,13 +105,13 @@ const tableHeaders: DataTableHeader[] = [
 ];
 
 const setupEdit = (refresh: () => Promise<void>) => {
-  const edit = ref<PricedNonFungibleBalance | null>(null);
+  const edit = ref<NonFungiblePrice | null>(null);
   const setPrice = async (price: string, toAsset: string) => {
     const nft = edit.value;
     edit.value = null;
     assert(nft);
     try {
-      await api.assets.setCurrentPrice(nft.id, toAsset, price);
+      await api.assets.setCurrentPrice(nft.asset, toAsset, price);
       await refresh();
     } catch (e: any) {
       await userNotify({
@@ -116,25 +129,28 @@ const setupEdit = (refresh: () => Promise<void>) => {
 };
 
 const setupConfirm = (refresh: () => Promise<void>) => {
-  const confirmId = ref('');
+  const confirmDelete = ref<NonFungiblePrice | null>(null);
   const deletePrice = async () => {
-    const asset = confirmId.value;
-    confirmId.value = '';
+    const price = confirmDelete.value;
+    assert(price);
+    confirmDelete.value = null;
     try {
-      await api.assets.deleteCurrentPrice(asset);
+      await api.assets.deleteCurrentPrice(price.asset);
       await refresh();
     } catch (e: any) {
       await userNotify({
         title: i18n.t('non_fungible_balances.delete.error.title').toString(),
         message: i18n
-          .t('non_fungible_balances.delete.error.message', { confirmId })
+          .t('non_fungible_balances.delete.error.message', {
+            asset: price.name ?? price.asset
+          })
           .toString(),
         display: true
       });
     }
   };
   return {
-    confirmId,
+    confirmDelete,
     deletePrice
   };
 };
@@ -152,6 +168,7 @@ const requestPrices = () => {
   };
   onMounted(fetchPrices);
   return {
+    fetchPrices,
     error,
     prices
   };
@@ -159,27 +176,42 @@ const requestPrices = () => {
 
 export default defineComponent({
   name: 'NonFungibleBalances',
-  components: { NonFungibleBalanceEdit, RowAction },
+  components: { RefreshButton, NonFungibleBalanceEdit, RowAction },
   setup() {
     const pricesRequest = requestPrices();
     const store = useStore();
-    const balances = computed<PricedNonFungibleBalance[]>(() => {
+    const balances = computed<NonFungiblePrice[]>(() => {
       const prices = pricesRequest.prices.value;
       const balances: NonFungibleBalance[] =
         store.getters['balances/nfBalances'];
-      const data: PricedNonFungibleBalance[] = [];
+      const data: NonFungiblePrice[] = [];
 
       for (const balance of balances) {
-        const hasPrice = !!prices.find(({ asset }) => asset === balance.id);
-        data.push({
-          ...balance,
-          hasPrice
-        });
+        const price = prices.find(({ asset }) => asset === balance.id);
+        let entry: NonFungiblePrice;
+        if (!price) {
+          entry = {
+            name: balance.name,
+            asset: balance.id,
+            manuallyInput: false,
+            priceAsset: 'USD',
+            priceInAsset: balance.usdPrice,
+            usdPrice: balance.usdPrice
+          };
+        } else {
+          entry = {
+            ...(price as AssetPrice),
+            name: balance.name
+          };
+        }
+
+        data.push(entry);
       }
       return data;
     });
 
     const refresh = async () => {
+      await pricesRequest.fetchPrices();
       return await store.dispatch(
         `balances/${BalanceActions.FETCH_NF_BALANCES}`
       );
@@ -190,8 +222,16 @@ export default defineComponent({
       ...pricesRequest,
       ...setupConfirm(refresh),
       ...setupEdit(refresh),
+      refresh,
       balances,
-      tableHeaders
+      tableHeaders,
+      getAsset: (price: NonFungiblePrice | null) => {
+        if (!price) {
+          return '';
+        }
+
+        return price.name ?? price.asset;
+      }
     };
   }
 });

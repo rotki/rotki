@@ -1,4 +1,4 @@
-import { BigNumber } from "bignumber.js";
+import { default as BigNumber } from "bignumber.js";
 import { z } from "zod";
 
 export type Nullable<T> = T | null;

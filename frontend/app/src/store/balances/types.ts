@@ -215,7 +215,7 @@ export type AssetSymbolGetter = (identifier: string) => string;
 
 export type KrakenAccountType = typeof KRAKEN_ACCOUNT_TYPES[number];
 
-const NonFungibleBalance = z.object({
+export const NonFungibleBalance = z.object({
   id: z.string(),
   name: z.string().nullable(),
   usdPrice: NumericString

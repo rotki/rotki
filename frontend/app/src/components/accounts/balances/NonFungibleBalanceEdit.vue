@@ -1,5 +1,10 @@
 <template>
-  <v-dialog :value="true" max-width="550px" @close="close">
+  <v-dialog
+    :value="true"
+    max-width="550px"
+    @close="close"
+    @click:outside="close"
+  >
     <card>
       <template #title>{{ $t('non_fungible_balance_edit.title') }}</template>
       <template #subtitle> {{ value.name }}</template>
@@ -25,8 +30,15 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, ref } from '@vue/composition-api';
-import { PricedNonFungibleBalance } from '@/components/accounts/balances/types';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  PropType,
+  ref,
+  toRefs
+} from '@vue/composition-api';
+import { NonFungiblePrice } from '@/components/accounts/balances/types';
 import { assert } from '@/utils/assertions';
 
 export default defineComponent({
@@ -34,11 +46,12 @@ export default defineComponent({
   props: {
     value: {
       required: true,
-      type: Object as PropType<PricedNonFungibleBalance>
+      type: Object as PropType<NonFungiblePrice>
     }
   },
   emits: ['close', 'save'],
   setup(props, { emit }) {
+    const { value } = toRefs(props);
     const asset = ref<string | null>(null);
     const price = ref<string | null>(null);
     const valid = computed(() => {
@@ -50,6 +63,10 @@ export default defineComponent({
       assert(price.value);
       emit('save', { asset: asset.value, price: price.value });
     };
+    onMounted(() => {
+      asset.value = value.value.priceAsset;
+      price.value = value.value.priceInAsset.toString();
+    });
     return {
       valid,
       asset,

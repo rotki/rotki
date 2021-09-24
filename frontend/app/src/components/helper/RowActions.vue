@@ -23,7 +23,7 @@
           small
           v-bind="attrs"
           icon
-          :disabled="disabled"
+          :disabled="disabled || deleteDisabled"
           class="mx-1"
           data-cy="row-delete"
           v-on="on"
@@ -44,7 +44,8 @@ import { defineComponent } from '@vue/composition-api';
 export default defineComponent({
   name: 'RowAction',
   props: {
-    disabled: { required: false, type: Boolean },
+    disabled: { required: false, type: Boolean, default: false },
+    deleteDisabled: { required: false, type: Boolean, default: false },
     editTooltip: { required: true, type: String },
     deleteTooltip: { required: false, type: String, default: '' },
     noDelete: { required: false, type: Boolean, default: false }

@@ -506,12 +506,13 @@
   "non_fungible_balances": {
     "delete": {
       "error": {
-        "message": "Could not delete the current price for {confirmId}",
+        "message": "Could not delete the current price for {asset}",
         "title": "Deleting custom current price"
       },
-      "message": "Are you sure wou want to delete the custom price for {confirmId}?",
+      "message": "Are you sure wou want to delete the custom price for {asset}?",
       "title": "Delete custom price"
     },
+    "refresh": "Refresh the balances",
     "row": {
       "delete": "Delete the custom price",
       "edit": "Edit or set the custom price"

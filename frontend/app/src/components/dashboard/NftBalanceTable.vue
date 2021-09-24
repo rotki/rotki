@@ -48,7 +48,8 @@ const tableHeaders: DataTableHeader[] = [
   {
     text: i18n.t('nft_balance_table.column.percentage').toString(),
     value: 'percentage',
-    align: 'end'
+    align: 'end',
+    class: 'text-no-wrap'
   }
 ];
 
