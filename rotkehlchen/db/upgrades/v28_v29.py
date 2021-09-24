@@ -117,4 +117,9 @@ def upgrade_v28_to_v29(db: 'DBHandler') -> None:
     )
 
     _create_new_tables(db.conn)
+
+    # Rename uniswap_events table. Drop amm_events first if it was created at initialization
+    # of the db handler
+    cursor.execute('DROP TABLE IF EXISTS amm_events;')
+    cursor.execute('ALTER TABLE uniswap_events RENAME TO amm_events;')
     db.conn.commit()

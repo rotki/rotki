@@ -2308,6 +2308,14 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
         ))
     assert transactions_after == expected_transactions_after
 
+    # check that uniswap_events table was renamed
+    cursor.execute(
+        'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="uniswap_events";',
+    )
+    assert cursor.fetchone()[0] == 0
+    cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="amm_events";')
+    assert cursor.fetchone()[0] == 1
+
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 29
 

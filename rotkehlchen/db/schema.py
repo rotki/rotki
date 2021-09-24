@@ -529,7 +529,7 @@ CREATE TABLE IF NOT EXISTS amm_swaps (
 """
 
 DB_CREATE_AMM_EVENTS = """
-CREATE TABLE IF NOT EXISTS uniswap_events (
+CREATE TABLE IF NOT EXISTS amm_events (
     tx_hash VARCHAR[42] NOT NULL,
     log_index INTEGER NOT NULL,
     address VARCHAR[42] NOT NULL,
