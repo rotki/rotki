@@ -14,6 +14,7 @@ Changelog
 * :bug:`3493` Users of Bitstamp will see correctly imported assets movements with fees in any coin.
 * :bug:`3491` Coinbasepro users who own Barnbridge governance token (BOND) will now be able to properly see it in balances, trades and deposits/withdrawals.
 * :bug:`-` Users importing information from Nexo CSVs will correctly detect interest gains and detect special assets symbols.
+* :bug:`3502` MakerDAO vault users who saw double the amount of liabilities for some of their vault/s should now see the proper amount again.
 
 * :release:`1.20.1 <2021-08-27>`
 * :bug:`3349` Defi swaps trade now shows in trade history.
