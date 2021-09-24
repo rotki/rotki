@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Optional, Tuple
 
@@ -7,9 +8,11 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
-from rotkehlchen.errors import InputError, RemoteError
+from rotkehlchen.errors import InputError, RemoteError, UnknownAsset
 from rotkehlchen.externalapis.opensea import NFT, Opensea
+from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
@@ -20,6 +23,9 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 FREE_NFT_LIMIT = 5
 
@@ -113,21 +119,35 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
     ) -> Dict[ChecksumEthAddress, List[Dict[str, Any]]]:
         result: DefaultDict[ChecksumEthAddress, List[Dict[str, Any]]] = defaultdict(list)
         nft_results, _ = self._get_all_nft_data(addresses, ignore_cache=ignore_cache)
+        cached_db_result = self.get_nfts_with_price()
+        cached_db_prices = {x['asset']: x for x in cached_db_result}
         db_data = []
         for address, nfts in nft_results.items():
             for nft in nfts:
                 identifier = NFT_DIRECTIVE + nft.token_identifier
-                usd_price = None
-                if nft.price_usd != ZERO:
+                cached_price_data = cached_db_prices.get(identifier)
+                if cached_price_data is not None and cached_price_data['manually_input']:
+                    result[address].append({
+                        'id': identifier,
+                        'name': nft.name,
+                        'manually_input': True,
+                        'price_asset': cached_price_data['price_asset'],
+                        'price_in_asset': cached_price_data['price_in_asset'],
+                        'usd_price': cached_price_data['usd_price'],
+                    })
+                elif nft.price_usd != ZERO:
                     usd_price = nft.price_usd
                     result[address].append({
                         'id': identifier,
                         'name': nft.name,
+                        'manually_input': False,
+                        'price_asset': 'USD',
+                        'price_in_asset': usd_price,
                         'usd_price': usd_price,
                     })
-                db_data.append((identifier, nft.name, str(usd_price)))
+                    db_data.append((identifier, nft.name, str(usd_price), 'USD', 0))
 
-        # save data in the DB
+        # save opensea data in the DB
         if len(db_data) != 0:
             cursor = self.db.conn.cursor()
             cursor.executemany(
@@ -135,25 +155,58 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                 [(x[0],) for x in db_data],
             )
             for entry in db_data:
-                cursor.execute(
-                    'INSERT OR IGNORE INTO nfts(identifier, name, last_price) '
-                    'VALUES(?, ?, ?)',
-                    entry,
-                )
-                if cursor.rowcount != 1 and entry[2] is not None:  # update price
+                exist_result = cursor.execute(
+                    'SELECT manual_price FROM nfts WHERE identifier=?',
+                    (entry[0],),
+                ).fetchone()
+                if exist_result is None or bool(exist_result[0]) is False:
                     cursor.execute(
-                        'UPDATE nfts SET last_price=? WHERE identifier=?',
-                        (entry[2], entry[0]),
+                        'INSERT OR IGNORE INTO nfts('
+                        'identifier, name, last_price, last_price_asset, manual_price'
+                        ') VALUES(?, ?, ?, ?, ?)',
+                        entry,
                     )
 
         return result
 
     def get_nfts_with_price(self) -> List[Dict[str, Any]]:
         cursor = self.db.conn.cursor()
-        query = cursor.execute('SELECT identifier, last_price from nfts WHERE last_price IS NOT NULL')  # noqa: E501
+        query = cursor.execute('SELECT identifier, last_price, last_price_asset, manual_price from nfts WHERE last_price IS NOT NULL')  # noqa: E501
         result = []
         for entry in query:
-            result.append({'asset': entry[0], 'usd_price': entry[1]})
+            to_asset_id = entry[2] if entry[2] is not None else A_USD
+            try:
+                to_asset = Asset(to_asset_id)
+            except UnknownAsset:
+                log.error(f'Unknown asset {to_asset_id} in custom nft price DB table. Ignoring.')
+                continue
+
+            if to_asset != A_USD:
+                try:
+                    to_asset_usd_price = Inquirer().find_usd_price(to_asset)
+                except RemoteError as e:
+                    log.error(
+                        f'Error querying current usd price of {to_asset} in custom nft price '
+                        f'api call due to {str(e)}. Ignoring.',
+                    )
+                    continue
+                if to_asset_usd_price == ZERO:
+                    log.error(
+                        f'Could not find current usd price for {to_asset} in custom nft '
+                        f'price api call. Ignoring.',
+                    )
+                    continue
+                usd_price = to_asset_usd_price * FVal(entry[1])
+            else:  # to_asset == USD
+                usd_price = entry[1]
+
+            result.append({
+                'asset': entry[0],
+                'manually_input': bool(entry[3]),
+                'price_asset': to_asset_id,
+                'price_in_asset': entry[1],
+                'usd_price': str(usd_price),
+            })
 
         return result
 
@@ -164,20 +217,14 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
             price: Price,
     ) -> bool:
         """May raise:
-         - RemoteError
          - InputError
         """
-        if to_asset != A_USD:
-            to_asset_usd_price = Inquirer().find_usd_price(to_asset)
-            if to_asset_usd_price == ZERO:
-                raise RemoteError(f'Could not find current usd price for {to_asset}')
-            price = price * to_asset_usd_price  # type: ignore
-
         cursor = self.db.conn.cursor()
         try:
             cursor.execute(
-                'UPDATE nfts SET last_price=? WHERE identifier=?',
-                (str(price), from_asset.identifier),
+                'UPDATE nfts SET last_price=?, last_price_asset=?, manual_price=? '
+                'WHERE identifier=?',
+                (str(price), to_asset.identifier, 1, from_asset.identifier),
             )
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             raise InputError(f'Failed to write price for {from_asset.identifier} due to {str(e)}') from e  # noqa: E501
@@ -190,8 +237,8 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
         cursor = self.db.conn.cursor()
         try:
             cursor.execute(
-                'UPDATE nfts SET last_price=? WHERE identifier=?',
-                (None, asset.identifier),
+                'UPDATE nfts SET last_price=?, last_price_asset=? WHERE identifier=?',
+                (None, None, asset.identifier),
             )
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             raise InputError(f'Failed to delete price for {asset.identifier} due to {str(e)}') from e  # noqa: E501

@@ -872,12 +872,12 @@ Query the current price of assets
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as cryptocompare/coingecko could not be reached or returned unexpected response.
 
-Get assets which have manual price set
+Get current price and custom price for assets
 =============================================
 
 .. http:get:: /api/(version)/assets/prices/current
 
-   Get all assets which have had custom current prices specified along with their current prices. At the moment this only works for nfts.
+   Get current prices and whether they have been manually input or not for all assets. At the moment this only works for nfts.
 
 
    **Example Request**:
@@ -902,10 +902,16 @@ Get assets which have manual price set
           "result": [
               {
                   "asset": "nft_uniqueid1",
-                  "usd_price": "150.55"
+                  "manually_input": true,
+                  "price_asset": "ETH",
+                  "price_in_asset": "1",
+                  "usd_price": "2505.13"
               }, {
                   "asset": "nft_uniqueid2",
-                  "usd_price": "250.55"
+                  "manually_input": false,
+                  "price_asset": "USD",
+                  "price_in_asset": "155.13",
+                  "usd_price": "155.13"
               }]
           "message": ""
       }
@@ -9281,11 +9287,17 @@ Show NFT Balances
                 "0xeE3766e4F996DC0e0F8c929954EAAFef3441de87": [{
                     "id": "unique id",
                     "name": "a name",
-                    "price_usd": "250"
+		    "manually_input": true,
+		    "price_asset": "ETH",
+		    "price_in_asset": "1",
+                    "usd_price": "2501.15"
                 }, {
                     "id": "unique id 2",
                     "name": null,
-                    "price_usd": "150"
+		    "manually_input": false,
+		    "price_asset": "USD",
+		    "price_in_asset": "150.55",
+                    "usd_price": "150.55"
                 }],
             },
             "message": ""

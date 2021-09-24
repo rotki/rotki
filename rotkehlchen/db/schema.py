@@ -635,7 +635,10 @@ CREATE TABLE IF NOT EXISTS nfts (
     identifier TEXT NOT NULL PRIMARY KEY,
     name TEXT,
     last_price TEXT,
-    FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE
+    last_price_asset TEXT,
+    manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),
+    FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 
