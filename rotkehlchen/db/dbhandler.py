@@ -147,7 +147,7 @@ TABLES_WITH_ASSETS = (
     ('asset_movements', 'asset', 'fee_asset'),
     ('ledger_actions', 'asset', 'rate_asset'),
     ('amm_swaps', 'token0_identifier', 'token1_identifier'),
-    ('uniswap_events', 'token0_identifier', 'token1_identifier'),
+    ('amm_events', 'token0_identifier', 'token1_identifier'),
     ('adex_events', 'token'),
     ('balancer_events', 'pool_address_token'),
     ('timed_balances', 'currency'),
@@ -1076,7 +1076,7 @@ class DBHandler:
     def add_amm_events(self, events: Sequence[LiquidityPoolEvent]) -> None:
         query = (
             """
-            INSERT INTO uniswap_events (
+            INSERT INTO amm_events (
                 tx_hash,
                 log_index,
                 address,
@@ -1120,7 +1120,7 @@ class DBHandler:
         """
         cursor = self.conn.cursor()
         events_sql_str = ", ".join([f'"{EventType.serialize_for_db(event)}"' for event in events])
-        query = f'SELECT * FROM uniswap_events WHERE uniswap_events.type IN ({events_sql_str}) '
+        query = f'SELECT * FROM amm_events WHERE amm_events.type IN ({events_sql_str}) '
 
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
         if address is not None:
@@ -1214,7 +1214,7 @@ class DBHandler:
         burn_uniswap = EventType.serialize_for_db(EventType.BURN_UNISWAP)
         uniswap_types = f'"{mint_uniswap}", "{burn_uniswap}"'
         cursor.execute(
-            f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({uniswap_types});',
+            f'DELETE FROM amm_events WHERE amm_events.type IN ({uniswap_types});',
         )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_EVENTS_PREFIX}%";',
@@ -1241,7 +1241,7 @@ class DBHandler:
         burn_sushiswap = EventType.serialize_for_db(EventType.BURN_SUSHISWAP)
         sushiswap_types = f'"{mint_sushiswap}", "{burn_sushiswap}"'
         cursor.execute(
-            f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({sushiswap_types});',
+            f'DELETE FROM amm_events WHERE amm_events.type IN ({sushiswap_types});',
         )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_EVENTS_PREFIX}%";',
@@ -2410,7 +2410,7 @@ class DBHandler:
         cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
         cursor.execute('DELETE FROM adex_events WHERE address = ?', (address,))
         cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
-        cursor.execute('DELETE FROM uniswap_events WHERE address=?;', (address,))
+        cursor.execute('DELETE FROM amm_events WHERE address=?;', (address,))
         cursor.execute(
             'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
             (address,),
