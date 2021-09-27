@@ -597,6 +597,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'CBC',  # neither in coingecko nor cryptocompare
     'DOGE3L',  # no cryptocompare/coingecko data
     'DOGE3S',  # no cryptocompare/coingecko data
+    'DOT3L',  # no cryptocompare/coingecko data
+    'DOT3S',  # no cryptocompare/coingecko data
     'EOS3L',  # no cryptocompare/coingecko data
     'EOS3S',  # no cryptocompare/coingecko data
     'EPRX',  # delisted and no cryptocompare/coingecko data
@@ -610,6 +612,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'GZIL',  # delisted
     'HOTCROSS',  # no cryptocompare/coingecko data
     'KTS',  # delisted
+    'LINK3L',  # no cryptocompare/coingecko data
+    'LINK3S',  # no cryptocompare/coingecko data
     'LITH',  # no cryptocompare/coingecko data
     'LUNA3L',  # no cryptocompare/coingecko data
     'LUNA3S',  # no cryptocompare/coingecko data
@@ -621,6 +625,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'MEM',  # meme.com, no cryptocompare/coingecko data
     'SATT',  # delisted
     'SERO',  # delisted
+    'SOL3L',  # no cryptocompare/coingecko data
+    'SOL3S',  # no cryptocompare/coingecko data
     'SPRK',  # delisted
     'TCP',  # The Crypto Prophecies no cryptocompare/coingecko data
     'TNC2',  # delisted and no cryptocompare/coingecko data

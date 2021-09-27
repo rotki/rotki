@@ -376,6 +376,7 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0xc221b7E65FfC80DE234bbB6667aBDd46593D34F0'): 'CFG',  # using wrapped centrifuge for now  # noqa: E501
     strethaddress_to_identifier('0x88df592f8eb5d7bd38bfef7deb0fbc02cf3778a0'): 'TRB',
     strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
+    strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
 }
 
 WORLD_TO_ICONOMI = {
