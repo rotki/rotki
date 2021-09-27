@@ -3504,6 +3504,7 @@ class RestAPI():
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('nfts'),
+            return_zero_values=True,
             ignore_cache=ignore_cache,
         )
 

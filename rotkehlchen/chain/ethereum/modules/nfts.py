@@ -115,6 +115,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
     def get_balances(
             self,
             addresses: List[ChecksumEthAddress],
+            return_zero_values: bool,
             ignore_cache: bool,
     ) -> Dict[ChecksumEthAddress, List[Dict[str, Any]]]:
         result: DefaultDict[ChecksumEthAddress, List[Dict[str, Any]]] = defaultdict(list)
@@ -132,8 +133,8 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                         'name': nft.name,
                         'manually_input': True,
                         'price_asset': cached_price_data['price_asset'],
-                        'price_in_asset': cached_price_data['price_in_asset'],
-                        'usd_price': cached_price_data['usd_price'],
+                        'price_in_asset': FVal(cached_price_data['price_in_asset']),
+                        'usd_price': FVal(cached_price_data['usd_price']),
                     })
                 elif nft.price_usd != ZERO:
                     usd_price = nft.price_usd
@@ -146,6 +147,16 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                         'usd_price': usd_price,
                     })
                     db_data.append((identifier, nft.name, str(usd_price), 'USD', 0))
+                else:
+                    if return_zero_values:
+                        result[address].append({
+                            'id': identifier,
+                            'name': nft.name,
+                            'manually_input': False,
+                            'price_asset': 'USD',
+                            'price_in_asset': ZERO,
+                            'usd_price': ZERO,
+                        })
 
         # save opensea data in the DB
         if len(db_data) != 0:
