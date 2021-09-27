@@ -32,8 +32,8 @@
           <v-col cols="auto" class="text-subtitle-2">
             <amount-display
               class="text--secondary"
-              :value="item.priceEth"
-              asset="ETH"
+              :value="item.priceInAsset"
+              :asset="item.priceAsset"
             />
           </v-col>
         </v-row>
@@ -84,7 +84,7 @@ import {
 } from '@vue/composition-api';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import IconLink from '@/components/base/IconLink.vue';
-import { NftWithAddress } from '@/components/nft/types';
+import { GalleryNft } from '@/store/session/types';
 
 export default defineComponent({
   name: 'NftGalleryItem',
@@ -92,7 +92,7 @@ export default defineComponent({
   props: {
     item: {
       required: true,
-      type: Object as PropType<NftWithAddress>
+      type: Object as PropType<GalleryNft>
     }
   },
   setup(props) {

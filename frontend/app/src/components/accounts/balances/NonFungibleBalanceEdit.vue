@@ -15,6 +15,7 @@
         :label="$t('non_fungible_balance_edit.price')"
         outlined
         single-line
+        @keypress.enter="save"
       />
       <template #buttons>
         <v-spacer />

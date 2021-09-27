@@ -1,5 +1,6 @@
 import { NumericString } from '@rotki/common';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
+import { BigNumber } from 'bignumber.js';
 import { z } from 'zod';
 import {
   QueriedAddresses,
@@ -61,7 +62,7 @@ const NftCollectionInfo = z.object({
 });
 
 const Nft = z.object({
-  tokenIdentifier: z.string(),
+  tokenIdentifier: z.string().nonempty(),
   name: z.string().nullable(),
   collection: NftCollectionInfo,
   backgroundColor: z.string().nullable(),
@@ -74,7 +75,15 @@ const Nft = z.object({
 
 export type Nft = z.infer<typeof Nft>;
 
+export type GalleryNft = Omit<Nft, 'priceEth'> & {
+  address: string;
+  priceInAsset: BigNumber;
+  priceAsset: string;
+};
+
 const Nfts = z.record(z.array(Nft));
+
+export type Nfts = z.infer<typeof Nfts>;
 
 export const NftResponse = z.object({
   addresses: Nfts,
