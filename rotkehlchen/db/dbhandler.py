@@ -1334,6 +1334,7 @@ class DBHandler:
         - {exchange_name}_trades
         - {exchange_name}_margins
         - {exchange_name}_asset_movements
+        - {exchange_name}_ledger_actions
         - aave_events_{address}
         - yearn_vaults_events_{address}
         - yearn_vaults_v2_events_{address}

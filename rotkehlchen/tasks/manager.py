@@ -33,7 +33,7 @@ ETH_TX_QUERY_FREQUENCY = 3600  # every hour
 EXCHANGE_QUERY_FREQUENCY = 3600  # every hour
 
 
-def noop_exchange_succes_cb(trades, margin, asset_movements, exchange_specific_data) -> None:  # type: ignore # noqa: E501
+def noop_exchange_succes_cb(trades, margin, asset_movements, ledger_actions, exchange_specific_data) -> None:  # type: ignore # noqa: E501
     pass
 
 

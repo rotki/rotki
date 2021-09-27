@@ -903,12 +903,12 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     assert movements[2].timestamp == 1502554304
 
 
-def test_coinbase_query_exchange_specific_history(function_scope_coinbase):
+def test_coinbase_query_income_loss_expense(function_scope_coinbase):
     """Test that coinbase deposit/withdrawals history query works fine for the happy path"""
     coinbase = function_scope_coinbase
 
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        ledger_actions = coinbase.query_exchange_specific_history(
+        ledger_actions = coinbase.query_online_income_loss_expense(
             start_ts=0,
             end_ts=1611426233,
         )
@@ -949,7 +949,7 @@ def test_coinbase_query_exchange_specific_history(function_scope_coinbase):
 
     # and now try to query within a specific range
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        ledger_actions = coinbase.query_exchange_specific_history(
+        ledger_actions = coinbase.query_online_income_loss_expense(
             start_ts=0,
             end_ts=1609877514,
         )

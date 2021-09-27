@@ -945,12 +945,13 @@ class RestAPI():
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             location: Optional[Location],
+            only_cache: Optional[bool],
     ) -> Dict[str, Any]:
         actions, original_length = self.rotkehlchen.events_historian.query_ledger_actions(
-            has_premium=self.rotkehlchen.premium is not None,
             from_ts=from_ts,
             to_ts=to_ts,
             location=location,
+            only_cache=only_cache,
         )
 
         mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.LEDGER_ACTION)
@@ -977,6 +978,7 @@ class RestAPI():
             to_ts: Timestamp,
             location: Optional[Location],
             async_query: bool,
+            only_cache: Optional[bool],
     ) -> Response:
         if async_query:
             return self._query_async(
@@ -984,12 +986,14 @@ class RestAPI():
                 from_ts=from_ts,
                 to_ts=to_ts,
                 location=location,
+                only_cache=only_cache,
             )
 
         response = self._get_ledger_actions(
             from_ts=from_ts,
             to_ts=to_ts,
             location=location,
+            only_cache=only_cache,
         )
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
@@ -1020,6 +1024,7 @@ class RestAPI():
             from_ts=None,
             to_ts=None,
             location=None,
+            only_cache=None,
         )
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
@@ -1036,6 +1041,7 @@ class RestAPI():
             from_ts=None,
             to_ts=None,
             location=None,
+            only_cache=None,
         )
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)

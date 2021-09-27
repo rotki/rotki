@@ -39,7 +39,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 # Number of steps excluding the connected exchanges. Current query steps:
 # eth transactions
-# ledger actions
 # external location trades -> len(EXTERNAL_LOCATION)
 # amm trades len(AMMTradeLocations)
 # makerdao dsr
@@ -51,7 +50,7 @@ log = RotkehlchenLogsAdapter(logger)
 # eth2
 # liquity
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 10 + len(EXTERNAL_LOCATION) + len(AMMTradeLocations)
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 9 + len(EXTERNAL_LOCATION) + len(AMMTradeLocations)
 FREE_LEDGER_ACTIONS_LIMIT = 50
 
 HistoryResult = Tuple[
@@ -127,9 +126,10 @@ class EventsHistorian():
 
     def _reset_variables(self) -> None:
         # Keeps how many trades we have found per location. Used for free user limiting
-        self.actions_per_location: Dict[str, Dict[Location, int]] = {
+        self.actions_per_location: Dict[str, Dict[Optional[Location], int]] = {
             'trade': defaultdict(int),
             'asset_movement': defaultdict(int),
+            'ledger_action': defaultdict(int),
         }
         self.processing_state_name = 'Starting query of historical events'
         self.progress = ZERO
@@ -162,13 +162,23 @@ class EventsHistorian():
     ) -> List[AssetMovement]:
         ...
 
+    @overload
     def _apply_actions_limit(
             self,
-            location: Location,
-            action_type: Literal['trade', 'asset_movement'],
-            location_actions: Union[TRADES_LIST, List[AssetMovement]],
-            all_actions: Union[TRADES_LIST, List[AssetMovement]],
-    ) -> Union[TRADES_LIST, List[AssetMovement]]:
+            location: Optional[Location],
+            action_type: Literal['ledger_action'],
+            location_actions: List[LedgerAction],
+            all_actions: List[LedgerAction],
+    ) -> List[LedgerAction]:
+        ...
+
+    def _apply_actions_limit(
+            self,
+            location: Union[Location, Optional[Location]],
+            action_type: Literal['trade', 'asset_movement', 'ledger_action'],
+            location_actions: Union[TRADES_LIST, List[AssetMovement], List[LedgerAction]],
+            all_actions: Union[TRADES_LIST, List[AssetMovement], List[LedgerAction]],
+    ) -> Union[TRADES_LIST, List[AssetMovement], List[LedgerAction]]:
         """Take as many actions from location actions and add them to all actions as the limit permits
 
         Returns the modified (or not) all_actions
@@ -194,31 +204,59 @@ class EventsHistorian():
 
     def query_ledger_actions(
             self,
-            has_premium: bool,
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             location: Optional[Location] = None,
-            new_exchange_ledger_actions: Optional[List['LedgerAction']] = None,
+            only_cache: Optional[bool] = None,
     ) -> Tuple[List['LedgerAction'], int]:
-        """Queries the ledger actions from the DB and applies the free version limit
+        """Queries the ledger actions from the given location and applies the free version limit
 
-        TODO: Since we always query all in one call, the limiting will work, but if we start
-        batch querying by time then we need to amend the logic of limiting here.
-        Would need to use the same logic we do with trades. Using db entries count
-        and count what all calls return and what is sums up to
         :param location: Location parameter to filter query results
         :param to_ts: End timestamp to filter query results
         :param from_ts: Start timestamp to filter query results
-        :param has_premium: Boolean True if user has a premium subscription
-        :param new_exchange_ledger_actions: Additional exchange online ledger actions
+        :param only_cache: Optional. If this is true then the equivalent exchange/location
+         is not queried, but only what is already in the DB is returned.
         """
         db = DBLedgerActions(self.db, self.msg_aggregator)
-        if new_exchange_ledger_actions and len(new_exchange_ledger_actions):
-            db.add_ledger_actions(new_exchange_ledger_actions)
-        actions = db.get_ledger_actions(from_ts=from_ts, to_ts=to_ts, location=location)
-        original_length = len(actions)
-        if has_premium is False:
-            actions = actions[:FREE_LEDGER_ACTIONS_LIMIT]
+        # clear the actions queried for this location
+        self.actions_per_location['ledger_action'][location] = 0
+        all_actions: List[LedgerAction] = []
+        location_actions = db.get_ledger_actions(from_ts=from_ts, to_ts=to_ts, location=location)
+        original_length = len(location_actions)
+        if self.chain_manager.premium is None:
+            actions = self._apply_actions_limit(
+                location=location,
+                action_type='ledger_action',
+                location_actions=location_actions,
+                all_actions=all_actions,
+            )
+        else:
+            actions = location_actions
+
+        for exchange in self.exchange_manager.connected_exchanges:
+            if isinstance(exchange, ExchangeInterface):
+                # clear the actions queried for this location
+                self.actions_per_location['ledger_action'][exchange.location] = 0
+                all_set = {x.identifier for x in actions}
+                exchange_actions = exchange.query_income_loss_expense(
+                    start_ts=from_ts,
+                    end_ts=to_ts,
+                    only_cache=only_cache,
+                )
+                # TODO: Really dirty. Figure out a better way.
+                # Since some of the trades may already be in the DB if multiple
+                # keys are used for a single exchange.
+                exchange_actions = [x for x in exchange_actions if x.identifier not in all_set]
+                original_length += len(exchange_actions)
+                if self.chain_manager.premium is None:
+                    actions = self._apply_actions_limit(
+                        location=exchange.location,
+                        action_type='ledger_action',
+                        location_actions=exchange_actions,
+                        all_actions=actions,
+                    )
+                else:
+                    actions.extend(exchange_actions)
 
         return actions, original_length
 
@@ -498,7 +536,7 @@ class EventsHistorian():
         # start creating the all trades history list
         history: List[Union[Trade, MarginPosition, AMMTrade]] = []
         asset_movements = []
-        ledger_actions: List[LedgerAction] = []
+        ledger_actions = []
         loans = []
         empty_or_error = ''
 
@@ -506,26 +544,25 @@ class EventsHistorian():
                 trades_history: List[Trade],
                 margin_history: List[MarginPosition],
                 result_asset_movements: List[AssetMovement],
+                result_ledger_actions: List[LedgerAction],
                 exchange_specific_data: Any,
         ) -> None:
             """This callback will run for succesfull exchange history query"""
             history.extend(trades_history)
             history.extend(margin_history)
             asset_movements.extend(result_asset_movements)
+            ledger_actions.extend(result_ledger_actions)
 
             if exchange_specific_data:
-                if all(isinstance(i, LedgerAction) for i in exchange_specific_data):
-                    ledger_actions.extend(exchange_specific_data)
-                else:
-                    # Only other case is poloniex.
-                    polo_loans_data = exchange_specific_data
-                    loans.extend(process_polo_loans(
-                        msg_aggregator=self.msg_aggregator,
-                        data=polo_loans_data,
-                        # We need to have history of loans since before the range
-                        start_ts=Timestamp(0),
-                        end_ts=end_ts,
-                    ))
+                # This can only be poloniex at the moment
+                polo_loans_data = exchange_specific_data
+                loans.extend(process_polo_loans(
+                    msg_aggregator=self.msg_aggregator,
+                    data=polo_loans_data,
+                    # We need to have history of loans since before the range
+                    start_ts=Timestamp(0),
+                    end_ts=end_ts,
+                ))
 
         def fail_history_cb(error_msg: str) -> None:
             """This callback will run for failure in exchange history query"""
@@ -584,17 +621,6 @@ class EventsHistorian():
             )
             history.extend(external_trades)
             step = self._increase_progress(step, total_steps)
-
-        # include the ledger actions
-        self.processing_state_name = 'Querying ledger actions history'
-        # Query ledger actions taking into account premium limits.
-        ledger_actions, _ = self.query_ledger_actions(
-            has_premium,
-            from_ts=None,
-            to_ts=end_ts,
-            new_exchange_ledger_actions=ledger_actions,
-        )
-        step = self._increase_progress(step, total_steps)
 
         # include AMM trades: balancer, uniswap
         for amm_location in AMMTradeLocations:

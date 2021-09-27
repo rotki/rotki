@@ -120,28 +120,14 @@ def test_query_ledger_actions(events_historian, function_scope_messages_aggregat
     )
     db.add_ledger_action(action)
 
-    new_exchange_actions = [LedgerAction(
-        identifier=0,  # whatever
-        timestamp=selected_timestamp + 3,
-        action_type=LedgerActionType.INCOME,
-        location=Location.EXTERNAL,
-        amount=FVal(5),
-        asset=A_USDC,
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes=None,
-    )]
-
     actions, length = events_historian.query_ledger_actions(
-        has_premium=True,
         from_ts=None,
         to_ts=Timestamp(selected_timestamp + 4),
-        new_exchange_ledger_actions=new_exchange_actions,
+        only_cache=False,
     )
 
     assert any((action.timestamp < selected_timestamp for action in actions))
-    assert length == 3
+    assert length == 2
 
 
 @pytest.mark.parametrize('value,result', [

@@ -583,13 +583,9 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """Processes a single deposit/withdrawal from coinbase and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
-        This method can raise:
-        - DeserializationError
-        - UnknownAsset
-        - UnsupportedAsset
         """
         try:
-            if raw_data['status'] != 'completed':
+            if raw_data.get('status', '') != 'completed':
                 return None
 
             payout_date = raw_data.get('payout_at', None)
@@ -597,7 +593,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 timestamp = deserialize_timestamp_from_date(payout_date, 'iso8601', 'coinbase')
             else:
                 timestamp = deserialize_timestamp_from_date(
-                    raw_data['created_at'],
+                    get_key_if_has_val(raw_data, 'created_at'),
                     'iso8601',
                     'coinbase',
                 )
@@ -605,7 +601,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             # Only get address/transaction id for "send" type of transactions
             address = None
             transaction_id = None
-            transaction_url = raw_data['id']
+            transaction_url = raw_data.get('id', '')
             fee = Fee(ZERO)
             # movement_category: Union[Literal['deposit'], Literal['withdrawal']]
             if 'type' in raw_data:
@@ -622,29 +618,26 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         f'. This means either api is broken or we called it wrong',
                     )
                     return None
-                raw_from = raw_data.get('from', None)
-                if raw_from:  # Covers transactions from other coinbase users.
-                    if raw_from.get('resource', False) == 'user' and raw_from.get('id', False):
-                        movement_category = AssetMovementCategory.DEPOSIT
                 # Can't see the fee being charged from the "send" resource
-
-                amount = deserialize_asset_amount_force_positive(raw_data['amount']['amount'])
-                asset = asset_from_coinbase(raw_data['amount']['currency'], time=timestamp)
+                amount_data = raw_data.get('amount', {})
+                amount = deserialize_asset_amount_force_positive(amount_data.get('amount', ''))
+                asset = asset_from_coinbase(amount_data.get('currency', ''), time=timestamp)
                 # Fees dont appear in the docs but from an experiment of sending ETH
                 # to an address from coinbase there is the network fee in the response
                 raw_network = raw_data.get('network', None)
                 if raw_network:
                     raw_fee = raw_network.get('transaction_fee', None)
                     if raw_fee:
+                        fee_asset = raw_fee.get('currency', '')
                         # Since this is a withdrawal the fee should be the same as the moved asset
-                        if asset != asset_from_coinbase(raw_fee['currency'], time=timestamp):
+                        if asset != asset_from_coinbase(fee_asset, time=timestamp):
                             # If not we set ZERO fee and ignore
                             log.error(
                                 f'In a coinbase withdrawal of {asset.identifier} the fee'
                                 f'is denoted in {raw_fee["currency"]}',
                             )
                         else:
-                            fee = deserialize_fee(raw_fee['amount'])
+                            fee = deserialize_fee(raw_fee.get('amount', ''))
 
                 if 'network' in raw_data:
                     transaction_id = get_key_if_has_val(raw_data['network'], 'hash')
@@ -654,12 +647,14 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if 'from' in raw_data:
                     movement_category = AssetMovementCategory.DEPOSIT
             else:
-                movement_category = deserialize_asset_movement_category(raw_data['resource'])
-                amount = deserialize_asset_amount_force_positive(raw_data['amount']['amount'])
+                movement_category = deserialize_asset_movement_category(
+                    raw_data.get('resource', ''),
+                )
+                amount_data = raw_data.get('amount', {})
+                asset = asset_from_coinbase(amount_data.get('currency', ''), time=timestamp)
+                amount = deserialize_asset_amount_force_positive(amount_data.get('amount', ''))
                 if 'fee' in raw_data:
                     fee = deserialize_fee(raw_data['fee']['amount'])
-
-                asset = asset_from_coinbase(raw_data['amount']['currency'], time=timestamp)
 
             return AssetMovement(
                 location=Location.COINBASE,
@@ -689,11 +684,12 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 msg = f'Missing key entry for {msg}.'
             self.msg_aggregator.add_error(
                 'Unexpected data encountered during deserialization of a coinbase '
-                'asset movement. Check logs for details and open a bug report.',
+                'ledger action. Check logs for details and open a bug report.',
             )
             log.error(
-                f'Unexpected data encountered during deserialization of coinbase '
-                f'asset_movement {raw_data}. Error was: {msg}',
+                'Error processing a coinbase ledger action',
+                ledger_action=raw_data,
+                error=msg,
             )
 
         return None
@@ -737,20 +733,16 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """Processes a single transaction from coinbase and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
-        This method can raise:
-        - DeserializationError
-        - UnknownAsset
-        - UnsupportedAsset
         """
         try:
-            if raw_data['status'] != 'completed':
+            if raw_data.get('status', '') != 'completed':
                 return None
             payout_date = raw_data.get('payout_at', None)
             if payout_date:
                 timestamp = deserialize_timestamp_from_date(payout_date, 'iso8601', 'coinbase')
             else:
                 timestamp = deserialize_timestamp_from_date(
-                    raw_data['created_at'],
+                    get_key_if_has_val(raw_data, 'created_at'),
                     'iso8601',
                     'coinbase',
                 )
@@ -758,21 +750,27 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 # The parent method filtered with 'from' attribute, so it is from another user.
                 # https://developers.coinbase.com/api/v2?python#transaction-resource
                 action_type = LedgerActionType.INCOME
-                if raw_data.get('type', '') not in ['send', 'inflation_reward']:
-                    msg = ('Non "send" or "inflation_reward" type found in coinbase '
-                           'transactions processing')
+                if raw_data.get('type', '') not in ('send', 'inflation_reward'):
+                    msg = (
+                        'Non "send" or "inflation_reward" type '
+                        'found in coinbase transactions processing'
+                    )
                     raise DeserializationError(msg)
-                amount = deserialize_asset_amount(raw_data['amount']['amount'])
-                asset = asset_from_coinbase(raw_data['amount']['currency'], time=timestamp)
-                native_amount = deserialize_asset_amount(raw_data['native_amount']['amount'])
-                native_asset = asset_from_coinbase(raw_data['native_amount']['currency'])
+                amount_data = raw_data.get('amount', {})
+                amount = deserialize_asset_amount(amount_data.get('amount', ''))
+                asset = asset_from_coinbase(amount_data.get('currency', ''), time=timestamp)
+                native_amount_data = raw_data.get('native_amount', {})
+                native_amount = deserialize_asset_amount(native_amount_data.get('amount', ''))
+                native_asset = asset_from_coinbase(native_amount_data.get('currency', ''))
                 rate = ZERO
-                if amount and native_amount != ZERO:
+                if amount_data and native_amount_data and native_amount and amount != ZERO:
                     rate = native_amount / amount
-                if 'details' in raw_data:
-                    notes = (f"{raw_data['details']['title']} "
-                             f"{raw_data['details']['subtitle']} "
-                             f"{raw_data['details']['header']}")
+                if 'details' in raw_data and 'title' in raw_data['details'] \
+                        and 'subtitle' in raw_data['details'] and 'header' in raw_data['details']:
+                    details = raw_data.get('details', {})
+                    notes = (f"{details.get('title', '')} "
+                             f"{details.get('subtitle', '')} "
+                             f"{details.get('header', '')}")
                 else:
                     notes = ''
                 return LedgerAction(
@@ -785,8 +783,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     rate=Price(rate),
                     rate_asset=native_asset,
                     link=str(raw_data['id']),
-                    notes=notes,
-                )
+                    notes=notes)
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found coinbase transaction with unknown asset '
@@ -811,7 +808,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
         return None
 
-    def query_exchange_specific_history(
+    def query_online_income_loss_expense(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,

@@ -1685,14 +1685,24 @@
         }
       }
     },
-    "ledger_actions": {
+    "manual_ledger_actions": {
       "error": {
         "description": "Failed query for ledger actions: {error}",
         "title": "Ledger actions"
       },
       "task": {
-        "description": "actions.ledger_actions.task.description",
-        "title": "Retrieving ledger actions"
+        "description": "Retrieving manual ledger actions",
+        "title": "Ledger actions"
+      }
+    },
+    "ledger_actions": {
+      "task": {
+        "title": "Ledger actions",
+        "description": "Retrieving ledger actions for {exchange}"
+      },
+      "error": {
+        "description": "Failed query for {exchange}: {error}",
+        "title": "Ledger actions for {exchange}"
       }
     },
     "ignore": {

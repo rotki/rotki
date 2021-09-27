@@ -83,7 +83,6 @@ from rotkehlchen.api.v1.encoding import (
     TagSchema,
     TimedManualPriceSchema,
     TimerangeLocationCacheQuerySchema,
-    TimerangeLocationQuerySchema,
     TradeDeleteSchema,
     TradePatchSchema,
     TradeSchema,
@@ -699,7 +698,7 @@ class TagsResource(BaseResource):
 
 class LedgerActionsResource(BaseResource):
 
-    get_schema = TimerangeLocationQuerySchema()
+    get_schema = TimerangeLocationCacheQuerySchema()
     put_schema = LedgerActionSchema()
     patch_schema = LedgerActionEditSchema()
     delete_schema = IntegerIdentifierSchema()
@@ -711,12 +710,14 @@ class LedgerActionsResource(BaseResource):
             to_timestamp: Timestamp,
             location: Optional[Location],
             async_query: bool,
+            only_cache: Optional[bool],
     ) -> Response:
         return self.rest_api.get_ledger_actions(
             from_ts=from_timestamp,
             to_ts=to_timestamp,
             location=location,
             async_query=async_query,
+            only_cache=only_cache,
         )
 
     @use_kwargs(put_schema, location='json')
