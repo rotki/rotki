@@ -7,7 +7,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import InputError, RemoteError, UnknownAsset
 from rotkehlchen.externalapis.opensea import NFT, Opensea
 from rotkehlchen.fval import FVal
@@ -125,11 +125,10 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
         db_data = []
         for address, nfts in nft_results.items():
             for nft in nfts:
-                identifier = NFT_DIRECTIVE + nft.token_identifier
-                cached_price_data = cached_db_prices.get(identifier)
+                cached_price_data = cached_db_prices.get(nft.token_identifier)
                 if cached_price_data is not None and cached_price_data['manually_input']:
                     result[address].append({
-                        'id': identifier,
+                        'id': nft.token_identifier,
                         'name': nft.name,
                         'manually_input': True,
                         'price_asset': cached_price_data['price_asset'],
@@ -139,18 +138,18 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                 elif nft.price_usd != ZERO:
                     usd_price = nft.price_usd
                     result[address].append({
-                        'id': identifier,
+                        'id': nft.token_identifier,
                         'name': nft.name,
                         'manually_input': False,
                         'price_asset': 'USD',
                         'price_in_asset': usd_price,
                         'usd_price': usd_price,
                     })
-                    db_data.append((identifier, nft.name, str(usd_price), 'USD', 0))
+                    db_data.append((nft.token_identifier, nft.name, str(usd_price), 'USD', 0))
                 else:
                     if return_zero_values:
                         result[address].append({
-                            'id': identifier,
+                            'id': nft.token_identifier,
                             'name': nft.name,
                             'manually_input': False,
                             'price_asset': 'USD',

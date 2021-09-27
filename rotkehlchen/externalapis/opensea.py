@@ -12,7 +12,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -218,7 +218,7 @@ class Opensea(ExternalServiceWithApiKey):
             price_in_usd = price_in_eth * eth_usd_price
             token_id = entry['asset_contract']['address'] + '_' + entry['token_id']
             return NFT(
-                token_identifier=token_id,
+                token_identifier=NFT_DIRECTIVE + token_id,
                 background_color=entry['background_color'],
                 image_url=entry['image_url'],
                 name=entry['name'],
