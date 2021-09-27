@@ -7,6 +7,8 @@ import { defineComponent } from '@vue/composition-api';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
+import i18n from '@/i18n';
+import { Routes } from '@/router/routes';
 
 const tabs: TabContent[] = [
   {
@@ -20,6 +22,10 @@ const tabs: TabContent[] = [
   {
     name: 'Manual Balances',
     routeTo: '/accounts-balances/manual-balances'
+  },
+  {
+    name: i18n.t('account_balances.tabs.nonfungible').toString(),
+    routeTo: Routes.NON_FUNGIBLE
   }
 ];
 

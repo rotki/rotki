@@ -1,10 +1,10 @@
+import { AssetBalance } from '@rotki/common';
 import { TimeUnit } from '@rotki/common/lib/settings';
 import { TimeFramePeriod, timeframes } from '@rotki/common/lib/settings/graphs';
 import { default as BigNumber } from 'bignumber.js';
 import dayjs from 'dayjs';
 import { aggregateTotal } from '@/filters';
 import { NetValue } from '@/services/types-api';
-import { AssetBalance } from '@/store/balances/types';
 import { OverallPerformance, StatisticsState } from '@/store/statistics/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
@@ -76,6 +76,7 @@ export const getters: Getters<
     {
       'balances/aggregatedBalances': aggregatedBalances,
       'balances/liabilities': liabilities,
+      'balances/nfTotalValue': nfTotalValue,
       'balances/exchangeRate': exchangeRate,
       'session/floatingPrecision': floatingPrecision,
       'session/currencySymbol': mainCurrency
@@ -89,7 +90,7 @@ export const getters: Getters<
       mainCurrency,
       exchangeRate(mainCurrency),
       floatingPrecision
-    );
+    ).plus(nfTotalValue);
     const liabilitySum = aggregateTotal(
       totalLiabilities,
       mainCurrency,

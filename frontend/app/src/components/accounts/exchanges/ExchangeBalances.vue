@@ -97,6 +97,7 @@
 </template>
 
 <script lang="ts">
+import { AssetBalance } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
@@ -105,7 +106,6 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { tradeLocations } from '@/components/history/consts';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import { Exchange } from '@/model/action-result';
-import { AssetBalance } from '@/store/balances/types';
 import { ExchangeInfo } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';

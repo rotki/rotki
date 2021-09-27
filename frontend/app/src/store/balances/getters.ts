@@ -1,4 +1,4 @@
-import { Balance } from '@rotki/common';
+import { AssetBalance, Balance } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
@@ -10,11 +10,11 @@ import {
 import { GeneralAccountData, HasBalance } from '@/services/types-api';
 import {
   AccountAssetBalances,
-  AssetBalance,
   AssetBreakdown,
   AssetInfoGetter,
   AssetPriceInfo,
   AssetSymbolGetter,
+  BalanceByLocation,
   BalanceState,
   BlockchainAccountWithBalance,
   BlockchainTotal,
@@ -22,21 +22,21 @@ import {
   IdentifierForSymbolGetter,
   L2Totals,
   LocationBalance,
-  BalanceByLocation
+  NonFungibleBalance
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { Writeable } from '@/types';
 import {
+  AVAX,
   Blockchain,
   BTC,
+  DOT,
   ETH,
   ExchangeInfo,
   GeneralAccount,
   KSM,
-  DOT,
-  AVAX,
   L2_LOOPRING
 } from '@/typing/types';
 import { assert } from '@/utils/assertions';
@@ -76,6 +76,8 @@ export interface BalanceGetters {
   getIdentifierForSymbol: IdentifierForSymbolGetter;
   byLocation: BalanceByLocation;
   exchangeNonce: (exchange: SupportedExchange) => number;
+  nfTotalValue: BigNumber;
+  nfBalances: NonFungibleBalance[];
 }
 
 function balances(
@@ -799,5 +801,23 @@ export const getters: Getters<
       return (
         exchanges.filter(({ location }) => location === exchange).length + 1
       );
+    },
+  nfTotalValue: ({ nonFungibleBalances }) => {
+    let sum = Zero;
+    for (const address in nonFungibleBalances) {
+      const addressNfts = nonFungibleBalances[address];
+      for (const nft of addressNfts) {
+        sum = sum.plus(nft.usdPrice);
+      }
     }
+    return sum;
+  },
+  nfBalances: ({ nonFungibleBalances }) => {
+    const nfBalances: NonFungibleBalance[] = [];
+    for (const address in nonFungibleBalances) {
+      const addressNfBalance = nonFungibleBalances[address];
+      nfBalances.push(...addressNfBalance);
+    }
+    return nfBalances;
+  }
 };

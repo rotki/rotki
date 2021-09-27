@@ -1,4 +1,7 @@
+import { NumericString } from '@rotki/common';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
+import { BigNumber } from 'bignumber.js';
+import { z } from 'zod';
 import {
   QueriedAddresses,
   Watcher,
@@ -51,31 +54,41 @@ export interface ChangePasswordPayload {
   readonly newPassword: string;
 }
 
-interface NftCollectionInfo {
-  readonly bannerImage: string;
-  readonly description: string;
-  readonly name: string;
-  readonly largeImage: string;
-}
+const NftCollectionInfo = z.object({
+  bannerImage: z.string().nullable(),
+  description: z.string(),
+  name: z.string(),
+  largeImage: z.string().nullable()
+});
 
-export interface Nft {
-  readonly tokenIdentifier: string;
-  readonly name: string;
-  readonly collection: NftCollectionInfo;
-  readonly backgroundColor?: any;
-  readonly imageUrl: string;
-  readonly externalLink: string;
-  readonly permalink: string;
-  readonly priceEth: string;
-  readonly priceUsd: string;
-}
+const Nft = z.object({
+  tokenIdentifier: z.string().nonempty(),
+  name: z.string().nullable(),
+  collection: NftCollectionInfo,
+  backgroundColor: z.string().nullable(),
+  imageUrl: z.string().nullable(),
+  externalLink: z.string().nullable(),
+  permalink: z.string().nullable(),
+  priceEth: NumericString,
+  priceUsd: NumericString
+});
 
-export interface Nfts {
-  readonly [address: string]: Nft[];
-}
+export type Nft = z.infer<typeof Nft>;
 
-export interface NftResponse {
-  addresses: Nfts;
-  entriesFound: number;
-  entriesLimit: number;
-}
+export type GalleryNft = Omit<Nft, 'priceEth'> & {
+  address: string;
+  priceInAsset: BigNumber;
+  priceAsset: string;
+};
+
+const Nfts = z.record(z.array(Nft));
+
+export type Nfts = z.infer<typeof Nfts>;
+
+export const NftResponse = z.object({
+  addresses: Nfts,
+  entriesFound: z.number(),
+  entriesLimit: z.number()
+});
+
+export type NftResponse = z.infer<typeof NftResponse>;

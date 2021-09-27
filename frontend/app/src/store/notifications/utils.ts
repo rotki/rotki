@@ -1,3 +1,4 @@
+import { SemiPartial } from '@rotki/common/src';
 import { Severity } from '@/store/notifications/consts';
 import {
   NotificationData,
@@ -36,4 +37,19 @@ export function notify(
     severity,
     display
   } as NotificationPayload);
+}
+
+export async function userNotify(
+  options: SemiPartial<NotificationPayload, 'title' | 'message'>
+) {
+  const defaults: NotificationPayload = {
+    title: '',
+    message: '',
+    severity: Severity.ERROR,
+    display: false
+  };
+  await store.dispatch(
+    'notifications/notify',
+    Object.assign(defaults, options)
+  );
 }

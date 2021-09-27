@@ -56,7 +56,7 @@
         <refresh-button
           :loading="loading"
           :tooltip="$t('nft_gallery.refresh_tooltip')"
-          @refresh="fetchNfts"
+          @refresh="fetchNfts({ ignoreCache: true })"
         />
       </v-col>
     </v-row>
@@ -109,33 +109,54 @@ import {
   ref,
   watch
 } from '@vue/composition-api';
+import { BigNumber } from 'bignumber.js';
 import { Dispatch } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
-import { NftWithAddress } from '@/components/nft/types';
 import { setupThemeCheck } from '@/composables/common';
+import { AssetPriceArray } from '@/services/assets/types';
+import { api } from '@/services/rotkehlchen-api';
 import { SessionActions } from '@/store/session/const';
-import { NftResponse } from '@/store/session/types';
+import { GalleryNft, Nft, NftResponse, Nfts } from '@/store/session/types';
 import { useStore } from '@/store/utils';
 import { GeneralAccount } from '@/typing/types';
+import { uniqueStrings } from '@/utils/data';
+
+const requestPrices = () => {
+  const prices: Ref<AssetPriceArray> = ref([]);
+  const priceError = ref('');
+  const fetchPrices = async () => {
+    try {
+      const data = await api.assets.fetchCurrentPrices();
+      prices.value = AssetPriceArray.parse(data);
+    } catch (e: any) {
+      priceError.value = e.message;
+    }
+  };
+  onMounted(fetchPrices);
+  return {
+    fetchPrices,
+    priceError,
+    prices
+  };
+};
 
 const setupNfts = (
   dispatch: Dispatch,
   selectedAccount: Ref<GeneralAccount | null>,
   selectedCollection: Ref<string | null>,
   itemsPerPage: Ref<number>,
-  page: Ref<number>
+  page: Ref<number>,
+  prices: Ref<AssetPriceArray>
 ) => {
   const total = ref(0);
   const limit = ref(0);
   const error = ref('');
   const loading = ref(true);
-  const availableAddresses = ref<string[]>([]);
-  const nfts = ref<NftWithAddress[]>([]);
-  const collections = ref<string[]>([]);
+  const perAccount: Ref<Nfts | null> = ref(null);
 
   const items = computed(() => {
     const account = selectedAccount.value;
@@ -159,30 +180,67 @@ const setupNfts = (
     return items.value.slice(start, start + itemsPerPage.value);
   });
 
-  const fetchNfts = async () => {
+  const availableAddresses = computed(() =>
+    perAccount.value ? Object.keys(perAccount.value) : []
+  );
+
+  const nfts = computed<GalleryNft[]>(() => {
+    const addresses: Nfts | null = perAccount.value;
+    const value = prices.value;
+    if (!addresses) {
+      return [];
+    }
+
+    const allNfts: GalleryNft[] = [];
+    for (const address in addresses) {
+      const addressNfts: Nft[] = addresses[address];
+      for (const nft of addressNfts) {
+        const price = value.find(({ asset }) => asset === nft.tokenIdentifier);
+        const { priceEth, priceUsd, ...data } = nft;
+        let priceDetails: {
+          priceInAsset: BigNumber;
+          priceAsset: string;
+          priceUsd: BigNumber;
+        };
+        if (price && price.manuallyInput) {
+          priceDetails = {
+            priceAsset: price.priceAsset,
+            priceInAsset: price.priceInAsset,
+            priceUsd: price.usdPrice
+          };
+        } else {
+          priceDetails = {
+            priceAsset: 'ETH',
+            priceInAsset: priceEth,
+            priceUsd
+          };
+        }
+
+        allNfts.push({ ...data, ...priceDetails, address });
+      }
+    }
+    return allNfts;
+  });
+
+  const collections = computed(() => {
+    if (!nfts.value) {
+      return [];
+    }
+    return nfts.value
+      .map(({ collection }) => collection.name)
+      .filter(uniqueStrings);
+  });
+
+  const fetchNfts = async (payload?: { ignoreCache: boolean }) => {
     loading.value = true;
     const { message, result }: ActionResult<NftResponse> = await dispatch(
-      `session/${SessionActions.FETCH_NFTS}`
+      `session/${SessionActions.FETCH_NFTS}`,
+      payload
     );
     if (result) {
       total.value = result.entriesFound;
       limit.value = result.entriesLimit;
-
-      const allNfts: NftWithAddress[] = [];
-      const allCollections: string[] = [];
-      const { addresses } = result;
-      availableAddresses.value = Object.keys(addresses);
-      for (const address in addresses) {
-        const addressNfts = addresses[address];
-        for (const nft of addressNfts) {
-          if (!allCollections.includes(nft.collection.name)) {
-            allCollections.push(nft.collection.name);
-          }
-          allNfts.push({ ...nft, address });
-        }
-      }
-      nfts.value = allNfts;
-      collections.value = allCollections;
+      perAccount.value = result.addresses;
     } else {
       error.value = message;
     }
@@ -242,6 +300,7 @@ export default defineComponent({
 
     watch(selectedAccount, () => (page.value = 1));
     watch(selectedCollection, () => (page.value = 1));
+    const retrievePrices = requestPrices();
 
     return {
       selectedAccount,
@@ -249,12 +308,14 @@ export default defineComponent({
       page,
       isMobile,
       premium,
+      ...retrievePrices,
       ...setupNfts(
         dispatch,
         selectedAccount,
         selectedCollection,
         itemsPerPage,
-        page
+        page,
+        retrievePrices.prices
       )
     };
   }

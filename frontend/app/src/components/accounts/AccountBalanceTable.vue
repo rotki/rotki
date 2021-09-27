@@ -168,7 +168,7 @@
 </template>
 
 <script lang="ts">
-import { Balance } from '@rotki/common';
+import { AssetBalance, Balance } from '@rotki/common';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
@@ -190,7 +190,6 @@ import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import { chainSection } from '@/store/balances/const';
 import {
-  AssetBalance,
   BlockchainAccountWithBalance,
   XpubAccountWithBalance,
   XpubPayload

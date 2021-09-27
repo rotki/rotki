@@ -147,6 +147,11 @@ export default new Router({
           props: true
         },
         {
+          path: Routes.NON_FUNGIBLE,
+          component: () =>
+            import('../views/accountsbalances/NonFungibleBalancePage.vue')
+        },
+        {
           path: 'manual-balances',
           component: () => import('../components/accounts/ManualBalances.vue')
         }

@@ -479,6 +479,48 @@
     "subtitle": "Select which modules should be queried for this account",
     "title": "Enabled modules"
   },
+  "non_fungible_balance": {
+    "column": {
+      "actions": "Actions",
+      "custom_price": "Custom Price",
+      "name": "Name",
+      "price": "Price in {currency}",
+      "price_in_asset": "Price in Asset"
+    }
+  },
+  "non_fungible_balance_edit": {
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "price": "Price",
+    "title": "Edit or set the price for the asset"
+  },
+  "nft_balance_table": {
+    "column": {
+      "name": "Name",
+      "percentage": "% of net Value",
+      "price": "Price in {currency}",
+      "price_in_asset": "Price in asset"
+    },
+    "title": "NFT Balances"
+  },
+  "non_fungible_balances": {
+    "delete": {
+      "error": {
+        "message": "Could not delete the current price for {asset}",
+        "title": "Deleting custom current price"
+      },
+      "message": "Are you sure wou want to delete the custom price for {asset}?",
+      "title": "Delete custom price"
+    },
+    "refresh": "Refresh the balances",
+    "row": {
+      "delete": "Delete the custom price",
+      "edit": "Edit or set the custom price"
+    },
+    "title": "Non Fungible Balances"
+  },
   "nft_gallery": {
     "empty_filter": "No NFTs matching the filter parameters",
     "empty_subtitle": "No NFTs have been detected",
@@ -1670,6 +1712,15 @@
         "title": "Deposits & withdrawals for {exchange}"
       }
     },
+    "nft_balances": {
+      "error": {
+        "message": "An error occurred while querying the NFT balances: {message}",
+        "title": "NFT balance querying"
+      },
+      "task": {
+        "title": "Querying NFT balances"
+      }
+    },
     "notifications": {
       "consume": {
         "message_title": "Backend messages"
@@ -2334,6 +2385,9 @@
       "actions": "Actions",
       "usd_value_eth": "Total {symbol} value of account's assets",
       "usd_value": "{symbol} value"
+    },
+    "tabs": {
+      "nonfungible": "Non Fungible Balances"
     },
     "total": "Total",
     "confirm_delete": {

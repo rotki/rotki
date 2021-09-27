@@ -1,7 +1,8 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { BackendOptions } from '@/electron-main/ipc';
 import { Writeable } from '@/types';
-import { CRITICAL, DEBUG, Level, LOG_LEVEL } from '@/utils/log-level';
+import { CRITICAL, DEBUG, ERROR, Level, LOG_LEVEL } from '@/utils/log-level';
+import { logger } from '@/utils/logging';
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 
@@ -57,6 +58,10 @@ export default class BackendMixin extends Vue {
   async mounted() {
     await this.load();
     this.loaded();
+    const loglevel = this.options.loglevel;
+    const level: Exclude<Level, 'critical'> =
+      !loglevel || loglevel === CRITICAL ? ERROR : loglevel;
+    logger.setDefaultLevel(level);
   }
 
   private async load() {

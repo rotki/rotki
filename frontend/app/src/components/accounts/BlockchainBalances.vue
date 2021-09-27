@@ -74,6 +74,7 @@
 </template>
 
 <script lang="ts">
+import { AssetBalance } from '@rotki/common';
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
@@ -84,7 +85,6 @@ import AssetBalances from '@/components/settings/AssetBalances.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import {
   AccountWithBalance,
-  AssetBalance,
   BlockchainAccountWithBalance
 } from '@/store/balances/types';
 

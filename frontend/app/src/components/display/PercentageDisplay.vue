@@ -1,7 +1,7 @@
 <template>
   <v-row
     no-gutters
-    class="percentage-display"
+    class="percentage-display flex-nowrap"
     :justify="justify"
     align="center"
   >

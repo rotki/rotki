@@ -1005,12 +1005,16 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async fetchNfts(): Promise<PendingTask> {
+  async fetchNfts(payload?: { ignoreCache: boolean }): Promise<PendingTask> {
+    const params = Object.assign(
+      {
+        asyncQuery: true
+      },
+      payload
+    );
     return this.axios
       .get<ActionResult<PendingTask>>('/nfts', {
-        params: axiosSnakeCaseTransformer({
-          asyncQuery: true
-        }),
+        params: axiosSnakeCaseTransformer(params),
         validateStatus: validWithoutSessionStatus,
         transformResponse: basicAxiosTransformer
       })

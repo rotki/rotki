@@ -1,7 +1,9 @@
 import { Balance } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { BigNumber } from 'bignumber.js';
+import { z } from 'zod';
 import { Exchange, PriceOracles } from '@/model/action-result';
+import { PriceInformation } from '@/services/assets/types';
 import {
   BlockchainAssetBalances,
   BtcBalances,
@@ -63,6 +65,7 @@ export interface BalanceState {
   manualBalances: ManualBalanceWithValue[];
   manualBalanceByLocation: BalanceByLocation;
   prices: AssetPrices;
+  nonFungibleBalances: NonFungibleBalances;
 }
 
 export interface EditExchange {
@@ -87,7 +90,7 @@ export interface ExchangePayload {
   readonly ftxSubaccount: Nullable<string>;
 }
 
-interface XpubPayload {
+export interface XpubPayload {
   readonly xpub: string;
   readonly derivationPath: string;
   readonly xpubType: string;
@@ -125,7 +128,7 @@ export interface AccountWithBalance extends GeneralAccount, HasBalance {}
 
 interface XpubAccount extends GeneralAccount, XpubPayload {}
 
-interface XpubAccountWithBalance extends XpubAccount, HasBalance {}
+export interface XpubAccountWithBalance extends XpubAccount, HasBalance {}
 
 export type BlockchainAccount = GeneralAccount | XpubAccount;
 
@@ -133,19 +136,13 @@ export type BlockchainAccountWithBalance =
   | XpubAccountWithBalance
   | AccountWithBalance;
 
-export interface AssetBalance extends Balance {
-  readonly asset: string;
-  readonly amount: BigNumber;
-  readonly usdValue: BigNumber;
-}
-
 export type AddAccountsPayload = {
   readonly blockchain: Blockchain;
   readonly payload: AccountPayload[];
   readonly modules?: Module[];
 };
 
-interface L2Totals {
+export interface L2Totals {
   readonly protocol: SupportedL2Protocol;
   readonly usdValue: BigNumber;
   readonly loading: boolean;
@@ -218,3 +215,18 @@ export type IdentifierForSymbolGetter = (symbol: string) => string | undefined;
 export type AssetSymbolGetter = (identifier: string) => string;
 
 export type KrakenAccountType = typeof KRAKEN_ACCOUNT_TYPES[number];
+
+export const NonFungibleBalance = PriceInformation.merge(
+  z.object({
+    name: z.string().nullable(),
+    id: z.string().nonempty()
+  })
+);
+
+export type NonFungibleBalance = z.infer<typeof NonFungibleBalance>;
+
+const NonFungibleBalanceArray = z.array(NonFungibleBalance);
+
+export const NonFungibleBalances = z.record(NonFungibleBalanceArray);
+
+export type NonFungibleBalances = z.infer<typeof NonFungibleBalances>;

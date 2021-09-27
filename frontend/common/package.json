@@ -11,7 +11,7 @@
   "scripts": {
     "preinstall": "node ../check-versions.js",
     "build": "rimraf lib && tsc",
-    "watch": "rimraf lib && tsc -w",
+    "watch": "tsc -w",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint:fix": "eslint --fix . --ext .js,.jsx,.ts,.tsx",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx"

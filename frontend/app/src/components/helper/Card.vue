@@ -2,18 +2,32 @@
   <v-card v-bind="$attrs" v-on="$listeners">
     <v-card-title v-if="$slots.title">
       <slot v-if="$slots.icon" name="icon" />
-      <card-title :class="$slots.icon ? 'ps-1 card__title' : null">
+      <card-title
+        :class="{
+          'ps-1': $slots.icon,
+          [$style.title]: $slots.icon
+        }"
+      >
         <slot name="title" />
       </card-title>
       <v-spacer v-if="$slots.details" />
       <slot name="details" />
     </v-card-title>
     <v-card-subtitle v-if="$slots.subtitle">
-      <div :class="$slots.icon ? 'ps-13 card__subtitle' : null">
+      <div
+        :class="{
+          'ps-13': $slots.icon,
+          [$style.subtitle]: $slots.icon
+        }"
+      >
         <slot name="subtitle" />
       </div>
     </v-card-subtitle>
-    <v-card-text :class="contained ? 'card__contained' : null">
+    <v-card-text
+      :class="{
+        [$style.contained]: contained
+      }"
+    >
       <slot name="search" />
       <v-sheet v-if="$slots.actions" outlined rounded class="pa-3 mb-4">
         <slot name="actions" />
@@ -25,7 +39,7 @@
         <slot />
       </v-sheet>
       <slot v-else />
-      <div v-if="$slots.options" class="card__options">
+      <div v-if="$slots.options" :class="$style.options">
         <slot name="options" />
       </div>
     </v-card-text>
@@ -36,42 +50,40 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import CardTitle from '@/components/typography/CardTitle.vue';
 
-@Component({
+const Card = defineComponent({
   name: 'Card',
-  components: { CardTitle }
-})
-export default class Card extends Vue {
-  @Prop({ required: false, type: Boolean, default: false })
-  outlinedBody!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  contained!: boolean;
-}
+  components: { CardTitle },
+  props: {
+    outlinedBody: { required: false, type: Boolean, default: false },
+    contained: { required: false, type: Boolean, default: false }
+  }
+});
+
+export default Card;
 </script>
 
-<style scoped lang="scss">
+<style module lang="scss">
 @import '~@/scss/scroll';
 
-.card {
-  &__title {
-    margin-top: -22px;
-  }
+.title {
+  margin-top: -22px;
+}
 
-  &__subtitle {
-    margin-top: -40px;
-  }
+.subtitle {
+  margin-top: -40px;
+}
 
-  &__options {
-    margin-bottom: -36px;
-  }
+.options {
+  margin-bottom: -36px;
+}
 
-  &__contained {
-    max-height: calc(100vh - 200px);
-    overflow-y: scroll;
+.contained {
+  max-height: calc(100vh - 200px);
+  overflow-y: scroll;
 
-    @extend .themed-scrollbar;
-  }
+  @extend .themed-scrollbar;
 }
 </style>
