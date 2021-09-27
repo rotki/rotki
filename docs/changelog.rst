@@ -6,7 +6,7 @@ Changelog
 * :feature:`3020` Users will now be able to copy their ETH1 addresses when visiting the ETH2 staking page.
 * :feature:`2362` Binance users will now be able to query their fiat deposit/withdrawals and fiat orders and have it taken into account in rotki.
 * :feature:`3326` Introduces pagination for liquidity pool balances to help users with a great number of lps.
-* :feature:`1097` Users will now be able to view their NFTs.
+* :feature:`1097` Users will now be able to view their NFTs, track and manage their prices, and also see their value as part of their total net worth.
 * :feature:`2764` Users will now be able to restore the local assets database to its initial state.
 * :feature:`2847` Users will now be able to use a combination of filters in the search for trades and deposits/withdrawals.
 * :feature:`3254` Users can now add a custom Covalent API key in rotki.
