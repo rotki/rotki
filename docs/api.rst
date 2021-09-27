@@ -6053,7 +6053,7 @@ Getting Liquity balances
 
 .. http:get:: /api/(version)/blockchains/ETH/modules/liquity/balances
 
-   Doing a GET on the liquity balances resource will return the balances that the user has both in troves and staked.
+   Doing a GET on the liquity balances resource will return the balances that the user has in troves.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -6083,7 +6083,7 @@ Getting Liquity balances
       {
           "result": {
             "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
-                "trove": {
+                {
                     "collateral": {
                         "asset": "ETH"
                         "amount": "5.3100000000000005",
@@ -6098,23 +6098,72 @@ Getting Liquity balances
                     "liquidation_price": "1261.435199626818912670885158",
                     "active": true,
                     "trove_id": 148
-                },
-                "stake": {
-                    "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
-                    "amount": "177.02",
-                    "usd_value": "1201.9658"
                 }
             }
           },
           "message": ""
       }
 
-   :resjson object result: A mapping of all accounts that currently have Liquity positions to keys ``trove`` and ``take`` for information on this places.
+   :resjson object result: A mapping of all accounts that currently have Liquity positions to ``trove`` information.
 
    :statuscode 200: Liquity balances succesfully queried.
    :statuscode 409: User is not logged in or Liquity module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+
+Getting Liquity staked amount
+=============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/staking
+
+   Doing a GET on the liquity balances resource will return the balances that the user has staked.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   .. note::
+      This endpoint requires a premium account.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/liquity/staking HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+            "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
+                {
+                    "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                    "amount": "177.02",
+                    "usd_value": "265.530"
+                }
+            }
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of the amount and value of LQTY staked in the protocol.
+
+   :statuscode 200: Liquity staking information succesfully queried.
+   :statuscode 409: User is not logged in or Liquity module is not activated.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
 
 
 Getting Liquity historical data

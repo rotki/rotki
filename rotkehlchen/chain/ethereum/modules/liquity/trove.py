@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import reduce
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 from operator import add
 
 from eth_utils import to_checksum_address
@@ -213,7 +213,7 @@ class Liquity(EthereumModule):
     def get_positions(
         self,
         addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, Dict[str, Union[Trove, StakePosition]]]:
+    ) -> Dict[ChecksumEthAddress, Trove]:
         contract = EthereumContract(
             address=LIQUITY_TROVE_MANAGER.address,
             abi=LIQUITY_TROVE_MANAGER.abi,
@@ -229,10 +229,9 @@ class Liquity(EthereumModule):
             calls=calls,
         )
 
-        data: Dict[ChecksumEthAddress, Dict[str, Union[Trove, StakePosition]]] = {}
+        data: Dict[ChecksumEthAddress, Trove] = {}
         eth_price = Inquirer().find_usd_price(A_ETH)
         lusd_price = Inquirer().find_usd_price(A_LUSD)
-        lqty_price = Inquirer().find_usd_price(A_LQTY)
         for idx, output in enumerate(outputs):
             status, result = output
             if status is True:
@@ -273,8 +272,7 @@ class Liquity(EthereumModule):
                     else:
                         liquidation_price = None
 
-                    data[addresses[idx]] = {}
-                    data[addresses[idx]]['trove'] = Trove(
+                    data[addresses[idx]] = Trove(
                         collateral=collateral_balance,
                         debt=debt_balance,
                         collateralization_ratio=collateralization_ratio,
@@ -287,30 +285,36 @@ class Liquity(EthereumModule):
                         f'Ignoring Liquity trove information. '
                         f'Failed to decode contract information. {str(e)}.',
                     )
+        return data
 
-        if self.premium:
-            staked = self._get_raw_history(addresses, 'stake')
-            for stake in staked['lqtyStakes']:
-                try:
-                    owner = to_checksum_address(stake['id'])
-                    amount = deserialize_optional_fval(stake['amount'], 'amount', 'liquity')
-                    position = AssetBalance(
-                        asset=A_LQTY,
-                        balance=Balance(
-                            amount=amount,
-                            usd_value=lqty_price * amount,
-                        ),
-                    )
-                    data[owner]['stake'] = StakePosition(position)
-                except (DeserializationError, KeyError) as e:
-                    msg = str(e)
-                    if isinstance(e, KeyError):
-                        msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_warning(
-                        f'Ignoring Liquity staking information. '
-                        f'Failed to decode remote response. {msg}.',
-                    )
-                    continue
+    def liquity_staking_balances(
+        self,
+        addresses: List[ChecksumEthAddress],
+    ) -> Dict[ChecksumEthAddress, StakePosition]:
+        staked = self._get_raw_history(addresses, 'stake')
+        lqty_price = Inquirer().find_usd_price(A_LQTY)
+        data = {}
+        for stake in staked['lqtyStakes']:
+            try:
+                owner = to_checksum_address(stake['id'])
+                amount = deserialize_optional_fval(stake['amount'], 'amount', 'liquity')
+                position = AssetBalance(
+                    asset=A_LQTY,
+                    balance=Balance(
+                        amount=amount,
+                        usd_value=lqty_price * amount,
+                    ),
+                )
+                data[owner] = StakePosition(position)
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_warning(
+                    f'Ignoring Liquity staking information. '
+                    f'Failed to decode remote response. {msg}.',
+                )
+                continue
         return data
 
     def _process_trove_events(
@@ -643,13 +647,13 @@ class Liquity(EthereumModule):
         pass
 
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
-        info = self.get_positions([address])
+        trove_info = self.get_positions([address])
         result = []
-        if address in info:
-            if 'trove' in info[address]:
-                result.append(info[address]['trove'].collateral)  # type: ignore
-            if 'stake' in info[address]:
-                result.append(info[address]['stake'].staked)  # type: ignore
+        if address in trove_info:
+            result.append(trove_info[address].collateral)
+        stake_info = self.liquity_staking_balances([address])
+        if address in stake_info:
+            result.append(stake_info[address].staked)
         return result
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:

@@ -1497,7 +1497,7 @@ class LoopringBalancesResource(BaseResource):
         return self.rest_api.get_loopring_balances(async_query=async_query)
 
 
-class LiquityTroves(BaseResource):
+class LiquityTrovesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1506,7 +1506,7 @@ class LiquityTroves(BaseResource):
         return self.rest_api.get_liquity_troves(async_query=async_query)
 
 
-class LiquityTrovesHistory(BaseResource):
+class LiquityTrovesHistoryResource(BaseResource):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1524,6 +1524,15 @@ class LiquityTrovesHistory(BaseResource):
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
+
+
+class LiquityStakingResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_liquity_staked(async_query=async_query)
 
 
 class PickleDillResource(BaseResource):

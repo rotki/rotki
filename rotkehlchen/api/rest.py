@@ -2704,6 +2704,16 @@ class RestAPI():
         )
 
     @require_premium_user(active_check=False)
+    def get_liquity_staked(self, async_query: bool) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='liquity',
+            method='liquity_staking_balances',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
+        )
+
+    @require_premium_user(active_check=False)
     def get_liquity_events(
         self,
         async_query: bool,
