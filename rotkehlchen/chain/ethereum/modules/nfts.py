@@ -136,16 +136,15 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                         'usd_price': FVal(cached_price_data['usd_price']),
                     })
                 elif nft.price_usd != ZERO:
-                    usd_price = nft.price_usd
                     result[address].append({
                         'id': nft.token_identifier,
                         'name': nft.name,
                         'manually_input': False,
-                        'price_asset': 'USD',
-                        'price_in_asset': usd_price,
-                        'usd_price': usd_price,
+                        'price_asset': 'ETH',
+                        'price_in_asset': nft.price_eth,
+                        'usd_price': nft.price_usd,
                     })
-                    db_data.append((nft.token_identifier, nft.name, str(usd_price), 'USD', 0))
+                    db_data.append((nft.token_identifier, nft.name, str(nft.price_eth), 'ETH', 0))
                 else:
                     if return_zero_values:
                         result[address].append({
