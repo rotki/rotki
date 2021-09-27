@@ -1,4 +1,4 @@
-import { LiquityBalances, LiquityEvents } from '@rotki/common/lib/liquity';
+import { LiquityBalances, TroveEvents } from '@rotki/common/lib/liquity';
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { TaskMeta } from '@/model/task';
@@ -49,7 +49,7 @@ export const actions: ActionTree<LiquitityState, RotkehlchenState> = {
     };
 
     await fetchAsync(context, {
-      query: async () => await api.defi.fetchLiquityEvents(),
+      query: async () => await api.defi.fetchLiquityTroveEvents(),
       mutation: LiquityMutations.SET_EVENTS,
       taskType: TaskType.LIQUITY_EVENTS,
       section: Section.DEFI_LIQUITY_EVENTS,
@@ -57,7 +57,7 @@ export const actions: ActionTree<LiquitityState, RotkehlchenState> = {
       meta: meta,
       refresh,
       checkPremium: true,
-      parser: result => LiquityEvents.parse(result),
+      parser: result => TroveEvents.parse(result),
       onError: {
         title: i18n.t('actions.defi.liquity_events.error.title').toString(),
         error: message =>

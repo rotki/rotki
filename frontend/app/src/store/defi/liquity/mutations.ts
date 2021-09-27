@@ -1,4 +1,4 @@
-import { LiquityBalances, LiquityEvents } from '@rotki/common/lib/liquity';
+import { LiquityBalances, TroveEvents } from '@rotki/common/lib/liquity';
 import { MutationTree } from 'vuex';
 import { LiquityMutations } from '@/store/defi/liquity/mutation-types';
 import { LiquitityState } from '@/store/defi/liquity/types';
@@ -14,7 +14,7 @@ export const mutations: MutationTree<LiquitityState> = {
   },
   [LiquityMutations.SET_EVENTS](
     state: Writeable<LiquitityState>,
-    events: LiquityEvents
+    events: TroveEvents
   ) {
     state.events = events;
   },

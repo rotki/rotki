@@ -1,19 +1,19 @@
 import {
-  LiquityAccountEvents,
   LiquityBalance,
   LiquityBalances,
-  LiquityEvents
+  TroveEvent,
+  TroveEvents
 } from '@rotki/common/lib/liquity';
 import { DefiProtocol } from '@/services/defi/consts';
 
 export interface LiquitityState {
   readonly balances: LiquityBalances;
-  readonly events: LiquityEvents;
+  readonly events: TroveEvents;
 }
 
 export interface LiquityLoan {
   readonly owner: string;
   readonly protocol: DefiProtocol;
-  readonly balances: LiquityBalance;
-  readonly events: LiquityAccountEvents;
+  readonly balance: LiquityBalance;
+  readonly events: TroveEvent[];
 }

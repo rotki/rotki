@@ -133,8 +133,8 @@ export class DefiApi {
     return fetchExternalAsync(this.api, url);
   }
 
-  async fetchLiquityEvents(): Promise<PendingTask> {
-    const url = 'blockchains/ETH/modules/liquity/events';
+  async fetchLiquityTroveEvents(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/liquity/events/trove';
     return fetchExternalAsync(this.api, url);
   }
 }

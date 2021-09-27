@@ -430,8 +430,6 @@
   },
   "liquity_lending": {
     "header": "Liquity Trove {troveId}",
-    "stake": "Stake",
-    "stake_events": "Stake Events",
     "trove_events": "Trove Events"
   },
   "loan_debt": {
