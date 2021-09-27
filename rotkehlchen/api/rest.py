@@ -2714,7 +2714,7 @@ class RestAPI():
         )
 
     @require_premium_user(active_check=False)
-    def get_liquity_events(
+    def get_liquity_trove_events(
         self,
         async_query: bool,
         reset_db_data: bool,  # pylint: disable=unused-argument
@@ -2724,7 +2724,25 @@ class RestAPI():
         return self._api_query_for_eth_module(
             async_query=async_query,
             module_name='liquity',
-            method='get_history',
+            method='get_trove_history',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+    @require_premium_user(active_check=False)
+    def get_liquity_stake_events(
+        self,
+        async_query: bool,
+        reset_db_data: bool,  # pylint: disable=unused-argument
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='liquity',
+            method='get_staking_history',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
             from_timestamp=from_timestamp,

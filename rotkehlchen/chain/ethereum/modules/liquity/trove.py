@@ -463,24 +463,19 @@ class Liquity(EthereumModule):
             param_values=param_values,
         )
 
-    def get_history(
+    def get_trove_history(
         self,
         addresses: List[ChecksumEthAddress],
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
-    ) -> Dict[ChecksumEthAddress, Dict[str, List[LiquityEvent]]]:
+    ) -> Dict[ChecksumEthAddress, List[LiquityEvent]]:
         try:
             query = self._get_raw_history(addresses, 'trove')
         except RemoteError as e:
             log.error(f'Failed to query trove graph events for liquity. {str(e)}')
             query = {}
-        try:
-            staked = self._get_raw_history(addresses, 'stake')
-        except RemoteError as e:
-            log.error(f'Failed to query stake graph events for liquity. {str(e)}')
-            staked = {}
 
-        result: Dict[ChecksumEthAddress, Dict[str, List[LiquityEvent]]] = defaultdict(lambda: defaultdict(list))  # noqa: E501
+        result: Dict[ChecksumEthAddress, List[LiquityEvent]] = defaultdict(list)
         for trove in query.get('troves', []):
             owner = to_checksum_address(trove['owner']['id'])
             for change in trove['changes']:
@@ -541,7 +536,7 @@ class Liquity(EthereumModule):
                         trove_operation=operation,
                         sequence_number=str(change['transaction']['sequenceNumber']),
                     )
-                    result[owner]['trove'].append(event)
+                    result[owner].append(event)
                 except (DeserializationError, KeyError) as e:
                     log.debug(f'Failed to deserialize Liquity trove event: {change}')
                     msg = str(e)
@@ -553,6 +548,21 @@ class Liquity(EthereumModule):
                     )
                     continue
 
+        return result
+
+    def get_staking_history(
+        self,
+        addresses: List[ChecksumEthAddress],
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Dict[ChecksumEthAddress, List[LiquityEvent]]:
+        try:
+            staked = self._get_raw_history(addresses, 'stake')
+        except RemoteError as e:
+            log.error(f'Failed to query stake graph events for liquity. {str(e)}')
+            staked = {}
+
+        result: Dict[ChecksumEthAddress, List[LiquityEvent]] = defaultdict(list)
         for stake in staked.get('lqtyStakes', []):
             owner = to_checksum_address(stake['id'])
             for change in stake['changes']:
@@ -613,7 +623,7 @@ class Liquity(EthereumModule):
                         stake_operation=operation_stake,
                         sequence_number=str(change['transaction']['sequenceNumber']),
                     )
-                    result[owner]['stake'].append(stake_event)
+                    result[owner].append(stake_event)
                 except (DeserializationError, KeyError) as e:
                     msg = str(e)
                     log.debug(f'Failed to deserialize Liquity entry: {change}')

@@ -91,7 +91,7 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
 @pytest.mark.parametrize('mocked_price_queries', [liquity_mocked_historical_prices])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_trove_events(rotkehlchen_api_server):
-    """Test that Trove events and Stake events are correctly queried"""
+    """Test that Trove events events are correctly queried"""
     async_query = random.choice([True, False])
     response = requests.get(
         api_url_for(
@@ -111,10 +111,8 @@ def test_trove_events(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
 
     assert LQTY_ADDR in result
-    assert {'trove', 'stake'} == set(result[LQTY_ADDR].keys())
-    assert len(result[LQTY_ADDR]['trove']) == 2
-    assert len(result[LQTY_ADDR]['stake']) == 1
-    trove_action = result[LQTY_ADDR]['trove'][0]
+    assert len(result[LQTY_ADDR]) == 2
+    trove_action = result[LQTY_ADDR][0]
     tx_id = '0xc8ad6f6ec244a93e1d66e60d1eab2ff2cb9de1f3a1f45c7bb4e9d2f720254137'
     assert trove_action['tx'] == tx_id
     assert trove_action['timestamp'] == 1627818194
@@ -125,7 +123,37 @@ def test_trove_events(rotkehlchen_api_server):
     assert trove_action['collateral_after']['amount'] == trove_action['collateral_delta']['amount']
     assert trove_action['collateral_delta']['amount'] == '3.5'
     assert trove_action['sequence_number'] == '51647'
-    trove_stake = result[LQTY_ADDR]['stake'][0]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])
+@pytest.mark.parametrize('ethereum_modules', [['liquity']])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('mocked_price_queries', [liquity_mocked_historical_prices])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_staking_events(rotkehlchen_api_server):
+    """Test that Trove events events are correctly queried"""
+    async_query = random.choice([True, False])
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'liquitystakinghistoryresource',
+        ), json={
+            'async_query': async_query,
+            'from_timestamp': 0,
+            'to_timestamp': 1628026696,
+            'reset_db_data': False,
+        },
+    )
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+    else:
+        result = assert_proper_response_with_result(response)
+
+    assert LQTY_ADDR in result
+    assert len(result[LQTY_ADDR]) == 1
+    trove_stake = result[LQTY_ADDR][0]
     tx_id = '0xe527749c76a3af56d86c97a8f8f8ce07e191721e9e16a0f62a228f8a8ef6d295'
     assert trove_stake['tx'] == tx_id
     assert trove_stake['timestamp'] == 1627827057

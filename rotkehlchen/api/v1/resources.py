@@ -1518,7 +1518,27 @@ class LiquityTrovesHistoryResource(BaseResource):
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> Response:
-        return self.rest_api.get_liquity_events(
+        return self.rest_api.get_liquity_trove_events(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
+class LiquityStakingHistoryResource(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+        self,
+        async_query: bool,
+        reset_db_data: bool,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_liquity_stake_events(
             async_query=async_query,
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,

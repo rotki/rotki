@@ -6083,22 +6083,20 @@ Getting Liquity balances
       {
           "result": {
             "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
-                {
-                    "collateral": {
-                        "asset": "ETH"
-                        "amount": "5.3100000000000005",
-                        "usd_value": "16161.675300000001521815"
-                    },
-                    "debt": {
-                        "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
-                        "amount": "6029.001719188487",
-                        "usd_value": "6089.29173638037187"
-                    },
-                    "collateralization_ratio": "268.0655281381374051287323733",
-                    "liquidation_price": "1261.435199626818912670885158",
-                    "active": true,
-                    "trove_id": 148
-                }
+                "collateral": {
+                    "asset": "ETH"
+                    "amount": "5.3100000000000005",
+                    "usd_value": "16161.675300000001521815"
+                },
+                "debt": {
+                    "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                    "amount": "6029.001719188487",
+                    "usd_value": "6089.29173638037187"
+                },
+                "collateralization_ratio": "268.0655281381374051287323733",
+                "liquidation_price": "1261.435199626818912670885158",
+                "active": true,
+                "trove_id": 148
             }
           },
           "message": ""
@@ -6147,11 +6145,9 @@ Getting Liquity staked amount
       {
           "result": {
             "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
-                {
-                    "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
-                    "amount": "177.02",
-                    "usd_value": "265.530"
-                }
+                "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                "amount": "177.02",
+                "usd_value": "265.530"
             }
           },
           "message": ""
@@ -6166,10 +6162,10 @@ Getting Liquity staked amount
 
 
 
-Getting Liquity historical data
-===============================
+Getting Liquity historical trove data
+=====================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/events
+.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/events/trove
 
    .. note::
       This endpoint is only available for premium users
@@ -6186,7 +6182,7 @@ Getting Liquity historical data
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/liquity/events HTTP/1.1
+      GET /api/1/blockchains/ETH/modules/liquity/events/ HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6201,8 +6197,7 @@ Getting Liquity historical data
 
       {
           "result": {
-                "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
-                    "trove": [
+                "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": [
                         {
                             "kind": "trove",
                             "tx": "0xc8ad6f6ec244a93e1d66e60d1eab2ff2cb9de1f3a1f45c7bb4e9d2f720254137",
@@ -6259,7 +6254,7 @@ Getting Liquity historical data
                             "trove_operation": "Adjust Trove",
                             "sequence_number": "51747"
                         }
-                    ],
+                    ]
                     "stake": [
                         {
                             "kind": "stake",
@@ -6297,8 +6292,6 @@ Getting Liquity historical data
       }
 
    :resjson object result: A mapping of accounts to the Liquity history report of each account. If an account is not in the mapping rotki does not see anything ever deposited in Liquity for it.
-   :resjson resjsonarr trove: A list of Trove events. Check the fields below for the potential values.
-   :resjson resjsonarr stake: A list of Staking events. Check the fields below for the potential values.
    :resjson string kind: "trove" if it's an action in troves and "stake" if it's a change in the staking position
    :resjson int timestamp: The unix timestamp at which the event occured.
    :resjson string tx: The transaction hash of the event.
@@ -6307,6 +6300,86 @@ Getting Liquity historical data
    :resjson object debt_delta: Amount, asset and usd value of debt that the operation changed.
    :resjson object collateral_delta: Amount, asset and usd value of collateral that the operation changed.
    :resjson string trove_operation: The operation that happened in the change. Can be ``Open Trove``, ``Close Trove``, ``Adjust Trove``, ``Accrue Rewards``, ``Liquidation In Normal Mode``, ``Liquidation In Recovery Mode``, ``Redeem Collateral``
+
+   :statuscode 200: Liquity history succesfully queried.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or Liquity module is not activated.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+
+Getting Liquity historical staking data
+=======================================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/events/staking
+
+   .. note::
+      This endpoint is only available for premium users
+
+   Doing a GET on the liquity events resource will return the history for staking events.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/liquity/events/ HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson bool reset_db_data: Boolean denoting whether all liquity event data saved in the DB are going to be deleted and rewritten after this query. False by default.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+                "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": [
+                    {
+                        "kind": "stake",
+                        "tx": "0xe527749c76a3af56d86c97a8f8f8ce07e191721e9e16a0f62a228f8a8ef6d295",
+                        "address": "0x063c26fF1592688B73d8e2A18BA4C23654e2792E",
+                        "timestamp": 1627827057,
+                        "stake_after": {
+                            "amount": "177.02",
+                            "usd_value": "654.974",
+                            "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                        },
+                        "stake_change": {
+                            "amount": "177.02",
+                            "usd_value": "654.974",
+                            "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                        },
+                        "issuance_gain": {
+                            "amount": "0",
+                            "usd_value": "0.00",
+                            "asset": "_ceth_0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D"
+                        },
+                        "redemption_gain": {
+                            "amount": "0",
+                            "usd_value": "0.00",
+                            "asset": "_ceth_0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
+                        },
+                        "stake_operation": "Stake Created",
+                        "sequence_number": "51676"
+                    }
+                ]
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of accounts to the Liquity history report of each account. If an account is not in the mapping rotki does not see anything ever deposited in Liquity for it.
+   :resjson string kind: "trove" if it's an action in troves and "stake" if it's a change in the staking position
+   :resjson int timestamp: The unix timestamp at which the event occured.
+   :resjson string tx: The transaction hash of the event.
    :resjson string stake_after: Amount, asset and usd value changed in the operation over the staked position. Amount is represented in LQTY
    :resjson string stake_change: Amount, asset and usd value that the operation changed
    :resjson string stake_operation: Can be ``Stake Created``, ``Stake Increased``, ``Stake Decreased``, ``Stake Removed``, ``Gains Withdrawn``
