@@ -239,8 +239,27 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
             )
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             raise InputError(f'Failed to write price for {from_asset.identifier} due to {str(e)}') from e  # noqa: E501
-        if cursor.rowcount != 1:
-            raise InputError(f'Failed to write price for unknown asset {from_asset.identifier}')
+
+        if cursor.rowcount == 1:
+            return True  # all done
+
+        # else it means no DB entry existed, so we need to make a full entry.
+        cursor.execute(
+            'INSERT OR IGNORE INTO assets(identifier) VALUES(?)',
+            (from_asset.identifier,),
+        )
+        cursor.execute(
+            'INSERT OR IGNORE INTO nfts('
+            'identifier, name, last_price, last_price_asset, manual_price'
+            ') VALUES(?, ?, ?, ?, ?)',
+            (
+                from_asset.identifier,
+                from_asset.identifier,  # can't have the name here. Rethink?
+                str(price),
+                to_asset.identifier,
+                1,
+            ),
+        )
 
         return True
 
