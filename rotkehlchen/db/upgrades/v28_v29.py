@@ -45,6 +45,9 @@ def _create_new_tables(conn: 'Connection') -> None:
     last_price TEXT,
     last_price_asset TEXT,
     manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),
+    owner_address TEXT,
+    blockchain TEXT GENERATED ALWAYS AS ("ETH") VIRTUAL,
+    FOREIGN KEY(blockchain, owner_address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
     FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
     FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
     );""")  # noqa: E501

@@ -122,7 +122,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
         nft_results, _ = self._get_all_nft_data(addresses, ignore_cache=ignore_cache)
         cached_db_result = self.get_nfts_with_price()
         cached_db_prices = {x['asset']: x for x in cached_db_result}
-        db_data = []
+        db_data: List[Tuple[str, str, Optional[str], Optional[str], int, ChecksumEthAddress]] = []
         for address, nfts in nft_results.items():
             for nft in nfts:
                 cached_price_data = cached_db_prices.get(nft.token_identifier)
@@ -144,7 +144,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                         'price_in_asset': nft.price_eth,
                         'usd_price': nft.price_usd,
                     })
-                    db_data.append((nft.token_identifier, nft.name, str(nft.price_eth), 'ETH', 0))
+                    db_data.append((nft.token_identifier, nft.name, str(nft.price_eth), 'ETH', 0, address))  # noqa: E501
                 else:
                     if return_zero_values:
                         result[address].append({
@@ -173,8 +173,8 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                 if exist_result is None or bool(exist_result[0]) is False:
                     cursor.execute(
                         'INSERT OR IGNORE INTO nfts('
-                        'identifier, name, last_price, last_price_asset, manual_price'
-                        ') VALUES(?, ?, ?, ?, ?)',
+                        'identifier, name, last_price, last_price_asset, manual_price, owner_address'  # noqa: E501
+                        ') VALUES(?, ?, ?, ?, ?, ?)',
                         entry,
                     )
 
