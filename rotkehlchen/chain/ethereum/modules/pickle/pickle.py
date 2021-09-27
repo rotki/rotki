@@ -138,7 +138,8 @@ class PickleFinance(EthereumModule):
         balances_per_address: Dict[ChecksumEthAddress, List['AssetBalance']] = defaultdict(list)
         for address, dill_balance in dill_balances.items():
             pickles = dill_balance.dill_amount + dill_balance.pending_rewards
-            balances_per_address[address] += [pickles]
+            if pickles.balance.amount != 0:
+                balances_per_address[address] += [pickles]
         return balances_per_address
 
     # -- Methods following the EthereumModule interface -- #
