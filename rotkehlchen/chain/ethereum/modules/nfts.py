@@ -155,6 +155,8 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                             'price_in_asset': ZERO,
                             'usd_price': ZERO,
                         })
+                    # Always write detected nfts in the DB to have name and address associated
+                    db_data.append((nft.token_identifier, nft.name, None, None, 0, address))  # noqa: E501
 
         # save opensea data in the DB
         if len(db_data) != 0:
@@ -241,23 +243,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
             raise InputError(f'Failed to write price for {from_asset.identifier} due to {str(e)}') from e  # noqa: E501
 
         if cursor.rowcount != 1:
-            # no DB entry existed, so we need to make a full entry.
-            cursor.execute(
-                'INSERT OR IGNORE INTO assets(identifier) VALUES(?)',
-                (from_asset.identifier,),
-            )
-            cursor.execute(
-                'INSERT OR IGNORE INTO nfts('
-                'identifier, name, last_price, last_price_asset, manual_price'
-                ') VALUES(?, ?, ?, ?, ?)',
-                (
-                    from_asset.identifier,
-                    from_asset.identifier,  # can't have the name here. Rethink?
-                    str(price),
-                    to_asset.identifier,
-                    1,
-                ),
-            )
+            raise InputError(f'Failed to write price for {from_asset.identifier}')
 
         self.db.update_last_write()
         return True
