@@ -156,7 +156,7 @@ const setupNfts = (
   const limit = ref(0);
   const error = ref('');
   const loading = ref(true);
-  const perAccount = ref<Nfts | null>(null);
+  const perAccount: Ref<Nfts | null> = ref(null);
 
   const items = computed(() => {
     const account = selectedAccount.value;
@@ -185,13 +185,13 @@ const setupNfts = (
   );
 
   const nfts = computed<GalleryNft[]>(() => {
-    const addresses = perAccount.value;
+    const addresses: Nfts | null = perAccount.value;
     const value = prices.value;
     if (!addresses) {
       return [];
     }
 
-    const allNfts: Nft[] = [];
+    const allNfts: GalleryNft[] = [];
     for (const address in addresses) {
       const addressNfts: Nft[] = addresses[address];
       for (const nft of addressNfts) {
