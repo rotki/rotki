@@ -18,7 +18,7 @@ from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
-from web3.exceptions import BadFunctionCallOutput
+from web3.exceptions import BadFunctionCallOutput, TransactionNotFound
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import FilterParams
 
@@ -404,6 +404,7 @@ class EthereumManager():
                     RemoteError,
                     BlockchainQueryError,
                     requests.exceptions.RequestException,
+                    TransactionNotFound,
                     KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
             ) as e:  # noqa: E501
                 log.warning(f'Failed to query {node} for {str(method)} due to {str(e)}')
@@ -736,6 +737,7 @@ class EthereumManager():
                 ) from e
             return tx_receipt
 
+        # Can raise TransactionNotFound if the user's node is pruned and transaction is old
         tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
         return process_result(tx_receipt)
 
