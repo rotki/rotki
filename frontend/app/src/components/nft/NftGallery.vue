@@ -56,7 +56,7 @@
         <refresh-button
           :loading="loading"
           :tooltip="$t('nft_gallery.refresh_tooltip')"
-          @refresh="fetchNfts"
+          @refresh="fetchNfts({ ignoreCache: true })"
         />
       </v-col>
     </v-row>
@@ -159,10 +159,11 @@ const setupNfts = (
     return items.value.slice(start, start + itemsPerPage.value);
   });
 
-  const fetchNfts = async () => {
+  const fetchNfts = async (payload?: { ignoreCache: boolean }) => {
     loading.value = true;
     const { message, result }: ActionResult<NftResponse> = await dispatch(
-      `session/${SessionActions.FETCH_NFTS}`
+      `session/${SessionActions.FETCH_NFTS}`,
+      payload
     );
     if (result) {
       total.value = result.entriesFound;

@@ -181,7 +181,7 @@ export default defineComponent({
     const refresh = async () => {
       return await store.dispatch(
         `balances/${BalanceActions.FETCH_NF_BALANCES}`,
-        true
+        { ignoreCache: true }
       );
     };
 

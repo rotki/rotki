@@ -611,12 +611,13 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     }
   },
 
-  async [SessionActions.FETCH_NFTS]({
-    commit
-  }): Promise<ActionResult<NftResponse | null>> {
+  async [SessionActions.FETCH_NFTS](
+    { commit },
+    payload?: { ignoreCache: boolean }
+  ): Promise<ActionResult<NftResponse | null>> {
     try {
       const taskType = TaskType.FETCH_NFTS;
-      const { taskId } = await api.fetchNfts();
+      const { taskId } = await api.fetchNfts(payload);
       const task = createTask(taskId, taskType, {
         title: i18n.t('actions.session.fetch_nfts.task.title').toString(),
         ignoreResult: false,
