@@ -1,8 +1,9 @@
-import { Balance, NumericString } from '@rotki/common';
+import { Balance } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { BigNumber } from 'bignumber.js';
 import { z } from 'zod';
 import { Exchange, PriceOracles } from '@/model/action-result';
+import { PriceInformation } from '@/services/assets/types';
 import {
   BlockchainAssetBalances,
   BtcBalances,
@@ -215,11 +216,12 @@ export type AssetSymbolGetter = (identifier: string) => string;
 
 export type KrakenAccountType = typeof KRAKEN_ACCOUNT_TYPES[number];
 
-export const NonFungibleBalance = z.object({
-  id: z.string(),
-  name: z.string().nullable(),
-  usdPrice: NumericString
-});
+export const NonFungibleBalance = PriceInformation.merge(
+  z.object({
+    name: z.string().nullable(),
+    id: z.string().nonempty()
+  })
+);
 
 export type NonFungibleBalance = z.infer<typeof NonFungibleBalance>;
 

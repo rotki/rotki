@@ -38,7 +38,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
-import { NonFungiblePrice } from '@/components/accounts/balances/types';
+import { NonFungibleBalance } from '@/store/balances/types';
 import { assert } from '@/utils/assertions';
 
 export default defineComponent({
@@ -46,7 +46,7 @@ export default defineComponent({
   props: {
     value: {
       required: true,
-      type: Object as PropType<NonFungiblePrice>
+      type: Object as PropType<NonFungibleBalance>
     }
   },
   emits: ['close', 'save'],
