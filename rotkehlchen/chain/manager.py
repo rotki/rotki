@@ -1422,18 +1422,22 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         liquity_module = self.get_module('liquity')
         if liquity_module is not None:
+            # Get trove information
             liquity_balances = liquity_module.get_positions(
                 addresses=self.queried_addresses_for_module('liquity'),
             )
             for address, deposits in liquity_balances.items():
-                if 'trove' in deposits:
-                    collateral = deposits['trove'].collateral.balance  # type: ignore
-                    eth_balances[address].assets[A_ETH] += collateral
-                    self.totals.assets[A_ETH] += collateral
-                if 'stake' in deposits:
-                    deposited_lqty = deposits['stake'].staked.balance  # type: ignore
-                    eth_balances[address].assets[A_LQTY] += deposited_lqty
-                    self.totals.assets[A_LQTY] += deposited_lqty
+                collateral = deposits.collateral.balance
+                eth_balances[address].assets[A_ETH] += collateral
+                self.totals.assets[A_ETH] += collateral
+            # Get staked amounts
+            liquity_staked = liquity_module.liquity_staking_balances(
+                addresses=self.queried_addresses_for_module('liquity'),
+            )
+            for address, staked_info in liquity_staked.items():
+                deposited_lqty = staked_info.staked.balance
+                eth_balances[address].assets[A_LQTY] += deposited_lqty
+                self.totals.assets[A_LQTY] += deposited_lqty
 
         # Count ETH staked in Eth2 beacon chain
         self.account_for_staked_eth2_balances(addresses=self.queried_addresses_for_module('eth2'))
