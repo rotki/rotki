@@ -1305,15 +1305,15 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async [BalanceActions.FETCH_NF_BALANCES]({
-    commit,
-    rootGetters: { status }
-  }): Promise<void> {
+  async [BalanceActions.FETCH_NF_BALANCES](
+    { commit, rootGetters: { status } },
+    payload?: { ignoreCache: boolean }
+  ): Promise<void> {
     const section = Section.NON_FUNGIBLE_BALANCES;
     try {
       setStatus(Status.LOADING, section, status, commit);
       const taskType = TaskType.NF_BALANCES;
-      const { taskId } = await api.balances.fetchNfBalances();
+      const { taskId } = await api.balances.fetchNfBalances(payload);
       const task = createTask(taskId, taskType, {
         title: i18n.t('actions.nft_balances.task.title').toString(),
         ignoreResult: false,

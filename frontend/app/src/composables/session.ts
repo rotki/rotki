@@ -27,3 +27,9 @@ export const getPremium = () => {
   const sessionState = getSessionState();
   return computed(() => sessionState.premium);
 };
+
+export const currency = computed(() => {
+  const sessionState = getSessionState();
+  const { ticker_symbol } = sessionState.generalSettings.selectedCurrency;
+  return ticker_symbol;
+});

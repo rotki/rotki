@@ -14,8 +14,11 @@
       />
     </template>
     <data-table :headers="tableHeaders" :items="balances" sort-by="usdPrice">
+      <template #header.usdPrice>
+        {{ $t('non_fungible_balance.column.price', { currency }) }}
+      </template>
       <template #item.name="{ item }">
-        {{ item.name ? item.name : item.asset }}
+        {{ item.name ? item.name : item.id }}
       </template>
       <template #item.usdPrice="{ item }">
         <amount-display
@@ -23,6 +26,14 @@
           show-currency="symbol"
           fiat-currency="USD"
         />
+      </template>
+      <template #item.priceInAsset="{ item }">
+        <amount-display
+          v-if="item.priceAsset !== currency"
+          :value="item.priceInAsset"
+          :asset="item.priceAsset"
+        />
+        <span v-else>-</span>
       </template>
       <template #item.actions="{ item }">
         <row-action
@@ -65,6 +76,7 @@ import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBa
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import { isSectionLoading } from '@/composables/common';
+import { currency } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { BalanceActions } from '@/store/balances/action-types';
@@ -81,19 +93,28 @@ const tableHeaders: DataTableHeader[] = [
     cellClass: 'text-no-wrap'
   },
   {
+    text: i18n.t('non_fungible_balance.column.price_in_asset').toString(),
+    value: 'priceInAsset',
+    align: 'end',
+    width: '75%',
+    class: 'text-no-wrap'
+  },
+  {
     text: i18n.t('non_fungible_balance.column.price').toString(),
     value: 'usdPrice',
     align: 'end',
-    width: '75%'
+    class: 'text-no-wrap'
   },
   {
     text: i18n.t('non_fungible_balance.column.custom_price').toString(),
-    value: 'manuallyInput'
+    value: 'manuallyInput',
+    class: 'text-no-wrap'
   },
   {
     text: i18n.t('non_fungible_balance.column.actions').toString(),
     align: 'center',
-    value: 'actions'
+    value: 'actions',
+    class: 'text-no-wrap'
   }
 ];
 
@@ -159,7 +180,8 @@ export default defineComponent({
 
     const refresh = async () => {
       return await store.dispatch(
-        `balances/${BalanceActions.FETCH_NF_BALANCES}`
+        `balances/${BalanceActions.FETCH_NF_BALANCES}`,
+        true
       );
     };
 
@@ -169,6 +191,7 @@ export default defineComponent({
       ...setupEdit(refresh),
       refresh,
       balances,
+      currency,
       tableHeaders,
       getAsset: (price: NonFungibleBalance | null) => {
         if (!price) {

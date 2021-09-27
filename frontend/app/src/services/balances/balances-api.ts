@@ -243,8 +243,14 @@ export class BalancesApi {
       .then(handleResponse);
   }
 
-  async fetchNfBalances(): Promise<PendingTask> {
+  async fetchNfBalances(payload?: {
+    ignoreCache: boolean;
+  }): Promise<PendingTask> {
     const url = '/nfts/balances';
-    return fetchExternalAsync(this.api, url);
+    let params = undefined;
+    if (payload) {
+      params = axiosSnakeCaseTransformer(payload);
+    }
+    return fetchExternalAsync(this.api, url, params);
   }
 }

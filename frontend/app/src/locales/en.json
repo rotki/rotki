@@ -484,7 +484,8 @@
       "actions": "Actions",
       "custom_price": "Custom Price",
       "name": "Name",
-      "price": "Price"
+      "price": "Price in {currency}",
+      "price_in_asset": "Price in Asset"
     }
   },
   "non_fungible_balance_edit": {
@@ -499,7 +500,8 @@
     "column": {
       "name": "Name",
       "percentage": "% of net Value",
-      "price": "Price"
+      "price": "Price in {currency}",
+      "price_in_asset": "Price in asset"
     },
     "title": "NFT Balances"
   },
