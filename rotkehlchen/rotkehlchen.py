@@ -646,6 +646,7 @@ class Rotkehlchen():
         if nfts is not None:
             nft_mapping = nfts.get_balances(
                 addresses=self.chain_manager.queried_addresses_for_module('nfts'),
+                return_zero_values=False,
                 ignore_cache=False,
             )
             if len(nft_mapping) != 0:
