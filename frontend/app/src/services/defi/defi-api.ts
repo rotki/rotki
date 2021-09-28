@@ -137,4 +137,14 @@ export class DefiApi {
     const url = 'blockchains/ETH/modules/liquity/events/trove';
     return fetchExternalAsync(this.api, url);
   }
+
+  fetchLiquityStaking(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/liquity/staking';
+    return fetchExternalAsync(this.api, url);
+  }
+
+  fetchLiquityStakingEvents(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/liquity/events/staking';
+    return fetchExternalAsync(this.api, url);
+  }
 }

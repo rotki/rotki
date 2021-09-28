@@ -432,6 +432,14 @@
     "header": "Liquity Trove {troveId}",
     "trove_events": "Trove Events"
   },
+  "liquity_page": {
+    "loading": "Liquity Staking information is loading",
+    "no_premium": "Liquity Staking"
+  },
+  "liquity_staking_details": {
+    "refresh_tooltip": "Refresh the staked amounts and events",
+    "select_account": "Select account"
+  },
   "loan_debt": {
     "outstanding_debt": "Outstanding debt",
     "title": "Debt"
@@ -1871,6 +1879,24 @@
           "title": "Querying Liquity Events"
         }
       },
+      "liquity_staking": {
+        "error": {
+          "description": "Failed to retreive liquity staking: {message}",
+          "title": "Liquity staking"
+        },
+        "task": {
+          "title": "Querying Liquity staking"
+        }
+      },
+      "liquity_staking_events": {
+        "error": {
+          "description": "Failed to retrieve Liquity staking events: {message}",
+          "title": "Liquity staking events"
+        },
+        "task": {
+          "title": "Querying Liquity staking events"
+        }
+      },
       "makerdao_vaults": {
         "task": {
           "title": "Querying MakerDAO Vaults"
@@ -2283,7 +2309,8 @@
     "staking": "Staking",
     "staking_sub": {
       "adex": "AdEx",
-      "eth2": "Eth2"
+      "eth2": "Eth2",
+      "liquity": "Liquity"
     },
     "manage_assets": "Manage Assets"
   },
@@ -2935,6 +2962,7 @@
     "balance": "Balance"
   },
   "staking": {
+    "liquity": "Liquity",
     "title": "Staking",
     "eth2": "ETH2",
     "adex": "AdEx"

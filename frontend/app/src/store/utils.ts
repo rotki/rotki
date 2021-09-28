@@ -3,6 +3,7 @@ import * as logger from 'loglevel';
 import { ActionContext, Commit, Store } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
+import { TaskType } from '@/model/task-type';
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
@@ -47,7 +48,7 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
     const { result } = await taskCompletion<R, T>(payload.taskType);
     commit(payload.mutation, payload.parser ? payload.parser(result) : result);
   } catch (e: any) {
-    logger.error(`actions failure ${payload.taskType}:`, e);
+    logger.error(`action failure for task ${TaskType[payload.taskType]}:`, e);
     notify(
       payload.onError.error(e.message),
       payload.onError.title,

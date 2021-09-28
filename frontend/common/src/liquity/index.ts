@@ -35,7 +35,11 @@ export const TroveEvents = z.record(z.array(TroveEvent))
 
 export type TroveEvents = z.infer<typeof TroveEvents>
 
-const StakeEvent = z.object({
+export const LiquityStaking = z.record(AssetBalance)
+
+export type LiquityStaking = z.infer<typeof LiquityStaking>
+
+const LiquityStakingEvent = z.object({
   kind: z.literal('stake'),
   tx: z.string(),
   address: z.string(),
@@ -47,9 +51,9 @@ const StakeEvent = z.object({
   stakeOperation: z.string()
 })
 
-export type StakeEvent = z.infer<typeof StakeEvent>
+export type LiquityStakingEvent = z.infer<typeof LiquityStakingEvent>
 
-export const StakeEvents = z.record(z.array(StakeEvent))
+export const LiquityStakingEvents = z.record(z.array(LiquityStakingEvent))
 
-export type StakeEvents = z.infer<typeof StakeEvents>
+export type LiquityStakingEvents = z.infer<typeof LiquityStakingEvents>
 

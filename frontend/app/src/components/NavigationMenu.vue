@@ -237,6 +237,14 @@ export default class NavigationMenu extends Vue {
           icon: '',
           cryptoIcon: 'ADX',
           class: 'staking-adex'
+        },
+        {
+          type: 'item',
+          text: `${this.$t('navigation_menu.staking_sub.liquity')}`,
+          route: Routes.STAKING_LIQUITY,
+          icon: '',
+          cryptoIcon: 'LQTY',
+          class: 'staking-liquity'
         }
       ]
     },
