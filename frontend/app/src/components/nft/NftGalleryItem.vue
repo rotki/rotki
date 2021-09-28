@@ -1,7 +1,18 @@
 <template>
   <v-card class="mx-auto">
     <base-external-link :href="item.externalLink">
+      <video
+        v-if="isVideo"
+        controls
+        width="auto"
+        aspect-ration="1"
+        :src="imageUrl"
+        :style="{
+          'background-color': `#${item.backgroundColor}`
+        }"
+      />
       <v-img
+        v-if="!isVideo"
         :src="imageUrl"
         contain
         aspect-ratio="1"
@@ -83,6 +94,8 @@ import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import IconLink from '@/components/base/IconLink.vue';
 import { GalleryNft } from '@/store/session/types';
 
+let videoExtensions = ['mp4', 'mov', 'webm', 'ogg'];
+
 export default defineComponent({
   name: 'NftGalleryItem',
   components: { BaseExternalLink, IconLink },
@@ -100,12 +113,24 @@ export default defineComponent({
     const imageUrl = computed(() => {
       return item.value.imageUrl ?? require('@/assets/images/placeholder.svg');
     });
-    return { name, imageUrl };
+    const isVideo = computed(() => {
+      return videoExtensions.some(
+        extension =>
+          item.value.imageUrl !== null &&
+          item.value.imageUrl.includes(extension)
+      );
+    });
+    return { name, imageUrl, isVideo };
   }
 });
 </script>
 
 <style lang="scss" module>
+video {
+  max-width: 100%;
+  height: auto;
+}
+
 .title {
   width: 100%;
 }
