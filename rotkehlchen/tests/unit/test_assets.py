@@ -329,6 +329,8 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x96A65609a7B84E8842732DEB08f56C3E21aC6f8a'),
         # We have Gladius Token (GLA) but coingecko has Galaxy adventure
         ethaddress_to_identifier('0x71D01dB8d6a2fBEa7f8d434599C237980C234e4C'),
+        # We have reftoken (REF) and coingecko has Ref Finance
+        ethaddress_to_identifier('0x89303500a7Abfb178B274FD89F2469C264951e1f'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

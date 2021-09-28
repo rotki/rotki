@@ -446,6 +446,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'WIHC',  # neither in coingecko nor cryptocompare
     'WXBTC',  # neither in coingecko nor cryptocompare
     'XBN',  # neither in coingecko nor cryptocompare
+    'XSILV',  # No information found about its relation with XGOLD
     'ZILD',  # neither in coingecko nor cryptocompare
     'ZK',  # couldn't find what asset is this
     # bittrex tokenized stocks -- not sure how to handle yet
