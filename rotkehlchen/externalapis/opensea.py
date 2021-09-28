@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class Collection:
     name: str
     banner_image: str
-    description: str
+    description: Optional[str]
     large_image: str
     floor_price: Optional[FVal] = None
 

@@ -227,7 +227,7 @@ const setupNfts = (
       return [];
     }
     return nfts.value
-      .map(({ collection }) => collection.name)
+      .map(({ collection }) => collection.name ?? '')
       .filter(uniqueStrings);
   });
 
