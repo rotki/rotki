@@ -1016,6 +1016,10 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             buy_asset = A_SAI
         if sold_asset == A_DAI and timestamp <= SAI_TIMESTAMP:
             sold_asset = A_SAI
+        if rate <= ZERO:
+            log.warning(f'shapeshift csv entry has negative or zero rate. Ignoring. {csv_row}')
+            return
+
         trade = Trade(
             timestamp=timestamp,
             location=Location.SHAPESHIFT,
@@ -1023,7 +1027,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             quote_asset=sold_asset,
             trade_type=TradeType.BUY,
             amount=buy_amount,
-            rate=Price(rate),
+            rate=Price(1 / rate),
             fee=Fee(fee),
             fee_currency=buy_asset,  # Assumption that minerFee is denominated in outputCurrency
             link='',
