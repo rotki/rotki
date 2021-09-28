@@ -1306,9 +1306,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async [BalanceActions.FETCH_NF_BALANCES](
-    { commit, rootGetters: { status } },
+    { commit, rootGetters: { status }, rootState: { session } },
     payload?: { ignoreCache: boolean }
   ): Promise<void> {
+    const { activeModules } = session!!.generalSettings;
+    if (!activeModules.includes(Module.NFTS)) {
+      return;
+    }
     const section = Section.NON_FUNGIBLE_BALANCES;
     try {
       setStatus(Status.LOADING, section, status, commit);
