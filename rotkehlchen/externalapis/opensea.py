@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 class Collection:
     name: str
     banner_image: str
-    description: str
+    description: Optional[str]
     large_image: str
     floor_price: Optional[FVal] = None
 
@@ -178,11 +178,11 @@ class Opensea(ExternalServiceWithApiKey):
         try:
             last_sale = entry.get('last_sale')
             if last_sale:
-                if last_sale['payment_token']['symbol'] == 'ETH':
+                if last_sale['payment_token']['symbol'] in ('ETH', 'WETH'):
                     payment_token = A_ETH
                 else:
                     payment_token = EthereumToken(
-                        to_checksum_address(last_sale['payment_token']['symbol']),
+                        to_checksum_address(last_sale['payment_token']['address']),
                     )
 
                 amount = asset_normalized_value(int(last_sale['total_price']), payment_token)

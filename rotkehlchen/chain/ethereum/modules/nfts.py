@@ -122,7 +122,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
         nft_results, _ = self._get_all_nft_data(addresses, ignore_cache=ignore_cache)
         cached_db_result = self.get_nfts_with_price()
         cached_db_prices = {x['asset']: x for x in cached_db_result}
-        db_data = []
+        db_data: List[Tuple[str, str, Optional[str], Optional[str], int, ChecksumEthAddress]] = []
         for address, nfts in nft_results.items():
             for nft in nfts:
                 cached_price_data = cached_db_prices.get(nft.token_identifier)
@@ -144,7 +144,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                         'price_in_asset': nft.price_eth,
                         'usd_price': nft.price_usd,
                     })
-                    db_data.append((nft.token_identifier, nft.name, str(nft.price_eth), 'ETH', 0))
+                    db_data.append((nft.token_identifier, nft.name, str(nft.price_eth), 'ETH', 0, address))  # noqa: E501
                 else:
                     if return_zero_values:
                         result[address].append({
@@ -155,6 +155,8 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                             'price_in_asset': ZERO,
                             'usd_price': ZERO,
                         })
+                    # Always write detected nfts in the DB to have name and address associated
+                    db_data.append((nft.token_identifier, nft.name, None, None, 0, address))  # noqa: E501
 
         # save opensea data in the DB
         if len(db_data) != 0:
@@ -171,10 +173,12 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                 if exist_result is None or bool(exist_result[0]) is False:
                     cursor.execute(
                         'INSERT OR IGNORE INTO nfts('
-                        'identifier, name, last_price, last_price_asset, manual_price'
-                        ') VALUES(?, ?, ?, ?, ?)',
+                        'identifier, name, last_price, last_price_asset, manual_price, owner_address'  # noqa: E501
+                        ') VALUES(?, ?, ?, ?, ?, ?)',
                         entry,
                     )
+
+            self.db.update_last_write()
 
         return result
 
@@ -238,27 +242,10 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             raise InputError(f'Failed to write price for {from_asset.identifier} due to {str(e)}') from e  # noqa: E501
 
-        if cursor.rowcount == 1:
-            return True  # all done
+        if cursor.rowcount != 1:
+            raise InputError(f'Failed to write price for {from_asset.identifier}')
 
-        # else it means no DB entry existed, so we need to make a full entry.
-        cursor.execute(
-            'INSERT OR IGNORE INTO assets(identifier) VALUES(?)',
-            (from_asset.identifier,),
-        )
-        cursor.execute(
-            'INSERT OR IGNORE INTO nfts('
-            'identifier, name, last_price, last_price_asset, manual_price'
-            ') VALUES(?, ?, ?, ?, ?)',
-            (
-                from_asset.identifier,
-                from_asset.identifier,  # can't have the name here. Rethink?
-                str(price),
-                to_asset.identifier,
-                1,
-            ),
-        )
-
+        self.db.update_last_write()
         return True
 
     def delete_price_for_nft(self, asset: Asset) -> bool:
@@ -273,6 +260,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
         if cursor.rowcount != 1:
             raise InputError(f'Failed to delete price for unknown asset {asset.identifier}')
 
+        self.db.update_last_write()
         return True
 
     # -- Methods following the EthereumModule interface -- #

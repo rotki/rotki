@@ -128,11 +128,12 @@ class DBEthTx():
         tx_hash_b = hexstring_to_bytes(data['transactionHash'])
         tx_type = hexstr_to_int(data['type'])
         cursor = self.db.conn.cursor()
+        status = data.get('status', 1)  # status may be missing for older txs. Assume 1.
         contract_address = deserialize_ethereum_address(data['contractAddress']) if data['contractAddress'] else None  # noqa: E501
         cursor.execute(
             'INSERT INTO ethtx_receipts (tx_hash, contract_address, status, type) '
             'VALUES(?, ?, ?, ?) ',
-            (tx_hash_b, contract_address, data['status'], tx_type),
+            (tx_hash_b, contract_address, status, tx_type),
         )
 
         log_tuples = []

@@ -56,8 +56,8 @@ export interface ChangePasswordPayload {
 
 const NftCollectionInfo = z.object({
   bannerImage: z.string().nullable(),
-  description: z.string(),
-  name: z.string(),
+  description: z.string().nullable(),
+  name: z.string().nullable(),
   largeImage: z.string().nullable()
 });
 

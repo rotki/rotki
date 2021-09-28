@@ -637,10 +637,13 @@ CREATE TABLE IF NOT EXISTS nfts (
     last_price TEXT,
     last_price_asset TEXT,
     manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),
+    owner_address TEXT,
+    blockchain TEXT GENERATED ALWAYS AS ("ETH") VIRTUAL,
+    FOREIGN KEY(blockchain, owner_address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
     FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
     FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
-"""
+"""  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
