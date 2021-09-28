@@ -5,7 +5,7 @@
       transition="slide-y-transition"
       offset-y
       bottom
-      :max-width="xsOnly ? '97%' : null"
+      :max-width="xsOnly ? '97%' : '350px'"
       z-index="215"
     >
       <template #activator="{ on }">
@@ -96,7 +96,7 @@
             </v-col>
           </v-row>
         </div>
-        <node-status :connected="nodeConnection" />
+        <node-status v-if="xsOnly" :connected="nodeConnection" />
       </div>
     </v-menu>
     <confirm-dialog
