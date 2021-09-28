@@ -122,9 +122,7 @@ class Opensea(ExternalServiceWithApiKey):
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
-                    f'Opensea API request {response.url} failed due to {str(e)}'
-                    f'with HTTP status code {response.status_code} and text '
-                    f'{response.text}',
+                    f'Opensea API request {query_str} failed due to {str(e)}',
                 ) from e
 
             if response.status_code == 429:
