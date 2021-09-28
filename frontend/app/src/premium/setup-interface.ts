@@ -21,6 +21,7 @@ import Vuex from 'vuex';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { registerComponents } from '@/premium/register-components';
+import { statisticsApi } from '@/premium/statistics-api';
 import { api } from '@/services/rotkehlchen-api';
 import { HistoryActions } from '@/store/history/consts';
 import { FrontendSettingsPayload } from '@/store/settings/types';
@@ -73,7 +74,8 @@ const data: DataUtilities = {
         payload
       );
     }
-  }
+  },
+  statistics: statisticsApi
 };
 
 const settings: SettingsApi = {
