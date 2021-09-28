@@ -35,3 +35,15 @@ export const isSectionLoading = (section: Section) => {
     return status !== Status.LOADED && status !== Status.PARTIALLY_LOADED;
   });
 };
+
+export const isSectionInitialLoading = (section: Section) => {
+  const store = useStore();
+  return computed(() => {
+    const status = store.getters['status'](section);
+    return (
+      status !== Status.LOADED &&
+      status !== Status.PARTIALLY_LOADED &&
+      status !== Status.REFRESHING
+    );
+  });
+};

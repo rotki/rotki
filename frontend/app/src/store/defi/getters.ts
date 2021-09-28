@@ -461,7 +461,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
             .map(address => {
               let troveId = 0;
               if (balances[address]) {
-                troveId = balances[address].trove.troveId;
+                troveId = balances[address].troveId;
               }
               return {
                 identifier: `Trove ${troveId} - ${truncateAddress(address, 6)}`,
@@ -665,9 +665,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         return {
           owner: owner,
           protocol: loan.protocol,
-          balances: balances[owner],
-          events: events[owner] ?? { trove: [], stake: [] }
-        };
+          balance: balances[owner],
+          events: events[owner] ?? []
+        } as LiquityLoan;
       }
 
       return null;
@@ -725,7 +725,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         const balances = liquity!!.balances;
         for (const address in balances) {
           const balance = balances[address];
-          const { collateral, debt } = balance.trove;
+          const { collateral, debt } = balance;
           totalCollateralUsd = collateral.usdValue.plus(totalCollateralUsd);
           totalDebt = debt.usdValue.plus(totalDebt);
         }

@@ -1,8 +1,10 @@
-import { LiquitityState } from '@/store/defi/liquity/types';
+import { LiquityState } from '@/store/defi/liquity/types';
 
-export const defaultState = (): LiquitityState => ({
+export const defaultState = (): LiquityState => ({
   balances: {},
-  events: {}
+  events: {},
+  staking: {},
+  stakingEvents: {}
 });
 
-export const state: LiquitityState = defaultState();
+export const state: LiquityState = defaultState();

@@ -39,7 +39,6 @@ class AppSettingManager {
       try {
         const file = fs.readFileSync(appConfig, { encoding: 'utf8' });
         const loadedSettings = JSON.parse(file) as Partial<AppSettings>;
-        console.log(loadedSettings);
         for (const [key, value] of Object.entries(loadedSettings)) {
           if (typeof settings[key as keyof AppSettings] === typeof value) {
             // @ts-ignore

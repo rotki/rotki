@@ -238,6 +238,10 @@ export default new Router({
         {
           path: Routes.STAKING_ADEX,
           component: () => import('../views/staking/AdexPage.vue')
+        },
+        {
+          path: Routes.STAKING_LIQUITY,
+          component: () => import('../views/staking/LiquityPage.vue')
         }
       ]
     },

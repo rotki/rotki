@@ -1,18 +1,13 @@
 import { z } from "zod";
 import { AssetBalance, NumericString } from "../index";
 
-const Trove = z.object({
+const LiquityBalance = z.object({
   collateral: AssetBalance,
   debt: AssetBalance,
   collateralizationRatio: NumericString.nullable(),
   liquidationPrice: NumericString.nullable(),
   active: z.boolean(),
   troveId: z.number()
-})
-
-const LiquityBalance = z.object({
-  trove: Trove,
-  stake: AssetBalance.optional()
 })
 
 export type LiquityBalance = z.infer<typeof LiquityBalance>
@@ -36,9 +31,15 @@ const TroveEvent = z.object({
 
 export type TroveEvent = z.infer<typeof TroveEvent>
 
-const TroveEvents = z.array(TroveEvent)
+export const TroveEvents = z.record(z.array(TroveEvent))
 
-const StakeEvent = z.object({
+export type TroveEvents = z.infer<typeof TroveEvents>
+
+export const LiquityStaking = z.record(AssetBalance)
+
+export type LiquityStaking = z.infer<typeof LiquityStaking>
+
+const LiquityStakingEvent = z.object({
   kind: z.literal('stake'),
   tx: z.string(),
   address: z.string(),
@@ -50,17 +51,9 @@ const StakeEvent = z.object({
   stakeOperation: z.string()
 })
 
-export type StakeEvent = z.infer<typeof StakeEvent>
+export type LiquityStakingEvent = z.infer<typeof LiquityStakingEvent>
 
-const StakeEvents = z.array(StakeEvent)
+export const LiquityStakingEvents = z.record(z.array(LiquityStakingEvent))
 
-const LiquityAccountEvents = z.object({
-  trove: TroveEvents,
-  stake: StakeEvents.optional()
-});
+export type LiquityStakingEvents = z.infer<typeof LiquityStakingEvents>
 
-export type LiquityAccountEvents = z.infer<typeof LiquityAccountEvents>
-
-export const LiquityEvents = z.record(LiquityAccountEvents)
-
-export type LiquityEvents = z.infer<typeof LiquityEvents>
