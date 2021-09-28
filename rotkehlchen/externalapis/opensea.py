@@ -58,7 +58,7 @@ class NFT(NamedTuple):
     permalink: Optional[str]
     price_eth: FVal
     price_usd: FVal
-    collection: Collection
+    collection: Optional[Collection]
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -70,7 +70,7 @@ class NFT(NamedTuple):
             'permalink': self.permalink,
             'price_eth': str(self.price_eth),
             'price_usd': str(self.price_usd),
-            'collection': self.collection.serialize(),
+            'collection': self.collection.serialize() if self.collection else None,
         }
 
 
@@ -192,6 +192,7 @@ class Opensea(ExternalServiceWithApiKey):
                 last_price_in_eth = ZERO
 
             floor_price = ZERO
+            collection = None
             # NFT might not be part of a collection
             if 'collection' in entry:
                 saved_entry = self.collections.get(entry['collection']['name'])
