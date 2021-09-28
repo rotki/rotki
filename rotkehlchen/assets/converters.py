@@ -8,6 +8,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_COINBASE_PRO,
     WORLD_TO_COINBASE,
     WORLD_TO_FTX,
+    WORLD_TO_GEMENI,
     WORLD_TO_ICONOMI,
     WORLD_TO_KRAKEN,
     WORLD_TO_KUCOIN,
@@ -663,6 +664,18 @@ UNSUPPORTED_ICONOMI_ASSETS = (
     'TT',  # delisted
 )
 
+UNSUPPORTED_GEMENI_ASSETS = (
+    '2USD',  # no information about this asset
+    'AUSD',  # no information about this asset
+    'LFIL',  # no information about this asset
+    'LGBP',  # no information about this asset
+    'LSGD',  # no information about this asset
+    'LEUR',  # no information about this asset
+    'LHKD',  # no information about this asset
+    'LCAD',  # no information about this asset
+    'LAUD',  # no information about this asset
+)
+
 # Exchange symbols that are clearly for testing purposes. They appear in all
 # these places: supported currencies list, supported exchange pairs list and
 # currency map.
@@ -688,6 +701,7 @@ COINBASE_PRO_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE_PRO.items()}
 COINBASE_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE.items()}
 UPHOLD_TO_WORLD = {v: k for k, v in WORLD_TO_UPHOLD.items()}
 BITSTAMP_TO_WORLD = {v: k for k, v in WORLD_TO_BITSTAMP.items()}
+GEMENI_TO_WORLD = {v: k for k, v in WORLD_TO_GEMENI.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -906,7 +920,13 @@ def asset_from_gemini(symbol: str) -> Asset:
     """
     if not isinstance(symbol, str):
         raise DeserializationError(f'Got non-string type {type(symbol)} for gemini asset')
-    return symbol_to_asset_or_token(symbol)
+
+    if symbol in UNSUPPORTED_GEMENI_ASSETS:
+        raise UnsupportedAsset(symbol)
+
+    name = GEMENI_TO_WORLD.get(symbol, symbol)
+
+    return symbol_to_asset_or_token(name)
 
 
 def asset_from_iconomi(symbol: str) -> Asset:

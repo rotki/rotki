@@ -107,6 +107,7 @@ const COZY_COMPOUND = 'Cozy • Compound';
 const UNAGII = 'Unagii';
 const ORIGIN_PROTOCOL = 'Origin Protocol • OGN Staking';
 const TIMEWARP = 'TimeWarp • Staking';
+const GELATO = 'Gelato Network • Locked GEL';
 
 export const OVERVIEW_PROTOCOLS = [
   YGOVFINANCEV1,
@@ -210,7 +211,8 @@ export const OVERVIEW_PROTOCOLS = [
   COZY_YEARN,
   UNAGII,
   ORIGIN_PROTOCOL,
-  TIMEWARP
+  TIMEWARP,
+  GELATO
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
@@ -315,7 +317,8 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [COZY_YEARN]: 'cozy.svg',
   [UNAGII]: 'unagii.svg',
   [ORIGIN_PROTOCOL]: 'origin.png',
-  [TIMEWARP]: 'timewarp.png'
+  [TIMEWARP]: 'timewarp.png',
+  [GELATO]: 'gelato.svg'
 };
 
 export function getProtcolIcon(name: OverviewDefiProtocol): string {

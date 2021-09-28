@@ -133,6 +133,7 @@ KNOWN_ZERION_PROTOCOL_NAMES = (
     'Unagii',
     'Origin Protocol • OGN Staking',
     'TimeWarp • Staking',
+    'Gelato Network • Locked GEL',
 )
 
 

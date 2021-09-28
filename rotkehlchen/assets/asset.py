@@ -97,6 +97,7 @@ WORLD_TO_BITTREX = {
 
 WORLD_TO_BITSTAMP = {
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
 }
 
 WORLD_TO_FTX = {
@@ -479,6 +480,11 @@ WORLD_TO_UPHOLD = {
     'XTZ': 'XTZ',
     strethaddress_to_identifier('0x05f4a42e251f2d52b8ed15E9FEdAacFcEF1FAD27'): 'ZIL',
     strethaddress_to_identifier('0xE41d2489571d322189246DaFA5ebDe1F4699F498'): 'ZRX',
+}
+
+WORLD_TO_GEMENI = {
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
 }
 
 # Create a generic variable that can be 'Asset', or any subclass.
