@@ -392,6 +392,7 @@ class AssetsUpdater():
                 infojson=infojson,
                 up_to_version=up_to_version,
             )
+            print(self.conflicts, len(self.conflicts))
             if len(self.conflicts) != 0:
                 # close the temporary DB and return the conflicts
                 connection.close()

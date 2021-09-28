@@ -355,6 +355,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'BST',  # No coingecko or cryptocompare yet. Beshare Token TODO: Review this one in a few days
     'CADX',  # no cryptocompare/coingecko data TODO: Review this one
     'CBC',  # neither in coingecko nor cryptocompare
+    'CIND',  # neither in coingecko nor cryptocompare
     # Tether CNH. As of 30/09/2019 no data found outside of Bittrex for this token
     # https://medium.com/bittrex/new-bittrex-international-listing-tether-cnh-cnht-c9ad966ac303
     'CNHT',
@@ -446,6 +447,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'WXBTC',  # neither in coingecko nor cryptocompare
     'XBN',  # neither in coingecko nor cryptocompare
     'ZILD',  # neither in coingecko nor cryptocompare
+    'ZK',  # couldn't find what asset is this
     # bittrex tokenized stocks -- not sure how to handle yet
     'AAPL',
     'ABNB',
@@ -519,6 +521,7 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'CHEX',  # no cryptocompare/coingecko data (chintai)
     'PLANETS',  # PlanetWatch (PLANETS) but has no cryptocompare/coingecko
     'MCS',  # no cryptocompare/coingecko data yet
+    'EXO',  # noqa: E501 #  https://blog.exordium.co/exo-security-token-to-be-listed-on-bitfinex-securities-ltd-24cb03dc8bb0 no cc/coingecko data
 )
 
 UNSUPPORTED_FTX_ASSETS = (
@@ -623,10 +626,12 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'LTC3S',  # no cryptocompare/coingecko data
     'MAP2',  # delisted
     'MEM',  # meme.com, no cryptocompare/coingecko data
+    'RMRK',  # no cryptocompare/coingecko data
     'SATT',  # delisted
     'SERO',  # delisted
     'SOL3L',  # no cryptocompare/coingecko data
     'SOL3S',  # no cryptocompare/coingecko data
+    'SOV',  # Couldn't find what assets is this one
     'SPRK',  # delisted
     'TCP',  # The Crypto Prophecies no cryptocompare/coingecko data
     'TNC2',  # delisted and no cryptocompare/coingecko data

@@ -186,6 +186,14 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0xD6014EA05BDe904448B743833dDF07c3C7837481'),
     strethaddress_to_identifier('0x054C64741dBafDC19784505494029823D89c3b13'),
     strethaddress_to_identifier('0x2ecB13A8c458c379c4d9a7259e202De03c8F3D19'),
+    strethaddress_to_identifier('0x4a6058666cf1057eaC3CD3A5a614620547559fc9'),
+    strethaddress_to_identifier('0x6F919D67967a97EA36195A2346d9244E60FE0dDB'),
+    strethaddress_to_identifier('0x8dB54ca569D3019A2ba126D03C37c44b5eF81EF6'),
+    strethaddress_to_identifier('0xb62d18DeA74045E822352CE4B3EE77319DC5ff2F'),
+    strethaddress_to_identifier('0x884181554dfA9e578d36379919C05C25dC4a15bB'),
+    strethaddress_to_identifier('0xfF18DBc487b4c2E3222d115952bABfDa8BA52F5F'),
+    strethaddress_to_identifier('0x957c30aB0426e0C93CD8241E2c60392d08c6aC8e'),
+    strethaddress_to_identifier('0x263c618480DBe35C300D8d5EcDA19bbB986AcaeD'),
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

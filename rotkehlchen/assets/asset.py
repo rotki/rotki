@@ -89,11 +89,14 @@ WORLD_TO_BITTREX = {
     strethaddress_to_identifier('0x15B543e986b8c34074DFc9901136d9355a537e7E'): 'STCCOIN',
     strethaddress_to_identifier('0x8f136Cc8bEf1fEA4A7b71aa2301ff1A52F084384'): 'STC',
     'MER': 'MER',
-    strethaddress_to_identifier('0x670f9D9a26D3D42030794ff035d35a67AA092ead'): 'XGOLD',
+    strethaddress_to_identifier('0x670f9D9a26D3D42030794ff035d35a67AA092ead'): 'XSILV',
+    # For some reason seems that XSILV and GOLD are the same asset in bittrex
+    strethaddress_to_identifier('0x670f9D9a26D3D42030794ff035d35a67AA092ead'): 'GOLD',
+    strethaddress_to_identifier('0x3b58c52C03ca5Eb619EBa171091c86C34d603e5f'): 'CYCLUB',
 }
 
 WORLD_TO_BITSTAMP = {
-    strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT'
+    strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
 }
 
 WORLD_TO_FTX = {
@@ -263,6 +266,8 @@ WORLD_TO_KRAKEN = {
     'MOVR': 'MOVR',
     'SDN': 'SDN',
     strethaddress_to_identifier('0x92D6C1e31e14520e676a687F0a93788B716BEff5'): 'DYDX',
+    'OXY': 'OXY',
+    'RAY': 'RAY',
 }
 
 WORLD_TO_BINANCE = {
@@ -309,6 +314,7 @@ WORLD_TO_BINANCE = {
     strethaddress_to_identifier('0xEA1ea0972fa092dd463f2968F9bB51Cc4c981D71'): 'MOD',
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
     strethaddress_to_identifier('0x8f693ca8D21b157107184d29D398A8D082b38b76'): 'DATA',
+    strethaddress_to_identifier('0x4824A7b64E3966B0133f4f4FFB1b9D6bEb75FFF7'): 'TCT',
 }
 
 WORLD_TO_BITFINEX = {
@@ -341,6 +347,7 @@ WORLD_TO_BITFINEX = {
     'UST': 'TERRAUST',
     strethaddress_to_identifier('0x8f693ca8D21b157107184d29D398A8D082b38b76'): 'DATA',
     'XEC': 'BCHABC',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
 }
 
 WORLD_TO_KUCOIN = {
@@ -377,6 +384,7 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0x88df592f8eb5d7bd38bfef7deb0fbc02cf3778a0'): 'TRB',
     strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+    'EDG-2': 'EDG',
 }
 
 WORLD_TO_ICONOMI = {
@@ -417,6 +425,8 @@ WORLD_TO_COINBASE_PRO = {
 
 WORLD_TO_COINBASE = {
     'SOL-2': 'SOL',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    strethaddress_to_identifier('0x32353A6C91143bfd6C7d363B546e62a9A2489A20'): 'AGLD',
 }
 
 WORLD_TO_UPHOLD = {
