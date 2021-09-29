@@ -925,7 +925,6 @@ def asset_from_gemini(symbol: str) -> Asset:
         raise UnsupportedAsset(symbol)
 
     name = GEMINI_TO_WORLD.get(symbol, symbol)
-
     return symbol_to_asset_or_token(name)
 
 
