@@ -1,6 +1,7 @@
 import { ActionResult, SupportedAsset } from "../data";
 import { GitcoinGrantEventsPayload, GitcoinGrantReport, GitcoinGrants, GitcoinReportPayload } from "../gitcoin";
 import { DebugSettings, FrontendSettingsPayload, Themes, TimeUnit } from "../settings";
+import { LocationData, OwnedAssets, TimedAssetBalances, TimedBalances } from "../statistics";
 
 export interface RotkiPremiumInterface {
   readonly useHostComponents: boolean;
@@ -17,6 +18,17 @@ export interface GitCoinApi {
   generateReport(payload: GitcoinReportPayload): Promise<GitcoinGrantReport>;
 }
 
+export interface StatisticsApi {
+  assetValueDistribution(): Promise<TimedAssetBalances>
+  locationValueDistribution(): Promise<LocationData>
+  ownedAssets(): Promise<OwnedAssets>
+  timedBalances(
+    asset: string,
+    start: number,
+    end: number
+  ): Promise<TimedBalances>;
+}
+
 export interface DateUtilities {
   epoch(): number;
   format(date: string, oldFormat: string, newFormat: string): string;
@@ -31,6 +43,7 @@ export interface DataUtilities {
   assetInfo(identifier: string): SupportedAsset | undefined;
   getIdentifierForSymbol(symbol: string): string | undefined;
   readonly gitcoin: GitCoinApi;
+  readonly statistics: StatisticsApi;
 }
 
 export interface SettingsApi {
