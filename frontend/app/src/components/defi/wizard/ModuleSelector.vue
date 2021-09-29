@@ -52,6 +52,7 @@ import { Component, Mixins } from 'vue-property-decorator';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleMixin from '@/mixins/module-mixin';
 import { Module } from '@/services/session/consts';
+import { BalanceActions } from '@/store/balances/action-types';
 
 @Component({})
 export default class ModuleSelector extends Mixins(ModuleMixin) {
@@ -76,8 +77,29 @@ export default class ModuleSelector extends Mixins(ModuleMixin) {
   async update(activeModules: Module[]) {
     this.loading = true;
     await this.activateModules(activeModules);
+    this.onModuleActivation(activeModules);
     this.selectedModules = activeModules;
     this.loading = false;
+  }
+
+  private wasActivated(
+    active: Module[],
+    previouslyActive: Module[],
+    module: Module
+  ) {
+    return active.includes(module) && !previouslyActive.includes(module);
+  }
+
+  private onModuleActivation(active: Module[]) {
+    if (this.wasActivated(active, this.selectedModules, Module.NFTS)) {
+      setTimeout(
+        () =>
+          this.$store
+            .dispatch(`balances/${BalanceActions.FETCH_NF_BALANCES}`)
+            .then(),
+        800
+      );
+    }
   }
 }
 </script>
