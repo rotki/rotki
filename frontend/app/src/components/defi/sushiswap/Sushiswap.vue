@@ -7,12 +7,15 @@
     </template>
   </progress-screen>
   <div v-else>
-    <active-modules :modules="modules" :class="$style.modules" />
     <sushi
       class="mt-4"
       :refreshing="anyRefreshing"
       :secondary-loading="secondaryRefreshing"
-    />
+    >
+      <template #modules>
+        <active-modules :modules="modules" />
+      </template>
+    </sushi>
   </div>
 </template>
 
@@ -64,12 +67,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style module lang="scss">
-.modules {
-  display: inline-flex;
-  position: absolute;
-  right: 88px;
-  top: 125px;
-}
-</style>

@@ -6,11 +6,14 @@
     </template>
   </progress-screen>
   <div v-else>
-    <active-modules :modules="module" :class="$style.modules" />
     <adex-staking
       :history-refreshing="secondaryLoading || secondaryRefreshing"
       :refreshing="refreshing"
-    />
+    >
+      <template #modules>
+        <active-modules :modules="module" />
+      </template>
+    </adex-staking>
   </div>
 </template>
 
