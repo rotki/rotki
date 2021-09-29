@@ -95,7 +95,6 @@
 import {
   computed,
   defineComponent,
-  inject,
   onMounted,
   PropType,
   Ref,
@@ -105,7 +104,6 @@ import {
   watch
 } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
-import { Store } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -128,8 +126,8 @@ import { AssetSymbolGetter } from '@/store/balances/types';
 import { HistoryActions, IGNORE_MOVEMENTS } from '@/store/history/consts';
 import { AssetMovementEntry, IgnoreActionPayload } from '@/store/history/types';
 import store from '@/store/store';
-import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
-import { assert } from '@/utils/assertions';
+import { ActionStatus, Message } from '@/store/types';
+import { useStore } from '@/store/utils';
 import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp } from '@/utils/date';
 import { setupSelectionMode } from '@/views/history/composables/selection';
@@ -184,7 +182,8 @@ const setupFilter = (
   assets: Ref<string[]>,
   locations: Ref<string[]>,
   items: Ref<AssetMovementEntry[]>,
-  visibleItems: Ref<AssetMovementEntry[]>
+  visibleItems: Ref<AssetMovementEntry[]>,
+  getSymbol: AssetSymbolGetter
 ) => {
   const filter = ref<MatchedKeyword<DepositWithdrawalFilters>>({});
   const matchers: SearchMatcher<DepositWithdrawalFilters>[] = [
@@ -234,7 +233,8 @@ const setupFilter = (
     const endFilter = filter.value[DepositWithdrawalFilters.END];
 
     visibleItems.value = items.value.filter(value => {
-      const assetMatch = checkIfMatch(value.asset, assetFilter);
+      const asset = getSymbol(value.asset);
+      const assetMatch = checkIfMatch(asset, assetFilter);
       const locationMatch = checkIfMatch(value.location, locationFilter);
       const actionMatch = checkIfMatch(value.category, actionFilter);
       const isStartMatch = startMatch(value.timestamp, startFilter);
@@ -376,8 +376,7 @@ export default defineComponent({
       items.value.map(({ location }) => location).filter(uniqueStrings)
     );
 
-    const store = inject<Store<RotkehlchenState>>('vuex-store');
-    assert(store);
+    const store = useStore();
     const getSymbol = store.getters[
       'balances/assetSymbol'
     ] as AssetSymbolGetter;
@@ -405,7 +404,7 @@ export default defineComponent({
       showUpgradeRow,
       expanded: ref([]),
       ...setupIgnore(selectionMode.selected, items),
-      ...setupFilter(assets, locations, items, visibleItems),
+      ...setupFilter(assets, locations, items, visibleItems, getSymbol),
       ...selectionMode
     };
   }
