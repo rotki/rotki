@@ -53,6 +53,9 @@
         </v-row>
       </v-col>
       <v-col cols="auto">
+        <active-modules :modules="modules" />
+      </v-col>
+      <v-col cols="auto">
         <refresh-button
           :loading="loading"
           :tooltip="$t('nft_gallery.refresh_tooltip')"
@@ -105,6 +108,7 @@ import {
   computed,
   defineComponent,
   onMounted,
+  PropType,
   Ref,
   ref,
   watch
@@ -113,12 +117,14 @@ import { BigNumber } from 'bignumber.js';
 import { Dispatch } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { setupThemeCheck } from '@/composables/common';
 import { AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
+import { Module } from '@/services/session/consts';
 import { SessionActions } from '@/store/session/const';
 import { GalleryNft, Nft, NftResponse, Nfts } from '@/store/session/types';
 import { useStore } from '@/store/utils';
@@ -272,11 +278,18 @@ const setupNfts = (
 export default defineComponent({
   name: 'NftGallery',
   components: {
+    ActiveModules,
     BaseExternalLink,
     NoDataScreen,
     RefreshButton,
     ProgressScreen,
     NftGalleryItem
+  },
+  props: {
+    modules: {
+      required: true,
+      type: Array as PropType<Module[]>
+    }
   },
   setup() {
     const { isMobile, breakpoint, width } = setupThemeCheck();

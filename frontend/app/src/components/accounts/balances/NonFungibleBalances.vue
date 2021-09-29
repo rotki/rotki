@@ -7,6 +7,7 @@
       </v-icon>
     </template>
     <template #details>
+      <active-modules :modules="modules" class="mr-2" />
       <refresh-button
         :loading="loading"
         :tooltip="$t('non_fungible_balances.refresh')"
@@ -70,15 +71,17 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from '@vue/composition-api';
+import { computed, defineComponent, PropType, ref } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';
+import ActiveModules from '@/components/defi/ActiveModules.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import { isSectionLoading } from '@/composables/common';
 import { currency } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { Module } from '@/services/session/consts';
 import { BalanceActions } from '@/store/balances/action-types';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { Section } from '@/store/const';
@@ -171,7 +174,18 @@ const setupConfirm = (refresh: () => Promise<void>) => {
 
 export default defineComponent({
   name: 'NonFungibleBalances',
-  components: { RefreshButton, NonFungibleBalanceEdit, RowAction },
+  components: {
+    ActiveModules,
+    RefreshButton,
+    NonFungibleBalanceEdit,
+    RowAction
+  },
+  props: {
+    modules: {
+      required: true,
+      type: Array as PropType<Module[]>
+    }
+  },
   setup() {
     const store = useStore();
     const balances = computed<NonFungibleBalance[]>(() => {
