@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <module-not-active v-if="!isEnabled" :modules="modules" />
-    <nft-gallery v-else />
+    <nft-gallery v-else :modules="modules" />
   </v-container>
 </template>
 
