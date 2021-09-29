@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-FREE_NFT_LIMIT = 5
+FREE_NFT_LIMIT = 10
 
 
 class NFTResult(NamedTuple):
