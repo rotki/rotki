@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.assets.converters import UNSUPPORTED_GEMENI_ASSETS
+from rotkehlchen.assets.converters import UNSUPPORTED_GEMINI_ASSETS
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LINK, A_LTC, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
@@ -76,7 +76,7 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
                 f'Unknown Gemini asset detected. {e}',
             ))
         except UnsupportedAsset as e:
-            assert str(e).split(' ')[2] in UNSUPPORTED_GEMENI_ASSETS
+            assert str(e).split(' ')[2] in UNSUPPORTED_GEMINI_ASSETS
 
         assert base is not None
         assert quote is not None

@@ -8,7 +8,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_COINBASE_PRO,
     WORLD_TO_COINBASE,
     WORLD_TO_FTX,
-    WORLD_TO_GEMENI,
+    WORLD_TO_GEMINI,
     WORLD_TO_ICONOMI,
     WORLD_TO_KRAKEN,
     WORLD_TO_KUCOIN,
@@ -664,7 +664,7 @@ UNSUPPORTED_ICONOMI_ASSETS = (
     'TT',  # delisted
 )
 
-UNSUPPORTED_GEMENI_ASSETS = (
+UNSUPPORTED_GEMINI_ASSETS = (
     '2USD',  # no information about this asset
     'AUSD',  # no information about this asset
     'LFIL',  # no information about this asset
@@ -701,7 +701,7 @@ COINBASE_PRO_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE_PRO.items()}
 COINBASE_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE.items()}
 UPHOLD_TO_WORLD = {v: k for k, v in WORLD_TO_UPHOLD.items()}
 BITSTAMP_TO_WORLD = {v: k for k, v in WORLD_TO_BITSTAMP.items()}
-GEMENI_TO_WORLD = {v: k for k, v in WORLD_TO_GEMENI.items()}
+GEMINI_TO_WORLD = {v: k for k, v in WORLD_TO_GEMINI.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -921,10 +921,10 @@ def asset_from_gemini(symbol: str) -> Asset:
     if not isinstance(symbol, str):
         raise DeserializationError(f'Got non-string type {type(symbol)} for gemini asset')
 
-    if symbol in UNSUPPORTED_GEMENI_ASSETS:
+    if symbol in UNSUPPORTED_GEMINI_ASSETS:
         raise UnsupportedAsset(symbol)
 
-    name = GEMENI_TO_WORLD.get(symbol, symbol)
+    name = GEMINI_TO_WORLD.get(symbol, symbol)
 
     return symbol_to_asset_or_token(name)
 
