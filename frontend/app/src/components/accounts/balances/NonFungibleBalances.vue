@@ -178,17 +178,22 @@ export default defineComponent({
       return store.getters['balances/nfBalances'];
     });
 
-    const refresh = async () => {
-      return await store.dispatch(
-        `balances/${BalanceActions.FETCH_NF_BALANCES}`,
-        { ignoreCache: true }
-      );
+    const setupRefresh = (ignoreCache: boolean = false) => {
+      const payload = ignoreCache ? { ignoreCache: true } : undefined;
+      return async () =>
+        await store.dispatch(
+          `balances/${BalanceActions.FETCH_NF_BALANCES}`,
+          payload
+        );
     };
+
+    const refresh = setupRefresh(true);
+    const refreshBalances = setupRefresh();
 
     return {
       loading: isSectionLoading(Section.NON_FUNGIBLE_BALANCES),
-      ...setupConfirm(refresh),
-      ...setupEdit(refresh),
+      ...setupConfirm(refreshBalances),
+      ...setupEdit(refreshBalances),
       refresh,
       balances,
       currency,
