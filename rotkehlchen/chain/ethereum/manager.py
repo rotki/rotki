@@ -124,14 +124,18 @@ def _query_web3_get_logs(
         # is infura can throw an error here which we can only parse by catching the  exception
         try:
             new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
-        except ValueError as e:
-            try:
-                decoded_error = json.loads(str(e).replace("'", '"'))
-            except json.JSONDecodeError:
-                # reraise the value error if the error is not json
-                raise e from None
+        except (ValueError, KeyError) as e:
+            if isinstance(e, ValueError):
+                try:
+                    decoded_error = json.loads(str(e).replace("'", '"'))
+                except json.JSONDecodeError:
+                    # reraise the value error if the error is not json
+                    raise e from None
 
-            msg = decoded_error.get('message', '')
+                msg = decoded_error.get('message', '')
+            else:  # temporary hack for key error seen from pokt
+                msg = 'query returned more than 10000 results'
+
             # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
             if msg in ('query returned more than 10000 results', 'query timeout exceeded'):
                 block_range = block_range // 2
@@ -139,7 +143,7 @@ def _query_web3_get_logs(
                     raise  # stop retrying if block range gets too small
                 # repeat the query with smaller block range
                 continue
-            # else, well we tried .. reraise the Value error
+            # else, well we tried .. reraise the error
             raise e
 
         # Turn all HexBytes into hex strings
