@@ -5,13 +5,14 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_BITFINEX,
     WORLD_TO_BITSTAMP,
     WORLD_TO_BITTREX,
-    WORLD_TO_COINBASE_PRO,
     WORLD_TO_COINBASE,
+    WORLD_TO_COINBASE_PRO,
     WORLD_TO_FTX,
     WORLD_TO_GEMINI,
     WORLD_TO_ICONOMI,
     WORLD_TO_KRAKEN,
     WORLD_TO_KUCOIN,
+    WORLD_TO_NEXO,
     WORLD_TO_POLONIEX,
     WORLD_TO_UPHOLD,
     Asset,
@@ -702,6 +703,7 @@ COINBASE_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE.items()}
 UPHOLD_TO_WORLD = {v: k for k, v in WORLD_TO_UPHOLD.items()}
 BITSTAMP_TO_WORLD = {v: k for k, v in WORLD_TO_BITSTAMP.items()}
 GEMINI_TO_WORLD = {v: k for k, v in WORLD_TO_GEMINI.items()}
+NEXO_TO_WORLD = {v: k for k, v in WORLD_TO_NEXO.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -925,7 +927,6 @@ def asset_from_gemini(symbol: str) -> Asset:
         raise UnsupportedAsset(symbol)
 
     name = GEMINI_TO_WORLD.get(symbol, symbol)
-
     return symbol_to_asset_or_token(name)
 
 
@@ -955,3 +956,16 @@ def asset_from_uphold(symbol: str) -> Asset:
 
     name = UPHOLD_TO_WORLD.get(symbol, symbol)
     return symbol_to_asset_or_token(name)
+
+
+def asset_from_nexo(nexo_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(nexo_name, str):
+        raise DeserializationError(f'Got non-string type {type(nexo_name)} for nexo asset')
+
+    our_name = NEXO_TO_WORLD.get(nexo_name, nexo_name)
+    return symbol_to_asset_or_token(our_name)

@@ -9,9 +9,9 @@ from typing import Any, Dict, List, Tuple
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.assets.converters import asset_from_uphold
+from rotkehlchen.assets.converters import asset_from_nexo, asset_from_uphold
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.constants.assets import A_USD, A_SAI, A_DAI
+from rotkehlchen.constants.assets import A_DAI, A_SAI, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -863,7 +863,14 @@ class DataImporter():
         - DeserializationError
         - sqlcipher.IntegrityError from db_ledger.add_ledger_action
         """
-        ignored_entries = ('ExchangeToWithdraw', 'DepositToExchange')
+        ignored_entries = (
+            'ExchangeToWithdraw',
+            'DepositToExchange',
+            'UnlockingTermDeposit',  # Move between nexo wallets
+            'LockingTermDeposit',  # Move between nexo wallets
+            'TransferIn',  # Transfer between nexo wallets
+            'TransferOut',  # Transfer between nexo wallets
+        )
 
         if 'rejected' not in csv_row['Details']:
             timestamp = deserialize_timestamp_from_date(
@@ -875,11 +882,17 @@ class DataImporter():
             log.debug(f'Ignoring rejected nexo entry {csv_row}')
             return
 
-        asset = symbol_to_asset_or_token(csv_row['Currency'])
+        asset = asset_from_nexo(csv_row['Currency'])
         amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
         entry_type = csv_row['Type']
         transaction = csv_row['Transaction']
 
+        if entry_type == 'Exchange':
+            self.db.msg_aggregator.add_warning(
+                'Found exchange transaction in nexo csv import but the entry will be ignored '
+                'since not enough information is provided about the trade.',
+            )
+            return
         if entry_type in ('Deposit', 'ExchangeDepositedOn', 'LockingTermDeposit'):
             asset_movement = AssetMovement(
                 location=Location.NEXO,
@@ -922,7 +935,15 @@ class DataImporter():
                 notes=f'{entry_type} from Nexo',
             )
             self.db_ledger.add_ledger_action(action)
-        elif entry_type in ('Interest', 'Bonus', 'Dividend'):
+        elif entry_type in ('Interest', 'Bonus', 'Dividend', 'FixedTermInterest'):
+            # A user shared a CSV file where some entries marked as interest had negative amounts.
+            # we couldn't find information about this since they seem internal transactions made
+            # by nexo but they appear like a trade from asset -> nexo in order to gain interest
+            # in nexo. There seems to always be another entry with the amount that the user
+            # received so we'll ignore interest rows with negative amounts.
+            if deserialize_asset_amount(csv_row['Amount']) < 0:
+                log.debug(f'Ignoring nexo entry {csv_row} with negative interest')
+                return
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
                 timestamp=timestamp,

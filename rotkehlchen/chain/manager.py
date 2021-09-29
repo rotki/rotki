@@ -152,6 +152,12 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     # We already got some pie dao tokens in all_assets.json
     'PieDAO': ['BCP', 'BTC++', 'DEFI++', 'DEFI+S', 'DEFI+L', 'YPIE'],
 }
+DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
+    'Multi-Collateral Dai': True,  # True means all
+    'Aave': True,
+    'Aave V2': True,
+    'Compound': True,
+}
 
 
 T = TypeVar('T')
@@ -1451,16 +1457,23 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     ) -> None:
         """Add a single account's defi balances to per account and totals"""
         for entry in balances:
+            found_double_entry = False
+            # filter our specific protocols for double entries
+            for skip_mapping, balance_type in (
+                    (DEFI_PROTOCOLS_TO_SKIP_ASSETS, 'Asset'),
+                    (DEFI_PROTOCOLS_TO_SKIP_LIABILITIES, 'Debt'),
+            ):
+                skip_list = skip_mapping.get(entry.protocol.name, None)  # type: ignore
+                double_entry = (
+                    entry.balance_type == balance_type and
+                    skip_list and
+                    (skip_list is True or entry.base_balance.token_symbol in skip_list)
+                )
+                if double_entry:
+                    found_double_entry = True
+                    break
 
-            skip_list = DEFI_PROTOCOLS_TO_SKIP_ASSETS.get(entry.protocol.name, None)
-            double_entry = (
-                entry.balance_type == 'Asset' and
-                skip_list and
-                (skip_list is True or entry.base_balance.token_symbol in skip_list)  # type: ignore
-            )
-
-            # We have to filter out specific balances/protocols here to not get double entries
-            if double_entry:
+            if found_double_entry:
                 continue
 
             if entry.balance_type == 'Asset' and entry.base_balance.token_symbol == 'ETH':

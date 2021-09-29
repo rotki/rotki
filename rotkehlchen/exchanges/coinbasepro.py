@@ -113,6 +113,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.base_uri = 'https://api.pro.coinbase.com'
         self.msg_aggregator = msg_aggregator
         self.account_to_currency: Optional[Dict[str, Asset]] = None
+        self.available_products = {0}
 
         self.session.headers.update({
             'Content-Type': 'Application/JSON',
@@ -164,6 +165,14 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return False, error
 
         return True, ''
+
+    def first_connection(self) -> None:
+        if self.first_connection_made:
+            return
+
+        products_response, _ = self._api_query('products')
+        self.available_products = {x['id'] for x in products_response}
+        self.first_connection_made = True
 
     def _api_query(
             self,
@@ -487,6 +496,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[Trade]:
         """Queries coinbase pro for trades"""
         log.debug('Query coinbasepro trade history', start_ts=start_ts, end_ts=end_ts)
+        self.first_connection()
 
         trades = []
         # first get all orders, to see which product ids we need to query fills for
@@ -514,8 +524,8 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-            if product_id in queried_product_ids:
-                continue  # already queried this product id
+            if product_id in queried_product_ids or product_id not in self.available_products:
+                continue  # already queried this product id or delisted product id
 
             # Now let's get all fills for this product id
             queried_product_ids.add(product_id)

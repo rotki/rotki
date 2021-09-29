@@ -20,6 +20,7 @@ Changelog
 * :bug:`3268` Users will now be able to properly scroll to the hidden tabs when using a mobile device.
 * :bug:`3267` Frontend will now occupy all the available screen when accessed from a mobile device.
 * :bug:`3208` Rotki is now able to accept and track the same account for different blockchain types.
+* :bug:`3463` Users using Turkish localization will now be able to use the application.
 * :bug:`3448` Improve Kucoin api rate limit handling. Recognize CFG asset in Kucoin as WCFG.
 * :bug:`3452` Trades from externally imported exchanges (blockfi, crypto.com etc.) should now be properly taken into accounting in the PnL report again.
 * :bug:`3437` Fix a bug where for some active aave v2 lending positions the entire aToken balance would be shown as profit.
@@ -28,6 +29,11 @@ Changelog
 * :bug:`3421` Users will now be able to see solana properly in coinbase assets
 * :bug:`3418` Users will now be able to finish import from crypto.com's CSV files when there is a time mismatch between rows.
 * :bug:`3056` Users will now be better notified when an error occurred while importing information from crypto.com on credit/debit events with special cases.
+* :bug:`3493` Users of Bitstamp will see correctly imported assets movements with fees in any coin.
+* :bug:`3491` Coinbasepro users who own Barnbridge governance token (BOND) will now be able to properly see it in balances, trades and deposits/withdrawals.
+* :bug:`-` Users importing information from Nexo CSVs will correctly detect interest gains and detect special assets symbols.
+* :bug:`3502` MakerDAO vault users who saw double the amount of liabilities for some of their vault/s should now see the proper amount again.
+* :bug:`3490` If a user had historic trades of a delisted asset in coinbasepro the trades query will now work again.
 
 * :release:`1.20.1 <2021-08-27>`
 * :feature:`3349` AMM swaps now have a transaction hash link in the trade history section.
