@@ -229,6 +229,7 @@ class RestAPI():
         # Greenlets that will be waited for when we shutdown (just main loop)
         self.waited_greenlets = [mainloop_greenlet]
         self.task_lock = Semaphore()
+        self.account_addition_lock = Semaphore()
         self.task_id = 0
         self.task_results: Dict[int, Any] = {}
 
@@ -309,13 +310,14 @@ class RestAPI():
 
     @require_loggedin_user()
     def set_settings(self, settings: ModifiableDBSettings) -> Response:
-        success, message = self.rotkehlchen.set_settings(settings)
-        if not success:
-            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
+        with self.account_addition_lock:
+            success, message = self.rotkehlchen.set_settings(settings)
+            if not success:
+                return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
 
-        new_settings = process_result(self.rotkehlchen.get_settings())
-        result_dict = {'result': new_settings, 'message': ''}
-        return api_response(result=result_dict, status_code=HTTPStatus.OK)
+            new_settings = process_result(self.rotkehlchen.get_settings())
+            result_dict = {'result': new_settings, 'message': ''}
+            return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def get_settings(self) -> Response:
@@ -1771,17 +1773,21 @@ class RestAPI():
             account_data: List[BlockchainAccountData],
             async_query: bool,
     ) -> Response:
-        if async_query:
-            return self._query_async(
-                command='_add_blockchain_accounts',
+        with self.account_addition_lock:
+            if async_query:
+                return self._query_async(
+                    command='_add_blockchain_accounts',
+                    blockchain=blockchain,
+                    account_data=account_data,
+                )
+
+            response = self._add_blockchain_accounts(
                 blockchain=blockchain,
                 account_data=account_data,
             )
-
-        response = self._add_blockchain_accounts(blockchain=blockchain, account_data=account_data)
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
+            result = response['result']
+            msg = response['message']
+            status_code = _get_status_code_from_async_response(response)
 
         if result is None:
             return api_response(wrap_in_fail_result(msg), status_code=status_code)
@@ -2035,12 +2041,13 @@ class RestAPI():
             module: ModuleName,
             address: ChecksumEthAddress,
     ) -> Response:
-        try:
-            QueriedAddresses(self.rotkehlchen.data.db).add_queried_address_for_module(module, address)  # noqa: E501
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        with self.account_addition_lock:
+            try:
+                QueriedAddresses(self.rotkehlchen.data.db).add_queried_address_for_module(module, address)  # noqa: E501
+            except InputError as e:
+                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        return self.get_queried_addresses_per_module()
+            return self.get_queried_addresses_per_module()
 
     @require_loggedin_user()
     def remove_queried_address_per_module(
@@ -2048,12 +2055,13 @@ class RestAPI():
             module: ModuleName,
             address: ChecksumEthAddress,
     ) -> Response:
-        try:
-            QueriedAddresses(self.rotkehlchen.data.db).remove_queried_address_for_module(module, address)  # noqa: E501
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        with self.account_addition_lock:
+            try:
+                QueriedAddresses(self.rotkehlchen.data.db).remove_queried_address_for_module(module, address)  # noqa: E501
+            except InputError as e:
+                return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        return self.get_queried_addresses_per_module()
+            return self.get_queried_addresses_per_module()
 
     def get_info(self) -> Response:
         version = check_if_version_up_to_date()
