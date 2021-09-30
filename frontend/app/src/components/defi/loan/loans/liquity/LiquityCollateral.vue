@@ -8,9 +8,9 @@
       />
     </loan-row>
 
-    <v-divider class="my-4" />
+    <v-divider v-if="ratio" class="my-4" />
 
-    <loan-row :title="$t('loan_collateral.ratio')">
+    <loan-row v-if="ratio" :title="$t('loan_collateral.ratio')">
       <percentage-display :value="ratio.toFormat(2)" />
     </loan-row>
   </stat-card>
