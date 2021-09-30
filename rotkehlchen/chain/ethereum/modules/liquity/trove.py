@@ -62,7 +62,7 @@ class TroveOperation(SerializableEnumMixin):
     ACCRUEREWARDS = 4
     LIQUIDATEINNORMALMODE = 5
     LIQUIDATEINRECOVERYMODE = 6
-    REEDEM = 7
+    REDEEMCOLLATERAL = 7
 
     def __str__(self) -> str:
         if self == TroveOperation.OPENTROVE:
@@ -77,7 +77,7 @@ class TroveOperation(SerializableEnumMixin):
             return 'Liquidation In Normal Mode'
         if self == TroveOperation.LIQUIDATEINRECOVERYMODE:
             return 'Liquidation In Recovery Mode'
-        if self == TroveOperation.REEDEM:
+        if self == TroveOperation.REDEEMCOLLATERAL:
             return 'Redeem Collateral'
         # else
         raise AssertionError(f'Invalid value {self} for TroveOperation')
