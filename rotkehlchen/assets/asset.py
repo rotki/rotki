@@ -544,6 +544,11 @@ class Asset():
             object.__setattr__(self, 'name', f'nft with id {self.identifier}')
             object.__setattr__(self, 'symbol', self.identifier[len(NFT_DIRECTIVE):])
             object.__setattr__(self, 'asset_type', AssetType.NFT)
+            object.__setattr__(self, 'started', 0)
+            object.__setattr__(self, 'forked', None)
+            object.__setattr__(self, 'swapped_for', None)
+            object.__setattr__(self, 'cryptocompare', '')
+            object.__setattr__(self, 'coingecko', None)
             return
 
         if direct_field_initialization:

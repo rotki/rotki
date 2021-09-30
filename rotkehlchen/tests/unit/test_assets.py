@@ -20,6 +20,18 @@ def test_unknown_asset():
         Asset('jsakdjsladjsakdj')
 
 
+def test_asset_nft():
+    a = Asset('_nft_foo')
+    assert a.identifier == '_nft_foo'
+    assert a.symbol is not None
+    assert a.name == 'nft with id _nft_foo'
+    assert a.started is not None
+    assert a.forked is None
+    assert a.swapped_for is None
+    assert a.cryptocompare is not None
+    assert a.coingecko is None
+
+
 def test_repr():
     btc_repr = repr(Asset('BTC'))
     assert btc_repr == '<Asset identifier:BTC name:Bitcoin symbol:BTC>'
