@@ -8,6 +8,7 @@ rotki is an open source portfolio tracking, analytics, accounting and tax report
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/rotki/rotki.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rotki/rotki/context:python)
 
 [![GitHub release](https://img.shields.io/github/release/rotki/rotki.svg)](https://GitHub.com/rotki/rotki/releases/)
+[![Docker Image Version (tag latest semver)](https://img.shields.io/docker/v/rotki/rotki/latest?label=Docker)](https://hub.docker.com/layers/rotki/rotki/dev/images/sha256-acbd52985ccea0fb42820a655d994312d322a0895ee5777733582b017a89f3b0?context=explore)
 [![GitHub commits](https://img.shields.io/github/commits-since/rotki/rotki/latest.svg)](https://GitHub.com/rotki/rotki/commit/)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/rotki/rotki.svg?style=flat)](https://github.com/rotki/rotki/graphs/contributors)
