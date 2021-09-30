@@ -35,6 +35,7 @@ Changelog
 * :bug:`-` Users importing information from Nexo CSVs will correctly detect interest gains and detect special assets symbols.
 * :bug:`3502` MakerDAO vault users who saw double the amount of liabilities for some of their vault/s should now see the proper amount again.
 * :bug:`3490` If a user had historic trades of a delisted asset in coinbasepro the trades query will now work again.
+* :bug:`3535` There should no longer be a problem when changing active modules while an ETH account is already being added.
 
 * :release:`1.20.1 <2021-08-27>`
 * :feature:`3349` AMM swaps now have a transaction hash link in the trade history section.

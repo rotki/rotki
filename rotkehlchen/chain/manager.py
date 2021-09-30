@@ -389,10 +389,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         modules_to_remove = existing_names.difference(given_modules_set)
         modules_to_add = given_modules_set.difference(existing_names)
 
-        for name in modules_to_remove:
-            self.deactivate_module(name)
-        for name in modules_to_add:
-            self.activate_module(name)
+        with self.eth_lock:
+            for name in modules_to_remove:
+                self.deactivate_module(name)
+            for name in modules_to_add:
+                self.activate_module(name)
 
     def iterate_modules(self) -> Iterator[Tuple[str, EthereumModule]]:
         for name, module in self.eth_modules.items():
