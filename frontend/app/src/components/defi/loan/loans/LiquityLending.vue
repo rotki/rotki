@@ -8,13 +8,26 @@
         <v-col cols="12" md="6" class="pe-md-4">
           <liquity-collateral :collateral="collateral" :ratio="ratio" />
         </v-col>
-        <v-col cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
+        <v-col
+          v-if="liquidationPrice"
+          cols="12"
+          md="6"
+          class="ps-md-4 pt-8 pt-md-0"
+        >
           <liquity-liquidation
             :price="liquidationPrice"
             :asset="collateral.asset"
           />
         </v-col>
-        <v-col cols="12" md="6" class="ps-md-0 pt-8 pe-md-4">
+        <v-col
+          cols="12"
+          md="6"
+          class=""
+          :class="{
+            'pt-8 ps-md-0 pe-md-4': !!liquidationPrice,
+            'ps-md-4': !liquidationPrice
+          }"
+        >
           <loan-debt :debt="debt" :asset="debt.asset" />
         </v-col>
       </v-row>
