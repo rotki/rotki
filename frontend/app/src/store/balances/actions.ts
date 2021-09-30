@@ -580,6 +580,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         commit('defi/reset', undefined, options);
         await dispatch('resetDefiStatus', {}, options);
         await dispatch('refreshPrices', false);
+        await dispatch(BalanceActions.FETCH_NF_BALANCES);
       })
       .catch(e => {
         const title = i18n.tc(
@@ -640,6 +641,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         await commit('defi/reset', undefined, { root: true });
         await dispatch('resetDefiStatus', {}, { root: true });
         await dispatch('refreshPrices', false);
+        await dispatch(BalanceActions.FETCH_NF_BALANCES);
       })
       .catch(e => {
         const title = i18n.tc(
