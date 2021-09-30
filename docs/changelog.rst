@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.21.0 <2021-09-30>`
 * :feature:`3251` Users will now be able to easily access the asset edit page from the asset details page.
 * :feature:`3020` Users will now be able to copy their ETH1 addresses when visiting the ETH2 staking page.
 * :feature:`2362` Binance users will now be able to query their fiat deposit/withdrawals and fiat orders and have it taken into account in rotki.
