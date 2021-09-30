@@ -722,6 +722,16 @@ Finally this can also be taken into account in the profit/loss report for any gi
    :alt: See ETH2 value earned
    :align: center
 
+Liquity Staking
+===============
+
+If you stake LQTY in the protocol you can see the amount staked and the changes in the staked amount.
+
+.. image:: images/sc_staking_liquity.png
+   :alt: See ETH2 value earned
+   :align: center
+
+
 Airdrops
 ==========
 
@@ -1015,21 +1025,32 @@ The liquidity pool support allows premium users to see their balances, the per p
 Liabilities
 =============
 
-In the liabilities section you can find information on your Aave Borrowing, Compound Borrow, and MakerDAO Vaults.
+In the liabilities section you can find information on your Aave Borrowing, Compound Borrow, Liquity troves and MakerDAO Vaults.
 These collateralized loans can be autodetected from your ethereum accounts and information about each one of them is displayed.
 However you can manage the different modules and addresses that are queried to make the retrieval faster.
 For more information you can check :ref:`customize-module-settings`.
 
-As a normal non-premium user you can see all your vaults, and for each one inspect the locked collateral, collateralization, debt generated and the liquidation price.
+As a normal non-premium user you can see all your vaults/troves, and for each one inspect the locked collateral, collateralization, debt generated and the liquidation price.
 
 .. image:: images/sc_vaults_nonpremium.png
    :alt: MakerDAO vaults without a premium account
    :align: center
 
+The information displayed for a Liquity trove shows as in this capture
+
+.. image:: images/sc_liquity_troves.png
+   :alt: Liquity troves information
+   :align: center
 
 With a premium subscription you can also see additional information such as the creation time of the vault, list of historical activities, total interest owed and liquidation events.
 
 .. image:: images/sc_vaults_premium.png
+   :alt: MakerDAO vaults with a premium account
+   :align: center
+
+in the case of troves with a premium subscription you can see the history of events and the changes in collateral and debt
+
+.. image:: images/sc_liquity_premium.png
    :alt: MakerDAO vaults with a premium account
    :align: center
 
