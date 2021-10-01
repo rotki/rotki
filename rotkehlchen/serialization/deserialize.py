@@ -525,8 +525,9 @@ def deserialize_ethereum_transaction(
     """
     source = 'etherscan' if ethereum is None else 'web3'
     try:
-        gas_price = read_integer(data, 'gasPrice', source)
-        tx_hash = read_hash(data, 'hash', source)
+        gas_price = read_integer(data=data, key='gasPrice', api=source)
+        tx_hash = read_hash(data=data, key='hash', api=source)
+
         input_data = read_hash(data, 'input', source)
         block_number = read_integer(data, 'blockNumber', source)
         if 'timeStamp' not in data:

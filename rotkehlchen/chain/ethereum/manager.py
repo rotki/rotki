@@ -764,7 +764,7 @@ class EthereumManager():
         if web3 is None:
             tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
         else:
-            tx_data = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
+            tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
 
         try:
             transaction = deserialize_ethereum_transaction(data=tx_data, ethereum=self)
