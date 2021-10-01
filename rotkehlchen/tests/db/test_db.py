@@ -574,11 +574,13 @@ def test_query_timed_balances(data_dir, username):
     assert result[0].amount == '500'
     assert result[0].usd_value == '500'
 
-    result = data.db.query_timed_balances(
+    all_data = data.db.query_timed_balances(
         from_ts=1451606300,
         to_ts=1485907000,
         asset=A_ETH,
     )
+    assert len(all_data) == 158
+    result = [x for x in all_data if x.amount != '0']
     assert len(result) == 2
     assert result[0].time == 1451606401
     assert result[0].category == BalanceType.ASSET
@@ -589,7 +591,9 @@ def test_query_timed_balances(data_dir, username):
     assert result[1].amount == '10'
     assert result[1].usd_value == '123'
 
-    result = data.db.query_timed_balances(A_ETH)
+    all_data = data.db.query_timed_balances(A_ETH)
+    assert len(all_data) == 399
+    result = [x for x in all_data if x.amount != '0']
     assert len(result) == 4
     result = data.db.query_timed_balances(A_ETH, balance_type=BalanceType.LIABILITY)
     assert len(result) == 1
