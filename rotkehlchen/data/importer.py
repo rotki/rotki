@@ -757,8 +757,6 @@ class DataImporter():
         else:
             raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
 
-        self.db.add_connected_location(Location.BLOCKFI)
-
     def import_blockfi_transactions_csv(self, filepath: Path) -> Tuple[bool, str]:
         """
         Information for the values that the columns can have has been obtained from
@@ -794,6 +792,7 @@ class DataImporter():
                     continue
                 except KeyError as e:
                     return False, str(e)
+        self.db.add_connected_location(Location.BLOCKFI)
         return True, ''
 
     def _consume_blockfi_trade(self, csv_row: Dict[str, Any]) -> None:
@@ -831,7 +830,6 @@ class DataImporter():
             notes=csv_row['Type'],
         )
         self.db.add_trades([trade])
-        self.db.add_connected_location(Location.BLOCKFI)
 
     def import_blockfi_trades_csv(self, filepath: Path) -> Tuple[bool, str]:
         """
@@ -857,6 +855,7 @@ class DataImporter():
                     continue
                 except KeyError as e:
                     return False, str(e)
+        self.db.add_connected_location(Location.BLOCKFI)
         return True, ''
 
     def _consume_nexo(self, csv_row: Dict[str, Any]) -> None:
@@ -1085,6 +1084,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
                     continue
                 except KeyError as e:
                     return False, str(e)
+        self.db.add_connected_location(Location.SHAPESHIFT)
         return True, ''
 
     def _consume_uphold_transaction(self, csv_row: Dict[str, Any]) -> None:
@@ -1251,4 +1251,5 @@ Activity from uphold with uphold transaction id:
                     continue
                 except KeyError as e:
                     return False, str(e)
+        self.db.add_connected_location(Location.UPHOLD)
         return True, ''

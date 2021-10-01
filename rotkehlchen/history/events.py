@@ -245,7 +245,10 @@ class EventsHistorian():
                 self.actions_per_location['trade'][given_location] = 0
             trades = self.query_location_trades(from_ts, to_ts, Location.EXTERNAL, only_cache)
             # Look for trades that might be imported from CSV files
-            for csv_location in EXTERNAL_EXCHANGES:
+            exchanges_with_api = self.exchange_manager.connected_exchanges.keys()
+            connected_locations = self.db.get_connected_locations()
+            csv_locations = set(connected_locations) - set(exchanges_with_api)
+            for csv_location in csv_locations:
                 trades.extend(self.query_location_trades(
                     from_ts=from_ts,
                     to_ts=to_ts,

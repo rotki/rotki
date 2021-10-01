@@ -1565,9 +1565,9 @@ Get locations with assets
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      {'result': ['nexo'], 'message': ''}
+      {'result': ['nexo', 'kraken'], 'message': ''}
 
-   :statuscode 200: Data succesfully purged.
+   :statuscode 200: Locations succesfully queried.
    :statuscode 409: User is not logged in. Check error message for details.
    :statuscode 500: Internal Rotki error
 

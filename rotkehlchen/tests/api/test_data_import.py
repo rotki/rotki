@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 import pytest
 import requests
 
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -22,6 +23,8 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_shapeshift_trades_import_results,
     assert_uphold_transactions_import_results,
 )
+from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.typing import ApiKey, ApiSecret, Location
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -344,3 +347,79 @@ def test_data_import_errors(rotkehlchen_api_server, tmpdir_factory):
         contained_in_msg='is not a file',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+def test_known_locations(user_data_dir, rotkehlchen_api_server):
+    """Test that locations imported in different places are correctly stored in database"""
+
+    # Import from nexo
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'nexo.csv'
+
+    json_data = {'source': 'nexo', 'file': str(filepath)}
+    requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+
+    # Add transactions from blockfi
+    filepath = dir_path / 'data' / 'blockfi-transactions.csv'
+
+    json_data = {'source': 'blockfi-transactions', 'file': str(filepath)}
+    requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+
+    # Add cryptocom
+    filepath = dir_path / 'data' / 'cryptocom_trades_list.csv'
+    json_data = {'source': 'cryptocom', 'file': str(filepath)}
+    requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+
+    # Add cointracking multiple exchanges
+    filepath = dir_path / 'data' / 'cointracking_trades_list.csv'
+    files = {'file': open(filepath, 'rb')}
+    requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ),
+        files=files,
+        data={'source': 'cointracking.info'},
+    )
+
+    # Add multiple entries for same exchange + connected exchange
+    msg_aggregator = MessagesAggregator()
+    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
+    kraken_api_key1 = ApiKey('kraken_api_key')
+    kraken_api_secret1 = ApiSecret(b'kraken_api_secret')
+    kraken_api_key2 = ApiKey('kraken_api_key2')
+    kraken_api_secret2 = ApiSecret(b'kraken_api_secret2')
+    binance_api_key = ApiKey('binance_api_key')
+    binance_api_secret = ApiSecret(b'binance_api_secret')
+
+    # add mock kraken and binance
+    db.add_exchange('kraken1', Location.KRAKEN, kraken_api_key1, kraken_api_secret1)
+    db.add_exchange('kraken2', Location.KRAKEN, kraken_api_key2, kraken_api_secret2)
+    db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
+
+    expected_locations = {
+        Location.KRAKEN,
+        Location.BINANCE,
+        Location.BLOCKFI,
+        Location.NEXO,
+        Location.CRYPTOCOM,
+        Location.POLONIEX,
+        Location.COINBASE,
+    }
+
+    assert set(db.get_connected_locations()) == expected_locations

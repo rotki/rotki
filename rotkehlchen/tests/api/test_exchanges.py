@@ -3,6 +3,7 @@ from http import HTTPStatus
 from unittest.mock import patch
 from urllib.parse import urlencode
 import os
+from pathlib import Path
 
 import pytest
 import requests
@@ -1034,10 +1035,10 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
 
 def test_get_connected_locations(rotkehlchen_api_server):
     # Import from nexo
-    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    filepath = os.path.join(dir_path, 'data', 'nexo.csv')
+    dir_path = Path(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    filepath = dir_path / 'data' / 'nexo.csv'
 
-    json_data = {'source': 'nexo', 'file': filepath}
+    json_data = {'source': 'nexo', 'file': str(filepath)}
     requests.put(
         api_url_for(
             rotkehlchen_api_server,
