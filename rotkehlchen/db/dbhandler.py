@@ -52,6 +52,7 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -2688,15 +2689,32 @@ class DBHandler:
         results = cursor.execute(querystr)
         results = results.fetchall()
         balances = []
-        for result in results:
+        results_length = len(results)
+        for idx, result in enumerate(results):
+            entry_time = result[0]
+            category = BalanceType.deserialize_from_db(result[3])
             balances.append(
                 SingleDBAssetBalance(
-                    time=result[0],
+                    time=entry_time,
                     amount=result[1],
                     usd_value=result[2],
-                    category=BalanceType.deserialize_from_db(result[3]),
+                    category=category,
                 ),
             )
+            if idx == results_length - 1:
+                continue
+
+            next_result_time = results[idx + 1][0]
+            while next_result_time - entry_time > DAY_IN_SECONDS:
+                entry_time = entry_time + DAY_IN_SECONDS
+                balances.append(
+                    SingleDBAssetBalance(
+                        time=Timestamp(min(entry_time, next_result_time - 1)),
+                        amount='0',
+                        usd_value='0',
+                        category=category,
+                    ),
+                )
 
         return balances
 
