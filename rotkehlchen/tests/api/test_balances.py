@@ -7,6 +7,7 @@ import gevent
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
@@ -167,6 +168,7 @@ def test_query_all_balances(
             amount=FVal('1550'),
             location=Location.BANKS,
             tags=None,
+            balance_type=BalanceType.ASSET,
         )],
     )
     # Test that all balances request saves data on a fresh account
@@ -371,30 +373,35 @@ def test_query_all_balances_with_manually_tracked_balances(
         amount=FVal('10'),
         location=Location.BLOCKCHAIN,
         tags=None,
+        balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
         asset=A_BTC,
         label='BTC in hardware wallet',
         amount=FVal('20'),
         location=Location.BLOCKCHAIN,
         tags=['private'],
+        balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
         asset=A_ETH,
         label='ETH in a not supported exchange wallet',
         amount=FVal('10'),
         location=Location.EXTERNAL,
         tags=['private'],
+        balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
         asset=A_EUR,
         label='N26 account',
         amount=FVal('12500.15'),
         location=Location.BANKS,
         tags=None,
+        balance_type=BalanceType.ASSET,
     ), ManuallyTrackedBalance(
         asset=A_EUR,
         label='Deutsche Bank account',
         amount=FVal('1337.1337'),
         location=Location.BANKS,
         tags=None,
+        balance_type=BalanceType.ASSET,
     )]
     setup = setup_balances(
         rotki=rotki,

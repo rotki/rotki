@@ -93,12 +93,12 @@
                 class="manual-balances-list__amount"
                 :fiat-currency="currency.ticker_symbol"
                 :value="
-                  visibleBalances
-                    | aggregateTotal(
-                      currency.ticker_symbol,
-                      exchangeRate(currency.ticker_symbol),
-                      floatingPrecision
-                    )
+                  aggregateTotal(
+                    visibleBalances,
+                    currency.ticker_symbol,
+                    exchangeRate(currency.ticker_symbol),
+                    floatingPrecision
+                  )
                 "
               />
             </td>
@@ -129,6 +129,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { CURRENCY_USD } from '@/data/currencies';
+import { aggregateTotalWithLiabilities } from '@/filters';
 import { Currency } from '@/model/currency';
 import {
   ManualBalance,
@@ -148,16 +149,17 @@ import { Tags } from '@/typing/types';
     TagFilter
   },
   computed: {
-    ...mapState('balances', ['manualBalances']),
     ...mapState('session', ['tags']),
     ...mapGetters('session', ['floatingPrecision', 'currency']),
-    ...mapGetters('balances', ['exchangeRate'])
+    ...mapGetters('balances', ['exchangeRate', 'manualBalanceWithLiabilities'])
   }
 })
 export default class ManualBalancesList extends Vue {
   labelToDelete: string | null = null;
   onlyTags: string[] = [];
   edited: ManualBalance | null = null;
+
+  readonly aggregateTotal = aggregateTotalWithLiabilities;
 
   get symbol(): string {
     return this.currency.ticker_symbol;
@@ -199,7 +201,7 @@ export default class ManualBalancesList extends Vue {
     }
   ];
 
-  manualBalances!: ManualBalanceWithValue[];
+  manualBalanceWithLiabilities!: ManualBalanceWithValue[];
   tags!: Tags;
   currency!: Currency;
   floatingPrecision!: number;
@@ -210,10 +212,10 @@ export default class ManualBalancesList extends Vue {
 
   get visibleBalances(): ManualBalance[] {
     if (this.onlyTags.length === 0) {
-      return this.manualBalances;
+      return this.manualBalanceWithLiabilities;
     }
 
-    return this.manualBalances.filter(balance => {
+    return this.manualBalanceWithLiabilities.filter(balance => {
       if (balance.tags) {
         return this.onlyTags.every(tag => balance.tags.includes(tag));
       }

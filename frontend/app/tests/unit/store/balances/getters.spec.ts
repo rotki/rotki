@@ -71,7 +71,8 @@ describe('balances:getters', () => {
           asset: 'DAI',
           label: '123',
           tags: [],
-          location: TRADE_LOCATION_BANKS
+          location: TRADE_LOCATION_BANKS,
+          isLiability: false
         }
       ],
       connectedExchanges: [

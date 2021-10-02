@@ -22,7 +22,7 @@ from typing_extensions import Literal
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.accounting.structures import ActionType
+from rotkehlchen.accounting.structures import ActionType, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -367,6 +367,22 @@ class BlockchainField(fields.Field):
             return SupportedBlockchain.AVALANCHE
 
         raise ValidationError(f'Unrecognized value {value} given for blockchain name')
+
+
+class BalanceTypeField(fields.Field):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> BalanceType:
+        if value == 'asset':
+            return BalanceType.ASSET
+        if value == 'liability':
+            return BalanceType.LIABILITY
+        raise ValidationError(f'Unrecognized value {value} given for balance type')
 
 
 class AssetField(fields.Field):
@@ -1008,6 +1024,7 @@ class ManuallyTrackedBalanceSchema(Schema):
     amount = PositiveAmountField(required=True)
     location = LocationField(required=True)
     tags = fields.List(fields.String(), load_default=None)
+    balance_type = BalanceTypeField(load_default=BalanceType.ASSET)
 
     @post_load
     def make_manually_tracked_balances(  # pylint: disable=no-self-use

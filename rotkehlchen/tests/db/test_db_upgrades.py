@@ -2320,6 +2320,27 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
     assert db.get_version() == 29
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_29_to_30(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 28 to version 29.
+
+    - Updates the primary key of blockchain accounts to take into account chain type
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v29_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=30,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 30
+    cursor = db.conn.cursor()
+    # Check that existing balances are not considered as liabilities after migration
+    cursor.execute('SELECT category FROM manually_tracked_balances;')
+    assert cursor.fetchone() == ('A',)
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the

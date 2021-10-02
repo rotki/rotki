@@ -59,6 +59,7 @@ export interface BalanceState {
   avaxAccounts: GeneralAccountData[];
   supportedAssets: SupportedAsset[];
   manualBalances: ManualBalanceWithValue[];
+  manualLiabilities: ManualBalanceWithValue[];
   manualBalanceByLocation: BalanceByLocation;
   prices: AssetPrices;
   nonFungibleBalances: NonFungibleBalances;

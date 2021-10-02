@@ -315,6 +315,7 @@ CREATE TABLE IF NOT EXISTS manually_tracked_balances (
     label TEXT NOT NULL PRIMARY KEY,
     amount TEXT,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """

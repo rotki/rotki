@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.fval import FVal
@@ -243,6 +244,7 @@ def test_query_statistics_value_distribution(
             amount=FVal('1550'),
             location=Location.BANKS,
             tags=None,
+            balance_type=BalanceType.ASSET,
         )],
     )
 

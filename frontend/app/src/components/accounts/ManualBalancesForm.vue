@@ -48,6 +48,12 @@
       :label="$t('manual_balances_form.fields.location')"
       @focus="delete errors['location']"
     />
+    <v-checkbox
+      v-model="isLiability"
+      :label="$t('manual_balances_form.fields.liability')"
+      :disabled="pending"
+      @change="liabilityToggle"
+    />
   </v-form>
 </template>
 
@@ -58,7 +64,7 @@ import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { ManualBalance } from '@/services/balances/types';
+import { BalanceType, ManualBalance } from '@/services/balances/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { TradeLocation } from '@/services/history/types';
 import { ActionStatus } from '@/store/types';
@@ -91,8 +97,12 @@ export default class ManualBalancesForm extends Vue {
     this.asset = balance.asset;
     this.label = balance.label;
     this.amount = balance.amount.toString();
-    this.tags = balance.tags;
+    this.tags = balance.tags ?? [];
     this.location = balance.location;
+    this.balanceType = balance.balanceType;
+    if (balance.balanceType === BalanceType.LIABILITY) {
+      this.isLiability = true;
+    }
   }
 
   @Watch('label')
@@ -125,6 +135,8 @@ export default class ManualBalancesForm extends Vue {
   amount: string = '';
   tags: string[] = [];
   location: TradeLocation = TRADE_LOCATION_EXTERNAL;
+  balanceType: BalanceType = BalanceType.ASSET;
+  isLiability: boolean = false;
 
   readonly amountRules = [
     (v: string) => !!v || this.$t('manual_balances_form.validation.amount')
@@ -156,7 +168,8 @@ export default class ManualBalancesForm extends Vue {
       amount: bigNumberify(this.amount),
       label: this.label,
       tags: this.tags,
-      location: this.location
+      location: this.location,
+      balanceType: this.balanceType
     };
     const status = await (this.edit
       ? this.editManualBalance(balance)
@@ -175,6 +188,15 @@ export default class ManualBalancesForm extends Vue {
       this.errors = (errorMessages?.balances[0] as any) ?? {};
     }
     return false;
+  }
+
+  liabilityToggle() {
+    this.isLiability = !this.isLiability;
+    if (this.isLiability) {
+      this.balanceType = BalanceType.ASSET;
+    } else {
+      this.balanceType = BalanceType.LIABILITY;
+    }
   }
 }
 </script>
