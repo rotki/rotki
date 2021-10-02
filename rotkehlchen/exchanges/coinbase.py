@@ -598,13 +598,19 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             # Only get address/transaction id for "send" type of transactions
             address = None
             transaction_id = None
+            fee = Fee(ZERO)
             # movement_category: Union[Literal['deposit'], Literal['withdrawal']]
             if 'type' in raw_data:
                 # Then this should be a "send" which is the way Coinbase uses to send
                 # crypto outside of the exchange
                 # https://developers.coinbase.com/api/v2?python#transaction-resource
-                msg = 'Non "send" type found in coinbase deposit/withdrawal processing'
-                assert raw_data['type'] == 'send', msg
+                if raw_data['type'] != 'send':
+                    log.error(
+                        f'In a coinbase deposit/withdrawal we got non send type {raw_data["type"]}'
+                        f'. This means either api is broken or we called it wrong',
+                    )
+                    return None
+
                 movement_category = AssetMovementCategory.WITHDRAWAL
                 # Can't see the fee being charged from the "send" resource
 
@@ -612,21 +618,20 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 asset = asset_from_coinbase(raw_data['amount']['currency'], time=timestamp)
                 # Fees dont appear in the docs but from an experiment of sending ETH
                 # to an address from coinbase there is the network fee in the response
-                fee = Fee(ZERO)
                 raw_network = raw_data.get('network', None)
                 if raw_network:
                     raw_fee = raw_network.get('transaction_fee', None)
 
-                if raw_fee:
-                    # Since this is a withdrawal the fee should be the same as the moved asset
-                    if asset != asset_from_coinbase(raw_fee['currency'], time=timestamp):
-                        # If not we set ZERO fee and ignore
-                        log.error(
-                            f'In a coinbase withdrawal of {asset.identifier} the fee'
-                            f'is denoted in {raw_fee["currency"]}',
-                        )
-                    else:
-                        fee = deserialize_fee(raw_fee['amount'])
+                    if raw_fee:
+                        # Since this is a withdrawal the fee should be the same as the moved asset
+                        if asset != asset_from_coinbase(raw_fee['currency'], time=timestamp):
+                            # If not we set ZERO fee and ignore
+                            log.error(
+                                f'In a coinbase withdrawal of {asset.identifier} the fee'
+                                f'is denoted in {raw_fee["currency"]}',
+                            )
+                        else:
+                            fee = deserialize_fee(raw_fee['amount'])
 
                 if 'network' in raw_data:
                     transaction_id = get_key_if_has_val(raw_data['network'], 'hash')
@@ -635,7 +640,9 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             else:
                 movement_category = deserialize_asset_movement_category(raw_data['resource'])
                 amount = deserialize_asset_amount_force_positive(raw_data['amount']['amount'])
-                fee = deserialize_fee(raw_data['fee']['amount'])
+                if 'fee' in raw_data:
+                    fee = deserialize_fee(raw_data['fee']['amount'])
+
                 asset = asset_from_coinbase(raw_data['amount']['currency'], time=timestamp)
 
             return AssetMovement(
@@ -670,7 +677,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             log.error(
                 f'Unexpected data encountered during deserialization of coinbase '
-                f'asset_movement {raw_data}. Error was: {str(e)}',
+                f'asset_movement {raw_data}. Error was: {msg}',
             )
 
         return None
