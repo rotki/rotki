@@ -5,11 +5,7 @@ import {
 } from '@rotki/common/lib/gitcoin';
 import { ActionContext, ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
-import {
-  TRADE_LOCATION_EXTERNAL,
-  EXTERNAL_EXCHANGES,
-  SUPPORTED_EXCHANGES
-} from '@/data/defaults';
+import { TRADE_LOCATION_EXTERNAL, EXTERNAL_EXCHANGES } from '@/data/defaults';
 import i18n from '@/i18n';
 import {
   AddressMeta,
@@ -618,7 +614,6 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     const locations = balances!.connectedExchanges
       .map(({ location }) => location)
-      .filter(location => location in SUPPORTED_EXCHANGES)
       .filter(uniqueStrings);
 
     const fetchDefault: () => Promise<void> = async () => {
@@ -733,7 +728,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     await Promise.all([
       fetchDefault().catch(e => onDefaultError(e.message)),
-      (
+      ...(
         [
           ...(source !== FETCH_FROM_SOURCE ? EXTERNAL_EXCHANGES : []),
           ...locations

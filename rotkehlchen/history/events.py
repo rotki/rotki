@@ -39,6 +39,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 # Number of steps excluding the connected exchanges. Current query steps:
 # eth transactions
+# ledger actions
 # external location trades -> len(EXTERNAL_LOCATION)
 # amm trades len(AMMTradeLocations)
 # makerdao dsr
@@ -50,7 +51,7 @@ log = RotkehlchenLogsAdapter(logger)
 # eth2
 # liquity
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 9 + len(EXTERNAL_LOCATION) + len(AMMTradeLocations)
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 10 + len(EXTERNAL_LOCATION) + len(AMMTradeLocations)
 FREE_LEDGER_ACTIONS_LIMIT = 50
 
 HistoryResult = Tuple[
@@ -621,6 +622,12 @@ class EventsHistorian():
             )
             history.extend(external_trades)
             step = self._increase_progress(step, total_steps)
+
+        # include the ledger actions from offline sources
+        self.processing_state_name = 'Querying ledger actions history'
+        offline_ledger_actions, _ = self.query_ledger_actions(from_ts=None, to_ts=end_ts)
+        ledger_actions.extend(offline_ledger_actions)
+        step = self._increase_progress(step, total_steps)
 
         # include AMM trades: balancer, uniswap
         for amm_location in AMMTradeLocations:
