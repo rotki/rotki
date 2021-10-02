@@ -18,7 +18,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_transaction,
     deserialize_int_from_str,
 )
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
+from rotkehlchen.typing import (
+    ChecksumEthAddress,
+    EthereumInternalTransaction,
+    EthereumTransaction,
+    ExternalService,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -206,12 +212,33 @@ class Etherscan(ExternalServiceWithApiKey):
 
         return result
 
+    @overload
     def get_transactions(
             self,
             account: ChecksumEthAddress,
+            internal: Literal[True],
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+    ) -> List[EthereumInternalTransaction]:
+        ...
+
+    @overload
+    def get_transactions(
+            self,
+            account: ChecksumEthAddress,
+            internal: Literal[False],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> List[EthereumTransaction]:
+        ...
+
+    def get_transactions(
+            self,
+            account: ChecksumEthAddress,
+            internal: bool,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+    ) -> Union[List[EthereumTransaction], List[EthereumInternalTransaction]]:
         """Gets a list of transactions (either normal or internal) for account.
 
         May raise:
@@ -226,12 +253,18 @@ class Etherscan(ExternalServiceWithApiKey):
             to_block = self.get_blocknumber_by_time(to_ts)
             options['endBlock'] = str(to_block)
 
+        action: Literal['txlistinternal', 'txlist']
+        if internal:
+            action = 'txlistinternal'
+        else:
+            action = 'txlist'
+
         transactions = []
         while True:
-            result = self._query(module='account', action='txlist', options=options)
+            result = self._query(module='account', action=action, options=options)
             for entry in result:
                 try:
-                    tx = deserialize_ethereum_transaction(data=entry, ethereum=None)
+                    tx = deserialize_ethereum_transaction(data=entry, internal=internal, ethereum=None)  # type: ignore  # noqa: E501
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
                     continue

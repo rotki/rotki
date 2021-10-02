@@ -3640,7 +3640,11 @@ class RestAPI():
         to_timestamp: Timestamp,
     ) -> Dict[str, Any]:
         avalanche = self.rotkehlchen.chain_manager.avalanche
-        response = avalanche.covalent.get_transactions(address, from_timestamp, to_timestamp)
+        response = avalanche.covalent.get_transactions(
+            account=address,
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+        )
         if response is None:
             return {
                 'result': [],

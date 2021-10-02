@@ -188,9 +188,6 @@ class EthereumTransaction(NamedTuple):
     gas_price: int
     gas_used: int
     input_data: bytes
-    # The ethereum transaction nonce. Even though for normal ethereum transactions
-    # this can't be negative it can be for us. IF it's negative it means that
-    # this is an internal transaction returned by etherscan.
     nonce: int
 
     def serialize(self) -> Dict[str, Any]:
@@ -221,6 +218,39 @@ class EthereumTransaction(NamedTuple):
     @property
     def identifier(self) -> str:
         return '0x' + self.tx_hash.hex() + self.from_address + str(self.nonce)
+
+
+class EthereumInternalTransaction(NamedTuple):
+    """Represent an internal Ethereum transaction"""
+    parent_tx_hash: bytes
+    trace_id: int
+    timestamp: Timestamp
+    block_number: int
+    from_address: ChecksumEthAddress
+    to_address: Optional[ChecksumEthAddress]
+    value: int
+
+    def serialize(self) -> Dict[str, Any]:
+        result = self._asdict()  # pylint: disable=no-member
+        result['tx_hash'] = '0x' + result['tx_hash'].hex()
+        result['value'] = str(result['value'])
+        return result
+
+    def __hash__(self) -> int:
+        return hash(self.identifier)
+
+    def __eq__(self, other: Any) -> bool:
+        if other is None:
+            return False
+
+        if not isinstance(other, EthereumInternalTransaction):
+            return False
+
+        return hash(self) == hash(other)
+
+    @property
+    def identifier(self) -> str:
+        return '0x' + self.parent_tx_hash.hex() + str(self.trace_id)
 
 
 class CovalentTransaction(NamedTuple):

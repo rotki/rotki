@@ -10,7 +10,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import EthereumTransaction
+from rotkehlchen.typing import EthereumInternalTransaction, EthereumTransaction
 from rotkehlchen.utils.misc import hexstr_to_int, hexstring_to_bytes
 
 logger = logging.getLogger(__name__)
@@ -57,6 +57,40 @@ class DBEthTx():
               input_data,
               nonce)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        self.db.write_tuples(
+            tuple_type='ethereum_transaction',
+            query=query,
+            tuples=tx_tuples,
+        )
+
+    def add_ethereum_internal_transactions(
+            self,
+            transactions: List[EthereumInternalTransaction],
+    ) -> None:
+        """Adds ethereum transactions to the database"""
+        tx_tuples: List[Tuple[Any, ...]] = []
+        for tx in transactions:
+            tx_tuples.append((
+                tx.parent_tx_hash,
+                tx.trace_id,
+                tx.timestamp,
+                tx.block_number,
+                tx.from_address,
+                tx.to_address,
+                str(tx.value),
+            ))
+
+        query = """
+            INSERT INTO ethereum_transactions(
+              parent_tx_hash,
+              trace_id,
+              timestamp,
+              block_number,
+              from_address,
+              to_address,
+              value)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """
         self.db.write_tuples(
             tuple_type='ethereum_transaction',

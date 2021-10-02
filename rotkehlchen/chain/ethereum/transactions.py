@@ -88,11 +88,13 @@ class EthTransactions(LockableQueryMixIn):
                     account=address,
                     from_ts=query_start_ts,
                     to_ts=query_end_ts,
+                    internal=False,
                 ))
             except RemoteError as e:
                 self.ethereum.msg_aggregator.add_error(
                     f'Got error "{str(e)}" while querying ethereum transactions '
                     f'from Etherscan. Transactions not added to the DB '
+                    f'address: {address} '
                     f'from_ts: {query_start_ts} '
                     f'to_ts: {query_end_ts} ',
                 )
@@ -101,7 +103,46 @@ class EthTransactions(LockableQueryMixIn):
         if new_transactions != []:
             dbethtx.add_ethereum_transactions(new_transactions)
 
-        # and also set the last queried timestamps for the address
+        # and now internal transactions, after normal ones so they are already in DB
+        new_internal_txs = []
+        for query_start_ts, query_end_ts in ranges_to_query:
+            try:
+                new_internal_txs.extend(self.ethereum.etherscan.get_transactions(
+                    account=address,
+                    from_ts=query_start_ts,
+                    to_ts=query_end_ts,
+                    internal=True,
+                ))
+            except RemoteError as e:
+                self.ethereum.msg_aggregator.add_error(
+                    f'Got error "{str(e)}" while querying internal ethereum transactions '
+                    f'from Etherscan. Transactions not added to the DB '
+                    f'address: {address} '
+                    f'from_ts: {query_start_ts} '
+                    f'to_ts: {query_end_ts} ',
+                )
+
+        # add new internal transactions to the DB
+        if new_internal_txs != []:
+            for internal_tx in new_internal_txs:
+                # make sure all internal transaction parent transactions are in the DB
+                result = dbethtx.get_ethereum_transactions(
+                    ETHTransactionsFilterQuery.make(tx_hash=internal_tx.parent_tx_hash),
+                )
+                if len(result) != 0:
+                    continue  # already got that transaction
+
+                txhash = '0x' + internal_tx.parent_tx_hash.hex()
+                transaction = self.ethereum.get_transaction_by_hash(txhash)
+                if transaction is None:
+                    continue  # hash does not correspond to a transaction
+                # add the parent transaction to the DB
+                dbethtx.add_ethereum_transactions([transaction])
+
+            # add all new internal txs to the DB
+            dbethtx.add_ethereum_internal_transactions(new_internal_txs)
+
+        # finally also set the last queried timestamps for the address
         ranges.update_used_query_range(
             location_string=f'ethtxs_{address}',
             start_ts=start_ts,
@@ -116,8 +157,8 @@ class EthTransactions(LockableQueryMixIn):
             with_limit: bool = False,
             only_cache: bool = False,
     ) -> Tuple[List[EthereumTransaction], int]:
-        """Queries for all transactions (normal AND internal) of an ethereum
-        address or of all addresses.
+        """Queries for all transactionsof an ethereum address or of all addresses.
+
         Returns a list of all transactions filtered and sorted according to the parameters.
 
         If `with_limit` is true then the api limit is applied

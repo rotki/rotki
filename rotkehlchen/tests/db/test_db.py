@@ -91,6 +91,7 @@ TABLES_AT_INIT = [
     'multisettings',
     'trades',
     'ethereum_transactions',
+    'ethereum_internal_transactions',
     'ethtx_receipts',
     'ethtx_receipt_logs',
     'ethtx_receipt_log_topics',

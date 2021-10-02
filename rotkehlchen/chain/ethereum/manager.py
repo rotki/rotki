@@ -823,7 +823,7 @@ class EthereumManager():
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
 
         try:
-            transaction = deserialize_ethereum_transaction(data=tx_data, ethereum=self)
+            transaction = deserialize_ethereum_transaction(data=tx_data, internal=False, ethereum=self)  # noqa: E501
         except (DeserializationError, ValueError) as e:
             raise RemoteError(
                 f'Couldnt deserialize ethereum transaction data from {tx_data}. Error: {str(e)}',

@@ -466,6 +466,20 @@ CREATE TABLE IF NOT EXISTS ethereum_transactions (
 );
 """
 
+DB_CREATE_ETHEREUM_INTERNAL_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS ethereum_internal_transactions (
+    parent_tx_hash BLOB NOT NULL,
+    trace_id INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    block_number INTEGER NOT NULL,
+    from_address TEXT NOT NULL,
+    to_address TEXT,
+    value TEXT NOT NULL,
+    FOREIGN KEY(tx_hash) REFERENCES ethereum_transactions(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(parent_tx_hash, trace_id)
+);
+"""  # noqa: E501
+
 DB_CREATE_ETHTX_RECEIPTS = """
 CREATE TABLE IF NOT EXISTS ethtx_receipts (
     tx_hash BLOB NOT NULL PRIMARY KEY,
