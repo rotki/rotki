@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3547` Coinbase transactions without network data returned should now be processed properly.
 * :bug:`2613` Graphs of assets that used to miss all 0 balance data points between two time point will now properly show a 0 amount in the asset graph for the time period.
 
 * :release:`1.21.0 <2021-09-30>`
