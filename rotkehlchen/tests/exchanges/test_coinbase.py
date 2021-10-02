@@ -410,6 +410,32 @@ TRANSACTIONS_RESPONSE = """{
     },
     "idem": "zzzz",
     "details": {"title": "Sent Ethereum", "subtitle": "To Ethereum address"}
+}, {
+  "id": "id2",
+  "type": "send",
+  "status": "completed",
+  "amount": {
+    "amount": "-0.05770427",
+    "currency": "ETH"
+  },
+  "native_amount": {
+    "amount": "-9.83",
+    "currency": "EUR"
+  },
+  "description": null,
+  "created_at": "2019-08-25T09:42:06Z",
+  "updated_at": "2019-08-25T09:43:42Z",
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/foo/transactions/coo",
+  "instant_exchange": false,
+    "to": {
+      "resource": "ethereum_address",
+      "address": "0x6dcd6449dbca615e40d696328209686ea95327b2",
+      "currency": "ETH",
+      "address_info": {"address": "0xboo"}
+    },
+    "idem": "zzzz",
+    "details": {"title": "Sent Ethereum", "subtitle": "To Ethereum address"}
 }]}"""
 
 
@@ -707,7 +733,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     errors = coinbase.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
-    assert len(movements) == 3
+    assert len(movements) == 4
     expected_movements = [AssetMovement(
         location=Location.COINBASE,
         category=AssetMovementCategory.DEPOSIT,
@@ -741,6 +767,17 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         fee_asset=A_ETH,
         fee=FVal('0.00021'),
         link='id1',
+    ), AssetMovement(
+        location=Location.COINBASE,
+        category=AssetMovementCategory.WITHDRAWAL,
+        address='0x6dcD6449dbCa615e40d696328209686eA95327b2',
+        transaction_id=None,
+        timestamp=1566726126,
+        asset=A_ETH,
+        amount=FVal('0.05770427'),
+        fee_asset=A_ETH,
+        fee=ZERO,
+        link='id2',
     )]
     assert expected_movements == movements
 
