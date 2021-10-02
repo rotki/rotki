@@ -133,7 +133,7 @@ def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> O
         # We have the fee amount in the native currency. To get it in the
         # converted asset we have to get the rate
         asset_native_rate = tx_amount / abs(amount_before_fee)
-        fee_amount = Fee(conversion_native_fee_amount / asset_native_rate)
+        fee_amount = Fee(conversion_native_fee_amount * asset_native_rate)
     else:
         fee_amount = Fee(ZERO)
     fee_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
