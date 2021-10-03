@@ -516,7 +516,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             # limit coinbase trades in the requested time range here since there
             # is no argument in the API call
-            if trade and trade.timestamp >= start_ts and trade.timestamp <= end_ts:
+            if trade and start_ts <= trade.timestamp <= end_ts:
                 trades.append(trade)
 
         # Analyze conversions of coins. We address them as sells
@@ -574,7 +574,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             # limit coinbase trades in the requested time range here since there
             # is no argument in the API call
-            if trade and trade.timestamp >= start_ts and trade.timestamp <= end_ts:
+            if trade and start_ts <= trade.timestamp <= end_ts:
                 trades.append(trade)
 
         return trades
@@ -608,7 +608,6 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 # Then this should be a "send" which is the way Coinbase uses to send
                 # crypto outside of the exchange, or from one user to another.
                 # https://developers.coinbase.com/api/v2?python#transaction-resource
-                movement_category = AssetMovementCategory.WITHDRAWAL
                 raw_type = raw_data.get('type', '')
                 if raw_type == 'send':
                     movement_category = AssetMovementCategory.WITHDRAWAL
@@ -684,12 +683,11 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 msg = f'Missing key entry for {msg}.'
             self.msg_aggregator.add_error(
                 'Unexpected data encountered during deserialization of a coinbase '
-                'ledger action. Check logs for details and open a bug report.',
+                'asset movement. Check logs for details and open a bug report.',
             )
             log.error(
-                'Error processing a coinbase ledger action',
-                ledger_action=raw_data,
-                error=msg,
+                f'Unexpected data encountered during deserialization of coinbase '
+                f'asset_movement {raw_data}. Error was: {msg}',
             )
 
         return None
@@ -706,16 +704,13 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raw_data.extend(self._api_query(f'accounts/{account_id}/deposits'))
             raw_data.extend(self._api_query(f'accounts/{account_id}/withdrawals'))
             # also get transactions to get the "sends", which in Coinbase is the
-            # way to send Crypto out of the exchange
+            # way to send Crypto in/out of the exchange
             txs = self._api_query(f'accounts/{account_id}/transactions')
             for tx in txs:
                 if 'type' not in tx:
                     continue
                 if tx['type'] == 'send':
-                    if 'to' in tx:
-                        raw_data.append(tx)
-                    if 'from' in tx and 'network' in tx and 'hash' in tx['network']:
-                        raw_data.append(tx)
+                    raw_data.append(tx)
 
         log.debug('coinbase deposits/withdrawals history result', results_num=len(raw_data))
 
@@ -800,11 +795,11 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 msg = f'Missing key entry for {msg}.'
             self.msg_aggregator.add_error(
                 'Unexpected data encountered during deserialization of a coinbase '
-                'asset movement. Check logs for details and open a bug report.',
+                'ledger action. Check logs for details and open a bug report.',
             )
             log.error(
                 f'Unexpected data encountered during deserialization of coinbase '
-                f'asset_movement {raw_data}. Error was: {str(e)}',
+                f'ledger action {raw_data}. Error was: {msg}',
             )
         return None
 
@@ -821,9 +816,9 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             for tx in txs:
                 if 'type' not in tx:
                     continue
-                if tx['type'] in ['send', 'inflation_reward'] and 'from' in tx:
-                    if 'resource' in tx['from'] and tx['from']['resource'] == 'user':
-                        raw_data.append(tx)
+                if tx['type'] in ['send', 'inflation_reward'] and 'from' in tx \
+                        and 'resource' in tx['from'] and tx['from']['resource'] == 'user':
+                    raw_data.append(tx)
 
         log.debug('coinbase transactions history result', results_num=len(raw_data))
 
