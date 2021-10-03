@@ -1,16 +1,17 @@
 import itertools
+import sqlite3
 from pathlib import Path
 from shutil import copyfile
 
 import pytest
-import sqlite3
 
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
-from rotkehlchen.constants.assets import A_BAT
+from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_PICKLE
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError
 from rotkehlchen.exchanges.data_structures import Trade
@@ -655,3 +656,26 @@ def test_global_db_reset(globaldb):
     tokens_local = cursor.execute('SELECT COUNT(*) FROM assets;')
     assert tokens_expected.fetchone()[0] + 3 == tokens_local.fetchone()[0]
     conn.close()
+
+
+def test_add_user_owned_asset_nft(globaldb):
+    """
+    Test that adding an NFT user owned asset does not make it into the global DB.
+    Otherwise a foreign key error will occur.
+    """
+    cursor = globaldb._conn.cursor()
+    result = cursor.execute('SELECT asset_id FROM user_owned_assets').fetchall()
+    initial_assets = {x[0] for x in result}
+
+    globaldb.add_user_owned_assets([A_DAI])
+    globaldb.add_user_owned_assets([
+        A_PICKLE,
+        Asset('_nft_0xfoo_24'),
+        A_CRV,
+        Asset('_nft_0xboo_2441'),
+    ])
+
+    result = cursor.execute('SELECT asset_id FROM user_owned_assets').fetchall()
+    new_assets = {x[0] for x in result}
+    assert new_assets - initial_assets == {A_DAI.identifier, A_PICKLE.identifier, A_CRV.identifier}
+    assert all(not x.startswith(NFT_DIRECTIVE) for x in new_assets)
