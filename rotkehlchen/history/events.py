@@ -234,8 +234,8 @@ class EventsHistorian():
         else:
             actions = location_actions
 
-        for exchange in self.exchange_manager.connected_exchanges:
-            if isinstance(exchange, ExchangeInterface):
+        for exchange in self.exchange_manager.iterate_exchanges():
+            if exchange.location == location:
                 # clear the actions queried for this location
                 self.actions_per_location['ledger_action'][exchange.location] = 0
                 all_set = {x.identifier for x in actions}

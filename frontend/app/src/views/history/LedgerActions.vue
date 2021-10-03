@@ -153,8 +153,14 @@ import StatusMixin from '@/mixins/status-mixin';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
-import { HistoryActions, LedgerActionType } from '@/store/history/consts';
 import {
+  FETCH_FROM_CACHE,
+  FETCH_FROM_SOURCE,
+  FETCH_REFRESH,
+  HistoryActions,
+   LedgerActionType } from '@/store/history/consts';
+import {
+  FetchSource,
   HistoricData,
   IgnoreActionPayload,
   IgnoreActionType,
@@ -257,7 +263,9 @@ export default class LedgerActions extends Mixins(StatusMixin) {
     },
     { text: '', value: 'data-table-expand' }
   ];
-  [HistoryActions.FETCH_LEDGER_ACTIONS]!: (refresh: boolean) => Promise<void>;
+  [HistoryActions.FETCH_LEDGER_ACTIONS]!: (
+    payload: FetchSource
+  ) => Promise<void>;
   [HistoryActions.ADD_LEDGER_ACTION]!: (
     action: UnsavedAction
   ) => Promise<ActionStatus>;
@@ -364,11 +372,12 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   }
 
   async refresh() {
-    await this[HistoryActions.FETCH_LEDGER_ACTIONS](true);
+    await this[HistoryActions.FETCH_LEDGER_ACTIONS](FETCH_REFRESH);
   }
 
   async mounted() {
-    await this[HistoryActions.FETCH_LEDGER_ACTIONS](false);
+    await this[HistoryActions.FETCH_LEDGER_ACTIONS](FETCH_FROM_CACHE);
+    await this[HistoryActions.FETCH_LEDGER_ACTIONS](FETCH_FROM_SOURCE);
   }
 
   async showForm(action: LedgerActionEntry | UnsavedAction = emptyAction()) {
