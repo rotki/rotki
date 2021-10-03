@@ -412,8 +412,34 @@ TRANSACTIONS_RESPONSE = """{
     },
     "idem": "zzzz",
     "details": {"title": "Sent Ethereum", "subtitle": "To Ethereum address"}
-}, {
+},{
   "id": "id2",
+  "type": "send",
+  "status": "completed",
+  "amount": {
+    "amount": "-0.05770427",
+    "currency": "ETH"
+  },
+  "native_amount": {
+    "amount": "-9.83",
+    "currency": "EUR"
+  },
+  "description": null,
+  "created_at": "2019-08-25T09:42:06Z",
+  "updated_at": "2019-08-25T09:43:42Z",
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/foo/transactions/coo",
+  "instant_exchange": false,
+    "to": {
+      "resource": "ethereum_address",
+      "address": "0x6dcd6449dbca615e40d696328209686ea95327b2",
+      "currency": "ETH",
+      "address_info": {"address": "0xboo"}
+    },
+    "idem": "zzzz",
+    "details": {"title": "Sent Ethereum", "subtitle": "To Ethereum address"}
+}, {
+  "id": "id3",
   "type": "send",
   "status": "completed",
   "amount": {
@@ -448,34 +474,9 @@ TRANSACTIONS_RESPONSE = """{
     "health": "positive"
   },
   "hide_native_amount": false
+
 },{
-  "id": "id3",
-  "type": "send",
-  "status": "completed",
-  "amount": {
-    "amount": "-0.05770427",
-    "currency": "ETH"
-  },
-  "native_amount": {
-    "amount": "-9.83",
-    "currency": "EUR"
-  },
-  "description": null,
-  "created_at": "2019-08-25T09:42:06Z",
-  "updated_at": "2019-08-25T09:43:42Z",
-  "resource": "transaction",
-  "resource_path": "/v2/accounts/foo/transactions/coo",
-  "instant_exchange": false,
-    "to": {
-      "resource": "ethereum_address",
-      "address": "0x6dcd6449dbca615e40d696328209686ea95327b2",
-      "currency": "ETH",
-      "address_info": {"address": "0xboo"}
-    },
-    "idem": "zzzz",
-    "details": {"title": "Sent Ethereum", "subtitle": "To Ethereum address"}
-},{
-  "id": "id3",
+  "id": "id4",
   "type": "send",
   "status": "completed",
   "amount": {
@@ -508,7 +509,7 @@ TRANSACTIONS_RESPONSE = """{
   },
   "hide_native_amount": false
 },{
-  "id": "id4",
+  "id": "id5",
   "type": "inflation_reward",
   "status": "completed",
   "amount": {
@@ -835,7 +836,7 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     errors = coinbase.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
-    assert len(movements) == 6
+    assert len(movements) == 5
     expected_movements = [AssetMovement(
         location=Location.COINBASE,
         category=AssetMovementCategory.DEPOSIT,
@@ -869,6 +870,17 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
         fee_asset=A_ETH,
         fee=FVal('0.00021'),
         link='https://etherscan.io/tx/bbb',
+    ), AssetMovement(
+        location=Location.COINBASE,
+        category=AssetMovementCategory.WITHDRAWAL,
+        address='0x6dcD6449dbCa615e40d696328209686eA95327b2',
+        transaction_id=None,
+        timestamp=1566726126,
+        asset=A_ETH,
+        amount=FVal('0.05770427'),
+        fee_asset=A_ETH,
+        fee=ZERO,
+        link='id2',
     ), AssetMovement(
         location=Location.COINBASE,
         category=AssetMovementCategory.DEPOSIT,
@@ -927,7 +939,7 @@ def test_coinbase_query_income_loss_expense(function_scope_coinbase):
         amount=FVal('0.02762431'),
         rate=FVal('36.56199919563601769600761069'),
         rate_asset=A_USD,
-        link='id3',
+        link='id4',
         notes=('Received Numeraire '
                'From Coinbase Earn '
                'Received 0.02762431 NMR ($1.01)'),
@@ -940,7 +952,7 @@ def test_coinbase_query_income_loss_expense(function_scope_coinbase):
         amount=FVal('0.000076'),
         rate=ZERO,
         rate_asset=A_USD,
-        link='id4',
+        link='id5',
         notes=('Algorand reward '
                'From Coinbase '
                'Received 0.000076 ALGO ($0.00)'),
