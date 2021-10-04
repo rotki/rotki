@@ -1,4 +1,5 @@
 import { AssetBalance, Balance } from '@rotki/common';
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
@@ -520,8 +521,23 @@ export const getters: Getters<
   },
 
   assetInfo:
-    ({ supportedAssets }: BalanceState) =>
+    ({ supportedAssets, nonFungibleBalances }: BalanceState) =>
     (identifier: string) => {
+      if (identifier.startsWith('_nft_')) {
+        for (const address in nonFungibleBalances) {
+          const nfb = nonFungibleBalances[address];
+          for (const balance of nfb) {
+            if (balance.id === identifier) {
+              return {
+                identifier: balance.id,
+                symbol: balance.name,
+                name: balance.name,
+                assetType: 'ethereum_token'
+              } as SupportedAsset;
+            }
+          }
+        }
+      }
       return supportedAssets.find(asset => asset.identifier === identifier);
     },
 
