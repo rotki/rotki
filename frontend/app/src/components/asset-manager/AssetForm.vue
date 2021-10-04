@@ -23,7 +23,7 @@
             v-model="assetType"
             outlined
             :label="$t('asset_form.labels.asset_type')"
-            :disabled="types.length === 1"
+            :disabled="types.length === 1 || !!edit"
             :items="types"
           />
         </v-col>

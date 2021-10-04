@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3579` Asset type selector will now be properly disabled when editing an asset.
 * :bug:`-` Statistics per asset graph will now properly display the name of the NFT.
 * :bug:`3547` Coinbase transactions without network data returned should now be processed properly.
 * :bug:`3546` Coinbase users with trades/deposits/withdrawals/balances of FET (Fetch.ai) should have it properly detected.
