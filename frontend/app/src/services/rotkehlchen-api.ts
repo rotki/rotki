@@ -994,7 +994,7 @@ export class RotkehlchenApi {
 
   async erc20details(address: string): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<PendingTask>>('/blockchains/ETH/erc20details', {
+      .get<ActionResult<PendingTask>>('/blockchains/ETH/erc20details/', {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true,
           address
