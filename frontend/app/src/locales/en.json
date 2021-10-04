@@ -509,6 +509,9 @@
       "price": "Price in {currency}",
       "price_in_asset": "Price in asset"
     },
+    "row": {
+      "total": "Total"
+    },
     "title": "NFT Balances"
   },
   "non_fungible_balances": {
