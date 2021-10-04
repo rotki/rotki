@@ -82,7 +82,7 @@ class DBEthTx():
             ))
 
         query = """
-            INSERT INTO ethereum_transactions(
+            INSERT INTO ethereum_internal_transactions(
               parent_tx_hash,
               trace_id,
               timestamp,

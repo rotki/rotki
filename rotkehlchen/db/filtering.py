@@ -80,6 +80,11 @@ class DBTimestampFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBETHTransactionAddressFilter(DBFilter):
+    """Find transactions involving any of the addresses. Including in an internal.
+
+    This is a bit complicated query since it tries to get all transactions that involve
+    any of the given addresses, either as from/to or internal transaction from/to.
+    """
     addresses: Optional[List[ChecksumEthAddress]] = None
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
@@ -88,10 +93,14 @@ class DBETHTransactionAddressFilter(DBFilter):
         if self.addresses is not None:
             questionmarks = '?' * len(self.addresses)
             filters = [
-                f'from_address IN ({",".join(questionmarks)})',
-                f'to_address IN ({",".join(questionmarks)})',
+                f'tx_hash IN (SELECT tx_hash FROM ethereum_transactions WHERE '
+                f'from_address IN ({",".join(questionmarks)}) OR '
+                f'to_address IN ({",".join(questionmarks)}) UNION '
+                f'SELECT parent_tx_hash FROM ethereum_internal_transactions WHERE '
+                f'from_address IN ({",".join(questionmarks)}) OR '
+                f'to_address IN ({",".join(questionmarks)}))',
             ]
-            bindings = [*self.addresses, *self.addresses]
+            bindings = [*self.addresses, *self.addresses, *self.addresses, *self.addresses]
 
         return filters, bindings
 
