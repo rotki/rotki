@@ -8,6 +8,7 @@ Changelog
 * :bug:`3546` Coinbase users with trades/deposits/withdrawals/balances of FET (Fetch.ai) should have it properly detected.
 * :bug:`2613` Graphs of assets that used to miss all 0 balance data points between two time point will now properly show a 0 amount in the asset graph for the time period.
 * :bug:`3552` Users with semi-fungible tokens in different ethereum wallets will see them correctly in the NFT gallery.
+* :bug:`-` Docker users will be able to retrieve automatic information for tokens when adding new ethereum assets.
 
 * :release:`1.21.0 <2021-09-30>`
 * :feature:`3251` Users will now be able to easily access the asset edit page from the asset details page.
