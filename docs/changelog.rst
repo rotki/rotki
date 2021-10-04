@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Statistics per asset graph will now properly display the name of the NFT.
 * :bug:`3547` Coinbase transactions without network data returned should now be processed properly.
 * :bug:`3546` Coinbase users with trades/deposits/withdrawals/balances of FET (Fetch.ai) should have it properly detected.
 * :bug:`2613` Graphs of assets that used to miss all 0 balance data points between two time point will now properly show a 0 amount in the asset graph for the time period.
