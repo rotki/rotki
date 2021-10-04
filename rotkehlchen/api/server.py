@@ -69,10 +69,10 @@ from rotkehlchen.api.v1.resources import (
     InfoResource,
     LedgerActionsResource,
     LimitsCounterResetResource,
-    LiquityTrovesResource,
-    LiquityTrovesHistoryResource,
     LiquityStakingHistoryResource,
     LiquityStakingResource,
+    LiquityTrovesHistoryResource,
+    LiquityTrovesResource,
     LoopringBalancesResource,
     MakerdaoDSRBalanceResource,
     MakerdaoDSRHistoryResource,
@@ -335,7 +335,7 @@ class APIServer():
         self.ws_server: Optional[WebSocketServer] = None
 
         self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)  # type: ignore
-        self.flask_app.register_error_handler(Exception, self.unhandled_exception)
+        self.flask_app.register_error_handler(Exception, self.unhandled_exception)  # type: ignore
 
     @staticmethod
     def unhandled_exception(exception: Exception) -> Response:
