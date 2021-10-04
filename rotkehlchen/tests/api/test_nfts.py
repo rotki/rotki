@@ -15,6 +15,8 @@ from rotkehlchen.tests.utils.api import (
 )
 
 TEST_ACC1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
+TEST_ACC2 = '0x3ba6eb0e4327b96ade6d4f3b578724208a590cef'
+TEST_ACC3 = '0xc21a5ee89d306353e065a6dd5779470de395dbac'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
@@ -60,3 +62,26 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
             assert isinstance(entry['collection']['description'], str)
             assert entry['collection']['large_image'].startswith('https://')
             break
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC2, TEST_ACC3]])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+def test_nft_ids_are_unique(rotkehlchen_api_server):
+    """Check that if two accounts hold the same semi-fungible token we don't have duplicate ids"""
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'nftsresource',
+    ), json={'async_query': False})
+
+    result = assert_proper_response_with_result(response)
+    # get the ids from the query result
+    ids_1 = [nft['token_identifier'] for nft in result['addresses'][TEST_ACC2]]
+    ids_2 = [nft['token_identifier'] for nft in result['addresses'][TEST_ACC3]]
+    # Check that two possible duplicates are between the NFT ids
+    expected_id = '_nft_0xfaff15c6cdaca61a4f87d329689293e07c98f578_1'
+    assert any([expected_id in nft_id for nft_id in ids_1])
+    assert any([expected_id in nft_id for nft_id in ids_2])
+    all_ids = ids_1 + ids_2
+    set_of_ids = set(all_ids)
+    assert len(all_ids) == len(set_of_ids)
