@@ -1543,6 +1543,35 @@ Querying the balances of exchanges
    :statuscode 500: Internal rotki error
 
 
+Get locations with assets
+=========================
+
+.. http:get:: /api/(version)/exchanges/connected/
+
+   Doing a GET on this endpoint will return a list of locations where the user has assets. It contains both connected exchanges as locations imported via CSV import.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/exchanges/connected HTTP/1.1
+      Host: localhost:5042
+   
+   
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {'result': ['nexo'], 'message': ''}
+
+   :statuscode 200: Data succesfully purged.
+   :statuscode 409: User is not logged in. Check error message for details.
+   :statuscode 500: Internal Rotki error
+
+
 Purging locally saved data for exchanges
 =========================================
 

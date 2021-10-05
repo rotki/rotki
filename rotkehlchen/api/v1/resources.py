@@ -318,6 +318,11 @@ class ExchangesDataResource(BaseResource):
         return self.rest_api.purge_exchange_data(location=location)
 
 
+class KnownLocations(BaseResource):
+    def get(self) -> Response:
+        return self.rest_api.get_connected_locations()
+
+
 class EthereumTransactionsResource(BaseResource):
     get_schema = EthereumTransactionQuerySchema()
 

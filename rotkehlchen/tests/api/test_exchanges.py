@@ -2,6 +2,7 @@ import random
 from http import HTTPStatus
 from unittest.mock import patch
 from urllib.parse import urlencode
+import os
 
 import pytest
 import requests
@@ -1029,3 +1030,28 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
     result = assert_proper_response_with_result(response)
     some_pairs = {'ETHUSDC', 'BTCUSDC', 'BNBBTC', 'FTTBNB'}
     assert some_pairs.issubset(result)
+
+
+def test_get_known_locations(rotkehlchen_api_server):
+    # Import from nexo
+    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    filepath = os.path.join(dir_path, 'data', 'nexo.csv')
+
+    json_data = {'source': 'nexo', 'file': filepath}
+    requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+
+    # get locations
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'knownlocations',
+        ),
+    )
+
+    result = assert_proper_response_with_result(response)
+    assert result == ['nexo']

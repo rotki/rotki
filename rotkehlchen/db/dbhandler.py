@@ -1884,6 +1884,28 @@ class DBHandler:
         self.add_multiple_balances(balances)
         self.add_multiple_location_data(locations)
 
+    def add_known_location(self, location: Location) -> None:
+        if location == Location.EXTERNAL:
+            # Ignore external location that can appear while importing from
+            # cointracking csv files
+            return
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT OR IGNORE INTO known_location (location) VALUES (?)',
+            (location.value,),
+        )
+        self.conn.commit()
+        self.update_last_write()
+
+    def get_known_locations(self) -> List[Location]:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'SELECT * FROM location LEFT OUTER JOIN known_location WHERE '
+            'location.seq = known_location.location',
+        )
+        locations = cursor.fetchall()
+        return [Location.deserialize_from_db(loc[0]) for loc in locations]
+
     def add_exchange(
             self,
             name: str,
@@ -1903,6 +1925,11 @@ class DBHandler:
             'INSERT INTO user_credentials '
             '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
             (name, location.serialize_for_db(), api_key, api_secret.decode(), passphrase),
+        )
+
+        cursor.execute(
+            'INSERT OR IGNORE INTO known_location (location) VALUES (?)',
+            (location.value,),
         )
 
         if location == Location.KRAKEN and kraken_account_type is not None:

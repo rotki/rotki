@@ -5,6 +5,7 @@ Changelog
 * :bug:`3547` Coinbase transactions without network data returned should now be processed properly.
 * :bug:`3546` Coinbase users with trades/deposits/withdrawals/balances of FET (Fetch.ai) should have it properly detected.
 * :bug:`2613` Graphs of assets that used to miss all 0 balance data points between two time point will now properly show a 0 amount in the asset graph for the time period.
+* :bug:`1864` Users will correctly see their imported trades from Cointracking for non connected exchanges.
 
 * :release:`1.21.0 <2021-09-30>`
 * :feature:`3251` Users will now be able to easily access the asset edit page from the asset details page.
@@ -132,8 +133,6 @@ Changelog
 * :bug:`2993` If a sell of FIAT for crypto is made, which is effectively a buy of crypto with FIAT, complaints about the source of funds should no longer be generated.
 * :bug:`2994` Nexo users will be able to correctly import their information from a CSV file.
 
-* :release:`1.17.1 <2021-05-26>`
-* :bug:`2984` The notification background will now properly adjust for users using the application in light mode.
 * :bug:`2982` Premium users of v1.17.0 who had DB syncing activated will now be able to open the app again.
 * :bug:`2986` Users won't be affected by a login error at the moment of querying FTX when the keys are correct.
 
