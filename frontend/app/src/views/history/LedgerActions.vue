@@ -28,18 +28,29 @@
         {{ $t('ledger_actions.title') }}
       </template>
       <template #actions>
-        <ignore-buttons
-          :disabled="selected.length === 0 || loading || refreshing"
-          @ignore="ignoreLedgerActions"
-        />
+        <v-row>
+          <v-col cols="12" sm="6">
+            <ignore-buttons
+              :disabled="selected.length === 0 || loading || refreshing"
+              @ignore="ignoreLedgerActions"
+            />
+          </v-col>
+          <v-col cols="12" sm="6">
+            <table-filter
+              :matchers="matchers"
+              @update:matches="updateFilter($event)"
+            />
+          </v-col>
+        </v-row>
       </template>
       <data-table
         show-expand
         single-expand
         sort-by="timestamp"
         item-key="identifier"
-        :items="ledgerActions.data"
+        :items="visibleActions"
         :headers="headers"
+        :page.sync="page"
       >
         <template #header.selection>
           <v-simple-checkbox
@@ -133,7 +144,7 @@
 <script lang="ts">
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
-import { Component, Mixins } from 'vue-property-decorator';
+import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapMutations, mapState } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -144,11 +155,22 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
+import TableFilter from '@/components/history/filtering/TableFilter.vue';
+import {
+  MatchedKeyword,
+  SearchMatcher
+} from '@/components/history/filtering/types';
+import {
+  checkIfMatch,
+  endMatch,
+  startMatch
+} from '@/components/history/filtering/utils';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import AssetMixin from '@/mixins/asset-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { TradeLocation } from '@/services/history/types';
@@ -171,7 +193,17 @@ import {
 import { ActionStatus, Message } from '@/store/types';
 import { Writeable } from '@/types';
 import { Zero } from '@/utils/bignumbers';
+import { uniqueStrings } from '@/utils/data';
+import { convertToTimestamp } from '@/utils/date';
 import LedgerActionDetails from '@/views/history/LedgerActionDetails.vue';
+
+enum ActionFilterKeys {
+  ASSET = 'asset',
+  TYPE = 'type',
+  START = 'start',
+  END = 'end',
+  LOCATION = 'location'
+}
 
 const emptyAction: () => UnsavedAction = () => ({
   timestamp: 0,
@@ -199,6 +231,7 @@ function lastSelectedLocation(): TradeLocation {
   components: {
     LedgerActionDetails,
     NotesDisplay,
+    TableFilter,
     TableExpandContainer,
     DataTable,
     CardTitle,
@@ -226,7 +259,7 @@ function lastSelectedLocation(): TradeLocation {
     ...mapMutations(['setMessage'])
   }
 })
-export default class LedgerActions extends Mixins(StatusMixin) {
+export default class LedgerActions extends Mixins(StatusMixin, AssetMixin) {
   readonly section = Section.LEDGER_ACTIONS;
   readonly headers: DataTableHeader[] = [
     { text: '', value: 'selection', width: '34px', sortable: false },
@@ -282,16 +315,90 @@ export default class LedgerActions extends Mixins(StatusMixin) {
 
   openDialog: boolean = false;
   validForm: boolean = false;
+  page: number = 1;
   saving: boolean = false;
   deleteIdentifier: number = 0;
   action: LedgerActionEntry | UnsavedAction = emptyAction();
   errors: { [key in keyof UnsavedAction]?: string } = {};
 
   selected: number[] = [];
+  filter: MatchedKeyword<ActionFilterKeys> = {};
+  visibleActions: LedgerActionEntry[] = [];
+
+  readonly matchers: SearchMatcher<ActionFilterKeys>[] = [
+    {
+      key: ActionFilterKeys.ASSET,
+      description: this.$t('ledger_actions.filter.asset').toString(),
+      suggestions: () => this.allAssets,
+      validate: (asset: string) => this.allAssets.includes(asset)
+    },
+    {
+      key: ActionFilterKeys.TYPE,
+      description: this.$t('ledger_actions.filter.action_type').toString(),
+      suggestions: () => [
+        'income',
+        'loss',
+        'donation received',
+        'expense',
+        'dividends income',
+        'airdrop',
+        'gift',
+        'grant'
+      ],
+      validate: type =>
+        [
+          'income',
+          'loss',
+          'donation received',
+          'expense',
+          'dividends income',
+          'airdrop',
+          'gift',
+          'grant'
+        ].includes(type)
+    },
+    {
+      key: ActionFilterKeys.START,
+      description: this.$t('ledger_actions.filter.start_date').toString(),
+      suggestions: () => [],
+      hint: this.$t('ledger_actions.filter.date_hint').toString(),
+      validate: value => {
+        return value.length > 0 && !isNaN(convertToTimestamp(value));
+      }
+    },
+    {
+      key: ActionFilterKeys.END,
+      description: this.$t('ledger_actions.filter.end_date').toString(),
+      suggestions: () => [],
+      hint: this.$t('closed_trades.filter.date_hint').toString(),
+      validate: value => {
+        return value.length > 0 && !isNaN(convertToTimestamp(value));
+      }
+    },
+    {
+      key: ActionFilterKeys.LOCATION,
+      description: this.$t('ledger_actions.filter.location').toString(),
+      suggestions: () => this.availableLocations,
+      validate: location => this.availableLocations.includes(location as any)
+    }
+  ];
 
   updateAction(action: LedgerAction | UnsavedAction) {
     this.action = action;
     setLastSelectedLocation(action.location);
+  }
+
+  get allAssets(): string[] {
+    return this.ledgerActions.data
+      .map(value => value.asset)
+      .filter(uniqueStrings)
+      .map(value => this.getSymbol(value));
+  }
+
+  get availableLocations(): TradeLocation[] {
+    return this.ledgerActions.data
+      .map(value => value.location)
+      .filter(uniqueStrings);
   }
 
   setSelected(selected: boolean) {
@@ -378,6 +485,43 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   async mounted() {
     await this[HistoryActions.FETCH_LEDGER_ACTIONS](FETCH_FROM_CACHE);
     await this[HistoryActions.FETCH_LEDGER_ACTIONS](FETCH_FROM_SOURCE);
+  }
+
+  updateFilter(filter: MatchedKeyword<ActionFilterKeys>) {
+    this.filter = filter;
+    this.applyFilter();
+  }
+
+  applyFilter() {
+    const filter = this.filter;
+    const assetFilter = filter[ActionFilterKeys.ASSET];
+    const typeFilter = filter[ActionFilterKeys.TYPE];
+    const locationFilter = filter[ActionFilterKeys.LOCATION];
+    const endFilter = filter[ActionFilterKeys.END];
+    const startFilter = filter[ActionFilterKeys.START];
+
+    this.visibleActions = this.ledgerActions.data.filter(action => {
+      const assetSymbol = this.getSymbol(action.asset);
+      const assetMatch = checkIfMatch(assetSymbol, assetFilter);
+      const typeMatch = checkIfMatch(action.actionType, typeFilter);
+      const locationMatch = checkIfMatch(action.location, locationFilter);
+
+      return (
+        assetMatch &&
+        typeMatch &&
+        endMatch(action.timestamp, endFilter) &&
+        startMatch(action.timestamp, startFilter) &&
+        locationMatch
+      );
+    });
+  }
+
+  @Watch('ledgerActions.data')
+  onDataUpdate(newData: LedgerActionEntry[], oldData?: LedgerActionEntry[]) {
+    if (oldData && newData.length < oldData.length) {
+      this.page = 1;
+    }
+    this.applyFilter();
   }
 
   async showForm(action: LedgerActionEntry | UnsavedAction = emptyAction()) {

@@ -953,6 +953,14 @@
       "income": "Income",
       "loss": "Loss"
     },
+    "filter": {
+      "asset": "filter by the asset of the ledger action",
+      "date_hint": "format DD/MM/YYYY HH:mm:ss (time/seconds are optional)",
+      "end_date": "filter by the end date of the ledger action period",
+      "location": "filter by the ledger action location",
+      "start_date": "filter by the start date of the ledger action period",
+      "action_type": "filter by the ledger action type (income, loss, etc...)"
+    },
     "delete": {
       "message": "Are you sure wou want to delete this ledger action?",
       "title": "Delete LedgerAction"
