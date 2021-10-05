@@ -539,13 +539,12 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             )
 
     @protect_with_lock(arguments_matter=True)
-    @cache_response_timewise()
+    @cache_response_timewise(forward_ignore_cache=True)
     def query_balances(
-            self,  # pylint: disable=unused-argument
+            self,
             blockchain: Optional[SupportedBlockchain] = None,
             force_token_detection: bool = False,
-            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
-            **kwargs: Any,
+            ignore_cache: bool = False,
     ) -> BlockchainBalancesUpdate:
         """Queries either all, or specific blockchain balances
 
@@ -564,21 +563,28 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         should_query_avax = not blockchain or blockchain == SupportedBlockchain.AVALANCHE
 
         if should_query_eth:
-            self.query_ethereum_balances(force_token_detection=force_token_detection)
+            self.query_ethereum_balances(
+                force_token_detection=force_token_detection,
+                ignore_cache=ignore_cache,
+            )
         if should_query_btc:
-            self.query_btc_balances()
+            self.query_btc_balances(ignore_cache=ignore_cache)
         if should_query_ksm:
-            self.query_kusama_balances()
+            self.query_kusama_balances(ignore_cache=ignore_cache)
         if should_query_dot:
-            self.query_polkadot_balances()
+            self.query_polkadot_balances(ignore_cache=ignore_cache)
         if should_query_avax:
-            self.query_avalanche_balances()
+            self.query_avalanche_balances(ignore_cache=ignore_cache)
 
         return self.get_balances_update()
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_btc_balances(self) -> None:
+    def query_btc_balances(
+            self,  # pylint: disable=unused-argument
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
         """Queries blockchain.info/blockstream for the balance of all BTC accounts
 
         May raise:
@@ -601,7 +607,12 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_kusama_balances(self, wait_available_node: bool = True) -> None:
+    def query_kusama_balances(
+            self,  # pylint: disable=unused-argument
+            wait_available_node: bool = True,
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
         """Queries the KSM balances of the accounts via Kusama endpoints.
 
         May raise:
@@ -632,7 +643,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_avalanche_balances(self) -> None:
+    def query_avalanche_balances(
+            self,  # pylint: disable=unused-argument
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
         """Queries the AVAX balances of the accounts via Avalanche/Covalent endpoints.
         May raise:
         - RemotError: if no nodes are available or the balances request fails.
@@ -658,7 +673,12 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_polkadot_balances(self, wait_available_node: bool = True) -> None:
+    def query_polkadot_balances(
+            self,  # pylint: disable=unused-argument
+            wait_available_node: bool = True,
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
         """Queries the DOT balances of the accounts via Polkadot endpoints.
 
         May raise:
@@ -989,7 +1009,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         # chain to populate the self.balances mapping.
         if not self.balances.is_queried(blockchain):
             self.query_balances(blockchain, ignore_cache=True)
-            self.flush_cache('query_balances', arguments_matter=True, blockchain=blockchain, ignore_cache=True)  # noqa: E501
+            self.flush_cache('query_balances', blockchain=blockchain, ignore_cache=True)  # noqa: E501
 
         result = self.modify_blockchain_accounts(
             blockchain=blockchain,
@@ -1076,9 +1096,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.check_accounts_exist(blockchain, accounts)
 
                 # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_btc_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.BITCOIN)  # noqa: E501
+                self.flush_cache('query_btc_balances')
+                self.flush_cache('query_balances')
+                self.flush_cache('query_balances', blockchain=SupportedBlockchain.BITCOIN)
                 for idx, account in enumerate(accounts):
                     a_balance = already_queried_balances[idx] if already_queried_balances else None
                     self.modify_btc_account(
@@ -1094,10 +1114,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.check_accounts_exist(blockchain, accounts)
 
                 # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=False)  # noqa: E501
-                self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=True)  # noqa: E501
-                self.flush_cache('query_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
+                self.flush_cache('query_ethereum_balances', force_token_detection=False)
+                self.flush_cache('query_ethereum_balances', force_token_detection=True)
+                self.flush_cache('query_balances')
+                self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM)
                 for account in accounts:
                     # when the API adds or removes an address, the deserialize function at
                     # EthereumAddressField is called, so we expect from the addresses retrieved by
@@ -1147,9 +1167,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.check_accounts_exist(blockchain, accounts)
 
                 # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_kusama_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.KUSAMA)  # noqa: E501
+                self.flush_cache('query_kusama_balances')
+                self.flush_cache('query_balances')
+                self.flush_cache('query_balances', blockchain=SupportedBlockchain.KUSAMA)
                 for account in accounts:
                     self.modify_kusama_account(
                         account=KusamaAddress(account),
@@ -1162,9 +1182,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.check_accounts_exist(blockchain, accounts)
 
                 # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_polkadot_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.POLKADOT)  # noqa: 
+                self.flush_cache('query_polkadot_balances')
+                self.flush_cache('query_balances')
+                self.flush_cache('query_balances', blockchain=SupportedBlockchain.POLKADOT)
                 for account in accounts:
                     self.modify_polkadot_account(
                         account=PolkadotAddress(account),
@@ -1177,9 +1197,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.check_accounts_exist(blockchain, accounts)
 
                 # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_avalanche_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.AVALANCHE)  # noqa: E501
+                self.flush_cache('query_avalanche_balances')
+                self.flush_cache('query_balances')
+                self.flush_cache('query_balances', blockchain=SupportedBlockchain.AVALANCHE)  # noqa: E501
                 for account in accounts:
                     address = string_to_ethereum_address(account)
                     self.modify_avalanche_account(
@@ -1310,7 +1330,12 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_ethereum_balances(self, force_token_detection: bool) -> None:
+    def query_ethereum_balances(
+            self,  # pylint: disable=unused-argument
+            force_token_detection: bool,
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
         """Queries all the ethereum balances and populates the state
 
         May raise:
