@@ -526,7 +526,8 @@
     "refresh": "Refresh the balances",
     "row": {
       "delete": "Delete the custom price",
-      "edit": "Edit or set the custom price"
+      "edit": "Edit or set the custom price",
+      "total": "Total"
     },
     "title": "Non Fungible Balances"
   },

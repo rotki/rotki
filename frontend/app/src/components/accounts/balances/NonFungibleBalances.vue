@@ -48,6 +48,21 @@
       <template #item.manuallyInput="{ item }">
         <v-icon v-if="item.manuallyInput" color="green">mdi-check</v-icon>
       </template>
+      <template #body.append="{ isMobile }">
+        <tr>
+          <td :colspan="isMobile ? 1 : 2" class="font-weight-medium">
+            {{ $t('non_fungible_balances.row.total') }}
+          </td>
+          <td class="text-right">
+            <amount-display
+              :value="total"
+              show-currency="symbol"
+              fiat-currency="USD"
+            />
+          </td>
+          <td v-if="!isMobile" />
+        </tr>
+      </template>
     </data-table>
 
     <non-fungible-balance-edit
@@ -88,6 +103,7 @@ import { Section } from '@/store/const';
 import { userNotify } from '@/store/notifications/utils';
 import { useStore } from '@/store/utils';
 import { assert } from '@/utils/assertions';
+import { Zero } from '@/utils/bignumbers';
 
 const tableHeaders: DataTableHeader[] = [
   {
@@ -204,6 +220,13 @@ export default defineComponent({
     const refresh = setupRefresh(true);
     const refreshBalances = setupRefresh();
 
+    const total = computed(() => {
+      return balances.value.reduce(
+        (sum, value) => sum.plus(value.usdPrice),
+        Zero
+      );
+    });
+
     return {
       loading: isSectionLoading(Section.NON_FUNGIBLE_BALANCES),
       ...setupConfirm(refreshBalances),
@@ -212,6 +235,7 @@ export default defineComponent({
       balances,
       currency,
       tableHeaders,
+      total,
       getAsset: (price: NonFungibleBalance | null) => {
         if (!price) {
           return '';
