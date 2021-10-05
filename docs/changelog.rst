@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3555` Users should now be able to see the total value in the table of NFTs in the dashboard
 * :bug:`3579` Asset type selector will now be properly disabled when editing an asset.
 * :bug:`-` Statistics per asset graph will now properly display the name of the NFT.
 * :bug:`3547` Coinbase transactions without network data returned should now be processed properly.
