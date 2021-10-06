@@ -237,9 +237,11 @@ class MakerdaoVault(NamedTuple):
         return self.collateral_type.encode('utf-8').ljust(32, b'\x00')
 
     def get_balance(self) -> BalanceSheet:
+        starting_assets = {self.collateral_asset: self.collateral} if self.collateral.amount != ZERO else {}  # noqa: E501
+        starting_liabilities = {A_DAI: self.debt} if self.debt.amount != ZERO else {}
         return BalanceSheet(
-            assets=defaultdict(Balance, {self.collateral_asset: self.collateral}),
-            liabilities=defaultdict(Balance, {A_DAI: self.debt}),
+            assets=defaultdict(Balance, starting_assets),
+            liabilities=defaultdict(Balance, starting_liabilities),  # type: ignore
         )
 
 
