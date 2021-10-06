@@ -33,7 +33,13 @@ def protect_with_lock(arguments_matter: bool = False) -> Callable:
     def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: LockableQueryMixIn, *args: Any, **kwargs: Any) -> Any:
-            lock_key = function_sig_key(f.__name__, arguments_matter, *args, **kwargs)
+            lock_key = function_sig_key(
+                f.__name__,        # name
+                arguments_matter,  # arguments_matter
+                False,             # skip_ignore_cache
+                *args,
+                **kwargs,
+            )
             with wrappingobj.query_locks_map_lock:
                 lock = wrappingobj.query_locks_map[lock_key]
             with lock:
