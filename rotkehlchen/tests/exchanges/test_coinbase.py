@@ -582,7 +582,7 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         expected_errors_num=0,
     )
 
-    # fallback to payout_at if created_date is invalid invalid payout_at timestamp
+    # fallback to payout_at if created_date is missing
     broken_response = BUYS_RESPONSE.replace('"created_at": "2017-07-21T23:43:59-07:00",', '')
     query_coinbase_and_test(
         coinbase=coinbase,
