@@ -12,6 +12,7 @@ Changelog
 * :bug:`3552` Users with semi-fungible tokens in different ethereum wallets will see them correctly in the NFT gallery.
 * :bug:`-` Docker users will be able to retrieve automatic information for tokens when adding new ethereum assets.
 * :bug:`3414` Coinbase conversions should display the correct fee.
+* :bug:`-` The value of NFTs will now be properly included as part of the total net worth when calculating an asset's percentage.
 
 * :release:`1.21.0 <2021-09-30>`
 * :feature:`3251` Users will now be able to easily access the asset edit page from the asset details page.
