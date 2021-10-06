@@ -474,7 +474,7 @@ def test_coinbase_query_trade_history(function_scope_coinbase):
     assert len(errors) == 0
     assert len(trades) == 2
     expected_trades = [Trade(
-        timestamp=1500853448,
+        timestamp=1500705839,
         location=Location.COINBASE,
         base_asset=A_BTC,
         quote_asset=A_USD,
@@ -582,14 +582,14 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         expected_errors_num=0,
     )
 
-    # invalid payout_at timestamp
-    broken_response = BUYS_RESPONSE.replace('"2017-07-23T23:44:08Z"', 'true')
+    # fallback to payout_at if created_date is invalid invalid payout_at timestamp
+    broken_response = BUYS_RESPONSE.replace('"created_at": "2017-07-21T23:43:59-07:00",', '')
     query_coinbase_and_test(
         coinbase=coinbase,
         query_fn_name='query_online_trade_history',
         buys_response=broken_response,
         expected_warnings_num=0,
-        expected_errors_num=1,
+        expected_errors_num=0,
     )
 
     # invalid created_at timestamp
@@ -1048,7 +1048,7 @@ def test_asset_conversion_not_stable_coin():
         trade_type=TradeType.SELL,
         amount=FVal('6000.0'),
         rate=FVal('0.000002823608333333333333333333333'),
-        fee=FVal('15'),
+        fee=FVal('540'),
         fee_currency=A_1INCH,
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
     )
