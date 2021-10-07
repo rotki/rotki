@@ -34,12 +34,21 @@ class CacheableMixIn:
         # Can also be 0 which means cache is disabled.
         self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
 
-    def flush_cache(self, name: str, arguments_matter: bool, *args: Any, **kwargs: Any) -> None:
-        cache_key = function_sig_key(name, arguments_matter, *args, **kwargs)
+    def flush_cache(self, name: str, *args: Any, **kwargs: Any) -> None:
+        cache_key = function_sig_key(
+            name,
+            True,  # arguments_matter
+            True,  # skip_ignore_cache
+            *args,
+            **kwargs,
+        )
         self.results_cache.pop(cache_key, None)
 
 
-def cache_response_timewise(arguments_matter: bool = True) -> Callable:
+def cache_response_timewise(
+        arguments_matter: bool = True,
+        forward_ignore_cache: bool = False,
+) -> Callable:
     """ This is a decorator for caching results of functions of objects.
     The objects must adhere to the CachableOject interface.
 
@@ -50,12 +59,27 @@ def cache_response_timewise(arguments_matter: bool = True) -> Callable:
 
     If the special keyword argument ignore_cache=True is given then the cache check
     is completely skipped
+
+    If arguments_matter is True then a different cache is kept for each different
+    combination of argumnents.
+
+    if forward_ignore_cache is True then if the ignore_cache argument is given it's
+    forward to the decorated function instead of being silently consumed.
     """
     def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableMixIn, *args: Any, **kwargs: Any) -> Any:
-            ignore_cache = kwargs.pop('ignore_cache', False)
-            cache_key = function_sig_key(f.__name__, arguments_matter, *args, **kwargs)
+            if forward_ignore_cache:
+                ignore_cache = kwargs.get('ignore_cache', False)
+            else:
+                ignore_cache = kwargs.pop('ignore_cache', False)
+            cache_key = function_sig_key(
+                f.__name__,        # name
+                arguments_matter,  # arguments_matter
+                True,              # skip_ignore_cache
+                *args,
+                **kwargs,
+            )
             now = ts_now()
             if ignore_cache is False:
                 # Check the cache

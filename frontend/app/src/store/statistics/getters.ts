@@ -5,6 +5,7 @@ import { default as BigNumber } from 'bignumber.js';
 import dayjs from 'dayjs';
 import { aggregateTotal } from '@/filters';
 import { NetValue } from '@/services/types-api';
+import { NonFungibleBalance } from '@/store/balances/types';
 import { OverallPerformance, StatisticsState } from '@/store/statistics/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
@@ -76,7 +77,7 @@ export const getters: Getters<
     {
       'balances/aggregatedBalances': aggregatedBalances,
       'balances/liabilities': liabilities,
-      'balances/nfTotalValue': nfTotalValue,
+      'balances/nfBalances': nfBalances,
       'balances/exchangeRate': exchangeRate,
       'session/floatingPrecision': floatingPrecision,
       'session/currencySymbol': mainCurrency
@@ -84,13 +85,21 @@ export const getters: Getters<
   ) => {
     const balances = aggregatedBalances as AssetBalance[];
     const totalLiabilities = liabilities as AssetBalance[];
+    const nfbs = nfBalances as NonFungibleBalance[];
+    const rate = exchangeRate(mainCurrency);
+
+    const nfTotal = nfbs.reduce((sum, balance) => {
+      return sum
+        .plus(balance.usdPrice.multipliedBy(rate))
+        .dp(floatingPrecision, BigNumber.ROUND_DOWN);
+    }, Zero);
 
     const assetSum = aggregateTotal(
       balances,
       mainCurrency,
       exchangeRate(mainCurrency),
       floatingPrecision
-    ).plus(nfTotalValue);
+    ).plus(nfTotal);
     const liabilitySum = aggregateTotal(
       totalLiabilities,
       mainCurrency,
@@ -106,7 +115,8 @@ export const getters: Getters<
     _rootState,
     {
       'balances/aggregatedBalances': aggregatedBalances,
-      'balances/liabilities': liabilities
+      'balances/liabilities': liabilities,
+      'balances/nfTotalValue': nfTotalValue
     }
   ) => {
     const balances = aggregatedBalances as AssetBalance[];
@@ -122,7 +132,7 @@ export const getters: Getters<
       Zero
     );
 
-    return assetValue.minus(liabilityValue);
+    return assetValue.plus(nfTotalValue).minus(liabilityValue);
   },
   overall: (
     state,

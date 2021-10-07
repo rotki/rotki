@@ -216,6 +216,8 @@ class Opensea(ExternalServiceWithApiKey):
             price_in_eth = max(last_price_in_eth, floor_price)
             price_in_usd = price_in_eth * eth_usd_price
             token_id = entry['asset_contract']['address'] + '_' + entry['token_id']
+            if entry['asset_contract']['asset_contract_type'] == 'semi-fungible':
+                token_id += f'_{str(owner_address)}'
             return NFT(
                 token_identifier=NFT_DIRECTIVE + token_id,
                 background_color=entry['background_color'],

@@ -31,6 +31,21 @@
       <template #item.percentage="{ item }">
         <percentage-display :value="percentage(item.usdPrice)" />
       </template>
+      <template #body.append="{ isMobile }">
+        <tr>
+          <td :colspan="isMobile ? 1 : 2" class="font-weight-medium">
+            {{ $t('nft_balance_table.row.total') }}
+          </td>
+          <td class="text-right">
+            <amount-display
+              :value="total"
+              show-currency="symbol"
+              fiat-currency="USD"
+            />
+          </td>
+          <td v-if="!isMobile" />
+        </tr>
+      </template>
     </data-table>
   </card>
 </template>
@@ -45,6 +60,7 @@ import { Routes } from '@/router/routes';
 import { BalanceActions } from '@/store/balances/action-types';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { useStore } from '@/store/utils';
+import { Zero } from '@/utils/bignumbers';
 
 const tableHeaders: DataTableHeader[] = [
   {
@@ -94,12 +110,20 @@ export default defineComponent({
         true
       );
     };
+
+    const total = computed(() => {
+      return balances.value.reduce(
+        (sum, value) => sum.plus(value.usdPrice),
+        Zero
+      );
+    });
     return {
       percentage,
       balances,
       tableHeaders,
       currency,
       refresh,
+      total,
       nonFungibleRoute: Routes.NON_FUNGIBLE
     };
   }
