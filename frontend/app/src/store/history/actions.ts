@@ -59,7 +59,7 @@ import {
 import { getKey } from '@/store/history/utils';
 import { Severity } from '@/store/notifications/consts';
 import { NotificationPayload } from '@/store/notifications/types';
-import { notify } from '@/store/notifications/utils';
+import { notify, userNotify } from '@/store/notifications/utils';
 import {
   ActionStatus,
   Message,
@@ -503,7 +503,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       }
 
       const { taskId } = await api.history.ethTransactionsTask(params);
-      const address = payload?.address ?? '';
+      const address = parameters?.address ?? '';
       const task = createTask<AddressMeta>(taskId, taskType, {
         title: i18n.t('actions.transactions.task.title').toString(),
         description: address
@@ -530,24 +530,44 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     try {
       const taskType = TaskType.TX;
-      const onlyCache = payload.onlyCache;
-      if (isTaskRunning(taskType) || (loading() && !onlyCache)) {
+      const firstLoad = isFirstLoad();
+      const onlyCache = firstLoad ? false : payload.onlyCache;
+      if ((isTaskRunning(taskType) || loading()) && !onlyCache) {
         return;
       }
 
-      setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
+      setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
 
       const cacheParams = { ...payload, onlyCache: true };
       const data = await fetchTransactions(cacheParams);
       commit(HistoryMutations.SET_TRANSACTIONS, data);
 
       if (!onlyCache) {
-        await Promise.all(
-          ethAddresses.map((address: string) => fetchTransactions({ address }))
+        setStatus(Status.REFRESHING);
+        const refreshAddressTxs = ethAddresses.map((address: string) =>
+          fetchTransactions({ address }).catch(error => {
+            userNotify({
+              title: i18n.t('actions.transactions.error.title').toString(),
+              message: i18n
+                .t('actions.transactions.error.description', {
+                  error,
+                  address
+                })
+                .toString(),
+              display: true
+            });
+          })
         );
+        await Promise.all(refreshAddressTxs);
+
+        if (!firstLoad) {
+          const cacheParams = { ...payload, onlyCache: true };
+          const data = await fetchTransactions(cacheParams);
+          commit(HistoryMutations.SET_TRANSACTIONS, data);
+        }
       }
 
-      setStatus(Status.LOADED);
+      setStatus(isTaskRunning(TaskType.TX) ? Status.REFRESHING : Status.LOADED);
     } catch (e: any) {
       logger.error(e);
       setStatus(Status.NONE);
