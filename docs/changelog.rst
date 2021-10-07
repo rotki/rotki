@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.21.1 <2021-10-07>`
 * :feature:`3554` Gemini users will now have their earn balances tracked in rotki.
 * :bug:`3555` Users should now be able to see the total value in the table of NFTs in the dashboard
 * :bug:`3579` Asset type selector will now be properly disabled when editing an asset.
@@ -34,7 +35,6 @@ Changelog
 * :bug:`3266` Users will now be able to properly access most of the top bar content using a mobile device.
 * :bug:`3268` Users will now be able to properly scroll to the hidden tabs when using a mobile device.
 * :bug:`3267` Frontend will now occupy all the available screen when accessed from a mobile device.
-* :bug:`3208` Rotki is now able to accept and track the same account for different blockchain types.
 * :bug:`3463` Users using Turkish localization will now be able to use the application.
 * :bug:`3448` Improve Kucoin api rate limit handling. Recognize CFG asset in Kucoin as WCFG.
 * :bug:`3452` Trades from externally imported exchanges (blockfi, crypto.com etc.) should now be properly taken into accounting in the PnL report again.
