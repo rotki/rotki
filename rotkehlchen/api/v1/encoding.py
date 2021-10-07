@@ -874,8 +874,8 @@ class DBPaginationSchema(Schema):
 
 
 class DBOrderBySchema(Schema):
-    order_by_attribute = fields.String(load_default=None)
-    ascending = fields.Boolean(load_default=True)
+    order_by_attribute = fields.String(load_default='timestamp')
+    ascending = fields.Boolean(load_default=False)
 
 
 class EthereumTransactionQuerySchema(
@@ -896,8 +896,8 @@ class EthereumTransactionQuerySchema(
     ) -> Dict[str, Any]:
         address = data.get('address')
         filter_query = ETHTransactionsFilterQuery.make(
-            order_by_attribute='timestamp',  # hard coding order by timestamp for API for now
-            order_ascending=False,  # most recent first
+            order_by_attribute=data['order_by_attribute'],
+            order_ascending=data['ascending'],
             limit=data['limit'],
             offset=data['offset'],
             addresses=[address] if address is not None else None,

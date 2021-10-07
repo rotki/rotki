@@ -68,8 +68,9 @@ class DBEthTx():
             filter_: ETHTransactionsFilterQuery,
     ) -> List[EthereumTransaction]:
         """Returns a list of ethereum transactions optionally filtered by time and/or from address
-
-        The returned list is ordered from oldest to newest
+        This function can raise:
+        - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to invalid
+        filtering arguments.
         """
         cursor = self.db.conn.cursor()
         query, bindings = filter_.prepare()

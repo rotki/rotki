@@ -293,6 +293,20 @@ def test_query_transactions_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
+    # Invalid order_by_attribute
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_address_ethereum_transactions_resource',
+            address='0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7',
+        ), json={'order_by_attribute': 'tim3'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='no such column: tim3',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
 
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
