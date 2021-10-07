@@ -100,7 +100,6 @@ import {
   Ref,
   ref,
   toRefs,
-  UnwrapRef,
   watch
 } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
@@ -123,13 +122,11 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import i18n from '@/i18n';
 import { AssetSymbolGetter } from '@/store/balances/types';
-import { HistoryActions, IGNORE_MOVEMENTS } from '@/store/history/consts';
-import { AssetMovementEntry, IgnoreActionPayload } from '@/store/history/types';
-import store from '@/store/store';
-import { ActionStatus, Message } from '@/store/types';
+import { AssetMovementEntry, IgnoreActionType } from '@/store/history/types';
 import { useStore } from '@/store/utils';
 import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp } from '@/utils/date';
+import { setupIgnore } from '@/views/history/composables/ignore';
 import { setupSelectionMode } from '@/views/history/composables/selection';
 import DepositWithdrawalDetails from '@/views/history/DepositWithdrawalDetails.vue';
 
@@ -263,72 +260,6 @@ const setupFilter = (
   };
 };
 
-const setupIgnore = (
-  selected: Ref<UnwrapRef<string[]>>,
-  items: Ref<AssetMovementEntry[]>
-) => {
-  const setMessage = (message: Message) => {
-    store.commit('setMessage', message);
-  };
-  const ignoreActions = async (payload: IgnoreActionPayload) => {
-    return (await store.dispatch(
-      `history/${HistoryActions.IGNORE_ACTIONS}`,
-      payload
-    )) as ActionStatus;
-  };
-
-  const unignoreActions = async (payload: IgnoreActionPayload) => {
-    return (await store.dispatch(
-      `history/${HistoryActions.UNIGNORE_ACTION}`,
-      payload
-    )) as ActionStatus;
-  };
-  const ignore = async (ignored: boolean) => {
-    const ids = items.value
-      .filter(({ identifier, ignoredInAccounting }) => {
-        return (
-          (ignored ? !ignoredInAccounting : ignoredInAccounting) &&
-          selected.value.includes(identifier)
-        );
-      })
-      .map(({ identifier }) => identifier)
-      .filter(uniqueStrings);
-
-    let status: ActionStatus;
-
-    if (ids.length === 0) {
-      const choice = ignored ? 1 : 2;
-      setMessage({
-        success: false,
-        title: i18n
-          .tc('deposits_withdrawals.ignore.no_actions.title', choice)
-          .toString(),
-        description: i18n
-          .tc('deposits_withdrawals.ignore.no_actions.description', choice)
-          .toString()
-      });
-      return;
-    }
-    const payload: IgnoreActionPayload = {
-      actionIds: ids,
-      type: IGNORE_MOVEMENTS
-    };
-    if (ignored) {
-      status = await ignoreActions(payload);
-    } else {
-      status = await unignoreActions(payload);
-    }
-
-    if (status.success) {
-      selected.value = [];
-    }
-  };
-
-  return {
-    ignore
-  };
-};
-
 export default defineComponent({
   name: 'DepositsWithdrawalsContent',
   components: {
@@ -403,7 +334,12 @@ export default defineComponent({
       page,
       showUpgradeRow,
       expanded: ref([]),
-      ...setupIgnore(selectionMode.selected, items),
+      ...setupIgnore(
+        IgnoreActionType.MOVEMENTS,
+        selectionMode.selected,
+        items,
+        item => item.identifier
+      ),
       ...setupFilter(assets, locations, items, visibleItems, getSymbol),
       ...selectionMode
     };

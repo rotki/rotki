@@ -197,8 +197,12 @@ import AssetMixin from '@/mixins/asset-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
-import { HistoryActions, IGNORE_TRADES } from '@/store/history/consts';
-import { IgnoreActionPayload, TradeEntry } from '@/store/history/types';
+import { HistoryActions } from '@/store/history/consts';
+import {
+  IgnoreActionPayload,
+  IgnoreActionType,
+  TradeEntry
+} from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
 import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp } from '@/utils/date';
@@ -444,7 +448,7 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
     }
     const payload: IgnoreActionPayload = {
       actionIds: actionIds,
-      type: IGNORE_TRADES
+      type: IgnoreActionType.TRADES
     };
     if (ignore) {
       status = await this.ignoreActions(payload);

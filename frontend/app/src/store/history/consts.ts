@@ -79,16 +79,6 @@ export const ledgerActionsData: ActionDataEntry[] = [
   }
 ];
 
-export const IGNORE_MOVEMENTS = 'asset movement';
-export const IGNORE_TRADES = 'trade';
-export const IGNORE_LEDGER_ACTION = 'ledger action';
-
-export const IGNORE_ACTION_TYPE = [
-  IGNORE_MOVEMENTS,
-  IGNORE_TRADES,
-  IGNORE_LEDGER_ACTION
-] as const;
-
 export const FETCH_FROM_CACHE = 'fromCache' as const;
 export const FETCH_FROM_SOURCE = 'fromSource' as const;
 export const FETCH_REFRESH = 'refresh' as const;

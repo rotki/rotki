@@ -23,7 +23,7 @@
           <v-col cols="12" md="6">
             <ignore-buttons
               :disabled="selected.length === 0 || loading || refreshing"
-              @ignore="ignoreTransactions"
+              @ignore="ignore"
             />
           </v-col>
           <v-col cols="12" md="6" lg="4" offset-lg="2">
@@ -71,8 +71,11 @@ import {
 } from '@/services/history/types';
 import { Section } from '@/store/const';
 import { HistoryActions } from '@/store/history/consts';
+import { IgnoreActionType } from '@/store/history/types';
+import { getKey } from '@/store/history/utils';
 import { RotkehlchenState } from '@/store/types';
 import { useStore } from '@/store/utils';
+import { setupIgnore } from '@/views/history/composables/ignore';
 import TransactionTable from '@/views/history/tx/TransactionTable.vue';
 
 export default defineComponent({
@@ -106,8 +109,6 @@ export default defineComponent({
       };
       fetchTransactions().then();
     });
-
-    const ignoreTransactions = () => {};
 
     const transactions = computed(() => {
       const state: RotkehlchenState = store.state;
@@ -170,8 +171,13 @@ export default defineComponent({
       refresh,
       selected,
       fetchTransactions,
-      ignoreTransactions,
-      onPaginationUpdate
+      onPaginationUpdate,
+      ...setupIgnore(
+        IgnoreActionType.ETH_TRANSACTIONS,
+        selected,
+        transactions,
+        item => getKey(item.entry)
+      )
     };
   }
 });

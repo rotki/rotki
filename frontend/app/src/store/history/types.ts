@@ -6,11 +6,7 @@ import {
   TradeLocation,
   Transactions
 } from '@/services/history/types';
-import {
-  FETCH_SOURCE,
-  IGNORE_ACTION_TYPE,
-  LedgerActionType
-} from '@/store/history/consts';
+import { FETCH_SOURCE, LedgerActionType } from '@/store/history/consts';
 import { Nullable } from '@/types';
 
 export interface HistoricData<T> {
@@ -25,10 +21,10 @@ export type AssetMovementEntry = AssetMovement & EntryMeta;
 export type TradeEntry = Trade & EntryMeta;
 export type LedgerActionEntry = LedgerAction & EntryMeta;
 
-interface Trades extends HistoricData<TradeEntry> {}
+export interface Trades extends HistoricData<TradeEntry> {}
 
-interface AssetMovements extends HistoricData<AssetMovementEntry> {}
-interface LedgerActions extends HistoricData<LedgerActionEntry> {}
+export interface AssetMovements extends HistoricData<AssetMovementEntry> {}
+export interface LedgerActions extends HistoricData<LedgerActionEntry> {}
 
 export interface HistoryState {
   ledgerActions: LedgerActions;
@@ -55,7 +51,12 @@ export interface LedgerAction {
 
 export type UnsavedAction = Omit<LedgerAction, 'identifier'>;
 
-export type IgnoreActionType = typeof IGNORE_ACTION_TYPE[number];
+export enum IgnoreActionType {
+  MOVEMENTS = 'asset movement',
+  TRADES = 'trade',
+  LEDGER_ACTIONS = 'ledger action',
+  ETH_TRANSACTIONS = 'ethereum transaction'
+}
 export type IgnoreActionPayload = {
   readonly actionIds: string[];
   readonly type: IgnoreActionType;

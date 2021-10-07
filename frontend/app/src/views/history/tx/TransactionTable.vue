@@ -127,13 +127,15 @@ const tableHeaders: DataTableHeader[] = [
     text: i18n.t('transactions.headers.gas_fee').toString(),
     value: 'gasFee',
     align: 'end',
-    class: 'text-no-wrap'
+    class: 'text-no-wrap',
+    sortable: false
   },
   {
     text: i18n.t('transactions.headers.ignored_in_accounting').toString(),
     value: 'ignoredInAccounting',
     width: '15px',
-    class: 'text-no-wrap'
+    class: 'text-no-wrap',
+    sortable: false
   },
   { text: '', value: 'data-table-expand' }
 ];
