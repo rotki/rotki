@@ -42,7 +42,6 @@ def test_get_balances_module_not_activated(
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'sushiswapbalancesresource'),
     )
-    print(response.text)
     assert_error_response(
         response=response,
         contained_in_msg='sushiswap module is not activated',

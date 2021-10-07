@@ -128,6 +128,8 @@ class EthTransactions(LockableQueryMixIn):
         May raise:
         - RemoteError if etherscan is used and there is a problem with reaching it or
         with parsing the response.
+        - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to
+        invalid filtering arguments.
         """
         query_addresses = filter_query.addresses
 

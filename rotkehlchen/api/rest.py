@@ -2820,6 +2820,10 @@ class RestAPI():
             transactions = None
             status_code = HTTPStatus.BAD_GATEWAY
             message = str(e)
+        except sqlcipher.OperationalError as e:
+            transactions = None
+            status_code = HTTPStatus.BAD_REQUEST
+            message = str(e)
 
         if transactions is not None:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ETHEREUM_TRANSACTION)  # noqa: E501
@@ -2833,11 +2837,15 @@ class RestAPI():
         else:
             entries_result = []
 
-        result = {
-            'entries': entries_result,
-            'entries_found': self.rotkehlchen.data.db.get_entries_count('ethereum_transactions'),
-            'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
-        }
+        result: Optional[Dict[str, Any]] = None
+        if status_code == HTTPStatus.OK:
+            result = {
+                'entries': entries_result,
+                'entries_found': self.rotkehlchen.data.db.get_entries_count(
+                    entries_table='ethereum_transactions',
+                ),
+                'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
+            }
 
         return {'result': result, 'message': message, 'status_code': status_code}
 
