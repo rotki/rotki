@@ -5,24 +5,29 @@ import {
 } from '@rotki/common/lib/gitcoin';
 import { ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
-import { TRADE_LOCATION_EXTERNAL, EXTERNAL_EXCHANGES } from '@/data/defaults';
+import { EXTERNAL_EXCHANGES, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
-import { createTask, taskCompletion, TaskMeta } from '@/model/task';
+import {
+  AddressMeta,
+  createTask,
+  taskCompletion,
+  TaskMeta
+} from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { SupportedExchange } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import {
   movementNumericKeys,
-  tradeNumericKeys,
-  transactionNumericKeys
+  tradeNumericKeys
 } from '@/services/history/const';
 import {
   AssetMovement,
-  EthTransaction,
   NewTrade,
   Trade,
   TradeLocation,
-  TradeUpdate
+  TradeUpdate,
+  TransactionRequestPayload,
+  Transactions
 } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
@@ -36,16 +41,12 @@ import {
   HistoryMutations,
   IGNORE_LEDGER_ACTION,
   IGNORE_MOVEMENTS,
-  IGNORE_TRADES,
-  IGNORE_TRANSACTIONS
+  IGNORE_TRADES
 } from '@/store/history/consts';
 import { defaultHistoricState } from '@/store/history/state';
 import {
-  AccountRequestMeta,
   AssetMovementEntry,
   AssetMovements,
-  EthTransactionEntry,
-  EthTransactions,
   FetchSource,
   HistoricData,
   HistoryState,
@@ -66,10 +67,11 @@ import {
   RotkehlchenState,
   StatusPayload
 } from '@/store/types';
-import { setStatus } from '@/store/utils';
+import { getStatusUpdater } from '@/store/utils';
 import { Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
 import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
 
 export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async [HistoryActions.FETCH_TRADES](
@@ -364,113 +366,87 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async [HistoryActions.FETCH_TRANSACTIONS](
     {
       commit,
-      state,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
-      rootState: { balances }
-    },
-    source: FetchSource
-  ): Promise<void> {
-    const taskType = TaskType.TX;
-    if (isTaskRunning(taskType)) {
-      return;
-    }
-
-    const section = Section.TX;
-    const currentStatus = status(section);
-    const refresh = source === FETCH_REFRESH || source === FETCH_FROM_SOURCE;
-
-    if (
-      currentStatus === Status.LOADING ||
-      currentStatus === Status.PARTIALLY_LOADED ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-    const setStatus: (newStatus: Status) => void = newStatus => {
-      if (status(section) === newStatus) {
-        return;
+      rootGetters: {
+        'tasks/isTaskRunning': isTaskRunning,
+        'balances/ethAddresses': ethAddresses,
+        status
       }
-      const payload: StatusPayload = {
-        section: section,
-        status: newStatus
+    },
+    payload: Partial<TransactionRequestPayload>
+  ): Promise<void> {
+    const { setStatus, loading, isFirstLoad } = getStatusUpdater(
+      commit,
+      Section.TX,
+      status
+    );
+    const fetchTransactions: (
+      parameters?: Partial<TransactionRequestPayload>
+    ) => Promise<Transactions> = async parameters => {
+      const taskType = TaskType.TX;
+      const defaults = {
+        limit: 1,
+        offset: 0,
+        ascending: false,
+        orderByAttribute: 'timestamp'
       };
-      commit('setStatus', payload, { root: true });
-    };
 
-    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
-
-    const { ethAccounts } = balances!;
-    const addresses = ethAccounts.map(address => address.address);
-
-    const fetchAddress: (address: string) => Promise<void> = async address => {
-      const { taskId } = await api.history.ethTransactions(
-        address,
-        source === FETCH_FROM_CACHE
+      const params: TransactionRequestPayload = Object.assign(
+        defaults,
+        parameters
       );
-      const task = createTask<AccountRequestMeta>(taskId, taskType, {
-        title: i18n.tc('actions.transactions.task.title'),
-        description: i18n.tc(
-          'actions.transactions.task.description',
-          undefined,
-          {
-            address
-          }
-        ),
+
+      const { taskId } = await api.history.ethTransactions({
+        ...params
+      });
+      const address = payload?.address ?? '';
+      const task = createTask<AddressMeta>(taskId, taskType, {
+        title: i18n.t('actions.transactions.task.title').toString(),
+        description: address
+          ? i18n
+              .t('actions.transactions.task.description', {
+                address: address
+              })
+              .toString()
+          : undefined,
         ignoreResult: false,
-        address: address,
-        numericKeys: transactionNumericKeys
+        numericKeys: [],
+        address: address
       });
 
       commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<
-        LimitedResponse<EntryWithMeta<EthTransaction>>,
-        AccountRequestMeta
-      >(taskType, `${taskId}`);
-      const newTransactions = result.entries.map(
-        ({ entry, ignoredInAccounting }) => ({
-          ...entry,
-          ignoredInAccounting: ignoredInAccounting
-        })
+      const { result } = await taskCompletion<Transactions, TaskMeta>(
+        taskType,
+        `${taskId}`
       );
 
-      const transactions = [
-        ...state.transactions.data.filter(
-          tx => tx.fromAddress !== address && tx.toAddress !== address
-        ),
-        ...newTransactions
-      ];
-      const data: HistoricData<EthTransactionEntry> = {
-        data: transactions,
-        limit: result.entriesLimit,
-        found: result.entriesFound
-      };
+      return Transactions.parse(result);
+    };
+
+    try {
+      const taskType = TaskType.TX;
+      const onlyCache = payload.onlyCache;
+      if (isTaskRunning(taskType) || (loading() && !onlyCache)) {
+        return;
+      }
+
+      setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
+
+      const cacheParams = { ...payload, onlyCache: true };
+      const data = await fetchTransactions(cacheParams);
       commit(HistoryMutations.SET_TRANSACTIONS, data);
-      setStatus(Status.PARTIALLY_LOADED);
-    };
 
-    const onError: (address: string, message: string) => void = (
-      address,
-      message
-    ) => {
-      notify(
-        i18n.tc('actions.transactions.error.description', undefined, {
-          error: message,
-          address
-        }),
-        i18n.tc('actions.transactions.error.title'),
-        Severity.ERROR,
-        true
-      );
-    };
+      if (!onlyCache) {
+        await Promise.all(
+          ethAddresses.map((address: string) => fetchTransactions({ address }))
+        );
+      }
 
-    await Promise.all(
-      addresses.map(address =>
-        fetchAddress(address).catch(e => onError(address, e.message))
-      )
-    );
-
-    setStatus(Status.LOADED);
+      setStatus(Status.LOADED);
+    } catch (e: any) {
+      logger.error(e);
+      setStatus(Status.NONE);
+    }
   },
 
   async [HistoryActions.FETCH_LEDGER_ACTIONS](
@@ -669,22 +645,6 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         found: state.assetMovements.found,
         limit: state.assetMovements.limit
       } as AssetMovements);
-    } else if (type === IGNORE_TRANSACTIONS) {
-      const data = [...state.transactions.data];
-
-      for (let i = 0; i < data.length; i++) {
-        const transaction: Writeable<EthTransactionEntry> = data[i];
-        const key =
-          transaction.txHash + transaction.fromAddress + transaction.nonce;
-        if (strings.includes(key)) {
-          data[i] = { ...data[i], ignoredInAccounting: true };
-        }
-      }
-      commit(HistoryMutations.SET_TRANSACTIONS, {
-        data,
-        found: state.transactions.found,
-        limit: state.transactions.limit
-      } as EthTransactions);
     } else if (type === IGNORE_LEDGER_ACTION) {
       const data = [...state.ledgerActions.data];
 
@@ -759,25 +719,6 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         found: state.assetMovements.found,
         limit: state.assetMovements.limit
       } as AssetMovements);
-    } else if (type === IGNORE_TRANSACTIONS) {
-      const data = [...state.transactions.data];
-
-      for (let i = 0; i < data.length; i++) {
-        const transaction: Writeable<EthTransactionEntry> = data[i];
-        if (!transaction.ignoredInAccounting) {
-          continue;
-        }
-        const key =
-          transaction.txHash + transaction.fromAddress + transaction.nonce;
-        if (!strings.includes(key)) {
-          data[i] = { ...data[i], ignoredInAccounting: false };
-        }
-      }
-      commit(HistoryMutations.SET_TRANSACTIONS, {
-        data,
-        found: state.transactions.found,
-        limit: state.transactions.limit
-      } as EthTransactions);
     } else if (type === IGNORE_LEDGER_ACTION) {
       const data = [...state.ledgerActions.data];
 
@@ -827,16 +768,6 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     };
 
     commit(HistoryMutations.SET_MOVEMENTS, trades);
-  },
-  async [HistoryActions.PURGE_TRANSACTIONS]({
-    commit,
-    rootGetters: { status }
-  }) {
-    commit(
-      HistoryMutations.SET_TRANSACTIONS,
-      defaultHistoricState<EthTransactions>()
-    );
-    setStatus(Status.NONE, Section.TX, status, commit);
   },
   async [HistoryActions.PURGE_EXCHANGE](
     { commit, dispatch },

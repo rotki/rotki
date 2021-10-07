@@ -28,22 +28,39 @@ export const setupThemeCheck = () => {
   };
 };
 
+export const setupStatusChecking = () => {
+  const store = useStore();
+
+  const isSectionRefreshing = (section: Section) =>
+    computed(() => {
+      const status = store.getters['status'](section);
+      return (
+        status === Status.LOADING ||
+        status === Status.REFRESHING ||
+        status === Status.PARTIALLY_LOADED
+      );
+    });
+
+  const shouldShowLoadingScreen = (section: Section) => {
+    return computed(() => {
+      const status = store.getters['status'](section);
+      return (
+        status !== Status.LOADED &&
+        status !== Status.PARTIALLY_LOADED &&
+        status !== Status.REFRESHING
+      );
+    });
+  };
+  return {
+    isSectionRefreshing,
+    shouldShowLoadingScreen
+  };
+};
+
 export const isSectionLoading = (section: Section) => {
   const store = useStore();
   return computed(() => {
     const status = store.getters['status'](section);
     return status !== Status.LOADED && status !== Status.PARTIALLY_LOADED;
-  });
-};
-
-export const isSectionInitialLoading = (section: Section) => {
-  const store = useStore();
-  return computed(() => {
-    const status = store.getters['status'](section);
-    return (
-      status !== Status.LOADED &&
-      status !== Status.PARTIALLY_LOADED &&
-      status !== Status.REFRESHING
-    );
   });
 };

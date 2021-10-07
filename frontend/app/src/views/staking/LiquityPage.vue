@@ -27,7 +27,7 @@ import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
-import { isSectionInitialLoading } from '@/composables/common';
+import { setupStatusChecking } from '@/composables/common';
 import { getPremium, setupModuleEnabled } from '@/composables/session';
 import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
@@ -50,10 +50,11 @@ export default defineComponent({
       await store.dispatch('defi/liquity/fetchStakingEvents');
     });
     const modules = [Module.LIQUITY];
+    const { shouldShowLoadingScreen } = setupStatusChecking();
     return {
       moduleEnabled: isModuleEnabled(modules[0]),
       modules,
-      loading: isSectionInitialLoading(Section.DEFI_LIQUITY_STAKING),
+      loading: shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING),
       premium: getPremium()
     };
   }

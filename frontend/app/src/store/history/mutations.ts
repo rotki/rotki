@@ -1,10 +1,9 @@
 import { MutationTree } from 'vuex';
-import { TradeUpdate } from '@/services/history/types';
+import { TradeUpdate, Transactions } from '@/services/history/types';
 import { HistoryMutations } from '@/store/history/consts';
 import { defaultState } from '@/store/history/state';
 import {
   AssetMovements,
-  EthTransactions,
   HistoricData,
   HistoryState,
   LedgerActionEntry,
@@ -56,7 +55,7 @@ export const mutations: MutationTree<HistoryState> = {
 
   [HistoryMutations.SET_TRANSACTIONS](
     state: HistoryState,
-    transactions: EthTransactions
+    transactions: Transactions
   ) {
     state.transactions = transactions;
   },

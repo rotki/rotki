@@ -7,6 +7,7 @@ import {
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import {
   axiosSnakeCaseTransformer,
+  getUpdatedKey,
   setupTransformer
 } from '@/services/axios-tranformers';
 import {
@@ -18,7 +19,8 @@ import {
   LedgerActionResult,
   NewTrade,
   Trade,
-  TradeLocation
+  TradeLocation,
+  TransactionRequestPayload
 } from '@/services/history/types';
 import {
   EntryWithMeta,
@@ -33,7 +35,6 @@ import {
 } from '@/services/utils';
 import { LedgerAction } from '@/store/history/types';
 import { ReportProgress } from '@/store/reports/types';
-import { assert } from '@/utils/assertions';
 
 export class HistoryApi {
   private readonly axios: AxiosInstance;
@@ -114,22 +115,23 @@ export class HistoryApi {
   }
 
   async ethTransactions(
-    address: string,
-    onlyCache: boolean
+    payload: TransactionRequestPayload
   ): Promise<PendingTask> {
-    assert(address.length > 0);
+    let url = `/blockchains/ETH/transactions`;
+    const { address, ...data } = payload;
+    if (address) {
+      url += `/${address}`;
+    }
     return this.axios
-      .get<ActionResult<PendingTask>>(
-        `/blockchains/ETH/transactions/${address}`,
-        {
-          params: axiosSnakeCaseTransformer({
-            asyncQuery: true,
-            onlyCache: onlyCache ? onlyCache : undefined
-          }),
-          validateStatus: validWithParamsSessionAndExternalService,
-          transformResponse: setupTransformer([])
-        }
-      )
+      .get<ActionResult<PendingTask>>(url, {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          ...data,
+          orderByAttribute: getUpdatedKey(payload.orderByAttribute, false)
+        }),
+        validateStatus: validWithParamsSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
       .then(handleResponse);
   }
 

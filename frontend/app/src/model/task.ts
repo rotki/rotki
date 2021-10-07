@@ -23,6 +23,10 @@ export interface BlockchainMetadata extends TaskMeta {
   readonly blockchain?: Blockchain;
 }
 
+export interface AddressMeta extends TaskMeta {
+  readonly address: string;
+}
+
 export const createTask: <T extends TaskMeta>(
   id: number,
   type: TaskType,

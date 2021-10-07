@@ -2,9 +2,9 @@ import { default as BigNumber } from 'bignumber.js';
 import { TaskMeta } from '@/model/task';
 import {
   AssetMovement,
-  EthTransaction,
   Trade,
-  TradeLocation
+  TradeLocation,
+  Transactions
 } from '@/services/history/types';
 import {
   FETCH_SOURCE,
@@ -22,38 +22,24 @@ export interface HistoricData<T> {
 type EntryMeta = { readonly ignoredInAccounting: boolean };
 
 export type AssetMovementEntry = AssetMovement & EntryMeta;
-export type EthTransactionEntry = EthTransaction & EntryMeta;
 export type TradeEntry = Trade & EntryMeta;
 export type LedgerActionEntry = LedgerAction & EntryMeta;
 
 interface Trades extends HistoricData<TradeEntry> {}
 
 interface AssetMovements extends HistoricData<AssetMovementEntry> {}
-
-interface EthTransactions extends HistoricData<EthTransactionEntry> {}
-
 interface LedgerActions extends HistoricData<LedgerActionEntry> {}
 
 export interface HistoryState {
   ledgerActions: LedgerActions;
   trades: Trades;
   assetMovements: AssetMovements;
-  transactions: EthTransactions;
+  transactions: Transactions;
 }
 
 export interface LocationRequestMeta extends TaskMeta {
   readonly location: TradeLocation;
 }
-
-export interface AccountRequestMeta extends TaskMeta {
-  readonly address: string;
-}
-
-export type EthTransactionWithFee = EthTransactionEntry & {
-  readonly gasFee: BigNumber;
-  readonly key: string;
-};
-
 export interface LedgerAction {
   readonly identifier: number;
   readonly timestamp: number;

@@ -7,7 +7,6 @@ export enum HistoryActions {
   ADD_LEDGER_ACTION = 'addLedgerAction',
   EDIT_LEDGER_ACTION = 'editLedgerAction',
   DELETE_LEDGER_ACTION = 'deleteLedgerAction',
-  PURGE_TRANSACTIONS = 'purgeTransactions',
   PURGE_EXCHANGE = 'purgeExchange',
   REMOVE_EXCHANGE_TRADES = 'removeExchangeTrades',
   REMOVE_EXCHANGE_MOVEMENTS = 'removeExchangeMovements',
@@ -80,13 +79,11 @@ export const ledgerActionsData: ActionDataEntry[] = [
   }
 ];
 
-export const IGNORE_TRANSACTIONS = 'ethereum transaction';
 export const IGNORE_MOVEMENTS = 'asset movement';
 export const IGNORE_TRADES = 'trade';
 export const IGNORE_LEDGER_ACTION = 'ledger action';
 
 export const IGNORE_ACTION_TYPE = [
-  IGNORE_TRANSACTIONS,
   IGNORE_MOVEMENTS,
   IGNORE_TRADES,
   IGNORE_LEDGER_ACTION
