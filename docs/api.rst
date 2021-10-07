@@ -3454,7 +3454,7 @@ Dealing with trades
       }
 
    :resjson object entries: An array of trade objects and their metadata. Each entry is composed of the main trade entry under the ``"entry"`` key and other metadata like ``"ignored_in_accounting"`` for each trade.
-   :resjsonarr string trade_id: The uniquely identifying identifier for this trade.
+   :resjsonarr string trade_id: The uniquely identifying identifier for this trade. The trade id depends on the data of the trade. If the trade is edited so will the trade id.
    :resjsonarr int timestamp: The timestamp at which the trade occured
    :resjsonarr string location: A valid location at which the trade happened
    :resjsonarr string base_asset: The base_asset of the trade.
@@ -3546,6 +3546,7 @@ Dealing with trades
 .. http:patch:: /api/(version)/trades
 
    Doing a PATCH on this endpoint edits an existing trade in rotki's currently logged in user using the ``trade_id``.
+   The edited trade's trade id is returned and will be different.
 
    **Example Request**:
 
@@ -3570,7 +3571,7 @@ Dealing with trades
           "notes": "Optional notes"
       }
 
-   :reqjson string trade_id: The ``trade_id`` of the trade to edit
+   :reqjson string trade_id: The ``trade_id`` of the trade to edit. Note: the returned trade id will be different.
    :reqjson int timestamp: The new timestamp
    :reqjson string location: The new location
    :reqjson string base_asset: The new base_asset
@@ -3607,7 +3608,7 @@ Dealing with trades
           "message": ""
       }
 
-   :resjson object result: A trade with the same schema as seen in `this <trades_schema_section_>`_ section.
+   :resjson object result: A trade with the same schema as seen in `this <trades_schema_section_>`_ section. The trade id will be different if the trade was succesfully edited.
    :statuscode 200: Trades was succesfully edited.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is logged in. The given trade identifier to edit does not exist.
