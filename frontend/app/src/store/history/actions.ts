@@ -395,9 +395,11 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         parameters
       );
 
-      const { taskId } = await api.history.ethTransactions({
-        ...params
-      });
+      if (params.onlyCache) {
+        return await api.history.ethTransactions(params);
+      }
+
+      const { taskId } = await api.history.ethTransactionsTask(params);
       const address = payload?.address ?? '';
       const task = createTask<AddressMeta>(taskId, taskType, {
         title: i18n.t('actions.transactions.task.title').toString(),

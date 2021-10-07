@@ -20,7 +20,8 @@ import {
   NewTrade,
   Trade,
   TradeLocation,
-  TransactionRequestPayload
+  TransactionRequestPayload,
+  Transactions
 } from '@/services/history/types';
 import {
   EntryWithMeta,
@@ -114,18 +115,19 @@ export class HistoryApi {
       .then(handleResponse);
   }
 
-  async ethTransactions(
-    payload: TransactionRequestPayload
-  ): Promise<PendingTask> {
+  private internalEthTransactions<T>(
+    payload: TransactionRequestPayload,
+    async: boolean
+  ): Promise<T> {
     let url = `/blockchains/ETH/transactions`;
     const { address, ...data } = payload;
     if (address) {
       url += `/${address}`;
     }
     return this.axios
-      .get<ActionResult<PendingTask>>(url, {
+      .get<ActionResult<T>>(url, {
         params: axiosSnakeCaseTransformer({
-          asyncQuery: true,
+          asyncQuery: async,
           ...data,
           orderByAttribute: getUpdatedKey(payload.orderByAttribute, false)
         }),
@@ -133,6 +135,22 @@ export class HistoryApi {
         transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
+  }
+
+  async ethTransactionsTask(
+    payload: TransactionRequestPayload
+  ): Promise<PendingTask> {
+    return this.internalEthTransactions<PendingTask>(payload, true);
+  }
+
+  async ethTransactions(
+    payload: TransactionRequestPayload
+  ): Promise<Transactions> {
+    const ethTransactions = await this.internalEthTransactions<Transactions>(
+      payload,
+      false
+    );
+    return Transactions.parse(ethTransactions);
   }
 
   async ledgerActions(
