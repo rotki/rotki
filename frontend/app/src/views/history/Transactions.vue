@@ -135,15 +135,14 @@ export default defineComponent({
     const onPaginationUpdate = ({
       ascending,
       page,
-      sortBy
+      sortBy,
+      itemsPerPage
     }: {
       page: number;
+      itemsPerPage: number;
       sortBy: keyof EthTransaction;
       ascending: boolean;
     }) => {
-      const state: RotkehlchenState = store.state;
-      const itemsPerPage = state.settings!!.itemsPerPage;
-
       const offset = (page - 1) * itemsPerPage;
       payload.value = {
         ...payload.value,

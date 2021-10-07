@@ -6,9 +6,7 @@
     single-expand
     :expanded="expanded"
     :server-items-length="total"
-    :sort-by.sync="sortBy"
-    :sort-desc.sync="sortDesc"
-    :page.sync="page"
+    :options.sync="options"
     :class="$style.table"
   >
     <template #item.selection="{ item }">
@@ -140,6 +138,12 @@ const tableHeaders: DataTableHeader[] = [
   { text: '', value: 'data-table-expand' }
 ];
 
+type PaginationOptions = {
+  page: number;
+  itemsPerPage: number;
+  sortBy: (keyof EthTransaction)[];
+  sortDesc: boolean[];
+};
 export default defineComponent({
   name: 'TransactionTable',
   components: { UpgradeRow, TransactionsDetails },
@@ -164,9 +168,7 @@ export default defineComponent({
   emits: ['update:selected', 'update:pagination'],
   setup(props, { emit }) {
     const expanded = ref([]);
-    const page = ref(1);
-    const sortBy: Ref<keyof EthTransaction> = ref('timestamp');
-    const sortDesc = ref(true);
+    const options: Ref<PaginationOptions | null> = ref(null);
     const { selected, transactions } = toRefs(props);
 
     const getKey = ({ fromAddress, nonce, txHash }: EthTransaction) =>
@@ -200,25 +202,26 @@ export default defineComponent({
       emit('update:selected', selection);
     };
 
-    const updatePagination = () => {
+    const updatePagination = (options: PaginationOptions | null) => {
+      if (!options) {
+        return;
+      }
+      const { itemsPerPage, page, sortBy, sortDesc } = options;
       emit('update:pagination', {
-        page: page.value,
-        sortBy: sortBy.value,
-        ascending: !sortDesc.value
+        page: page,
+        sortBy: sortBy.length > 0 ? sortBy[0] : 'timestamp',
+        ascending: !sortDesc[0],
+        itemsPerPage: itemsPerPage
       });
     };
 
-    watch(page, updatePagination);
-    watch(sortBy, updatePagination);
-    watch(sortDesc, updatePagination);
+    watch(options, updatePagination);
 
     return {
       expanded,
       tableHeaders,
       txs,
-      page,
-      sortBy,
-      sortDesc,
+      options,
       selectionChanged,
       isSelected,
       gasFee: (tx: EthTransaction) =>
