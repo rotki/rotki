@@ -3,9 +3,21 @@ import hmac
 import json
 import logging
 from base64 import b64encode
+from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    overload,
+)
 
 import gevent
 import requests
@@ -311,7 +323,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             log.error(msg)
             return None, msg
 
-        returned_balances: Dict[Asset, Balance] = {}
+        returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for entry in balances:
             try:
                 balance_type = entry['type']
@@ -333,7 +345,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                returned_balances[asset] = Balance(
+                returned_balances[asset] += Balance(
                     amount=amount,
                     usd_value=amount * usd_price,
                 )
