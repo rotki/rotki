@@ -1,3 +1,4 @@
+import { Eth2Deposit, Eth2Detail } from '@rotki/common/lib/staking/eth2';
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
@@ -15,13 +16,7 @@ import {
   ETH2_DEPOSITS,
   ETH2_DETAILS
 } from '@/store/staking/consts';
-import {
-  AdexBalances,
-  AdexHistory,
-  Eth2Deposit,
-  Eth2Detail,
-  StakingState
-} from '@/store/staking/types';
+import { AdexBalances, AdexHistory, StakingState } from '@/store/staking/types';
 import { RotkehlchenState } from '@/store/types';
 import { isLoading, setStatus } from '@/store/utils';
 
