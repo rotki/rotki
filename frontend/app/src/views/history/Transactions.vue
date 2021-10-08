@@ -104,8 +104,12 @@ export default defineComponent({
     });
 
     watch(account, account => {
+      const state: RotkehlchenState = store.state;
+      const limit = state.settings!!.itemsPerPage;
       payload.value = {
         ...payload.value,
+        offset: 0,
+        limit,
         address: account?.address
       };
       fetchTransactions().then();
