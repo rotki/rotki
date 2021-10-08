@@ -1,3 +1,4 @@
+import { AdexBalances, AdexHistory } from '@rotki/common/lib/staking/adex';
 import { Eth2Deposit, Eth2Detail } from '@rotki/common/lib/staking/eth2';
 import {
   ADEX_BALANCES,
@@ -6,7 +7,7 @@ import {
   ETH2_DETAILS,
   RESET
 } from '@/store/staking/consts';
-import { AdexBalances, AdexHistory, StakingState } from '@/store/staking/types';
+import { StakingState } from '@/store/staking/types';
 import { defaultState } from '@/store/statistics/state';
 import { Writeable } from '@/types';
 

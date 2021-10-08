@@ -1,56 +1,9 @@
-import { Balance } from '@rotki/common';
+import { AdexBalances, AdexHistory } from '@rotki/common/lib/staking/adex';
 import { Eth2Deposit, Eth2Detail } from '@rotki/common/lib/staking/eth2';
-import { default as BigNumber } from 'bignumber.js';
 
 export interface StakingState {
   readonly eth2Details: Eth2Detail[];
   readonly eth2Deposits: Eth2Deposit[];
   readonly adexBalances: AdexBalances;
   readonly adexHistory: AdexHistory;
-}
-
-interface AdexBalance {
-  readonly contractAddress: string;
-  readonly adxBalance: Balance;
-  readonly daiUnclaimedBalance: Balance;
-  readonly poolId: string;
-  readonly poolName: string;
-}
-
-export interface AdexBalances {
-  readonly [address: string]: AdexBalance[];
-}
-
-interface AdexEvent {
-  readonly value: BigNumber;
-  readonly eventType: 'claim' | 'deposit' | 'withdraw';
-  readonly bondId: string;
-  readonly identityAddress: string;
-  readonly poolId: string;
-  readonly poolName: string;
-  readonly timestamp: number;
-  readonly txHash: string;
-  readonly token: string | null;
-}
-
-interface AdexStakingDetails {
-  readonly contractAddress: string;
-  readonly apr: string;
-  readonly adxBalance: Balance;
-  readonly daiUnclaimedBalance: Balance;
-  readonly adxUnclaimedBalance: Balance;
-  readonly adxProfitLoss: Balance;
-  readonly daiProfitLoss: Balance;
-  readonly poolId: string;
-  readonly poolName: string;
-  readonly totalStakedAmount: BigNumber;
-}
-
-interface AdexDetails {
-  readonly events: AdexEvent[];
-  readonly stakingDetails: AdexStakingDetails[];
-}
-
-export interface AdexHistory {
-  readonly [address: string]: AdexDetails;
 }
