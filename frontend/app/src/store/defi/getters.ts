@@ -1,5 +1,14 @@
 import { AddressIndexed, Balance } from '@rotki/common';
 import {
+  AaveBorrowingEventType,
+  AaveEvent,
+  AaveHistoryEvents,
+  AaveHistoryTotal,
+  AaveLending,
+  AaveLendingEventType,
+  isAaveLiquidationEvent
+} from '@rotki/common/lib/defi/aave';
+import {
   XswapBalance,
   XswapEventDetails,
   XswapPool,
@@ -10,19 +19,7 @@ import sortBy from 'lodash/sortBy';
 import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress } from '@/filters';
 import i18n from '@/i18n';
-import {
-  AAVE_BORROWING_EVENTS,
-  AAVE_LENDING_EVENTS,
-  DEFI_EVENT_LIQUIDATION,
-  DefiProtocol,
-  ProtocolVersion
-} from '@/services/defi/consts';
-import {
-  AaveEvent,
-  AaveHistoryEvents,
-  AaveHistoryTotal,
-  AaveLending
-} from '@/services/defi/types/aave';
+import { DefiProtocol, ProtocolVersion } from '@/services/defi/consts';
 import { CompoundLoan } from '@/services/defi/types/compound';
 import { DEPOSIT } from '@/services/defi/types/consts';
 import {
@@ -91,7 +88,7 @@ import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 
 function isLendingEvent(value: AaveHistoryEvents): value is AaveEvent {
-  const lending: string[] = [...AAVE_LENDING_EVENTS];
+  const lending: string[] = Object.keys(AaveLendingEventType);
   return lending.indexOf(value.eventType) !== -1;
 }
 
@@ -389,13 +386,11 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
         for (const address in aaveHistory) {
           const { events } = aaveHistory[address];
-          const borrowEvents: string[] = [...AAVE_BORROWING_EVENTS];
+          const borrowEvents: string[] = Object.values(AaveBorrowingEventType);
           const historyAssets = events
             .filter(e => borrowEvents.includes(e.eventType))
             .map(event =>
-              event.eventType === DEFI_EVENT_LIQUIDATION
-                ? event.principalAsset
-                : event.asset
+              isAaveLiquidationEvent(event) ? event.principalAsset : event.asset
             )
             .filter(uniqueStrings)
             .filter(asset => !knownAssets.includes(asset));
@@ -544,7 +539,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           } = aaveHistory[owner];
 
           for (const event of allEvents) {
-            if (event.eventType !== DEFI_EVENT_LIQUIDATION) {
+            if (!isAaveLiquidationEvent(event)) {
               continue;
             }
 
@@ -576,15 +571,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
           events.push(
             ...allEvents.filter(event => {
-              let isAsset: boolean;
-              if (event.eventType !== DEFI_EVENT_LIQUIDATION) {
-                isAsset = event.asset === asset;
-              } else {
-                isAsset = event.principalAsset === asset;
-              }
+              const isAsset: boolean = !isAaveLiquidationEvent(event)
+                ? event.asset === asset
+                : event.principalAsset === asset;
               return (
                 isAsset &&
-                AAVE_BORROWING_EVENTS.find(
+                Object.values(AaveBorrowingEventType).find(
                   eventType => eventType === event.eventType
                 )
               );

@@ -1,4 +1,4 @@
-import { AssetBalance, Balance } from '@rotki/common';
+import { AssetBalance, Balance, HasBalance } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
@@ -8,7 +8,7 @@ import {
   BlockchainAssetBalances,
   SupportedExchange
 } from '@/services/balances/types';
-import { GeneralAccountData, HasBalance } from '@/services/types-api';
+import { GeneralAccountData } from '@/services/types-api';
 import {
   AccountAssetBalances,
   AssetBreakdown,

@@ -1,4 +1,4 @@
-import { Balance } from '@rotki/common';
+import { Balance, HasBalance } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { BigNumber } from 'bignumber.js';
 import { z } from 'zod';
@@ -11,11 +11,7 @@ import {
   SupportedExchange
 } from '@/services/balances/types';
 import { Module } from '@/services/session/consts';
-import {
-  BtcAccountData,
-  GeneralAccountData,
-  HasBalance
-} from '@/services/types-api';
+import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { KRAKEN_ACCOUNT_TYPES } from '@/store/balances/const';
 import { Section } from '@/store/const';
 import { Nullable } from '@/types';

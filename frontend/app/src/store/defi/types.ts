@@ -1,4 +1,12 @@
 import { Balance } from '@rotki/common';
+import { HasBalance } from '@rotki/common/lib';
+import {
+  AaveBalances,
+  AaveBorrowingRates,
+  AaveHistory,
+  AaveHistoryEvents,
+  AaveHistoryTotal
+} from '@rotki/common/lib/defi/aave';
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { default as BigNumber } from 'bignumber.js';
 import { DefiProtocol } from '@/services/defi/consts';
@@ -10,13 +18,6 @@ import {
   MakerDAOVaultEventType
 } from '@/services/defi/types';
 import {
-  AaveBalances,
-  AaveBorrowingRates,
-  AaveHistory,
-  AaveHistoryEvents,
-  AaveHistoryTotal
-} from '@/services/defi/types/aave';
-import {
   CompoundBalances,
   CompoundEventType,
   CompoundHistory
@@ -27,7 +28,6 @@ import {
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { TradeType } from '@/services/history/types';
-import { HasBalance } from '@/services/types-api';
 import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
 import { LiquityState } from '@/store/defi/liquity/types';
 import { SushiswapState } from '@/store/defi/sushiswap/types';

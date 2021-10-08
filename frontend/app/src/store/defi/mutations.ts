@@ -1,6 +1,6 @@
+import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { MutationTree } from 'vuex';
-import { AaveBalances, AaveHistory } from '@/services/defi/types/aave';
 import {
   CompoundBalances,
   CompoundHistory

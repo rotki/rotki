@@ -1,4 +1,3 @@
-import { Balance } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import { IgnoreActionType } from '@/store/history/types';
@@ -44,10 +43,6 @@ export interface LocationData {
   readonly time: number;
   readonly location: string;
   readonly usd_value: string;
-}
-
-export interface HasBalance {
-  readonly balance: Balance;
 }
 
 // This is equivalent to python's AssetBalance named tuple

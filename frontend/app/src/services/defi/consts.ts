@@ -15,10 +15,6 @@ export const DEFI_EVENT_REPAY = 'repay';
 export const DEFI_EVENT_LIQUIDATION = 'liquidation';
 export const DEFI_EVENT_BORROW = 'borrow';
 
-export const DEFI_EVENT_DEPOSIT = 'deposit';
-export const DEFI_EVENT_INTEREST = 'interest';
-export const DEFI_EVENT_WITHDRAWAL = 'withdrawal';
-
 export const COMPOUND_EVENT_TYPES = [
   'mint',
   'redeem',
@@ -26,18 +22,6 @@ export const COMPOUND_EVENT_TYPES = [
   DEFI_EVENT_REPAY,
   DEFI_EVENT_LIQUIDATION,
   'comp'
-] as const;
-
-export const AAVE_BORROWING_EVENTS = [
-  DEFI_EVENT_BORROW,
-  DEFI_EVENT_REPAY,
-  DEFI_EVENT_LIQUIDATION
-] as const;
-
-export const AAVE_LENDING_EVENTS = [
-  DEFI_EVENT_DEPOSIT,
-  DEFI_EVENT_INTEREST,
-  DEFI_EVENT_WITHDRAWAL
 ] as const;
 
 export const dsrKeys = [...balanceKeys, 'current_dsr'];

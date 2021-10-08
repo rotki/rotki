@@ -1,6 +1,6 @@
+import { HasBalance } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
 import { CompoundProfitAndLoss } from '@/services/defi/types/compound';
-import { HasBalance } from '@/services/types-api';
 import { ProfitLossModel } from '@/store/defi/types';
 import { Zero } from '@/utils/bignumbers';
 
