@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
@@ -66,8 +67,12 @@ class DBEthTx():
     def get_ethereum_transactions(
             self,
             filter_: ETHTransactionsFilterQuery,
-    ) -> List[EthereumTransaction]:
-        """Returns a list of ethereum transactions optionally filtered by time and/or from address
+    ) -> Tuple[List[EthereumTransaction], int]:
+        """Returns a tuple with 2 entries.
+        First entry is a list of ethereum transactions optionally filtered by
+        time and/or from address and pagination.
+        Second is the number of entries found for the current filter ignoring pagination.
+
         This function can raise:
         - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to invalid
         filtering arguments.
@@ -102,7 +107,17 @@ class DBEthTx():
 
             ethereum_transactions.append(tx)
 
-        return ethereum_transactions
+        if filter_.pagination is not None:
+            no_pagination_filter = deepcopy(filter_)
+            no_pagination_filter.pagination = None
+            query, bindings = no_pagination_filter.prepare()
+            query = 'SELECT COUNT(*) FROM ethereum_transactions ' + query
+            results = cursor.execute(query, bindings).fetchone()
+            total_filter_count = results[0]
+        else:
+            total_filter_count = len(ethereum_transactions)
+
+        return ethereum_transactions, total_filter_count
 
     def purge_ethereum_transaction_data(self) -> None:
         """Deletes all ethereum transaction related data from the DB"""
