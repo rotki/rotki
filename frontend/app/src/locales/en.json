@@ -2321,6 +2321,9 @@
     "transaction": "TX:"
   },
   "transactions": {
+    "filter": {
+      "label": "Filter by account"
+    },
     "loading": "Please wait while your transactions are getting loaded...",
     "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",
     "title": "Ethereum Transactions",

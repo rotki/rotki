@@ -31,6 +31,7 @@
               v-model="account"
               :chains="['ETH']"
               dense
+              :label="$t('transactions.filter.label')"
               outlined
               no-padding
               flat
