@@ -2982,7 +2982,8 @@
   },
   "no_premium_placeholder": {
     "get_premium": "@:common.visit_website",
-    "no_premium": "@:common.no_premium {text} @:common.available_to_premium"
+    "no_premium": "@:common.no_premium",
+    "premium_only": " {text} @:common.available_to_premium"
   },
   "l2": {
     "loopring": "Loopring"
