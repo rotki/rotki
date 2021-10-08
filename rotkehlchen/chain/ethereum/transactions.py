@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, DefaultDict, List, Optional
+from typing import TYPE_CHECKING, DefaultDict, List, Optional, Tuple
 
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
@@ -115,7 +115,7 @@ class EthTransactions(LockableQueryMixIn):
             filter_query: ETHTransactionsFilterQuery,
             with_limit: bool = False,
             only_cache: bool = False,
-    ) -> List[EthereumTransaction]:
+    ) -> Tuple[List[EthereumTransaction], int]:
         """Queries for all transactions (normal AND internal) of an ethereum
         address or of all addresses.
         Returns a list of all transactions filtered and sorted according to the parameters.
@@ -151,11 +151,14 @@ class EthTransactions(LockableQueryMixIn):
                 )
 
         dbethtx = DBEthTx(self.database)
-        transactions = dbethtx.get_ethereum_transactions(filter_=filter_query)
-        return self._return_transactions_maybe_limit(
-            requested_addresses=query_addresses,
-            transactions=transactions,
-            with_limit=with_limit,
+        transactions, total_filter_count = dbethtx.get_ethereum_transactions(filter_=filter_query)
+        return (
+            self._return_transactions_maybe_limit(
+                requested_addresses=query_addresses,
+                transactions=transactions,
+                with_limit=with_limit,
+            ),
+            total_filter_count,
         )
 
     def get_or_query_transaction_receipt(
@@ -176,7 +179,7 @@ class EthTransactions(LockableQueryMixIn):
         tx_hash_b = hexstring_to_bytes(tx_hash)
         dbethtx = DBEthTx(self.database)
         # If the transaction is not in the DB then query it and add it
-        result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx_hash_b))  # noqa: E501
+        result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx_hash_b))  # noqa: E501
         if len(result) == 0:
             transaction = self.ethereum.get_transaction_by_hash(tx_hash)
             if transaction is None:

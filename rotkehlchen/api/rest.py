@@ -2809,7 +2809,7 @@ class RestAPI():
         )
         transactions: Optional[List[EthereumTransaction]]
         try:
-            transactions = tx_module.query(
+            transactions, total_filter_count = tx_module.query(
                 only_cache=only_cache,
                 filter_query=filter_query,
                 with_limit=self.rotkehlchen.premium is None,
@@ -2820,7 +2820,7 @@ class RestAPI():
             transactions = None
             status_code = HTTPStatus.BAD_GATEWAY
             message = str(e)
-        except sqlcipher.OperationalError as e:
+        except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             transactions = None
             status_code = HTTPStatus.BAD_REQUEST
             message = str(e)
@@ -2841,7 +2841,8 @@ class RestAPI():
         if status_code == HTTPStatus.OK:
             result = {
                 'entries': entries_result,
-                'entries_found': self.rotkehlchen.data.db.get_entries_count(
+                'entries_found': total_filter_count,
+                'entries_total': self.rotkehlchen.data.db.get_entries_count(
                     entries_table='ethereum_transactions',
                 ),
                 'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,

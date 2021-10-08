@@ -71,7 +71,7 @@ def test_add_ethereum_transactions(data_dir, username):
     assert len(errors) == 0
     assert len(warnings) == 0
     filter_query = ETHTransactionsFilterQuery.make()
-    returned_transactions = dbethtx.get_ethereum_transactions(filter_query)
+    returned_transactions, _ = dbethtx.get_ethereum_transactions(filter_query)
     assert returned_transactions == [tx1, tx2]
 
     # Add the last 2 transactions. Since tx2 already exists in the DB it should be
@@ -81,13 +81,13 @@ def test_add_ethereum_transactions(data_dir, username):
     warnings = msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
-    returned_transactions = dbethtx.get_ethereum_transactions(filter_query)
+    returned_transactions, _ = dbethtx.get_ethereum_transactions(filter_query)
     assert returned_transactions == [tx1, tx2, tx3]
 
     # try transaction query by tx_hash
-    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash_b))
+    result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash_b))  # noqa: E501
     assert result == [tx2], 'querying transaction by hash in bytes failed'
-    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash))
+    result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash))  # noqa: E501
     assert result == [tx2], 'querying transaction by hash string failed'
-    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=b'dsadsad'))
+    result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=b'dsadsad'))  # noqa: E501
     assert result == []

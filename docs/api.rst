@@ -1882,7 +1882,7 @@ Querying ethereum transactions
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a GET on the transactions endpoint for ETH will query all ethereum transactions for all the tracked user addresses. Caller can also specify an address to further filter the query as a from address. Also he can limit the queried transactions by timestamps. If the user is not premium and has more than 500 transaction then the returned transaction will be limited to that number. Any filtering will also be limited to those first 500 transaction. Transactions are returned most recent first.
+   Doing a GET on the transactions endpoint for ETH will query all ethereum transactions for all the tracked user addresses. Caller can also specify an address to further filter the query as a from address. Also they can limit the queried transactions by timestamps. If the user is not premium and has more than 500 transaction then the returned transaction will be limited to that number. Any filtering will also be limited to those first 500 transaction. Transactions are returned most recent first.
 
    **Example Request**:
 
@@ -1944,8 +1944,14 @@ Querying ethereum transactions
             }],
             "entries_found": 95,
             "entries_limit": 500,
+            "entries_total": 1000
         "message": ""
       }
+
+   :reqjson object result: A list of transaction entries to return for the given filter.
+   :reqjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :reqjson int entries_limit: The limit of entries if free version. -1 for premium.
+   :reqjson int entries_total: The number of total entries ignoring all filters.
 
    :statuscode 200: Transactions succesfull queried
    :statuscode 400: Provided JSON is in some way malformed

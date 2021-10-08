@@ -21,6 +21,6 @@ def test_get_transaction_receipt(database, ethereum_manager, call_order, transac
     txmodule = EthTransactions(ethereum=ethereum_manager, database=database)
     receipt = txmodule.get_or_query_transaction_receipt(tx_hash)
     assert receipt == receipts[0]
-    results = txmodule.query(ETHTransactionsFilterQuery.make(tx_hash=tx_hash), only_cache=True)
+    results, _ = txmodule.query(ETHTransactionsFilterQuery.make(tx_hash=tx_hash), only_cache=True)
     assert len(results) == 1
     assert results[0] == transactions[0]
