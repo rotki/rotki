@@ -2739,8 +2739,7 @@
     }
   },
   "statistics": {
-    "no_premium": "@:common.no_premium Statistics are @:common.available_to_premium",
-    "get_premium": "@:common.visit_website"
+    "no_premium_label": "Statistics are"
   },
   "profit_loss_report": {
     "download_csv": "Download CSV",
