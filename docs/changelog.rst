@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`3578` Adding an external trade on a specific date without specifying time will now be possible. Any backend validation errors on the date field should now be properly visible.
+
 * :release:`1.21.1 <2021-10-07>`
 * :feature:`3554` Gemini users will now have their earn balances tracked in rotki.
 * :bug:`3555` Users should now be able to see the total value in the table of NFTs in the dashboard
