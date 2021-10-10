@@ -238,26 +238,25 @@ class EventsHistorian():
             if exchange.location == location:
                 # clear the actions queried for this location
                 self.actions_per_location['ledger_action'][exchange.location] = 0
-                all_set = {x.identifier for x in actions}
                 exchange_actions = exchange.query_income_loss_expense(
                     start_ts=from_ts,
                     end_ts=to_ts,
                     only_cache=only_cache,
                 )
-                # TODO: Really dirty. Figure out a better way.
-                # Since some of the trades may already be in the DB if multiple
-                # keys are used for a single exchange.
-                exchange_actions = [x for x in exchange_actions if x.identifier not in all_set]
+                # Use set difference to determine uniqueness.
+                all_set = set(actions)
+                unique_exchange_actions = set(exchange_actions)
+                new_exchange_actions = list(unique_exchange_actions - all_set)
                 original_length += len(exchange_actions)
                 if self.chain_manager.premium is None:
                     actions = self._apply_actions_limit(
                         location=exchange.location,
                         action_type='ledger_action',
-                        location_actions=exchange_actions,
-                        all_actions=actions,
+                        location_actions=new_exchange_actions,
+                        all_actions=list(all_set),
                     )
                 else:
-                    actions.extend(exchange_actions)
+                    actions.extend(new_exchange_actions)
 
         return actions, original_length
 
@@ -626,7 +625,8 @@ class EventsHistorian():
         # include the ledger actions from offline sources
         self.processing_state_name = 'Querying ledger actions history'
         offline_ledger_actions, _ = self.query_ledger_actions(from_ts=None, to_ts=end_ts)
-        ledger_actions.extend(offline_ledger_actions)
+        unique_ledger_actions = list(set(offline_ledger_actions) - set(ledger_actions))
+        ledger_actions.extend(unique_ledger_actions)
         step = self._increase_progress(step, total_steps)
 
         # include AMM trades: balancer, uniswap
