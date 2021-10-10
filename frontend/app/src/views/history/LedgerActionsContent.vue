@@ -432,7 +432,7 @@ export default defineComponent({
     });
 
     const setupSelectionMode = (
-      items: Ref<Array<LedgerActionEntry>>,
+      visibleItems: Ref<Array<LedgerActionEntry>>,
       getId: GetId<LedgerActionEntry>
     ) => {
       const selected = ref<number[]>([]);
@@ -440,7 +440,7 @@ export default defineComponent({
       const setSelected = (selectAll: boolean) => {
         const selection: number[] = [];
         if (selectAll) {
-          for (const item of items.value) {
+          for (const item of visibleItems.value) {
             const id = getId(item);
             if (!id || selection.includes(id)) {
               logger.warn(
@@ -469,7 +469,7 @@ export default defineComponent({
       };
 
       const allSelected = computed(() => {
-        const numbers = items.value.map(getId);
+        const numbers = visibleItems.value.map(getId);
         return (
           numbers.length > 0 && isEqual(sortBy(numbers), sortBy(selected.value))
         );
@@ -483,7 +483,10 @@ export default defineComponent({
       };
     };
 
-    const selectionMode = setupSelectionMode(items, item => item.identifier);
+    const selectionMode = setupSelectionMode(
+      visibleItems,
+      item => item.identifier
+    );
 
     return {
       tableHeaders,
