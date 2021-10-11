@@ -23,6 +23,7 @@
           :search="search"
           :loading="loading"
           sort-by="usdValue"
+          :custom-sort="sortItems"
           :custom-filter="assetFilter"
         >
           <template #header.usdValue>
@@ -145,6 +146,7 @@ import { aggregateTotal } from '@/filters';
 import AssetMixin from '@/mixins/asset-mixin';
 import { AssetPrices, ExchangeRateGetter } from '@/store/balances/types';
 import { Nullable } from '@/types';
+import { getSortItems } from '@/utils/assets';
 
 @Component({
   components: { DataTable },
@@ -186,6 +188,8 @@ export default class DashboardAssetTable extends Mixins(AssetMixin) {
     const symbol = this.getSymbol(item.asset)?.toLocaleLowerCase()?.trim();
     return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
   }
+
+  sortItems = getSortItems(this.$store.getters['balances/assetInfo']);
 
   get headers(): DataTableHeader[] {
     return [

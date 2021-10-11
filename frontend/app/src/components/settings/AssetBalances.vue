@@ -4,6 +4,7 @@
     :items="balances"
     :loading="isLoading"
     :loading-text="$t('asset_balances.loading')"
+    :custom-sort="sortItems"
     sort-by="usdValue"
   >
     <template #header.usdValue>
@@ -91,6 +92,7 @@ import { balanceSum } from '@/filters';
 import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import { AssetPrices, ExchangeRateGetter } from '@/store/balances/types';
+import { getSortItems } from '@/utils/assets';
 
 @Component({
   components: { DataTable, AmountDisplay },
@@ -136,7 +138,8 @@ export default class AssetBalances extends Vue {
         }).toString(),
         value: 'price',
         align: 'end',
-        class: 'text-no-wrap'
+        class: 'text-no-wrap',
+        sortable: false
       },
       {
         text: this.$t('asset_balances.headers.amount').toString(),
@@ -156,6 +159,8 @@ export default class AssetBalances extends Vue {
       }
     ];
   }
+
+  sortItems = getSortItems(this.$store.getters['balances/assetInfo']);
 }
 </script>
 
