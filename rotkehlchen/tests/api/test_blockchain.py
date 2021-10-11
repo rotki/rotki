@@ -359,7 +359,7 @@ def _add_blockchain_accounts_test_start(
         setup.enter_ethereum_patches(stack)
         response = requests.put(api_url_for(
             api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain='ETH',
         ), json=data)
 
