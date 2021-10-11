@@ -12,6 +12,7 @@ import {
   BalancerBalances,
   BalancerEvents
 } from '@rotki/common/lib/defi/balancer';
+import { DexTrade } from '@rotki/common/lib/defi/dex';
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { default as BigNumber } from 'bignumber.js';
 import {
@@ -31,7 +32,6 @@ import {
   YearnVaultsBalances,
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
-import { TradeType } from '@/services/history/types';
 import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
 import { LiquityState } from '@/store/defi/liquity/types';
 import { SushiswapState } from '@/store/defi/sushiswap/types';
@@ -294,36 +294,6 @@ export interface ProfitLossModel {
   readonly address: string;
   readonly asset: string;
   readonly value: Balance;
-}
-
-interface DexSwap {
-  readonly amount0In: BigNumber;
-  readonly amount0Out: BigNumber;
-  readonly amount1In: BigNumber;
-  readonly amount1Out: BigNumber;
-  readonly fromAddress: string;
-  readonly location: 'uniswap';
-  readonly logIndex: number;
-  readonly toAddress: string;
-  readonly token0: string;
-  readonly token1: string;
-  readonly txHash: string;
-}
-
-export interface DexTrade {
-  readonly address: string;
-  readonly amount: BigNumber;
-  readonly baseAsset: string;
-  readonly fee: BigNumber;
-  readonly feeCurrency: string;
-  readonly location: 'uniswap' | 'balancer';
-  readonly quoteAsset: string;
-  readonly rate: BigNumber;
-  readonly swaps: DexSwap[];
-  readonly timestamp: number;
-  readonly tradeId: string;
-  readonly tradeType: TradeType;
-  readonly txHash: string;
 }
 
 export interface DexTrades {

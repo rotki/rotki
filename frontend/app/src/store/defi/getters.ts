@@ -16,6 +16,7 @@ import {
   BalancerProfitLoss,
   Pool
 } from '@rotki/common/lib/defi/balancer';
+import { DexTrade } from '@rotki/common/lib/defi/dex';
 import {
   XswapBalance,
   XswapEventDetails,
@@ -64,7 +65,6 @@ import {
   DefiLoan,
   DefiProtocolSummary,
   DefiState,
-  DexTrade,
   DexTrades,
   LoanSummary,
   MakerDAOVaultModel,
