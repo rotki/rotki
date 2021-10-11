@@ -100,6 +100,7 @@
 </template>
 
 <script lang="ts">
+import { GeneralAccount } from '@rotki/common/lib/account';
 import { default as BigNumber } from 'bignumber.js';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
@@ -131,7 +132,6 @@ import {
   IgnoreActionPayload
 } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
-import { GeneralAccount } from '@/typing/types';
 import { toUnit, Unit } from '@/utils/calculation';
 
 @Component({

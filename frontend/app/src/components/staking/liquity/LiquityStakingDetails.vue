@@ -42,6 +42,7 @@
 
 <script lang="ts">
 import { AssetBalance } from '@rotki/common';
+import { GeneralAccount } from '@rotki/common/lib/account';
 import { LiquityStakingEvent } from '@rotki/common/lib/liquity';
 import { computed, defineComponent, ref } from '@vue/composition-api';
 import Fragment from '@/components/helper/Fragment';
@@ -52,7 +53,6 @@ import { LiquityStakeEvents } from '@/premium/premium';
 import { Section } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
 import { useStore } from '@/store/utils';
-import { GeneralAccount } from '@/typing/types';
 
 export default defineComponent({
   name: 'LiquityStakingDetails',

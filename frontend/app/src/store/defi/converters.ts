@@ -1,4 +1,4 @@
-import { DefiProtocol } from '@/services/defi/consts';
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { ApiMakerDAOVault } from '@/services/defi/types';
 import { MakerDAOVault } from '@/store/defi/types';
 import { bigNumberify } from '@/utils/bignumbers';

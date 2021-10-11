@@ -1,4 +1,22 @@
 import { AddressIndexed, Balance } from '@rotki/common';
+import { DefiAccount } from '@rotki/common/lib/account';
+import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
+import {
+  AaveBorrowingEventType,
+  AaveEvent,
+  AaveHistoryEvents,
+  AaveHistoryTotal,
+  AaveLending,
+  AaveLendingEventType,
+  isAaveLiquidationEvent
+} from '@rotki/common/lib/defi/aave';
+import {
+  BalancerBalanceWithOwner,
+  BalancerEvent,
+  BalancerProfitLoss,
+  Pool
+} from '@rotki/common/lib/defi/balancer';
+import { DexTrade } from '@rotki/common/lib/defi/dex';
 import {
   XswapBalance,
   XswapEventDetails,
@@ -10,19 +28,7 @@ import sortBy from 'lodash/sortBy';
 import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress } from '@/filters';
 import i18n from '@/i18n';
-import {
-  AAVE_BORROWING_EVENTS,
-  AAVE_LENDING_EVENTS,
-  DEFI_EVENT_LIQUIDATION,
-  DefiProtocol,
-  ProtocolVersion
-} from '@/services/defi/consts';
-import {
-  AaveEvent,
-  AaveHistoryEvents,
-  AaveHistoryTotal,
-  AaveLending
-} from '@/services/defi/types/aave';
+import { ProtocolVersion } from '@/services/defi/consts';
 import { CompoundLoan } from '@/services/defi/types/compound';
 import { DEPOSIT } from '@/services/defi/types/consts';
 import {
@@ -52,9 +58,6 @@ import {
   Airdrop,
   AirdropDetail,
   AirdropType,
-  BalancerBalanceWithOwner,
-  BalancerEvent,
-  BalancerProfitLoss,
   BaseDefiBalance,
   Collateral,
   DefiBalance,
@@ -62,13 +65,11 @@ import {
   DefiLoan,
   DefiProtocolSummary,
   DefiState,
-  DexTrade,
   DexTrades,
   LoanSummary,
   MakerDAOVaultModel,
   OverviewDefiProtocol,
   PoapDelivery,
-  Pool,
   ProfitLossModel,
   TokenInfo
 } from '@/store/defi/types';
@@ -84,14 +85,13 @@ import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
 import { Writeable } from '@/types';
-import { DefiAccount, ETH } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 
 function isLendingEvent(value: AaveHistoryEvents): value is AaveEvent {
-  const lending: string[] = [...AAVE_LENDING_EVENTS];
+  const lending: string[] = Object.keys(AaveLendingEventType);
   return lending.indexOf(value.eventType) !== -1;
 }
 
@@ -326,7 +326,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           } else {
             accounts[address] = {
               address,
-              chain: ETH,
+              chain: Blockchain.ETH,
               protocols: [selectedProtocol]
             };
           }
@@ -389,13 +389,11 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
         for (const address in aaveHistory) {
           const { events } = aaveHistory[address];
-          const borrowEvents: string[] = [...AAVE_BORROWING_EVENTS];
+          const borrowEvents: string[] = Object.values(AaveBorrowingEventType);
           const historyAssets = events
             .filter(e => borrowEvents.includes(e.eventType))
             .map(event =>
-              event.eventType === DEFI_EVENT_LIQUIDATION
-                ? event.principalAsset
-                : event.asset
+              isAaveLiquidationEvent(event) ? event.principalAsset : event.asset
             )
             .filter(uniqueStrings)
             .filter(asset => !knownAssets.includes(asset));
@@ -544,7 +542,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           } = aaveHistory[owner];
 
           for (const event of allEvents) {
-            if (event.eventType !== DEFI_EVENT_LIQUIDATION) {
+            if (!isAaveLiquidationEvent(event)) {
               continue;
             }
 
@@ -576,15 +574,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
 
           events.push(
             ...allEvents.filter(event => {
-              let isAsset: boolean;
-              if (event.eventType !== DEFI_EVENT_LIQUIDATION) {
-                isAsset = event.asset === asset;
-              } else {
-                isAsset = event.principalAsset === asset;
-              }
+              const isAsset: boolean = !isAaveLiquidationEvent(event)
+                ? event.asset === asset
+                : event.principalAsset === asset;
               return (
                 isAsset &&
-                AAVE_BORROWING_EVENTS.find(
+                Object.values(AaveBorrowingEventType).find(
                   eventType => eventType === event.eventType
                 )
               );

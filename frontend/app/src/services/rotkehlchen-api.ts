@@ -1,3 +1,4 @@
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionResult } from '@rotki/common/lib/data';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { SupportedCurrency } from '@/data/currencies';
@@ -57,8 +58,6 @@ import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
 import {
   AccountSession,
-  Blockchain,
-  BTC,
   ExternalServiceKey,
   ExternalServiceName,
   SettingsUpdate,
@@ -626,7 +625,7 @@ export class RotkehlchenApi {
     payload: BlockchainAccountPayload
   ): Promise<GeneralAccountData[]> {
     const { address, label, tags, blockchain } = payload;
-    assert(blockchain !== BTC, 'call editBtcAccount for btc');
+    assert(blockchain !== Blockchain.BTC, 'call editBtcAccount for btc');
     return this.axios
       .patch<ActionResult<GeneralAccountData[]>>(
         `/blockchains/${blockchain}`,

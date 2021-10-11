@@ -1,3 +1,5 @@
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
+import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { ActionContext, ActionTree } from 'vuex';
 import i18n from '@/i18n';
@@ -6,14 +8,12 @@ import { TaskType } from '@/model/task-type';
 import { balanceKeys } from '@/services/consts';
 import {
   aaveHistoryKeys,
-  DefiProtocol,
   dsrKeys,
   ProtocolVersion,
   vaultDetailsKeys,
   vaultKeys
 } from '@/services/defi/consts';
 import { ApiMakerDAOVault } from '@/services/defi/types';
-import { AaveBalances, AaveHistory } from '@/services/defi/types/aave';
 import {
   CompoundBalances,
   CompoundHistory

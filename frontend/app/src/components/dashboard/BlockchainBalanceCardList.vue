@@ -62,6 +62,7 @@
 </template>
 
 <script lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { default as BigNumber } from 'bignumber.js';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -70,16 +71,7 @@ import Fragment from '@/components/helper/Fragment';
 import { capitalize } from '@/filters';
 import AssetMixin from '@/mixins/asset-mixin';
 import { BlockchainTotal } from '@/store/balances/types';
-import {
-  Blockchain,
-  BTC,
-  ETH,
-  KSM,
-  DOT,
-  AVAX,
-  L2_LOOPRING,
-  SupportedL2Protocol
-} from '@/typing/types';
+import { L2_LOOPRING, SupportedL2Protocol } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 
 @Component({
@@ -93,15 +85,15 @@ export default class BlockchainBalanceCardList extends Mixins(AssetMixin) {
 
   get name(): string {
     const chain = this.total.chain;
-    if (chain === ETH) {
+    if (chain === Blockchain.ETH) {
       return this.$t('blockchains.eth').toString();
-    } else if (chain === BTC) {
+    } else if (chain === Blockchain.BTC) {
       return this.$t('blockchains.btc').toString();
-    } else if (chain === KSM) {
+    } else if (chain === Blockchain.KSM) {
       return this.$t('blockchains.ksm').toString();
-    } else if (chain === DOT) {
+    } else if (chain === Blockchain.DOT) {
       return this.$t('blockchains.dot').toString();
-    } else if (chain === AVAX) {
+    } else if (chain === Blockchain.AVAX) {
       return this.$t('blockchains.avax').toString();
     }
     return '';

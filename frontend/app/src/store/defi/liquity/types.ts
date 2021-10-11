@@ -1,3 +1,4 @@
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
   LiquityBalance,
   LiquityBalances,
@@ -6,7 +7,6 @@ import {
   TroveEvent,
   TroveEvents
 } from '@rotki/common/lib/liquity';
-import { DefiProtocol } from '@/services/defi/consts';
 
 export interface LiquityState {
   readonly balances: LiquityBalances;

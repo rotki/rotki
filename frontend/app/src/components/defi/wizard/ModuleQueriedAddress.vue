@@ -12,12 +12,12 @@
 </template>
 
 <script lang="ts">
+import { Account, GeneralAccount } from '@rotki/common/lib/account';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { Module } from '@/services/session/consts';
 import { QueriedAddressPayload } from '@/services/session/types';
-import { Account, GeneralAccount } from '@/typing/types';
 
 @Component({
   components: { BlockchainAccountSelector },

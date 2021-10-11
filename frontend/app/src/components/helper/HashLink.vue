@@ -62,6 +62,7 @@
 </template>
 
 <script lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import { explorerUrls } from '@/components/helper/asset-urls';
@@ -69,7 +70,6 @@ import { truncateAddress } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 import ThemeMixin from '@/mixins/theme-mixin';
 import { ExplorersSettings } from '@/store/settings/types';
-import { Blockchain, ETH } from '@/typing/types';
 import { randomHex } from '@/typing/utils';
 
 @Component({
@@ -89,7 +89,7 @@ export default class HashLink extends Mixins(ScrambleMixin, ThemeMixin) {
   noLink!: boolean;
   @Prop({ required: false, type: String, default: '' })
   baseUrl!: string;
-  @Prop({ required: false, type: String, default: ETH })
+  @Prop({ required: false, type: String, default: Blockchain.ETH })
   chain!: Blockchain | 'ETC' | 'zksync';
   @Prop({ required: false, type: Boolean, default: false })
   tx!: Boolean;

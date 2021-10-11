@@ -174,6 +174,7 @@
   </v-form>
 </template>
 <script lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import {
@@ -197,7 +198,6 @@ import {
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { Message } from '@/store/types';
-import { Blockchain, BTC, ETH, SupportedBlockchains } from '@/typing/types';
 import { trimOnPaste } from '@/utils/event';
 import { getMetamaskAddresses } from '@/utils/metamask';
 
@@ -259,9 +259,9 @@ const validationErrors: () => ValidationErrors = () => ({
   }
 })
 export default class AccountForm extends Vue {
-  readonly items = SupportedBlockchains;
+  readonly items = Object.values(Blockchain);
   isTaskRunning!: (type: TaskType) => boolean;
-  blockchain: Blockchain = ETH;
+  blockchain: Blockchain = Blockchain.ETH;
   pending: boolean = false;
   xpub: string = '';
   derivationPath: string = '';
@@ -301,11 +301,11 @@ export default class AccountForm extends Vue {
   }
 
   get isEth(): boolean {
-    return this.blockchain === ETH;
+    return this.blockchain === Blockchain.ETH;
   }
 
   get isBtc(): boolean {
-    return this.blockchain === BTC;
+    return this.blockchain === Blockchain.BTC;
   }
 
   get isXpub(): boolean {
@@ -473,7 +473,7 @@ export default class AccountForm extends Vue {
     this.xpub = '';
     this.derivationPath = '';
     (this.$refs.form as any).resetValidation();
-    this.blockchain = ETH;
+    this.blockchain = Blockchain.ETH;
     this.inputMode = MANUAL_ADD;
     this.multiple = false;
   }
@@ -512,7 +512,7 @@ export default class AccountForm extends Vue {
       }));
 
       await this.addAccounts({
-        blockchain: ETH,
+        blockchain: Blockchain.ETH,
         payload: payload,
         modules: this.selectedModules
       });

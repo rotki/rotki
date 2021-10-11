@@ -33,8 +33,6 @@ export type Properties<TObj, TResult> = {
   [K in keyof TObj]: TObj[K] extends TResult ? K : never;
 }[keyof TObj];
 
-export type Diff<T, U> = T extends U ? never : T;
-
 export type Nullable<T> = T | null;
 
 export interface WebVersion {

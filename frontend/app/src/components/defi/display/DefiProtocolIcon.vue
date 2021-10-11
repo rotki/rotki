@@ -33,9 +33,9 @@
   </div>
 </template>
 <script lang="ts">
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { computed, defineComponent, PropType } from '@vue/composition-api';
 import { capitalize } from '@/filters';
-import { DefiProtocol } from '@/services/defi/consts';
 
 export default defineComponent({
   name: 'DefiProtocolIcon',

@@ -1,3 +1,4 @@
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { BigNumber } from 'bignumber.js';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
@@ -54,16 +55,7 @@ import { notify, userNotify } from '@/store/notifications/utils';
 import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
 import { isLoading, setStatus, showError } from '@/store/utils';
 import { Writeable } from '@/types';
-import {
-  AVAX,
-  Blockchain,
-  BTC,
-  DOT,
-  ETH,
-  ExchangeRates,
-  KSM,
-  SupportedBlockchains
-} from '@/typing/types';
+import { ExchangeRates } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 import { chunkArray } from '@/utils/data';
@@ -281,7 +273,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     const chains: Blockchain[] = [];
     if (!blockchain) {
-      chains.push(...SupportedBlockchains);
+      chains.push(...Object.values(Blockchain));
     } else {
       chains.push(blockchain);
     }
@@ -379,23 +371,23 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     } = perAccount;
     const chain = payload.chain;
 
-    if (!chain || chain === ETH) {
+    if (!chain || chain === Blockchain.ETH) {
       commit('updateEth', ethBalances ?? {});
     }
 
-    if (!chain || chain === KSM) {
+    if (!chain || chain === Blockchain.KSM) {
       commit('updateKsm', ksmBalances ?? {});
     }
 
-    if (!chain || chain === DOT) {
+    if (!chain || chain === Blockchain.DOT) {
       commit('updateDot', dotBalances ?? {});
     }
 
-    if (!chain || chain === BTC) {
+    if (!chain || chain === Blockchain.BTC) {
       commit('updateBtc', btcBalances ?? {});
     }
 
-    if (!chain || chain === AVAX) {
+    if (!chain || chain === Blockchain.AVAX) {
       commit('updateAvax', avaxBalances ?? {});
     }
 
@@ -421,7 +413,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
             xpub: payload.xpub
           }
         ),
-        blockchain: BTC,
+        blockchain: Blockchain.BTC,
         numericKeys: blockchainBalanceKeys
       } as BlockchainMetadata);
       commit('tasks/add', task, { root: true });
@@ -429,7 +421,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         BlockchainBalances,
         BlockchainMetadata
       >(taskType);
-      await dispatch('updateBalances', { chain: BTC, balances: result });
+      await dispatch('updateBalances', {
+        chain: Blockchain.BTC,
+        balances: result
+      });
     } catch (e: any) {
       const title = i18n.tc('actions.balances.xpub_removal.error.title');
       const description = i18n.tc(
@@ -557,7 +552,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         BlockchainMetadata
       >(taskType, `${taskId}`);
 
-      if (modules && blockchain === ETH) {
+      if (modules && blockchain === Blockchain.ETH) {
         await dispatch(
           'session/enableModule',
           {
@@ -628,7 +623,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           balances: result
         });
 
-        if (blockchain === ETH && payload.modules) {
+        if (blockchain === Blockchain.ETH && payload.modules) {
           await dispatch(
             'session/enableModule',
             {
@@ -662,15 +657,15 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async editAccount({ commit }, payload: BlockchainAccountPayload) {
     const { blockchain } = payload;
-    const isBTC = blockchain === BTC;
+    const isBTC = blockchain === Blockchain.BTC;
     if (!isBTC) {
       const accountData = await api.editAccount(payload);
 
-      if (blockchain === ETH) {
+      if (blockchain === Blockchain.ETH) {
         commit('ethAccounts', accountData);
-      } else if (blockchain === KSM) {
+      } else if (blockchain === Blockchain.KSM) {
         commit('ksmAccounts', accountData);
-      } else if (blockchain === DOT) {
+      } else if (blockchain === Blockchain.DOT) {
         commit('dotAccounts', accountData);
       } else {
         commit('avaxAccounts', accountData);
@@ -685,11 +680,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     try {
       const [ethAccounts, btcAccounts, ksmAccounts, dotAccounts, avaxAccounts] =
         await Promise.all([
-          api.accounts(ETH),
+          api.accounts(Blockchain.ETH),
           api.btcAccounts(),
-          api.accounts(KSM),
-          api.accounts(DOT),
-          api.accounts(AVAX)
+          api.accounts(Blockchain.KSM),
+          api.accounts(Blockchain.DOT),
+          api.accounts(Blockchain.AVAX)
         ]);
 
       commit('ethAccounts', ethAccounts);
@@ -990,7 +985,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     commit('updateEth', eth);
 
-    const btcPrice = prices[BTC];
+    const btcPrice = prices[Blockchain.BTC];
     if (btcPrice) {
       for (const address in btc.standalone) {
         const balance = btc.standalone[address];

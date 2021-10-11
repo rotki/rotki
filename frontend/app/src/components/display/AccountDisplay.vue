@@ -22,12 +22,12 @@
 </template>
 
 <script lang="ts">
+import { GeneralAccount } from '@rotki/common/lib/account';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { truncateAddress } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
-import { GeneralAccount } from '@/typing/types';
 import { randomHex } from '@/typing/utils';
 
 @Component({

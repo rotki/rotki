@@ -1,9 +1,10 @@
+import { GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import store from '@/store/store';
-import { GeneralAccount } from '@/typing/types';
 
 Vue.use(Vuetify);
 
@@ -11,7 +12,7 @@ describe('AccountDisplay.vue', () => {
   let wrapper: Wrapper<AccountDisplay>;
 
   const account: GeneralAccount = {
-    chain: 'ETH',
+    chain: Blockchain.ETH,
     address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5',
     label: 'Test Account',
     tags: []

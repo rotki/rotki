@@ -22,3 +22,9 @@ export const AssetEntry = z.object({
 });
 export const AssetBalance = Balance.merge(AssetEntry);
 export type AssetBalance = z.infer<typeof AssetBalance>
+export type Diff<T, U> = T extends U ? never : T;
+
+export interface HasBalance {
+  readonly balance: Balance;
+}
+

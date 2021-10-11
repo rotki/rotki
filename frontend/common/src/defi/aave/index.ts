@@ -1,23 +1,18 @@
-import { Balance } from '@rotki/common';
-import { default as BigNumber } from 'bignumber.js';
-import {
-  DEFI_EVENT_BORROW,
-  DEFI_EVENT_LIQUIDATION,
-  DEFI_EVENT_REPAY
-} from '@/services/defi/consts';
-import { AaveEventType } from '@/services/defi/types';
-import { AAVE_BORROW_RATE } from '@/services/defi/types/consts';
-import { HasBalance } from '@/services/types-api';
-import { Diff } from '@/types';
+import { BigNumber } from "bignumber.js";
+import { Balance, Diff, HasBalance } from "../../index";
 
-type AaveBorrowRate = typeof AAVE_BORROW_RATE[number];
+enum AaveBorrowRate {
+  STABLE = "stable",
+  VARIABLE = "variable"
+}
 
 export interface AaveBorrowingRates {
   readonly stableApr: string;
   readonly variableApr: string;
 }
 
-interface AaveBorrowingAsset extends HasBalance, AaveBorrowingRates {}
+interface AaveBorrowingAsset extends HasBalance, AaveBorrowingRates {
+}
 
 interface AaveLendingAsset extends HasBalance {
   readonly apy: string;
@@ -27,7 +22,7 @@ interface AaveBorrowing {
   readonly [asset: string]: AaveBorrowingAsset;
 }
 
-interface AaveLending {
+export interface AaveLending {
   readonly [asset: string]: AaveLendingAsset;
 }
 
@@ -40,6 +35,20 @@ export interface AaveBalances {
   readonly [address: string]: AaveBalance;
 }
 
+export enum AaveBorrowingEventType {
+  REPAY = "repay",
+  LIQUIDATION = "liquidation",
+  BORROW = "borrow",
+}
+
+export enum AaveLendingEventType {
+  DEPOSIT = "deposit",
+  INTEREST = "interest",
+  WITHDRAWAL = "withdrawal",
+}
+
+export type AaveEventType = AaveLendingEventType | AaveBorrowingEventType;
+
 interface AaveBaseEvent {
   readonly eventType: AaveEventType;
   readonly blockNumber: number;
@@ -48,38 +57,41 @@ interface AaveBaseEvent {
   readonly logIndex: number;
 }
 
-interface AaveEvent extends AaveBaseEvent {
-  readonly eventType: Diff<AaveEventType, typeof DEFI_EVENT_LIQUIDATION>;
+export interface AaveEvent extends AaveBaseEvent {
+  readonly eventType: Diff<AaveEventType, typeof AaveBorrowingEventType.LIQUIDATION>;
   readonly asset: string;
   readonly atoken: string;
   readonly value: Balance;
 }
 
-interface AaveLiquidationEvent extends AaveBaseEvent {
-  readonly eventType: typeof DEFI_EVENT_LIQUIDATION;
+export interface AaveLiquidationEvent extends AaveBaseEvent {
+  readonly eventType: typeof AaveBorrowingEventType.LIQUIDATION;
   readonly collateralAsset: string;
   readonly collateralBalance: Balance;
   readonly principalAsset: string;
   readonly principalBalance: Balance;
 }
 
+export function isAaveLiquidationEvent(value: AaveHistoryEvents): value is AaveLiquidationEvent {
+  return value.eventType === AaveBorrowingEventType.LIQUIDATION;
+}
+
 interface AaveRepayEvent extends AaveEvent {
-  readonly eventType: typeof DEFI_EVENT_REPAY;
+  readonly eventType: typeof AaveBorrowingEventType.REPAY;
   readonly fee: Balance;
 }
 
 interface AaveBorrowEvent extends AaveEvent {
-  readonly eventType: typeof DEFI_EVENT_BORROW;
+  readonly eventType: typeof AaveBorrowingEventType.BORROW;
   readonly borrowRateMode: AaveBorrowRate;
   readonly borrowRate: BigNumber;
   readonly accruedBorrowInterest: BigNumber;
 }
 
-type AaveBorrowingEvent =
+export type AaveBorrowingEvent =
   | AaveLiquidationEvent
   | AaveRepayEvent
   | AaveBorrowEvent;
-
 export type AaveHistoryEvents = AaveEvent | AaveBorrowingEvent;
 
 export interface AaveHistoryTotal {

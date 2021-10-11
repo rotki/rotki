@@ -1,7 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
 import { PriceOracles } from '@/model/action-result';
 import { Currency } from '@/model/currency';
-import { DefiProtocol } from '@/services/defi/consts';
 import { Module } from '@/services/session/consts';
 import { AssetBalances } from '@/store/balances/types';
 import { LedgerActionType } from '@/store/history/consts';
@@ -77,16 +76,6 @@ export interface TaskResult<T> {
   status: 'completed' | 'not-found' | 'pending';
 }
 
-export const ETH = 'ETH';
-export const BTC = 'BTC';
-export const KSM = 'KSM';
-export const DOT = 'DOT';
-export const AVAX = 'AVAX';
-
-export const SupportedBlockchains = [ETH, BTC, KSM, DOT, AVAX] as const;
-
-export type Blockchain = typeof SupportedBlockchains[number];
-
 export const L2_LOOPRING = 'LRC';
 export const L2_PROTOCOLS = [L2_LOOPRING] as const;
 export type SupportedL2Protocol = typeof L2_PROTOCOLS[number];
@@ -161,20 +150,3 @@ export interface Tag {
 export interface Tags {
   [tag: string]: Tag;
 }
-
-export interface AccountData {
-  readonly address: string;
-  readonly label: string;
-  readonly tags: string[];
-}
-
-export interface Account {
-  readonly chain: Blockchain;
-  readonly address: string;
-}
-
-export interface DefiAccount extends Account {
-  readonly protocols: DefiProtocol[];
-}
-
-export interface GeneralAccount extends AccountData, Account {}

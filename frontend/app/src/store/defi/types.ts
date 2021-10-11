@@ -1,7 +1,20 @@
 import { Balance } from '@rotki/common';
+import { HasBalance } from '@rotki/common/lib';
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
+import {
+  AaveBalances,
+  AaveBorrowingRates,
+  AaveHistory,
+  AaveHistoryEvents,
+  AaveHistoryTotal
+} from '@rotki/common/lib/defi/aave';
+import {
+  BalancerBalances,
+  BalancerEvents
+} from '@rotki/common/lib/defi/balancer';
+import { DexTrade } from '@rotki/common/lib/defi/dex';
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { default as BigNumber } from 'bignumber.js';
-import { DefiProtocol } from '@/services/defi/consts';
 import {
   CollateralAssetType,
   DefiBalanceType,
@@ -9,13 +22,6 @@ import {
   EventType,
   MakerDAOVaultEventType
 } from '@/services/defi/types';
-import {
-  AaveBalances,
-  AaveBorrowingRates,
-  AaveHistory,
-  AaveHistoryEvents,
-  AaveHistoryTotal
-} from '@/services/defi/types/aave';
 import {
   CompoundBalances,
   CompoundEventType,
@@ -26,8 +32,6 @@ import {
   YearnVaultsBalances,
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
-import { TradeType } from '@/services/history/types';
-import { HasBalance } from '@/services/types-api';
 import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
 import { LiquityState } from '@/store/defi/liquity/types';
 import { SushiswapState } from '@/store/defi/sushiswap/types';
@@ -292,102 +296,6 @@ export interface ProfitLossModel {
   readonly value: Balance;
 }
 
-interface DexSwap {
-  readonly amount0In: BigNumber;
-  readonly amount0Out: BigNumber;
-  readonly amount1In: BigNumber;
-  readonly amount1Out: BigNumber;
-  readonly fromAddress: string;
-  readonly location: 'uniswap';
-  readonly logIndex: number;
-  readonly toAddress: string;
-  readonly token0: string;
-  readonly token1: string;
-  readonly txHash: string;
-}
-
-export interface DexTrade {
-  readonly address: string;
-  readonly amount: BigNumber;
-  readonly baseAsset: string;
-  readonly fee: BigNumber;
-  readonly feeCurrency: string;
-  readonly location: 'uniswap' | 'balancer';
-  readonly quoteAsset: string;
-  readonly rate: BigNumber;
-  readonly swaps: DexSwap[];
-  readonly timestamp: number;
-  readonly tradeId: string;
-  readonly tradeType: TradeType;
-  readonly txHash: string;
-}
-
 export interface DexTrades {
   readonly [address: string]: DexTrade[];
-}
-
-export interface BalancerUnderlyingToken {
-  readonly token: string;
-  readonly totalAmount: BigNumber;
-  readonly userBalance: Balance;
-  readonly usdPrice: BigNumber;
-  readonly weight: string;
-}
-
-interface BalancerBalance {
-  readonly address: string;
-  readonly tokens: BalancerUnderlyingToken[];
-  readonly totalAmount: BigNumber;
-  readonly userBalance: Balance;
-}
-
-export interface BalancerBalanceWithOwner extends BalancerBalance {
-  readonly owner: string;
-}
-
-export interface BalancerBalances {
-  readonly [address: string]: BalancerBalance[];
-}
-
-interface PoolToken {
-  readonly token: string;
-  readonly weight: string;
-}
-
-export interface PoolAmounts {
-  readonly [asset: string]: BigNumber;
-}
-
-export type Pool = {
-  readonly name: string;
-  readonly address: string;
-};
-
-export interface BalancerEvent {
-  readonly txHash: string;
-  readonly logIndex: number;
-  readonly timestamp: number;
-  readonly eventType: EventType;
-  readonly lpBalance: Balance;
-  readonly amounts: PoolAmounts;
-  readonly pool?: Pool;
-}
-
-interface BalancerPoolDetails {
-  readonly poolAddress: string;
-  readonly poolTokens: PoolToken[];
-  readonly events: BalancerEvent[];
-  readonly profitLossAmounts: PoolAmounts;
-  readonly usdProfitLoss: BigNumber;
-}
-
-export interface BalancerEvents {
-  readonly [address: string]: BalancerPoolDetails[];
-}
-
-export interface BalancerProfitLoss {
-  readonly pool: Pool;
-  readonly tokens: string[];
-  readonly usdProfitLoss: BigNumber;
-  readonly profitLossAmount: PoolAmounts;
 }

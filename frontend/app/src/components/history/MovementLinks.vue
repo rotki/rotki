@@ -15,11 +15,11 @@
   </span>
 </template>
 <script lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import HashLink from '@/components/helper/HashLink.vue';
 import { AssetMovement } from '@/services/history/types';
-import { ETH } from '@/typing/types';
 
 @Component({
   components: { HashLink },
@@ -33,7 +33,7 @@ export default class MovementLinks extends Vue {
 
   get transactionId(): string {
     const { transactionId } = this.item;
-    if (this.chain !== ETH) {
+    if (this.chain !== Blockchain.ETH) {
       return transactionId;
     }
     return transactionId.startsWith('0x')
@@ -42,8 +42,11 @@ export default class MovementLinks extends Vue {
   }
 
   get chain(): string {
-    if (this.isEthereumToken(this.item.asset) || this.item.asset === ETH) {
-      return ETH;
+    if (
+      this.isEthereumToken(this.item.asset) ||
+      this.item.asset === Blockchain.ETH
+    ) {
+      return Blockchain.ETH;
     }
     return this.item.asset;
   }

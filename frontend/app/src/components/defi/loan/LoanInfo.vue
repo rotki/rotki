@@ -6,6 +6,7 @@
 </template>
 
 <script lang="ts">
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
   computed,
   defineComponent,
@@ -16,7 +17,6 @@ import AaveLending from '@/components/defi/loan/loans/AaveLending.vue';
 import CompoundLending from '@/components/defi/loan/loans/CompoundLending.vue';
 import LiquityLending from '@/components/defi/loan/loans/LiquityLending.vue';
 import MakerDaoVaultLoan from '@/components/defi/loan/loans/MakerDaoVaultLoan.vue';
-import { DefiProtocol } from '@/services/defi/consts';
 import { CompoundLoan } from '@/services/defi/types/compound';
 import { LiquityLoan } from '@/store/defi/liquity/types';
 import { AaveLoan, MakerDAOVaultModel } from '@/store/defi/types';
