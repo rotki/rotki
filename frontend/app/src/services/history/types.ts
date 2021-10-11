@@ -79,7 +79,8 @@ export type EthTransactionWithMeta = z.infer<typeof EthTransactionWithMeta>;
 export const Transactions = z.object({
   entries: z.array(EthTransactionWithMeta),
   entriesFound: z.number(),
-  entriesLimit: z.number()
+  entriesLimit: z.number(),
+  entriesTotal: z.number()
 });
 
 export type Transactions = z.infer<typeof Transactions>;

@@ -43,6 +43,7 @@
         :transactions="transactions"
         :limit="limit"
         :total="total"
+        :found="found"
         :selected="selected"
         @update:selected="selected = $event"
         @update:pagination="onPaginationUpdate($event)"
@@ -123,9 +124,13 @@ export default defineComponent({
       const state: RotkehlchenState = store.state;
       return state.history!!.transactions.entriesLimit;
     });
-    const total = computed(() => {
+    const found = computed(() => {
       const state: RotkehlchenState = store.state;
       return state.history!!.transactions.entriesFound;
+    });
+    const total = computed(() => {
+      const state: RotkehlchenState = store.state;
+      return state.history!!.transactions.entriesTotal;
     });
 
     const fetchTransactions = async (refresh: boolean = false) => {
@@ -170,6 +175,7 @@ export default defineComponent({
       transactions,
       limit,
       total,
+      found,
       loading: shouldShowLoadingScreen(Section.TX),
       refreshing: isSectionRefreshing(Section.TX),
       refresh,

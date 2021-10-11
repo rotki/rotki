@@ -5,7 +5,7 @@
     show-expand
     single-expand
     :expanded="expanded"
-    :server-items-length="total"
+    :server-items-length="found"
     :options.sync="options"
     :class="$style.table"
   >
@@ -157,6 +157,10 @@ export default defineComponent({
       type: Number
     },
     total: {
+      required: true,
+      type: Number
+    },
+    found: {
       required: true,
       type: Number
     },

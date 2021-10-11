@@ -12,7 +12,8 @@ export const defaultState = (): HistoryState => ({
   transactions: {
     entries: [],
     entriesFound: 0,
-    entriesLimit: 0
+    entriesLimit: 0,
+    entriesTotal: 0
   },
   ledgerActions: defaultHistoricState()
 });
