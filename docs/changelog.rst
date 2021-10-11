@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`3578` Adding an external trade on a specific date without specifying time will now be possible. Any backend validation errors on the date field should now be properly visible.
+* :bug:`-` The NFT gallery will correctly display NFTs that include a video extension but not at the end of the url.
 
 * :release:`1.21.1 <2021-10-07>`
 * :feature:`3554` Gemini users will now have their earn balances tracked in rotki.
