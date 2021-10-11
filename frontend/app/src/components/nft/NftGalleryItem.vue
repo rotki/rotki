@@ -117,7 +117,7 @@ export default defineComponent({
       return videoExtensions.some(
         extension =>
           item.value.imageUrl !== null &&
-          item.value.imageUrl.includes(extension)
+          item.value.imageUrl.endsWith(extension)
       );
     });
     return { name, imageUrl, isVideo };
