@@ -69,12 +69,12 @@
 </template>
 
 <script lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import { explorerUrls } from '@/components/helper/asset-urls';
 import SettingsMixin from '@/mixins/settings-mixin';
 import { ExplorersSettings } from '@/store/settings/types';
-import { Blockchain, ETH, SupportedBlockchains } from '@/typing/types';
 
 const ETC = 'ETC' as const;
 
@@ -84,8 +84,8 @@ const ETC = 'ETC' as const;
   }
 })
 export default class Explorers extends Mixins(SettingsMixin) {
-  readonly supportedExplorers = [...SupportedBlockchains, ETC];
-  selection: Blockchain | typeof ETC = ETH;
+  readonly supportedExplorers = [...Object.values(Blockchain), ETC];
+  selection: Blockchain | typeof ETC = Blockchain.ETH;
   explorers!: ExplorersSettings;
 
   address: string = '';

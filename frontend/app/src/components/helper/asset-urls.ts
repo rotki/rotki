@@ -1,4 +1,4 @@
-import { Blockchain } from '@/typing/types';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 
 export type ExplorerUrls = {
   readonly address: string;

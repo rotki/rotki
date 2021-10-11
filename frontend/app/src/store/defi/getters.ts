@@ -1,4 +1,6 @@
 import { AddressIndexed, Balance } from '@rotki/common';
+import { DefiAccount } from '@rotki/common/lib/account';
+import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
   AaveBorrowingEventType,
   AaveEvent,
@@ -8,6 +10,12 @@ import {
   AaveLendingEventType,
   isAaveLiquidationEvent
 } from '@rotki/common/lib/defi/aave';
+import {
+  BalancerBalanceWithOwner,
+  BalancerEvent,
+  BalancerProfitLoss,
+  Pool
+} from '@rotki/common/lib/defi/balancer';
 import {
   XswapBalance,
   XswapEventDetails,
@@ -19,7 +27,7 @@ import sortBy from 'lodash/sortBy';
 import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress } from '@/filters';
 import i18n from '@/i18n';
-import { DefiProtocol, ProtocolVersion } from '@/services/defi/consts';
+import { ProtocolVersion } from '@/services/defi/consts';
 import { CompoundLoan } from '@/services/defi/types/compound';
 import { DEPOSIT } from '@/services/defi/types/consts';
 import {
@@ -49,9 +57,6 @@ import {
   Airdrop,
   AirdropDetail,
   AirdropType,
-  BalancerBalanceWithOwner,
-  BalancerEvent,
-  BalancerProfitLoss,
   BaseDefiBalance,
   Collateral,
   DefiBalance,
@@ -65,7 +70,6 @@ import {
   MakerDAOVaultModel,
   OverviewDefiProtocol,
   PoapDelivery,
-  Pool,
   ProfitLossModel,
   TokenInfo
 } from '@/store/defi/types';
@@ -81,7 +85,6 @@ import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';
 import { Writeable } from '@/types';
-import { DefiAccount, ETH } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
@@ -323,7 +326,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           } else {
             accounts[address] = {
               address,
-              chain: ETH,
+              chain: Blockchain.ETH,
               protocols: [selectedProtocol]
             };
           }

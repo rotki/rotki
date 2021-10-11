@@ -120,6 +120,8 @@
 </template>
 
 <script lang="ts">
+import { GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { XswapBalance } from '@rotki/common/lib/defi/xswap';
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
@@ -139,7 +141,6 @@ import StatusMixin from '@/mixins/status-mixin';
 import { UniswapDetails } from '@/premium/premium';
 import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
-import { ETH, GeneralAccount } from '@/typing/types';
 
 @Component({
   components: {
@@ -167,7 +168,7 @@ export default class Uniswap extends Mixins(
   PremiumMixin,
   AssetMixin
 ) {
-  readonly ETH = ETH;
+  readonly ETH = Blockchain.ETH;
   readonly modules: Module[] = [Module.UNISWAP];
   section = Section.DEFI_UNISWAP_BALANCES;
   secondSection = Section.DEFI_UNISWAP_EVENTS;

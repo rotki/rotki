@@ -94,6 +94,8 @@
 </template>
 
 <script lang="ts">
+import { GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Mixins } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapActions, mapGetters } from 'vuex';
@@ -116,7 +118,6 @@ import {
   AIRDROP_UNISWAP
 } from '@/store/defi/const';
 import { Airdrop, AirdropType } from '@/store/defi/types';
-import { ETH, GeneralAccount } from '@/typing/types';
 import PoapDeliveryAirdrops from '@/views/defi/PoapDeliveryAirdrops.vue';
 
 type AirdropSource = {
@@ -139,7 +140,7 @@ type AirdropSources = {
 })
 export default class Airdrops extends Mixins(StatusMixin) {
   readonly section = Section.DEFI_AIRDROPS;
-  readonly ETH = ETH;
+  readonly ETH = Blockchain.ETH;
   readonly headers: DataTableHeader[] = [
     {
       text: this.$t('airdrops.headers.source').toString(),

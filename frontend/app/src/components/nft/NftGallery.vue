@@ -103,6 +103,7 @@
 </template>
 
 <script lang="ts">
+import { GeneralAccount } from '@rotki/common/lib/account';
 import { ActionResult } from '@rotki/common/lib/data';
 import {
   computed,
@@ -128,7 +129,6 @@ import { Module } from '@/services/session/consts';
 import { SessionActions } from '@/store/session/const';
 import { GalleryNft, Nft, NftResponse, Nfts } from '@/store/session/types';
 import { useStore } from '@/store/utils';
-import { GeneralAccount } from '@/typing/types';
 import { uniqueStrings } from '@/utils/data';
 
 const requestPrices = () => {

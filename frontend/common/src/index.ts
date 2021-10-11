@@ -27,3 +27,4 @@ export type Diff<T, U> = T extends U ? never : T;
 export interface HasBalance {
   readonly balance: Balance;
 }
+

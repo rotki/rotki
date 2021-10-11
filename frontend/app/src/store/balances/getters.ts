@@ -1,4 +1,6 @@
 import { AssetBalance, Balance, HasBalance } from '@rotki/common';
+import { GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
@@ -29,17 +31,7 @@ import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { Writeable } from '@/types';
-import {
-  AVAX,
-  Blockchain,
-  BTC,
-  DOT,
-  ETH,
-  ExchangeInfo,
-  GeneralAccount,
-  KSM,
-  L2_LOOPRING
-} from '@/typing/types';
+import { ExchangeInfo, L2_LOOPRING } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
@@ -118,20 +110,20 @@ export const getters: Getters<
     eth,
     ethAccounts
   }: BalanceState): BlockchainAccountWithBalance[] {
-    return balances(ethAccounts, eth, ETH);
+    return balances(ethAccounts, eth, Blockchain.ETH);
   },
   kusamaBalances: ({ ksmAccounts, ksm }) => {
-    return balances(ksmAccounts, ksm, KSM);
+    return balances(ksmAccounts, ksm, Blockchain.KSM);
   },
 
   avaxAccounts: ({
     avaxAccounts,
     avax
   }: BalanceState): BlockchainAccountWithBalance[] => {
-    return balances(avaxAccounts, avax, AVAX);
+    return balances(avaxAccounts, avax, Blockchain.AVAX);
   },
   polkadotBalances: ({ dotAccounts, dot }) => {
-    return balances(dotAccounts, dot, DOT);
+    return balances(dotAccounts, dot, Blockchain.DOT);
   },
   btcAccounts({
     btc,
@@ -151,14 +143,14 @@ export const getters: Getters<
         address,
         label: label ?? '',
         tags: tags ?? [],
-        chain: BTC,
+        chain: Blockchain.BTC,
         balance
       });
     }
 
     for (const { addresses, derivationPath, label, tags, xpub } of xpubs) {
       accounts.push({
-        chain: BTC,
+        chain: Blockchain.BTC,
         xpub,
         derivationPath: derivationPath ?? '',
         address: '',
@@ -177,7 +169,7 @@ export const getters: Getters<
         const balance =
           index >= 0 ? xpubs[index].addresses[address] : zeroBalance();
         accounts.push({
-          chain: BTC,
+          chain: Blockchain.BTC,
           xpub: xpub,
           derivationPath: derivationPath ?? '',
           address: address,
@@ -413,7 +405,7 @@ export const getters: Getters<
       }
 
       totals.push({
-        chain: ETH,
+        chain: Blockchain.ETH,
         l2: l2Totals.sort((a, b) => b.usdValue.minus(a.usdValue).toNumber()),
         usdValue: sum(ethAccounts),
         loading: ethStatus === Status.NONE || ethStatus === Status.LOADING
@@ -423,7 +415,7 @@ export const getters: Getters<
     if (btcAccounts.length > 0) {
       const btcStatus = status(Section.BLOCKCHAIN_BTC);
       totals.push({
-        chain: BTC,
+        chain: Blockchain.BTC,
         l2: [],
         usdValue: sum(btcAccounts),
         loading: btcStatus === Status.NONE || btcStatus === Status.LOADING
@@ -433,7 +425,7 @@ export const getters: Getters<
     if (kusamaBalances.length > 0) {
       const ksmStatus = status(Section.BLOCKCHAIN_KSM);
       totals.push({
-        chain: KSM,
+        chain: Blockchain.KSM,
         l2: [],
         usdValue: sum(kusamaBalances),
         loading: ksmStatus === Status.NONE || ksmStatus === Status.LOADING
@@ -443,7 +435,7 @@ export const getters: Getters<
     if (avaxAccounts.length > 0) {
       const avaxStatus = status(Section.BLOCKCHAIN_AVAX);
       totals.push({
-        chain: AVAX,
+        chain: Blockchain.AVAX,
         l2: [],
         usdValue: sum(avaxAccounts),
         loading: avaxStatus === Status.NONE || avaxStatus === Status.LOADING
@@ -453,7 +445,7 @@ export const getters: Getters<
     if (polkadotBalances.length > 0) {
       const dotStatus = status(Section.BLOCKCHAIN_DOT);
       totals.push({
-        chain: DOT,
+        chain: Blockchain.DOT,
         l2: [],
         usdValue: sum(polkadotBalances),
         loading: dotStatus === Status.NONE || dotStatus === Status.LOADING
@@ -641,7 +633,7 @@ export const getters: Getters<
         }
         breakdown.push({
           address,
-          location: ETH,
+          location: Blockchain.ETH,
           balance: assetBalance
         });
       }
@@ -659,19 +651,19 @@ export const getters: Getters<
         } else {
           breakdown.push({
             address,
-            location: ETH,
+            location: Blockchain.ETH,
             balance: loopringBalances[address][asset]
           });
         }
       }
 
-      if (asset === BTC) {
+      if (asset === Blockchain.BTC) {
         if (standalone) {
           for (const address in standalone) {
             const btcBalance = standalone[address];
             breakdown.push({
               address,
-              location: BTC,
+              location: Blockchain.BTC,
               balance: btcBalance
             });
           }
@@ -685,7 +677,7 @@ export const getters: Getters<
               const btcBalance = addresses[address];
               breakdown.push({
                 address,
-                location: BTC,
+                location: Blockchain.BTC,
                 balance: btcBalance
               });
             }
@@ -701,7 +693,7 @@ export const getters: Getters<
         }
         breakdown.push({
           address,
-          location: KSM,
+          location: Blockchain.KSM,
           balance: assetBalance
         });
       }
@@ -714,7 +706,7 @@ export const getters: Getters<
         }
         breakdown.push({
           address,
-          location: DOT,
+          location: Blockchain.DOT,
           balance: assetBalance
         });
       }
@@ -727,7 +719,7 @@ export const getters: Getters<
         }
         breakdown.push({
           address,
-          location: AVAX,
+          location: Blockchain.AVAX,
           balance: assetBalance
         });
       }

@@ -108,6 +108,8 @@
 </template>
 
 <script lang="ts">
+import { GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
@@ -119,7 +121,7 @@ import {
   QueriedAddressPayload
 } from '@/services/session/types';
 import { Nullable } from '@/types';
-import { ETH, GeneralAccount, Tags } from '@/typing/types';
+import { Tags } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 
 @Component({
@@ -169,13 +171,14 @@ export default class QueriedAddressDialog extends Vue {
   get usableAddresses(): string[] {
     if (!this.module || this.addresses(this.module).length === 0) {
       return this.accounts
-        .filter(({ chain }) => chain === ETH)
+        .filter(({ chain }) => chain === Blockchain.ETH)
         .map(({ address }) => address);
     }
     const addresses = this.addresses(this.module);
     return this.accounts
       .filter(
-        ({ chain, address }) => chain === ETH && !addresses.includes(address)
+        ({ chain, address }) =>
+          chain === Blockchain.ETH && !addresses.includes(address)
       )
       .map(({ address }) => address);
   }

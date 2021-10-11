@@ -173,6 +173,8 @@
 </template>
 
 <script lang="ts">
+import { Account, DefiAccount } from '@rotki/common/lib/account';
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { default as BigNumber } from 'bignumber.js';
 import Component from 'vue-class-component';
 import { Mixins } from 'vue-property-decorator';
@@ -199,14 +201,13 @@ import {
   LendingHistory,
   YearnVaultsProfitDetails
 } from '@/premium/premium';
-import { DefiProtocol, ProtocolVersion } from '@/services/defi/consts';
+import { ProtocolVersion } from '@/services/defi/consts';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 import { DefiGetterTypes } from '@/store/defi/getters';
 import { BaseDefiBalance, ProfitLossModel } from '@/store/defi/types';
 import { Nullable } from '@/types';
-import { Account, DefiAccount } from '@/typing/types';
 
 @Component({
   components: {

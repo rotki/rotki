@@ -169,6 +169,7 @@
 
 <script lang="ts">
 import { AssetBalance, Balance } from '@rotki/common';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
@@ -195,7 +196,7 @@ import {
   XpubPayload
 } from '@/store/balances/types';
 import { Properties } from '@/types';
-import { Blockchain, BTC, ETH, Tags } from '@/typing/types';
+import { Tags } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 
 @Component({
@@ -399,7 +400,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
       }
     ];
 
-    if (this.blockchain !== BTC) {
+    if (this.blockchain !== Blockchain.BTC) {
       headers.push({
         text: '',
         value: 'expand',
@@ -454,7 +455,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
               label: '',
               tags: [],
               balance: { amount: Zero, usdValue: Zero },
-              chain: BTC
+              chain: Blockchain.BTC
             }
           );
         })
@@ -464,7 +465,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   private withL2(
     balances: BlockchainAccountWithBalance[]
   ): BlockchainAccountWithBalance[] {
-    if (this.blockchain !== ETH) {
+    if (this.blockchain !== Blockchain.ETH) {
       return balances;
     }
 
@@ -476,7 +477,8 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
       }
       const chainBalance = value.balance;
       const loopringEth =
-        assetBalances.find(({ asset }) => asset === ETH)?.amount ?? Zero;
+        assetBalances.find(({ asset }) => asset === Blockchain.ETH)?.amount ??
+        Zero;
       return {
         ...value,
         balance: {
@@ -502,11 +504,11 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   }
 
   get isBtc(): boolean {
-    return this.blockchain === BTC;
+    return this.blockchain === Blockchain.BTC;
   }
 
   get expandable(): boolean {
-    return this.blockchain === ETH;
+    return this.blockchain === Blockchain.ETH;
   }
 
   removeCollapsed({ derivationPath, xpub }: XpubPayload) {

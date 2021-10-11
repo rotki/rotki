@@ -1,4 +1,6 @@
 import { Balance, HasBalance } from '@rotki/common';
+import { GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { BigNumber } from 'bignumber.js';
 import { z } from 'zod';
@@ -16,10 +18,8 @@ import { KRAKEN_ACCOUNT_TYPES } from '@/store/balances/const';
 import { Section } from '@/store/const';
 import { Nullable } from '@/types';
 import {
-  Blockchain,
   ExchangeData,
   ExchangeRates,
-  GeneralAccount,
   SupportedL2Protocol
 } from '@/typing/types';
 

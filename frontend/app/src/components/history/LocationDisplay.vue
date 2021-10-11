@@ -8,13 +8,13 @@
 </template>
 
 <script lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { tradeLocations } from '@/components/history/consts';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocationData } from '@/components/history/type';
 import AssetMixin from '@/mixins/asset-mixin';
 import { TradeLocation } from '@/services/history/types';
-import { SupportedBlockchains } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 
 @Component({
@@ -48,7 +48,7 @@ export default class LocationDisplay extends Mixins(AssetMixin) {
   }
 
   private isSupportedBlockchain(identifier: string): boolean {
-    return SupportedBlockchains.includes(identifier as any);
+    return Object.values(Blockchain).includes(identifier as any);
   }
 }
 </script>

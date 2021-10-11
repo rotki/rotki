@@ -19,9 +19,9 @@
 </template>
 
 <script lang="ts">
+import { BalancerUnderlyingToken } from '@rotki/common/lib/defi/balancer';
 import { defineComponent, PropType } from '@vue/composition-api';
 import AssetMixin from '@/mixins/asset-mixin';
-import { BalancerUnderlyingToken } from '@/store/defi/types';
 
 export default defineComponent({
   name: 'BalancerPoolAsset',

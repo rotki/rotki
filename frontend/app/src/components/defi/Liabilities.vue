@@ -87,6 +87,7 @@
 </template>
 
 <script lang="ts">
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { PropType } from 'vue';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
@@ -101,7 +102,6 @@ import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import StatusMixin from '@/mixins/status-mixin';
-import { DefiProtocol } from '@/services/defi/consts';
 import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 import {

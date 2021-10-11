@@ -30,11 +30,11 @@
 </template>
 
 <script lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Mixins, Prop, Watch } from 'vue-property-decorator';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import { currencies } from '@/data/currencies';
 import AssetMixin from '@/mixins/asset-mixin';
-import { BTC, ETH } from '@/typing/types';
 
 @Component({
   components: { GeneratedIcon }
@@ -81,7 +81,7 @@ export default class AssetIcon extends Mixins(AssetMixin) {
   }
 
   get currency(): string | undefined {
-    if (this.asset === BTC || this.asset === ETH) {
+    if (this.asset === Blockchain.BTC || this.asset === Blockchain.ETH) {
       return undefined;
     }
     return currencies.find(({ ticker_symbol }) => ticker_symbol === this.asset)
