@@ -31,6 +31,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_MAIN_CURRENCY,
     DEFAULT_PNL_CSV_HAVE_SUMMARY,
     DEFAULT_PNL_CSV_WITH_FORMULAS,
+    DEFAULT_SSF_0GRAPH_MULTIPLIER,
     DEFAULT_TAXABLE_LEDGER_ACTIONS,
     DEFAULT_UI_FLOATING_PRECISION,
     ROTKEHLCHEN_DB_VERSION,
@@ -346,6 +347,7 @@ def test_writing_fetching_data(data_dir, username):
         'taxable_ledger_actions': DEFAULT_TAXABLE_LEDGER_ACTIONS,
         'pnl_csv_with_formulas': DEFAULT_PNL_CSV_WITH_FORMULAS,
         'pnl_csv_have_summary': DEFAULT_PNL_CSV_HAVE_SUMMARY,
+        'ssf_0graph_multiplier': DEFAULT_SSF_0GRAPH_MULTIPLIER,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 
@@ -579,7 +581,7 @@ def test_query_timed_balances(data_dir, username):
         to_ts=1485907000,
         asset=A_ETH,
     )
-    assert len(all_data) == 158
+    assert len(all_data) == 2
     result = [x for x in all_data if x.amount != '0']
     assert len(result) == 2
     assert result[0].time == 1451606401
@@ -592,7 +594,7 @@ def test_query_timed_balances(data_dir, username):
     assert result[1].usd_value == '123'
 
     all_data = data.db.query_timed_balances(A_ETH)
-    assert len(all_data) == 399
+    assert len(all_data) == 4
     result = [x for x in all_data if x.amount != '0']
     assert len(result) == 4
     result = data.db.query_timed_balances(A_ETH, balance_type=BalanceType.LIABILITY)

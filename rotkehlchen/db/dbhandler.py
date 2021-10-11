@@ -52,7 +52,7 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -2676,6 +2676,7 @@ class DBHandler:
             from_ts = Timestamp(0)
         if to_ts is None:
             to_ts = ts_now()
+        settings = self.get_settings()
 
         querystr = (
             f'SELECT time, amount, usd_value, category FROM timed_balances '
@@ -2701,15 +2702,19 @@ class DBHandler:
                     category=category,
                 ),
             )
-            if idx == results_length - 1:
+            if settings.ssf_0graph_multiplier == 0 or idx == results_length - 1:
                 continue
 
             next_result_time = results[idx + 1][0]
-            while next_result_time - entry_time > DAY_IN_SECONDS:
-                entry_time = entry_time + DAY_IN_SECONDS
+            max_diff = settings.balance_save_frequency * HOUR_IN_SECONDS * settings.ssf_0graph_multiplier  # noqa: E501
+            while next_result_time - entry_time > max_diff:
+                entry_time = entry_time + settings.balance_save_frequency * HOUR_IN_SECONDS
+                if entry_time >= next_result_time:
+                    break
+
                 balances.append(
                     SingleDBAssetBalance(
-                        time=Timestamp(min(entry_time, next_result_time - 1)),
+                        time=entry_time,
                         amount='0',
                         usd_value='0',
                         category=category,

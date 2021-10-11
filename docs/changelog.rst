@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3576` User asset charts should no longer have arbitrary zero amounts. There is now a setting they can choose which is off by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
 * :bug:`3578` Adding an external trade on a specific date without specifying time will now be possible. Any backend validation errors on the date field should now be properly visible.
 * :bug:`-` The NFT gallery will correctly display NFTs that include a video extension but not at the end of the url.
 * :bug:`3593` Sorting by asset in the dashboard asset table and blockchain balances per asset table should now properly sort alphabetically by the asset symbol.
