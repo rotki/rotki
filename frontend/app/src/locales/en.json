@@ -509,6 +509,9 @@
       "price": "Price in {currency}",
       "price_in_asset": "Price in asset"
     },
+    "row": {
+      "total": "Total"
+    },
     "title": "NFT Balances"
   },
   "non_fungible_balances": {
@@ -523,7 +526,8 @@
     "refresh": "Refresh the balances",
     "row": {
       "delete": "Delete the custom price",
-      "edit": "Edit or set the custom price"
+      "edit": "Edit or set the custom price",
+      "total": "Total"
     },
     "title": "Non Fungible Balances"
   },
@@ -2735,8 +2739,7 @@
     }
   },
   "statistics": {
-    "no_premium": "@:common.no_premium Statistics are @:common.available_to_premium",
-    "get_premium": "@:common.visit_website"
+    "no_premium_label": "Statistics are"
   },
   "profit_loss_report": {
     "download_csv": "Download CSV",
@@ -2978,7 +2981,8 @@
   },
   "no_premium_placeholder": {
     "get_premium": "@:common.visit_website",
-    "no_premium": "@:common.no_premium {text} @:common.available_to_premium"
+    "no_premium": "@:common.no_premium",
+    "premium_only": " {text} @:common.available_to_premium"
   },
   "l2": {
     "loopring": "Loopring"

@@ -2,10 +2,21 @@
 Changelog
 =========
 
+* :bug:`1864` Users will correctly see their imported trades from Cointracking for non connected exchanges.
+
+* :release:`1.21.1 <2021-10-07>`
+* :feature:`3554` Gemini users will now have their earn balances tracked in rotki.
+* :bug:`3555` Users should now be able to see the total value in the table of NFTs in the dashboard
+* :bug:`3579` Asset type selector will now be properly disabled when editing an asset.
+* :bug:`-` Statistics per asset graph will now properly display the name of the NFT.
 * :bug:`3547` Coinbase transactions without network data returned should now be processed properly.
 * :bug:`3546` Coinbase users with trades/deposits/withdrawals/balances of FET (Fetch.ai) should have it properly detected.
 * :bug:`2613` Graphs of assets that used to miss all 0 balance data points between two time point will now properly show a 0 amount in the asset graph for the time period.
-* :bug:`1864` Users will correctly see their imported trades from Cointracking for non connected exchanges.
+* :bug:`3552` Users with semi-fungible tokens in different ethereum wallets will see them correctly in the NFT gallery.
+* :bug:`-` Docker users will be able to retrieve automatic information for tokens when adding new ethereum assets.
+* :bug:`3414` Coinbase conversions should display the correct fee.
+* :bug:`3208` Rotki will now allow to track the same account for different blockchain types.
+* :bug:`-` The value of NFTs will now be properly included as part of the total net worth when calculating an asset's percentage.
 
 * :release:`1.21.0 <2021-09-30>`
 * :feature:`3251` Users will now be able to easily access the asset edit page from the asset details page.
@@ -26,7 +37,6 @@ Changelog
 * :bug:`3266` Users will now be able to properly access most of the top bar content using a mobile device.
 * :bug:`3268` Users will now be able to properly scroll to the hidden tabs when using a mobile device.
 * :bug:`3267` Frontend will now occupy all the available screen when accessed from a mobile device.
-* :bug:`3208` Rotki is now able to accept and track the same account for different blockchain types.
 * :bug:`3463` Users using Turkish localization will now be able to use the application.
 * :bug:`3448` Improve Kucoin api rate limit handling. Recognize CFG asset in Kucoin as WCFG.
 * :bug:`3452` Trades from externally imported exchanges (blockfi, crypto.com etc.) should now be properly taken into accounting in the PnL report again.

@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.constants.assets import CONSTANT_ASSETS
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
@@ -869,7 +870,7 @@ class GlobalDBHandler():
         try:
             cursor.executemany(
                 'INSERT OR IGNORE INTO user_owned_assets(asset_id) VALUES(?)',
-                [(x.identifier,) for x in assets],
+                [(x.identifier,) for x in assets if not x.identifier.startswith(NFT_DIRECTIVE)],
             )
         except sqlite3.IntegrityError as e:
             log.error(

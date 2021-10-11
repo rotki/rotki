@@ -1911,7 +1911,7 @@ Querying ethereum transactions
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a GET on the transactions endpoint for ETH will query all ethereum transactions for all the tracked user addresses. Caller can also specify an address to further filter the query as a from address. Also he can limit the queried transactions by timestamps. If the user is not premium and has more than 500 transaction then the returned transaction will be limited to that number. Any filtering will also be limited to those first 500 transaction. Transactions are returned most recent first.
+   Doing a GET on the transactions endpoint for ETH will query all ethereum transactions for all the tracked user addresses. Caller can also specify an address to further filter the query as a from address. Also they can limit the queried transactions by timestamps. If the user is not premium and has more than 500 transaction then the returned transaction will be limited to that number. Any filtering will also be limited to those first 500 transaction. Transactions are returned most recent first.
 
    **Example Request**:
 
@@ -1973,8 +1973,14 @@ Querying ethereum transactions
             }],
             "entries_found": 95,
             "entries_limit": 500,
+            "entries_total": 1000
         "message": ""
       }
+
+   :reqjson object result: A list of transaction entries to return for the given filter.
+   :reqjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :reqjson int entries_limit: The limit of entries if free version. -1 for premium.
+   :reqjson int entries_total: The number of total entries ignoring all filters.
 
    :statuscode 200: Transactions succesfull queried
    :statuscode 400: Provided JSON is in some way malformed
@@ -3483,7 +3489,7 @@ Dealing with trades
       }
 
    :resjson object entries: An array of trade objects and their metadata. Each entry is composed of the main trade entry under the ``"entry"`` key and other metadata like ``"ignored_in_accounting"`` for each trade.
-   :resjsonarr string trade_id: The uniquely identifying identifier for this trade.
+   :resjsonarr string trade_id: The uniquely identifying identifier for this trade. The trade id depends on the data of the trade. If the trade is edited so will the trade id.
    :resjsonarr int timestamp: The timestamp at which the trade occured
    :resjsonarr string location: A valid location at which the trade happened
    :resjsonarr string base_asset: The base_asset of the trade.
@@ -3575,6 +3581,7 @@ Dealing with trades
 .. http:patch:: /api/(version)/trades
 
    Doing a PATCH on this endpoint edits an existing trade in rotki's currently logged in user using the ``trade_id``.
+   The edited trade's trade id is returned and will be different.
 
    **Example Request**:
 
@@ -3599,7 +3606,7 @@ Dealing with trades
           "notes": "Optional notes"
       }
 
-   :reqjson string trade_id: The ``trade_id`` of the trade to edit
+   :reqjson string trade_id: The ``trade_id`` of the trade to edit. Note: the returned trade id will be different.
    :reqjson int timestamp: The new timestamp
    :reqjson string location: The new location
    :reqjson string base_asset: The new base_asset
@@ -3636,7 +3643,7 @@ Dealing with trades
           "message": ""
       }
 
-   :resjson object result: A trade with the same schema as seen in `this <trades_schema_section_>`_ section.
+   :resjson object result: A trade with the same schema as seen in `this <trades_schema_section_>`_ section. The trade id will be different if the trade was succesfully edited.
    :statuscode 200: Trades was succesfully edited.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is logged in. The given trade identifier to edit does not exist.

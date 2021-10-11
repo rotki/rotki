@@ -145,7 +145,8 @@ def setup_ethereum_transactions_test(
     transactions = [transaction1, transaction2]
     if transaction_already_queried is True:
         dbethtx.add_ethereum_transactions(ethereum_transactions=transactions)
-        assert dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make()) == transactions
+        result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make())
+        assert result == transactions
 
     expected_receipt1 = EthereumTxReceipt(
         tx_hash=tx_hash1_b,

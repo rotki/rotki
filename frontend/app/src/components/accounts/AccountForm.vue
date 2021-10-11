@@ -197,13 +197,7 @@ import {
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { Message } from '@/store/types';
-import {
-  Blockchain,
-  BTC,
-  ETH,
-  GeneralAccount,
-  SupportedBlockchains
-} from '@/typing/types';
+import { Blockchain, BTC, ETH, SupportedBlockchains } from '@/typing/types';
 import { trimOnPaste } from '@/utils/event';
 import { getMetamaskAddresses } from '@/utils/metamask';
 
@@ -278,7 +272,6 @@ export default class AccountForm extends Vue {
   multiple: boolean = false;
   readonly errorMessages: ValidationErrors = validationErrors();
   xpubKeyPrefix: XpubPrefix = XPUB_VALUE;
-  account!: (address: string) => GeneralAccount | undefined;
   addAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
   addAccounts!: (payload: AddAccountsPayload) => Promise<void>;
   editAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
@@ -362,10 +355,7 @@ export default class AccountForm extends Vue {
   }
 
   private checkIfExists(value: string): boolean | string {
-    return (
-      (!!value && !this.account(value)) ||
-      this.$tc('account_form.validation.address_exists')
-    );
+    return !!value || this.$tc('account_form.validation.address_exists');
   }
 
   @Prop({ required: false, default: null })

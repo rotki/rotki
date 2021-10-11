@@ -687,19 +687,19 @@ Rotki provides an NFT gallery where you can view the NFTs owned by your accounts
    :alt: NFT Gallery
    :align: center
 
-You can have an overview of the total value of your NFTs in the application dashboard.
+You have an overview of the total value of your NFTs in the application dashboard, on the NFTs table.
 
 .. image:: images/sc_nf_balances_dashboard.png
    :alt: NFT Value Dashboard
    :align: center
 
-The value of the NFTs you own is counted into your total net worth.
+An estimation of the value of the NFTs you own is counted into your total net worth. The estimation strategy is currently the maximum of either the floor price of the collection or the last sale of the NFT. If a manual price has been given this is always preferred.
 
 .. image:: images/sc_nf_price.png
    :alt: NFT Value Dashboard
    :align: center
 
-If a price cannot be found for an NFT asset you can easily set the price for this asset manually.
+If a price cannot be found for an NFT asset or if you want to change the calculated price estimate you can easily set the price for an NFT asset manually. You can do this by either clicking on the ``>`` in the NFTs table in the dashboard or by going to ``Blockchains & Accounts`` -> ``Non-fungible balances``. And then click on the pen icon for the NFT you are interested in.
 
 ETH2 Staking
 =====================
