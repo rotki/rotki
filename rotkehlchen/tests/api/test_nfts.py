@@ -15,8 +15,8 @@ from rotkehlchen.tests.utils.api import (
 )
 
 TEST_ACC1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
-TEST_ACC2 = '0x3ba6eb0e4327b96ade6d4f3b578724208a590cef'
-TEST_ACC3 = '0xc21a5ee89d306353e065a6dd5779470de395dbac'
+TEST_ACC2 = '0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF'
+TEST_ACC3 = '0xC21A5ee89D306353e065a6dd5779470DE395DBaC'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
@@ -62,6 +62,48 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
             assert isinstance(entry['collection']['description'], str)
             assert entry['collection']['large_image'].startswith('https://')
             break
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+def test_nft_query_after_account_add(rotkehlchen_api_server):
+    """Test for https://github.com/rotki/rotki/issues/3590"""
+    # add account 1
+    data = {'accounts': [{'address': TEST_ACC1}]}
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json=data)
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'nftsresource',
+    ))
+    result = assert_proper_response_with_result(response)
+
+    if len(result['addresses']) == 0:
+        test_warnings.warn(UserWarning(f'Test account {TEST_ACC1} has no NFTs'))
+        return
+
+    assert TEST_ACC1 in result['addresses']
+
+    # now add another account and refresh NFTs, ignoring cache
+    data = {'accounts': [{'address': TEST_ACC2}]}
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json=data)
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'nftsresource',
+        ), json={'ignore_cache': True},
+    )
+    result = assert_proper_response_with_result(response)
+    assert TEST_ACC1 in result['addresses']
+    assert TEST_ACC2 in result['addresses']
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC2, TEST_ACC3]])
