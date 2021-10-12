@@ -423,9 +423,15 @@ class RestAPI():
         response_result = self._get_exchange_rates(given_currencies)
         return api_response(result=response_result, status_code=HTTPStatus.OK)
 
-    def _query_all_balances(self, save_data: bool, ignore_cache: bool) -> Dict[str, Any]:
+    def _query_all_balances(
+            self,
+            save_data: bool,
+            ignore_errors: bool,
+            ignore_cache: bool,
+    ) -> Dict[str, Any]:
         result = self.rotkehlchen.query_balances(
             requested_save_data=save_data,
+            save_despite_errors=ignore_errors,
             ignore_cache=ignore_cache,
         )
         return {'result': result, 'message': ''}
@@ -434,6 +440,7 @@ class RestAPI():
     def query_all_balances(
             self,
             save_data: bool,
+            ignore_errors: bool,
             async_query: bool,
             ignore_cache: bool,
     ) -> Response:
@@ -441,10 +448,15 @@ class RestAPI():
             return self._query_async(
                 command='_query_all_balances',
                 save_data=save_data,
+                ignore_errors=ignore_errors,
                 ignore_cache=ignore_cache,
             )
 
-        response = self._query_all_balances(save_data=save_data, ignore_cache=ignore_cache)
+        response = self._query_all_balances(
+            save_data=save_data,
+            ignore_errors=ignore_errors,
+            ignore_cache=ignore_cache,
+        )
         return api_response(
             _wrap_in_result(process_result(response['result']), response['message']),
             HTTPStatus.OK,
