@@ -646,6 +646,14 @@
     "value_rounding_hint": "Specify how the value (e.g the FIAT value of an owned asset) is rounded.",
     "amount_rounding_hint": "Specify how the amount (e.g. the amount of an owned asset) is rounded."
   },
+  "statistics_graph_settings": {
+    "label": "Multiplier",
+    "off": "No missed snapshots will be considered as being zero.",
+    "on": "Any missing snapshot balances after {period} hours will considered zero",
+    "save": "Save",
+    "subtitle": "Set after how many missed snapshots a balance will be considered zero.",
+    "title": "Missing snapshot multiplier"
+  },
   "sushiswap": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "premium": "Sushiswap feature "

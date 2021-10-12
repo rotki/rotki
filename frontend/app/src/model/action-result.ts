@@ -49,6 +49,7 @@ export interface DBSettings {
   readonly historical_price_oracles: PriceOracles[];
   readonly pnl_csv_with_formulas: boolean;
   readonly pnl_csv_have_summary: boolean;
+  readonly ssf_0graph_multiplier: number;
 }
 
 interface ApiKey {
