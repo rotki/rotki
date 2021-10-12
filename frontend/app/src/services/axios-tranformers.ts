@@ -35,7 +35,7 @@ const isObject = (data: any): boolean =>
   !(data instanceof Date) &&
   !(data instanceof BigNumber);
 
-function getUpdatedKey(key: string, camelCase: boolean) {
+export function getUpdatedKey(key: string, camelCase: boolean) {
   if (camelCase) {
     return key.includes('_')
       ? key.replace(/_(.)/gu, (_, p1) => p1.toUpperCase())

@@ -990,13 +990,7 @@
     "loading": "Please wait while your ledger actions are getting loaded...",
     "loading_subtitle": "The loading of ledger actions might take a while depending on the number of actions you performed.",
     "refresh_tooltip": "Refresh your ledger actions",
-    "title": "Ledger Actions",
-    "ignore": {
-      "no_actions": {
-        "description": "All the selected actions are already ignored | All the selected actions are already included",
-        "title": "No actions to ignore | No actions to unignore"
-      }
-    }
+    "title": "Ledger Actions"
   },
   "ledger_action_settings": {
     "header": {
@@ -1520,12 +1514,12 @@
       "title": "Details",
       "no_details": "No details found."
     },
-    "loading_subtitle": "The loading of asset movements might take a while depending on the amount of exchanges, and actions you performed on these exchanges.",
-    "ignore": {
-      "no_actions": {
-        "description": "All the selected actions are already ignored | All the selected actions are already included",
-        "title": "No actions to ignore | No actions to unignore"
-      }
+    "loading_subtitle": "The loading of asset movements might take a while depending on the amount of exchanges, and actions you performed on these exchanges."
+  },
+  "ignore": {
+    "no_items": {
+      "description": "All the selected entries are already ignored | All the selected entries are already included",
+      "title": "No entries to ignore | No entries to unignore"
     }
   },
   "history": {
@@ -2327,11 +2321,8 @@
     "transaction": "TX:"
   },
   "transactions": {
-    "ignore": {
-      "no_actions": {
-        "description": "All the selected actions are already ignored | All the selected actions are already included",
-        "title": "No actions to ignore | No actions to unignore"
-      }
+    "filter": {
+      "label": "Filter by account"
     },
     "loading": "Please wait while your transactions are getting loaded...",
     "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",

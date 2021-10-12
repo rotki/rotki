@@ -7,6 +7,7 @@ import {
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import {
   axiosSnakeCaseTransformer,
+  getUpdatedKey,
   setupTransformer
 } from '@/services/axios-tranformers';
 import {
@@ -18,7 +19,9 @@ import {
   LedgerActionResult,
   NewTrade,
   Trade,
-  TradeLocation
+  TradeLocation,
+  TransactionRequestPayload,
+  Transactions
 } from '@/services/history/types';
 import {
   EntryWithMeta,
@@ -33,7 +36,6 @@ import {
 } from '@/services/utils';
 import { LedgerAction } from '@/store/history/types';
 import { ReportProgress } from '@/store/reports/types';
-import { assert } from '@/utils/assertions';
 
 export class HistoryApi {
   private readonly axios: AxiosInstance;
@@ -113,24 +115,42 @@ export class HistoryApi {
       .then(handleResponse);
   }
 
-  async ethTransactions(
-    address: string,
-    onlyCache: boolean
-  ): Promise<PendingTask> {
-    assert(address.length > 0);
+  private internalEthTransactions<T>(
+    payload: TransactionRequestPayload,
+    async: boolean
+  ): Promise<T> {
+    let url = `/blockchains/ETH/transactions`;
+    const { address, ...data } = payload;
+    if (address) {
+      url += `/${address}`;
+    }
     return this.axios
-      .get<ActionResult<PendingTask>>(
-        `/blockchains/ETH/transactions/${address}`,
-        {
-          params: axiosSnakeCaseTransformer({
-            asyncQuery: true,
-            onlyCache: onlyCache ? onlyCache : undefined
-          }),
-          validateStatus: validWithParamsSessionAndExternalService,
-          transformResponse: setupTransformer([])
-        }
-      )
+      .get<ActionResult<T>>(url, {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: async,
+          ...data,
+          orderByAttribute: getUpdatedKey(payload.orderByAttribute, false)
+        }),
+        validateStatus: validWithParamsSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
       .then(handleResponse);
+  }
+
+  async ethTransactionsTask(
+    payload: TransactionRequestPayload
+  ): Promise<PendingTask> {
+    return this.internalEthTransactions<PendingTask>(payload, true);
+  }
+
+  async ethTransactions(
+    payload: TransactionRequestPayload
+  ): Promise<Transactions> {
+    const ethTransactions = await this.internalEthTransactions<Transactions>(
+      payload,
+      false
+    );
+    return Transactions.parse(ethTransactions);
   }
 
   async ledgerActions(

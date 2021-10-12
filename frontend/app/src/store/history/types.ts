@@ -2,15 +2,11 @@ import { default as BigNumber } from 'bignumber.js';
 import { TaskMeta } from '@/model/task';
 import {
   AssetMovement,
-  EthTransaction,
   Trade,
-  TradeLocation
+  TradeLocation,
+  Transactions
 } from '@/services/history/types';
-import {
-  FETCH_SOURCE,
-  IGNORE_ACTION_TYPE,
-  LedgerActionType
-} from '@/store/history/consts';
+import { FETCH_SOURCE, LedgerActionType } from '@/store/history/consts';
 import { Nullable } from '@/types';
 
 export interface HistoricData<T> {
@@ -22,38 +18,24 @@ export interface HistoricData<T> {
 type EntryMeta = { readonly ignoredInAccounting: boolean };
 
 export type AssetMovementEntry = AssetMovement & EntryMeta;
-export type EthTransactionEntry = EthTransaction & EntryMeta;
 export type TradeEntry = Trade & EntryMeta;
 export type LedgerActionEntry = LedgerAction & EntryMeta;
 
-interface Trades extends HistoricData<TradeEntry> {}
+export interface Trades extends HistoricData<TradeEntry> {}
 
-interface AssetMovements extends HistoricData<AssetMovementEntry> {}
-
-interface EthTransactions extends HistoricData<EthTransactionEntry> {}
-
-interface LedgerActions extends HistoricData<LedgerActionEntry> {}
+export interface AssetMovements extends HistoricData<AssetMovementEntry> {}
+export interface LedgerActions extends HistoricData<LedgerActionEntry> {}
 
 export interface HistoryState {
   ledgerActions: LedgerActions;
   trades: Trades;
   assetMovements: AssetMovements;
-  transactions: EthTransactions;
+  transactions: Transactions;
 }
 
 export interface LocationRequestMeta extends TaskMeta {
   readonly location: TradeLocation;
 }
-
-export interface AccountRequestMeta extends TaskMeta {
-  readonly address: string;
-}
-
-export type EthTransactionWithFee = EthTransactionEntry & {
-  readonly gasFee: BigNumber;
-  readonly key: string;
-};
-
 export interface LedgerAction {
   readonly identifier: number;
   readonly timestamp: number;
@@ -69,7 +51,12 @@ export interface LedgerAction {
 
 export type UnsavedAction = Omit<LedgerAction, 'identifier'>;
 
-export type IgnoreActionType = typeof IGNORE_ACTION_TYPE[number];
+export enum IgnoreActionType {
+  MOVEMENTS = 'asset movement',
+  TRADES = 'trade',
+  LEDGER_ACTIONS = 'ledger action',
+  ETH_TRANSACTIONS = 'ethereum transaction'
+}
 export type IgnoreActionPayload = {
   readonly actionIds: string[];
   readonly type: IgnoreActionType;

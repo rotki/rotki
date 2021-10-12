@@ -153,14 +153,11 @@ import StatusMixin from '@/mixins/status-mixin';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
-import {
-  HistoryActions,
-  IGNORE_LEDGER_ACTION,
-  LedgerActionType
-} from '@/store/history/consts';
+import { HistoryActions, LedgerActionType } from '@/store/history/consts';
 import {
   HistoricData,
   IgnoreActionPayload,
+  IgnoreActionType,
   LedgerAction,
   LedgerActionEntry,
   UnsavedAction
@@ -342,17 +339,14 @@ export default class LedgerActions extends Mixins(StatusMixin) {
       const choice = ignore ? 1 : 2;
       this.setMessage({
         success: false,
-        title: this.$tc('ledger_actions.ignore.no_actions.title', choice),
-        description: this.$tc(
-          'ledger_actions.ignore.no_actions.description',
-          choice
-        )
+        title: this.$tc('ignore.no_items.title', choice).toString(),
+        description: this.$tc('ignore.no_items.description', choice).toString()
       });
       return;
     }
     const payload: IgnoreActionPayload = {
       actionIds: actionIds,
-      type: IGNORE_LEDGER_ACTION
+      type: IgnoreActionType.LEDGER_ACTIONS
     };
 
     if (ignore) {

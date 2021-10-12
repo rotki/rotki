@@ -93,6 +93,31 @@ export const setStatus: (
   commit('setStatus', payload, { root: true });
 };
 
+export const getStatusUpdater = (
+  commit: Commit,
+  section: Section,
+  getStatus: (section: Section) => Status
+) => {
+  const setStatus = (status: Status) => {
+    if (getStatus(section) === status) {
+      return;
+    }
+    const payload: StatusPayload = {
+      section: section,
+      status: status
+    };
+    commit('setStatus', payload, { root: true });
+  };
+
+  const loading = () => isLoading(getStatus(section));
+  const isFirstLoad = () => getStatus(section) === Status.NONE;
+  return {
+    loading,
+    isFirstLoad,
+    setStatus
+  };
+};
+
 export function isLoading(status: Status): boolean {
   return (
     status === Status.LOADING ||

@@ -22,7 +22,6 @@ import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES,
-  ALL_TRANSACTIONS,
   Module
 } from '@/services/session/consts';
 import {
@@ -584,12 +583,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     } else if (purgable === ALL_DECENTRALIZED_EXCHANGES) {
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.UNISWAP, opts);
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.BALANCER, opts);
-    } else if (purgable === ALL_TRANSACTIONS) {
-      await dispatch(
-        `history/${HistoryActions.PURGE_TRANSACTIONS}`,
-        undefined,
-        opts
-      );
     } else if (purgable === ALL_MODULES) {
       await dispatch(`staking/${ACTION_PURGE_DATA}`, ALL_MODULES, opts);
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, ALL_MODULES, opts);

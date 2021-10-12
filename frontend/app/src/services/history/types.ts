@@ -1,4 +1,6 @@
+import { NumericString } from '@rotki/common';
 import { default as BigNumber } from 'bignumber.js';
+import { z } from 'zod';
 import {
   SupportedExchange,
   SupportedTradeLocation
@@ -51,20 +53,49 @@ export interface AssetMovement {
   readonly link: string;
 }
 
-export interface EthTransaction {
-  readonly txHash: string;
-  readonly timestamp: number;
-  readonly blockNumber: number;
-  readonly fromAddress: string;
-  readonly toAddress: string;
-  readonly value: BigNumber;
-  readonly gas: BigNumber;
-  readonly gasPrice: BigNumber;
-  readonly gasUsed: BigNumber;
-  readonly inputData: string;
-  readonly nonce: number;
-}
+export const EthTransaction = z.object({
+  txHash: z.string(),
+  timestamp: z.number(),
+  blockNumber: z.number(),
+  fromAddress: z.string(),
+  toAddress: z.string(),
+  value: NumericString,
+  gas: NumericString,
+  gasPrice: NumericString,
+  gasUsed: NumericString,
+  inputData: z.string(),
+  nonce: z.number()
+});
+
+export type EthTransaction = z.infer<typeof EthTransaction>;
+
+const EthTransactionWithMeta = z.object({
+  entry: EthTransaction,
+  ignoredInAccounting: z.boolean()
+});
+
+export type EthTransactionWithMeta = z.infer<typeof EthTransactionWithMeta>;
+
+export const Transactions = z.object({
+  entries: z.array(EthTransactionWithMeta),
+  entriesFound: z.number(),
+  entriesLimit: z.number(),
+  entriesTotal: z.number()
+});
+
+export type Transactions = z.infer<typeof Transactions>;
 
 export interface LedgerActionResult {
   readonly identifier: number;
 }
+
+export type TransactionRequestPayload = {
+  readonly limit: number;
+  readonly offset: number;
+  readonly orderByAttribute: keyof EthTransaction;
+  readonly ascending: boolean;
+  readonly fromTimestamp?: number;
+  readonly toTimestamp?: number;
+  readonly onlyCache?: boolean;
+  readonly address?: string;
+};

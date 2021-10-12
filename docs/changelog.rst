@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`1451` Improves performance of the Transactions page.
+
 * :release:`1.21.1 <2021-10-07>`
 * :feature:`3554` Gemini users will now have their earn balances tracked in rotki.
 * :bug:`3555` Users should now be able to see the total value in the table of NFTs in the dashboard
