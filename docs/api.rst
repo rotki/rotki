@@ -2326,6 +2326,7 @@ Querying all balances
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
    :reqjson bool save_data: Boolean denoting whether to force save data even if the balance save frequency has not lapsed (see `here <balance_save_frequency_>`_ ).
+   :reqjson bool ignore_error: Boolean denoting whether to still save a snapshot of balances even if there is an error. Off by default. So if for example Binance exchange errors out and this is true then a snapshot will be taken. Otherwise it won't.
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
    :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
    :param bool save_data: Boolean denoting whether to force save data even if the balance save frequency has not lapsed (see `here <balance_save_frequency_>`_ ).

@@ -1263,6 +1263,7 @@ class NewUserSchema(BaseUserSchema):
 class AllBalancesQuerySchema(Schema):
     async_query = fields.Boolean(load_default=False)
     save_data = fields.Boolean(load_default=False)
+    ignore_errors = fields.Boolean(load_default=False)
     ignore_cache = fields.Boolean(load_default=False)
 
 
