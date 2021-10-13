@@ -2865,6 +2865,7 @@
     }
   },
   "sync_indicator": {
+    "ignore_errors": "Save the balance snapshot ignoring any errors on external APIs. The can cause the snapshot to be incomplete.",
     "menu_tooltip": "View the date of the last balances snapshot | View the date of the last balances snapshot, and the time of the last premium database sync",
     "snapshot_title": "Last balances snapshot",
     "never_saved": "Never",
