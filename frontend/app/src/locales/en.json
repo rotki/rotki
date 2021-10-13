@@ -555,6 +555,9 @@
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
   },
+  "pagination": {
+    "of": "of {length}"
+  },
   "price_form": {
     "date": "Date",
     "date_non_empty": "The date of the price cannot be empty",

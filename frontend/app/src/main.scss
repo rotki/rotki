@@ -22,3 +22,15 @@ html {
   /* stylelint-enable */
   box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1) !important;
 }
+
+.v-menu {
+  &__content {
+    background: white;
+
+    &.theme {
+      &--dark {
+        background: var(--v-dark-base);
+      }
+    }
+  }
+}

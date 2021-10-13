@@ -48,7 +48,7 @@
             </v-card>
           </v-col>
           <v-col :cols="isMobile ? '12' : 'auto'">
-            <v-pagination v-if="pages > 0" v-model="page" :length="pages" />
+            <pagination v-if="pages > 0" v-model="page" :length="pages" />
           </v-col>
         </v-row>
       </v-col>
@@ -119,6 +119,7 @@ import { Dispatch } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
+import Pagination from '@/components/helper/Pagination.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
@@ -278,6 +279,7 @@ const setupNfts = (
 export default defineComponent({
   name: 'NftGallery',
   components: {
+    Pagination,
     ActiveModules,
     BaseExternalLink,
     NoDataScreen,
