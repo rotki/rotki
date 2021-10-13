@@ -48,8 +48,8 @@
     "headers": {
       "amount": "Amount",
       "asset": "Asset",
-      "price": "Price in {symbol}",
-      "value": "{symbol} Value"
+      "price": "Price in {currency}",
+      "value": "{currency} Value"
     },
     "loading": "Please wait while rotki queries the blockchain...",
     "total": "Total"

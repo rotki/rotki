@@ -73,7 +73,7 @@ export interface BalanceGetters {
   assetPriceInfo: (asset: string) => AssetPriceInfo;
   breakdown: (asset: string) => AssetBreakdown[];
   loopringBalances: (address: string) => AssetBalance[];
-  blockchainAssets: AssetBalance[];
+  blockchainAssets: AssetBalanceWithPrice[];
   getIdentifierForSymbol: IdentifierForSymbolGetter;
   byLocation: BalanceByLocation;
   exchangeNonce: (exchange: SupportedExchange) => number;
@@ -224,6 +224,7 @@ export const getters: Getters<
     (exchange: string): AssetBalance[] => {
       const ignoredAssets = session!.ignoredAssets;
       const exchangeBalances = state.exchangeBalances[exchange];
+      const noPrice = new BigNumber(-1);
       return exchangeBalances
         ? Object.keys(exchangeBalances)
             .filter(asset => !ignoredAssets.includes(asset))
@@ -232,7 +233,8 @@ export const getters: Getters<
                 ({
                   asset,
                   amount: exchangeBalances[asset].amount,
-                  usdValue: exchangeBalances[asset].usdValue
+                  usdValue: exchangeBalances[asset].usdValue,
+                  usdPrice: state.prices[asset] ?? noPrice
                 } as AssetBalance)
             )
         : [];
@@ -777,7 +779,13 @@ export const getters: Getters<
     return balances;
   },
   blockchainAssets: (state, { totals }, { session }) => {
-    const blockchainTotal = [...totals];
+    const noPrice = new BigNumber(-1);
+    const blockchainTotal = [
+      ...totals.map(value => ({
+        ...value,
+        usdPrice: state.prices[value.asset] ?? noPrice
+      }))
+    ];
     const ignoredAssets = session!.ignoredAssets;
     const loopringBalances = state.loopringBalances;
     for (const address in loopringBalances) {
@@ -791,7 +799,8 @@ export const getters: Getters<
         if (!existing) {
           blockchainTotal.push({
             asset,
-            ...accountBalances[asset]
+            ...accountBalances[asset],
+            usdPrice: state.prices[asset] ?? noPrice
           });
         } else {
           const sum = balanceSum(existing, accountBalances[asset]);

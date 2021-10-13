@@ -74,7 +74,7 @@
 </template>
 
 <script lang="ts">
-import { AssetBalance } from '@rotki/common';
+import { AssetBalanceWithPrice } from '@rotki/common';
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
@@ -114,7 +114,7 @@ export default class BlockchainBalances extends Vue {
   kusamaBalances!: AccountWithBalance[];
   polkadotBalances!: AccountWithBalance[];
   avaxAccounts!: AccountWithBalance[];
-  blockchainAssets!: AssetBalance[];
+  blockchainAssets!: AssetBalanceWithPrice[];
 
   accountToEdit: BlockchainAccountWithBalance | null = null;
   dialogTitle: string = '';
