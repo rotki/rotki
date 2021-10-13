@@ -122,6 +122,7 @@ export interface BlockchainBalancePayload {
 export interface AllBalancePayload {
   readonly ignoreCache: boolean;
   readonly saveData: boolean;
+  readonly ignoreErrors: boolean;
 }
 
 export interface AccountWithBalance extends GeneralAccount, HasBalance {}
