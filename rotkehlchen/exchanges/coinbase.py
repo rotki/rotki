@@ -618,12 +618,12 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     return None
                 # Can't see the fee being charged from the "send" resource
-                amount_data = raw_data.get('amount')
+                amount_data = raw_data.get('amount', {})
                 amount = deserialize_asset_amount_force_positive(amount_data['amount'])
                 asset = asset_from_coinbase(amount_data['currency'], time=timestamp)
                 # Fees dont appear in the docs but from an experiment of sending ETH
                 # to an address from coinbase there is the network fee in the response
-                raw_network = raw_data.get('network')
+                raw_network = raw_data.get('network', {})
                 if raw_network and 'transaction_fee' in raw_network:
                     raw_fee = raw_network['transaction_fee']
                     if raw_fee:
@@ -649,7 +649,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 movement_category = deserialize_asset_movement_category(
                     raw_data.get('resource', ''),
                 )
-                amount_data = raw_data.get('amount')
+                amount_data = raw_data.get('amount', {})
                 asset = asset_from_coinbase(amount_data['currency'], time=timestamp)
                 amount = deserialize_asset_amount_force_positive(amount_data['amount'])
                 if 'fee' in raw_data:
@@ -751,10 +751,10 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         'found in coinbase transactions processing'
                     )
                     raise DeserializationError(msg)
-                amount_data = raw_data.get('amount')
+                amount_data = raw_data.get('amount', {})
                 amount = deserialize_asset_amount(amount_data['amount'])
                 asset = asset_from_coinbase(amount_data['currency'], time=timestamp)
-                native_amount_data = raw_data.get('native_amount')
+                native_amount_data = raw_data.get('native_amount', {})
                 native_amount = deserialize_asset_amount(native_amount_data['amount'])
                 native_asset = asset_from_coinbase(native_amount_data['currency'])
                 rate = ZERO
