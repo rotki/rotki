@@ -53,6 +53,19 @@ import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleMixin from '@/mixins/module-mixin';
 import { Module } from '@/services/session/consts';
 import { BalanceActions } from '@/store/balances/action-types';
+import { BalanceMutations } from '@/store/balances/mutation-types';
+
+const wasActivated = (
+  active: Module[],
+  previouslyActive: Module[],
+  module: Module
+) => active.includes(module) && !previouslyActive.includes(module);
+
+const wasDeactivated = (
+  active: Module[],
+  previouslyActive: Module[],
+  module: Module
+) => !active.includes(module) && previouslyActive.includes(module);
 
 @Component({})
 export default class ModuleSelector extends Mixins(ModuleMixin) {
@@ -66,12 +79,17 @@ export default class ModuleSelector extends Mixins(ModuleMixin) {
   }
 
   unselect(identifier: Module) {
+    const previouslyActive = [...this.selectedModules];
     const selectionIndex = this.selectedModules.indexOf(identifier);
     if (selectionIndex < 0) {
       return;
     }
     this.selectedModules.splice(selectionIndex, 1);
     this.update(this.selectedModules);
+
+    if (wasDeactivated(this.selectedModules, previouslyActive, Module.NFTS)) {
+      this.clearNfBalances();
+    }
   }
 
   async update(activeModules: Module[]) {
@@ -82,24 +100,24 @@ export default class ModuleSelector extends Mixins(ModuleMixin) {
     this.loading = false;
   }
 
-  private wasActivated(
-    active: Module[],
-    previouslyActive: Module[],
-    module: Module
-  ) {
-    return active.includes(module) && !previouslyActive.includes(module);
+  private onModuleActivation(active: Module[]) {
+    if (wasActivated(active, this.selectedModules, Module.NFTS)) {
+      this.fetchNfBalances();
+    }
   }
 
-  private onModuleActivation(active: Module[]) {
-    if (this.wasActivated(active, this.selectedModules, Module.NFTS)) {
-      setTimeout(
-        () =>
-          this.$store
-            .dispatch(`balances/${BalanceActions.FETCH_NF_BALANCES}`)
-            .then(),
-        800
-      );
-    }
+  private fetchNfBalances() {
+    const callback = () =>
+      this.$store
+        .dispatch(`balances/${BalanceActions.FETCH_NF_BALANCES}`)
+        .then();
+    setTimeout(callback, 800);
+  }
+
+  private clearNfBalances() {
+    const callback = () =>
+      this.$store.commit(`balances/${BalanceMutations.UPDATE_NF_BALANCES}`, {});
+    setTimeout(callback, 800);
   }
 }
 </script>
