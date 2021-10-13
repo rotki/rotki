@@ -212,10 +212,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             'query_online_deposits_withdrawals should only be implemented by subclasses',
         )
 
-    def query_online_income_loss_expense(  # pylint: disable=no-self-use
+    def query_online_income_loss_expense(
             self,
-            start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,  # pylint: disable=unused-argument
+            start_ts: Timestamp,
+            end_ts: Timestamp,
     ) -> List[LedgerAction]:
         """Queries the exchange's API for the ledger actions of the user
 
@@ -224,7 +224,9 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
         For example coinbase
         """
-        return []
+        raise NotImplementedError(
+            'query_online_income_loss_expense should only be implemented by subclasses',
+        )
 
     @protect_with_lock()
     def query_trade_history(
