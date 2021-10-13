@@ -141,8 +141,12 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import i18n from '@/i18n';
 import { AssetSymbolGetter } from '@/store/balances/types';
-import { HistoryActions, IGNORE_LEDGER_ACTION } from '@/store/history/consts';
-import { LedgerActionEntry, IgnoreActionPayload } from '@/store/history/types';
+import { HistoryActions } from '@/store/history/consts';
+import {
+  LedgerActionEntry,
+  IgnoreActionPayload,
+  IgnoreActionType
+} from '@/store/history/types';
 import store from '@/store/store';
 import { ActionStatus, Message } from '@/store/types';
 import { useStore } from '@/store/utils';
@@ -335,18 +339,14 @@ const setupIgnore = (
       const choice = ignored ? 1 : 2;
       setMessage({
         success: false,
-        title: i18n
-          .tc('ledger_actions.ignore.no_actions.title', choice)
-          .toString(),
-        description: i18n
-          .tc('ledger_actions.ignore.no_actions.description', choice)
-          .toString()
+        title: i18n.tc('ignore.no_items.title', choice).toString(),
+        description: i18n.tc('ignore.no_items.description', choice).toString()
       });
       return;
     }
     const payload: IgnoreActionPayload = {
       actionIds: ids,
-      type: IGNORE_LEDGER_ACTION
+      type: IgnoreActionType.LEDGER_ACTIONS
     };
     if (ignored) {
       status = await ignoreActions(payload);

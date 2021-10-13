@@ -68,7 +68,6 @@ import {
   FetchSource,
   HistoricData,
   IgnoreActionPayload,
-  IgnoreActionType,
   LedgerAction,
   LedgerActionEntry,
   UnsavedAction

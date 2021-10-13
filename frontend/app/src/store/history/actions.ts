@@ -58,7 +58,6 @@ import {
 } from '@/store/history/types';
 import { getKey } from '@/store/history/utils';
 import { Severity } from '@/store/notifications/consts';
-import { NotificationPayload } from '@/store/notifications/types';
 import { notify, userNotify } from '@/store/notifications/utils';
 import {
   ActionStatus,
