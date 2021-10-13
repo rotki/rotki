@@ -33,3 +33,9 @@ export const currency = computed(() => {
   const { ticker_symbol } = sessionState.generalSettings.selectedCurrency;
   return ticker_symbol;
 });
+
+export const floatingPrecision = computed(() => {
+  const sessionState = getSessionState();
+  const { floatingPrecision } = sessionState.generalSettings;
+  return floatingPrecision;
+});

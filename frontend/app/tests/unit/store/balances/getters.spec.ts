@@ -1,4 +1,4 @@
-import { AssetBalance } from '@rotki/common';
+import { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import sortBy from 'lodash/sortBy';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
@@ -76,6 +76,13 @@ describe('balances:getters', () => {
         }
       ],
       manualLiabilities: [],
+      prices: {
+        DAI: bigNumberify(1),
+        EUR: bigNumberify(1),
+        SAI: bigNumberify(1),
+        ETH: bigNumberify(3000),
+        BTC: bigNumberify(40000)
+      },
       connectedExchanges: [
         {
           location: 'bittrex',
@@ -103,29 +110,34 @@ describe('balances:getters', () => {
         {
           asset: 'EUR',
           amount: bigNumberify(50),
-          usdValue: bigNumberify(50)
+          usdValue: bigNumberify(50),
+          usdPrice: bigNumberify(1)
         },
         {
           asset: 'DAI',
           amount: bigNumberify(200),
-          usdValue: bigNumberify(200)
+          usdValue: bigNumberify(200),
+          usdPrice: bigNumberify(1)
         },
         {
           asset: 'BTC',
           amount: bigNumberify(150),
-          usdValue: bigNumberify(150)
+          usdValue: bigNumberify(150),
+          usdPrice: bigNumberify(40000)
         },
         {
           asset: 'ETH',
           amount: bigNumberify(150),
-          usdValue: bigNumberify(150)
+          usdValue: bigNumberify(150),
+          usdPrice: bigNumberify(3000)
         },
         {
           asset: 'SAI',
           amount: bigNumberify(100),
-          usdValue: bigNumberify(100)
+          usdValue: bigNumberify(100),
+          usdPrice: bigNumberify(1)
         }
-      ] as AssetBalance[],
+      ] as AssetBalanceWithPrice[],
       'asset'
     );
 

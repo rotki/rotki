@@ -1,8 +1,7 @@
 <template>
-  <v-card>
-    <v-card-title>
-      <card-title>{{ title }}</card-title>
-      <v-spacer />
+  <card outlined-body>
+    <template #title>{{ title }}</template>
+    <template #details>
       <v-text-field
         v-model="search"
         outlined
@@ -13,228 +12,223 @@
         single-line
         hide-details
       />
-    </v-card-title>
-    <v-card-text>
-      <v-sheet outlined rounded>
-        <data-table
-          class="dashboard-asset-table__balances"
-          :headers="headers"
-          :items="balances"
-          :search="search"
-          :loading="loading"
-          sort-by="usdValue"
-          :custom-sort="sortItems"
-          :custom-filter="assetFilter"
+    </template>
+    <data-table
+      class="dashboard-asset-table__balances"
+      :headers="tableHeaders"
+      :items="balances"
+      :search.sync="search"
+      :loading="loading"
+      sort-by="usdValue"
+      :custom-sort="sortItems"
+      :custom-filter="assetFilter"
+    >
+      <template #header.usdValue>
+        <div class="text-no-wrap">
+          {{
+            $t('dashboard_asset_table.headers.value', {
+              symbol: currencySymbol
+            })
+          }}
+        </div>
+      </template>
+      <template #header.usdPrice>
+        <div class="text-no-wrap">
+          {{
+            $t('dashboard_asset_table.headers.price', {
+              symbol: currencySymbol
+            })
+          }}
+        </div>
+      </template>
+      <template #item.asset="{ item }">
+        <asset-details opens-details :asset="item.asset" />
+      </template>
+      <template #item.amount="{ item }">
+        <amount-display :value="item.amount" />
+      </template>
+      <template #item.usdValue="{ item }">
+        <amount-display
+          show-currency="symbol"
+          :fiat-currency="item.asset"
+          :amount="item.amount"
+          :value="item.usdValue"
+        />
+      </template>
+      <template #item.usdPrice="{ item }">
+        <amount-display
+          v-if="item.usdPrice && item.usdPrice.gte(0)"
+          show-currency="symbol"
+          fiat-currency="USD"
+          tooltip
+          :price-asset="item.asset"
+          :value="item.usdPrice"
+        />
+        <span v-else>-</span>
+      </template>
+      <template #item.percentage="{ item }">
+        <percentage-display :value="percentage(item.usdValue)" />
+      </template>
+      <template #no-results>
+        <span class="grey--text text--darken-2">
+          {{
+            $t('dashboard_asset_table.no_search_result', {
+              search
+            })
+          }}
+        </span>
+      </template>
+      <template v-if="balances.length > 0 && search.length < 1" #body.append>
+        <tr
+          v-if="$vuetify.breakpoint.smAndUp"
+          class="dashboard-asset-table__balances__total font-weight-medium"
         >
-          <template #header.usdValue>
-            <div class="text-no-wrap">
-              {{
-                $t('dashboard_asset_table.headers.value', {
-                  symbol: currencySymbol
-                })
-              }}
-            </div>
-          </template>
-          <template #header.price>
-            <div class="text-no-wrap">
-              {{
-                $t('dashboard_asset_table.headers.price', {
-                  symbol: currencySymbol
-                })
-              }}
-            </div>
-          </template>
-          <template #item.asset="{ item }">
-            <asset-details opens-details :asset="item.asset" />
-          </template>
-          <template #item.amount="{ item }">
-            <amount-display :value="item.amount" />
-          </template>
-          <template #item.usdValue="{ item }">
+          <td colspan="3">{{ $t('dashboard_asset_table.total') }}</td>
+          <td class="text-end">
             <amount-display
+              :fiat-currency="currencySymbol"
+              :value="total"
               show-currency="symbol"
-              :fiat-currency="item.asset"
-              :amount="item.amount"
-              :value="item.usdValue"
             />
-          </template>
-          <template #item.price="{ item }">
-            <amount-display
-              show-currency="symbol"
-              fiat-currency="USD"
-              tooltip
-              :price-asset="item.asset"
-              :value="prices[item.asset] ? prices[item.asset] : '-'"
-            />
-          </template>
-          <template #item.percentage="{ item }">
-            <percentage-display :value="percentage(item.usdValue)" />
-          </template>
-          <template #no-results>
-            <span class="grey--text text--darken-2">
-              {{
-                $t('dashboard_asset_table.no_search_result', {
-                  search
-                })
-              }}
-            </span>
-          </template>
-          <template
-            v-if="balances.length > 0 && search.length < 1"
-            #body.append
-          >
-            <tr
-              v-if="$vuetify.breakpoint.smAndUp"
-              class="dashboard-asset-table__balances__total font-weight-medium"
-            >
-              <td colspan="3">{{ $t('dashboard_asset_table.total') }}</td>
-              <td class="text-end">
+          </td>
+          <td />
+        </tr>
+        <tr v-else>
+          <td>
+            <v-row class="justify-space-between">
+              <v-col cols="auto" class="font-weight-medium">
+                {{ $t('dashboard_asset_table.total') }}
+              </v-col>
+              <v-col cols="auto">
                 <amount-display
                   :fiat-currency="currencySymbol"
-                  :value="
-                    aggregateTotal(
-                      balances,
-                      currencySymbol,
-                      exchangeRate(currencySymbol),
-                      floatingPrecision
-                    )
-                  "
+                  :value="total"
                   show-currency="symbol"
                 />
-              </td>
-              <td />
-            </tr>
-            <tr v-else>
-              <td>
-                <v-row class="justify-space-between">
-                  <v-col cols="auto" class="font-weight-medium">
-                    {{ $t('dashboard_asset_table.total') }}
-                  </v-col>
-                  <v-col cols="auto">
-                    <amount-display
-                      :fiat-currency="currencySymbol"
-                      :value="
-                        aggregateTotal(
-                          balances,
-                          currencySymbol,
-                          exchangeRate(currencySymbol),
-                          floatingPrecision
-                        )
-                      "
-                      show-currency="symbol"
-                    />
-                  </v-col>
-                </v-row>
-              </td>
-            </tr>
-          </template>
-        </data-table>
-      </v-sheet>
-    </v-card-text>
-  </v-card>
+              </v-col>
+            </v-row>
+          </td>
+        </tr>
+      </template>
+    </data-table>
+  </card>
 </template>
 
 <script lang="ts">
-import { AssetBalance } from '@rotki/common';
+import { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs
+} from '@vue/composition-api';
 import { default as BigNumber } from 'bignumber.js';
-import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { DataTableHeader } from 'vuetify';
-import { mapGetters, mapState } from 'vuex';
-import DataTable from '@/components/helper/DataTable.vue';
-import { CURRENCY_USD } from '@/data/currencies';
+import {
+  setupAssetInfoRetrieval,
+  setupExchangeRateGetter
+} from '@/composables/balances';
+import { currency, floatingPrecision } from '@/composables/session';
+import { totalNetWorthUsd } from '@/composables/statistics';
 import { aggregateTotal } from '@/filters';
-import AssetMixin from '@/mixins/asset-mixin';
-import { AssetPrices, ExchangeRateGetter } from '@/store/balances/types';
+import i18n from '@/i18n';
 import { Nullable } from '@/types';
 import { getSortItems } from '@/utils/assets';
 
-@Component({
-  components: { DataTable },
-  computed: {
-    ...mapGetters('session', ['floatingPrecision', 'currencySymbol']),
-    ...mapGetters('balances', ['exchangeRate']),
-    ...mapGetters('statistics', ['totalNetWorthUsd']),
-    ...mapState('balances', ['prices'])
+const tableHeaders = [
+  {
+    text: i18n.t('dashboard_asset_table.headers.asset').toString(),
+    value: 'asset',
+    cellClass: 'asset-info'
+  },
+  {
+    text: i18n.t('dashboard_asset_table.headers.price').toString(),
+    value: 'usdPrice',
+    align: 'end'
+  },
+  {
+    text: i18n.t('dashboard_asset_table.headers.amount'),
+    value: 'amount',
+    align: 'end',
+    cellClass: 'asset-divider'
+  },
+  {
+    text: i18n.t('dashboard_asset_table.headers.value').toString(),
+    value: 'usdValue',
+    align: 'end',
+    class: 'text-no-wrap'
+  },
+  {
+    text: i18n.t('dashboard_asset_table.headers.percentage').toString(),
+    value: 'percentage',
+    align: 'end',
+    cellClass: 'asset-percentage',
+    class: 'text-no-wrap',
+    sortable: false
   }
-})
-export default class DashboardAssetTable extends Mixins(AssetMixin) {
-  @Prop({ required: false, type: Boolean, default: false })
-  loading!: boolean;
-  @Prop({ required: true, type: String })
-  title!: string;
-  @Prop({ required: true, type: Array })
-  balances!: AssetBalance[];
+];
 
-  totalNetWorthUsd!: BigNumber;
-  floatingPrecision!: number;
-  currencySymbol!: string;
-  prices!: AssetPrices;
-  exchangeRate!: ExchangeRateGetter;
-
-  search: string = '';
-
-  readonly aggregateTotal = aggregateTotal;
-
-  assetFilter(
-    _value: Nullable<string>,
-    search: Nullable<string>,
-    item: Nullable<AssetBalance>
-  ) {
-    if (!search || !item) {
-      return true;
+const DashboardAssetTable = defineComponent({
+  name: 'DashboardAssetTable',
+  props: {
+    loading: { required: false, type: Boolean, default: false },
+    title: { required: true, type: String },
+    balances: {
+      required: true,
+      type: Array as PropType<AssetBalanceWithPrice[]>
     }
-    const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
-    const name = this.getAssetName(item.asset)?.toLocaleLowerCase()?.trim();
-    const symbol = this.getSymbol(item.asset)?.toLocaleLowerCase()?.trim();
-    return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
-  }
+  },
+  setup(props) {
+    const { balances } = toRefs(props);
+    const search = ref('');
 
-  sortItems = getSortItems(this.$store.getters['balances/assetInfo']);
+    const currencySymbol = currency;
+    const exchangeRate = setupExchangeRateGetter();
+    const total = computed(() => {
+      const mainCurrency = currencySymbol.value;
+      return aggregateTotal(
+        balances.value,
+        mainCurrency,
+        exchangeRate(mainCurrency) ?? new BigNumber(1),
+        floatingPrecision.value
+      );
+    });
 
-  get headers(): DataTableHeader[] {
-    return [
-      {
-        text: this.$tc('dashboard_asset_table.headers.asset'),
-        value: 'asset',
-        cellClass: 'asset-info'
-      },
-      {
-        text: this.$t('dashboard_asset_table.headers.price', {
-          symbol: this.currencySymbol ?? CURRENCY_USD
-        }).toString(),
-        value: 'price',
-        align: 'end',
-        sortable: false
-      },
-      {
-        text: this.$tc('dashboard_asset_table.headers.amount'),
-        value: 'amount',
-        align: 'end',
-        cellClass: 'asset-divider'
-      },
-      {
-        text: this.$t('dashboard_asset_table.headers.value', {
-          symbol: this.currencySymbol ?? CURRENCY_USD
-        }).toString(),
-        value: 'usdValue',
-        align: 'end',
-        class: 'text-no-wrap'
-      },
-      {
-        text: this.$tc('dashboard_asset_table.headers.percentage'),
-        value: 'percentage',
-        align: 'end',
-        cellClass: 'asset-percentage',
-        class: 'text-no-wrap',
-        sortable: false
+    const { getAssetSymbol, getAssetName } = setupAssetInfoRetrieval();
+
+    const assetFilter = (
+      _value: Nullable<string>,
+      search: Nullable<string>,
+      item: Nullable<AssetBalance>
+    ) => {
+      if (!search || !item) {
+        return true;
       }
-    ];
-  }
+      const keyword = search?.toLocaleLowerCase()?.trim() ?? '';
+      const name = getAssetName(item.asset)?.toLocaleLowerCase()?.trim();
+      const symbol = getAssetSymbol(item.asset)?.toLocaleLowerCase()?.trim();
+      return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
+    };
 
-  percentage(value: BigNumber): string {
-    return value.div(this.totalNetWorthUsd).multipliedBy(100).toFixed(2);
+    const percentage = (value: BigNumber) => {
+      return value.div(totalNetWorthUsd.value).multipliedBy(100).toFixed(2);
+    };
+
+    const { getAssetInfo } = setupAssetInfoRetrieval();
+    return {
+      search,
+      total,
+      tableHeaders,
+      currencySymbol,
+      floatingPrecision,
+      sortItems: getSortItems(getAssetInfo),
+      assetFilter,
+      percentage
+    };
   }
-}
+});
+
+export default DashboardAssetTable;
 </script>
 
 <style scoped lang="scss">
