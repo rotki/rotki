@@ -26,6 +26,7 @@ import TableExpandContainer from '@/components/helper/table/TableExpandContainer
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 
 export function registerComponents() {
@@ -72,4 +73,6 @@ export function registerComponents() {
   // Version 14 - 1.21
   Vue.component('PaginatedCards', PaginatedCards);
   Vue.component('AssetLink', AssetLink);
+  // Version 15 - 1.21.2
+  Vue.component('StatisticsGraphSettings', StatisticsGraphSettings);
 }
