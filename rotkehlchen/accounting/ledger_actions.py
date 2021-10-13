@@ -123,6 +123,19 @@ class LedgerAction:
     notes: Optional[str]
     extra_data: Optional[GitcoinEventData] = None
 
+    def __hash__(self) -> int:
+        return hash(str(self))
+
+    def __str__(self) -> str:
+        return (
+            f'<LedgerAction '
+            f'id={self.identifier} timestamp={self.timestamp} action_type={str(self.action_type)} '
+            f'location={str(self.location)} amount={str(self.amount)} '
+            f'asset={self.asset.identifier} rate={str(self.rate) if self.rate else None}'
+            f'rate_asset={self.rate_asset.identifier if self.rate_asset else None} '
+            f'link={self.link} notes={self.notes}>'
+        )
+
     def serialize(self) -> Dict[str, Any]:
         return {
             'identifier': self.identifier,

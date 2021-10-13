@@ -6,103 +6,16 @@
     {{ $t('ledger_actions.loading_subtitle') }}
   </progress-screen>
   <div v-else>
-    <card outlined-body>
-      <v-btn
-        absolute
-        fab
-        top
-        right
-        dark
-        color="primary"
-        class="ledger-actions__add"
-        @click="showForm()"
-      >
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
-      <template #title>
-        <refresh-button
-          :loading="refreshing"
-          :tooltip="$t('ledger_actions.refresh_tooltip')"
-          @refresh="refresh"
-        />
-        {{ $t('ledger_actions.title') }}
-      </template>
-      <template #actions>
-        <ignore-buttons
-          :disabled="selected.length === 0 || loading || refreshing"
-          @ignore="ignoreLedgerActions"
-        />
-      </template>
-      <data-table
-        show-expand
-        single-expand
-        sort-by="timestamp"
-        item-key="identifier"
-        :items="ledgerActions.data"
-        :headers="headers"
-      >
-        <template #header.selection>
-          <v-simple-checkbox
-            :ripple="false"
-            :value="allSelected"
-            color="primary"
-            @input="setSelected($event)"
-          />
-        </template>
-        <template #item.selection="{ item }">
-          <v-simple-checkbox
-            :ripple="false"
-            color="primary"
-            :value="selected.includes(item.identifier)"
-            @input="selectionChanged(item.identifier, $event)"
-          />
-        </template>
-        <template #item.actionType="{ item }">
-          <event-type-display :event-type="item.actionType" />
-        </template>
-        <template #item.timestamp="{ item }">
-          <date-display :timestamp="item.timestamp" />
-        </template>
-        <template #item.location="{ item }">
-          <location-display :identifier="item.location" />
-        </template>
-        <template #item.asset="{ item }">
-          <asset-details opens-details :asset="item.asset" />
-        </template>
-        <template #item.amount="{ item }">
-          <amount-display :value="item.amount" />
-        </template>
-        <template #item.ignoredInAccounting="{ item }">
-          <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
-        </template>
-        <template #item.actions="{ item }">
-          <row-actions
-            :disabled="refreshing"
-            :edit-tooltip="$t('ledger_actions.edit_tooltip')"
-            :delete-tooltip="$t('ledger_actions.delete_tooltip')"
-            @edit-click="showForm(item)"
-            @delete-click="deleteIdentifier = item.identifier"
-          />
-        </template>
-        <template
-          v-if="
-            ledgerActions.limit <= ledgerActions.found &&
-            ledgerActions.limit > 0
-          "
-          #body.append="{ headers }"
-        >
-          <upgrade-row
-            :limit="ledgerActions.limit"
-            :total="ledgerActions.found"
-            :colspan="headers.length"
-            :label="$t('ledger_actions.label')"
-          />
-        </template>
-        <template #expanded-item="{ headers, item }">
-          <ledger-action-details :span="headers.length" :item="item" />
-        </template>
-      </data-table>
-    </card>
+    <ledger-actions-content
+      :items="ledgerActions"
+      :total="ledgerActionsTotal"
+      :limit="ledgerActionsLimit"
+      :refreshing="refreshing"
+      :loading="loading"
+      @refresh="refresh"
+      @show-form="showForm"
+      @delete-action="setDeleteIdentifier"
+    />
     <big-dialog
       :display="openDialog"
       :title="dialogTitle"
@@ -131,33 +44,30 @@
 </template>
 
 <script lang="ts">
-import isEqual from 'lodash/isEqual';
-import sortBy from 'lodash/sortBy';
 import { Component, Mixins } from 'vue-property-decorator';
-import { DataTableHeader } from 'vuetify';
-import { mapActions, mapMutations, mapState } from 'vuex';
+import { mapActions, mapGetters, mapMutations } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import DataTable from '@/components/helper/DataTable.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import RowActions from '@/components/helper/RowActions.vue';
 import NotesDisplay from '@/components/helper/table/NotesDisplay.vue';
-import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
-import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import StatusMixin from '@/mixins/status-mixin';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
-import { HistoryActions, LedgerActionType } from '@/store/history/consts';
 import {
+  FETCH_FROM_CACHE,
+  FETCH_FROM_SOURCE,
+  FETCH_REFRESH,
+  HistoryActions,
+  LedgerActionType
+} from '@/store/history/consts';
+import {
+  FetchSource,
   HistoricData,
   IgnoreActionPayload,
-  IgnoreActionType,
   LedgerAction,
   LedgerActionEntry,
   UnsavedAction
@@ -165,7 +75,7 @@ import {
 import { ActionStatus, Message } from '@/store/types';
 import { Writeable } from '@/types';
 import { Zero } from '@/utils/bignumbers';
-import LedgerActionDetails from '@/views/history/LedgerActionDetails.vue';
+import LedgerActionsContent from '@/views/history/LedgerActionsContent.vue';
 
 const emptyAction: () => UnsavedAction = () => ({
   timestamp: 0,
@@ -191,22 +101,20 @@ function lastSelectedLocation(): TradeLocation {
 
 @Component({
   components: {
-    LedgerActionDetails,
+    LedgerActionsContent,
     NotesDisplay,
-    TableExpandContainer,
-    DataTable,
-    CardTitle,
     IgnoreButtons,
     ConfirmDialog,
-    RowActions,
     LedgerActionForm,
     BigDialog,
-    UpgradeRow,
-    RefreshButton,
     ProgressScreen
   },
   computed: {
-    ...mapState('history', ['ledgerActions'])
+    ...mapGetters('history', [
+      'ledgerActions',
+      'ledgerActionsTotal',
+      'ledgerActionsLimit'
+    ])
   },
   methods: {
     ...mapActions('history', [
@@ -222,42 +130,9 @@ function lastSelectedLocation(): TradeLocation {
 })
 export default class LedgerActions extends Mixins(StatusMixin) {
   readonly section = Section.LEDGER_ACTIONS;
-  readonly headers: DataTableHeader[] = [
-    { text: '', value: 'selection', width: '34px', sortable: false },
-    {
-      text: this.$t('ledger_actions.headers.location').toString(),
-      value: 'location',
-      width: '120px',
-      align: 'center'
-    },
-    {
-      text: this.$t('ledger_actions.headers.type').toString(),
-      value: 'actionType'
-    },
-    {
-      text: this.$t('ledger_actions.headers.asset').toString(),
-      value: 'asset'
-    },
-    {
-      text: this.$t('ledger_actions.headers.amount').toString(),
-      value: 'amount'
-    },
-    {
-      text: this.$t('ledger_actions.headers.date').toString(),
-      value: 'timestamp'
-    },
-    {
-      text: this.$t('ledger_actions.headers.ignored').toString(),
-      value: 'ignoredInAccounting'
-    },
-    {
-      text: this.$t('ledger_actions.headers.actions').toString(),
-      align: 'end',
-      value: 'actions'
-    },
-    { text: '', value: 'data-table-expand' }
-  ];
-  [HistoryActions.FETCH_LEDGER_ACTIONS]!: (refresh: boolean) => Promise<void>;
+  [HistoryActions.FETCH_LEDGER_ACTIONS]!: (
+    payload: FetchSource
+  ) => Promise<void>;
   [HistoryActions.ADD_LEDGER_ACTION]!: (
     action: UnsavedAction
   ) => Promise<ActionStatus>;
@@ -279,96 +154,18 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   action: LedgerActionEntry | UnsavedAction = emptyAction();
   errors: { [key in keyof UnsavedAction]?: string } = {};
 
-  selected: number[] = [];
-
   updateAction(action: LedgerAction | UnsavedAction) {
     this.action = action;
     setLastSelectedLocation(action.location);
   }
 
-  setSelected(selected: boolean) {
-    const selection = this.selected;
-    if (!selected) {
-      const total = selection.length;
-      for (let i = 0; i < total; i++) {
-        selection.pop();
-      }
-    } else {
-      for (const { identifier } of this.ledgerActions.data) {
-        if (!identifier || selection.includes(identifier)) {
-          continue;
-        }
-        selection.push(identifier);
-      }
-    }
-  }
-
-  selectionChanged(identifier: number, selected: boolean) {
-    const selection = this.selected;
-    if (!selected) {
-      const index = selection.indexOf(identifier);
-      if (index >= 0) {
-        selection.splice(index, 1);
-      }
-    } else if (identifier && !selection.includes(identifier)) {
-      selection.push(identifier);
-    }
-  }
-
-  get allSelected(): boolean {
-    const strings = this.ledgerActions.data.map(({ identifier }) => identifier);
-    return (
-      strings.length > 0 && isEqual(sortBy(strings), sortBy(this.selected))
-    );
-  }
-
-  async ignoreLedgerActions(ignore: boolean) {
-    let status: ActionStatus;
-
-    const actionIds = this.ledgerActions.data
-      .filter(({ identifier, ignoredInAccounting }) => {
-        return (
-          (ignore ? !ignoredInAccounting : ignoredInAccounting) &&
-          this.selected.includes(identifier)
-        );
-      })
-      .map(({ identifier }) => identifier.toString())
-      .filter((value, index, array) => array.indexOf(value) === index);
-
-    if (actionIds.length === 0) {
-      const choice = ignore ? 1 : 2;
-      this.setMessage({
-        success: false,
-        title: this.$tc('ignore.no_items.title', choice).toString(),
-        description: this.$tc('ignore.no_items.description', choice).toString()
-      });
-      return;
-    }
-    const payload: IgnoreActionPayload = {
-      actionIds: actionIds,
-      type: IgnoreActionType.LEDGER_ACTIONS
-    };
-
-    if (ignore) {
-      status = await this.ignoreActions(payload);
-    } else {
-      status = await this.unignoreActions(payload);
-    }
-
-    if (status.success) {
-      const total = this.selected.length;
-      for (let i = 0; i < total; i++) {
-        this.selected.pop();
-      }
-    }
-  }
-
   async refresh() {
-    await this[HistoryActions.FETCH_LEDGER_ACTIONS](true);
+    await this[HistoryActions.FETCH_LEDGER_ACTIONS](FETCH_REFRESH);
   }
 
   async mounted() {
-    await this[HistoryActions.FETCH_LEDGER_ACTIONS](false);
+    await this[HistoryActions.FETCH_LEDGER_ACTIONS](FETCH_FROM_CACHE);
+    await this[HistoryActions.FETCH_LEDGER_ACTIONS](FETCH_FROM_SOURCE);
   }
 
   async showForm(action: LedgerActionEntry | UnsavedAction = emptyAction()) {
@@ -420,6 +217,10 @@ export default class LedgerActions extends Mixins(StatusMixin) {
 
   get dialogSubtitle(): string {
     return this.$t('ledger_actions.dialog.add.subtitle').toString();
+  }
+
+  async setDeleteIdentifier(identifier: number) {
+    this.deleteIdentifier = identifier;
   }
 
   async deleteAction() {

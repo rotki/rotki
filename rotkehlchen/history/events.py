@@ -11,6 +11,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, ExchangeManager
@@ -29,14 +30,12 @@ from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.ledger_actions import LedgerAction
     from rotkehlchen.accounting.structures import DefiEvent
     from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
 
 # Number of steps excluding the connected exchanges. Current query steps:
 # eth transactions
@@ -128,9 +127,10 @@ class EventsHistorian():
 
     def _reset_variables(self) -> None:
         # Keeps how many trades we have found per location. Used for free user limiting
-        self.actions_per_location: Dict[str, Dict[Location, int]] = {
+        self.actions_per_location: Dict[str, Dict[Optional[Location], int]] = {
             'trade': defaultdict(int),
             'asset_movement': defaultdict(int),
+            'ledger_action': defaultdict(int),
         }
         self.processing_state_name = 'Starting query of historical events'
         self.progress = ZERO
@@ -163,13 +163,23 @@ class EventsHistorian():
     ) -> List[AssetMovement]:
         ...
 
+    @overload
     def _apply_actions_limit(
             self,
-            location: Location,
-            action_type: Literal['trade', 'asset_movement'],
-            location_actions: Union[TRADES_LIST, List[AssetMovement]],
-            all_actions: Union[TRADES_LIST, List[AssetMovement]],
-    ) -> Union[TRADES_LIST, List[AssetMovement]]:
+            location: Optional[Location],
+            action_type: Literal['ledger_action'],
+            location_actions: List[LedgerAction],
+            all_actions: List[LedgerAction],
+    ) -> List[LedgerAction]:
+        ...
+
+    def _apply_actions_limit(
+            self,
+            location: Union[Location, Optional[Location]],
+            action_type: Literal['trade', 'asset_movement', 'ledger_action'],
+            location_actions: Union[TRADES_LIST, List[AssetMovement], List[LedgerAction]],
+            all_actions: Union[TRADES_LIST, List[AssetMovement], List[LedgerAction]],
+    ) -> Union[TRADES_LIST, List[AssetMovement], List[LedgerAction]]:
         """Take as many actions from location actions and add them to all actions as the limit permits
 
         Returns the modified (or not) all_actions
@@ -195,23 +205,58 @@ class EventsHistorian():
 
     def query_ledger_actions(
             self,
-            has_premium: bool,
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             location: Optional[Location] = None,
+            only_cache: Optional[bool] = None,
     ) -> Tuple[List['LedgerAction'], int]:
-        """Queries the ledger actions from the DB and applies the free version limit
+        """Queries the ledger actions from the given location and applies the free version limit
 
-        TODO: Since we always query all in one call, the limiting will work, but if we start
-        batch querying by time then we need to amend the logic of limiting here.
-        Would need to use the same logic we do with trades. Using db entries count
-        and count what all calls return and what is sums up to
+        :param location: Location parameter to filter query results
+        :param to_ts: End timestamp to filter query results
+        :param from_ts: Start timestamp to filter query results
+        :param only_cache: Optional. If this is true then the equivalent exchange/location
+         is not queried, but only what is already in the DB is returned.
         """
         db = DBLedgerActions(self.db, self.msg_aggregator)
-        actions = db.get_ledger_actions(from_ts=from_ts, to_ts=to_ts, location=location)
-        original_length = len(actions)
-        if has_premium is False:
-            actions = actions[:FREE_LEDGER_ACTIONS_LIMIT]
+        # clear the actions queried for this location
+        self.actions_per_location['ledger_action'][location] = 0
+        all_actions: List[LedgerAction] = []
+        location_actions = db.get_ledger_actions(from_ts=from_ts, to_ts=to_ts, location=location)
+        original_length = len(location_actions)
+        if self.chain_manager.premium is None:
+            actions = self._apply_actions_limit(
+                location=location,
+                action_type='ledger_action',
+                location_actions=location_actions,
+                all_actions=all_actions,
+            )
+        else:
+            actions = location_actions
+
+        for exchange in self.exchange_manager.iterate_exchanges():
+            if exchange.location == location:
+                # clear the actions queried for this location
+                self.actions_per_location['ledger_action'][exchange.location] = 0
+                exchange_actions = exchange.query_income_loss_expense(
+                    start_ts=from_ts,
+                    end_ts=to_ts,
+                    only_cache=only_cache,
+                )
+                # Use set difference to determine uniqueness.
+                all_set = set(actions)
+                unique_exchange_actions = set(exchange_actions)
+                new_exchange_actions = list(unique_exchange_actions - all_set)
+                original_length += len(exchange_actions)
+                if self.chain_manager.premium is None:
+                    actions = self._apply_actions_limit(
+                        location=exchange.location,
+                        action_type='ledger_action',
+                        location_actions=new_exchange_actions,
+                        all_actions=list(all_set),
+                    )
+                else:
+                    actions.extend(new_exchange_actions)
 
         return actions, original_length
 
@@ -453,7 +498,6 @@ class EventsHistorian():
                 self.actions_per_location['asset_movement'][exchange_location] = 0
             # we may have DB entries due to csv import from supported locations
             for external_location in EXTERNAL_EXCHANGES:
-
                 movements = self._query_and_populate_exchange_asset_movements(
                     from_ts=from_ts,
                     to_ts=to_ts,
@@ -492,6 +536,7 @@ class EventsHistorian():
         # start creating the all trades history list
         history: List[Union[Trade, MarginPosition, AMMTrade]] = []
         asset_movements = []
+        ledger_actions = []
         loans = []
         empty_or_error = ''
 
@@ -499,12 +544,14 @@ class EventsHistorian():
                 trades_history: List[Trade],
                 margin_history: List[MarginPosition],
                 result_asset_movements: List[AssetMovement],
+                result_ledger_actions: List[LedgerAction],
                 exchange_specific_data: Any,
         ) -> None:
             """This callback will run for succesfull exchange history query"""
             history.extend(trades_history)
             history.extend(margin_history)
             asset_movements.extend(result_asset_movements)
+            ledger_actions.extend(result_ledger_actions)
 
             if exchange_specific_data:
                 # This can only be poloniex at the moment
@@ -575,9 +622,11 @@ class EventsHistorian():
             history.extend(external_trades)
             step = self._increase_progress(step, total_steps)
 
-        # include the ledger actions
+        # include the ledger actions from offline sources
         self.processing_state_name = 'Querying ledger actions history'
-        ledger_actions, _ = self.query_ledger_actions(has_premium, from_ts=None, to_ts=end_ts)
+        offline_ledger_actions, _ = self.query_ledger_actions(from_ts=None, to_ts=end_ts)
+        unique_ledger_actions = list(set(offline_ledger_actions) - set(ledger_actions))
+        ledger_actions.extend(unique_ledger_actions)
         step = self._increase_progress(step, total_steps)
 
         # include AMM trades: balancer, uniswap

@@ -3760,6 +3760,7 @@ Dealing with ledger actions
    :param int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :param int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :param string location: Optionally filter actions by location. A valid location name has to be provided. If missing location filtering does not happen.
+   :param bool only_cache: Optional. If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
 
    .. _ledger_actions_schema_section:
 

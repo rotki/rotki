@@ -156,7 +156,8 @@ export class HistoryApi {
   async ledgerActions(
     start: number = 0,
     end: number | undefined = undefined,
-    location: string | undefined = undefined
+    location: string | undefined = undefined,
+    onlyCache?: boolean
   ): Promise<PendingTask> {
     return this.axios
       .get<ActionResult<PendingTask>>(`/ledgeractions`, {
@@ -164,7 +165,8 @@ export class HistoryApi {
           asyncQuery: true,
           fromTimestamp: start,
           toTimestamp: end ? end : undefined,
-          location: location ? location : undefined
+          location: location ? location : undefined,
+          onlyCache: onlyCache ? onlyCache : undefined
         }),
         validateStatus: validStatus,
         transformResponse: basicAxiosTransformer

@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import requests
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -22,7 +24,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 ExchangeQueryBalances = Tuple[Optional[Dict[Asset, Balance]], str]
 ExchangeHistorySuccessCallback = Callable[
-    [List[Trade], List[MarginPosition], List[AssetMovement], Any],
+    [List[Trade], List[MarginPosition], List[AssetMovement], List[LedgerAction], Any],
     None,
 ]
 
@@ -210,6 +212,22 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             'query_online_deposits_withdrawals should only be implemented by subclasses',
         )
 
+    def query_online_income_loss_expense(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[LedgerAction]:
+        """Queries the exchange's API for the ledger actions of the user
+
+        Should be implemented in subclasses.
+        Has to be implemented by exchanges if they have anything exchange specific
+
+        For example coinbase
+        """
+        raise NotImplementedError(
+            'query_online_income_loss_expense should only be implemented by subclasses',
+        )
+
     @protect_with_lock()
     def query_trade_history(
             self,
@@ -346,6 +364,52 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
         return asset_movements
 
+    @protect_with_lock()
+    def query_income_loss_expense(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            only_cache: bool,
+    ) -> List[LedgerAction]:
+        """Queries the local DB and the exchange for the income/loss/expense history of the user
+
+        If only_cache is true only what is already cached in the DB is returned without
+        an actual exchange query.
+        """
+        db = DBLedgerActions(self.db, self.db.msg_aggregator)
+        ledger_actions = db.get_ledger_actions(
+            from_ts=start_ts,
+            to_ts=end_ts,
+            location=self.location,
+        )
+        if only_cache:
+            return ledger_actions
+
+        ranges = DBQueryRanges(self.db)
+        ranges_to_query = ranges.get_location_query_ranges(
+            location_string=f'{str(self.location)}_ledger_actions',
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+        new_ledger_actions = []
+        for query_start_ts, query_end_ts in ranges_to_query:
+            new_ledger_actions.extend(self.query_online_income_loss_expense(
+                start_ts=query_start_ts,
+                end_ts=query_end_ts,
+            ))
+
+        if new_ledger_actions != []:
+            db.add_ledger_actions(new_ledger_actions)
+        ranges.update_used_query_range(
+            location_string=f'{str(self.location)}_ledger_actions',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            ranges_to_query=ranges_to_query,
+        )
+        ledger_actions.extend(new_ledger_actions)
+
+        return ledger_actions
+
     def query_history_with_callbacks(
             self,
             start_ts: Timestamp,
@@ -373,6 +437,11 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 end_ts=end_ts,
                 only_cache=False,
             )
+            ledger_actions = self.query_income_loss_expense(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                only_cache=False,
+            )
             exchange_specific_data = self.query_exchange_specific_history(  # pylint: disable=assignment-from-none  # noqa: E501
                 start_ts=start_ts,
                 end_ts=end_ts,
@@ -381,6 +450,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 trades_history,
                 margin_history,
                 asset_movements,
+                ledger_actions,
                 exchange_specific_data,
             )
 

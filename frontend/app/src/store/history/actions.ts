@@ -5,7 +5,7 @@ import {
 } from '@rotki/common/lib/gitcoin';
 import { ActionContext, ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
-import { EXTERNAL_EXCHANGES, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import { TRADE_LOCATION_EXTERNAL, EXTERNAL_EXCHANGES } from '@/data/defaults';
 import i18n from '@/i18n';
 import {
   AddressMeta,
@@ -58,7 +58,6 @@ import {
 } from '@/store/history/types';
 import { getKey } from '@/store/history/utils';
 import { Severity } from '@/store/notifications/consts';
-import { NotificationPayload } from '@/store/notifications/types';
 import { notify, userNotify } from '@/store/notifications/utils';
 import {
   ActionStatus,
@@ -577,10 +576,11 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async [HistoryActions.FETCH_LEDGER_ACTIONS](
     {
       commit,
-      dispatch,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status }
+      state,
+      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
+      rootState: { balances }
     },
-    refresh: boolean
+    source: FetchSource
   ): Promise<void> {
     const taskType = TaskType.LEDGER_ACTIONS;
     if (isTaskRunning(taskType)) {
@@ -589,6 +589,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     const section = Section.LEDGER_ACTIONS;
     const currentStatus = status(section);
+    const refresh = source === FETCH_REFRESH || source === FETCH_FROM_SOURCE;
 
     if (
       currentStatus === Status.LOADING ||
@@ -610,12 +611,21 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
-    try {
-      const { taskId } = await api.history.ledgerActions();
+    const locations = balances!.connectedExchanges
+      .map(({ location }) => location)
+      .filter(uniqueStrings);
+
+    const fetchDefault: () => Promise<void> = async () => {
+      const { taskId } = await api.history.ledgerActions(
+        undefined,
+        undefined,
+        undefined,
+        true
+      );
       const task = createTask<TaskMeta>(taskId, taskType, {
-        title: i18n.t('actions.ledger_actions.task.title').toString(),
+        title: i18n.t('actions.manual_ledger_actions.task.title').toString(),
         description: i18n
-          .t('actions.ledger_actions.task.description', {})
+          .t('actions.manual_ledger_actions.task.description', {})
           .toString(),
         ignoreResult: false,
         numericKeys: [...balanceKeys, 'rate']
@@ -627,6 +637,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         LimitedResponse<EntryWithMeta<LedgerAction>>,
         TaskMeta
       >(taskType, `${taskId}`);
+
       const data: HistoricData<LedgerActionEntry> = {
         data: result.entries.map(({ entry, ignoredInAccounting }) => ({
           ...entry,
@@ -636,27 +647,97 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         found: result.entriesFound
       };
       commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
-    } catch (e: any) {
-      const message = i18n
-        .t('actions.ledger_actions.error.description', {
-          error: e.message
-        })
-        .toString();
-      const title = i18n.t('actions.ledger_actions.error.title').toString();
+      setStatus(Status.PARTIALLY_LOADED);
+    };
 
-      await dispatch(
-        'notifications/notify',
-        {
-          title,
-          message: message,
-          severity: Severity.ERROR,
-          display: true
-        } as NotificationPayload,
-        { root: true }
+    const onDefaultError: (message: string) => void = message => {
+      notify(
+        i18n.tc('actions.manual_ledger_actions.error.description', undefined, {
+          error: message
+        }),
+        i18n.tc('actions.manual_ledger_actions.error.title'),
+        Severity.ERROR,
+        true
       );
-    } finally {
-      setStatus(Status.LOADED);
-    }
+    };
+
+    const fetchLocation: (location: TradeLocation) => Promise<void> =
+      async location => {
+        const { taskId } = await api.history.ledgerActions(
+          undefined,
+          undefined,
+          location,
+          source === FETCH_FROM_CACHE
+        );
+        const task = createTask<TaskMeta>(taskId, taskType, {
+          title: i18n.tc('actions.ledger_actions.task.title'),
+          description: i18n.tc(
+            'actions.ledger_actions.task.description',
+            undefined,
+            {
+              exchange: exchangeName(location)
+            }
+          ),
+          ignoreResult: false,
+          numericKeys: [...balanceKeys, 'rate']
+        });
+
+        commit('tasks/add', task, { root: true });
+
+        const { result } = await taskCompletion<
+          LimitedResponse<EntryWithMeta<LedgerAction>>,
+          TaskMeta
+        >(taskType, `${taskId}`);
+
+        const actions = [
+          ...state.ledgerActions.data.filter(
+            action => action.location !== location
+          ),
+          ...result.entries.map(({ entry, ignoredInAccounting }) => ({
+            ...entry,
+            ignoredInAccounting: ignoredInAccounting
+          }))
+        ];
+
+        const data: HistoricData<LedgerActionEntry> = {
+          data: actions,
+          limit: result.entriesLimit,
+          found: result.entriesFound
+        };
+
+        commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
+        setStatus(Status.PARTIALLY_LOADED);
+      };
+
+    const onError: (location: TradeLocation, message: string) => void = (
+      location,
+      message
+    ) => {
+      const exchange = exchangeName(location);
+      notify(
+        i18n.tc('actions.ledger_actions.error.description', undefined, {
+          exchange,
+          error: message
+        }),
+        i18n.tc('actions.ledger_actions.error.title', undefined, { exchange }),
+        Severity.ERROR,
+        true
+      );
+    };
+
+    await Promise.all([
+      fetchDefault().catch(e => onDefaultError(e.message)),
+      ...(
+        [
+          ...(source !== FETCH_FROM_SOURCE ? EXTERNAL_EXCHANGES : []),
+          ...locations
+        ] as TradeLocation[]
+      ).map(location =>
+        fetchLocation(location).catch(e => onError(location, e.message))
+      )
+    ]);
+
+    setStatus(Status.LOADED);
   },
 
   async [HistoryActions.ADD_LEDGER_ACTION](

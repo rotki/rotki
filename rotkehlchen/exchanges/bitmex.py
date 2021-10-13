@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 
 import requests
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
@@ -368,4 +369,11 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return movements
 
     def query_online_trade_history(self, start_ts: Timestamp, end_ts: Timestamp) -> List[Trade]:
+        return []  # noop for bitmex
+
+    def query_online_income_loss_expense(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[LedgerAction]:
         return []  # noop for bitmex
