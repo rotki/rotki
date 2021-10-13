@@ -10,6 +10,7 @@ Changelog
 * :bug:`3591` Uphold trades will reflect exchanged value instead of received value for base amount.  This will properly arrive at the received amount when the fee is accounted for.
 * :bug:`3580` NFT balances will now get removed from the UI when the user deactivates the module.
 * :bug:`3602` Kusama/Polkadot balances should now be queried properly again.
+* :bug:`3603` The PnL execution will now continue despite potential error calling the compound subgraph.
 
 * :release:`1.21.1 <2021-10-07>`
 * :feature:`3554` Gemini users will now have their earn balances tracked in rotki.
