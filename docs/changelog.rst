@@ -8,6 +8,7 @@ Changelog
 * :bug:`3593` Sorting by asset in the dashboard asset table and blockchain balances per asset table should now properly sort alphabetically by the asset symbol.
 * :bug:`3591` Uphold trades will reflect exchanged value instead of received value for base amount.  This will properly arrive at the received amount when the fee is accounted for.
 * :bug:`3580` NFT balances will now get removed from the UI when the user deactivates the module.
+* :bug:`3602` Kusama/Polkadot balances should now be queried properly again.
 
 * :release:`1.21.1 <2021-10-07>`
 * :feature:`3554` Gemini users will now have their earn balances tracked in rotki.

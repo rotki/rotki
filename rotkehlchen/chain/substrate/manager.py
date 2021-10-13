@@ -314,6 +314,7 @@ class SubstrateManager():
             account=account,
             result=result,
         )
+
         balance = ZERO
         if result is not None:
             account_data = result.value['data']

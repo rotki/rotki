@@ -15,7 +15,6 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.substrate import (
-    SUBSTRATE_ACC1_DOT_ADDR,
     SUBSTRATE_ACC1_KSM_ADDR,
     SUBSTRATE_ACC2_KSM_ADDR,
     attempt_connect_test_nodes,
@@ -46,7 +45,7 @@ def test_get_accounts_balance_invalid_account(kusama_manager):
     node. RemoteError is raised by `request_available_nodes()`.
     """
     with pytest.raises(RemoteError) as e:
-        kusama_manager.get_accounts_balance([SUBSTRATE_ACC1_KSM_ADDR, SUBSTRATE_ACC1_DOT_ADDR])
+        kusama_manager.get_accounts_balance([SUBSTRATE_ACC1_KSM_ADDR, '13mB8stSf1vdP7WzbVr82YPgGGF7cBK9N7KxiVEac9UQgYj8'])  # noqa: E501
 
     assert 'Kusama request failed after trying the following nodes' in str(e.value)
 
