@@ -649,10 +649,11 @@
   "statistics_graph_settings": {
     "label": "Multiplier",
     "off": "No missed snapshots will be considered as being zero.",
-    "on": "Any missing snapshot balances after {period} hours will considered zero",
+    "on": "If there is a period of {period} hours or more between two existing balance snapshots then the graph will consider zero balances for that period.",
     "save": "Save",
-    "subtitle": "Set after how many missed snapshots a balance will be considered zero.",
-    "title": "Missing snapshot multiplier"
+    "subtitle": "Set after how many hours between two existing balance snapshots the graph will consider zero balances for that period.",
+    "title": "Missing snapshot multiplier",
+    "tooltip": "Change graph zero snapshot multiplier"
   },
   "sushiswap": {
     "loading": "Please wait while your liquidity pools are getting loaded...",

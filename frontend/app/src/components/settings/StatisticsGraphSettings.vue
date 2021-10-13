@@ -8,7 +8,7 @@
   >
     <template #activator="{ on }">
       <menu-tooltip-button
-        tooltip="Change graph snapshot period"
+        :tooltip="$t('statistics_graph_settings.tooltip')"
         class-name="graph-period"
         :on-menu="on"
       >
