@@ -354,10 +354,12 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # APM Coin. As of 16/11/2019 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-APM
     'APM',
+    'BTR',  # neither in coingecko nor cryptocompare
     'BST',  # No coingecko or cryptocompare yet. Beshare Token TODO: Review this one in a few days
     'CADX',  # no cryptocompare/coingecko data TODO: Review this one
     'CBC',  # neither in coingecko nor cryptocompare
     'CIND',  # neither in coingecko nor cryptocompare
+    'CLI',  # Couldn't find a reference to this asset
     # Tether CNH. As of 30/09/2019 no data found outside of Bittrex for this token
     # https://medium.com/bittrex/new-bittrex-international-listing-tether-cnh-cnht-c9ad966ac303
     'CNHT',
@@ -629,6 +631,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'LTC3S',  # no cryptocompare/coingecko data
     'MAP2',  # delisted
     'MEM',  # meme.com, no cryptocompare/coingecko data
+    'NAKA',  # Nakamoto.games, no cryptocompare/coingecko data
     'RMRK',  # no cryptocompare/coingecko data
     'SATT',  # delisted
     'SERO',  # delisted
@@ -655,6 +658,14 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'XNL',  # no cryptocompare/coingecko data
     'XRP3L',  # no cryptocompare/coingecko data
     'XRP3S',  # no cryptocompare/coingecko data
+    'UNI3L',  # no cryptocompare/coingecko data
+    'UNI3S',  # no cryptocompare/coingecko data
+    'ATOM3L',  # no cryptocompare/coingecko data
+    'ATOM3S',  # no cryptocompare/coingecko data
+    'FTM3L',  # no cryptocompare/coingecko data
+    'FTM3S',  # no cryptocompare/coingecko data
+    'AXS3L',  # no cryptocompare/coingecko data
+    'AXS3S',  # no cryptocompare/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets

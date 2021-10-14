@@ -149,6 +149,9 @@ def test_cryptocompare_asset_support(cryptocompare):
         'POLIS',  # noqa: E501 # Star Atlas DAO (POLIS) but another POLIS in CC
         ethaddress_to_identifier('0x670f9D9a26D3D42030794ff035d35a67AA092ead'),  # noqa: E501 # XBullion Token (GOLD) but another GOLD in CC
         ethaddress_to_identifier('0x3b58c52C03ca5Eb619EBa171091c86C34d603e5f'),  # noqa: E501 # MCI Coin (MCI) but another MCI in CC
+        ethaddress_to_identifier('0x5dD57Da40e6866C9FcC34F4b6DDC89F1BA740DfE'),  # noqa: E501 # Bright(BRIGHT) but another BRIGHT in CC
+        ethaddress_to_identifier('0x40284109c3309A7C3439111bFD93BF5E0fBB706c'),  # noqa: E501 # Motiv protocol but another MOV in CC
+        ethaddress_to_identifier('0xba5BDe662c17e2aDFF1075610382B9B691296350'),  # noqa: E501 # Super Rare but another RARE in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
