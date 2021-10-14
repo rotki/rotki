@@ -6,7 +6,13 @@
       </v-btn>
     </v-col>
     <v-col cols="auto">
-      <div :class="$style.pages">
+      <div
+        :class="{
+          [$style.pages]: true,
+          [$style.light]: !dark,
+          [$style.dark]: dark
+        }"
+      >
         <v-autocomplete
           :items="items"
           :value="value"
@@ -30,6 +36,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { setupThemeCheck } from '@/composables/common';
 
 export default defineComponent({
   name: 'Pagination',
@@ -83,11 +90,14 @@ export default defineComponent({
       }
     };
 
+    const { dark } = setupThemeCheck();
+
     return {
       items,
       nextPage,
       previousPage,
-      newPage
+      newPage,
+      dark
     };
   }
 });
@@ -114,5 +124,13 @@ export default defineComponent({
       }
     }
   }
+}
+
+.dark {
+  background-color: var(--v-dark-base);
+}
+
+.light {
+  background-color: white;
 }
 </style>
