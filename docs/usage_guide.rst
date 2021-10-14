@@ -752,6 +752,18 @@ The list of currently supported airdrops is:
 - Lido
 - Curve
 
+Snapshots
+=========
+
+The application will on login snapshot to disk the information about balances from all the tracked sources every 24 hours (by default. The number of hours is configurable). This information is saved directly to your local database.
+You can force a snapshot taking by clicking in the floppy disk icon at the top bar and then on `Force Save`
+
+.. image:: images/rotki_snapshot_forcing.png
+   :alt: Force snapshots saves
+   :align: center
+
+Snapshots won't be saved if there is any error querying information for external sources. If you want to force the snapshot to be saved when an external source is reporting an error you can select the option `Ignore Errors`.
+
 Historical events
 ************************
 
@@ -1220,6 +1232,12 @@ Following that you can see a graph of quantity of an asset superimposed on its U
 
 .. image:: images/sc_stats_asset_amount_value.png
    :alt: Asset amount and value over time
+   :align: center
+
+We have introduced an option in the asset graphs to select the `Missing snapshot multiplier`. It sets after how many hours between two snapshots the graph will display zero balances. This allows to improve graphs for periods where the balance of an asset was zero.
+
+.. image:: images/statistics_multipliying_option.png
+   :alt: Multiplying option in assets graphs
    :align: center
 
 Furthermore you can see a piechart of the distribution of your netvalue across different locations. So you can determine how exposed you are to having a big part of your net value in exchanges, in banks e.t.c.
