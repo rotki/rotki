@@ -48,6 +48,15 @@
             </v-card>
           </v-col>
           <v-col :cols="isMobile ? '12' : 'auto'">
+            <sorting-selector
+              :sort-by="sortBy"
+              :sort-properties="sortProperties"
+              :sort-desc="sortDesc"
+              @update:sort-by="sortBy = $event"
+              @update:sort-desc="sortDesc = $event"
+            />
+          </v-col>
+          <v-col :cols="isMobile ? '12' : 'auto'">
             <pagination v-if="pages > 0" v-model="page" :length="pages" />
           </v-col>
         </v-row>
@@ -88,8 +97,8 @@
     </v-row>
     <v-row v-else>
       <v-col
-        v-for="item in visibleNfts"
-        :key="item.tokenIdentifier"
+        v-for="(item, index) in visibleNfts"
+        :key="index"
         cols="12"
         sm="6"
         md="6"
@@ -122,8 +131,10 @@ import ActiveModules from '@/components/defi/ActiveModules.vue';
 import Pagination from '@/components/helper/Pagination.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import SortingSelector from '@/components/helper/SortingSelector.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { setupThemeCheck } from '@/composables/common';
+import i18n from '@/i18n';
 import { AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { Module } from '@/services/session/consts';
@@ -164,6 +175,18 @@ const setupNfts = (
   const error = ref('');
   const loading = ref(true);
   const perAccount: Ref<Nfts | null> = ref(null);
+  const sortBy = ref<'name' | 'priceUsd'>('name');
+  const sortDesc = ref(false);
+  const sortProperties = [
+    {
+      text: i18n.t('nft_gallery.sort.name').toString(),
+      value: 'name'
+    },
+    {
+      text: i18n.t('nft_gallery.sort.price').toString(),
+      value: 'priceUsd'
+    }
+  ];
 
   const items = computed(() => {
     const account = selectedAccount.value;
@@ -175,7 +198,26 @@ const setupNfts = (
         return sameAccount && sameCollection;
       });
     }
-    return nfts.value;
+
+    const sortProp = sortBy.value;
+    const desc = sortDesc.value;
+    return nfts.value.sort((a, b) => {
+      const aElement = a[sortProp];
+      const bElement = b[sortProp];
+      if (typeof aElement === 'string' && typeof bElement === 'string') {
+        return desc
+          ? bElement.toLowerCase().localeCompare(aElement)
+          : aElement.toLowerCase().localeCompare(bElement);
+      } else if (
+        aElement instanceof BigNumber &&
+        bElement instanceof BigNumber
+      ) {
+        return (
+          desc ? bElement.minus(aElement) : aElement.minus(bElement)
+        ).toNumber();
+      }
+      return 0;
+    });
   });
 
   const pages = computed(() => {
@@ -271,6 +313,9 @@ const setupNfts = (
     error,
     availableAddresses,
     collections,
+    sortBy,
+    sortDesc,
+    sortProperties,
     noData,
     loading
   };
@@ -279,6 +324,7 @@ const setupNfts = (
 export default defineComponent({
   name: 'NftGallery',
   components: {
+    SortingSelector,
     Pagination,
     ActiveModules,
     BaseExternalLink,

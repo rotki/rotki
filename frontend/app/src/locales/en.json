@@ -540,6 +540,10 @@
     "refresh_tooltip": "Reload NFTs",
     "select_collection": "Select collection",
     "select_account": "Select account",
+    "sort": {
+      "name": "Name",
+      "price": "Price"
+    },
     "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
   },
   "no_filter_available": {
@@ -648,6 +652,11 @@
     "title": "Amount rounding",
     "value_rounding_hint": "Specify how the value (e.g the FIAT value of an owned asset) is rounded.",
     "amount_rounding_hint": "Specify how the amount (e.g. the amount of an owned asset) is rounded."
+  },
+  "sorting_selector": {
+    "desc": {
+      "tooltip": "Change the sorting order"
+    }
   },
   "statistics_graph_settings": {
     "label": "Multiplier",
