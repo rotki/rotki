@@ -3,12 +3,21 @@
     <div>
       <v-tooltip open-delay="400" top>
         <template #activator="{ on, attrs }">
-          <v-btn icon v-bind="attrs" @click="updateSortDesc" v-on="on">
+          <v-btn
+            icon
+            v-bind="attrs"
+            color="primary"
+            @click="updateSortDesc"
+            v-on="on"
+          >
             <v-icon v-if="sortDesc">mdi-sort-descending</v-icon>
             <v-icon v-else>mdi-sort-ascending</v-icon>
           </v-btn>
         </template>
-        <span>{{ $t('sorting_selector.desc.tooltip') }}</span>
+        <span v-if="sortDesc">
+          {{ $t('sorting_selector.desc.sort_asc_tooltip') }}
+        </span>
+        <span v-else>{{ $t('sorting_selector.desc.sort_desc_tooltip') }}</span>
       </v-tooltip>
     </div>
     <div

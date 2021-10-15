@@ -656,7 +656,8 @@
   },
   "sorting_selector": {
     "desc": {
-      "tooltip": "Change the sorting order"
+      "sort_desc_tooltip": "Sort descending",
+      "sort_asc_tooltip": "Sort ascending"
     }
   },
   "statistics_graph_settings": {
