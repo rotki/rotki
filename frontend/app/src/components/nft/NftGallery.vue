@@ -162,6 +162,35 @@ const requestPrices = () => {
   };
 };
 
+function sortNfts(
+  sortBy: Ref<'name' | 'priceUsd' | 'collection'>,
+  sortDesc: Ref<boolean>,
+  a: GalleryNft,
+  b: GalleryNft
+): number {
+  const sortProp = sortBy.value;
+  const desc = sortDesc.value;
+  const isCollection = sortProp === 'collection';
+  const aElement = isCollection ? a.collection.name : a[sortProp];
+  const bElement = isCollection ? b.collection.name : b[sortProp];
+  if (typeof aElement === 'string' && typeof bElement === 'string') {
+    return desc
+      ? bElement.localeCompare(aElement, 'en', { sensitivity: 'base' })
+      : aElement.localeCompare(bElement, 'en', { sensitivity: 'base' });
+  } else if (aElement instanceof BigNumber && bElement instanceof BigNumber) {
+    return (
+      desc ? bElement.minus(aElement) : aElement.minus(bElement)
+    ).toNumber();
+  } else if (aElement === null && bElement === null) {
+    return 0;
+  } else if (aElement && !bElement) {
+    return desc ? 1 : -1;
+  } else if (!aElement && bElement) {
+    return desc ? -1 : 1;
+  }
+  return 0;
+}
+
 const setupNfts = (
   dispatch: Dispatch,
   selectedAccount: Ref<GeneralAccount | null>,
@@ -175,7 +204,7 @@ const setupNfts = (
   const error = ref('');
   const loading = ref(true);
   const perAccount: Ref<Nfts | null> = ref(null);
-  const sortBy = ref<'name' | 'priceUsd'>('name');
+  const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
   const sortDesc = ref(false);
   const sortProperties = [
     {
@@ -185,6 +214,10 @@ const setupNfts = (
     {
       text: i18n.t('nft_gallery.sort.price').toString(),
       value: 'priceUsd'
+    },
+    {
+      text: i18n.t('nft_gallery.sort.collection').toString(),
+      value: 'collection'
     }
   ];
 
@@ -192,38 +225,18 @@ const setupNfts = (
     const account = selectedAccount.value;
     const selection = selectedCollection.value;
     if (account || selection) {
-      return nfts.value.filter(({ address, collection }) => {
-        const sameAccount = account ? address === account.address : true;
-        const sameCollection = selection ? selection === collection.name : true;
-        return sameAccount && sameCollection;
-      });
+      return nfts.value
+        .filter(({ address, collection }) => {
+          const sameAccount = account ? address === account.address : true;
+          const sameCollection = selection
+            ? selection === collection.name
+            : true;
+          return sameAccount && sameCollection;
+        })
+        .sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
     }
 
-    const sortProp = sortBy.value;
-    const desc = sortDesc.value;
-    return nfts.value.sort((a, b) => {
-      const aElement = a[sortProp];
-      const bElement = b[sortProp];
-      if (typeof aElement === 'string' && typeof bElement === 'string') {
-        return desc
-          ? bElement.localeCompare(aElement, 'en', { sensitivity: 'base' })
-          : aElement.localeCompare(bElement, 'en', { sensitivity: 'base' });
-      } else if (
-        aElement instanceof BigNumber &&
-        bElement instanceof BigNumber
-      ) {
-        return (
-          desc ? bElement.minus(aElement) : aElement.minus(bElement)
-        ).toNumber();
-      } else if (aElement === null && bElement === null) {
-        return 0;
-      } else if (aElement && !bElement) {
-        return desc ? 1 : -1;
-      } else if (!aElement && bElement) {
-        return desc ? -1 : 1;
-      }
-      return 0;
-    });
+    return nfts.value.sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
   });
 
   const pages = computed(() => {

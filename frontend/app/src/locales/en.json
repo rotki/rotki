@@ -541,6 +541,7 @@
     "select_collection": "Select collection",
     "select_account": "Select account",
     "sort": {
+      "collection": "Collection",
       "name": "Name",
       "price": "Price"
     },
