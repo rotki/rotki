@@ -5,8 +5,10 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class Playground extends Vue {}
+const Playground = defineComponent({
+  name: 'Playground'
+});
+export default Playground;
 </script>

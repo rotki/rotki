@@ -48,7 +48,16 @@
             </v-card>
           </v-col>
           <v-col :cols="isMobile ? '12' : 'auto'">
-            <v-pagination v-if="pages > 0" v-model="page" :length="pages" />
+            <sorting-selector
+              :sort-by="sortBy"
+              :sort-properties="sortProperties"
+              :sort-desc="sortDesc"
+              @update:sort-by="sortBy = $event"
+              @update:sort-desc="sortDesc = $event"
+            />
+          </v-col>
+          <v-col :cols="isMobile ? '12' : 'auto'">
+            <pagination v-if="pages > 0" v-model="page" :length="pages" />
           </v-col>
         </v-row>
       </v-col>
@@ -88,8 +97,8 @@
     </v-row>
     <v-row v-else>
       <v-col
-        v-for="item in visibleNfts"
-        :key="item.tokenIdentifier"
+        v-for="(item, index) in visibleNfts"
+        :key="index"
         cols="12"
         sm="6"
         md="6"
@@ -119,10 +128,13 @@ import { Dispatch } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
+import Pagination from '@/components/helper/Pagination.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import SortingSelector from '@/components/helper/SortingSelector.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { setupThemeCheck } from '@/composables/common';
+import i18n from '@/i18n';
 import { AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { Module } from '@/services/session/consts';
@@ -150,6 +162,35 @@ const requestPrices = () => {
   };
 };
 
+function sortNfts(
+  sortBy: Ref<'name' | 'priceUsd' | 'collection'>,
+  sortDesc: Ref<boolean>,
+  a: GalleryNft,
+  b: GalleryNft
+): number {
+  const sortProp = sortBy.value;
+  const desc = sortDesc.value;
+  const isCollection = sortProp === 'collection';
+  const aElement = isCollection ? a.collection.name : a[sortProp];
+  const bElement = isCollection ? b.collection.name : b[sortProp];
+  if (typeof aElement === 'string' && typeof bElement === 'string') {
+    return desc
+      ? bElement.localeCompare(aElement, 'en', { sensitivity: 'base' })
+      : aElement.localeCompare(bElement, 'en', { sensitivity: 'base' });
+  } else if (aElement instanceof BigNumber && bElement instanceof BigNumber) {
+    return (
+      desc ? bElement.minus(aElement) : aElement.minus(bElement)
+    ).toNumber();
+  } else if (aElement === null && bElement === null) {
+    return 0;
+  } else if (aElement && !bElement) {
+    return desc ? 1 : -1;
+  } else if (!aElement && bElement) {
+    return desc ? -1 : 1;
+  }
+  return 0;
+}
+
 const setupNfts = (
   dispatch: Dispatch,
   selectedAccount: Ref<GeneralAccount | null>,
@@ -163,18 +204,39 @@ const setupNfts = (
   const error = ref('');
   const loading = ref(true);
   const perAccount: Ref<Nfts | null> = ref(null);
+  const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
+  const sortDesc = ref(false);
+  const sortProperties = [
+    {
+      text: i18n.t('nft_gallery.sort.name').toString(),
+      value: 'name'
+    },
+    {
+      text: i18n.t('nft_gallery.sort.price').toString(),
+      value: 'priceUsd'
+    },
+    {
+      text: i18n.t('nft_gallery.sort.collection').toString(),
+      value: 'collection'
+    }
+  ];
 
   const items = computed(() => {
     const account = selectedAccount.value;
     const selection = selectedCollection.value;
     if (account || selection) {
-      return nfts.value.filter(({ address, collection }) => {
-        const sameAccount = account ? address === account.address : true;
-        const sameCollection = selection ? selection === collection.name : true;
-        return sameAccount && sameCollection;
-      });
+      return nfts.value
+        .filter(({ address, collection }) => {
+          const sameAccount = account ? address === account.address : true;
+          const sameCollection = selection
+            ? selection === collection.name
+            : true;
+          return sameAccount && sameCollection;
+        })
+        .sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
     }
-    return nfts.value;
+
+    return nfts.value.sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
   });
 
   const pages = computed(() => {
@@ -270,6 +332,9 @@ const setupNfts = (
     error,
     availableAddresses,
     collections,
+    sortBy,
+    sortDesc,
+    sortProperties,
     noData,
     loading
   };
@@ -278,6 +343,8 @@ const setupNfts = (
 export default defineComponent({
   name: 'NftGallery',
   components: {
+    SortingSelector,
+    Pagination,
     ActiveModules,
     BaseExternalLink,
     NoDataScreen,

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3579` Users will now be able to sort the NFTs in the gallery by name, collection and price.
 * :feature:`1451` Improves performance of the Transactions page.
 
 * :release:`1.21.2 <2021-10-14>`
