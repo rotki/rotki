@@ -22,6 +22,7 @@ describe('UserSecuritySettings.vue', () => {
         'card-title',
         'asset-select',
         'asset-update',
+        'confirm-dialog',
         'card'
       ],
       mocks: {
@@ -29,6 +30,12 @@ describe('UserSecuritySettings.vue', () => {
           balances: {
             getPriceCache: () => []
           }
+        },
+        $interop: {
+          isPackaged: () => true,
+          config: () => ({
+            logDirectory: ''
+          })
         }
       }
     });
