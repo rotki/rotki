@@ -206,8 +206,8 @@ const setupNfts = (
       const bElement = b[sortProp];
       if (typeof aElement === 'string' && typeof bElement === 'string') {
         return desc
-          ? bElement.toLowerCase().localeCompare(aElement)
-          : aElement.toLowerCase().localeCompare(bElement);
+          ? bElement.localeCompare(aElement, 'en', { sensitivity: 'base' })
+          : aElement.localeCompare(bElement, 'en', { sensitivity: 'base' });
       } else if (
         aElement instanceof BigNumber &&
         bElement instanceof BigNumber
@@ -215,6 +215,12 @@ const setupNfts = (
         return (
           desc ? bElement.minus(aElement) : aElement.minus(bElement)
         ).toNumber();
+      } else if (aElement === null && bElement === null) {
+        return 0;
+      } else if (aElement && !bElement) {
+        return desc ? 1 : -1;
+      } else if (!aElement && bElement) {
+        return desc ? -1 : 1;
       }
       return 0;
     });
