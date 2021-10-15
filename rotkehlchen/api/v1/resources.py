@@ -371,9 +371,16 @@ class AllBalancesResource(BaseResource):
     get_schema = AllBalancesQuerySchema()
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, save_data: bool, async_query: bool, ignore_cache: bool) -> Response:
+    def get(
+            self,
+            save_data: bool,
+            ignore_errors: bool,
+            async_query: bool,
+            ignore_cache: bool,
+    ) -> Response:
         return self.rest_api.query_all_balances(
             save_data=save_data,
+            ignore_errors=ignore_errors,
             async_query=async_query,
             ignore_cache=ignore_cache,
         )

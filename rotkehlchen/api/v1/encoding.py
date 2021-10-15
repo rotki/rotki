@@ -1144,6 +1144,14 @@ class ModifiableSettingsSchema(Schema):
     taxable_ledger_actions = fields.List(LedgerActionTypeField, load_default=None)
     pnl_csv_with_formulas = fields.Bool(load_default=None)
     pnl_csv_have_summary = fields.Bool(load_default=None)
+    ssf_0graph_multiplier = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=0,
+            error='The snapshot saving frequeny 0graph multiplier should be >= 0',
+        ),
+        load_default=None,
+    )
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -1189,6 +1197,7 @@ class ModifiableSettingsSchema(Schema):
             taxable_ledger_actions=data['taxable_ledger_actions'],
             pnl_csv_with_formulas=data['pnl_csv_with_formulas'],
             pnl_csv_have_summary=data['pnl_csv_have_summary'],
+            ssf_0graph_multiplier=data['ssf_0graph_multiplier'],
         )
 
 
@@ -1254,6 +1263,7 @@ class NewUserSchema(BaseUserSchema):
 class AllBalancesQuerySchema(Schema):
     async_query = fields.Boolean(load_default=False)
     save_data = fields.Boolean(load_default=False)
+    ignore_errors = fields.Boolean(load_default=False)
     ignore_cache = fields.Boolean(load_default=False)
 
 

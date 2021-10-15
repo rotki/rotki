@@ -28,7 +28,8 @@ export const convertToGeneralSettings = (
   btcDerivationGapLimit: settings.btc_derivation_gap_limit,
   displayDateInLocaltime: settings.display_date_in_localtime,
   currentPriceOracles: settings.current_price_oracles,
-  historicalPriceOracles: settings.historical_price_oracles
+  historicalPriceOracles: settings.historical_price_oracles,
+  ssf0GraphMultiplier: settings.ssf_0graph_multiplier
 });
 
 export const convertToAccountingSettings = (

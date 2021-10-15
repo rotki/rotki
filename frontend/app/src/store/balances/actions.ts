@@ -118,18 +118,14 @@ const updateBalancePrice: (
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async fetchBalances(
     { commit, rootGetters, dispatch },
-    payload: AllBalancePayload = {
-      ignoreCache: false,
-      saveData: false
-    }
+    payload: Partial<AllBalancePayload> = {}
   ) {
-    const { ignoreCache, saveData } = payload;
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
     if (isTaskRunning(TaskType.QUERY_BALANCES)) {
       return;
     }
     try {
-      const result = await api.queryBalancesAsync(ignoreCache, saveData);
+      const result = await api.queryBalancesAsync(payload);
       const task = createTask(result.task_id, TaskType.QUERY_BALANCES, {
         title: i18n.t('actions.balances.all_balances.task.title').toString(),
         ignoreResult: true

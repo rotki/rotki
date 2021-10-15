@@ -586,6 +586,7 @@ class Rotkehlchen():
     def query_balances(
             self,
             requested_save_data: bool = False,
+            save_despite_errors: bool = False,
             timestamp: Timestamp = None,
             ignore_cache: bool = False,
     ) -> Dict[str, Any]:
@@ -594,6 +595,8 @@ class Rotkehlchen():
         If requested_save_data is True then the data are always saved in the DB,
         if it is False then data are saved if self.data.should_save_balances()
         is True.
+        If save_despite_errors is True then even if there is any error the snapshot
+        will be saved.
         If timestamp is None then the current timestamp is used.
         If a timestamp is given then that is the time that the balances are going
         to be saved in the DB
@@ -601,7 +604,11 @@ class Rotkehlchen():
 
         Returns a dictionary with the queried balances.
         """
-        log.info('query_balances called', requested_save_data=requested_save_data)
+        log.info(
+            'query_balances called',
+            requested_save_data=requested_save_data,
+            save_despite_errors=save_despite_errors,
+        )
 
         balances: Dict[str, Dict[Asset, Balance]] = {}
         problem_free = True
@@ -711,7 +718,7 @@ class Rotkehlchen():
         }
         allowed_to_save = requested_save_data or self.data.should_save_balances()
 
-        if problem_free and allowed_to_save:
+        if (problem_free or save_despite_errors) and allowed_to_save:
             if not timestamp:
                 timestamp = Timestamp(int(time.time()))
             self.data.db.save_balances_data(data=result_dict, timestamp=timestamp)
@@ -721,6 +728,7 @@ class Rotkehlchen():
                 'query_balances data not saved',
                 allowed_to_save=allowed_to_save,
                 problem_free=problem_free,
+                save_despite_errors=save_despite_errors,
             )
 
         return result_dict

@@ -49,6 +49,7 @@ import {
 } from '@/services/utils';
 import {
   AccountPayload,
+  AllBalancePayload,
   BlockchainAccountPayload,
   ExchangePayload,
   XpubPayload
@@ -269,17 +270,13 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  queryBalancesAsync(
-    ignoreCache: boolean = false,
-    saveData: boolean = false
-  ): Promise<AsyncQuery> {
+  queryBalancesAsync(payload: Partial<AllBalancePayload>): Promise<AsyncQuery> {
     return this.axios
       .get<ActionResult<AsyncQuery>>('/balances/', {
-        params: {
-          async_query: true,
-          ignore_cache: ignoreCache ? true : undefined,
-          save_data: saveData ? true : undefined
-        },
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          ...payload
+        }),
         validateStatus: validStatus
       })
       .then(handleResponse);

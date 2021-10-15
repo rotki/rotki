@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast,
 
 from typing_extensions import Literal
 
+from rotkehlchen.chain.ethereum.graph import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.misc import ZERO
@@ -680,11 +681,18 @@ class EventsHistorian():
         compound = self.chain_manager.get_module('compound')
         if compound and has_premium:
             self.processing_state_name = 'Querying compound history'
-            defi_events.extend(compound.get_history_events(
-                from_timestamp=Timestamp(0),  # we need to process all events from history start
-                to_timestamp=end_ts,
-                addresses=self.chain_manager.queried_addresses_for_module('compound'),
-            ))
+            try:
+                # we need to process all events from history start
+                defi_events.extend(compound.get_history_events(
+                    from_timestamp=Timestamp(0),
+                    to_timestamp=end_ts,
+                    addresses=self.chain_manager.queried_addresses_for_module('compound'),
+                ))
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    SUBGRAPH_REMOTE_ERROR_MSG.format(protocol="Compound", error_msg=str(e)),
+                )
+
         step = self._increase_progress(step, total_steps)
 
         # include adex events

@@ -26,6 +26,7 @@ export interface GeneralSettings {
   readonly displayDateInLocaltime: boolean;
   readonly currentPriceOracles: PriceOracles[];
   readonly historicalPriceOracles: PriceOracles[];
+  readonly ssf0GraphMultiplier: number;
 }
 
 export interface AccountingSettings {
@@ -131,6 +132,7 @@ interface SettingsPayload {
   taxable_ledger_actions: LedgerActionType[];
   pnl_csv_with_formulas: boolean;
   pnl_csv_have_summary: boolean;
+  ssf_0graph_multiplier: number;
 }
 
 export type ExternalServiceName = 'etherscan' | 'cryptocompare' | 'loopring';

@@ -1,4 +1,7 @@
+import { AssetBalance } from '@rotki/common';
 import { ManagedAsset } from '@/services/assets/types';
+import { AssetInfoGetter } from '@/store/balances/types';
+import { assert } from '@/utils/assertions';
 
 function levenshtein(a: string, b: string) {
   let tmp;
@@ -77,3 +80,32 @@ export function compareAssets(
   }
   return 0;
 }
+
+export const getSortItems = (getInfo: AssetInfoGetter) => {
+  return (
+    items: AssetBalance[],
+    sortBy: (keyof AssetBalance)[],
+    sortDesc: boolean[]
+  ): AssetBalance[] => {
+    const sortByElement = sortBy[0];
+    const sortByDesc = sortDesc[0];
+    return items.sort((a, b) => {
+      if (sortByElement === 'asset') {
+        const aAsset = getInfo(a.asset);
+        const bAsset = getInfo(b.asset);
+        assert(aAsset && bAsset);
+        const bSymbol = bAsset.symbol;
+        const aSymbol = aAsset.symbol;
+        return sortByDesc
+          ? bSymbol.toLowerCase().localeCompare(aSymbol)
+          : aSymbol.toLowerCase().localeCompare(bSymbol);
+      }
+
+      const aElement = a[sortByElement];
+      const bElement = b[sortByElement];
+      return (
+        sortByDesc ? bElement.minus(aElement) : aElement.minus(bElement)
+      ).toNumber();
+    });
+  };
+};

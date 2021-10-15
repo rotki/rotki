@@ -1136,6 +1136,9 @@ Activity from uphold with uphold transaction id:
                 )
                 self.db_ledger.add_ledger_action(action)
             else:  # Assets or amounts differ (Trades)
+                # in uphold UI the exchanged amount includes the fee.
+                if fee_asset == destination_asset:
+                    destination_amount = AssetAmount(destination_amount + fee)
                 if destination_amount > 0:
                     trade = Trade(
                         timestamp=timestamp,
