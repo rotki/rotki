@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`3579` Users will now be able to sort the NFTs in the gallery by name, collection and price.
 * :feature:`1451` Improves performance of the Transactions page.
+* :feature:`3594` Users can now sort the dashboard assets and blockchain balance per asset tables using the price field.
 * :bug:`3328` The asset update resolution dialog should now be usable on mobile screens.
 * :feature:`1513` Users will now be able to add manual liabilities.
 
