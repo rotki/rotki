@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`3613` Users should be now able to save a ledger action without specifying seconds.
+
 * :release:`1.21.2 <2021-10-14>`
 * :bug:`-` Users can now ignore any errors when force saving balances.
 * :bug:`3576` User asset charts should no longer have arbitrary zero amounts. There is now a setting they can choose which is off by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
