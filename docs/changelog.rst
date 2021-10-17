@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3619` Binance users should now be able to properly process fiat payments, deposits and withdrawals.
 * :bug:`3613` Users should be now able to save a ledger action without specifying seconds.
 
 * :release:`1.21.2 <2021-10-14>`

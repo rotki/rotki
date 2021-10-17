@@ -27,6 +27,7 @@ A_BAND = EthereumToken('0xBA11D00c5f74255f56a5E366F4F77f5A186d7f55')
 A_YAM_V1 = EthereumToken('0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16')
 
 
+A_LUNA = Asset('LUNA-2')
 A_AIR2 = Asset('AIR-2')
 A_SDC = Asset('SDC')
 A_DOGE = Asset('DOGE')

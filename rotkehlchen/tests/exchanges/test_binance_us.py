@@ -6,7 +6,7 @@ import pytest
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
 from rotkehlchen.constants.assets import A_BNB, A_BTC
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.binance import Binance, BINANCEUS_BASE_URL
+from rotkehlchen.exchanges.binance import BINANCEUS_BASE_URL, Binance
 from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.exchanges import (
@@ -126,4 +126,8 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
     assert len(warnings) == 0
 
     assert len(movements) == 4
-    assert_binance_asset_movements_result(movements=movements, location=Location.BINANCEUS)
+    assert_binance_asset_movements_result(
+        movements=movements,
+        location=Location.BINANCEUS,
+        got_fiat=False,
+    )

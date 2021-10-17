@@ -42,14 +42,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_binance,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.typing import (
-    ApiKey,
-    ApiSecret,
-    Fee,
-    AssetMovementCategory,
-    Location,
-    Timestamp,
-)
+from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -913,7 +906,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             api_type='sapi',
-            method='fiat/orders',
+            method='fiat/payments',
             additional_options={'transactionType': 0},
         )
         log.debug(f'{self.name} fiat buys history result', results_num=len(fiat_buys))
@@ -922,7 +915,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             api_type='sapi',
-            method='fiat/orders',
+            method='fiat/payments',
             additional_options={'transactionType': 1},
         )
         log.debug(f'{self.name} fiat sells history result', results_num=len(fiat_sells))
@@ -946,7 +939,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         Can log error/warning and return None if something went wrong at deserialization
         """
         try:
-            if 'status' not in raw_data or raw_data['status'] != 'Successful':
+            if 'status' not in raw_data or raw_data['status'] != 'Completed':
                 log.error(
                     f'Found {str(self.location)} fiat payment with failed status. Ignoring it.',
                 )
@@ -973,7 +966,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 amount=obtain_amount,
                 rate=rate,
                 fee=fee,
-                fee_currency=base_asset,
+                fee_currency=quote_asset,
                 link=link_str,
             )
 
@@ -1013,7 +1006,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         Can log error/warning and return None if something went wrong at deserialization
         """
         try:
-            if 'status' not in raw_data or raw_data['status'] != 'Successful':
+            if 'status' not in raw_data or raw_data['status'] not in ('Successful', 'Finished'):
                 log.error(
                     f'Found {str(self.location)} fiat deposit/withdrawal with failed status. Ignoring it.',  # noqa: E501
                 )
@@ -1151,7 +1144,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
           - Timestamps are converted to milliseconds.
         """
         results: List[Dict[str, Any]] = []
-
         # Create required time references in milliseconds
         start_ts = Timestamp(start_ts * 1000)
         end_ts = Timestamp(end_ts * 1000)

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.binance import (
@@ -275,6 +275,7 @@ BINANCE_LENDING_WALLET_RESPONSE = """{
     "totalFlexibleInUSDT": "77.13289230"
 }"""
 
+
 BINANCE_MYTRADES_RESPONSE = """
 [
     {
@@ -291,6 +292,47 @@ BINANCE_MYTRADES_RESPONSE = """
     "isMaker": false,
     "isBestMatch": true
     }]"""
+
+
+BINANCE_FIATBUY_RESPONSE = """{
+   "code": "000000",
+   "message": "success",
+   "data": [{
+      "orderNo": "353fca443f06466db0c4dc89f94f027a",
+      "sourceAmount": "20.0",
+      "fiatCurrency": "EUR",
+      "obtainAmount": "4.462",
+      "cryptoCurrency": "LUNA",
+      "totalFee": "0.2",
+      "price": "4.437472",
+      "status": "Completed",
+      "createTime": 1624529919000,
+      "updateTime": 1624529919000
+   }],
+   "total": 1,
+   "success": true
+}"""
+
+
+BINANCE_FIATSELL_RESPONSE = """{
+   "code": "000000",
+   "message": "success",
+   "data": [{
+      "orderNo": "463fca443f06466db0c4dc89f94f027a",
+      "sourceAmount": "20.0",
+      "fiatCurrency": "EUR",
+      "obtainAmount": "4.462",
+      "cryptoCurrency": "ETH",
+      "totalFee": "0.2",
+      "price": "4.437472",
+      "status": "Completed",
+      "createTime": 1628529919000,
+      "updateTime": 1628529919000
+   }],
+   "total": 1,
+   "success": true
+}"""
+
 
 BINANCE_DEPOSITS_HISTORY_RESPONSE = """[
     {
@@ -337,6 +379,48 @@ BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """[
 ]"""  # noqa: E501
 
 
+BINANCE_FIATDEPOSITS_RESPONSE = """{
+   "code": "000000",
+   "message": "success",
+   "data": [
+   {
+      "orderNo":"7d76d611-0568-4f43-afb6-24cac7767365",
+      "fiatCurrency": "EUR",
+      "indicatedAmount": "10.00",
+      "amount": "10.00",
+      "totalFee": "0.00",
+      "method": "BankAccount",
+      "status": "Successful",
+      "createTime": 1626144956000,
+      "updateTime": 1626400907000
+   }
+   ],
+   "total": 1,
+   "success": true
+}"""
+
+
+BINANCE_FIATWITHDRAWS_RESPONSE = """{
+   "code": "000000",
+   "message": "success",
+   "data": [
+   {
+      "orderNo":"8e76d611-0568-4f43-afb6-24cac7767365",
+      "fiatCurrency": "EUR",
+      "indicatedAmount": "10.00",
+      "amount": "10.00",
+      "totalFee": "0.02",
+      "method": "BankAccount",
+      "status": "Finished",
+      "createTime": 1636144956000,
+      "updateTime": 1636400907000
+   }
+   ],
+   "total": 1,
+   "success": true
+}"""
+
+
 def assert_binance_balances_result(balances: Dict[str, Any]) -> None:
     assert balances['BTC']['amount'] == '4723846.89208129'
     assert balances['BTC']['usd_value'] is not None
@@ -344,8 +428,12 @@ def assert_binance_balances_result(balances: Dict[str, Any]) -> None:
     assert balances['ETH']['usd_value'] is not None
 
 
-def assert_binance_asset_movements_result(movements: List[AssetMovement], location: Location) -> None:  # noqa: E501
-    assert len(movements) == 4
+def assert_binance_asset_movements_result(
+        movements: List[AssetMovement],
+        location: Location,
+        got_fiat: bool,
+) -> None:
+    assert len(movements) == 6 if got_fiat else 4
     assert movements[0].location == location
     assert movements[0].category == AssetMovementCategory.DEPOSIT
     assert movements[0].timestamp == 1508198532
@@ -377,6 +465,23 @@ def assert_binance_asset_movements_result(movements: List[AssetMovement], locati
     assert movements[3].asset == A_XMR
     assert movements[3].amount == FVal('999.9999')
     assert movements[3].fee == FVal('0.0001')
+
+    if got_fiat:
+        assert movements[4].location == location
+        assert movements[4].category == AssetMovementCategory.DEPOSIT
+        assert movements[4].timestamp == 1626144956
+        assert isinstance(movements[4].asset, Asset)
+        assert movements[4].asset == A_EUR
+        assert movements[4].amount == FVal('10')
+        assert movements[4].fee == FVal('0')
+
+        assert movements[5].location == location
+        assert movements[5].category == AssetMovementCategory.WITHDRAWAL
+        assert movements[5].timestamp == 1636144956
+        assert isinstance(movements[5].asset, Asset)
+        assert movements[5].asset == A_EUR
+        assert movements[5].amount == FVal('10')
+        assert movements[5].fee == FVal('0.02')
 
 
 def assert_poloniex_balances_result(balances: Dict[str, Any]) -> None:
