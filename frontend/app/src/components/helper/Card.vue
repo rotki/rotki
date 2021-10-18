@@ -1,5 +1,11 @@
 <template>
-  <v-card v-bind="$attrs" v-on="$listeners">
+  <v-card
+    v-bind="$attrs"
+    :class="{
+      [$style['no-radius-bottom']]: noRadiusBottom
+    }"
+    v-on="$listeners"
+  >
     <v-card-title v-if="$slots.title">
       <slot v-if="$slots.icon" name="icon" />
       <card-title
@@ -24,6 +30,8 @@
       </div>
     </v-card-subtitle>
     <v-card-text
+      ref="body"
+      :style="bodyStyle"
       :class="{
         [$style.contained]: contained
       }"
@@ -43,14 +51,20 @@
         <slot name="options" />
       </div>
     </v-card-text>
-    <v-card-actions v-if="$slots.buttons">
+    <v-card-actions v-if="$slots.buttons" ref="actions">
       <slot name="buttons" />
     </v-card-actions>
   </v-card>
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  ref,
+  toRefs
+} from '@vue/composition-api';
 import CardTitle from '@/components/typography/CardTitle.vue';
 
 const Card = defineComponent({
@@ -58,7 +72,39 @@ const Card = defineComponent({
   components: { CardTitle },
   props: {
     outlinedBody: { required: false, type: Boolean, default: false },
-    contained: { required: false, type: Boolean, default: false }
+    contained: { required: false, type: Boolean, default: false },
+    noRadiusBottom: { required: false, type: Boolean, default: false }
+  },
+  setup(props) {
+    const { contained } = toRefs(props);
+    const body = ref<HTMLDivElement | null>(null);
+    const actions = ref<HTMLDivElement | null>(null);
+    const top = ref(206);
+
+    onMounted(() => {
+      setTimeout(() => {
+        top.value = body.value?.getBoundingClientRect().top ?? 0;
+      }, 1000);
+    });
+
+    const bodyStyle = computed(() => {
+      if (!contained.value) {
+        return null;
+      }
+      const bodyTop = top.value;
+      const actionsHeight = actions.value?.getBoundingClientRect().height ?? 0;
+      const diff = bodyTop + actionsHeight;
+
+      return {
+        height: `calc(100vh - ${diff}px)`
+      };
+    });
+
+    return {
+      actions,
+      body,
+      bodyStyle
+    };
   }
 });
 
@@ -81,9 +127,14 @@ export default Card;
 }
 
 .contained {
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 206px);
   overflow-y: scroll;
 
   @extend .themed-scrollbar;
+}
+
+.no-radius-bottom {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
 }
 </style>

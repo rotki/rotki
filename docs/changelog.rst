@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`3579` Users will now be able to sort the NFTs in the gallery by name, collection and price.
 * :feature:`1451` Improves performance of the Transactions page.
+* :bug:`3328` The asset update resolution dialog should now be usable on mobile screens.
 
 * :release:`1.21.2 <2021-10-14>`
 * :bug:`-` Users can now ignore any errors when force saving balances.
