@@ -1,7 +1,7 @@
 <template>
   <v-row class="mt-2 mb-2" no-gutters>
     <v-col cols="auto" class="font-weight-medium"> {{ field }}: </v-col>
-    <v-col class="ms-4" :class="diff ? 'red--text' : null">
+    <v-col class="ms-4" :class="diff ? 'red--text font-weight-bold' : null">
       <span v-if="isStarted">
         <date-display v-if="value" :timestamp="value" no-timezone />
         <span v-else>-</span>
@@ -18,25 +18,25 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { computed, defineComponent, toRefs } from '@vue/composition-api';
 
-@Component({})
-export default class ConflictRow extends Vue {
-  @Prop({ required: true, type: String })
-  field!: string;
-  @Prop({ required: true })
-  value!: string | null;
-  @Prop({ required: true, type: Boolean })
-  diff!: boolean;
+const ConflictRow = defineComponent({
+  props: {
+    field: { required: true, type: String },
+    value: { required: false, type: [String, Number], default: null },
+    diff: { required: true, type: Boolean }
+  },
+  setup(props) {
+    const { field } = toRefs(props);
 
-  get isStarted(): boolean {
-    return this.field === 'started';
+    const isStarted = computed(() => field.value === 'started');
+    const isAddress = computed(() => field.value === 'ethereumAddress');
+
+    return {
+      isStarted,
+      isAddress
+    };
   }
-
-  get isAddress(): boolean {
-    return this.field === 'ethereumAddress';
-  }
-}
+});
+export default ConflictRow;
 </script>
-
-<style scoped lang="scss"></style>

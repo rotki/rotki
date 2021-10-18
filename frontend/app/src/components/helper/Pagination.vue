@@ -107,11 +107,7 @@ export default defineComponent({
 .pages {
   max-width: 80px;
 
-  /* stylelint-disable selector-pseudo-class-no-unknown */
-
   :global {
-    /* stylelint-enable selector-pseudo-class-no-unknown */
-
     .v-autocomplete {
       &.v-select {
         &.v-input {

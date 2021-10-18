@@ -1,6 +1,6 @@
 ﻿<template>
-  <v-bottom-sheet persistent v-bind="$attrs" width="98%" v-on="$listeners">
-    <card outlined-body>
+  <v-bottom-sheet v-bind="$attrs" persistent width="98%" v-on="$listeners">
+    <card outlined-body contained no-radius-bottom>
       <template #title>{{ $t('conflict_dialog.title') }}</template>
       <template #subtitle>{{ $t('conflict_dialog.subtitle') }}</template>
       <template #actions>
@@ -33,9 +33,11 @@
         </i18n>
       </template>
       <data-table
-        class="conflict-dialog__table"
+        :class="{
+          [$style.mobile]: true
+        }"
         :items="conflicts"
-        :headers="headers"
+        :headers="tableHeaders"
       >
         <template #item.local="{ item: conflict }">
           <conflict-row
@@ -94,9 +96,19 @@
 
 <script lang="ts">
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  Ref,
+  ref,
+  toRefs
+} from '@vue/composition-api';
+import { IVueI18n } from 'vue-i18n';
 import { DataTableHeader } from 'vuetify';
 import ConflictRow from '@/components/status/update/ConflictRow.vue';
+import { setupThemeCheck } from '@/composables/common';
+import i18n from '@/i18n';
 import {
   ConflictResolution,
   ConflictResolutionStrategy
@@ -105,159 +117,153 @@ import { AssetUpdateConflictResult } from '@/store/assets/types';
 import { Writeable } from '@/types';
 import { uniqueStrings } from '@/utils/data';
 
-@Component({
-  components: { ConflictRow }
-})
-export default class ConflictDialog extends Vue {
-  @Prop({ required: true, type: Array })
-  conflicts!: AssetUpdateConflictResult[];
-  resolution: ConflictResolution = {};
-
-  @Emit()
-  resolve(_resolution: ConflictResolution) {}
-  @Emit()
-  cancel() {}
-
-  readonly headers: DataTableHeader[] = [
+const getHeaders: (
+  i18n: IVueI18n,
+  isMobile: Ref<boolean>
+) => DataTableHeader[] = i18n => {
+  return [
     {
-      text: this.$t('conflict_dialog.table.headers.local').toString(),
+      text: i18n.t('conflict_dialog.table.headers.local').toString(),
       sortable: false,
       value: 'local'
     },
     {
-      text: this.$t('conflict_dialog.table.headers.remote').toString(),
+      text: i18n.t('conflict_dialog.table.headers.remote').toString(),
       sortable: false,
       value: 'remote'
     },
     {
-      text: this.$t('conflict_dialog.table.headers.keep').toString(),
+      text: i18n.t('conflict_dialog.table.headers.keep').toString(),
       value: 'keep',
       align: 'center',
       sortable: false,
       class: 'conflict-dialog__action-container'
     }
   ];
+};
 
-  setResolution(strategy: ConflictResolutionStrategy) {
-    const length = this.conflicts.length;
-    const resolution: Writeable<ConflictResolution> = {};
-    for (let i = 0; i < length; i++) {
-      const conflict = this.conflicts[i];
-      resolution[conflict.identifier] = strategy;
+const ConflictDialog = defineComponent({
+  name: 'ConflictDialog',
+  components: { ConflictRow },
+  props: {
+    conflicts: {
+      required: true,
+      type: Array as PropType<AssetUpdateConflictResult[]>
     }
+  },
+  emits: ['resolve', 'cancel'],
+  setup(props, { emit }) {
+    const { conflicts } = toRefs(props);
+    const resolution: Ref<ConflictResolution> = ref({});
+    const setResolution = (strategy: ConflictResolutionStrategy) => {
+      const length = conflicts.value.length;
+      const resolutionStrategy: Writeable<ConflictResolution> = {};
+      for (let i = 0; i < length; i++) {
+        const conflict = conflicts.value[i];
+        resolutionStrategy[conflict.identifier] = strategy;
+      }
 
-    this.resolution = resolution;
-  }
+      resolution.value = resolutionStrategy;
+    };
 
-  getConflictFields(conflict: AssetUpdateConflictResult): string[] {
-    function nonNull(
-      key: keyof SupportedAsset,
-      asset: SupportedAsset
-    ): boolean {
-      return asset[key] !== null;
-    }
-    const remote = Object.keys(conflict.remote).filter(value =>
-      nonNull(value as keyof SupportedAsset, conflict.remote)
-    );
-    const local = Object.keys(conflict.local).filter(value =>
-      nonNull(value as keyof SupportedAsset, conflict.local)
-    );
-    return [...remote, ...local].filter(uniqueStrings);
-  }
+    const getConflictFields = (
+      conflict: AssetUpdateConflictResult
+    ): string[] => {
+      function nonNull(
+        key: keyof SupportedAsset,
+        asset: SupportedAsset
+      ): boolean {
+        return asset[key] !== null;
+      }
+      const remote = Object.keys(conflict.remote).filter(value =>
+        nonNull(value as keyof SupportedAsset, conflict.remote)
+      );
+      const local = Object.keys(conflict.local).filter(value =>
+        nonNull(value as keyof SupportedAsset, conflict.local)
+      );
+      return [...remote, ...local].filter(uniqueStrings);
+    };
 
-  isDiff(conflict: AssetUpdateConflictResult, field: keyof SupportedAsset) {
-    const localElement = conflict.local[field];
-    const remoteElement = conflict.remote[field];
-    return localElement !== remoteElement;
-  }
+    const isDiff = (
+      conflict: AssetUpdateConflictResult,
+      field: keyof SupportedAsset
+    ) => {
+      const localElement = conflict.local[field];
+      const remoteElement = conflict.remote[field];
+      return localElement !== remoteElement;
+    };
 
-  get valid(): boolean {
-    const identifiers = this.conflicts
-      .map(({ identifier }) => identifier)
-      .sort();
-    const resolved = Object.keys(this.resolution).sort();
-    if (identifiers.length !== resolved.length) {
-      return false;
-    }
+    const remaining = computed(() => {
+      const resolved = Object.keys(resolution.value).length;
+      return conflicts.value.length - resolved;
+    });
 
-    for (let i = 0; i < resolved.length; i++) {
-      if (resolved[i] !== identifiers[i]) {
+    const valid = computed(() => {
+      const identifiers = conflicts.value
+        .map(({ identifier }) => identifier)
+        .sort();
+      const resolved = Object.keys(resolution.value).sort();
+      if (identifiers.length !== resolved.length) {
         return false;
       }
-    }
-    return true;
-  }
 
-  get remaining(): number {
-    const resolved = Object.keys(this.resolution).length;
-    return this.conflicts.length - resolved;
+      for (let i = 0; i < resolved.length; i++) {
+        if (resolved[i] !== identifiers[i]) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    const resolve = (resolution: ConflictResolution) => {
+      emit('resolve', resolution);
+    };
+
+    const cancel = () => {
+      emit('cancel');
+    };
+
+    const { isMobile } = setupThemeCheck();
+
+    return {
+      isDiff,
+      setResolution,
+      getConflictFields,
+      tableHeaders: getHeaders(i18n, isMobile),
+      resolution,
+      remaining,
+      valid,
+      cancel,
+      resolve,
+      isMobile
+    };
   }
-}
+});
+
+export default ConflictDialog;
 </script>
 
-<style scoped lang="scss">
-@import '~@/scss/scroll';
+<style module lang="scss">
+.mobile {
+  :global {
+    .v-data-table {
+      &__mobile-row {
+        padding: 12px 16px !important;
 
-::v-deep {
-  .v-card {
-    border-bottom-left-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
-  }
-}
-
-.conflict-dialog {
-  &__table {
-    height: calc(100vh - 550px);
-    overflow-y: auto;
-
-    ::v-deep {
-      .v-data-footer {
-        position: fixed;
-        bottom: 48px;
-        left: 0;
-        right: 0;
-        margin-left: 40px;
-        margin-right: 40px;
-        border-top: none !important;
-        @media (max-width: 450px) {
-          margin-left: 8px;
-          margin-right: 8px;
+        &__header {
+          text-orientation: sideways;
+          writing-mode: vertical-lr;
         }
-        @media (max-width: 700px) {
-          margin-left: 16px;
-          margin-right: 16px;
+      }
+
+      &__mobile-table-row {
+        td {
+          &:nth-child(2) {
+            background-color: rgba(0, 0, 0, 0.1);
+          }
         }
       }
     }
-
-    @media (max-width: 450px) {
-      height: calc(100vh - 690px);
-    }
-
-    @media (max-height: 700px) {
-      height: calc(100vh - 360px);
-    }
-
-    @media (min-height: 701px) and (max-height: 1024px) {
-      height: calc(100vh - 388px);
-    }
-
-    @extend .themed-scrollbar;
-  }
-
-  &__action {
-    width: 90px;
-  }
-
-  &__pagination {
-    height: 70px;
-    @media (max-width: 450px) {
-      height: 120px;
-    }
-  }
-
-  &__action-container {
-    width: 200px;
   }
 }
 </style>
