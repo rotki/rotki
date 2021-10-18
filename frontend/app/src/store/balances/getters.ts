@@ -281,7 +281,7 @@ export const getters: Getters<
   },
 
   liabilities: ({ liabilities, manualLiabilities }) => {
-    const liabilitiesMerged: Record<string, Balance> = liabilities;
+    const liabilitiesMerged: Record<string, Balance> = { ...liabilities };
     for (const entry of manualLiabilities) {
       if (liabilitiesMerged[entry.asset]) {
         liabilitiesMerged[entry.asset].amount.plus(entry.amount);

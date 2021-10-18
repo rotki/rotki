@@ -2,7 +2,7 @@ import { AssetBalance } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import sortBy from 'lodash/sortBy';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
-import { BtcBalances } from '@/services/balances/types';
+import { BalanceType, BtcBalances } from '@/services/balances/types';
 import { BtcAccountData } from '@/services/types-api';
 import { BalanceGetters, getters } from '@/store/balances/getters';
 import { BalanceState } from '@/store/balances/types';
@@ -72,9 +72,10 @@ describe('balances:getters', () => {
           label: '123',
           tags: [],
           location: TRADE_LOCATION_BANKS,
-          isLiability: false
+          balanceType: BalanceType.LIABILITY
         }
       ],
+      manualLiabilities: [],
       connectedExchanges: [
         {
           location: 'bittrex',
@@ -150,7 +151,8 @@ describe('balances:getters', () => {
             tags: [],
             location: 'banks'
           }
-        ]
+        ],
+        manualLiabilities: []
       })
     ).toMatchObject(['My monero wallet', 'My Bank Account']);
   });

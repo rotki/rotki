@@ -2322,7 +2322,7 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upgrade_db_29_to_30(user_data_dir):  # pylint: disable=unused-argument
-    """Test upgrading the DB from version 28 to version 29.
+    """Test upgrading the DB from version 29 to version 30.
 
     - Updates the primary key of blockchain accounts to take into account chain type
     """
