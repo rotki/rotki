@@ -3,6 +3,7 @@ import { MutationTree } from 'vuex';
 import { Exchange } from '@/model/action-result';
 import {
   Balances,
+  BalanceType,
   BlockchainAssetBalances,
   BtcBalances,
   ManualBalanceWithValue
@@ -116,7 +117,12 @@ export const mutations: MutationTree<BalanceState> = {
     state: BalanceState,
     manualBalances: ManualBalanceWithValue[]
   ) {
-    state.manualBalances = manualBalances;
+    state.manualBalances = manualBalances.filter(
+      x => x.balanceType === BalanceType.ASSET
+    );
+    state.manualLiabilities = manualBalances.filter(
+      x => x.balanceType === BalanceType.LIABILITY
+    );
   },
   [BalanceMutations.UPDATE_PRICES](state: BalanceState, prices: AssetPrices) {
     state.prices = prices;

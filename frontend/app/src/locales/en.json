@@ -2506,7 +2506,8 @@
       "asset": "Asset",
       "amount": "Amount",
       "location": "Location",
-      "tags": "Tags"
+      "tags": "Tags",
+      "liability": "Is a liability"
     },
     "validation": {
       "label_exists": "Label {label} already exists",

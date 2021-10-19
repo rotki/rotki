@@ -240,6 +240,7 @@ def test_export_import_db(data_dir, username):
         amount=FVal(10),
         location=Location.BANKS,
         tags=None,
+        balance_type=BalanceType.ASSET,
     )
     data.db.add_manually_tracked_balances([starting_balance])
     encoded_data, _ = data.compress_and_encrypt_db('123')

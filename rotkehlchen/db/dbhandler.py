@@ -1707,25 +1707,34 @@ class DBHandler:
 
         return data
 
-    def get_manually_tracked_balances(self) -> List[ManuallyTrackedBalance]:
+    def get_manually_tracked_balances(
+        self,
+        balance_type: Optional[BalanceType] = BalanceType.ASSET,
+    ) -> List[ManuallyTrackedBalance]:
         """Returns the manually tracked balances from the DB"""
         cursor = self.conn.cursor()
+        query_balance_type = ''
+        if balance_type is not None:
+            query_balance_type = f'WHERE A.category="{balance_type.serialize_for_db()}"'
         query = cursor.execute(
-            'SELECT A.asset, A.label, A.amount, A.location, group_concat(B.tag_name,",") '
-            'FROM manually_tracked_balances as A '
-            'LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.label GROUP BY label;',
+            f'SELECT A.asset, A.label, A.amount, A.location, group_concat(B.tag_name,","), '
+            f'A.category FROM manually_tracked_balances as A '
+            f'LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.label '
+            f'{query_balance_type} GROUP BY label;',
         )
 
         data = []
         for entry in query:
             tags = deserialize_tags_from_db(entry[4])
             try:
+                balance_type = BalanceType.deserialize_from_db(entry[5])
                 data.append(ManuallyTrackedBalance(
                     asset=Asset(entry[0]),
                     label=entry[1],
                     amount=FVal(entry[2]),
                     location=Location.deserialize_from_db(entry[3]),
                     tags=tags,
+                    balance_type=balance_type,
                 ))
             except (DeserializationError, UnknownAsset, UnsupportedAsset, ValueError) as e:
                 # ValueError would be due to FVal failing
@@ -1747,12 +1756,13 @@ class DBHandler:
             entry.label,
             str(entry.amount),
             entry.location.serialize_for_db(),
+            entry.balance_type.serialize_for_db(),
         ) for entry in data]
         cursor = self.conn.cursor()
         try:
             cursor.executemany(
-                'INSERT INTO manually_tracked_balances(asset, label, amount, location) '
-                'VALUES (?, ?, ?, ?)', tuples,
+                'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '
+                'VALUES (?, ?, ?, ?, ?)', tuples,
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
@@ -1789,11 +1799,12 @@ class DBHandler:
             entry.asset.identifier,
             str(entry.amount),
             entry.location.serialize_for_db(),
+            BalanceType.serialize_for_db(entry.balance_type),
             entry.label,
         ) for entry in data]
 
         cursor.executemany(
-            'UPDATE manually_tracked_balances SET asset=?, amount=?, location=? '
+            'UPDATE manually_tracked_balances SET asset=?, amount=?, location=?, category=?'
             'WHERE label=?;', tuples,
         )
         if cursor.rowcount != len(data):

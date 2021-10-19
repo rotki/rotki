@@ -1878,8 +1878,11 @@ class RestAPI():
         return api_response(process_result(result_dict), status_code=status_code)
 
     def _get_manually_tracked_balances(self) -> Dict[str, Any]:
+        db_entries = get_manually_tracked_balances(db=self.rotkehlchen.data.db, balance_type=None)
         balances = process_result(
-            {'balances': get_manually_tracked_balances(db=self.rotkehlchen.data.db)},
+            {
+                'balances': db_entries,
+            },
 
         )
         return _wrap_in_ok_result(balances)

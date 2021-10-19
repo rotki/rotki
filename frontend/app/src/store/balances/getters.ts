@@ -8,6 +8,7 @@ import map from 'lodash/map';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import {
   BlockchainAssetBalances,
+  ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
 import { GeneralAccountData } from '@/services/types-api';
@@ -52,6 +53,7 @@ export interface BalanceGetters {
   aggregatedAssets: string[];
   liabilities: AssetBalance[];
   manualBalanceByLocation: LocationBalance[];
+  manualBalanceWithLiabilities: ManualBalanceWithValue[];
   blockchainTotal: BigNumber;
   blockchainTotals: BlockchainTotal[];
   accountAssets: (account: string) => AssetBalance[];
@@ -278,11 +280,23 @@ export const getters: Getters<
     );
   },
 
-  liabilities: ({ liabilities }) => {
-    return Object.keys(liabilities).map(asset => ({
+  liabilities: ({ liabilities, manualLiabilities }) => {
+    const liabilitiesMerged: Record<string, Balance> = { ...liabilities };
+    for (const entry of manualLiabilities) {
+      if (liabilitiesMerged[entry.asset]) {
+        liabilitiesMerged[entry.asset].amount.plus(entry.amount);
+        liabilitiesMerged[entry.asset].usdValue.plus(entry.usdValue);
+      } else {
+        liabilitiesMerged[entry.asset] = {
+          amount: entry.amount,
+          usdValue: entry.usdValue
+        };
+      }
+    }
+    return Object.keys(liabilitiesMerged).map(asset => ({
       asset,
-      amount: liabilities[asset].amount,
-      usdValue: liabilities[asset].usdValue
+      amount: liabilitiesMerged[asset].amount,
+      usdValue: liabilitiesMerged[asset].usdValue
     }));
   },
 
@@ -347,6 +361,10 @@ export const getters: Getters<
         usdValue: aggregateManualBalancesByLocation[location]
       }))
       .sort((a, b) => b.usdValue.minus(a.usdValue).toNumber());
+  },
+
+  manualBalanceWithLiabilities: (state): ManualBalanceWithValue[] => {
+    return state.manualLiabilities.concat(state.manualBalances);
   },
 
   blockchainTotal: (_, getters) => {
@@ -512,8 +530,9 @@ export const getters: Getters<
     return assets.length > 1 || liabilities.length > 1;
   },
 
-  manualLabels: ({ manualBalances }: BalanceState) => {
-    return manualBalances.map(value => value.label);
+  manualLabels: ({ manualBalances, manualLiabilities }: BalanceState) => {
+    const balances = manualLiabilities.concat(manualBalances);
+    return balances.map(value => value.label);
   },
 
   assetInfo:

@@ -936,7 +936,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async updatePrices({ commit, state }, prices: AssetPrices): Promise<void> {
-    const manualBalances = [...state.manualBalances];
+    const manualBalances = [
+      ...state.manualBalances,
+      ...state.manualLiabilities
+    ];
     const totals = { ...state.totals };
     const eth = { ...state.eth };
     const btc: BtcBalances = {

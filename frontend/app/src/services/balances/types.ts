@@ -11,12 +11,18 @@ export type SupportedExchange = typeof SUPPORTED_EXCHANGES[number];
 export type SupportedTradeLocation = typeof SUPPORTED_TRADE_LOCATIONS[number];
 export type SupportedExternalExchanges = typeof EXTERNAL_EXCHANGES[number];
 
+export enum BalanceType {
+  ASSET = 'asset',
+  LIABILITY = 'liability'
+}
+
 export interface ManualBalance {
   readonly asset: string;
   readonly label: string;
   readonly amount: BigNumber;
   readonly location: TradeLocation;
   readonly tags: string[];
+  readonly balanceType: BalanceType;
 }
 
 export interface ManualBalanceWithValue extends ManualBalance {
@@ -25,6 +31,7 @@ export interface ManualBalanceWithValue extends ManualBalance {
 
 export interface ManualBalances {
   readonly balances: ManualBalanceWithValue[];
+  readonly liabilities: Balances[];
 }
 
 interface BlockchainTotals {
@@ -49,7 +56,7 @@ interface XpubBalance {
   readonly addresses: Balances;
 }
 
-interface BtcBalances {
+export interface BtcBalances {
   readonly standalone: Balances;
   readonly xpubs: XpubBalance[];
 }

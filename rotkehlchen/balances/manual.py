@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import InputError, RemoteError
@@ -18,6 +18,7 @@ class ManuallyTrackedBalance(NamedTuple):
     amount: FVal
     location: Location
     tags: Optional[List[str]]
+    balance_type: BalanceType
 
 
 class ManuallyTrackedBalanceWithValue(NamedTuple):
@@ -29,11 +30,15 @@ class ManuallyTrackedBalanceWithValue(NamedTuple):
     location: Location
     tags: Optional[List[str]]
     usd_value: FVal
+    balance_type: BalanceType
 
 
-def get_manually_tracked_balances(db: 'DBHandler') -> List[ManuallyTrackedBalanceWithValue]:
+def get_manually_tracked_balances(
+    db: 'DBHandler',
+    balance_type: Optional[BalanceType] = None,
+) -> List[ManuallyTrackedBalanceWithValue]:
     """Gets the manually tracked balances"""
-    balances = db.get_manually_tracked_balances()
+    balances = db.get_manually_tracked_balances(balance_type=balance_type)
     balances_with_value = []
     for entry in balances:
         try:

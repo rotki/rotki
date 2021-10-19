@@ -82,9 +82,7 @@ export class BalancesApi {
     return this.axios
       .put<ActionResult<ManualBalances>>(
         'balances/manual',
-        {
-          balances
-        },
+        axiosSnakeCaseTransformer({ balances }),
         {
           transformResponse: balanceAxiosTransformer,
           validateStatus: validWithParamsSessionAndExternalService
@@ -97,9 +95,7 @@ export class BalancesApi {
     return this.axios
       .patch<ActionResult<ManualBalances>>(
         'balances/manual',
-        {
-          balances
-        },
+        axiosSnakeCaseTransformer({ balances }),
         {
           transformResponse: balanceAxiosTransformer,
           validateStatus: validWithParamsSessionAndExternalService

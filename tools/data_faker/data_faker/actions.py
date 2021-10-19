@@ -2,6 +2,7 @@ import logging
 import random
 from typing import Tuple
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_EUR, A_USD
@@ -58,6 +59,7 @@ class ActionWriter():
                     amount=value,
                     location=Location.BANKS,
                     tags=None,
+                    balance_type=BalanceType.ASSET,
                 )])
         self.rotki.query_balances(requested_save_data=True, timestamp=timestamp)
 
@@ -83,6 +85,7 @@ class ActionWriter():
                         amount=value,
                         location=Location.BANKS,
                         tags=None,
+                        balance_type=BalanceType.ASSET,
                     )])
 
         self.rotki.query_balances(requested_save_data=True, timestamp=timestamp)

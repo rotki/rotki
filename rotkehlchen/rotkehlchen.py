@@ -12,10 +12,13 @@ import gevent
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.balances.manual import account_for_manually_tracked_balances
+from rotkehlchen.balances.manual import (
+    account_for_manually_tracked_balances,
+    get_manually_tracked_balances,
+)
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.manager import (
     ETHEREUM_NODES_TO_CONNECT_AT_START,
@@ -642,6 +645,18 @@ class Rotkehlchen():
             liabilities = {}
             log.error(f'Querying blockchain balances failed due to: {str(e)}')
 
+        manually_tracked_liabilities = get_manually_tracked_balances(
+            db=self.data.db,
+            balance_type=BalanceType.LIABILITY,
+        )
+        manual_liabilities_as_dict = {
+            manual_liability.asset: Balance(
+                amount=manual_liability.amount,
+                usd_value=manual_liability.usd_value,
+            )
+            for manual_liability in manually_tracked_liabilities
+        }
+        liabilities = combine_dicts(liabilities, manual_liabilities_as_dict)
         # retrieve loopring balances if module is activated
         if self.chain_manager.get_module('loopring'):
             loopring_balances = self.chain_manager.get_loopring_balances()
