@@ -11,9 +11,9 @@
       </v-card-title>
       <v-card-text>
         <v-btn
-          absolute
+          fixed
           fab
-          top
+          bottom
           right
           dark
           color="primary"
