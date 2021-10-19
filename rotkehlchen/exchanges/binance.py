@@ -254,6 +254,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     @property
     def symbols_to_pair(self) -> Dict[str, BinancePair]:
+        """Returns binance symbols to pair if in memory otherwise queries binance"""
         self.first_connection()
         return self._symbols_to_pair
 
