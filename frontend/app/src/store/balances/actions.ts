@@ -1,5 +1,5 @@
+import { BigNumber } from '@rotki/common/';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { BigNumber } from 'bignumber.js';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';

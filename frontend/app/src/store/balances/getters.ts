@@ -2,12 +2,12 @@ import {
   AssetBalance,
   AssetBalanceWithPrice,
   Balance,
-  HasBalance
+  HasBalance,
+  BigNumber
 } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { default as BigNumber } from 'bignumber.js';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';

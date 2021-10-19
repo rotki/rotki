@@ -32,14 +32,12 @@
     "rimraf": "3.0.2",
     "typescript": "4.4.2"
   },
-  "peerDependencies": {
-    "bignumber.js": "9.0.1"
-  },
   "engines": {
     "node": ">=14 <15",
     "npm": ">=7.19 <8"
   },
   "dependencies": {
+    "bignumber.js": "9.0.1",
     "zod": "3.8.2"
   }
 }

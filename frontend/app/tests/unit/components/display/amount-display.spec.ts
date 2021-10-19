@@ -1,5 +1,5 @@
+import { BigNumber } from '@rotki/common/';
 import { mount, Wrapper } from '@vue/test-utils';
-import { default as BigNumber } from 'bignumber.js';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';

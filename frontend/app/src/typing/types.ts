@@ -1,4 +1,4 @@
-import { default as BigNumber } from 'bignumber.js';
+import { BigNumber } from '@rotki/common/';
 import { PriceOracles } from '@/model/action-result';
 import { Currency } from '@/model/currency';
 import { Module } from '@/services/session/consts';

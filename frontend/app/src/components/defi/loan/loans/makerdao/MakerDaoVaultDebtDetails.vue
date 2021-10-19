@@ -21,13 +21,13 @@
 </template>
 
 <script lang="ts">
+import { BigNumber } from '@rotki/common/';
 import {
   computed,
   defineComponent,
   PropType,
   toRefs
 } from '@vue/composition-api';
-import { BigNumber } from 'bignumber.js';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';

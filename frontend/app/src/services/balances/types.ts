@@ -1,5 +1,4 @@
-import { Balance } from '@rotki/common';
-import { default as BigNumber } from 'bignumber.js';
+import { Balance, BigNumber } from '@rotki/common';
 import {
   SUPPORTED_EXCHANGES,
   SUPPORTED_TRADE_LOCATIONS,

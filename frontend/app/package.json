@@ -29,7 +29,6 @@
     "@rotki/common": "1.0.0",
     "@vue/composition-api": "1.1.4",
     "axios": "0.21.4",
-    "bignumber.js": "9.0.1",
     "chart.js": "2.9.4",
     "core-js": "3.17.2",
     "dayjs": "1.10.6",

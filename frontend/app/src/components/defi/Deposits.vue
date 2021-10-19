@@ -173,9 +173,9 @@
 </template>
 
 <script lang="ts">
+import { BigNumber } from '@rotki/common/';
 import { Account, DefiAccount } from '@rotki/common/lib/account';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { default as BigNumber } from 'bignumber.js';
 import Component from 'vue-class-component';
 import { Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';

@@ -1,5 +1,4 @@
-import { HasBalance } from '@rotki/common';
-import { default as BigNumber } from 'bignumber.js';
+import { HasBalance, BigNumber } from '@rotki/common';
 import { CompoundProfitAndLoss } from '@/services/defi/types/compound';
 import { ProfitLossModel } from '@/store/defi/types';
 import { Zero } from '@/utils/bignumbers';

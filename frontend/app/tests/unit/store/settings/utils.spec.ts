@@ -1,3 +1,4 @@
+import { BigNumber } from '@rotki/common/';
 import {
   DARK_MODE_ENABLED,
   DARK_THEME,
@@ -7,7 +8,6 @@ import {
   TimeFramePeriod,
   TimeFramePersist
 } from '@rotki/common/lib/settings/graphs';
-import { default as BigNumber } from 'bignumber.js';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {

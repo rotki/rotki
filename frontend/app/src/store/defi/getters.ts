@@ -1,4 +1,4 @@
-import { AddressIndexed, Balance } from '@rotki/common';
+import { AddressIndexed, Balance, BigNumber } from '@rotki/common';
 import { DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
@@ -23,7 +23,6 @@ import {
   XswapPool,
   XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
-import { default as BigNumber } from 'bignumber.js';
 import sortBy from 'lodash/sortBy';
 import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress } from '@/filters';

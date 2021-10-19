@@ -159,7 +159,7 @@
 </template>
 
 <script lang="ts">
-import { default as BigNumber } from 'bignumber.js';
+import { BigNumber } from '@rotki/common/';
 import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';

@@ -1,6 +1,5 @@
-import { NumericString } from '@rotki/common';
+import { NumericString, BigNumber } from '@rotki/common';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
-import { BigNumber } from 'bignumber.js';
 import { z } from 'zod';
 import {
   QueriedAddresses,

@@ -1,6 +1,5 @@
-import { AssetEntry, NumericString } from '@rotki/common';
+import { AssetEntry, NumericString, BigNumber } from '@rotki/common';
 import { BaseAsset, SupportedAsset } from '@rotki/common/lib/data';
-import { BigNumber } from 'bignumber.js';
 import { z } from 'zod';
 import { CONFLICT_RESOLUTION } from '@/services/assets/consts';
 

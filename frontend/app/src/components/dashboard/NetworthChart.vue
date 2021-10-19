@@ -18,12 +18,12 @@
 </template>
 
 <script lang="ts">
+import { BigNumber } from '@rotki/common/';
 import {
   TimeFramePeriod,
   Timeframe,
   Timeframes
 } from '@rotki/common/lib/settings/graphs';
-import { default as BigNumber } from 'bignumber.js';
 import {
   Chart,
   ChartConfiguration,

@@ -112,6 +112,7 @@
 </template>
 
 <script lang="ts">
+import { BigNumber } from '@rotki/common/';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { ActionResult } from '@rotki/common/lib/data';
 import {
@@ -123,7 +124,6 @@ import {
   ref,
   watch
 } from '@vue/composition-api';
-import { BigNumber } from 'bignumber.js';
 import { Dispatch } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';

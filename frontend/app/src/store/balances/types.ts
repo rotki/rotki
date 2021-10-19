@@ -1,8 +1,7 @@
-import { Balance, HasBalance } from '@rotki/common';
+import { Balance, HasBalance, BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { BigNumber } from 'bignumber.js';
 import { z } from 'zod';
 import { Exchange, PriceOracles } from '@/model/action-result';
 import { PriceInformation } from '@/services/assets/types';
