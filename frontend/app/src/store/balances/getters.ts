@@ -56,7 +56,7 @@ export interface BalanceGetters {
   exchangeBalances: (exchange: string) => AssetBalance[];
   aggregatedBalances: AssetBalanceWithPrice[];
   aggregatedAssets: string[];
-  liabilities: AssetBalance[];
+  liabilities: AssetBalanceWithPrice[];
   manualBalanceByLocation: LocationBalance[];
   manualBalanceWithLiabilities: ManualBalanceWithValue[];
   blockchainTotal: BigNumber;
@@ -296,7 +296,8 @@ export const getters: Getters<
     );
   },
 
-  liabilities: ({ liabilities, manualLiabilities }) => {
+  liabilities: ({ liabilities, manualLiabilities, prices }) => {
+    const noPrice = new BigNumber(-1);
     const liabilitiesMerged: Record<string, Balance> = { ...liabilities };
     for (const entry of manualLiabilities) {
       if (liabilitiesMerged[entry.asset]) {
@@ -312,7 +313,8 @@ export const getters: Getters<
     return Object.keys(liabilitiesMerged).map(asset => ({
       asset,
       amount: liabilitiesMerged[asset].amount,
-      usdValue: liabilitiesMerged[asset].usdValue
+      usdValue: liabilitiesMerged[asset].usdValue,
+      usdPrice: prices[asset] ?? noPrice
     }));
   },
 
