@@ -1,152 +1,165 @@
 <template>
-  <v-card class="notification" :outlined="!popup" :elevation="0">
-    <v-list-item class="notification__body">
+  <v-card :class="$style.notification" :outlined="!popup" :elevation="0">
+    <v-list-item :class="$style.body">
       <v-list-item-avatar>
-        <v-icon
-          size="32px"
-          :color="color(notification)"
-          class="notification__severity"
-        >
-          {{ icon(notification) }}
+        <v-icon size="32px" :color="color">
+          {{ icon }}
         </v-icon>
       </v-list-item-avatar>
       <v-list-item-content>
         <v-list-item-title class="mt-2">
           {{ notification.title }}
         </v-list-item-title>
-        <span class="notification__message mt-1" :style="fontStyle">
+        <span class="mt-1" :style="fontStyle" :class="$style.message">
           {{ notification.message }}
-          <textarea
-            ref="copy"
-            class="notification__copy-area"
-            :value="notification.message"
-          />
         </span>
         <span class="text-caption text--secondary">
-          {{ timeDisplay(notification.date) }}
+          {{ date }}
         </span>
         <slot />
       </v-list-item-content>
-      <v-col cols="auto">
-        <div class="d-flex flex-column">
-          <v-tooltip bottom open-delay="400">
-            <template #activator="{ on }">
-              <v-btn
-                text
-                icon
-                class="notification__dismiss"
-                v-on="on"
-                @click="dismiss(notification.id)"
-              >
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
-            </template>
-            <span v-text="$t('notification.dismiss_tooltip')" />
-          </v-tooltip>
-          <v-tooltip bottom open-delay="400">
-            <template #activator="{ on }">
-              <v-btn
-                class="notification__copy"
-                text
-                icon
-                v-on="on"
-                @click="copy"
-              >
-                <v-icon>mdi-content-copy</v-icon>
-              </v-btn>
-            </template>
-            <span v-text="$t('notification.copy_tooltip')" />
-          </v-tooltip>
-        </div>
-      </v-col>
+      <div class="d-flex flex-column" :class="$style.actions">
+        <v-tooltip bottom open-delay="400">
+          <template #activator="{ on }">
+            <v-btn
+              text
+              icon
+              :class="$style.dismiss"
+              v-on="on"
+              @click="dismiss(notification.id)"
+            >
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </template>
+          <span v-text="$t('notification.dismiss_tooltip')" />
+        </v-tooltip>
+        <v-tooltip bottom open-delay="400">
+          <template #activator="{ on }">
+            <v-btn :class="$style.copy" text icon v-on="on" @click="copy">
+              <v-icon>mdi-content-copy</v-icon>
+            </v-btn>
+          </template>
+          <span v-text="$t('notification.copy_tooltip')" />
+        </v-tooltip>
+      </div>
     </v-list-item>
   </v-card>
 </template>
 
 <script lang="ts">
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import dayjs from 'dayjs';
-import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
-import ThemeMixin from '@/mixins/theme-mixin';
+import { setupThemeCheck } from '@/composables/common';
 import { Severity } from '@/store/notifications/consts';
 import { NotificationData } from '@/store/notifications/types';
-@Component({
-  components: {}
-})
-export default class Notification extends Mixins(ThemeMixin) {
-  @Prop({ required: true })
-  notification!: NotificationData;
-  @Prop({ required: false, type: Boolean, default: false })
-  popup!: boolean;
 
-  @Emit()
-  dismiss(_notificationId: number) {}
-
-  icon(notification: NotificationData) {
-    switch (notification.severity) {
-      case Severity.ERROR:
-        return 'mdi-alert-circle';
-      case Severity.INFO:
-        return 'mdi-information-outline';
-      case Severity.WARNING:
-        return 'mdi-alert';
+const Notification = defineComponent({
+  name: 'Notification',
+  props: {
+    popup: { required: false, type: Boolean, default: false },
+    notification: {
+      required: true,
+      type: Object as PropType<NotificationData>
     }
-  }
+  },
+  emits: ['dismiss'],
+  setup(props, { emit }) {
+    const { notification } = toRefs(props);
+    const dismiss = (id: number) => {
+      emit('dismiss', id);
+    };
 
-  color(notification: NotificationData) {
-    switch (notification.severity) {
-      case Severity.ERROR:
-        return 'error';
-      case Severity.INFO:
-        return 'info';
-      case Severity.WARNING:
-        return 'warning';
-    }
-  }
+    const icon = computed(() => {
+      switch (notification.value.severity) {
+        case Severity.ERROR:
+          return 'mdi-alert-circle';
+        case Severity.INFO:
+          return 'mdi-information-outline';
+        case Severity.WARNING:
+          return 'mdi-alert';
+      }
+      return '';
+    });
 
-  copy() {
-    const copy = this.$refs.copy as HTMLTextAreaElement;
-    copy.focus();
-    copy.select();
-    document.execCommand('copy');
-    copy.blur();
-  }
+    const color = computed(() => {
+      switch (notification.value.severity) {
+        case Severity.ERROR:
+          return 'error';
+        case Severity.INFO:
+          return 'info';
+        case Severity.WARNING:
+          return 'warning';
+      }
+      return '';
+    });
 
-  timeDisplay(date: Date): string {
-    return dayjs(date).format('LLL');
+    const date = computed(() => {
+      return dayjs(notification.value.date).format('LLL');
+    });
+
+    const copy = () => {
+      navigator.clipboard.writeText(notification.value.message);
+    };
+
+    const { fontStyle } = setupThemeCheck();
+
+    return {
+      icon,
+      color,
+      date,
+      fontStyle,
+      copy,
+      dismiss
+    };
   }
-}
+});
+export default Notification;
 </script>
-<style scoped lang="scss">
+
+<style module lang="scss">
 .notification {
   height: 120px;
   max-width: 400px;
+}
 
-  &__body {
-    height: 100% !important;
-  }
+.body {
+  max-width: 400px;
+  height: 100% !important;
+  padding: 8px !important;
+}
 
-  &__message {
-    font-size: 13px;
-    min-height: 60px;
-    max-height: 60px;
-    overflow-y: auto;
-  }
+.message {
+  font-size: 13px;
+  min-height: 60px;
+  max-height: 60px;
+  overflow-y: auto;
+}
 
-  &__dismiss {
-    position: absolute;
-    right: 0;
-    top: 0;
-  }
+.dismiss {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
 
-  &__copy {
-    position: absolute;
-    right: 0;
-    bottom: 4px;
-  }
+.copy {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+}
 
-  &__copy-area {
-    position: absolute;
-    left: -999em;
-  }
+.copy-area {
+  position: absolute;
+  left: -999em;
+}
+
+.actions {
+  height: 100%;
+  justify-content: space-between;
+  margin-right: -4px;
 }
 </style>
