@@ -201,7 +201,7 @@ export default class ExchangeSettings extends Vue {
     }
 
     if (
-      exchange.ftxSubaccount !== null &&
+      !!exchange.ftxSubaccount &&
       exchange.ftxSubaccount.trim().length === 0
     ) {
       exchange.ftxSubaccount = null;

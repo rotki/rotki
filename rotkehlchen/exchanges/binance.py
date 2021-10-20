@@ -415,7 +415,11 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Dict:
         """May raise RemoteError and BinancePermissionError due to api_query"""
         result = self.api_query(api_type, method, options)
-        assert isinstance(result, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+        if not isinstance(result, dict):
+            error_msg = f'Expected dict but did not get it in {self.name} api response.'
+            log.error(f'{error_msg}. Got: {result}')
+            raise RemoteError(error_msg)
+
         return result
 
     def api_query_list(
@@ -428,7 +432,12 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         result = self.api_query(api_type, method, options)
         if isinstance(result, Dict) and 'data' in result:
             result = result['data']
-        assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+
+        if not isinstance(result, list):
+            error_msg = f'Expected list but did not get it in {self.name} api response.'
+            log.error(f'{error_msg}. Got: {result}')
+            raise RemoteError(error_msg)
+
         return result
 
     def _query_spot_balances(
