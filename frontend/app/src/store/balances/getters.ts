@@ -1,4 +1,9 @@
-import { AssetBalance, Balance, HasBalance } from '@rotki/common';
+import {
+  AssetBalance,
+  AssetBalanceWithPrice,
+  Balance,
+  HasBalance
+} from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
@@ -49,9 +54,9 @@ export interface BalanceGetters {
   exchangeRate: ExchangeRateGetter;
   exchanges: ExchangeInfo[];
   exchangeBalances: (exchange: string) => AssetBalance[];
-  aggregatedBalances: AssetBalance[];
+  aggregatedBalances: AssetBalanceWithPrice[];
   aggregatedAssets: string[];
-  liabilities: AssetBalance[];
+  liabilities: AssetBalanceWithPrice[];
   manualBalanceByLocation: LocationBalance[];
   manualBalanceWithLiabilities: ManualBalanceWithValue[];
   blockchainTotal: BigNumber;
@@ -68,7 +73,7 @@ export interface BalanceGetters {
   assetPriceInfo: (asset: string) => AssetPriceInfo;
   breakdown: (asset: string) => AssetBreakdown[];
   loopringBalances: (address: string) => AssetBalance[];
-  blockchainAssets: AssetBalance[];
+  blockchainAssets: AssetBalanceWithPrice[];
   getIdentifierForSymbol: IdentifierForSymbolGetter;
   byLocation: BalanceByLocation;
   exchangeNonce: (exchange: SupportedExchange) => number;
@@ -219,6 +224,7 @@ export const getters: Getters<
     (exchange: string): AssetBalance[] => {
       const ignoredAssets = session!.ignoredAssets;
       const exchangeBalances = state.exchangeBalances[exchange];
+      const noPrice = new BigNumber(-1);
       return exchangeBalances
         ? Object.keys(exchangeBalances)
             .filter(asset => !ignoredAssets.includes(asset))
@@ -227,30 +233,40 @@ export const getters: Getters<
                 ({
                   asset,
                   amount: exchangeBalances[asset].amount,
-                  usdValue: exchangeBalances[asset].usdValue
+                  usdValue: exchangeBalances[asset].usdValue,
+                  usdPrice: state.prices[asset] ?? noPrice
                 } as AssetBalance)
             )
         : [];
     },
 
   aggregatedBalances: (
-    { connectedExchanges, manualBalances, loopringBalances }: BalanceState,
+    {
+      connectedExchanges,
+      manualBalances,
+      loopringBalances,
+      prices
+    }: BalanceState,
     { exchangeBalances, totals },
     { session }
-  ): AssetBalance[] => {
+  ): AssetBalanceWithPrice[] => {
     const ignoredAssets = session!.ignoredAssets;
-    const ownedAssets: { [asset: string]: AssetBalance } = {};
+    const ownedAssets: { [asset: string]: AssetBalanceWithPrice } = {};
     const addToOwned = (value: AssetBalance) => {
       const asset = ownedAssets[value.asset];
       if (ignoredAssets.includes(value.asset)) {
         return;
       }
       ownedAssets[value.asset] = !asset
-        ? value
+        ? {
+            ...value,
+            usdPrice: prices[value.asset] ?? new BigNumber(-1)
+          }
         : {
             asset: asset.asset,
             amount: asset.amount.plus(value.amount),
-            usdValue: asset.usdValue.plus(value.usdValue)
+            usdValue: asset.usdValue.plus(value.usdValue),
+            usdPrice: prices[asset.asset] ?? new BigNumber(-1)
           };
     };
 
@@ -280,7 +296,8 @@ export const getters: Getters<
     );
   },
 
-  liabilities: ({ liabilities, manualLiabilities }) => {
+  liabilities: ({ liabilities, manualLiabilities, prices }) => {
+    const noPrice = new BigNumber(-1);
     const liabilitiesMerged: Record<string, Balance> = { ...liabilities };
     for (const entry of manualLiabilities) {
       if (liabilitiesMerged[entry.asset]) {
@@ -296,7 +313,8 @@ export const getters: Getters<
     return Object.keys(liabilitiesMerged).map(asset => ({
       asset,
       amount: liabilitiesMerged[asset].amount,
-      usdValue: liabilitiesMerged[asset].usdValue
+      usdValue: liabilitiesMerged[asset].usdValue,
+      usdPrice: prices[asset] ?? noPrice
     }));
   },
 
@@ -763,7 +781,13 @@ export const getters: Getters<
     return balances;
   },
   blockchainAssets: (state, { totals }, { session }) => {
-    const blockchainTotal = [...totals];
+    const noPrice = new BigNumber(-1);
+    const blockchainTotal = [
+      ...totals.map(value => ({
+        ...value,
+        usdPrice: state.prices[value.asset] ?? noPrice
+      }))
+    ];
     const ignoredAssets = session!.ignoredAssets;
     const loopringBalances = state.loopringBalances;
     for (const address in loopringBalances) {
@@ -777,7 +801,8 @@ export const getters: Getters<
         if (!existing) {
           blockchainTotal.push({
             asset,
-            ...accountBalances[asset]
+            ...accountBalances[asset],
+            usdPrice: state.prices[asset] ?? noPrice
           });
         } else {
           const sum = balanceSum(existing, accountBalances[asset]);

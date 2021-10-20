@@ -14,13 +14,15 @@ describe('AssetBalances.vue', () => {
 
   beforeEach(() => {
     const vuetify = new Vuetify();
+
     wrapper = mount(AssetBalances, {
-      store,
       vuetify,
+      store,
+      provide: {
+        'vuex-store': store
+      },
       propsData: {
-        blockchain: 'ETH',
-        balances: [],
-        title: 'Blockchain assets'
+        balances: []
       }
     });
   });

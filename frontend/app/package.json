@@ -95,7 +95,6 @@
     "eslint-import-resolver-alias": "1.1.2",
     "eslint-plugin-import": "2.24.2",
     "eslint-plugin-prettier": "3.4.1",
-    "eslint-plugin-rulesdir": "0.2.0",
     "eslint-plugin-vue": "7.17.0",
     "eslint-plugin-vuetify": "1.0.1",
     "flush-promises": "1.0.2",
