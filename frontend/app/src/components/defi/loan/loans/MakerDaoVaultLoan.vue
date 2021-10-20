@@ -4,7 +4,7 @@
       <loan-header class="mt-8 mb-6" :owner="vault.owner">
         {{
           $t('maker_dao_vault_loan.header', {
-            identifier: scrambleData ? '-' : getSymbol(vault.identifier),
+            identifier: scrambleData ? '-' : vault.identifier,
             collateralType: vault.collateralType
           })
         }}
