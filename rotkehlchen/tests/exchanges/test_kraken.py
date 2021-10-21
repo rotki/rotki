@@ -1,6 +1,8 @@
 import warnings as test_warnings
+from contextlib import ExitStack
 from unittest.mock import patch
 
+import gevent
 import pytest
 
 from rotkehlchen.accounting.structures import Balance
@@ -109,6 +111,51 @@ def test_querying_trade_history(function_scope_kraken):
 
     for kraken_trade in result:
         assert isinstance(kraken_trade, Trade)
+
+
+def test_querying_rate_limit_exhaustion(function_scope_kraken, database):
+    """Test that if kraken api rates limit us we don't get stuck in an infinite loop
+    and also that we return what we managed to retrieve until rate limit occured.
+
+    Regression test for https://github.com/rotki/rotki/issues/3629
+    """
+    kraken = function_scope_kraken
+    kraken.use_original_kraken = True
+    kraken.reduction_every_secs = 0.05
+
+    count = 0
+
+    def mock_response(url, **kwargs):  # pylint: disable=unused-argument
+        nonlocal count
+        if 'TradesHistory' in url:
+            if count == 0:
+                text = '{"result":{"trades": {"id1": {"ordertxid": "id1", "postxid": "bb1", "pair": "ETHDAI", "time": "1629490727.0000", "type": "buy", "ordertype": "limit", "price": "1.0", "vol": "1.0", "fee": "1.0", "cost": "1.0", "margin": "0.0", "misc": ""}}, "count": 10}}'  # noqa: E501
+                count += 1
+                return MockResponse(200, text)
+
+            # else
+            text = '{"result": "", "error": "EAPI Rate limit exceeded"}'
+            count += 1
+            return MockResponse(200, text)
+
+        # else
+        raise AssertionError(f'Unexpected url in kraken query: {url}')
+
+    patch_kraken = patch.object(kraken.session, 'post', side_effect=mock_response)
+    patch_retries = patch('rotkehlchen.exchanges.kraken.KRAKEN_QUERY_TRIES', new=2)
+    patch_dividend = patch('rotkehlchen.exchanges.kraken.KRAKEN_BACKOFF_DIVIDEND', new=1)
+
+    with ExitStack() as stack:
+        stack.enter_context(gevent.Timeout(8))
+        stack.enter_context(patch_retries)
+        stack.enter_context(patch_dividend)
+        stack.enter_context(patch_kraken)
+        trades = kraken.query_trade_history(start_ts=0, end_ts=1638529919, only_cache=False)
+
+    assert len(trades) == 1
+    from_ts, to_ts = database.get_used_query_range('kraken_trades')
+    assert from_ts == 0
+    assert to_ts == 1629490727, 'should have saved only until the last trades timestamp'
 
 
 def test_querying_deposits_withdrawals(function_scope_kraken):
