@@ -15,12 +15,14 @@
       @click="click"
     >
       <v-icon
+        v-if="!hasRunningTasks"
         :class="{
           [$style.visible]: visible
         }"
       >
         mdi-bell
       </v-icon>
+      <v-icon v-else> mdi-spin mdi-loading </v-icon>
     </menu-tooltip-button>
   </v-badge>
 </template>
@@ -29,6 +31,7 @@
 import { defineComponent } from '@vue/composition-api';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { setupNotifications } from '@/composables/notifications';
+import { setupTaskStatus } from '@/composables/tasks';
 
 const NotificationIndicator = defineComponent({
   name: 'NotificationIndicator',
@@ -44,7 +47,11 @@ const NotificationIndicator = defineComponent({
     const click = () => {
       emit('click');
     };
+
+    const { hasRunningTasks } = setupTaskStatus();
+
     return {
+      hasRunningTasks,
       click,
       count
     };
@@ -64,6 +71,7 @@ export default NotificationIndicator;
     }
   }
 }
+
 .visible {
   transform: rotate(-25deg);
 }

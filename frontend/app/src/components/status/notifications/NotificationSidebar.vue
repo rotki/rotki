@@ -18,7 +18,7 @@
               <v-icon>mdi-chevron-right</v-icon>
             </v-btn>
           </template>
-          <span v-text="$t('notification_sidebar.close_tooltip')" />
+          <span>{{ $t('notification_sidebar.close_tooltip') }}</span>
         </v-tooltip>
       </v-col>
       <v-col>
@@ -28,8 +28,9 @@
             font-weight-medium
             pl-1
           "
-          v-text="$t('notification_sidebar.title')"
-        />
+        >
+          {{ $t('notification_sidebar.title') }}
+        </span>
       </v-col>
       <v-col cols="auto">
         <v-btn
@@ -38,19 +39,23 @@
           color="accent"
           :disabled="notifications.length === 0"
           @click="confirmClear = true"
-          v-text="$t('notification_sidebar.clear_tooltip')"
-        />
+        >
+          {{ $t('notification_sidebar.clear_tooltip') }}
+        </v-btn>
       </v-col>
     </v-row>
-    <v-row no-gutters :class="$style.details">
-      <v-col v-if="notifications.length === 0" :class="$style['no-messages']">
-        <v-icon size="64px" color="primary">mdi-information</v-icon>
-        <p
-          :class="$style.label"
-          v-text="$t('notification_sidebar.no_messages')"
-        />
-      </v-col>
-      <v-col v-else class="pl-2" :class="$style.messages">
+    <div
+      v-if="!hasRunningTasks && notifications.length === 0"
+      :class="$style['no-messages']"
+    >
+      <v-icon size="64px" color="primary">mdi-information</v-icon>
+      <div :class="$style.label">
+        {{ $t('notification_sidebar.no_messages') }}
+      </div>
+    </div>
+    <div v-else :class="$style.messages">
+      <pending-tasks />
+      <div v-if="notifications.length > 0" class="pl-2">
         <notification
           v-for="notification in notifications"
           :key="notification.id"
@@ -58,8 +63,8 @@
           :notification="notification"
           @dismiss="remove($event)"
         />
-      </v-col>
-    </v-row>
+      </div>
+    </div>
     <confirm-dialog
       :display="confirmClear"
       :title="$t('notification_sidebar.confirmation.title')"
@@ -75,11 +80,13 @@ import { computed, defineComponent, ref } from '@vue/composition-api';
 import orderBy from 'lodash/orderBy';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Notification from '@/components/status/notifications/Notification.vue';
+import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
 import { setupThemeCheck } from '@/composables/common';
 import { setupNotifications } from '@/composables/notifications';
+import { setupTaskStatus } from '@/composables/tasks';
 
 const NotificationSidebar = defineComponent({
-  components: { Notification, ConfirmDialog },
+  components: { PendingTasks, Notification, ConfirmDialog },
   props: {
     visible: { required: true, type: Boolean }
   },
@@ -110,10 +117,12 @@ const NotificationSidebar = defineComponent({
     });
 
     const { isMobile } = setupThemeCheck();
+    const { hasRunningTasks } = setupTaskStatus();
 
     return {
       isMobile,
       notifications,
+      hasRunningTasks,
       confirmClear,
       input,
       close,
@@ -158,18 +167,12 @@ export default NotificationSidebar;
   padding-top: 0 !important;
 }
 
-.details {
-  overflow-y: hidden;
-  height: calc(100% - 64px);
-  font-weight: 400;
-  color: rgba(0, 0, 0, 0.87);
-}
-
 .no-messages {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: calc(100% - 64px);
 }
 
 .label {

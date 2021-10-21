@@ -1157,9 +1157,6 @@
     "margin_position_close": "Margin Position Close",
     "sell": "Sell"
   },
-  "progress_indicator": {
-    "no_tasks": "No running tasks"
-  },
   "progress_screen": {
     "progress": "{progress} %"
   },

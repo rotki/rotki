@@ -31,7 +31,7 @@
               <v-icon>mdi-close</v-icon>
             </v-btn>
           </template>
-          <span v-text="$t('notification.dismiss_tooltip')" />
+          <span>{{ $t('notification.dismiss_tooltip') }}</span>
         </v-tooltip>
         <v-tooltip bottom open-delay="400">
           <template #activator="{ on }">
@@ -39,7 +39,7 @@
               <v-icon>mdi-content-copy</v-icon>
             </v-btn>
           </template>
-          <span v-text="$t('notification.copy_tooltip')" />
+          <span> {{ $t('notification.copy_tooltip') }}</span>
         </v-tooltip>
       </div>
     </v-list-item>
