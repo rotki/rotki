@@ -5,7 +5,7 @@ from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union, overload
-from urllib.parse import urlencode, quote
+from urllib.parse import quote, urlencode
 
 import gevent
 import requests
@@ -425,7 +425,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
 
         raw_data = self._api_query('fills', start_time=start_ts, end_time=end_ts)
         log.debug('FTX trades history result', results_num=len(raw_data))
@@ -462,7 +462,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 continue
             if trade:
                 trades.append(trade)
-        return trades
+        return trades, (start_ts, end_ts)
 
     def _deserialize_asset_movement(
         self,

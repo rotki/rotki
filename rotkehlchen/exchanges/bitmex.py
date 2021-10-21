@@ -367,5 +367,9 @@ class Bitmex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 continue
         return movements
 
-    def query_online_trade_history(self, start_ts: Timestamp, end_ts: Timestamp) -> List[Trade]:
-        return []  # noop for bitmex
+    def query_online_trade_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+        return [], (start_ts, end_ts)  # noop for bitmex

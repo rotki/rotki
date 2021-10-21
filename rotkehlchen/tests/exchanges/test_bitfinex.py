@@ -135,7 +135,7 @@ def test_api_key_err_auth_nonce(mock_bitfinex):
         assert len(errors) == 1
         assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 
-        trades = mock_bitfinex.query_online_trade_history(0, 1)
+        trades, _ = mock_bitfinex.query_online_trade_history(0, 1)
         assert trades == []
         errors = mock_bitfinex.msg_aggregator.consume_errors()
         assert len(errors) == 1
@@ -547,7 +547,7 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
         api_query_mock = stack.enter_context(api_query_patch)
-        trades = mock_bitfinex.query_online_trade_history(
+        trades, _ = mock_bitfinex.query_online_trade_history(
             start_ts=Timestamp(0),
             end_ts=Timestamp(int(datetime.now().timestamp())),
         )
@@ -726,7 +726,7 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
         stack.enter_context(api_query_patch)
-        trades = mock_bitfinex.query_online_trade_history(
+        trades, _ = mock_bitfinex.query_online_trade_history(
             start_ts=Timestamp(0),
             end_ts=Timestamp(int(datetime.now().timestamp())),
         )

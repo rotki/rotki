@@ -247,10 +247,16 @@ def query_ftx_and_test(
 
     query_fn = getattr(ftx, query_fn_name)
     with patch.object(ftx.session, 'get', side_effect=mock_ftx_query):
-        actions = query_fn(
-            start_ts=Timestamp(0),
-            end_ts=TEST_END_TS,
-        )
+        if query_fn_name == 'query_online_trade_history':
+            actions, _ = query_fn(
+                start_ts=Timestamp(0),
+                end_ts=TEST_END_TS,
+            )
+        else:
+            actions = query_fn(
+                start_ts=Timestamp(0),
+                end_ts=TEST_END_TS,
+            )
 
     errors = ftx.msg_aggregator.consume_errors()
     warnings = ftx.msg_aggregator.consume_warnings()
@@ -262,7 +268,7 @@ def query_ftx_and_test(
 def test_ftx_trade_history(mock_ftx):
     """Test the happy path when querying trades"""
     with patch.object(mock_ftx.session, 'get', side_effect=mock_normal_ftx_query):
-        trades = mock_ftx.query_online_trade_history(
+        trades, _ = mock_ftx.query_online_trade_history(
             start_ts=0,
             end_ts=TEST_END_TS,
         )

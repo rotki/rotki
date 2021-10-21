@@ -58,6 +58,7 @@ log = RotkehlchenLogsAdapter(logger)
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
 KRAKEN_PUBLIC_METHODS = ('AssetPairs', 'Assets')
 KRAKEN_QUERY_TRIES = 8
+KRAKEN_BACKOFF_DIVIDEND = 15
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
 
 
@@ -409,6 +410,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         f'Backing off for {backoff_in_seconds} seconds',
                         call_counter=self.call_counter,
                     )
+                    tries -= 1
                     gevent.sleep(backoff_in_seconds)
                     continue
 
@@ -421,11 +423,12 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             result = query_method(method, req)
             if isinstance(result, str):
                 # Got a recoverable error
-                backoff_in_seconds = int(15 / tries)
+                backoff_in_seconds = int(KRAKEN_BACKOFF_DIVIDEND / tries)
                 log.debug(
                     f'Got recoverable error {result} in a Kraken query of {method}. Will backoff '
                     f'for {backoff_in_seconds} seconds',
                 )
+                tries -= 1
                 gevent.sleep(backoff_in_seconds)
                 continue
 
@@ -433,7 +436,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return result
 
         raise RemoteError(
-            f'After {KRAKEN_QUERY_TRIES} kraken query for {method} could still not be completed',
+            f'After {KRAKEN_QUERY_TRIES} kraken queries for {method} could still not be completed',
         )
 
     def _query_private(self, method: str, req: Optional[dict] = None) -> Union[Dict, str]:
@@ -550,13 +553,14 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
             extra_dict: Optional[dict] = None,
-    ) -> List:
+    ) -> Tuple[List, bool]:
         """ Abstracting away the functionality of querying a kraken endpoint where
         you need to check the 'count' of the returned results and provide sufficient
         calls with enough offset to gather all the data of your query.
         """
         result: List = []
 
+        with_errors = False
         log.debug(
             f'Querying Kraken {endpoint} from {start_ts} to '
             f'{end_ts} with extra_dict {extra_dict}',
@@ -578,14 +582,30 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 f'Querying Kraken {endpoint} from {start_ts} to {end_ts} '
                 f'with offset {offset} and extra_dict {extra_dict}',
             )
-            response = self._query_endpoint_for_period(
-                endpoint=endpoint,
-                start_ts=start_ts,
-                end_ts=end_ts,
-                offset=offset,
-                extra_dict=extra_dict,
-            )
-            assert count == response['count']
+            try:
+                response = self._query_endpoint_for_period(
+                    endpoint=endpoint,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    offset=offset,
+                    extra_dict=extra_dict,
+                )
+            except RemoteError as e:
+                with_errors = True
+                log.error(
+                    f'One of krakens queries when querying endpoint for period failed '
+                    f'with {str(e)}. Returning only results we have.',
+                )
+                break
+
+            if count != response['count']:
+                log.error(
+                    f'Kraken unexpected response while querying endpoint for period. '
+                    f'Original count was {count} and response returned {response["count"]}',
+                )
+                with_errors = True
+                break
+
             response_length = len(response[keyname])
             offset += response_length
             if response_length == 0 and offset != count:
@@ -600,24 +620,32 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     'Missing {} results when querying kraken endpoint {}'.format(
                         count - offset, endpoint),
                 )
+                with_errors = True
                 break
 
             result.extend(response[keyname].values())
 
-        return result
+        return result, with_errors
 
     def query_online_trade_history(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
-        result = self.query_until_finished('TradesHistory', 'trades', start_ts, end_ts)
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+        result, with_errors = self.query_until_finished(
+            endpoint='TradesHistory',
+            keyname='trades',
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
 
         # And now turn it from kraken trade to our own trade format
         trades = []
+        max_ts = 0
         for raw_data in result:
             try:
-                trades.append(trade_from_kraken(raw_data))
+                new_trade = trade_from_kraken(raw_data)
+                trades.append(new_trade)
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found kraken trade with unknown asset '
@@ -645,7 +673,10 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-        return trades
+            max_ts = max(new_trade.timestamp, max_ts)
+
+        queried_range = (start_ts, Timestamp(max_ts)) if with_errors else (start_ts, end_ts)
+        return trades, queried_range
 
     def _query_endpoint_for_period(
             self,
@@ -670,20 +701,21 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
-        result = self.query_until_finished(
+        result, _ = self.query_until_finished(
             endpoint='Ledgers',
             keyname='ledger',
             start_ts=start_ts,
             end_ts=end_ts,
             extra_dict={'type': 'deposit'},
         )
-        result.extend(self.query_until_finished(
+        result2, _ = self.query_until_finished(
             endpoint='Ledgers',
             keyname='ledger',
             start_ts=start_ts,
             end_ts=end_ts,
             extra_dict={'type': 'withdrawal'},
-        ))
+        )
+        result.extend(result2)
 
         log.debug('Kraken deposit/withdrawals query result', num_results=len(result))
 

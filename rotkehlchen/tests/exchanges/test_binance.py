@@ -331,7 +331,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
             new=input_trade_str,
         )
         with patch_get, patch_response:
-            trades = binance.query_online_trade_history(
+            trades, _ = binance.query_online_trade_history(
                 start_ts=0,
                 end_ts=1564301134,
                 markets=query_specific_markets,

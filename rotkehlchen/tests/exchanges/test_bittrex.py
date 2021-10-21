@@ -179,7 +179,7 @@ def test_bittrex_query_trade_history_unexpected_data(bittrex):
         )
         with patch_get, patch_response:
             # Test that after querying the assets only ETH and BTC are there
-            trades = bittrex.query_online_trade_history(start_ts=0, end_ts=1564301134)
+            trades, _ = bittrex.query_online_trade_history(start_ts=0, end_ts=1564301134)
 
         assert len(trades) == 0
         errors = bittrex.msg_aggregator.consume_errors()
