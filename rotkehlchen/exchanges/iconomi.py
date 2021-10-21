@@ -269,7 +269,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
 
         page = 0
         all_transactions = []
@@ -314,7 +314,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         trade=tx,
                     )
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def query_supported_tickers(
             self,

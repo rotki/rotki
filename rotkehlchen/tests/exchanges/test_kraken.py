@@ -399,7 +399,7 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
 
     def query_kraken_and_test(input_trades, expected_warnings_num, expected_errors_num):
         with patch(target, new=input_trades):
-            trades = kraken.query_online_trade_history(
+            trades, _ = kraken.query_online_trade_history(
                 start_ts=0,
                 end_ts=TEST_END_TS,
             )

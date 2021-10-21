@@ -108,7 +108,7 @@ def test_validate_api_key_err_auth_nonce(mock_bitstamp):
         assert len(errors) == 1
         assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 
-        trades = mock_bitstamp.query_online_trade_history(0, 1)
+        trades, _ = mock_bitstamp.query_online_trade_history(0, 1)
         assert trades == []
         errors = mock_bitstamp.msg_aggregator.consume_errors()
         assert len(errors) == 1

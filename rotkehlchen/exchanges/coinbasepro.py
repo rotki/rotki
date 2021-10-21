@@ -493,7 +493,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """Queries coinbase pro for trades"""
         log.debug('Query coinbasepro trade history', start_ts=start_ts, end_ts=end_ts)
         self.first_connection()
@@ -597,7 +597,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def query_online_margin_history(
             self,  # pylint: disable=no-self-use

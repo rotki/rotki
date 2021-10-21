@@ -807,7 +807,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
             markets: Optional[List[str]] = None,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """
 
         May raise due to api query and unexpected id:
@@ -908,7 +908,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             trades += fiat_payments
             trades.sort(key=lambda x: x.timestamp)
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def _query_online_fiat_payments(self, start_ts: Timestamp, end_ts: Timestamp) -> List[Trade]:
         fiat_buys = self._api_query_list_within_time_delta(

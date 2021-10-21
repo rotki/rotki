@@ -262,7 +262,7 @@ def query_ftx_and_test(
 def test_ftx_trade_history(mock_ftx):
     """Test the happy path when querying trades"""
     with patch.object(mock_ftx.session, 'get', side_effect=mock_normal_ftx_query):
-        trades = mock_ftx.query_online_trade_history(
+        trades, _ = mock_ftx.query_online_trade_history(
             start_ts=0,
             end_ts=TEST_END_TS,
         )

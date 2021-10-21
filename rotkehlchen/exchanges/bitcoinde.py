@@ -295,7 +295,7 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
 
         page = 1
         resp_trades = []
@@ -351,7 +351,7 @@ class Bitcoinde(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def query_online_deposits_withdrawals(
             self,  # pylint: disable=no-self-use

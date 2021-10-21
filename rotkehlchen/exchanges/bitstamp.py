@@ -271,7 +271,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """Return the account trades on Bitstamp.
 
         NB: when `since_id` is used, the Bitstamp API v2 will return by default
@@ -301,7 +301,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             options=options,
             case='trades',
         )
-        return trades
+        return trades, (start_ts, end_ts)
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Bitstamp API key is good for usage in rotki

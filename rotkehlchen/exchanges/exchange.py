@@ -173,11 +173,15 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """Queries the exchange's API for the trade history of the user
 
         Should be implemented by subclasses if the exchange can return trade history in any form.
         This is not implemented only for bitmex as it only returns margin positions
+
+        Returns a tuple of the trades of the exchange and a Tuple of the queried time
+        range. The time range can differ from the given time range if an error happened
+        and the call stopped in the middle.
         """
         raise NotImplementedError(
             'query_online_trade_history() should only be implemented by subclasses',
@@ -237,27 +241,27 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             end_ts=end_ts,
         )
 
-        new_trades = []
         for query_start_ts, query_end_ts in ranges_to_query:
             # If we have a time frame we have not asked the exchange for trades then
             # go ahead and do that now
-            new_trades.extend(self.query_online_trade_history(
+            new_trades, queried_range = self.query_online_trade_history(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
-            ))
+            )
 
-        # make sure to add them to the DB
-        if new_trades != []:
-            self.db.add_trades(new_trades)
-        # and also set the used queried timestamp range for the exchange
-        ranges.update_used_query_range(
-            location_string=f'{str(self.location)}_trades',
-            start_ts=start_ts,
-            end_ts=end_ts,
-            ranges_to_query=ranges_to_query,
-        )
-        # finally append them to the already returned DB trades
-        trades.extend(new_trades)
+            # make sure to add them to the DB
+            if new_trades != []:
+                self.db.add_trades(new_trades)
+
+            # and also set the used queried timestamp range for the exchange
+            ranges.update_used_query_range(
+                location_string=f'{str(self.location)}_trades',
+                start_ts=queried_range[0],
+                end_ts=queried_range[1],
+                ranges_to_query=[queried_range],
+            )
+            # finally append them to the already returned DB trades
+            trades.extend(new_trades)
 
         return trades
 
