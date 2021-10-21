@@ -115,7 +115,7 @@
 </template>
 
 <script lang="ts">
-import { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
+import { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import {
   computed,
   defineComponent,
@@ -123,7 +123,6 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
-import { default as BigNumber } from 'bignumber.js';
 import {
   setupAssetInfoRetrieval,
   setupExchangeRateGetter

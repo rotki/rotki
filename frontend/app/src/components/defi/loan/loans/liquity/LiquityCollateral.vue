@@ -17,9 +17,8 @@
 </template>
 
 <script lang="ts">
-import { AssetBalance } from '@rotki/common';
+import { AssetBalance, BigNumber } from '@rotki/common';
 import { defineComponent, PropType } from '@vue/composition-api';
-import { BigNumber } from 'bignumber.js';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
 

@@ -1,7 +1,6 @@
-import { AssetBalance } from '@rotki/common';
+import { AssetBalance, BigNumber } from '@rotki/common';
 import { TimeUnit } from '@rotki/common/lib/settings';
 import { TimeFramePeriod, timeframes } from '@rotki/common/lib/settings/graphs';
-import { default as BigNumber } from 'bignumber.js';
 import dayjs from 'dayjs';
 import { aggregateTotal } from '@/filters';
 import { NetValue } from '@/services/types-api';

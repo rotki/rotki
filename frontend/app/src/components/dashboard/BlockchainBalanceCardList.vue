@@ -62,8 +62,8 @@
 </template>
 
 <script lang="ts">
+import { BigNumber } from '@rotki/common/';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { default as BigNumber } from 'bignumber.js';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';

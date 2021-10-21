@@ -1,4 +1,4 @@
-import { default as BigNumber } from 'bignumber.js';
+import { BigNumber } from '@rotki/common/';
 import { TaskMeta } from '@/model/task';
 import {
   AssetMovement,

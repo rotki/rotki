@@ -1,5 +1,4 @@
-import { NumericString } from '@rotki/common';
-import { default as BigNumber } from 'bignumber.js';
+import { NumericString, BigNumber } from '@rotki/common';
 import { z } from 'zod';
 import {
   SupportedExchange,

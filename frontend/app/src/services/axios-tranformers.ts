@@ -1,5 +1,5 @@
+import { BigNumber } from '@rotki/common/';
 import { AxiosTransformer } from 'axios';
-import { default as BigNumber } from 'bignumber.js';
 
 const isNumber = /^-?\d+(\.\d+)?((\d(.\d+)?)?[Ee][-+]\d+)?$/;
 

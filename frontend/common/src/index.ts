@@ -1,4 +1,4 @@
-import { default as BigNumber } from "bignumber.js";
+import { BigNumber } from "bignumber.js";
 import { z } from "zod";
 
 export type Nullable<T> = T | null;
@@ -9,7 +9,7 @@ export type AddressIndexed<T> = {
   readonly [address: string]: T
 }
 
-export const NumericString = z.string().transform(arg => new BigNumber(arg));
+export const NumericString = z.string().transform<BigNumber>(arg => new BigNumber(arg));
 
 export const Balance = z.object({
   amount: NumericString,
@@ -32,3 +32,4 @@ export interface HasBalance {
   readonly balance: Balance;
 }
 
+export { BigNumber as BigNumber }

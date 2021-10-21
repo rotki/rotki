@@ -1,4 +1,4 @@
-import { default as BigNumber } from 'bignumber.js';
+import { BigNumber } from '@rotki/common/';
 
 export function bigNumberify(value: string | number) {
   return new BigNumber(value);

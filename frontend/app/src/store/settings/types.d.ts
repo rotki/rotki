@@ -1,3 +1,4 @@
+import { BigNumber } from '@rotki/common';
 import {
   DARK_MODE_ENABLED,
   DARK_THEME,
@@ -8,23 +9,22 @@ import {
   TimeFramePeriod,
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { default as BigNumber } from 'bignumber.js';
 import {
-  TIMEFRAME_SETTING,
+  AMOUNT_ROUNDING_MODE,
+  CURRENCY_LOCATION,
+  DECIMAL_SEPARATOR,
   DEFI_SETUP_DONE,
+  EXPLORERS,
+  GRAPH_ZERO_BASED,
+  ITEMS_PER_PAGE,
   LAST_KNOWN_TIMEFRAME,
-  QUERY_PERIOD,
   PROFIT_LOSS_PERIOD,
   QUARTERS,
-  THOUSAND_SEPARATOR,
-  DECIMAL_SEPARATOR,
-  CURRENCY_LOCATION,
+  QUERY_PERIOD,
   REFRESH_PERIOD,
-  EXPLORERS,
-  ITEMS_PER_PAGE,
-  AMOUNT_ROUNDING_MODE,
-  VALUE_ROUNDING_MODE,
-  GRAPH_ZERO_BASED
+  THOUSAND_SEPARATOR,
+  TIMEFRAME_SETTING,
+  VALUE_ROUNDING_MODE
 } from '@/store/settings/consts';
 import { CurrencyLocation } from '@/typing/types';
 import RoundingMode = BigNumber.RoundingMode;

@@ -63,6 +63,7 @@
 </template>
 
 <script lang="ts">
+import { BigNumber } from '@rotki/common/';
 import {
   computed,
   defineComponent,
@@ -72,7 +73,6 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
-import { BigNumber } from 'bignumber.js';
 import { DataTableHeader } from 'vuetify';
 import TransactionsDetails from '@/components/history/TransactionsDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';

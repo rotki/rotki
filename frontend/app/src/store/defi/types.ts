@@ -1,4 +1,4 @@
-import { Balance } from '@rotki/common';
+import { Balance, BigNumber } from '@rotki/common';
 import { HasBalance } from '@rotki/common/lib';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import {
@@ -14,7 +14,6 @@ import {
 } from '@rotki/common/lib/defi/balancer';
 import { DexTrade } from '@rotki/common/lib/defi/dex';
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
-import { default as BigNumber } from 'bignumber.js';
 import {
   CollateralAssetType,
   DefiBalanceType,

@@ -1,5 +1,4 @@
-import { default as BigNumber } from 'bignumber.js';
-import { Nullable } from "../index";
+import { BigNumber, Nullable } from "../index";
 
 interface GitcoinBaseEventsPayload {
   readonly fromTimestamp: number;

@@ -86,13 +86,13 @@
 </template>
 
 <script lang="ts">
+import { BigNumber } from '@rotki/common/';
 import { TimeUnit } from '@rotki/common/lib/settings';
 import {
   TimeFramePeriod,
   Timeframes,
   timeframes
 } from '@rotki/common/lib/settings/graphs';
-import { default as BigNumber } from 'bignumber.js';
 import dayjs from 'dayjs';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';

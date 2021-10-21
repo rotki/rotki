@@ -1,6 +1,5 @@
-import { Balance } from '@rotki/common';
+import { Balance, BigNumber } from '@rotki/common';
 import { AaveEventType } from '@rotki/common/lib/defi/aave';
-import { default as BigNumber } from 'bignumber.js';
 import { CompoundEventType } from '@/services/defi/types/compound';
 
 export type DSRMovementType = 'withdrawal' | 'deposit';
