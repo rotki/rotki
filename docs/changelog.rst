@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3629` Kraken api rate limiting should no longer cause a query to get stuck in a loop.
 * :bug:`3624` Editing a CEX api key should now work properly again.
 * :bug:`3619` Binance users should now be able to properly process fiat payments, deposits and withdrawals.
 * :bug:`3613` Users should be now able to save a ledger action without specifying seconds.
