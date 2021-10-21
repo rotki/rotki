@@ -58,6 +58,7 @@ log = RotkehlchenLogsAdapter(logger)
 KRAKEN_DELISTED = ('XDAO', 'XXVN', 'ZKRW', 'XNMC', 'BSV', 'XICN')
 KRAKEN_PUBLIC_METHODS = ('AssetPairs', 'Assets')
 KRAKEN_QUERY_TRIES = 8
+KRAKEN_BACKOFF_DIVIDEND = 15
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
 
 
@@ -409,6 +410,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         f'Backing off for {backoff_in_seconds} seconds',
                         call_counter=self.call_counter,
                     )
+                    tries -= 1
                     gevent.sleep(backoff_in_seconds)
                     continue
 
@@ -421,11 +423,12 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             result = query_method(method, req)
             if isinstance(result, str):
                 # Got a recoverable error
-                backoff_in_seconds = int(15 / tries)
+                backoff_in_seconds = int(KRAKEN_BACKOFF_DIVIDEND / tries)
                 log.debug(
                     f'Got recoverable error {result} in a Kraken query of {method}. Will backoff '
                     f'for {backoff_in_seconds} seconds',
                 )
+                tries -= 1
                 gevent.sleep(backoff_in_seconds)
                 continue
 
@@ -433,7 +436,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return result
 
         raise RemoteError(
-            f'After {KRAKEN_QUERY_TRIES} kraken query for {method} could still not be completed',
+            f'After {KRAKEN_QUERY_TRIES} kraken queries for {method} could still not be completed',
         )
 
     def _query_private(self, method: str, req: Optional[dict] = None) -> Union[Dict, str]:
