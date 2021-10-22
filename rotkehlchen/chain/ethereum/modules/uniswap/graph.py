@@ -8,7 +8,7 @@ V3_SWAPS_QUERY = (
         first: $limit,
         skip: $offset,
         where: {{
-            recipient: $address,
+            origin: $address,
             timestamp_gte: $start_ts,
             timestamp_lte: $end_ts,
         }}
