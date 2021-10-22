@@ -5,7 +5,15 @@
       <template #title>
         {{ $t('blockchain_balances.title') }}
       </template>
-      <v-btn fixed fab bottom right color="primary" @click="createAccount()">
+      <v-btn
+        v-blur
+        fixed
+        fab
+        bottom
+        right
+        color="primary"
+        @click="createAccount()"
+      >
         <v-icon> mdi-plus </v-icon>
       </v-btn>
       <big-dialog

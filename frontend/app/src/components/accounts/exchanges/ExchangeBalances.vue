@@ -4,6 +4,7 @@
       {{ $t('exchange_balances.title') }}
     </template>
     <v-btn
+      v-blur
       fixed
       fab
       bottom

@@ -11,6 +11,7 @@
       </v-card-title>
       <v-card-text>
         <v-btn
+          v-blur
           fixed
           fab
           bottom

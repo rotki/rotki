@@ -27,6 +27,17 @@ Vue.use(VueCompositionAPI);
 
 setupPremium();
 
+Vue.directive('blur', {
+  inserted: function (el) {
+    el.onfocus = ({ target }) => {
+      if (!target) {
+        return;
+      }
+      (target as any).blur();
+    };
+  }
+});
+
 new Vue({
   setup() {
     provide('vuex-store', store);
