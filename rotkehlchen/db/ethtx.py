@@ -10,7 +10,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import EthereumInternalTransaction, EthereumTransaction
+from rotkehlchen.typing import EthereumInternalTransaction, EthereumTransaction, Timestamp
 from rotkehlchen.utils.misc import hexstr_to_int, hexstring_to_bytes
 
 logger = logging.getLogger(__name__)
@@ -97,6 +97,32 @@ class DBEthTx():
             query=query,
             tuples=tx_tuples,
         )
+
+    def get_ethereum_internal_transactions(
+            self,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> List[EthereumInternalTransaction]:
+        cursor = self.db.conn.cursor()
+        results = cursor.execute(
+            'SELECT * from ethereum_internal_transactions WHERE timestamp >= ? '
+            'AND timestamp <= ?',
+            (from_ts, to_ts),
+        )
+        transactions = []
+        for result in results:
+            tx = EthereumInternalTransaction(
+                parent_tx_hash=result[0],
+                trace_id=result[1],
+                timestamp=result[2],
+                block_number=result[3],
+                from_address=result[4],
+                to_address=result[5],
+                value=result[6],
+            )
+            transactions.append(tx)
+
+        return transactions
 
     def get_ethereum_transactions(
             self,

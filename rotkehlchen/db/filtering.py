@@ -84,6 +84,9 @@ class DBETHTransactionAddressFilter(DBFilter):
 
     This is a bit complicated query since it tries to get all transactions that involve
     any of the given addresses, either as from/to or internal transaction from/to.
+
+    But this is not enough! We also need to somehow mark all transactions we have
+    where the given address makes an appearance.
     """
     addresses: Optional[List[ChecksumEthAddress]] = None
 

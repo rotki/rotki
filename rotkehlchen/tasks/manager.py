@@ -25,7 +25,7 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.typing import ChecksumEthAddress, Location, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Location, Optional, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class TaskManager():
             api_task_greenlets: List[gevent.Greenlet],
             database: DBHandler,
             cryptocompare: Cryptocompare,
-            premium_sync_manager: PremiumSyncManager,
+            premium_sync_manager: Optional[PremiumSyncManager],
             chain_manager: ChainManager,
             exchange_manager: ExchangeManager,
     ) -> None:
@@ -72,7 +72,6 @@ class TaskManager():
         self.database = database
         self.cryptocompare = cryptocompare
         self.exchange_manager = exchange_manager
-        self.premium_sync_manager = premium_sync_manager
         self.cryptocompare_queries: Set[CCHistoQuery] = set()
         self.chain_manager = chain_manager
         self.last_xpub_derivation_ts = 0
@@ -89,13 +88,14 @@ class TaskManager():
 
         self.potential_tasks = [
             self._maybe_schedule_cryptocompare_query,
-            self.premium_sync_manager.maybe_upload_data_to_server,
             self._maybe_schedule_xpub_derivation,
             self._maybe_query_ethereum_transactions,
             self._maybe_schedule_exchange_history_query,
             self._maybe_schedule_ethereum_txreceipts,
             self._maybe_query_missing_prices,
         ]
+        if premium_sync_manager is not None:
+            self.potential_tasks.append(premium_sync_manager.maybe_upload_data_to_server)
         self.schedule_lock = gevent.lock.Semaphore()
 
     def _prepare_cryptocompare_queries(self) -> None:
@@ -240,7 +240,7 @@ class TaskManager():
         cursor = self.database.conn.cursor()
         result = cursor.execute(
             'SELECT tx_hash from ethereum_transactions WHERE tx_hash NOT IN '
-            '(SELECT tx_hash from ethtx_receipts) LIMIT 100;',
+            '(SELECT tx_hash from ethtx_receipts) LIMIT 500;',
         ).fetchall()
         if len(result) == 0:
             return
@@ -377,7 +377,7 @@ class TaskManager():
         )
 
         for callable_fn in callables:
-            callable_fn()  # type: ignore
+            callable_fn()
 
     def schedule(self) -> None:
         """Schedules background task while holding the scheduling lock

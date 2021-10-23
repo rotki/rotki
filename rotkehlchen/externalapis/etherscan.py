@@ -1,6 +1,6 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union, overload
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union, overload
 
 import gevent
 import requests
@@ -216,7 +216,7 @@ class Etherscan(ExternalServiceWithApiKey):
     def get_transactions(
             self,
             account: ChecksumEthAddress,
-            internal: Literal[True],
+            action: Literal['txlistinternal'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> List[EthereumInternalTransaction]:
@@ -226,19 +226,29 @@ class Etherscan(ExternalServiceWithApiKey):
     def get_transactions(
             self,
             account: ChecksumEthAddress,
-            internal: Literal[False],
+            action: Literal['txlist'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> List[EthereumTransaction]:
         ...
 
+    @overload
     def get_transactions(
             self,
             account: ChecksumEthAddress,
-            internal: bool,
+            action: Literal['tokentx'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Union[List[EthereumTransaction], List[EthereumInternalTransaction]]:
+    ) -> Set[str]:
+        ...
+
+    def get_transactions(
+            self,
+            account: ChecksumEthAddress,
+            action: Literal['txlist', 'txlistinternal', 'tokentx'],
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+    ) -> Union[List[EthereumTransaction], List[EthereumInternalTransaction], Set[str]]:
         """Gets a list of transactions (either normal or internal) for account.
 
         May raise:
@@ -253,23 +263,29 @@ class Etherscan(ExternalServiceWithApiKey):
             to_block = self.get_blocknumber_by_time(to_ts)
             options['endBlock'] = str(to_block)
 
-        action: Literal['txlistinternal', 'txlist']
-        if internal:
-            action = 'txlistinternal'
+        transactions: Union[List[EthereumTransaction], List[EthereumInternalTransaction], Set[str]]
+        if action == 'tokentx':
+            transactions = set()
         else:
-            action = 'txlist'
-
-        transactions = []
+            transactions = []  # type: ignore
         while True:
             result = self._query(module='account', action=action, options=options)
             for entry in result:
+                if action == 'tokentx':
+                    transactions.add(entry['hash'])  # type: ignore
+                    continue
+
                 try:
-                    tx = deserialize_ethereum_transaction(data=entry, internal=internal, ethereum=None)  # type: ignore  # noqa: E501
+                    tx = deserialize_ethereum_transaction(  # type: ignore
+                        data=entry,
+                        internal=action == 'txlistinternal',
+                        ethereum=None,
+                    )
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
                     continue
 
-                transactions.append(tx)
+                transactions.append(tx)  # type: ignore
 
             if len(result) != ETHERSCAN_TX_QUERY_LIMIT:
                 break

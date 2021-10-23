@@ -73,7 +73,14 @@ class EthTransactions(LockableQueryMixIn):
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> None:
-        """Only queries new transactions and adds them to the DB"""
+        """Only queries new transactions and adds them to the DB
+
+        This is our attempt to identify as many transactions related to the address
+        as possible. This unfortunately at the moment depends on etherscan as it's
+        the only open indexing service for "appearances" of an address.
+
+        Trueblocks ... we need you.
+        """
         ranges = DBQueryRanges(self.database)
         ranges_to_query = ranges.get_location_query_ranges(
             location_string=f'ethtxs_{address}',
@@ -88,7 +95,7 @@ class EthTransactions(LockableQueryMixIn):
                     account=address,
                     from_ts=query_start_ts,
                     to_ts=query_end_ts,
-                    internal=False,
+                    action='txlist',
                 ))
             except RemoteError as e:
                 self.ethereum.msg_aggregator.add_error(
@@ -111,7 +118,7 @@ class EthTransactions(LockableQueryMixIn):
                     account=address,
                     from_ts=query_start_ts,
                     to_ts=query_end_ts,
-                    internal=True,
+                    action='txlistinternal',
                 ))
             except RemoteError as e:
                 self.ethereum.msg_aggregator.add_error(
@@ -126,7 +133,7 @@ class EthTransactions(LockableQueryMixIn):
         if new_internal_txs != []:
             for internal_tx in new_internal_txs:
                 # make sure all internal transaction parent transactions are in the DB
-                result = dbethtx.get_ethereum_transactions(
+                result, _ = dbethtx.get_ethereum_transactions(
                     ETHTransactionsFilterQuery.make(tx_hash=internal_tx.parent_tx_hash),
                 )
                 if len(result) != 0:
@@ -141,6 +148,39 @@ class EthTransactions(LockableQueryMixIn):
 
             # add all new internal txs to the DB
             dbethtx.add_ethereum_internal_transactions(new_internal_txs)
+
+        # and now detect ERC20 events thanks to etherscan and get their transactions
+        erc20_tx_hashes = set()
+        for query_start_ts, query_end_ts in ranges_to_query:
+            try:
+                erc20_tx_hashes.update(self.ethereum.etherscan.get_transactions(
+                    account=address,
+                    from_ts=query_start_ts,
+                    to_ts=query_end_ts,
+                    action='tokentx',
+                ))
+            except RemoteError as e:
+                self.ethereum.msg_aggregator.add_error(
+                    f'Got error "{str(e)}" while querying token transactions'
+                    f'from Etherscan. Transactions not added to the DB '
+                    f'address: {address} '
+                    f'from_ts: {query_start_ts} '
+                    f'to_ts: {query_end_ts} ',
+                )
+
+        # and add them to the DB
+        for tx_hash in erc20_tx_hashes:
+            result, _ = dbethtx.get_ethereum_transactions(
+                ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
+            )
+            if len(result) != 0:
+                continue  # already got that transaction
+
+            transaction = self.ethereum.get_transaction_by_hash(tx_hash)
+            if transaction is None:
+                continue  # hash does not correspond to a transaction
+
+            dbethtx.add_ethereum_transactions([transaction])
 
         # finally also set the last queried timestamps for the address
         ranges.update_used_query_range(
@@ -157,7 +197,7 @@ class EthTransactions(LockableQueryMixIn):
             with_limit: bool = False,
             only_cache: bool = False,
     ) -> Tuple[List[EthereumTransaction], int]:
-        """Queries for all transactionsof an ethereum address or of all addresses.
+        """Queries for all transactions of an ethereum address or of all addresses.
 
         Returns a list of all transactions filtered and sorted according to the parameters.
 

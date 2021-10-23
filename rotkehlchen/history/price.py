@@ -220,7 +220,7 @@ class PriceHistorian():
         oracles = instance._oracles
         oracle_instances = instance._oracle_instances
         assert isinstance(oracles, list) and isinstance(oracle_instances, list), (
-            'PriceHistorian should never be called before the setting the oracles'
+            'PriceHistorian should never be called before setting the oracles'
         )
         for oracle, oracle_instance in zip(oracles, oracle_instances):
             can_query_history = oracle_instance.can_query_history(
@@ -239,6 +239,7 @@ class PriceHistorian():
                 )
             except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
                 continue
+
             if price != Price(ZERO):
                 log.debug(
                     f'Historical price oracle {oracle} got price',
