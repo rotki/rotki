@@ -4,9 +4,10 @@
       {{ $t('exchange_balances.title') }}
     </template>
     <v-btn
-      absolute
+      v-blur
+      fixed
       fab
-      top
+      bottom
       right
       dark
       color="primary"

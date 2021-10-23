@@ -175,6 +175,7 @@
 </template>
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { PropType } from 'vue';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import {
@@ -362,6 +363,16 @@ export default class AccountForm extends Vue {
   edit!: BlockchainAccount | null;
   @Prop({ required: true, type: Boolean, default: false })
   value!: boolean;
+  @Prop({ required: true, type: String as PropType<Blockchain> })
+  context!: Blockchain;
+
+  @Watch('context')
+  onContextChange() {
+    if (!this.edit) {
+      return;
+    }
+    this.blockchain = this.context;
+  }
 
   private setEditMode() {
     if (!this.edit) {
@@ -387,6 +398,9 @@ export default class AccountForm extends Vue {
 
   mounted() {
     this.setEditMode();
+    if (!this.edit) {
+      this.blockchain = this.context;
+    }
   }
 
   @Watch('address')
