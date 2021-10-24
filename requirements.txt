@@ -17,14 +17,14 @@ gql==2.0.0
 py-sr25519-bindings==0.1.2
 py-ed25519-bindings==0.1.2
 py-bip39-bindings==0.1.6
-substrate-interface==1.0.2
+substrate-interface==1.0.5
 beautifulsoup4==4.10.0
 
 # For the rest api
 flask-cors==3.0.10
 flask-restful==0.3.9
 flask==2.0.2
-marshmallow==3.13.0
+marshmallow==3.14.0
 webargs==8.0.1
 
 #constraints
