@@ -15,9 +15,6 @@
       />
     </template>
     <data-table :headers="tableHeaders" :items="balances" sort-by="usdPrice">
-      <template #header.usdPrice>
-        {{ $t('non_fungible_balance.column.price', { currency }) }}
-      </template>
       <template #item.name="{ item }">
         {{ item.name ? item.name : item.id }}
       </template>
@@ -86,7 +83,13 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, ref } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  Ref,
+  ref
+} from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -105,37 +108,43 @@ import { useStore } from '@/store/utils';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 
-const tableHeaders: DataTableHeader[] = [
-  {
-    text: i18n.t('non_fungible_balance.column.name').toString(),
-    value: 'name',
-    cellClass: 'text-no-wrap'
-  },
-  {
-    text: i18n.t('non_fungible_balance.column.price_in_asset').toString(),
-    value: 'priceInAsset',
-    align: 'end',
-    width: '75%',
-    class: 'text-no-wrap'
-  },
-  {
-    text: i18n.t('non_fungible_balance.column.price').toString(),
-    value: 'usdPrice',
-    align: 'end',
-    class: 'text-no-wrap'
-  },
-  {
-    text: i18n.t('non_fungible_balance.column.custom_price').toString(),
-    value: 'manuallyInput',
-    class: 'text-no-wrap'
-  },
-  {
-    text: i18n.t('non_fungible_balance.column.actions').toString(),
-    align: 'center',
-    value: 'actions',
-    class: 'text-no-wrap'
-  }
-];
+const tableHeaders = (currency: Ref<string>) => {
+  return computed<DataTableHeader[]>(() => {
+    return [
+      {
+        text: i18n.t('non_fungible_balance.column.name').toString(),
+        value: 'name',
+        cellClass: 'text-no-wrap'
+      },
+      {
+        text: i18n.t('non_fungible_balance.column.price_in_asset').toString(),
+        value: 'priceInAsset',
+        align: 'end',
+        width: '75%',
+        class: 'text-no-wrap'
+      },
+      {
+        text: i18n
+          .t('non_fungible_balance.column.price', { currency: currency.value })
+          .toString(),
+        value: 'usdPrice',
+        align: 'end',
+        class: 'text-no-wrap'
+      },
+      {
+        text: i18n.t('non_fungible_balance.column.custom_price').toString(),
+        value: 'manuallyInput',
+        class: 'text-no-wrap'
+      },
+      {
+        text: i18n.t('non_fungible_balance.column.actions').toString(),
+        align: 'center',
+        value: 'actions',
+        class: 'text-no-wrap'
+      }
+    ];
+  });
+};
 
 const setupEdit = (refresh: () => Promise<void>) => {
   const edit = ref<NonFungibleBalance | null>(null);
@@ -234,7 +243,7 @@ export default defineComponent({
       refresh,
       balances,
       currency,
-      tableHeaders,
+      tableHeaders: tableHeaders(currency),
       total,
       getAsset: (price: NonFungibleBalance | null) => {
         if (!price) {

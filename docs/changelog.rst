@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3643` The price currency will now be properly visible on the NFT balance header sorting when using a mobile device.
 * :bug:`3629` Kraken api rate limiting should no longer cause a query to get stuck in a loop.
 * :bug:`3624` Editing a CEX api key should now work properly again.
 * :bug:`3619` Binance users should now be able to properly process fiat payments, deposits and withdrawals.
