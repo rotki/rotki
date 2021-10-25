@@ -1,7 +1,6 @@
 import { Balance } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { AxiosInstance, AxiosTransformer } from 'axios';
-import { IgnoreActionType } from '@/store/history/types';
 
 export const SYNC_UPLOAD = 'upload';
 export const SYNC_DOWNLOAD = 'download';
@@ -109,10 +108,6 @@ export interface TaskStatus {
   readonly pending: number[];
   readonly completed: number[];
 }
-
-export type IgnoreActionResult = {
-  readonly [key in IgnoreActionType]?: string[];
-};
 
 export interface ApiImplementation {
   readonly axios: AxiosInstance;

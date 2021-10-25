@@ -1442,6 +1442,7 @@
     }
   },
   "closed_trades": {
+    "clear_selection": "Clear Selection",
     "description": {
       "with": "With",
       "for": "For"
@@ -1455,6 +1456,7 @@
       "start_date": "filter by the start date of the trade period",
       "trade_type": "filter by the trade action (buy or sell)"
     },
+    "selected": "{count} trades selected",
     "title": "Closed Orders",
     "headers": {
       "location": "Location",
@@ -1697,6 +1699,14 @@
         },
         "task": {
           "title": "Checking for asset database updates"
+        }
+      }
+    },
+    "history": {
+      "fetch_ignored": {
+        "error": {
+          "message": "Failed to retrieve the ignored actions\": {message}",
+          "title": "Querying ignored actions"
         }
       }
     },

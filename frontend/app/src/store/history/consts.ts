@@ -17,6 +17,7 @@ export enum HistoryActions {
   DELETE_EXTERNAL_TRADE = 'deleteExternalTrade',
   IGNORE_ACTIONS = 'ignoreActions',
   UNIGNORE_ACTION = 'unignoreActions',
+  FETCH_IGNORED = 'fetchIgnored',
   FETCH_GITCOIN_GRANT = 'fetchGitcoinGrant'
 }
 
@@ -29,7 +30,8 @@ export enum HistoryMutations {
   DELETE_TRADE = 'deleteTrade',
   UPDATE_TRADE = 'updateTrade',
   ADD_TRADE = 'addTrade',
-  SET_TRADES = 'setTrades'
+  SET_TRADES = 'setTrades',
+  SET_IGNORED = 'setIgnored'
 }
 
 export enum LedgerActionType {

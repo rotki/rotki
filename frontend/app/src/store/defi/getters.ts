@@ -1541,8 +1541,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       return getBalances(uniswapBalances, addresses);
     },
   basicDexTrades:
-    ({ uniswapTrades, balancerTrades, sushiswap }, _r, { settings }) =>
+    ({ uniswapTrades, balancerTrades, sushiswap }, _r, { settings, history }) =>
     (addresses): Trade[] => {
+      const ignoredTrades = history!.ignored.trades ?? [];
       const {
         explorers: { ETH }
       }: SettingsState = settings!;
@@ -1573,7 +1574,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
             tradeType: 'buy',
             link: linkUrl,
             notes: '',
-            ignoredInAccounting: false
+            ignoredInAccounting: ignoredTrades.includes(trade.tradeId)
           }));
           simpleTrades.push(...convertedTrades);
         }

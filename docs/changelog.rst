@@ -8,6 +8,7 @@ Changelog
 * :bug:`3619` Binance users should now be able to properly process fiat payments, deposits and withdrawals.
 * :bug:`3613` Users should be now able to save a ledger action without specifying seconds.
 * :bug:`3630` Users will be able to properly see their MakerDAO vault loans
+* :bug:`3647` It should be now possible for users to properly ignore DEX trades in the trade history page.
 
 * :release:`1.21.2 <2021-10-14>`
 * :bug:`-` Users can now ignore any errors when force saving balances.
