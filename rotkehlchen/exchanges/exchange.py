@@ -226,6 +226,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         Limits the query to the given time range and also if only_cache is True returns
         only what is already saved in the DB without performing an exchange query
         """
+        log.debug(f'Querying trade history for {self.name} exchange')
         trades = self.db.get_trades(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -244,6 +245,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         for query_start_ts, query_end_ts in ranges_to_query:
             # If we have a time frame we have not asked the exchange for trades then
             # go ahead and do that now
+            log.debug(
+                f'Querying online trade history for {self.name} between '
+                f'{query_start_ts} and {query_end_ts}',
+            )
             new_trades, queried_range = self.query_online_trade_history(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
@@ -272,6 +277,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
     ) -> List[MarginPosition]:
         """Queries the local DB and the remote exchange for the margin positions history of the user
         """
+        log.debug(f'Querying margin history for {self.name} exchange')
         margin_positions = self.db.get_margin_positions(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -285,6 +291,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         )
         new_positions = []
         for query_start_ts, query_end_ts in ranges_to_query:
+            log.debug(
+                f'Querying online margin history for {self.name} between '
+                f'{query_start_ts} and {query_end_ts}',
+            )
             new_positions.extend(self.query_online_margin_history(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
@@ -317,6 +327,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         If only_cache is true only what is already cached in the DB is returned without
         an actual exchange query.
         """
+        log.debug(f'Querying deposits/withdrawals history for {self.name} exchange')
         asset_movements = self.db.get_asset_movements(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -333,6 +344,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         )
         new_movements = []
         for query_start_ts, query_end_ts in ranges_to_query:
+            log.debug(
+                f'Querying online deposits/withdrawals for {self.name} between '
+                f'{query_start_ts} and {query_end_ts}',
+            )
             new_movements.extend(self.query_online_deposits_withdrawals(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
