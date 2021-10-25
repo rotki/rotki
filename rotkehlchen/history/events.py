@@ -524,9 +524,7 @@ class EventsHistorian():
             empty_or_error += '\n' + error_msg
 
         for exchange in self.exchange_manager.iterate_exchanges():
-            self.processing_state_name = (
-                f'Querying {str(exchange.location)} {exchange.name} exchange history'
-            )
+            self.processing_state_name = f'Querying {exchange.name} exchange history'
             exchange.query_history_with_callbacks(
                 # We need to have history of exchanges since before the range
                 start_ts=Timestamp(0),

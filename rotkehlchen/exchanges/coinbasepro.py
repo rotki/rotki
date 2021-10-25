@@ -204,12 +204,6 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             request_url += '?' + urlencode(query_options)
 
         message = timestamp + request_method + request_url + stringified_options
-        log.debug(
-            'Coinbase Pro API query',
-            request_method=request_method,
-            request_url=request_url,
-            options=options,
-        )
 
         if 'products' not in endpoint:
             try:
@@ -228,6 +222,12 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         retries_left = QUERY_RETRY_TIMES
         while retries_left > 0:
+            log.debug(
+                'Coinbase Pro API query',
+                request_method=request_method,
+                request_url=request_url,
+                options=options,
+            )
             full_url = self.base_uri + request_url
             try:
                 response = self.session.request(
@@ -243,7 +243,9 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 # Backoff a bit by sleeping. Sleep more, the more retries have been made
-                gevent.sleep(QUERY_RETRY_TIMES / retries_left)
+                backoff_secs = QUERY_RETRY_TIMES / retries_left
+                log.debug(f'Backing off coinbase pro api query for {backoff_secs} secs')
+                gevent.sleep(backoff_secs)
                 retries_left -= 1
             else:
                 # get out of the retry loop, we did not get 429 complaint
@@ -417,7 +419,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if entry.get('completed_at', None) is None:
                     log.warning(
                         f'Skipping coinbase pro deposit/withdrawal '
-                        f'due not having been completed: {entry}',
+                        f'due to not having been completed: {entry}',
                     )
                     continue
 
@@ -429,8 +431,8 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 asset = account_to_currency.get(entry['account_id'], None)
                 if asset is None:
                     log.warning(
-                        f'Skipping coinbase pro asset_movement {entry} due to inability to '
-                        f'match account id to an asset',
+                        f'Skipping coinbase pro asset_movement {entry} due to '
+                        f'inability to match account id to an asset',
                     )
                     continue
 
