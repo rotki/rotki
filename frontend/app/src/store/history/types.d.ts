@@ -1,5 +1,6 @@
 import { default as BigNumber } from 'bignumber.js';
 import { TaskMeta } from '@/model/task';
+import { IgnoredActions } from '@/services/history/const';
 import {
   AssetMovement,
   EthTransaction,
@@ -35,6 +36,7 @@ interface EthTransactions extends HistoricData<EthTransactionEntry> {}
 interface LedgerActions extends HistoricData<LedgerActionEntry> {}
 
 export interface HistoryState {
+  ignored: IgnoredActions;
   ledgerActions: LedgerActions;
   trades: Trades;
   assetMovements: AssetMovements;

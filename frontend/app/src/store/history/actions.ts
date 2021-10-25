@@ -5,13 +5,14 @@ import {
 } from '@rotki/common/lib/gitcoin';
 import { ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
-import { TRADE_LOCATION_EXTERNAL, EXTERNAL_EXCHANGES } from '@/data/defaults';
+import { EXTERNAL_EXCHANGES, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { SupportedExchange } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import {
+  IgnoredActions,
   movementNumericKeys,
   tradeNumericKeys,
   transactionNumericKeys
@@ -59,7 +60,7 @@ import {
 } from '@/store/history/types';
 import { Severity } from '@/store/notifications/consts';
 import { NotificationPayload } from '@/store/notifications/types';
-import { notify } from '@/store/notifications/utils';
+import { notify, userNotify } from '@/store/notifications/utils';
 import {
   ActionStatus,
   Message,
@@ -68,8 +69,22 @@ import {
 } from '@/store/types';
 import { setStatus } from '@/store/utils';
 import { Writeable } from '@/types';
-import { assert } from '@/utils/assertions';
 import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
+
+function getIgnored(type: string, result: IgnoredActions) {
+  let entries: string[] = [];
+  if (type === IGNORE_TRADES) {
+    entries = result.trades ?? [];
+  } else if (type === IGNORE_MOVEMENTS) {
+    entries = result.assetMovements ?? [];
+  } else if (type === IGNORE_TRANSACTIONS) {
+    entries = result.ethereumTransactions ?? [];
+  } else if (type === IGNORE_LEDGER_ACTION) {
+    entries = result.ledgerActions ?? [];
+  }
+  return entries;
+}
 
 export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async [HistoryActions.FETCH_TRADES](
@@ -623,9 +638,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     let strings: string[] = [];
     try {
       const result = await api.ignoreActions(actionIds, type);
-      const entries = result[type];
-      assert(entries, `expected entry for ${type} but there where non`);
-      strings = entries;
+      strings = getIgnored(type, result);
+      const newState = { ...state.ignored, ...result };
+      commit(HistoryMutations.SET_IGNORED, newState);
     } catch (e: any) {
       commit(
         'setMessage',
@@ -710,7 +725,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     let strings: string[] = [];
     try {
       const result = await api.unignoreActions(actionIds, type);
-      strings = result[type] ?? [];
+      strings = getIgnored(type, result);
+      const newState = { ...state.ignored, ...result };
+      commit(HistoryMutations.SET_IGNORED, newState);
     } catch (e: any) {
       commit(
         'setMessage',
@@ -880,6 +897,25 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         result: {},
         message: e.message
       };
+    }
+  },
+  async [HistoryActions.FETCH_IGNORED]({ commit }) {
+    const notify = async (error?: any) => {
+      logger.error(error);
+      const message = error?.message ?? error ?? '';
+      await userNotify({
+        title: i18n.t('actions.history.fetch_ignored.error.title').toString(),
+        message: i18n
+          .t('actions.history.fetch_ignored.error.message', { message })
+          .toString(),
+        display: true
+      });
+    };
+    try {
+      const result = await api.history.fetchIgnored();
+      commit(HistoryMutations.SET_IGNORED, result);
+    } catch (e: any) {
+      await notify(e);
     }
   }
 };

@@ -1,6 +1,7 @@
 import { TaskType } from '@/model/task-type';
 import { taskManager } from '@/services/task-manager';
 import { Blockchain } from '@/typing/types';
+import { assert } from '@/utils/assertions';
 
 export interface Task<T extends TaskMeta> {
   readonly id: number;
@@ -27,11 +28,17 @@ export const createTask: <T extends TaskMeta>(
   id: number,
   type: TaskType,
   meta: T
-) => Task<T> = (id, type, meta) => ({
-  id,
-  type,
-  meta
-});
+) => Task<T> = (id, type, meta) => {
+  assert(
+    !(id === null || id === undefined),
+    `missing id for ${TaskType[type]} with ${JSON.stringify(meta)}`
+  );
+  return {
+    id,
+    type,
+    meta
+  };
+};
 
 export function taskCompletion<R, M extends TaskMeta>(
   task: TaskType,

@@ -120,6 +120,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         root: true
       };
       const async = [
+        dispatch(`history/${HistoryActions.FETCH_IGNORED}`, null, options),
         dispatch('fetchIgnoredAssets'),
         dispatch('balances/fetchSupportedAssets', null, options),
         dispatch('session/fetchWatchers', null, options),

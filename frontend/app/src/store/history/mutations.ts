@@ -1,4 +1,5 @@
 import { MutationTree } from 'vuex';
+import { IgnoredActions } from '@/services/history/const';
 import { TradeUpdate } from '@/services/history/types';
 import { HistoryMutations } from '@/store/history/consts';
 import { defaultState } from '@/store/history/state';
@@ -79,7 +80,9 @@ export const mutations: MutationTree<HistoryState> = {
       found: ledgerActions.found + 1
     };
   },
-
+  [HistoryMutations.SET_IGNORED](state: HistoryState, ignored: IgnoredActions) {
+    state.ignored = ignored;
+  },
   [HistoryMutations.RESET](state: HistoryState) {
     Object.assign(state, defaultState());
   }
