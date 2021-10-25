@@ -82,7 +82,7 @@
         </template>
         <template
           v-if="transactionsLimit <= transactionsTotal && transactionsLimit > 0"
-          #body.append="{ headers }"
+          #body.prepend="{ headers }"
         >
           <upgrade-row
             :total="transactionsTotal"

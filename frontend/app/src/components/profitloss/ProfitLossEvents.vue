@@ -74,7 +74,7 @@
               :cost-basis="item.costBasis"
             />
           </template>
-          <template v-if="showUpgradeMessage" #body.append="{ headers }">
+          <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
             <upgrade-row
               events
               :total="processed"
