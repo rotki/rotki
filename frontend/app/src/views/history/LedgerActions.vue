@@ -89,7 +89,7 @@
             ledgerActions.limit <= ledgerActions.found &&
             ledgerActions.limit > 0
           "
-          #body.append="{ headers }"
+          #body.prepend="{ headers }"
         >
           <upgrade-row
             :limit="ledgerActions.limit"
