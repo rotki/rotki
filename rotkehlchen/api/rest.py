@@ -79,6 +79,7 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.history.events import (
     FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_LEDGER_ACTIONS_LIMIT,
@@ -3611,3 +3612,22 @@ class RestAPI():
         # at the moment only location is ethereum_transactions and is checked by marshmallow
         tx_module.reset_count()
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def get_database_info(self) -> Response:
+        globaldb_schema_version = GlobalDBHandler().get_schema_version()
+        globaldb_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
+        result_dict = {
+            'globaldb': {
+                'globaldb_schema_version': globaldb_schema_version,
+                'globaldb_assets_version': globaldb_assets_version,
+            },
+            'userdb': {},
+        }
+        if self.rotkehlchen.user_is_logged_in:
+            result_dict['userdb']['info'] = self.rotkehlchen.data.db.get_db_info()  # type: ignore
+            result_dict['userdb']['backups'] = []  # type: ignore
+            backups = self.rotkehlchen.data.db.get_backups()
+            for entry in backups:
+                result_dict['userdb']['backups'].append(entry)  # type: ignore
+
+        return api_response(_wrap_in_ok_result(result_dict), status_code=HTTPStatus.OK)

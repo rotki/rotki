@@ -41,6 +41,7 @@ from rotkehlchen.api.v1.resources import (
     CompoundBalancesResource,
     CompoundHistoryResource,
     CurrentAssetsPriceResource,
+    DatabaseInfoResource,
     DataImportResource,
     DefiBalancesResource,
     ERC20TokenInfo,
@@ -245,6 +246,7 @@ URLS_V1: URLS = [
     ('/nfts', NFTSResource),
     ('/nfts/balances', NFTSBalanceResource),
     ('/limits/reset/<string:location>', LimitsCounterResetResource),
+    ('/database/info', DatabaseInfoResource),
 ]
 
 logger = logging.getLogger(__name__)

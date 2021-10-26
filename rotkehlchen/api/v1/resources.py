@@ -405,6 +405,12 @@ class OwnedAssetsResource(BaseResource):
         return self.rest_api.query_owned_assets()
 
 
+class DatabaseInfoResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.get_database_info()
+
+
 class AllAssetsResource(BaseResource):
 
     delete_schema = StringIdentifierSchema()
