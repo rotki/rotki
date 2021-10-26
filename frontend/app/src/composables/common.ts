@@ -20,11 +20,17 @@ export const setupThemeCheck = () => {
   const dark = computed(() => $vuetify.theme.dark);
   const breakpoint = computed(() => $vuetify.breakpoint.name);
   const width = computed(() => $vuetify.breakpoint.width);
+  const fontStyle = computed(() => {
+    return {
+      color: dark.value ? 'rgba(255,255,255,0.87)' : 'rgba(0,0,0,0.87)'
+    };
+  });
   return {
     isMobile,
     dark,
     breakpoint,
-    width
+    width,
+    fontStyle
   };
 };
 

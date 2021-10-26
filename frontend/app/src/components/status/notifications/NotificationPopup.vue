@@ -1,7 +1,7 @@
 <template>
   <v-snackbar
     v-model="notification.display"
-    class="notification-popup"
+    :class="$style.popup"
     :timeout="notification.duration"
     top
     right
@@ -9,7 +9,7 @@
     app
     rounded
     width="400px"
-    @input="displayed(notification.id)"
+    @input="displayed([notification.id])"
   >
     <notification
       popup
@@ -31,12 +31,12 @@
     </v-row>
     <v-tooltip v-if="queue.length > 0" bottom>
       <template #activator="{ on }">
-        <div class="notification-popup__count__wrapper" v-on="on">
+        <div :class="$style.wrapper" v-on="on">
           <v-badge
             inline
             :content="queue.length"
             color="info"
-            class="notification-popup__count"
+            :class="$style.count"
           />
         </div>
       </template>
@@ -46,51 +46,57 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { defineComponent, nextTick, ref, watch } from '@vue/composition-api';
 import Notification from '@/components/status/notifications/Notification.vue';
-import { NotificationData } from '@/store/notifications/types';
+import { setupNotifications } from '@/composables/notifications';
 import { emptyNotification } from '@/store/notifications/utils';
 
-@Component({
+const NotificationPopup = defineComponent({
+  name: 'NotificationPopup',
   components: { Notification },
-  computed: {
-    ...mapGetters('notifications', ['queue'])
-  },
-  methods: {
-    ...mapActions('notifications', ['displayed'])
-  }
-})
-export default class NotificationPopup extends Vue {
-  notification: NotificationData = emptyNotification();
-  queue!: NotificationData[];
-  displayed!: (id: number[]) => void;
+  setup() {
+    const notification = ref(emptyNotification());
+    const { queue, displayed } = setupNotifications();
+    const dismiss = (id: number) => {
+      displayed([id]);
+      notification.value = { ...notification.value, display: false };
+    };
 
-  @Watch('queue', { deep: true })
-  onQueueUpdate() {
-    if (!this.notification.display && this.queue.length > 0) {
-      const nextNotification = this.queue.shift();
-      if (!nextNotification) {
-        return;
-      }
-      this.$nextTick(() => (this.notification = nextNotification));
-    }
-  }
+    const dismissAll = () => {
+      displayed(queue.value.map(({ id }) => id));
+      notification.value = { ...notification.value, display: false };
+    };
 
-  dismiss(id: number) {
-    this.displayed([id]);
-    this.notification = { ...this.notification, display: false };
+    watch(
+      queue,
+      () => {
+        const data = [...queue.value];
+        if (!notification.value.display && data.length > 0) {
+          const next = data.shift();
+          if (!next) {
+            return;
+          }
+          nextTick(() => {
+            notification.value = next;
+          });
+        }
+      },
+      { deep: true }
+    );
+    return {
+      queue,
+      notification,
+      dismiss,
+      dismissAll,
+      displayed
+    };
   }
-
-  dismissAll() {
-    this.displayed(this.queue.map(({ id }) => id));
-    this.notification = { ...this.notification, display: false };
-  }
-}
+});
+export default NotificationPopup;
 </script>
-<style scoped lang="scss">
-.notification-popup {
-  ::v-deep {
+<style module lang="scss">
+.popup {
+  :global {
     .v-snack {
       &__wrapper {
         width: 400px;
@@ -105,17 +111,17 @@ export default class NotificationPopup extends Vue {
       }
     }
   }
+}
 
-  &__count {
-    position: absolute;
-    right: 4px;
-    top: 0;
+.count {
+  position: absolute;
+  right: 4px;
+  top: 0;
+}
 
-    &__wrapper {
-      position: absolute;
-      top: 48px;
-      right: 0;
-    }
-  }
+.wrapper {
+  position: absolute;
+  top: 48px;
+  right: 0;
 }
 </style>

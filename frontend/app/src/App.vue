@@ -59,7 +59,6 @@
           class="app__app-bar__button"
           @click="notifications = !notifications"
         />
-        <progress-indicator v-if="!xsOnly" class="app__app-bar__button" />
         <currency-drop-down class="red--text app__app-bar__button" />
         <user-dropdown class="app__app-bar__button" />
         <help-indicator
@@ -128,7 +127,6 @@ import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
 import NotificationSidebar from '@/components/status/notifications/NotificationSidebar.vue';
-import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import '@/services/task-manager';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
@@ -164,7 +162,6 @@ import { Message } from '@/store/types';
     ErrorScreen,
     AccountManagement,
     UpdateIndicator,
-    ProgressIndicator,
     NotificationIndicator,
     BalanceSavedIndicator: SyncIndicator,
     NodeStatusIndicator,

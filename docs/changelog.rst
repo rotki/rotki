@@ -8,6 +8,7 @@ Changelog
 * :bug:`3328` The asset update resolution dialog should now be usable on mobile screens.
 * :feature:`1513` Users will now be able to add manual liabilities.
 * :feature:`1536` The Account & Balances add button will now be fixed to the right bottom of the screen. The blockchain balances add button will now properly select the appropriate blockchain based on the visible table.
+* :feature:`3335` Users will now be able to find the pending tasks in the notification sidebar.
 
 * :release:`1.21.2 <2021-10-14>`
 * :bug:`-` Users can now ignore any errors when force saving balances.
