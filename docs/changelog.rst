@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`3579` Users will now be able to sort the NFTs in the gallery by name, collection and price.
+* :feature:`3640` Liquity users that created troves using DefiSaver will be now able to track them.
 * :feature:`1451` Improves performance of the Transactions page.
 * :feature:`3594` Users can now sort the dashboard assets and blockchain balance per asset tables using the price field.
 * :bug:`3328` The asset update resolution dialog should now be usable on mobile screens.

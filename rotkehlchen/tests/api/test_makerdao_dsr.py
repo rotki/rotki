@@ -1,18 +1,21 @@
 import random
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any, Dict, NamedTuple
+from typing import Any, Dict, NamedTuple, List
 from unittest.mock import _patch, patch
 
 import pytest
 import requests
+from web3 import Web3
+from web3._utils.abi import get_abi_output_types
 
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import _dsrdai_to_dai
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import (
+    ETH_MULTICALL,
     MAKERDAO_DAI_JOIN,
     MAKERDAO_POT,
-    MAKERDAO_PROXY_REGISTRY,
+    DS_PROXY_REGISTRY,
     MAKERDAO_VAT,
 )
 from rotkehlchen.constants.misc import ZERO
@@ -105,12 +108,18 @@ def mock_etherscan_for_dsr(
         etherscan: Etherscan,
         account1: ChecksumEthAddress,
         account2: ChecksumEthAddress,
+        account3: ChecksumEthAddress,
         original_requests_get,
         params: DSRMockParameters,
 ) -> _patch:
 
     proxy1 = make_ethereum_address()
     proxy2 = make_ethereum_address()
+    targets = [address_to_32byteshexstr(proxy1), address_to_32byteshexstr(proxy2), '0x0000000000000000000000000000000000000000000000000000000000000000']  # noqa: E501
+
+    sorted_accounts = sorted(zip([account1, account2, account3], targets), key=lambda x: x[0])
+    proxies = [y[1] for y in sorted_accounts]
+
     account1_join1_event = f"""{{"address": "{MAKERDAO_POT.address}", "topics": ["0x049878f300000000000000000000000000000000000000000000000000000000", "{address_to_32byteshexstr(proxy1)}", "{int_to_32byteshexstr(params.account1_join1_normalized_balance)}", "0x0000000000000000000000000000000000000000000000000000000000000000"], "data": "0x1", "blockNumber": "{hex(params.account1_join1_blocknumber)}", "timeStamp": "{hex(blocknumber_to_timestamp(params.account1_join1_blocknumber))}", "gasPrice": "0x1", "gasUsed": "0x1", "logIndex": "0x6c", "transactionHash": "0xf00", "transactionIndex": "0x79"}}"""  # noqa: E501
 
     account1_join1_deposit = params.account1_join1_normalized_balance * params.account1_join1_chi
@@ -136,13 +145,12 @@ def mock_etherscan_for_dsr(
     def mock_requests_get(url, *args, **kwargs):
         if 'etherscan.io/api?module=proxy&action=eth_blockNumber' in url:
             response = f'{{"status":"1","message":"OK","result":"{TEST_LATEST_BLOCKNUMBER_HEX}"}}'
-
         elif 'etherscan.io/api?module=proxy&action=eth_call' in url:
             to_address = url.split(
                 'https://api.etherscan.io/api?module=proxy&action=eth_call&to=',
             )[1][:42]
             input_data = url.split('data=')[1].split('&apikey')[0]
-            if to_address == MAKERDAO_PROXY_REGISTRY.address:
+            if to_address == DS_PROXY_REGISTRY.address:
                 if not input_data.startswith('0xc4552791'):
                     raise AssertionError(
                         'Call to unexpected method of DSR ProxyRegistry during tests',
@@ -156,6 +164,18 @@ def mock_etherscan_for_dsr(
                 else:
                     proxy_account = '0x' + '0' * 64
                 response = f'{{"status":"1","message":"OK","result":"{proxy_account}"}}'
+            elif to_address == ETH_MULTICALL.address:
+                web3 = Web3()
+                contract = web3.eth.contract(address=ETH_MULTICALL.address, abi=ETH_MULTICALL.abi)
+                data = url.split('data=')[1]
+                if '&apikey' in data:
+                    data = data.split('&apikey')[0]
+
+                fn_abi = contract.functions.abi[1]
+                output_types = get_abi_output_types(fn_abi)
+                args = [1, proxies]
+                result = '0x' + web3.codec.encode_abi(output_types, args).hex()
+                response = f'{{"status":"1","message":"OK","result":"{result}"}}'
             elif to_address == MAKERDAO_POT.address:
                 if input_data.startswith('0x0bebac86'):  # pie
                     if proxy1_contents in input_data:
@@ -270,10 +290,12 @@ def mock_etherscan_for_dsr(
 
 def setup_tests_for_dsr(
         etherscan: Etherscan,
-        account1: ChecksumEthAddress,
-        account2: ChecksumEthAddress,
+        accounts: List[ChecksumEthAddress],
         original_requests_get,
 ) -> DSRTestSetup:
+    account1 = accounts[0]
+    account2 = accounts[2]
+    account3 = accounts[1]
 
     current_dsr = 1000000002440418608258400030
     current_chi = 1123323222211111111111001249911111
@@ -300,6 +322,7 @@ def setup_tests_for_dsr(
         etherscan=etherscan,
         account1=account1,
         account2=account2,
+        account3=account3,
         original_requests_get=original_requests_get,
         params=params,
     )
@@ -434,12 +457,9 @@ def test_query_current_dsr_balance(
 ):
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    account1 = ethereum_accounts[0]
-    account2 = ethereum_accounts[2]
     setup = setup_tests_for_dsr(
         etherscan=rotki.etherscan,
-        account1=account1,
-        account2=account2,
+        accounts=ethereum_accounts,
         original_requests_get=requests.get,
     )
     with setup.etherscan_patch:
@@ -463,12 +483,9 @@ def test_query_historical_dsr_non_premium(
         ethereum_accounts,
 ):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    account1 = ethereum_accounts[0]
-    account2 = ethereum_accounts[2]
     setup = setup_tests_for_dsr(
         etherscan=rotki.etherscan,
-        account1=account1,
-        account2=account2,
+        accounts=ethereum_accounts,
         original_requests_get=requests.get,
     )
     with setup.etherscan_patch:
@@ -533,12 +550,9 @@ def test_query_historical_dsr(
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    account1 = ethereum_accounts[0]
-    account2 = ethereum_accounts[2]
     setup = setup_tests_for_dsr(
         etherscan=rotki.etherscan,
-        account1=account1,
-        account2=account2,
+        accounts=ethereum_accounts,
         original_requests_get=requests.get,
     )
     with setup.etherscan_patch:

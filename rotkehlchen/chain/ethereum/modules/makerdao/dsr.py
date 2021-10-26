@@ -6,6 +6,7 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
+from rotkehlchen.chain.ethereum.defi.defisaver_proxy import DefiSaverProxy
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import MAKERDAO_DAI_JOIN, MAKERDAO_POT
@@ -19,7 +20,6 @@ from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hexstr_to_int, ts_now
 
-from .common import MakerdaoCommon
 from .constants import MAKERDAO_REQUERY_PERIOD, RAD, RAY
 
 if TYPE_CHECKING:
@@ -94,7 +94,7 @@ def _dsrdai_to_dai(value: Union[int, FVal]) -> FVal:
     return FVal(value / FVal(RAD))
 
 
-class MakerdaoDsr(MakerdaoCommon):
+class MakerdaoDsr(DefiSaverProxy):
 
     def __init__(
             self,
@@ -130,7 +130,7 @@ class MakerdaoDsr(MakerdaoCommon):
         queries fail for some reason
         """
         with self.lock:
-            proxy_mappings = self._get_accounts_having_maker_proxy()
+            proxy_mappings = self._get_accounts_having_proxy()
             balances = {}
             try:
                 current_dai_price = Inquirer().find_usd_price(A_DAI)
@@ -398,7 +398,7 @@ class MakerdaoDsr(MakerdaoCommon):
             return self.historical_dsr_reports
 
         with self.lock:
-            proxy_mappings = self._get_accounts_having_maker_proxy()
+            proxy_mappings = self._get_accounts_having_proxy()
             reports = {}
             for account, proxy in proxy_mappings.items():
                 report = self._historical_dsr_for_account(account, proxy)

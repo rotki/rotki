@@ -14,7 +14,7 @@
         "abi": [{"constant":true,"inputs":[{"internalType":"address","name":"manager","type":"address"},{"internalType":"address","name":"guy","type":"address"}],"name":"getCdpsAsc","outputs":[{"internalType":"uint256[]","name":"ids","type":"uint256[]"},{"internalType":"address[]","name":"urns","type":"address[]"},{"internalType":"bytes32[]","name":"ilks","type":"bytes32[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"address","name":"manager","type":"address"},{"internalType":"address","name":"guy","type":"address"}],"name":"getCdpsDesc","outputs":[{"internalType":"uint256[]","name":"ids","type":"uint256[]"},{"internalType":"address[]","name":"urns","type":"address[]"},{"internalType":"bytes32[]","name":"ilks","type":"bytes32[]"}],"payable":false,"stateMutability":"view","type":"function"}],
         "deployed_block": 8928205
     },
-    "MAKERDAO_PROXY_REGISTRY": {
+    "DS_PROXY_REGISTRY": {
         "address": "0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4",
         "abi": [{"constant":false,"inputs":[],"name":"build","outputs":[{"name":"proxy","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"proxies","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"owner","type":"address"}],"name":"build","outputs":[{"name":"proxy","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"factory_","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"}],
         "deployed_block": 5834629

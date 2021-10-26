@@ -14,6 +14,9 @@ from rotkehlchen.tests.utils.api import (
 )
 
 LQTY_ADDR = string_to_ethereum_address('0x063c26fF1592688B73d8e2A18BA4C23654e2792E')
+LQTY_PROXY = string_to_ethereum_address('0x9476832d4687c14b2c1a04E2ee4693162a7340B6')
+ADDR_NOT_IN_LIQUITY = '0xA0446D8804611944F1B527eCD37d7dcbE442caba'
+
 liquity_mocked_historical_prices = {
     A_ETH: {
         'USD': {
@@ -166,7 +169,7 @@ def test_staking_events(rotkehlchen_api_server):
     assert trove_stake['sequence_number'] == '51676'
 
 
-@pytest.mark.parametrize('ethereum_accounts', [['0xA0446D8804611944F1B527eCD37d7dcbE442caba']])
+@pytest.mark.parametrize('ethereum_accounts', [[ADDR_NOT_IN_LIQUITY]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
@@ -183,4 +186,26 @@ def test_account_without_info(rotkehlchen_api_server, inquirer):  # pylint: disa
     else:
         result = assert_proper_response_with_result(response)
 
-    assert LQTY_ADDR not in result
+    assert ADDR_NOT_IN_LIQUITY not in result
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[LQTY_PROXY, ADDR_NOT_IN_LIQUITY, LQTY_ADDR]])
+@pytest.mark.parametrize('ethereum_modules', [['liquity']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+def test_account_with_proxy(rotkehlchen_api_server, inquirer):  # pylint: disable=unused-argument
+    """Test that we can get the status of a trove created using DSProxy"""
+    async_query = random.choice([False, True])
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'liquitytrovesresource',
+    ), json={'async_query': async_query})
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+    else:
+        result = assert_proper_response_with_result(response)
+
+    assert LQTY_PROXY in result
+    assert ADDR_NOT_IN_LIQUITY not in result
+    assert LQTY_ADDR in result
