@@ -9480,3 +9480,53 @@ Resetting limits counters
    :statuscode 200: Limits reset
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal rotki error
+
+Querying database information
+=================================
+
+.. http:get:: /api/(version)/database/info
+
+
+   Doing a GET on the database information will query information about the global database. If a user is logged in it will also query info on the user's DB and potential backups.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/database/info HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "globaldb": {"globaldb_assets_version": 10, "globaldb_schema_version": 2},
+	      "userdb": {
+	          "info": {
+		      "filepath": "/home/username/.local/share/rotki/data/user/rotkehlchen.db",
+		      "size": 5590482,
+		      "version": 30
+		  },
+		  "backups": [{
+		      "size": 323441, "time": 1626382287, "version": 27
+		  }, {
+		      "size": 623441, "time": 1623384287, "version": 24
+		  }]
+          }
+          "message": ""
+      }
+
+   :resjson object globaldb: An object with information on the global DB
+   :resjson int globaldb_assets_version: The version of the global database's assets.
+   :resjson int globaldb_schema_version: The version of the global database's schema.
+   :resjson object userdb: An object with information on the currently logged in user's DB. If there is no currently logged in user this is an empty object.
+   :resjson object info: Under the userdb this contains the info of the currently logged in user. It has the path to the DB file, the size in bytes and the DB version.
+   :resjson list backups: Under the userdb this contains the list of detected backups (if any) for the user db. Each list entry is an object with the size in bytes of the backup, the unix timestamp in which it was taken and the user DB version.
+   :statuscode 200: Data were queried succesfully.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal rotki error.

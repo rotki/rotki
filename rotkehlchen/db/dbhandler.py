@@ -3333,8 +3333,8 @@ class DBHandler:
         version = self.get_version()
         return {
             'filepath': str(filepath),
-            'size': size,
-            'version': version,
+            'size': int(size),
+            'version': int(version),
         }
 
     def get_backups(self) -> List[Dict[str, Any]]:
@@ -3351,8 +3351,8 @@ class DBHandler:
                     except OSError:
                         size = None
                     backups.append({
-                        'time': timestamp,
-                        'version': version,
+                        'time': int(timestamp),
+                        'version': int(version),
                         'size': size,
                     })
 

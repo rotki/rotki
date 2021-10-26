@@ -30,11 +30,11 @@ def test_query_db_info(rotkehlchen_api_server, data_dir, username, start_with_lo
         assert userdb['info']['version'] == ROTKEHLCHEN_DB_VERSION
         assert len(userdb['backups']) == 3
         assert userdb['backups'][0] == {
-            'size': len(backup2_contents), 'time': '1626382287', 'version': '27',
+            'size': len(backup2_contents), 'time': 1626382287, 'version': 27,
         }
         assert userdb['backups'][1] == {
-            'size': 0, 'time': '1633042045', 'version': '28',
+            'size': 0, 'time': 1633042045, 'version': 28,
         }
         assert userdb['backups'][2] == {
-            'size': len(backup1_contents), 'time': '1624053928', 'version': '26',
+            'size': len(backup1_contents), 'time': 1624053928, 'version': 26,
         }
