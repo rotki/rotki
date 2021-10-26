@@ -26,6 +26,7 @@ from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2 import ETH2_DEPOSIT
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN
 from rotkehlchen.errors import (
@@ -217,6 +218,8 @@ class EthereumManager():
         self.etherscan = etherscan
         self.msg_aggregator = msg_aggregator
         self.eth_rpc_timeout = eth_rpc_timeout
+        self.archive_connection = False
+        self.queried_archive_connection = False
         for node in connect_at_start:
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
@@ -406,8 +409,8 @@ class EthereumManager():
                 result = method(web3, **kwargs)
             except (
                     RemoteError,
-                    BlockchainQueryError,
                     requests.exceptions.RequestException,
+                    BlockchainQueryError,
                     TransactionNotFound,
                     KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
             ) as e:  # noqa: E501
@@ -435,6 +438,51 @@ class EthereumManager():
             method=self._get_latest_block_number,
             call_order=call_order if call_order is not None else self.default_call_order(),
         )
+
+    def get_historical_eth_balance(
+            self,
+            address: ChecksumEthAddress,
+            block_number: int,
+    ) -> Optional[FVal]:
+        """Attempts to get a historical eth balance from the local own node only.
+        If there is no node or the node can't query historical balance (not archive) then
+        returns None"""
+        web3 = self.web3_mapping.get(NodeName.OWN)
+        if web3 is None:
+            return None
+
+        try:
+            result = web3.eth.get_balance(address, block_identifier=block_number)
+        except (
+                requests.exceptions.RequestException,
+                BlockchainQueryError,
+                TransactionNotFound,
+                KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
+        ):
+            return None
+
+        try:
+            balance = from_wei(FVal(result))
+        except ValueError:
+            return None
+
+        return balance
+
+    def have_archive(self, requery: bool = False) -> bool:
+        """Checks to see if our own connected node is an archive node
+
+        If requery is True it always queries the node. Otherwise it remembers last query.
+        """
+        if self.queried_archive_connection and requery is False:
+            return self.archive_connection
+
+        balance = self.get_historical_eth_balance(
+            address=string_to_ethereum_address('0x50532e4Be195D1dE0c2E6DfA46D9ec0a4Fee6861'),
+            block_number=87042,
+        )
+        self.archive_connection = balance is not None and balance == FVal('5.1063307')
+        self.queried_archive_connection = True
+        return self.archive_connection
 
     def query_eth_highest_block(self) -> BlockNumber:
         """ Attempts to query an external service for the block height
