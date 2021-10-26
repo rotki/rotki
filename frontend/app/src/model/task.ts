@@ -1,4 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import dayjs from 'dayjs';
 import { TaskType } from '@/model/task-type';
 import { taskManager } from '@/services/task-manager';
 
@@ -6,6 +7,7 @@ export interface Task<T extends TaskMeta> {
   readonly id: number;
   readonly type: TaskType;
   readonly meta: T;
+  readonly time: number;
 }
 
 export interface TaskMeta {
@@ -34,7 +36,8 @@ export const createTask: <T extends TaskMeta>(
 ) => Task<T> = (id, type, meta) => ({
   id,
   type,
-  meta
+  meta,
+  time: dayjs().valueOf()
 });
 
 export function taskCompletion<R, M extends TaskMeta>(

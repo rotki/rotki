@@ -2,7 +2,7 @@ import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import { Task, TaskMeta } from '@/model/task';
+import { createTask, Task, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { Section, Status } from '@/store/const';
 import store from '@/store/store';
@@ -31,14 +31,14 @@ describe('AccountBalances.vue', () => {
   });
 
   test('table enters into loading state when balances load', async () => {
-    const payload: Task<TaskMeta> = {
-      id: 1,
-      type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
-      meta: {
+    const payload: Task<TaskMeta> = createTask(
+      1,
+      TaskType.QUERY_BLOCKCHAIN_BALANCES,
+      {
         ignoreResult: false,
         title: 'test'
       }
-    };
+    );
     store.commit('tasks/add', payload);
     store.commit('setStatus', {
       section: Section.BLOCKCHAIN_ETH,

@@ -1,21 +1,31 @@
 <template>
   <card outlined :class="$style.task">
-    <v-row no-gutters>
+    <v-row align="center" no-gutters>
       <v-col>
-        <div :class="$style.title">{{ task.meta.title }}</div>
+        <v-row no-gutters>
+          <v-col>
+            <div :class="$style.title" class="text--primary">
+              {{ task.meta.title }}
+            </div>
+          </v-col>
+        </v-row>
+        <v-row v-if="task.meta.description" no-gutters class="text--secondary">
+          {{ task.meta.description }}
+        </v-row>
+        <v-row class="text-caption px-3" :class="$style.date">
+          {{ time }}
+        </v-row>
       </v-col>
       <v-col cols="auto">
         <v-progress-circular
+          v-if="isHistory"
           size="20"
           width="2"
           :value="progress"
-          :indeterminate="!isHistory"
           color="primary"
         />
+        <v-icon v-else color="primary">mdi-spin mdi-loading</v-icon>
       </v-col>
-    </v-row>
-    <v-row v-if="task.meta.description" no-gutters class="text--secondary">
-      {{ task.meta.description }}
     </v-row>
   </card>
 </template>
@@ -27,6 +37,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import dayjs from 'dayjs';
 import { setupReports } from '@/composables/reports';
 import { Task, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
@@ -46,7 +57,13 @@ export default defineComponent({
     );
 
     const { progress } = setupReports();
+
+    const time = computed(() => {
+      return dayjs(task.value.time).format('LLL');
+    });
+
     return {
+      time,
       isHistory,
       progress
     };
@@ -60,9 +77,13 @@ export default defineComponent({
 }
 
 .title {
-  font-weight: 600;
+  font-size: 1rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.date {
+  font-size: 0.75rem;
 }
 </style>

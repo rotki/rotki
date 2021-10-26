@@ -222,6 +222,9 @@
       "password_missmatch": "The password confirmation does not match the provided password"
     }
   },
+  "collapsed_pending_tasks": {
+    "title": "{count} pending task | {count} pending tasks"
+  },
   "compound_lending": {
     "history": "Compound History",
     "header": "Compound Loan ({asset})"
@@ -484,6 +487,9 @@
     "hint": "* Modules that are activated for all addresses will not appear here",
     "subtitle": "Select which modules should be queried for this account",
     "title": "Enabled modules"
+  },
+  "no_task_running": {
+    "description": "No Pending tasks"
   },
   "non_fungible_balance": {
     "column": {
