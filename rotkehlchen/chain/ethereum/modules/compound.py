@@ -156,7 +156,7 @@ class Compound(EthereumModule):
         self.msg_aggregator = msg_aggregator
         try:
             self.graph: Optional[Graph] = Graph(
-                'https://api.thegraph.com/subgraphs/name/juanmardefago/aasdasd2',
+                'https://api.thegraph.com/subgraphs/name/juanmardefago/compound-v2',
             )
         except RemoteError as e:
             self.graph = None

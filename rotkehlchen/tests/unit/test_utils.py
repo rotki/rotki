@@ -114,7 +114,7 @@ def test_combine_stat_dicts():
 
 
 def test_check_if_version_up_to_date():
-    def mock_github_return_current(url):  # pylint: disable=unused-argument
+    def mock_github_return_current(url, **kwargs):  # pylint: disable=unused-argument
         contents = '{"tag_name": "v1.4.0", "html_url": "https://foo"}'
         return MockResponse(200, contents)
     patch_github = patch('requests.get', side_effect=mock_github_return_current)
@@ -130,7 +130,7 @@ def test_check_if_version_up_to_date():
         result = check_if_version_up_to_date()
         assert result.download_url is None, 'Same version should return None as url'
 
-    def mock_github_return(url):  # pylint: disable=unused-argument
+    def mock_github_return(url, **kwargs):  # pylint: disable=unused-argument
         contents = '{"tag_name": "v99.99.99", "html_url": "https://foo"}'
         return MockResponse(200, contents)
 
@@ -142,7 +142,7 @@ def test_check_if_version_up_to_date():
     assert result.download_url == 'https://foo'
 
     # Also test that bad responses are handled gracefully
-    def mock_non_200_github_return(url):  # pylint: disable=unused-argument
+    def mock_non_200_github_return(url, **kwargs):  # pylint: disable=unused-argument
         contents = '{"tag_name": "v99.99.99", "html_url": "https://foo"}'
         return MockResponse(501, contents)
 
@@ -152,7 +152,7 @@ def test_check_if_version_up_to_date():
         assert not result.latest_version
         assert not result.latest_version
 
-    def mock_missing_fields_github_return(url):  # pylint: disable=unused-argument
+    def mock_missing_fields_github_return(url, **kwargs):  # pylint: disable=unused-argument
         contents = '{"html_url": "https://foo"}'
         return MockResponse(200, contents)
 
@@ -162,7 +162,7 @@ def test_check_if_version_up_to_date():
         assert not result.latest_version
         assert not result.latest_version
 
-    def mock_invalid_json_github_return(url):  # pylint: disable=unused-argument
+    def mock_invalid_json_github_return(url, **kwargs):  # pylint: disable=unused-argument
         contents = '{html_url: "https://foo"}'
         return MockResponse(200, contents)
 
