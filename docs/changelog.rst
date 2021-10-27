@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`2178` Premium DB sync popup should no longer popup if you only use one instance of rotki in one system.
 * :bug:`3643` The price currency will now be properly visible on the NFT balance header sorting when using a mobile device.
 * :bug:`3629` Kraken api rate limiting should no longer cause a query to get stuck in a loop.
 * :bug:`3624` Editing a CEX api key should now work properly again.
