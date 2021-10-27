@@ -13,12 +13,13 @@ from rotkehlchen.constants.assets import (
     A_CORN,
     A_CRV,
     A_CVX,
+    A_FOX,
     A_GRAIN,
     A_LDO,
     A_TORN,
     A_UNI,
-    A_FOX,
 )
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
@@ -191,7 +192,7 @@ def get_airdrop_data(name: str, data_dir: Path) -> Tuple[Iterator, TextIO]:
     if not filename.is_file():
         # if not cached, get it from the gist
         try:
-            request = requests.get(AIRDROPS[name][0])
+            request = requests.get(url=AIRDROPS[name][0], timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Airdrops Gist request failed due to {str(e)}') from e
 
@@ -211,7 +212,7 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> Dict[str, Any]:
     if not filename.is_file():
         # if not cached, get it from the gist
         try:
-            request = requests.get(POAP_AIRDROPS[name][0])
+            request = requests.get(url=POAP_AIRDROPS[name][0], timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'POAP airdrops Gist request failed due to {str(e)}') from e
 
