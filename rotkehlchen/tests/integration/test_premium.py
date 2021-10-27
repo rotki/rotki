@@ -14,7 +14,6 @@ from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
-    INVALID_BUT_BIGGER_REMOTE_DATA,
     REMOTE_DATA_OLDER_DB,
     VALID_PREMIUM_KEY,
     VALID_PREMIUM_SECRET,
@@ -333,29 +332,6 @@ def test_try_premium_at_start_old_account_newer_remote_ts_smaller_remote_size(
             newer_remote_db=True,
             db_can_sync_setting=True,
             sync_approval='unknown',
-        )
-
-
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_try_premium_at_start_old_account_older_remote_ts_bigger_remote_size(
-        rotkehlchen_instance,
-        username,
-        db_password,
-        rotki_premium_credentials,
-):
-    """Assure that older remote ts but bigger remote size asks the user for sync"""
-    with pytest.raises(RotkehlchenPermissionError):
-        setup_starting_environment(
-            rotkehlchen_instance=rotkehlchen_instance,
-            username=username,
-            db_password=db_password,
-            premium_credentials=rotki_premium_credentials,
-            first_time=False,
-            same_hash_with_remote=False,
-            newer_remote_db=False,
-            db_can_sync_setting=True,
-            sync_approval='unknown',
-            remote_data=INVALID_BUT_BIGGER_REMOTE_DATA,
         )
 
 
