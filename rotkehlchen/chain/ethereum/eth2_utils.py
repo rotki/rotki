@@ -93,6 +93,7 @@ def scrape_validator_daily_stats(
 
         break  # else all good - break from the loop
 
+    log.debug('Got beaconcha.in stats results. Processing it.')
     soup = BeautifulSoup(response.text, 'html.parser', parse_only=SoupStrainer('tbod'))
     if soup is None:
         raise RemoteError('Could not find <tbod> while parsing beaconcha.in stats page')
@@ -200,4 +201,5 @@ def scrape_validator_daily_stats(
         ))
         tr = tr.find_next_sibling()
 
+    log.debug('Processed beaconcha.in stats results. Returning it.')
     return stats

@@ -1609,6 +1609,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     ) -> List[DefiEvent]:
         """May raise:
         - ModuleInactive if eth2 module is not activated
+        - RemoteError if a remote query to beacon chain fails and is not caught in the method
         """
         eth2 = self.get_module('eth2')
         if eth2 is None:
@@ -1623,12 +1624,20 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             if entry.validator_index is None:
                 continue  # don't query stats for validators without an index yet
 
-            stats = eth2.get_validator_daily_stats(
-                validator_index=entry.validator_index,
-                msg_aggregator=self.msg_aggregator,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
+            try:
+                stats = eth2.get_validator_daily_stats(
+                    validator_index=entry.validator_index,
+                    msg_aggregator=self.msg_aggregator,
+                    from_timestamp=from_timestamp,
+                    to_timestamp=to_timestamp,
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Will not include details for validator {entry.validator_index} '
+                    f'due to {str(e)}',
+                )
+                continue
+
             for stats_entry in stats:
                 got_asset = got_balance = spent_asset = spent_balance = None
                 if stats_entry.pnl_balance.amount == ZERO:
