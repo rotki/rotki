@@ -6,6 +6,8 @@ from base64 import b64encode
 
 import requests
 
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+
 ANON_UPLOAD_ID = 'ce8c41d2c1a72d1'
 
 
@@ -26,7 +28,12 @@ def upload(path: str, headers: dict):
     data = {
         'image': image,
     }
-    response = requests.post('https://api.imgur.com/3/upload', data=data, headers=headers)
+    response = requests.post(
+        url='https://api.imgur.com/3/upload',
+        data=data,
+        headers=headers,
+        timeout=DEFAULT_TIMEOUT_TUPLE,
+    )
     print(response.status_code)
 
     if response.ok:

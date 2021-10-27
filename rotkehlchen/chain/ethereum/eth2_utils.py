@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup, SoupStrainer
 from rotkehlchen.chain.ethereum.typing import ValidatorDailyStats
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
@@ -69,9 +69,9 @@ def scrape_validator_daily_stats(
     max_tries = 3
     backoff = 60
     while True:
-        log.debug(f'Querying beaconchain stats: {url}')
+        log.debug(f'Querying beaconcha.in stats: {url}')
         try:
-            response = requests.get(url)
+            response = requests.get(url, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Beaconcha.in api request {url} failed due to {str(e)}') from e
 

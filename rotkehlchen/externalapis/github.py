@@ -3,6 +3,7 @@ from typing import Dict, Tuple
 
 import requests
 
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -18,7 +19,7 @@ class Github():
         - RemoteError if there is a problem querying Github
         """
         try:
-            response = requests.get(f'{self.prefix}{path}')
+            response = requests.get(url=f'{self.prefix}{path}', timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to query Github: {str(e)}') from e
 

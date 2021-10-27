@@ -13,6 +13,7 @@ from typing_extensions import Literal
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetData, AssetType
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
@@ -120,7 +121,7 @@ class AssetsUpdater():
     def _get_remote_info_json(self) -> Dict[str, Any]:
         url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/info.json'
         try:
-            response = requests.get(url)
+            response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to query Github {url} during assets update: {str(e)}') from e  # noqa: E501
 
@@ -454,7 +455,7 @@ class AssetsUpdater():
 
             try:
                 url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/{version}/updates.sql'  # noqa: E501
-                response = requests.get(url)
+                response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 connection.rollback()
                 raise RemoteError(f'Failed to query Github for {url} during assets update: {str(e)}') from e  # noqa: E501

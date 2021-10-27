@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import LiquidityPool
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import _decode_result
 from rotkehlchen.chain.ethereum.typing import NodeName
 from rotkehlchen.constants.ethereum import ZERION_ABI
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.utils.misc import get_chunks
@@ -85,7 +86,10 @@ def get_latest_lp_addresses(data_directory: Path) -> List[ChecksumEthAddress]:
     our_downloaded_meta = data_directory / 'assets' / 'uniswapv2_lp_tokens.meta'
     our_builtin_meta = root_dir / 'data' / 'uniswapv2_lp_tokens.meta'
     try:
-        response = requests.get('https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/uniswapv2_lp_tokens.meta')  # noqa: E501
+        response = requests.get(
+            url='https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/uniswapv2_lp_tokens.meta',  # noqa: E501,
+            timeout=DEFAULT_TIMEOUT_TUPLE,
+        )
         remote_meta = response.json()
         if our_downloaded_meta.is_file():
             local_meta_file = our_downloaded_meta
@@ -97,7 +101,10 @@ def get_latest_lp_addresses(data_directory: Path) -> List[ChecksumEthAddress]:
 
         if local_meta['version'] < remote_meta['version']:
             # we need to download and save the new assets from github
-            response = requests.get('https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/uniswapv2_lp_tokens.json')  # noqa: E501
+            response = requests.get(
+                url='https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/uniswapv2_lp_tokens.json',  # noqa: E501
+                timeout=DEFAULT_TIMEOUT_TUPLE,
+            )
             remote_data = response.text
 
             # Make sure directory exists
