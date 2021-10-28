@@ -23,7 +23,11 @@ log = RotkehlchenLogsAdapter(logger)
 DS_REQUERY_PERIOD = 7200  # Refresh queries every 2 hours
 
 
-class DefiSaverProxy(EthereumModule):
+class HasDSProxy(EthereumModule):
+    """
+    Class to retrive information about DSProxy for defi addresses.
+    It implements the EthereumModule interface to properly query proxies on account addition
+    """
 
     def __init__(
             self,
@@ -66,9 +70,9 @@ class DefiSaverProxy(EthereumModule):
     def _get_accounts_proxy(
         self,
         addresses: List[ChecksumEthAddress],
-    ) -> List[Optional[ChecksumEthAddress]]:
+    ) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
         """
-        Returns DSProxy if it exitsts for a list of addresses using only one call
+        Returns DSProxy if it exists for a list of addresses using only one call
         to the chain.
 
         May raise:
@@ -81,7 +85,7 @@ class DefiSaverProxy(EthereumModule):
                 DS_PROXY_REGISTRY.encode(method_name='proxies', arguments=[address]),
             ) for address in addresses],
         )
-        proxy_accounts: List[Optional[ChecksumEthAddress]] = []
+        mapping = {}
         for idx, result_encoded in enumerate(output):
             address = addresses[idx]
             result = DS_PROXY_REGISTRY.decode(    # pylint: disable=unsubscriptable-object
@@ -91,14 +95,12 @@ class DefiSaverProxy(EthereumModule):
             )[0]
             if int(result, 16) != 0:
                 try:
-                    proxy_accounts.append(deserialize_ethereum_address(result))
+                    proxy_address = deserialize_ethereum_address(result)
+                    mapping[address] = proxy_address
                 except DeserializationError as e:
                     msg = f'Failed to deserialize {result} DSproxy for address {address}. {str(e)}'
                     log.error(msg)
-                    proxy_accounts.append(None)
-            else:
-                proxy_accounts.append(None)
-        return proxy_accounts
+        return mapping
 
     def _get_accounts_having_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
         """Returns a mapping of accounts that have DS proxies to their proxies
@@ -116,12 +118,9 @@ class DefiSaverProxy(EthereumModule):
         if now - self.last_proxy_mapping_query_ts < DS_REQUERY_PERIOD:
             return self.proxy_mappings
 
-        mapping = {}
         accounts = self.database.get_blockchain_accounts()
         eth_accounts = accounts.eth
-        for idx, proxy_result in enumerate(self._get_accounts_proxy(eth_accounts)):
-            if proxy_result is not None:
-                mapping[eth_accounts[idx]] = proxy_result
+        mapping = self._get_accounts_proxy(eth_accounts)
 
         self.last_proxy_mapping_query_ts = ts_now()
         self.proxy_mappings = mapping

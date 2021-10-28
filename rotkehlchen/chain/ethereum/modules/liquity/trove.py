@@ -27,7 +27,7 @@ from rotkehlchen.chain.ethereum.graph import (
 )
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.ethereum.defi.defisaver_proxy import DefiSaverProxy
+from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default, PriceHistorian
@@ -186,7 +186,7 @@ class StakePosition(NamedTuple):
         return self.staked.serialize()
 
 
-class Liquity(DefiSaverProxy):
+class Liquity(HasDSProxy):
 
     def __init__(
             self,

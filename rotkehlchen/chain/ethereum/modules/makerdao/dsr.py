@@ -6,7 +6,7 @@ from gevent.lock import Semaphore
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
-from rotkehlchen.chain.ethereum.defi.defisaver_proxy import DefiSaverProxy
+from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import MAKERDAO_DAI_JOIN, MAKERDAO_POT
@@ -94,7 +94,7 @@ def _dsrdai_to_dai(value: Union[int, FVal]) -> FVal:
     return FVal(value / FVal(RAD))
 
 
-class MakerdaoDsr(DefiSaverProxy):
+class MakerdaoDsr(HasDSProxy):
 
     def __init__(
             self,
