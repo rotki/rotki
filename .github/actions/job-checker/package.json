@@ -20,22 +20,22 @@
   ],
   "author": "Rotki Solutions GmbH",
   "dependencies": {
-    "@actions/core": "1.5.0",
+    "@actions/core": "1.6.0",
     "@actions/github": "5.0.0"
   },
   "devDependencies": {
-    "@types/jest": "27.0.1",
-    "@types/node": "14.17.4",
-    "@typescript-eslint/parser": "4.31.0",
-    "@vercel/ncc": "0.30.0",
+    "@types/jest": "27.0.2",
+    "@types/node": "14.17.32",
+    "@typescript-eslint/parser": "4.33.0",
+    "@vercel/ncc": "0.31.1",
     "eslint": "7.32.0",
-    "eslint-plugin-github": "4.2.0",
-    "eslint-plugin-jest": "24.4.0",
-    "jest": "27.1.0",
-    "jest-circus": "27.1.0",
+    "eslint-plugin-github": "4.3.2",
+    "eslint-plugin-jest": "24.7.0",
+    "jest": "27.3.1",
+    "jest-circus": "27.3.1",
     "js-yaml": "4.1.0",
-    "prettier": "2.3.2",
-    "ts-jest": "27.0.5",
-    "typescript": "4.4.2"
+    "prettier": "2.4.1",
+    "ts-jest": "27.0.7",
+    "typescript": "4.4.4"
   }
 }
