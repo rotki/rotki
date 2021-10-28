@@ -1,6 +1,6 @@
 <template>
   <card outlined :class="$style.task">
-    <v-row align="center" no-gutters>
+    <v-row align="center" no-gutters class="flex-nowrap">
       <v-col>
         <v-row no-gutters>
           <v-col>
@@ -9,7 +9,12 @@
             </div>
           </v-col>
         </v-row>
-        <v-row v-if="task.meta.description" no-gutters class="text--secondary">
+        <v-row
+          v-if="task.meta.description"
+          no-gutters
+          :class="$style.description"
+          class="text--secondary"
+        >
           {{ task.meta.description }}
         </v-row>
         <v-row class="text-caption px-3" :class="$style.date">
@@ -81,6 +86,11 @@ export default defineComponent({
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.description {
+  font-size: 0.8rem;
+  white-space: pre-line;
 }
 
 .date {
