@@ -430,8 +430,16 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List:
         """May raise RemoteError and BinancePermissionError due to api_query"""
         result = self.api_query(api_type, method, options)
-        if isinstance(result, Dict) and 'data' in result:
-            result = result['data']
+        if isinstance(result, Dict):
+            if 'data' in result:
+                result = result['data']
+            elif 'total' in result and result['total'] == 0:
+                # This is a completely undocumented behavior of their api seen in the wild.
+                # At least one endpoint (/sapi/v1/fiat/payments) can omit the data
+                # key in the response object instead of returning an empty list like
+                # other endpoints.
+                # {'code': '000000', 'message': 'success', 'success': True, 'total': 0}
+                return []
 
         if not isinstance(result, list):
             error_msg = f'Expected list but did not get it in {self.name} api response.'
