@@ -7,9 +7,6 @@
       </v-btn>
     </template>
     <data-table :headers="tableHeaders" :items="balances" sort-by="usdPrice">
-      <template #header.usdPrice>
-        {{ $t('nft_balance_table.column.price', { currency }) }}
-      </template>
       <template #item.name="{ item }">
         {{ item.name ? item.name : item.id }}
       </template>
@@ -52,7 +49,7 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common/';
-import { computed, defineComponent } from '@vue/composition-api';
+import { computed, defineComponent, Ref } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import { currency } from '@/composables/session';
 import i18n from '@/i18n';
@@ -62,32 +59,38 @@ import { NonFungibleBalance } from '@/store/balances/types';
 import { useStore } from '@/store/utils';
 import { Zero } from '@/utils/bignumbers';
 
-const tableHeaders: DataTableHeader[] = [
-  {
-    text: i18n.t('nft_balance_table.column.name').toString(),
-    value: 'name',
-    cellClass: 'text-no-wrap'
-  },
-  {
-    text: i18n.t('nft_balance_table.column.price_in_asset').toString(),
-    value: 'priceInAsset',
-    align: 'end',
-    width: '75%',
-    class: 'text-no-wrap'
-  },
-  {
-    text: i18n.t('nft_balance_table.column.price').toString(),
-    value: 'usdPrice',
-    align: 'end',
-    class: 'text-no-wrap'
-  },
-  {
-    text: i18n.t('nft_balance_table.column.percentage').toString(),
-    value: 'percentage',
-    align: 'end',
-    class: 'text-no-wrap'
-  }
-];
+const tableHeaders = (currency: Ref<string>) => {
+  return computed<DataTableHeader[]>(() => [
+    {
+      text: i18n.t('nft_balance_table.column.name').toString(),
+      value: 'name',
+      cellClass: 'text-no-wrap'
+    },
+    {
+      text: i18n.t('nft_balance_table.column.price_in_asset').toString(),
+      value: 'priceInAsset',
+      align: 'end',
+      width: '75%',
+      class: 'text-no-wrap'
+    },
+    {
+      text: i18n
+        .t('nft_balance_table.column.price', {
+          currency: currency.value
+        })
+        .toString(),
+      value: 'usdPrice',
+      align: 'end',
+      class: 'text-no-wrap'
+    },
+    {
+      text: i18n.t('nft_balance_table.column.percentage').toString(),
+      value: 'percentage',
+      align: 'end',
+      class: 'text-no-wrap'
+    }
+  ]);
+};
 
 export default defineComponent({
   name: 'NftBalanceTable',
@@ -120,7 +123,7 @@ export default defineComponent({
     return {
       percentage,
       balances,
-      tableHeaders,
+      tableHeaders: tableHeaders(currency),
       currency,
       refresh,
       total,

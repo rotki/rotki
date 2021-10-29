@@ -175,11 +175,15 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """Queries the exchange's API for the trade history of the user
 
         Should be implemented by subclasses if the exchange can return trade history in any form.
         This is not implemented only for bitmex as it only returns margin positions
+
+        Returns a tuple of the trades of the exchange and a Tuple of the queried time
+        range. The time range can differ from the given time range if an error happened
+        and the call stopped in the middle.
         """
         raise NotImplementedError(
             'query_online_trade_history() should only be implemented by subclasses',
@@ -240,6 +244,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         Limits the query to the given time range and also if only_cache is True returns
         only what is already saved in the DB without performing an exchange query
         """
+        log.debug(f'Querying trade history for {self.name} exchange')
         trades = self.db.get_trades(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -255,27 +260,31 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             end_ts=end_ts,
         )
 
-        new_trades = []
         for query_start_ts, query_end_ts in ranges_to_query:
             # If we have a time frame we have not asked the exchange for trades then
             # go ahead and do that now
-            new_trades.extend(self.query_online_trade_history(
+            log.debug(
+                f'Querying online trade history for {self.name} between '
+                f'{query_start_ts} and {query_end_ts}',
+            )
+            new_trades, queried_range = self.query_online_trade_history(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
-            ))
+            )
 
-        # make sure to add them to the DB
-        if new_trades != []:
-            self.db.add_trades(new_trades)
-        # and also set the used queried timestamp range for the exchange
-        ranges.update_used_query_range(
-            location_string=f'{str(self.location)}_trades',
-            start_ts=start_ts,
-            end_ts=end_ts,
-            ranges_to_query=ranges_to_query,
-        )
-        # finally append them to the already returned DB trades
-        trades.extend(new_trades)
+            # make sure to add them to the DB
+            if new_trades != []:
+                self.db.add_trades(new_trades)
+
+            # and also set the used queried timestamp range for the exchange
+            ranges.update_used_query_range(
+                location_string=f'{str(self.location)}_trades',
+                start_ts=queried_range[0],
+                end_ts=queried_range[1],
+                ranges_to_query=[queried_range],
+            )
+            # finally append them to the already returned DB trades
+            trades.extend(new_trades)
 
         return trades
 
@@ -286,6 +295,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
     ) -> List[MarginPosition]:
         """Queries the local DB and the remote exchange for the margin positions history of the user
         """
+        log.debug(f'Querying margin history for {self.name} exchange')
         margin_positions = self.db.get_margin_positions(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -299,6 +309,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         )
         new_positions = []
         for query_start_ts, query_end_ts in ranges_to_query:
+            log.debug(
+                f'Querying online margin history for {self.name} between '
+                f'{query_start_ts} and {query_end_ts}',
+            )
             new_positions.extend(self.query_online_margin_history(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
@@ -331,6 +345,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         If only_cache is true only what is already cached in the DB is returned without
         an actual exchange query.
         """
+        log.debug(f'Querying deposits/withdrawals history for {self.name} exchange')
         asset_movements = self.db.get_asset_movements(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -347,6 +362,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         )
         new_movements = []
         for query_start_ts, query_end_ts in ranges_to_query:
+            log.debug(
+                f'Querying online deposits/withdrawals for {self.name} between '
+                f'{query_start_ts} and {query_end_ts}',
+            )
             new_movements.extend(self.query_online_deposits_withdrawals(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,

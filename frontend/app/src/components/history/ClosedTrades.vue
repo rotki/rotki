@@ -28,6 +28,12 @@
               :disabled="selected.length === 0 || loading || refreshing"
               @ignore="ignoreTrades"
             />
+            <div v-if="selected.length > 0" class="mt-2 ms-1">
+              {{ $t('closed_trades.selected', { count: selected.length }) }}
+              <v-btn small text @click="setSelected(false)">
+                {{ $t('closed_trades.clear_selection') }}
+              </v-btn>
+            </div>
           </v-col>
           <v-col cols="12" sm="6">
             <table-filter
@@ -45,7 +51,6 @@
         show-expand
         sort-by="timestamp"
         class="closed-trades"
-        item-key="tradeId"
         :page.sync="page"
         :loading="refreshing"
       >
@@ -125,7 +130,7 @@
         </template>
         <template
           v-if="tradesLimit <= tradesTotal && tradesLimit > 0"
-          #body.append="{ headers }"
+          #body.prepend="{ headers }"
         >
           <upgrade-row
             :limit="tradesLimit"

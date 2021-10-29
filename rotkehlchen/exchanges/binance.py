@@ -43,14 +43,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_binance,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.typing import (
-    ApiKey,
-    ApiSecret,
-    Fee,
-    AssetMovementCategory,
-    Location,
-    Timestamp,
-)
+from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -262,6 +255,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     @property
     def symbols_to_pair(self) -> Dict[str, BinancePair]:
+        """Returns binance symbols to pair if in memory otherwise queries binance"""
         self.first_connection()
         return self._symbols_to_pair
 
@@ -422,7 +416,11 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Dict:
         """May raise RemoteError and BinancePermissionError due to api_query"""
         result = self.api_query(api_type, method, options)
-        assert isinstance(result, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+        if not isinstance(result, dict):
+            error_msg = f'Expected dict but did not get it in {self.name} api response.'
+            log.error(f'{error_msg}. Got: {result}')
+            raise RemoteError(error_msg)
+
         return result
 
     def api_query_list(
@@ -433,9 +431,22 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List:
         """May raise RemoteError and BinancePermissionError due to api_query"""
         result = self.api_query(api_type, method, options)
-        if isinstance(result, Dict) and 'data' in result:
-            result = result['data']
-        assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+        if isinstance(result, Dict):
+            if 'data' in result:
+                result = result['data']
+            elif 'total' in result and result['total'] == 0:
+                # This is a completely undocumented behavior of their api seen in the wild.
+                # At least one endpoint (/sapi/v1/fiat/payments) can omit the data
+                # key in the response object instead of returning an empty list like
+                # other endpoints.
+                # {'code': '000000', 'message': 'success', 'success': True, 'total': 0}
+                return []
+
+        if not isinstance(result, list):
+            error_msg = f'Expected list but did not get it in {self.name} api response.'
+            log.error(f'{error_msg}. Got: {result}')
+            raise RemoteError(error_msg)
+
         return result
 
     def _query_spot_balances(
@@ -805,7 +816,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
             markets: Optional[List[str]] = None,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """
 
         May raise due to api query and unexpected id:
@@ -906,7 +917,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             trades += fiat_payments
             trades.sort(key=lambda x: x.timestamp)
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def _query_online_fiat_payments(self, start_ts: Timestamp, end_ts: Timestamp) -> List[Trade]:
         fiat_buys = self._api_query_list_within_time_delta(
@@ -914,7 +925,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             api_type='sapi',
-            method='fiat/orders',
+            method='fiat/payments',
             additional_options={'transactionType': 0},
         )
         log.debug(f'{self.name} fiat buys history result', results_num=len(fiat_buys))
@@ -923,7 +934,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts=end_ts,
             time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
             api_type='sapi',
-            method='fiat/orders',
+            method='fiat/payments',
             additional_options={'transactionType': 1},
         )
         log.debug(f'{self.name} fiat sells history result', results_num=len(fiat_sells))
@@ -947,7 +958,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         Can log error/warning and return None if something went wrong at deserialization
         """
         try:
-            if 'status' not in raw_data or raw_data['status'] != 'Successful':
+            if 'status' not in raw_data or raw_data['status'] != 'Completed':
                 log.error(
                     f'Found {str(self.location)} fiat payment with failed status. Ignoring it.',
                 )
@@ -974,7 +985,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 amount=obtain_amount,
                 rate=rate,
                 fee=fee,
-                fee_currency=base_asset,
+                fee_currency=quote_asset,
                 link=link_str,
             )
 
@@ -1014,7 +1025,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         Can log error/warning and return None if something went wrong at deserialization
         """
         try:
-            if 'status' not in raw_data or raw_data['status'] != 'Successful':
+            if 'status' not in raw_data or raw_data['status'] not in ('Successful', 'Finished'):
                 log.error(
                     f'Found {str(self.location)} fiat deposit/withdrawal with failed status. Ignoring it.',  # noqa: E501
                 )
@@ -1152,7 +1163,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
           - Timestamps are converted to milliseconds.
         """
         results: List[Dict[str, Any]] = []
-
         # Create required time references in milliseconds
         start_ts = Timestamp(start_ts * 1000)
         end_ts = Timestamp(end_ts * 1000)

@@ -655,10 +655,16 @@ def query_coinbase_and_test(
 
     query_fn = getattr(coinbase, query_fn_name)
     with patch.object(coinbase.session, 'get', side_effect=mock_coinbase_query):
-        actions = query_fn(
-            start_ts=0,
-            end_ts=TEST_END_TS,
-        )
+        if query_fn_name == 'query_online_trade_history':
+            actions, _ = query_fn(
+                start_ts=0,
+                end_ts=TEST_END_TS,
+            )
+        else:
+            actions = query_fn(
+                start_ts=0,
+                end_ts=TEST_END_TS,
+            )
 
     errors = coinbase.msg_aggregator.consume_errors()
     warnings = coinbase.msg_aggregator.consume_warnings()

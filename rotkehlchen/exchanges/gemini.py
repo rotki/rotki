@@ -457,7 +457,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """Queries gemini for trades
         """
         log.debug('Query gemini trade history', start_ts=start_ts, end_ts=end_ts)
@@ -515,7 +515,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def query_online_deposits_withdrawals(
             self,

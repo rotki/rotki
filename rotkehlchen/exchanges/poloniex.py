@@ -568,7 +568,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         raw_data = self.return_trade_history(
             start=start_ts,
             end=end_ts,
@@ -622,7 +622,7 @@ class Poloniex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-        return our_trades
+        return our_trades, (start_ts, end_ts)
 
     def parse_loan_csv(self) -> List:
         """Parses (if existing) the lendingHistory.csv and returns the history in a list

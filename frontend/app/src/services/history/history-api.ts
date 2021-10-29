@@ -14,7 +14,7 @@ import {
   balanceAxiosTransformer,
   basicAxiosTransformer
 } from '@/services/consts';
-import { tradeNumericKeys } from '@/services/history/const';
+import { IgnoredActions, tradeNumericKeys } from '@/services/history/const';
 import {
   LedgerActionResult,
   NewTrade,
@@ -262,5 +262,15 @@ export class HistoryApi {
         transformRequest: this.requestTransformer
       })
       .then(handleResponse);
+  }
+
+  fetchIgnored(): Promise<IgnoredActions> {
+    return this.axios
+      .get<ActionResult<IgnoredActions>>('/actions/ignored', {
+        validateStatus: validStatus,
+        transformResponse: setupTransformer([])
+      })
+      .then(handleResponse)
+      .then(result => IgnoredActions.parse(result));
   }
 }

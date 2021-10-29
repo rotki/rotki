@@ -5,7 +5,7 @@ import {
 } from '@rotki/common/lib/gitcoin';
 import { ActionContext, ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
-import { TRADE_LOCATION_EXTERNAL, EXTERNAL_EXCHANGES } from '@/data/defaults';
+import { EXTERNAL_EXCHANGES, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
 import {
   AddressMeta,
@@ -17,6 +17,7 @@ import { TaskType } from '@/model/task-type';
 import { SupportedExchange } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import {
+  IgnoredActions,
   movementNumericKeys,
   tradeNumericKeys
 } from '@/services/history/const';
@@ -70,6 +71,20 @@ import { Writeable } from '@/types';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 
+function getIgnored(type: string, result: IgnoredActions) {
+  let entries: string[] = [];
+  if (type === IgnoreActionType.TRADES) {
+    entries = result.trades ?? [];
+  } else if (type === IgnoreActionType.MOVEMENTS) {
+    entries = result.assetMovements ?? [];
+  } else if (type === IgnoreActionType.ETH_TRANSACTIONS) {
+    entries = result.ethereumTransactions ?? [];
+  } else if (type === IgnoreActionType.LEDGER_ACTIONS) {
+    entries = result.ledgerActions ?? [];
+  }
+  return entries;
+}
+
 const ignoreInAccounting = async (
   { commit, state }: ActionContext<HistoryState, RotkehlchenState>,
   { actionIds, type }: IgnoreActionPayload,
@@ -80,7 +95,9 @@ const ignoreInAccounting = async (
     const result = ignore
       ? await api.ignoreActions(actionIds, type)
       : await api.unignoreActions(actionIds, type);
-    strings = result[type] ?? [];
+    strings = getIgnored(type, result);
+    const newState = { ...state.ignored, ...result };
+    commit(HistoryMutations.SET_IGNORED, newState);
   } catch (e: any) {
     let title: string;
     let description: string;
@@ -881,6 +898,25 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         result: {},
         message: e.message
       };
+    }
+  },
+  async [HistoryActions.FETCH_IGNORED]({ commit }) {
+    const notify = async (error?: any) => {
+      logger.error(error);
+      const message = error?.message ?? error ?? '';
+      await userNotify({
+        title: i18n.t('actions.history.fetch_ignored.error.title').toString(),
+        message: i18n
+          .t('actions.history.fetch_ignored.error.message', { message })
+          .toString(),
+        display: true
+      });
+    };
+    try {
+      const result = await api.history.fetchIgnored();
+      commit(HistoryMutations.SET_IGNORED, result);
+    } catch (e: any) {
+      await notify(e);
     }
   }
 };

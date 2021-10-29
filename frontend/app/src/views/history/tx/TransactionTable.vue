@@ -48,7 +48,7 @@
     <template #item.gasFee="{ item }">
       <amount-display :value="gasFee(item)" asset="ETH" />
     </template>
-    <template v-if="limit <= total && limit > 0" #body.append="{ headers }">
+    <template v-if="limit <= total && limit > 0" #body.prepend="{ headers }">
       <upgrade-row
         :total="total"
         :limit="limit"

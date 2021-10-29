@@ -571,9 +571,7 @@ class EventsHistorian():
             empty_or_error += '\n' + error_msg
 
         for exchange in self.exchange_manager.iterate_exchanges():
-            self.processing_state_name = (
-                f'Querying {str(exchange.location)} {exchange.name} exchange history'
-            )
+            self.processing_state_name = f'Querying {exchange.name} exchange history'
             exchange.query_history_with_callbacks(
                 # We need to have history of exchanges since before the range
                 start_ts=Timestamp(0),
@@ -721,10 +719,17 @@ class EventsHistorian():
         eth2 = self.chain_manager.get_module('eth2')
         if eth2 is not None and has_premium:
             self.processing_state_name = 'Querying ETH2 staking history'
-            defi_events.extend(self.chain_manager.get_eth2_history_events(
-                from_timestamp=start_ts,
-                to_timestamp=end_ts,
-            ))
+            try:
+                eth2_events = self.chain_manager.get_eth2_history_events(
+                    from_timestamp=start_ts,
+                    to_timestamp=end_ts,
+                )
+                defi_events.extend(eth2_events)
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Eth2 events are not included in the PnL report due to {str(e)}',
+                )
+
         step = self._increase_progress(step, total_steps)
 
         # include liquity events

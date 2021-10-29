@@ -76,7 +76,7 @@
       <template #item.timestamp="{ item }">
         <date-display :timestamp="item.timestamp" />
       </template>
-      <template v-if="showUpgradeRow" #body.append="{ headers }">
+      <template v-if="showUpgradeRow" #body.prepend="{ headers }">
         <upgrade-row
           :total="total"
           :limit="limit"

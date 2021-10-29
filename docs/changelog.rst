@@ -11,6 +11,16 @@ Changelog
 * :feature:`1536` The Account & Balances add button will now be fixed to the right bottom of the screen. The blockchain balances add button will now properly select the appropriate blockchain based on the visible table.
 * :feature:`3335` Users will now be able to find the pending tasks in the notification sidebar.
 
+* :release:`1.21.3 <2021-10-28>`
+* :bug:`2178` Premium DB sync popup should no longer popup if you only use one instance of rotki in one system.
+* :bug:`3643` The price currency will now be properly visible on the NFT balance header sorting when using a mobile device.
+* :bug:`3629` Kraken api rate limiting should no longer cause a query to get stuck in a loop.
+* :bug:`3624` Editing a CEX api key should now work properly again.
+* :bug:`3619` Binance users should now be able to properly process fiat payments, deposits and withdrawals.
+* :bug:`3613` Users should be now able to save a ledger action without specifying seconds.
+* :bug:`3630` Users will be able to properly see their MakerDAO vault loans
+* :bug:`3647` It should be now possible for users to properly ignore DEX trades in the trade history page.
+
 * :release:`1.21.2 <2021-10-14>`
 * :bug:`-` Users can now ignore any errors when force saving balances.
 * :bug:`3576` User asset charts should no longer have arbitrary zero amounts. There is now a setting they can choose which is off by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.

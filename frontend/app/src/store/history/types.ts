@@ -1,5 +1,6 @@
 import { BigNumber } from '@rotki/common/';
 import { TaskMeta } from '@/model/task';
+import { IgnoredActions } from '@/services/history/const';
 import {
   AssetMovement,
   Trade,
@@ -27,6 +28,7 @@ export interface AssetMovements extends HistoricData<AssetMovementEntry> {}
 export interface LedgerActions extends HistoricData<LedgerActionEntry> {}
 
 export interface HistoryState {
+  ignored: IgnoredActions;
   ledgerActions: LedgerActions;
   trades: Trades;
   assetMovements: AssetMovements;

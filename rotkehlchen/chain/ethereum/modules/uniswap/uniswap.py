@@ -51,7 +51,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
 
     * Uniswap subgraph:
     https://github.com/Uniswap/uniswap-v2-subgraph
-    https://github.com/Uniswap/uniswap-v3-subgraph
+    https://github.com/croco-finance/uniswap-v3-subgraph
     """
     def __init__(
             self,
@@ -65,7 +65,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                 'https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v2',
             )
             self.graph_v3 = Graph(
-                'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
+                'https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph',
             )
         except RemoteError as e:
             self.msg_aggregator.add_error(

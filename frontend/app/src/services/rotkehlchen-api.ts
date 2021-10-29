@@ -17,6 +17,7 @@ import {
 import { BalancesApi } from '@/services/balances/balances-api';
 import { basicAxiosTransformer } from '@/services/consts';
 import { DefiApi } from '@/services/defi/defi-api';
+import { IgnoredActions } from '@/services/history/const';
 import { HistoryApi } from '@/services/history/history-api';
 import { SessionApi } from '@/services/session/session-api';
 import {
@@ -25,7 +26,6 @@ import {
   BtcAccountData,
   DBAssetBalance,
   GeneralAccountData,
-  IgnoreActionResult,
   LocationData,
   Messages,
   NetValue,
@@ -956,9 +956,9 @@ export class RotkehlchenApi {
   async ignoreActions(
     actionIds: string[],
     actionType: IgnoreActionType
-  ): Promise<IgnoreActionResult> {
+  ): Promise<IgnoredActions> {
     return this.axios
-      .put<ActionResult<IgnoreActionResult>>(
+      .put<ActionResult<IgnoredActions>>(
         '/actions/ignored',
         axiosSnakeCaseTransformer({
           actionIds,
@@ -969,15 +969,16 @@ export class RotkehlchenApi {
           transformResponse: basicAxiosTransformer
         }
       )
-      .then(handleResponse);
+      .then(handleResponse)
+      .then(data => IgnoredActions.parse(data));
   }
 
   async unignoreActions(
     actionIds: string[],
     actionType: IgnoreActionType
-  ): Promise<IgnoreActionResult> {
+  ): Promise<IgnoredActions> {
     return this.axios
-      .delete<ActionResult<IgnoreActionResult>>('/actions/ignored', {
+      .delete<ActionResult<IgnoredActions>>('/actions/ignored', {
         data: axiosSnakeCaseTransformer({
           actionIds,
           actionType
@@ -985,7 +986,8 @@ export class RotkehlchenApi {
         validateStatus: validStatus,
         transformResponse: basicAxiosTransformer
       })
-      .then(handleResponse);
+      .then(handleResponse)
+      .then(data => IgnoredActions.parse(data));
   }
 
   async erc20details(address: string): Promise<PendingTask> {

@@ -403,7 +403,7 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
             market: Optional[TradePair] = None,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         options: Dict[str, Union[str, int]] = {
             'pageSize': 200,  # max page size according to their docs
             'startDate': timestamp_to_iso8601(start_ts, utc_as_z=True),
@@ -454,7 +454,7 @@ class Bittrex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             trades.append(trade)
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def _deserialize_asset_movement(self, raw_data: Dict[str, Any]) -> Optional[AssetMovement]:
         """Processes a single deposit/withdrawal from bittrex and deserializes it

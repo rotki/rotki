@@ -22,8 +22,8 @@ from rotkehlchen.constants.assets import (
     A_BCH,
     A_BTC,
     A_COMP,
-    A_DOGE,
     A_DAI,
+    A_DOGE,
     A_DOT,
     A_EOS,
     A_ETC,
@@ -417,7 +417,7 @@ class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """May raise RemoteError"""
         try:
             resp_trades = self._gather_paginated_data(path='GetClosedFilledOrders')
@@ -426,7 +426,7 @@ class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 f'Error processing independentreserve trades response. '
                 f'Missing key: {str(e)}.',
             )
-            return []
+            return [], (start_ts, end_ts)
 
         trades = []
         for raw_trade in resp_trades:
@@ -456,7 +456,7 @@ class Independentreserve(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def query_online_deposits_withdrawals(
             self,  # pylint: disable=no-self-use

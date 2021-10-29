@@ -499,7 +499,7 @@ def test_query_trades_sandbox(sandbox_kuckoin, inquirer):  # pylint: disable=unu
             notes='',
         ),
     ]
-    trades = sandbox_kuckoin.query_online_trade_history(
+    trades, _ = sandbox_kuckoin.query_online_trade_history(
         start_ts=Timestamp(1612556693),
         end_ts=Timestamp(1612556765),
     )

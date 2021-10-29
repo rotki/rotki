@@ -90,7 +90,7 @@
           @delete-click="$emit('delete-action', item.identifier)"
         />
       </template>
-      <template v-if="showUpgradeRow" #body.append="{ headers }">
+      <template v-if="showUpgradeRow" #body.prepend="{ headers }">
         <upgrade-row
           :total="total"
           :limit="limit"
@@ -143,9 +143,9 @@ import i18n from '@/i18n';
 import { AssetSymbolGetter } from '@/store/balances/types';
 import { HistoryActions } from '@/store/history/consts';
 import {
-  LedgerActionEntry,
   IgnoreActionPayload,
-  IgnoreActionType
+  IgnoreActionType,
+  LedgerActionEntry
 } from '@/store/history/types';
 import store from '@/store/store';
 import { ActionStatus, Message } from '@/store/types';

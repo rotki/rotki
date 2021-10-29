@@ -15,6 +15,7 @@ from websocket import WebSocketException
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager
@@ -460,7 +461,7 @@ class SubstrateManager():
 
         log.debug(f'{self.chain} subscan API request', request_url=url)
         try:
-            response = requests.post(url=url)
+            response = requests.post(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
             message = f'{self.chain} failed to post request at {url}. Connection error: {str(e)}.'
             log.error(message)

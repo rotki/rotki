@@ -795,7 +795,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """Return the account trades
 
         May raise RemoteError
@@ -812,7 +812,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts=start_ts,
             end_ts=end_ts,
         )
-        return trades
+        return trades, (start_ts, end_ts)
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the KuCoin API key is good for usage in rotki

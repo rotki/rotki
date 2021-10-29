@@ -469,7 +469,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         account_data = self._api_query('accounts')
         # now get the account ids and for each one query buys/sells
         # Looking at coinbase's API no other type of transaction
@@ -577,7 +577,7 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if trade and start_ts <= trade.timestamp <= end_ts:
                 trades.append(trade)
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def _deserialize_asset_movement(self, raw_data: Dict[str, Any]) -> Optional[AssetMovement]:
         """Processes a single deposit/withdrawal from coinbase and deserializes it
