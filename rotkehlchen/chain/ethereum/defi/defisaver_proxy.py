@@ -1,7 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from rotkehlchen.constants.ethereum import MAKERDAO_PROXY_REGISTRY
+from rotkehlchen.chain.ethereum.utils import multicall
+from rotkehlchen.constants.ethereum import DS_PROXY_REGISTRY
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
@@ -11,8 +12,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
 
-from .constants import MAKERDAO_REQUERY_PERIOD
-
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures import AssetBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -21,9 +20,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+DS_REQUERY_PERIOD = 7200  # Refresh queries every 2 hours
 
-class MakerdaoCommon(EthereumModule):
-    """Class to manage MakerDao related stuff such as DSR and CDPs/Vaults"""
+
+class HasDSProxy(EthereumModule):
+    """
+    Class to retrive information about DSProxy for defi addresses.
+    It implements the EthereumModule interface to properly query proxies on account addition
+    """
 
     def __init__(
             self,
@@ -44,7 +48,7 @@ class MakerdaoCommon(EthereumModule):
         self.last_proxy_mapping_query_ts = 0
 
     def _get_account_proxy(self, address: ChecksumEthAddress) -> Optional[ChecksumEthAddress]:
-        """Checks if a DSR proxy exists for the given address and returns it if it does
+        """Checks if a DS proxy exists for the given address and returns it if it does
 
         May raise:
         - RemoteError if etherscan is used and there is a problem with
@@ -53,18 +57,53 @@ class MakerdaoCommon(EthereumModule):
         - BlockchainQueryError if an ethereum node is used and the contract call
         queries fail for some reason
         """
-        result = MAKERDAO_PROXY_REGISTRY.call(self.ethereum, 'proxies', arguments=[address])
+        result = DS_PROXY_REGISTRY.call(self.ethereum, 'proxies', arguments=[address])
         if int(result, 16) != 0:
             try:
                 return deserialize_ethereum_address(result)
             except DeserializationError as e:
-                msg = f'Failed to deserialize {result} DSR proxy for address {address}'
+                msg = f'Failed to deserialize {result} DS proxy for address {address}'
                 log.error(msg)
                 raise RemoteError(msg) from e
         return None
 
-    def _get_accounts_having_maker_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
-        """Returns a mapping of accounts that have DSR proxies to their proxies
+    def _get_accounts_proxy(
+        self,
+        addresses: List[ChecksumEthAddress],
+    ) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
+        """
+        Returns DSProxy if it exists for a list of addresses using only one call
+        to the chain.
+
+        May raise:
+        - RemoteError if query to the node failed
+        """
+        output = multicall(
+            ethereum=self.ethereum,
+            calls=[(
+                DS_PROXY_REGISTRY.address,
+                DS_PROXY_REGISTRY.encode(method_name='proxies', arguments=[address]),
+            ) for address in addresses],
+        )
+        mapping = {}
+        for idx, result_encoded in enumerate(output):
+            address = addresses[idx]
+            result = DS_PROXY_REGISTRY.decode(    # pylint: disable=unsubscriptable-object
+                result_encoded,
+                'proxies',
+                arguments=[address],
+            )[0]
+            if int(result, 16) != 0:
+                try:
+                    proxy_address = deserialize_ethereum_address(result)
+                    mapping[address] = proxy_address
+                except DeserializationError as e:
+                    msg = f'Failed to deserialize {result} DSproxy for address {address}. {str(e)}'
+                    log.error(msg)
+        return mapping
+
+    def _get_accounts_having_proxy(self) -> Dict[ChecksumEthAddress, ChecksumEthAddress]:
+        """Returns a mapping of accounts that have DS proxies to their proxies
 
         If the proxy mappings have been queried in the past REQUERY_PERIOD
         seconds then the old result is used.
@@ -76,15 +115,12 @@ class MakerdaoCommon(EthereumModule):
         queries fail for some reason
         """
         now = ts_now()
-        if now - self.last_proxy_mapping_query_ts < MAKERDAO_REQUERY_PERIOD:
+        if now - self.last_proxy_mapping_query_ts < DS_REQUERY_PERIOD:
             return self.proxy_mappings
 
-        mapping = {}
         accounts = self.database.get_blockchain_accounts()
-        for account in accounts.eth:
-            proxy_result = self._get_account_proxy(account)
-            if proxy_result:
-                mapping[account] = proxy_result
+        eth_accounts = accounts.eth
+        mapping = self._get_accounts_proxy(eth_accounts)
 
         self.last_proxy_mapping_query_ts = ts_now()
         self.proxy_mappings = mapping

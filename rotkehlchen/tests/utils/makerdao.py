@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.constants.ethereum import (
     MAKERDAO_GET_CDPS,
     MAKERDAO_JUG,
-    MAKERDAO_PROXY_REGISTRY,
+    DS_PROXY_REGISTRY,
     MAKERDAO_SPOT,
     MAKERDAO_VAT,
 )
@@ -122,7 +122,7 @@ def mock_jug_ilks(_, ilk) -> Tuple[int, int]:
 def create_web3_mock(web3: Web3, test_data: VaultTestData):
     def mock_contract(address, abi):  # pylint: disable=unused-argument
         mock_proxy_registry = (
-            address == MAKERDAO_PROXY_REGISTRY.address and
+            address == DS_PROXY_REGISTRY.address and
             'ProxyRegistry' in test_data.mock_contracts
         )
         if address == MAKERDAO_GET_CDPS.address and 'GetCDPS' in test_data.mock_contracts:
@@ -155,4 +155,4 @@ def mock_proxies(
 
     module = rotki.chain_manager.get_module(given_module)
     assert module, f'module {module} not found in chain manager'
-    module._get_accounts_having_maker_proxy = mock_get_proxies
+    module._get_accounts_having_proxy = mock_get_proxies

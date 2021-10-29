@@ -27,6 +27,7 @@ from rotkehlchen.chain.ethereum.graph import (
 )
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default, PriceHistorian
@@ -34,7 +35,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Timestamp
-from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.serialization.deserialize import (
@@ -186,7 +186,7 @@ class StakePosition(NamedTuple):
         return self.staked.serialize()
 
 
-class Liquity(EthereumModule):
+class Liquity(HasDSProxy):
 
     def __init__(
             self,
@@ -195,10 +195,12 @@ class Liquity(EthereumModule):
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum = ethereum_manager
-        self.database = database
-        self.msg_aggregator = msg_aggregator
-        self.premium = premium
+        super().__init__(
+            ethereum_manager=ethereum_manager,
+            database=database,
+            premium=premium,
+            msg_aggregator=msg_aggregator,
+        )
         self.history_lock = Semaphore()
         try:
             self.graph = Graph(
@@ -219,6 +221,11 @@ class Liquity(EthereumModule):
             abi=LIQUITY_TROVE_MANAGER.abi,
             deployed_block=LIQUITY_TROVE_MANAGER.deployed_block,
         )
+
+        proxied_addresses = self._get_accounts_having_proxy()
+        proxies_to_address = {v: k for k, v in proxied_addresses.items()}
+        addresses += proxied_addresses.values()
+
         calls = [
             (LIQUITY_TROVE_MANAGER.address, contract.encode(method_name='Troves', arguments=[x]))
             for x in addresses
@@ -272,7 +279,10 @@ class Liquity(EthereumModule):
                     else:
                         liquidation_price = None
 
-                    data[addresses[idx]] = Trove(
+                    account_address = addresses[idx]
+                    if account_address in proxies_to_address:
+                        account_address = proxies_to_address[account_address]
+                    data[account_address] = Trove(
                         collateral=collateral_balance,
                         debt=debt_balance,
                         collateralization_ratio=collateralization_ratio,
@@ -653,10 +663,8 @@ class Liquity(EthereumModule):
         return []
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        pass
-
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
+        super().on_account_addition(address)
         trove_info = self.get_positions([address])
         result = []
         if address in trove_info:
@@ -665,9 +673,3 @@ class Liquity(EthereumModule):
         if address in stake_info:
             result.append(stake_info[address].staked)
         return result
-
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
-        pass
-
-    def deactivate(self) -> None:
-        pass

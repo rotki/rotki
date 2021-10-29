@@ -1397,7 +1397,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     eth_balances[address] += entry
                     self.totals += entry
 
-            proxy_mappings = vaults_module._get_accounts_having_maker_proxy()
+            proxy_mappings = vaults_module._get_accounts_having_proxy()
             proxy_to_address = {}
             proxy_addresses = []
             for user_address, proxy_address in proxy_mappings.items():

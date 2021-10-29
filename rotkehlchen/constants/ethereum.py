@@ -85,7 +85,7 @@ class EthereumConstants():
 MAKERDAO_DAI_JOIN = EthereumConstants().contract('MAKERDAO_DAI_JOIN')
 MAKERDAO_CDP_MANAGER = EthereumConstants().contract('MAKERDAO_CDP_MANAGER')
 MAKERDAO_GET_CDPS = EthereumConstants().contract('MAKERDAO_GET_CDPS')
-MAKERDAO_PROXY_REGISTRY = EthereumConstants().contract('MAKERDAO_PROXY_REGISTRY')
+DS_PROXY_REGISTRY = EthereumConstants().contract('DS_PROXY_REGISTRY')
 MAKERDAO_SPOT = EthereumConstants().contract('MAKERDAO_SPOT')
 MAKERDAO_POT = EthereumConstants().contract('MAKERDAO_POT')
 MAKERDAO_VAT = EthereumConstants().contract('MAKERDAO_VAT')

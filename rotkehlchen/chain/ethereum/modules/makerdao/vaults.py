@@ -70,6 +70,7 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.errors import DeserializationError, RemoteError
+from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
@@ -80,7 +81,6 @@ from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
 
-from .common import MakerdaoCommon
 from .constants import MAKERDAO_REQUERY_PERIOD, RAY, RAY_DIGITS, WAD
 
 if TYPE_CHECKING:
@@ -258,7 +258,7 @@ class MakerdaoVaultDetails(NamedTuple):
     events: List[VaultEvent]
 
 
-class MakerdaoVaults(MakerdaoCommon):
+class MakerdaoVaults(HasDSProxy):
 
     def __init__(
             self,
@@ -704,7 +704,7 @@ class MakerdaoVaults(MakerdaoCommon):
 
         with self.lock:
             self.vault_mappings = defaultdict(list)
-            proxy_mappings = self._get_accounts_having_maker_proxy()
+            proxy_mappings = self._get_accounts_having_proxy()
             vaults = []
             for user_address, proxy in proxy_mappings.items():
                 vaults.extend(
@@ -735,7 +735,7 @@ class MakerdaoVaults(MakerdaoCommon):
             return self.vault_details
 
         self.vault_details = []
-        proxy_mappings = self._get_accounts_having_maker_proxy()
+        proxy_mappings = self._get_accounts_having_proxy()
         # Make sure that before querying vault details there has been a recent vaults call
         vaults = self.get_vaults()
         for vault in vaults:
