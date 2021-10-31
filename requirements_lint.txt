@@ -16,7 +16,7 @@ isort==5.9.3
 # type packages used by mypy
 # pinned here so that we can have reproducible mypy runs
 types-chardet==4.0.1
-types-cryptography==3.3.7
+types-cryptography==3.3.8
 types-enum34==1.1.1
 types-ipaddress==1.0.1
 types-pkg-resources==0.1.3
