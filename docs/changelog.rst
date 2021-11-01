@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`3664` Binance US users will no longer see errors regarding the fiat payments and orders endpoints.
+
 * :release:`1.21.3 <2021-10-28>`
 * :bug:`2178` Premium DB sync popup should no longer popup if you only use one instance of rotki in one system.
 * :bug:`3643` The price currency will now be properly visible on the NFT balance header sorting when using a mobile device.
