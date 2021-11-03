@@ -24,7 +24,8 @@
     "check": "npm run lint && npm run build && npm run test:unit --workspace=rotki",
     "check:all": "npm run lint && npm run build && npm run test:unit --workspace=rotki && npm run test:integration-ci --workspace=rotki",
     "clean:modules": "rimraf node_modules app/node_modules common/node_modules",
-    "dev": "node start-dev.js"
+    "dev": "node start-dev.js",
+    "start": "npm run electron:serve -w rotki"
   },
   "devDependencies": {
     "dotenv": "10.0.0",

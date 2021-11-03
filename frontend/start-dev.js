@@ -40,7 +40,7 @@ const commonProcesses = spawn("npm run watch -w @rotki/common", {
   stdio: [process.stdin, process.stdout, process.stderr]
 });
 process.stdout.write("Starting rotki dev mode \n");
-const devRotkiProcess = spawn("sleep 20 && npm run electron:serve -w rotki", {
+const devRotkiProcess = spawn("sleep 20 && npm start", {
   shell: true,
   stdio: [process.stdin, process.stdout, process.stderr]
 });
