@@ -401,7 +401,7 @@ def assert_csv_formulas_all_events(row, profit_currency):
         raise AssertionError(f'Unexpected CSV row type {row["type"]} encountered')
 
 
-def assert_csv_export_response(response, profit_currency, csv_dir, is_download = False):
+def assert_csv_export_response(response, profit_currency, csv_dir, is_download=False):
     if is_download:
         assert response.status_code == HTTPStatus.OK
     else:
@@ -620,6 +620,7 @@ def test_history_export_download_csv(
             zip_ref.extractall(extractdir)
         assert_csv_export_response(response, profit_currency, extractdir, is_download=True)
 
+
 @pytest.mark.parametrize(
     'added_exchanges',
     [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
@@ -672,11 +673,11 @@ def test_history_export_csv_errors(
     )
 
     # And now provide valid path but not directory
-    tempfile = Path(Path(csv_dir) / 'f.txt')
-    tempfile.touch()
+    temporary_file = Path(Path(csv_dir) / 'f.txt')
+    temporary_file.touch()
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
-        json={'directory_path': str(tempfile)},
+        json={'directory_path': str(temporary_file)},
     )
     assert_error_response(
         response=response,

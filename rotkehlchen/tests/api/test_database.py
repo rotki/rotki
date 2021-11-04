@@ -50,8 +50,8 @@ def test_query_db_info(rotkehlchen_api_server, data_dir, username, start_with_lo
         }
 
 
-def test_create_delete_backup(rotkehlchen_api_server, data_dir, username):
-    """Test that creating and deleting a backup works fine"""
+def test_create_download_delete_backup(rotkehlchen_api_server, data_dir, username):
+    """Test that creating, downloading and deleting a backup works fine"""
     start_ts = ts_now()
     response = requests.put(api_url_for(rotkehlchen_api_server, 'databasebackupsresource'))
     filepath = Path(assert_proper_response_with_result(response))
@@ -89,8 +89,8 @@ def test_create_delete_backup(rotkehlchen_api_server, data_dir, username):
     assert len(backups) == 0
 
 
-def test_delete_backup_errors(rotkehlchen_api_server, data_dir, username):
-    """Test that errors are handled properly in backup deletion"""
+def test_delete_download_backup_errors(rotkehlchen_api_server, data_dir, username):
+    """Test that errors are handled properly in backup deletion and download"""
     user_data_dir = Path(data_dir, username)
     # Make sure deleting file outside  of user data dir fails
     undeletable_file = Path(data_dir / 'notdeletablefile')
@@ -107,9 +107,31 @@ def test_delete_backup_errors(rotkehlchen_api_server, data_dir, username):
         contained_in_msg='is not in the user directory',
         status_code=HTTPStatus.CONFLICT,
     )
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'databasebackupsresource'),
+        json={'file': str(undeletable_file)},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='is not in the user directory',
+        status_code=HTTPStatus.CONFLICT,
+    )
     undeletable_file.unlink()  # finally delete normally
 
     response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'databasebackupsresource'),
+        json={'file': str(Path(user_data_dir, 'idontexist'))},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='does not exist',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
             'databasebackupsresource'),
