@@ -49,19 +49,24 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
 
     # find the one known nft in the nfts list
     nfts = result['addresses'][TEST_ACC1]
+    nft_found = False
     for entry in nfts:
-        if entry['token_identifier'] == '8636':
-            assert entry['name'] == 'BASTARD GAN PUNK V2 #8636'
-            assert entry['permalink'] == 'https://opensea.io/assets/0x31385d3520bced94f77aae104b406994d8f2168c/8636'  # noqa: E501
-            assert entry['external_link'] == 'https://www.bastardganpunks.club/v2/8636'
-            assert entry['image_url'] == 'https://lh3.googleusercontent.com/kwF-39qZlluEalQnNv-yMxbntzNdc3g00pK2xALkpoir9ooWttVUO2hVFWOgPtOkJOHufYRajfn-nNFdjruRQ4YaMgOYHEB8E4CdjBk'  # noqa: E501
+        if entry['token_identifier'] == '_nft_0xc3f733ca98e0dad0386979eb96fb1722a1a05e69_129':
+
+            assert entry['name'] == 'MoonCat #129: 0x0082206dcb'
+            assert entry['permalink'] == 'https://opensea.io/assets/0xc3f733ca98e0dad0386979eb96fb1722a1a05e69/129'  # noqa: E501
+            assert entry['external_link'] is None
+            assert entry['image_url'] == 'https://lh3.googleusercontent.com/C5ceArerHdGigmSt9tCsUD67Nbxr-P05fSsP_Pye34zN78lr2519P66kANkb55nfWW-ZMWFM4oCawLF4fW2jfRPxWButdqIX0QM95DM'  # noqa: E501
             assert FVal(entry['price_eth']) > ZERO
             assert FVal(entry['price_usd']) > ZERO
-            assert entry['collection']['name'] == 'BASTARD GAN PUNKS V2'
+            assert entry['collection']['name'] == 'Official Wrapped MoonCats (Acclimated)'
             assert entry['collection']['banner_image'].startswith('https://')
             assert isinstance(entry['collection']['description'], str)
             assert entry['collection']['large_image'].startswith('https://')
+            nft_found = True
             break
+
+    assert nft_found, 'Could not find and verify the test NFT'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[]])
