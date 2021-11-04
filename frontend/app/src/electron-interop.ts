@@ -1,3 +1,4 @@
+import { getBackendUrl } from '@/components/account-management/utils';
 import { BackendCode } from '@/electron-main/backend-code';
 import { BackendOptions, SystemVersion, TrayUpdate } from '@/electron-main/ipc';
 import { WebVersion } from '@/types';
@@ -13,6 +14,11 @@ export class ElectronInterop {
 
   get isPackaged(): boolean {
     return this.packagedApp;
+  }
+
+  get appSession(): boolean {
+    const { url } = getBackendUrl();
+    return this.isPackaged && !url;
   }
 
   navigate(url: string) {
