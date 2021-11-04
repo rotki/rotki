@@ -422,7 +422,7 @@ export default class AssetForm extends Vue {
     let success = false;
     let message = '';
     try {
-      if (this.$interop.isPackaged) {
+      if (this.$interop.appSession) {
         await this.$api.assets.setIcon(identifier, this.icon.path);
       } else {
         await this.$api.assets.uploadIcon(identifier, this.icon);
