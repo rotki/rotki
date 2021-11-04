@@ -155,6 +155,9 @@ TABLES_WITH_ASSETS = (
 )
 
 
+DB_BACKUP_RE = re.compile(r'(\d+)_rotkehlchen_db_v(\d+).backup')
+
+
 def _protect_password_sqlcipher(password: str) -> str:
     """A double quote in the password would close the string. To escape it double it
 
@@ -3323,3 +3326,47 @@ class DBHandler:
         self._ensure_data_integrity('margin_positions', MarginPosition)
         self.conn.commit()
         log.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')
+
+    def get_db_info(self) -> Dict[str, Any]:
+        filepath = self.user_data_dir / 'rotkehlchen.db'
+        size = Path(self.user_data_dir / 'rotkehlchen.db').stat().st_size
+        version = self.get_version()
+        return {
+            'filepath': str(filepath),
+            'size': int(size),
+            'version': int(version),
+        }
+
+    def get_backups(self) -> List[Dict[str, Any]]:
+        """Returns a list of tuples with possible backups of the user DB"""
+        backups = []
+        for root, _, files in os.walk(self.user_data_dir):
+            for filename in files:
+                match = DB_BACKUP_RE.search(filename)
+                if match:
+                    timestamp = match.group(1)
+                    version = match.group(2)
+                    try:
+                        size: Optional[int] = Path(Path(root) / filename).stat().st_size
+                    except OSError:
+                        size = None
+                    backups.append({
+                        'time': int(timestamp),
+                        'version': int(version),
+                        'size': size,
+                    })
+
+        return backups
+
+    def create_db_backup(self) -> Path:
+        """May raise:
+        - OSError
+        """
+        version = self.get_version()
+        new_db_filename = f'{ts_now()}_rotkehlchen_db_v{version}.backup'
+        new_db_path = self.user_data_dir / new_db_filename
+        shutil.copyfile(
+            self.user_data_dir / 'rotkehlchen.db',
+            new_db_path,
+        )
+        return new_db_path

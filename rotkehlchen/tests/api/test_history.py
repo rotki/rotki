@@ -2,6 +2,8 @@ import csv
 import os
 import random
 import re
+import tempfile
+import zipfile
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
@@ -399,11 +401,14 @@ def assert_csv_formulas_all_events(row, profit_currency):
         raise AssertionError(f'Unexpected CSV row type {row["type"]} encountered')
 
 
-def assert_csv_export_response(response, profit_currency, csv_dir):
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert data['result'] is True
+def assert_csv_export_response(response, profit_currency, csv_dir, is_download=False):
+    if is_download:
+        assert response.status_code == HTTPStatus.OK
+    else:
+        assert_proper_response(response)
+        data = response.json()
+        assert data['message'] == ''
+        assert data['result'] is True
 
     # and check the csv files were generated succesfully. Here we are only checking
     # for valid CSV and not for the values to be valid.
@@ -567,11 +572,11 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_history_export_csv(
+def test_history_export_download_csv(
         rotkehlchen_api_server_with_exchanges,
         tmpdir_factory,
 ):
-    """Test that the csv export REST API endpoint works correctly"""
+    """Test that the csv export/download REST API endpoint works correctly"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     profit_currency = rotki.data.db.get_main_currency()
     setup = prepare_rotki_for_history_processing_test(
@@ -588,22 +593,32 @@ def test_history_export_csv(
                 continue
             stack.enter_context(manager)
         response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
+            api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
         )
     assert_proper_response(response)
 
     # now query the export endpoint with json body
     response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource'),
         json={'directory_path': csv_dir},
     )
     assert_csv_export_response(response, profit_currency, csv_dir)
     # now query the export endpoint with query params
     response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource") +
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource') +
         f'?directory_path={csv_dir2}',
     )
     assert_csv_export_response(response, profit_currency, csv_dir2)
+    # now query the download CSV endpoint
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historydownloadingresource'))
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        tempzipfile = Path(tmpdirname, 'temp.zip')
+        extractdir = Path(tmpdirname, 'extractdir')
+        tempzipfile.write_bytes(response.content)
+        with zipfile.ZipFile(tempzipfile, 'r') as zip_ref:
+            zip_ref.extractall(extractdir)
+        assert_csv_export_response(response, profit_currency, extractdir, is_download=True)
 
 
 @pytest.mark.parametrize(
@@ -658,11 +673,11 @@ def test_history_export_csv_errors(
     )
 
     # And now provide valid path but not directory
-    tempfile = Path(Path(csv_dir) / 'f.txt')
-    tempfile.touch()
+    temporary_file = Path(Path(csv_dir) / 'f.txt')
+    temporary_file.touch()
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
-        json={'directory_path': str(tempfile)},
+        json={'directory_path': str(temporary_file)},
     )
     assert_error_response(
         response=response,

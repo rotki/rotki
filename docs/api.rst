@@ -9480,3 +9480,152 @@ Resetting limits counters
    :statuscode 200: Limits reset
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal rotki error
+
+Querying database information
+=================================
+
+.. http:get:: /api/(version)/database/info
+
+
+   Doing a GET on the database information will query information about the global database. If a user is logged in it will also query info on the user's DB and potential backups.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/database/info HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "globaldb": {"globaldb_assets_version": 10, "globaldb_schema_version": 2},
+	      "userdb": {
+	          "info": {
+		      "filepath": "/home/username/.local/share/rotki/data/user/rotkehlchen.db",
+		      "size": 5590482,
+		      "version": 30
+		  },
+		  "backups": [{
+		      "size": 323441, "time": 1626382287, "version": 27
+		  }, {
+		      "size": 623441, "time": 1623384287, "version": 24
+		  }]
+          }
+          "message": ""
+      }
+
+   :resjson object globaldb: An object with information on the global DB
+   :resjson int globaldb_assets_version: The version of the global database's assets.
+   :resjson int globaldb_schema_version: The version of the global database's schema.
+   :resjson object userdb: An object with information on the currently logged in user's DB. If there is no currently logged in user this is an empty object.
+   :resjson object info: Under the userdb this contains the info of the currently logged in user. It has the path to the DB file, the size in bytes and the DB version.
+   :resjson list backups: Under the userdb this contains the list of detected backups (if any) for the user db. Each list entry is an object with the size in bytes of the backup, the unix timestamp in which it was taken and the user DB version.
+   :statuscode 200: Data were queried succesfully.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+Creating a database backup
+=================================
+
+.. http:put:: /api/(version)/database/backups
+
+
+   Doing a PUT on the database backups endpoint will immediately create a backup of the current user's database.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/history/database/backups HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": "/path/to/created/1633042045_rotkehlchen_db_v28.backup",
+          "message": ""
+      }
+
+   :resjson string result: The full path of the newly created database backup
+
+   :statuscode 200: Backup was created succesfully.
+   :statuscode 409: No user is currently logged in or failure to create the DB ackup.
+   :statuscode 500: Internal rotki error.
+
+Deleting a database backup
+=================================
+
+.. http:delete:: /api/(version)/database/backups
+
+
+   Doing a DELETE on the database backups endpoint with the backup filepath will delete it.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/history/database/backups HTTP/1.1
+      Host: localhost:5042
+
+      {"file": "/path/to/created/1633042045_rotkehlchen_db_v28.backup"}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: True for success
+
+   :statuscode 200: Backup was deleted succesfully.
+   :statuscode 400: The given filepath does not exist
+   :statuscode 409: No user is currently logged in or failure to delete the backup or the requested file to delete is not in the user's data directory.
+   :statuscode 500: Internal rotki error.
+
+Downloading a database backup
+=================================
+
+.. http:get:: /api/(version)/database/backups
+
+
+   Doing a GET on the database backups endpoint with the backup filepath will download it.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/database/backups HTTP/1.1
+      Host: localhost:5042
+
+      {"file": "/path/to/created/1633042045_rotkehlchen_db_v28.backup"}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/octet-stream
+
+
+   :statuscode 200: Backup was downloaded succesfully.
+   :statuscode 400: The given filepath does not exist
+   :statuscode 409: No user is currently logged in or failure to download the backup or the requested file to download is not in the user's data directory.
+   :statuscode 500: Internal rotki error.

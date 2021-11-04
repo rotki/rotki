@@ -79,6 +79,7 @@ from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.history.events import (
     FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_LEDGER_ACTIONS_LIMIT,
@@ -1660,7 +1661,7 @@ class RestAPI():
                 path_or_file=zipfile,
                 mimetype='application/zip',
                 as_attachment=True,
-                attachment_filename='report.zip',
+                download_name='report.zip',
             )
         except FileNotFoundError:
             return api_response(
@@ -3610,4 +3611,55 @@ class RestAPI():
         )
         # at the moment only location is ethereum_transactions and is checked by marshmallow
         tx_module.reset_count()
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def get_database_info(self) -> Response:
+        globaldb_schema_version = GlobalDBHandler().get_schema_version()
+        globaldb_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
+        result_dict = {
+            'globaldb': {
+                'globaldb_schema_version': globaldb_schema_version,
+                'globaldb_assets_version': globaldb_assets_version,
+            },
+            'userdb': {},
+        }
+        if self.rotkehlchen.user_is_logged_in:
+            result_dict['userdb']['info'] = self.rotkehlchen.data.db.get_db_info()  # type: ignore
+            result_dict['userdb']['backups'] = []  # type: ignore
+            backups = self.rotkehlchen.data.db.get_backups()
+            for entry in backups:
+                result_dict['userdb']['backups'].append(entry)  # type: ignore
+
+        return api_response(_wrap_in_ok_result(result_dict), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def create_database_backup(self) -> Response:
+        try:
+            db_backup_path = self.rotkehlchen.data.db.create_db_backup()
+        except OSError as e:
+            error_msg = f'Failed to create a DB backup due to {str(e)}'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(str(db_backup_path)), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def download_database_backup(self, filepath: Path) -> Response:
+        if filepath.parent != self.rotkehlchen.data.db.user_data_dir:
+            error_msg = f'DB backup file {filepath} is not in the user directory'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        return send_file(
+            path_or_file=filepath,
+            mimetype='application/octet-stream',
+            as_attachment=True,
+            download_name=filepath.name,
+        )
+
+    @require_loggedin_user()
+    def delete_database_backup(self, filepath: Path) -> Response:
+        if filepath.parent != self.rotkehlchen.data.db.user_data_dir:
+            error_msg = f'DB backup file {filepath} is not in the user directory'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        filepath.unlink()  # should not raise file not found as marshmallow should check
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
