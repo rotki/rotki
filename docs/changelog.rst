@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3667` Users should be able to upload asset icons to docker instances when using a remote connection via the application.
 * :bug:`3664` Binance US users will no longer see errors regarding the fiat payments and orders endpoints.
 
 * :release:`1.21.3 <2021-10-28>`
