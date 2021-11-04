@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`3664` Binance US users will no longer see errors regarding the fiat payments and orders endpoints.
+* :bug:`3666` An ethereum token's address will be properly filled when navigating to the asset edit from the asset overview page.
 
 * :release:`1.21.3 <2021-10-28>`
 * :bug:`2178` Premium DB sync popup should no longer popup if you only use one instance of rotki in one system.
