@@ -415,6 +415,11 @@ class DatabaseInfoResource(BaseResource):
 class DatabaseBackupsResource(BaseResource):
 
     delete_schema = SingleFileSchema()
+    get_schema = SingleFileSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, file: Path) -> Response:
+        return self.rest_api.download_database_backup(filepath=file)
 
     def put(self) -> Response:
         return self.rest_api.create_database_backup()

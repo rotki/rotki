@@ -3643,6 +3643,19 @@ class RestAPI():
         return api_response(_wrap_in_ok_result(str(db_backup_path)), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
+    def download_database_backup(self, filepath: Path) -> Response:
+        if filepath.parent != self.rotkehlchen.data.db.user_data_dir:
+            error_msg = f'DB backup file {filepath} is not in the user directory'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        return send_file(
+            path_or_file=filepath,
+            mimetype='application/octet-stream',
+            as_attachment=True,
+            attachment_filename=filepath.name,
+        )
+
+    @require_loggedin_user()
     def delete_database_backup(self, filepath: Path) -> Response:
         if filepath.parent != self.rotkehlchen.data.db.user_data_dir:
             error_msg = f'DB backup file {filepath} is not in the user directory'

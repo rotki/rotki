@@ -1,3 +1,5 @@
+import filecmp
+import tempfile
 from http import HTTPStatus
 from pathlib import Path
 
@@ -62,6 +64,16 @@ def test_create_delete_backup(rotkehlchen_api_server, data_dir, username):
     assert len(backups) == 1
     assert backups[0]['time'] >= start_ts
     assert backups[0]['version'] == ROTKEHLCHEN_DB_VERSION
+
+    # now also try to download that backup and make sure it's the same file
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server, 'databasebackupsresource'),
+        json={'file': str(filepath)},
+    )
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        tempdbpath = Path(tmpdirname, 'temp.db')
+        tempdbpath.write_bytes(response.content)
+        assert filecmp.cmp(filepath, tempdbpath)
 
     response = requests.delete(
         api_url_for(
