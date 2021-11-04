@@ -1,14 +1,22 @@
+from http import HTTPStatus
 from pathlib import Path
 
 import pytest
 import requests
 
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_error_response,
+    assert_proper_response_with_result,
+    assert_simple_ok_response,
+)
+from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True, False])
 def test_query_db_info(rotkehlchen_api_server, data_dir, username, start_with_logged_in_user):
+    """Test that retrieving user and global database details works fine"""
     if start_with_logged_in_user:
         backup1 = Path(data_dir / username / '1624053928_rotkehlchen_db_v26.backup')
         backup1_contents = 'bla bla'
@@ -38,3 +46,65 @@ def test_query_db_info(rotkehlchen_api_server, data_dir, username, start_with_lo
         assert userdb['backups'][2] == {
             'size': len(backup1_contents), 'time': 1624053928, 'version': 26,
         }
+
+
+def test_create_delete_backup(rotkehlchen_api_server, data_dir, username):
+    """Test that creating and deleting a backup works fine"""
+    start_ts = ts_now()
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'databasebackupsresource'))
+    filepath = Path(assert_proper_response_with_result(response))
+    assert filepath.exists()
+    assert filepath.parent == Path(data_dir, username)
+
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'databaseinforesource'))
+    result = assert_proper_response_with_result(response)
+    backups = result['userdb']['backups']
+    assert len(backups) == 1
+    assert backups[0]['time'] >= start_ts
+    assert backups[0]['version'] == ROTKEHLCHEN_DB_VERSION
+
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'databasebackupsresource'),
+        json={'file': str(filepath)},
+    )
+    assert_simple_ok_response(response)
+    assert not filepath.exists()
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'databaseinforesource'))
+    result = assert_proper_response_with_result(response)
+    backups = result['userdb']['backups']
+    assert len(backups) == 0
+
+
+def test_delete_backup_errors(rotkehlchen_api_server, data_dir, username):
+    """Test that errors are handled properly in backup deletion"""
+    user_data_dir = Path(data_dir, username)
+    # Make sure deleting file outside  of user data dir fails
+    undeletable_file = Path(data_dir / 'notdeletablefile')
+    undeletable_file.touch()
+    assert undeletable_file.exists()
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'databasebackupsresource'),
+        json={'file': str(undeletable_file)},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='is not in the user directory',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    undeletable_file.unlink()  # finally delete normally
+
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'databasebackupsresource'),
+        json={'file': str(Path(user_data_dir, 'idontexist'))},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='does not exist',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

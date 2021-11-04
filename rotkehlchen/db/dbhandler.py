@@ -3357,3 +3357,16 @@ class DBHandler:
                     })
 
         return backups
+
+    def create_db_backup(self) -> Path:
+        """May raise:
+        - OSError
+        """
+        version = self.get_version()
+        new_db_filename = f'{ts_now()}_rotkehlchen_db_v{version}.backup'
+        new_db_path = self.user_data_dir / new_db_filename
+        shutil.copyfile(
+            self.user_data_dir / 'rotkehlchen.db',
+            new_db_path,
+        )
+        return new_db_path

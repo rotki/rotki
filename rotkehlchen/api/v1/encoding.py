@@ -1065,7 +1065,7 @@ class TagEditSchema(Schema):
     foreground_color = ColorField(load_default=None)
 
 
-class TagDeleteSchema(Schema):
+class NameDeleteSchema(Schema):
     name = fields.String(required=True)
 
 
@@ -2145,3 +2145,7 @@ class LimitsCounterResetSchema(Schema):
         required=True,
         validate=webargs.validate.OneOf(choices=('ethereum_transactions',)),
     )
+
+
+class SingleFileSchema(Schema):
+    file = FileField(required=True)

@@ -3631,3 +3631,22 @@ class RestAPI():
                 result_dict['userdb']['backups'].append(entry)  # type: ignore
 
         return api_response(_wrap_in_ok_result(result_dict), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def create_database_backup(self) -> Response:
+        try:
+            db_backup_path = self.rotkehlchen.data.db.create_db_backup()
+        except OSError as e:
+            error_msg = f'Failed to create a DB backup due to {str(e)}'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(str(db_backup_path)), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def delete_database_backup(self, filepath: Path) -> Response:
+        if filepath.parent != self.rotkehlchen.data.db.user_data_dir:
+            error_msg = f'DB backup file {filepath} is not in the user directory'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        filepath.unlink()  # should not raise file not found as marshmallow should check
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)

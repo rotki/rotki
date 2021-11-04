@@ -66,6 +66,7 @@ from rotkehlchen.api.v1.encoding import (
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
     ModifyEthereumTokenSchema,
+    NameDeleteSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
     NamedOracleCacheGetSchema,
@@ -75,10 +76,10 @@ from rotkehlchen.api.v1.encoding import (
     QueriedAddressesSchema,
     RequiredEthereumAddressSchema,
     SingleAssetIdentifierSchema,
+    SingleFileSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
     StringIdentifierSchema,
-    TagDeleteSchema,
     TagEditSchema,
     TagSchema,
     TimedManualPriceSchema,
@@ -411,6 +412,18 @@ class DatabaseInfoResource(BaseResource):
         return self.rest_api.get_database_info()
 
 
+class DatabaseBackupsResource(BaseResource):
+
+    delete_schema = SingleFileSchema()
+
+    def put(self) -> Response:
+        return self.rest_api.create_database_backup()
+
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, file: Path) -> Response:
+        return self.rest_api.delete_database_backup(filepath=file)
+
+
 class AllAssetsResource(BaseResource):
 
     delete_schema = StringIdentifierSchema()
@@ -669,7 +682,7 @@ class TagsResource(BaseResource):
 
     put_schema = TagSchema()
     patch_schema = TagEditSchema()
-    delete_schema = TagDeleteSchema()
+    delete_schema = NameDeleteSchema()
 
     def get(self) -> Response:
         return self.rest_api.get_tags()
