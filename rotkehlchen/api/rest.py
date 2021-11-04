@@ -1661,7 +1661,7 @@ class RestAPI():
                 path_or_file=zipfile,
                 mimetype='application/zip',
                 as_attachment=True,
-                attachment_filename='report.zip',
+                download_name='report.zip',
             )
         except FileNotFoundError:
             return api_response(
@@ -3652,7 +3652,7 @@ class RestAPI():
             path_or_file=filepath,
             mimetype='application/octet-stream',
             as_attachment=True,
-            attachment_filename=filepath.name,
+            download_name=filepath.name,
         )
 
     @require_loggedin_user()
