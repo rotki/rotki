@@ -10,7 +10,10 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.ethereum import EthereumContract
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_optional_fval, deserialize_timestamp
+from rotkehlchen.serialization.deserialize import (
+    deserialize_optional_to_fval,
+    deserialize_timestamp,
+)
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 AAVE_EVENT_TYPE = Literal['deposit', 'withdrawal', 'interest', 'borrow', 'repay', 'liquidation']
@@ -267,12 +270,12 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
                 f'Invalid borrow rate mode encountered in the DB: {event_tuple[12]}',
             )
         borrow_rate_mode: Literal['stable', 'variable'] = event_tuple[12]  # type: ignore
-        borrow_rate = deserialize_optional_fval(
+        borrow_rate = deserialize_optional_to_fval(
             value=event_tuple[10],
             name='borrow_rate',
             location='reading aave borrow event from DB',
         )
-        accrued_borrow_interest = deserialize_optional_fval(
+        accrued_borrow_interest = deserialize_optional_to_fval(
             value=event_tuple[11],
             name='accrued_borrow_interest',
             location='reading aave borrow event from DB',
@@ -290,12 +293,12 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
             accrued_borrow_interest=accrued_borrow_interest,
         )
     if event_type == 'repay':
-        fee_amount = deserialize_optional_fval(
+        fee_amount = deserialize_optional_to_fval(
             value=event_tuple[10],
             name='fee_amount',
             location='reading aave repay event from DB',
         )
-        fee_usd_value = deserialize_optional_fval(
+        fee_usd_value = deserialize_optional_to_fval(
             value=event_tuple[11],
             name='fee_usd_value',
             location='reading aave repay event from DB',
@@ -315,12 +318,12 @@ def aave_event_from_db(event_tuple: AAVE_EVENT_DB_TUPLE) -> AaveEvent:
             raise DeserializationError(
                 'Did not find asset2 in an aave liquidation event fom the DB.',
             )
-        principal_amount = deserialize_optional_fval(
+        principal_amount = deserialize_optional_to_fval(
             value=event_tuple[10],
             name='principal_amount',
             location='reading aave liquidation event from DB',
         )
-        principal_usd_value = deserialize_optional_fval(
+        principal_usd_value = deserialize_optional_to_fval(
             value=event_tuple[11],
             name='principal_usd_value',
             location='reading aave liquidation event from DB',
@@ -411,34 +414,34 @@ class YearnVaultEvent:
         location = 'deserialize yearn vault event from db'
         realized_pnl = None
         if result[8] is not None and result[9] is not None:
-            pnl_amount = deserialize_optional_fval(
+            pnl_amount = deserialize_optional_to_fval(
                 value=result[8],
                 name='pnl_amount',
                 location=location,
             )
-            pnl_usd_value = deserialize_optional_fval(
+            pnl_usd_value = deserialize_optional_to_fval(
                 value=result[9],
                 name='pnl_usd_value',
                 location=location,
             )
             realized_pnl = Balance(amount=pnl_amount, usd_value=pnl_usd_value)
 
-        from_value_amount = deserialize_optional_fval(
+        from_value_amount = deserialize_optional_to_fval(
             value=result[3],
             name='from_value_amount',
             location=location,
         )
-        from_value_usd_value = deserialize_optional_fval(
+        from_value_usd_value = deserialize_optional_to_fval(
             result[4],
             name='from_value_usd_value',
             location=location,
         )
-        to_value_amount = deserialize_optional_fval(
+        to_value_amount = deserialize_optional_to_fval(
             value=result[6],
             name='to_value_amount',
             location=location,
         )
-        to_value_usd_value = deserialize_optional_fval(
+        to_value_usd_value = deserialize_optional_to_fval(
             value=result[7],
             name='to_value_usd_value',
             location=location,

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3676` NFT collection floor price should now be properly retrieved again and shown as the valuation for user NFTs that have had no previous sales.
 * :bug:`3667` Users should be able to upload asset icons to docker instances when using a remote connection via the application.
 * :bug:`3664` Binance US users will no longer see errors regarding the fiat payments and orders endpoints.
 * :bug:`3666` An ethereum token's address will be properly filled when navigating to the asset edit from the asset overview page.
