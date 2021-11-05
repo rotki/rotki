@@ -186,6 +186,9 @@
     "subtitle": "Modify the backend settings",
     "title": "Backend Settings"
   },
+  "backup_manager": {
+    "title": "Database Backups"
+  },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "premium": "Balancer feature "
@@ -324,6 +327,16 @@
   "currency_drop_down": {
     "hint": "Select as the main currency",
     "profit_currency": "Profit Currency"
+  },
+  "database_backups": {
+    "action": {
+      "delete": "Delete the backup"
+    },
+    "column": {
+      "size": "Size",
+      "time": "Time",
+      "version": "Version"
+    }
   },
   "date_format_help": {
     "close": "Close",

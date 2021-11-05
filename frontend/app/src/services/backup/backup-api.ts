@@ -1,6 +1,6 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { AxiosInstance } from 'axios';
-import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
+import { setupTransformer } from '@/services/axios-tranformers';
 import {
   CreateDatabaseResponse,
   DatabaseInfo,
@@ -16,12 +16,12 @@ import { ActionStatus } from '@/store/types';
 import { assert } from '@/utils/assertions';
 
 export class BackupApi {
-  private static transformer = [axiosCamelCaseTransformer];
+  private static transformer = setupTransformer([]);
   constructor(private readonly axios: AxiosInstance) {}
 
   async info(): Promise<DatabaseInfo> {
     const response = await this.axios.get<DatabaseInfoResponse>(
-      '/history/database/info',
+      '/database/info',
       {
         validateStatus: validWithSessionStatus,
         transformResponse: BackupApi.transformer
@@ -35,7 +35,7 @@ export class BackupApi {
 
   async createBackup(): Promise<string> {
     const response = await this.axios.get<CreateDatabaseResponse>(
-      '/history/database/backups',
+      '/database/backups',
       {
         validateStatus: validWithSessionStatus
       }
@@ -48,7 +48,7 @@ export class BackupApi {
 
   async deleteBackup(file: string): Promise<boolean> {
     const response = await this.axios.delete<DeleteDatabaseResponse>(
-      '/history/database/backups',
+      '/database/backups',
       {
         data: {
           file
@@ -64,7 +64,7 @@ export class BackupApi {
 
   async downloadFile(file: string): Promise<ActionStatus> {
     try {
-      const response = await this.axios.get('', {
+      const response = await this.axios.get('/database/backups', {
         params: {
           file: file
         },

@@ -17,6 +17,8 @@ const UserDbBackup = z.object({
   version: z.number()
 });
 
+export type UserDbBackup = z.infer<typeof UserDbBackup>;
+
 const UserDb = z.object({
   info: UserDbInfo,
   backups: z.array(UserDbBackup)
