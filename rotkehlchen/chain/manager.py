@@ -1666,7 +1666,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @cache_response_timewise()
     def get_loopring_balances(self) -> Dict[Asset, Balance]:
-        """Query loopring balances if the module is activated"""
+        """Query loopring balances if the module is activated
+
+        May raise:
+        - RemoteError if there is problems querying loopring api
+        """
         # Check if the loopring module is activated
         loopring_module = self.get_module('loopring')
         if loopring_module is None:
