@@ -2,7 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, NamedTuple, Optional, Tuple
 
-from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
@@ -58,7 +57,6 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
         self.ethereum = ethereum_manager
         self.premium = premium
         self.opensea = Opensea(database=database, msg_aggregator=msg_aggregator)
-        self._query_lock = Semaphore()
 
     @protect_with_lock()
     @cache_response_timewise()
