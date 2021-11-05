@@ -75,5 +75,3 @@ export default class UniswapPoolDetails extends Mixins(AssetMixin) {
   balance!: XswapBalance;
 }
 </script>
-
-<style scoped lang="scss"></style>

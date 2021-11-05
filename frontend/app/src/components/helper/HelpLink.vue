@@ -34,5 +34,3 @@ export default class HelpLink extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

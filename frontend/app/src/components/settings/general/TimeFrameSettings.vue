@@ -68,5 +68,3 @@ export default class TimeFrameSettings extends Vue {
   timeframeChange(_timeframe: TimeFrameSetting) {}
 }
 </script>
-
-<style scoped lang="scss"></style>

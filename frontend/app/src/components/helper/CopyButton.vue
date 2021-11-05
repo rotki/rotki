@@ -24,5 +24,3 @@ export default class CopyButton extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

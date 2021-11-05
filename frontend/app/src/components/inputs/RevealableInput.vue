@@ -55,5 +55,3 @@ export default class RevealableInput extends Vue {
   input(_value: string) {}
 }
 </script>
-
-<style scoped></style>

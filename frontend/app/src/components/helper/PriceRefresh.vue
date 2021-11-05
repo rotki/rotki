@@ -41,5 +41,3 @@ export default class PriceRefresh extends Mixins(StatusMixin) {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

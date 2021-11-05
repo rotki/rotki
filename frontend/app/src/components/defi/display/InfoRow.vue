@@ -37,5 +37,3 @@ export default class InfoRow extends Vue {
   fiat!: boolean;
 }
 </script>
-
-<style scoped></style>

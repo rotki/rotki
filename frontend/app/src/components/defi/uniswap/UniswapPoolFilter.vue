@@ -92,5 +92,3 @@ export default class UniswapPoolFilter extends Mixins(AssetMixin) {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

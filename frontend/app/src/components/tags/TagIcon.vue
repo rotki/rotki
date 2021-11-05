@@ -22,5 +22,3 @@ export default class TagIcon extends Vue {
   small!: boolean;
 }
 </script>
-
-<style scoped lang="scss"></style>

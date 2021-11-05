@@ -74,5 +74,3 @@ export default class RoundingSettings extends Mixins(SettingsMixin) {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

@@ -194,5 +194,3 @@ export default class ReportPeriodSelector extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

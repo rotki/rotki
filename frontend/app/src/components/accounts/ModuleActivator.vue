@@ -81,5 +81,3 @@ export default class ModuleActivator extends Mixins(ModuleMixin) {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

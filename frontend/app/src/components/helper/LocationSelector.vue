@@ -54,5 +54,3 @@ export default class LocationSelector extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

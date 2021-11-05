@@ -83,5 +83,3 @@ export default class ProfitLossEventType extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

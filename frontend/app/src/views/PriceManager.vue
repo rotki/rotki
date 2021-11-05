@@ -10,5 +10,3 @@ export default defineComponent({
   components: { PriceManagement }
 });
 </script>
-
-<style scoped lang="scss"></style>

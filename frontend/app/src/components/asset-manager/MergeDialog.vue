@@ -127,5 +127,3 @@ export default class MergeDialog extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

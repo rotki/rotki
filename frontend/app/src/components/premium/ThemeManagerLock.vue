@@ -23,5 +23,3 @@ import PremiumLock from '@/components/premium/PremiumLock.vue';
 })
 export default class ThemeManagerLock extends Vue {}
 </script>
-
-<style scoped lang="scss"></style>

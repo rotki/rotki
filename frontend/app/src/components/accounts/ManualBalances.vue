@@ -123,5 +123,3 @@ export default class ManualBalances extends Vue {
   }
 }
 </script>
-
-<style scoped></style>

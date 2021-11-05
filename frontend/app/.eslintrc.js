@@ -28,6 +28,7 @@ module.exports = {
     'vuetify/no-deprecated-classes': 'error',
     'vuetify/grid-unknown-attributes': 'error',
     'vuetify/no-legacy-grid': 'error',
+    'vue/no-empty-component-block': 'error',
     'vue/multiline-html-element-content-newline': [
       'error',
       {
