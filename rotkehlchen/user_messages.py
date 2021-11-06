@@ -1,6 +1,7 @@
 import logging
+import json
 from collections import deque
-from typing import TYPE_CHECKING, Deque, List, Optional
+from typing import TYPE_CHECKING, Deque, List, Optional, Dict, Any
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -61,6 +62,23 @@ class MessagesAggregator():
             )
             return
         self.errors.appendleft(msg)
+
+    def add_message(
+            self,
+            message_type: WSMessageType,
+            data: Dict[str, Any],
+    ) -> None:
+        fallback_msg = json.dumps({'type': str(message_type), 'data': data})  # noqa: E501  # kind of silly to repeat it here. Same code in broadcast
+
+        if self.rotki_notifier is not None:
+            self.rotki_notifier.broadcast(
+                message_type=message_type,
+                to_send_data=data,
+                failure_callback=self._append_error,
+                failure_callback_args={'msg': fallback_msg},
+            )
+        else:
+            self.errors.appendleft(fallback_msg)
 
     def consume_errors(self) -> List[str]:
         result = []

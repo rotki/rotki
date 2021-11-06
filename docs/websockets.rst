@@ -50,3 +50,21 @@ The messages sent by rotki via the ``MessagesAggregator`` can be found in this t
 
 - ``verbosity``: The verbosity of the message. Can be one of ``"warning"`` or ``"error"``.
 - ``value``: A string with the contents of the message.
+
+
+Balance snapshot errors
+=========================
+
+The messages sent by rotki when there is a snapshot balance error. There can be multiple of these errors for one balance snapshot. The format is the following.
+
+
+::
+
+    {
+        "type": "balance_snapshot_error",
+        "data": "{"location": "poloniex", "error": "Could not connect to poloniex"}"
+    }
+
+
+- ``location``: An approximate location name for where in the balance snapshot the error happened.
+- ``error``: A string with details of the error

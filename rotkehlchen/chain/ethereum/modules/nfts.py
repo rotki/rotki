@@ -66,6 +66,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
     ) -> Tuple[Dict[ChecksumEthAddress, List[NFT]], int]:
+        """May raise RemoteError"""
         result = {}
         total_nfts_num = 0
         for address in addresses:
@@ -116,6 +117,11 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
             return_zero_values: bool,
             ignore_cache: bool,
     ) -> Dict[ChecksumEthAddress, List[Dict[str, Any]]]:
+        """Gets all NFT balances
+
+        May raise:
+        - RemoteError
+        """
         result: DefaultDict[ChecksumEthAddress, List[Dict[str, Any]]] = defaultdict(list)
         nft_results, _ = self._get_all_nft_data(addresses, ignore_cache=ignore_cache)
         cached_db_result = self.get_nfts_with_price()

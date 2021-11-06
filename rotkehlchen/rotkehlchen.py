@@ -32,6 +32,7 @@ from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data.importer import DataImporter
@@ -616,10 +617,14 @@ class Rotkehlchen():
         balances: Dict[str, Dict[Asset, Balance]] = {}
         problem_free = True
         for exchange in self.exchange_manager.iterate_exchanges():
-            exchange_balances, _ = exchange.query_balances(ignore_cache=ignore_cache)
+            exchange_balances, error_msg = exchange.query_balances(ignore_cache=ignore_cache)
             # If we got an error, disregard that exchange but make sure we don't save data
             if not isinstance(exchange_balances, dict):
                 problem_free = False
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.BALANCE_SNAPSHOT_ERROR,
+                    data={'location': exchange.name, 'error': error_msg},
+                )
             else:
                 location_str = str(exchange.location)
                 if location_str not in balances:
@@ -644,6 +649,10 @@ class Rotkehlchen():
             problem_free = False
             liabilities = {}
             log.error(f'Querying blockchain balances failed due to: {str(e)}')
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.BALANCE_SNAPSHOT_ERROR,
+                data={'location': 'blockchain balances query', 'error': str(e)},
+            )
 
         manually_tracked_liabilities = get_manually_tracked_balances(
             db=self.data.db,
@@ -659,28 +668,45 @@ class Rotkehlchen():
         liabilities = combine_dicts(liabilities, manual_liabilities_as_dict)
         # retrieve loopring balances if module is activated
         if self.chain_manager.get_module('loopring'):
-            loopring_balances = self.chain_manager.get_loopring_balances()
-            if len(loopring_balances) != 0:
-                balances[str(Location.LOOPRING)] = loopring_balances
+            try:
+                loopring_balances = self.chain_manager.get_loopring_balances()
+            except RemoteError as e:
+                problem_free = False
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.BALANCE_SNAPSHOT_ERROR,
+                    data={'location': 'loopring', 'error': str(e)},
+                )
+            else:
+                if len(loopring_balances) != 0:
+                    balances[str(Location.LOOPRING)] = loopring_balances
 
         # retrieve nft balances if module is activated
         nfts = self.chain_manager.get_module('nfts')
         if nfts is not None:
-            nft_mapping = nfts.get_balances(
-                addresses=self.chain_manager.queried_addresses_for_module('nfts'),
-                return_zero_values=False,
-                ignore_cache=False,
-            )
-            if len(nft_mapping) != 0:
-                if str(Location.BLOCKCHAIN) not in balances:
-                    balances[str(Location.BLOCKCHAIN)] = {}
+            try:
+                nft_mapping = nfts.get_balances(
+                    addresses=self.chain_manager.queried_addresses_for_module('nfts'),
+                    return_zero_values=False,
+                    ignore_cache=False,
+                )
+            except RemoteError as e:
+                problem_free = False
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.BALANCE_SNAPSHOT_ERROR,
+                    data={'location': 'loopring', 'error': str(e)},
+                )
+            else:
+                if len(nft_mapping) != 0:
+                    if str(Location.BLOCKCHAIN) not in balances:
+                        balances[str(Location.BLOCKCHAIN)] = {}
 
-                for _, nft_balances in nft_mapping.items():
-                    for balance_entry in nft_balances:
-                        balances[str(Location.BLOCKCHAIN)][Asset(balance_entry['id'])] = Balance(
-                            amount=FVal(1),
-                            usd_value=balance_entry['usd_price'],
-                        )
+                    for _, nft_balances in nft_mapping.items():
+                        for balance_entry in nft_balances:
+                            balances[str(Location.BLOCKCHAIN)][Asset(
+                                balance_entry['id'])] = Balance(
+                                amount=FVal(1),
+                                usd_value=balance_entry['usd_price'],
+                            )
 
         balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
 
