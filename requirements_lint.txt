@@ -11,7 +11,7 @@ flake8-debugger==4.0.0
 flake8-executable==2.1.1
 flake8-mutable==1.2.0
 pep8-naming==0.12.1
-isort==5.9.3
+isort==5.10.0
 
 # type packages used by mypy
 # pinned here so that we can have reproducible mypy runs
