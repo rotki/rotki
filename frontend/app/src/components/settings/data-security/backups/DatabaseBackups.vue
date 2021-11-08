@@ -1,36 +1,71 @@
 <template>
-  <data-table :items="items" sort-by="time" :headers="headers">
-    <template #item.time="{ item }">
-      <date-display :timestamp="item.time" />
-    </template>
-    <template #item.size="{ item }">
-      {{ size(item.size) }}
-    </template>
-    <template #item.actions="{ item }">
-      <v-tooltip top>
-        <template #activator="{ on, attrs }">
-          <v-btn
-            small
-            v-bind="attrs"
-            icon
-            class="mx-1"
-            v-on="on"
-            @click="remove(item)"
-          >
-            <v-icon small> mdi-delete-outline </v-icon>
-          </v-btn>
-        </template>
-        <span>{{ $t('database_backups.action.delete') }}</span>
-      </v-tooltip>
-    </template>
-  </data-table>
+  <fragment>
+    <data-table
+      :items="items"
+      sort-by="time"
+      :headers="headers"
+      :loading="loading"
+    >
+      <template #item.time="{ item }">
+        <date-display :timestamp="item.time" />
+      </template>
+      <template #item.size="{ item }">
+        {{ size(item.size) }}
+      </template>
+      <template #item.actions="{ item }">
+        <v-tooltip top>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              small
+              v-bind="attrs"
+              icon
+              class="mx-1"
+              v-on="on"
+              @click="pendingDeletion = item"
+            >
+              <v-icon small> mdi-delete-outline </v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('database_backups.action.delete') }}</span>
+        </v-tooltip>
+      </template>
+      <template #body.append="{ isMobile }">
+        <tr>
+          <td :colspan="isMobile ? 1 : 2" class="font-weight-medium">
+            {{ $t('database_backups.row.total') }}
+          </td>
+          <td class="text-right">
+            {{ totalSize }}
+          </td>
+          <td v-if="!isMobile" />
+        </tr>
+      </template>
+    </data-table>
+    <confirm-dialog
+      :display="!!pendingDeletion"
+      :title="$t('database_backups.confirm.title')"
+      :message="$t('database_backups.confirm.message', messageInfo)"
+      @cancel="pendingDeletion = null"
+      @confirm="remove"
+    />
+  </fragment>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs
+} from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
+import Fragment from '@/components/helper/Fragment';
+import { dateDisplayFormat } from '@/composables/session';
+import { displayDateFormatter } from '@/data/date_formatter';
 import i18n from '@/i18n';
 import { UserDbBackup } from '@/services/backup/types';
+import { size } from '@/utils/data';
 
 const tableHeaders: DataTableHeader[] = [
   {
@@ -51,24 +86,50 @@ const tableHeaders: DataTableHeader[] = [
 
 export default defineComponent({
   name: 'DatabaseBackups',
+  components: { Fragment },
   props: {
-    items: { required: true, type: Array as PropType<UserDbBackup[]> }
+    items: { required: true, type: Array as PropType<UserDbBackup[]> },
+    loading: { required: false, type: Boolean, default: false }
   },
-  setup() {
-    const size = (bytes: number) => {
-      let i = 0;
+  emits: ['remove'],
+  setup(props, { emit }) {
+    const { items } = toRefs(props);
+    const pendingDeletion = ref<UserDbBackup | null>(null);
 
-      for (i; bytes > 1024; i++) {
-        bytes /= 1024;
+    const messageInfo = computed(() => {
+      const db = pendingDeletion.value;
+      if (db) {
+        return {
+          size: size(db.size),
+          date: displayDateFormatter.format(
+            new Date(db.time * 1000),
+            dateDisplayFormat.value
+          )
+        };
       }
 
-      const symbol = 'KMGTPEZY'[i - 1] || '';
-      return `${bytes.toFixed(2)}  ${symbol}B`;
+      return {
+        size: 0,
+        date: 0
+      };
+    });
+
+    const remove = () => {
+      const value = pendingDeletion.value;
+      pendingDeletion.value = null;
+      emit('remove', value);
     };
-    const remove = (_backup: UserDbBackup) => {};
+
+    const totalSize = computed(() =>
+      size(items.value.reduce((sum, db) => sum + db.size, 0))
+    );
+
     return {
       remove,
+      messageInfo,
+      pendingDeletion,
       size,
+      totalSize,
       headers: tableHeaders
     };
   }

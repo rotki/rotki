@@ -170,11 +170,10 @@ export class AccountBalancesPage {
   }
 
   confirmDelete() {
-    cy.get('.confirm-dialog__title').should(
-      'contain',
-      'Delete manually tracked balance'
-    );
-    cy.get('.confirm-dialog__buttons__confirm').click();
+    cy.get('[data-cy=confirm-dialog]')
+      .find('[data-cy=dialog-title]')
+      .should('contain', 'Delete manually tracked balance');
+    cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
   }
 
   showsCurrency(currency: string) {

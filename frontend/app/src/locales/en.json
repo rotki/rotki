@@ -187,7 +187,14 @@
     "title": "Backend Settings"
   },
   "backup_manager": {
-    "title": "Database Backups"
+    "directory": "Database Directory:",
+    "globaldb_schema": "Schema version: {schema}",
+    "globaldb_assets": "Assets version: {assets}",
+    "globaldb": "Global Database:",
+    "title": "Database Backups",
+    "userdb": "User Database:",
+    "userdb_version": "v{version}",
+    "userdb_size": "Size on disk: {size}"
   },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
@@ -336,6 +343,17 @@
       "size": "Size",
       "time": "Time",
       "version": "Version"
+    },
+    "confirm": {
+      "message": "Are you sure you want to delete the {size} database backup from {date}?",
+      "title": "Delete database backup"
+    },
+    "delete_error": {
+      "message": "There was a problem deleting {file}",
+      "title": "Backup delete failure"
+    },
+    "row": {
+      "total": "Total"
     }
   },
   "date_format_help": {

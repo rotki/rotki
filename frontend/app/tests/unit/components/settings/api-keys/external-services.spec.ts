@@ -158,7 +158,9 @@ describe('ExternalServices.vue', () => {
       // @ts-ignore
       expect(wrapper.vm.serviceToDelete).toBe('etherscan');
 
-      wrapper.find('.confirm-dialog__buttons__confirm').trigger('click');
+      wrapper
+        .find('[data-cy="confirm-dialog"] [data-cy="button-confirm"]')
+        .trigger('click');
       await wrapper.vm.$nextTick();
       await flushPromises();
 
@@ -180,7 +182,9 @@ describe('ExternalServices.vue', () => {
       // @ts-ignore
       expect(wrapper.vm.serviceToDelete).toBe('cryptocompare');
 
-      wrapper.find('.confirm-dialog__buttons__confirm').trigger('click');
+      wrapper
+        .find('[data-cy="confirm-dialog"] [data-cy="button-confirm"]')
+        .trigger('click');
       await wrapper.vm.$nextTick();
       await flushPromises();
 

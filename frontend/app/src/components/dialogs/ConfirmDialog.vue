@@ -1,92 +1,99 @@
 <template>
-  <v-dialog
-    :value="display"
-    persistent
-    max-width="500"
-    class="confirm-dialog"
-    @keydown.esc.stop="cancel()"
-  >
-    <v-card>
-      <v-card-title class="text-h5 confirm-dialog__title">
-        {{ title }}
-      </v-card-title>
-      <v-row align="center" class="mx-0 confirm-dialog__body">
-        <v-col cols="2" class="text-center">
-          <v-icon :color="themes[confirmType].color" x-large>
-            {{ themes[confirmType].icon }}
-          </v-icon>
-        </v-col>
-        <v-col cols="10">
-          {{ message }}
-          <slot />
-        </v-col>
-      </v-row>
+  <v-dialog-transition>
+    <v-dialog
+      v-if="display"
+      :value="true"
+      persistent
+      max-width="500"
+      @keydown.esc.stop="cancel()"
+    >
+      <v-card data-cy="confirm-dialog">
+        <v-card-title class="text-h5" data-cy="dialog-title">
+          {{ title }}
+        </v-card-title>
+        <v-card-text>
+          <v-row align="center">
+            <v-col cols="auto" class="text-center">
+              <v-icon :color="color" x-large>
+                {{ icon }}
+              </v-icon>
+            </v-col>
+            <v-col class="text-body-1">
+              {{ message }}
+              <slot />
+            </v-col>
+          </v-row>
+        </v-card-text>
 
-      <v-card-actions>
-        <v-spacer />
-        <v-btn
-          v-if="!singleAction"
-          color="primary"
-          depressed
-          outlined
-          text
-          class="confirm-dialog__buttons__cancel"
-          @click="cancel()"
-        >
-          {{ secondaryAction }}
-        </v-btn>
-        <v-btn
-          :color="themes[confirmType].color"
-          depressed
-          :disabled="disabled"
-          class="confirm-dialog__buttons__confirm"
-          @click="confirm()"
-        >
-          {{ primaryAction }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            v-if="!singleAction"
+            color="primary"
+            depressed
+            outlined
+            text
+            data-cy="button-cancel"
+            @click="cancel()"
+          >
+            {{ secondaryAction }}
+          </v-btn>
+          <v-btn
+            :color="color"
+            depressed
+            :disabled="disabled"
+            data-cy="button-confirm"
+            @click="confirm()"
+          >
+            {{ primaryAction }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-dialog-transition>
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import { themes } from '@/components/dialogs/consts';
-import { DialogThemes } from '@/components/dialogs/types';
 
-@Component({})
-export default class ConfirmDialog extends Vue {
-  @Prop({ required: true })
-  title!: string;
-  @Prop({ required: true })
-  message!: string;
-  @Prop({ type: Boolean, required: true })
-  display!: boolean;
-  @Prop({ type: String, required: false, default: 'Confirm' })
-  primaryAction!: string;
-  @Prop({ type: String, required: false, default: 'Cancel' })
-  secondaryAction!: string;
-  @Prop({ type: String, required: false, default: 'info' }) // must be one of the types defined in confirmTypesProps below
-  confirmType!: string;
-  @Prop({ type: Boolean, required: false, default: false })
-  disabled!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  singleAction!: boolean;
+const ConfirmDialog = defineComponent({
+  name: 'ConfirmDialog',
+  props: {
+    title: { required: true, type: String },
+    message: { required: true, type: String },
+    display: { type: Boolean, required: true },
+    primaryAction: { type: String, required: false, default: 'Confirm' },
+    secondaryAction: { type: String, required: false, default: 'Cancel' },
+    confirmType: {
+      type: String as PropType<keyof typeof themes>,
+      required: false,
+      default: 'info'
+    },
+    disabled: { type: Boolean, required: false, default: false },
+    singleAction: { required: false, type: Boolean, default: false }
+  },
+  emits: ['confirm', 'cancel'],
+  setup(props, { emit }) {
+    const { confirmType } = toRefs(props);
+    const color = computed(() => themes[confirmType.value].color);
+    const icon = computed(() => themes[confirmType.value].icon);
+    const confirm = () => emit('confirm');
+    const cancel = () => emit('cancel');
 
-  @Emit()
-  confirm() {}
-
-  @Emit()
-  cancel() {}
-
-  readonly themes: DialogThemes = themes;
-}
-</script>
-
-<style scoped lang="scss">
-.confirm-dialog {
-  &__body {
-    padding: 0 16px;
+    return {
+      cancel,
+      confirm,
+      color,
+      icon
+    };
   }
-}
-</style>
+});
+
+export default ConfirmDialog;
+</script>
