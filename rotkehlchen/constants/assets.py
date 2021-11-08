@@ -1,13 +1,13 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 10/09/2021 22:20:13.
+# tools/scripts/generate_constant_assets.py at 08/11/2021 14:26:02.
 # Do not edit manually!
 
 from typing import List
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.typing import Timestamp
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 
 CONSTANT_ASSETS: List[Asset] = []
 
@@ -2185,3 +2185,15 @@ A_FOX = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_FOX)
+A_ENS = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72'),
+    decimals=18,
+    name="Ethereum Name Service",
+    symbol='ENS',
+    started=Timestamp(1635800117),
+    swapped_for=None,
+    coingecko='ethereum-name-service',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_ENS)
