@@ -3,14 +3,16 @@
     <card class="mt-8">
       <template #title>{{ $t('asset_update.restore.title') }}</template>
       <template #subtitle>{{ $t('asset_update.restore.subtitle') }}</template>
-      <v-btn
-        depressed
-        color="primary"
-        class="mt-2"
-        @click="activateRestoreAssets()"
-      >
-        {{ $t('asset_update.restore.action') }}
-      </v-btn>
+      <template #buttons>
+        <v-btn
+          depressed
+          color="primary"
+          class="mt-2"
+          @click="activateRestoreAssets()"
+        >
+          {{ $t('asset_update.restore.action') }}
+        </v-btn>
+      </template>
     </card>
     <confirm-dialog
       :display="confirmRestore"
@@ -44,6 +46,7 @@ import Fragment from '@/components/helper/Fragment';
 import RestoreAssetsDatabaseMixin from '@/mixins/restore-assets-database-mixin';
 
 export default defineComponent({
+  name: 'RestoreAssetsDatabase',
   components: { Fragment },
   mixins: [RestoreAssetsDatabaseMixin]
 });
