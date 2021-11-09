@@ -28,6 +28,22 @@
           </template>
           <span>{{ $t('database_backups.action.delete') }}</span>
         </v-tooltip>
+        <v-tooltip top>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              icon
+              small
+              :href="getLink(item)"
+              v-bind="attrs"
+              class="mx-1"
+              download
+              v-on="on"
+            >
+              <v-icon small> mdi-download </v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('database_backups.action.download') }}</span>
+        </v-tooltip>
       </template>
       <template #body.append="{ isMobile }">
         <tr>
@@ -61,10 +77,12 @@ import {
 } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
+import { getFilepath } from '@/components/settings/data-security/backups/utils';
 import { dateDisplayFormat } from '@/composables/session';
 import { displayDateFormatter } from '@/data/date_formatter';
 import i18n from '@/i18n';
 import { UserDbBackup } from '@/services/backup/types';
+import { api } from '@/services/rotkehlchen-api';
 import { size } from '@/utils/data';
 
 const tableHeaders: DataTableHeader[] = [
@@ -89,11 +107,12 @@ export default defineComponent({
   components: { Fragment },
   props: {
     items: { required: true, type: Array as PropType<UserDbBackup[]> },
-    loading: { required: false, type: Boolean, default: false }
+    loading: { required: false, type: Boolean, default: false },
+    directory: { required: true, type: String }
   },
   emits: ['remove'],
   setup(props, { emit }) {
-    const { items } = toRefs(props);
+    const { items, directory } = toRefs(props);
     const pendingDeletion = ref<UserDbBackup | null>(null);
 
     const messageInfo = computed(() => {
@@ -124,8 +143,12 @@ export default defineComponent({
       size(items.value.reduce((sum, db) => sum + db.size, 0))
     );
 
+    const getLink = (db: UserDbBackup) =>
+      api.backups.fileUrl(getFilepath(db, directory));
+
     return {
       remove,
+      getLink,
       messageInfo,
       pendingDeletion,
       size,

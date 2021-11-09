@@ -338,7 +338,8 @@
   },
   "database_backups": {
     "action": {
-      "delete": "Delete the backup"
+      "delete": "Delete the backup",
+      "download": "Download the backup"
     },
     "backup": {
       "message": "A database backup was successfully created {filepath}",

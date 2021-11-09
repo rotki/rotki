@@ -15,7 +15,12 @@
         @refresh="loadInfo"
       />
     </template>
-    <database-backups :loading="loading" :items="backups" @remove="remove" />
+    <database-backups
+      :loading="loading"
+      :items="backups"
+      :directory="directory"
+      @remove="remove"
+    />
     <template #buttons>
       <v-btn
         depressed
@@ -41,6 +46,7 @@ import {
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import DatabaseInfoDisplay from '@/components/settings/data-security/backups/DatabaseInfoDisplay.vue';
+import { getFilepath } from '@/components/settings/data-security/backups/utils';
 import i18n from '@/i18n';
 import { DatabaseInfo, UserDbBackup } from '@/services/backup/types';
 import { api } from '@/services/rotkehlchen-api';
@@ -127,8 +133,7 @@ function setupBackupActions(
   refresh: () => Promise<void>
 ) {
   const remove = async (db: UserDbBackup) => {
-    const file = `${db.time}_rotkehlchen_db_v${db.version}.backup`;
-    const filepath = `${directory.value}${file}`;
+    const filepath = getFilepath(db, directory);
     try {
       await api.backups.deleteBackup(filepath);
       if (backupInfo.value) {
@@ -147,7 +152,7 @@ function setupBackupActions(
         title: i18n.t('database_backups.delete_error.title').toString(),
         message: i18n
           .t('database_backups.delete_error.message', {
-            file,
+            file: filepath,
             message: e.message
           })
           .toString()
