@@ -341,7 +341,7 @@ Since the electron application is located in a different directory you also need
 Before starting the application you need to build the common package. To do this you can go to ``frontend`` and
 run ``npm run build -w @rotki/common``.
 
-After that you can start the application from the ``frontend`` directory and typing ``npm run electron:serve -w rotki``.
+After that you can start the application from the ``frontend`` directory by typing ``npm run dev``.
 
 OSX
 =====
@@ -438,7 +438,7 @@ Almost there, we can now install all the Node.js dependencies of the frontend ap
 
 You can now start rotki, still from the ``frontend`` directory::
 
-    $ npm run electron:serve
+    $ npm run dev
 
 Windows
 ==========
