@@ -1,8 +1,27 @@
 const fs = require("fs");
 const { spawn } = require("child_process");
 
+const PROXY = 'proxy';
+const COMMON = '@rotki/common'
+const ROTKI = 'rotki'
+
+const colors = {
+  magenta: (msg) => `\x1b[35m${msg}\x1b[0m`,
+  green: (msg) => `\x1b[32m${msg}\x1b[0m`,
+  blue: (msg) => `\x1b[34m${msg}\x1b[0m`,
+  cyan: (msg) => `\x1b[36m${msg}\x1b[0m`
+}
+
+const logger = {
+  info: (msg) => console.info(colors.cyan('dev'),`${msg}`),
+  error: (prefix, msg) => console.error(prefix, msg.replace(/\n$/, "")),
+  debug: (prefix, msg) => console.log(prefix, msg.replace(/\n$/, "")),
+}
+
+const pids = {}
+
 if (!process.env.VIRTUAL_ENV) {
-  process.stdout.write("No python virtual environment detected\n");
+  logger.info("No python virtual environment detected");
   process.exit(1);
 }
 
@@ -13,36 +32,72 @@ if (devEnvExists) {
   startDevProxy = !!process.env.VUE_APP_BACKEND_URL;
 }
 
-console.log(startDevProxy);
-
 const subprocesses = [];
 
-process.on("beforeExit", () => {
-  process.stdout.write("preparing to terminate subprocesses");
-  for (const subprocess of subprocesses) {
-    subprocess.kill();
+const terminateSubprocesses = () => {
+  let subprocess
+  while(subprocess = subprocesses.pop()) {
+    if (subprocess.killed) {
+      continue
+    }
+    const name = pids[subprocess.pid] ?? '';
+    logger.info(`terminating process: ${name} (${subprocess.pid})`);
+    subprocess.kill('SIGTERM');
   }
-});
+};
+process.on("beforeExit", terminateSubprocesses);
 
 if (startDevProxy) {
-  process.stdout.write("Starting dev-proxy \n");
+  logger.info("Starting dev-proxy");
   const devProxyProcess = spawn("npm run serve", {
     cwd: "./dev-proxy",
     shell: true,
-    stdio: [process.stdin, process.stdout, process.stderr]
+    stdio: [process.stdin]
   });
   subprocesses.push(devProxyProcess);
+
+  devProxyProcess.stdout.on('data', buffer  => {
+    logger.debug(colors.green(PROXY), buffer.toLocaleString())
+  })
+  devProxyProcess.stderr.on('data', buffer => {
+    logger.error(colors.green(PROXY), buffer.toLocaleString())
+  })
+  pids[devProxyProcess.pid] = PROXY
 }
 
-process.stdout.write("Starting @rotki/common watch \n");
+logger.info("Starting @rotki/common watch");
 const commonProcesses = spawn("npm run watch -w @rotki/common", {
   shell: true,
-  stdio: [process.stdin, process.stdout, process.stderr]
+  stdio: [process.stdin]
 });
-process.stdout.write("Starting rotki dev mode \n");
+commonProcesses.stdout.on('data', buffer  => {
+  logger.debug(colors.blue(COMMON), buffer.toLocaleString())
+})
+commonProcesses.stderr.on('data', buffer => {
+  logger.error(colors.blue(COMMON), buffer.toLocaleString())
+})
+
+pids[commonProcesses.pid] = COMMON
+
+logger.info("Starting rotki dev mode");
 const devRotkiProcess = spawn("sleep 20 && npm run electron:serve -w rotki", {
   shell: true,
-  stdio: [process.stdin, process.stdout, process.stderr]
+  stdio: [process.stdin]
 });
+
+devRotkiProcess.stdout.on('data', buffer  => {
+  logger.debug(colors.magenta(ROTKI), buffer.toLocaleString())
+})
+devRotkiProcess.stderr.on('data', buffer => {
+  logger.error(colors.magenta(ROTKI), buffer.toLocaleString())
+})
+
+pids[devRotkiProcess.pid] = ROTKI
+
+devRotkiProcess.on('exit', () => {
+  terminateSubprocesses()
+  process.exit(0)
+})
+
 subprocesses.push(commonProcesses, devRotkiProcess);
 
