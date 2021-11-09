@@ -14,6 +14,7 @@ from rotkehlchen.tests.utils.api import (
 )
 
 LQTY_ADDR = string_to_ethereum_address('0x063c26fF1592688B73d8e2A18BA4C23654e2792E')
+LQTY_STAKING = string_to_ethereum_address('0x018565899A88f75E6edfEA0639183adF8c205641')
 LQTY_PROXY = string_to_ethereum_address('0x9476832d4687c14b2c1a04E2ee4693162a7340B6')
 ADDR_WITHOUT_TROVE = string_to_ethereum_address('0xA0446D8804611944F1B527eCD37d7dcbE442caba')
 
@@ -65,7 +66,7 @@ def test_trove_position(rotkehlchen_api_server, inquirer):  # pylint: disable=un
     assert trove_data['active'] is True
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])
+@pytest.mark.parametrize('ethereum_accounts', [[LQTY_STAKING]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
@@ -82,8 +83,8 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
     else:
         result = assert_proper_response_with_result(response)
 
-    assert LQTY_ADDR in result
-    stake_data = result[LQTY_ADDR]
+    assert LQTY_STAKING in result
+    stake_data = result[LQTY_STAKING]
     assert 'amount' in stake_data and float(stake_data['amount']) > 0
 
 
