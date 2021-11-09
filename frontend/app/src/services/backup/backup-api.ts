@@ -34,7 +34,7 @@ export class BackupApi {
   }
 
   async createBackup(): Promise<string> {
-    const response = await this.axios.get<CreateDatabaseResponse>(
+    const response = await this.axios.put<CreateDatabaseResponse>(
       '/database/backups',
       {
         validateStatus: validWithSessionStatus

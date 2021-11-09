@@ -187,6 +187,7 @@
     "title": "Backend Settings"
   },
   "backup_manager": {
+    "backup_button": "Backup",
     "directory": "Database Directory:",
     "globaldb_schema": "Schema version: {schema}",
     "globaldb_assets": "Assets version: {assets}",
@@ -339,6 +340,14 @@
     "action": {
       "delete": "Delete the backup"
     },
+    "backup": {
+      "message": "A database backup was successfully created {filepath}",
+      "title": "Database Backup"
+    },
+    "backup_error": {
+      "message": "There was a problem creating the database backup: {message}",
+      "title": "Database Backup failure"
+    },
     "column": {
       "size": "Size",
       "time": "Time",
@@ -349,12 +358,19 @@
       "title": "Delete database backup"
     },
     "delete_error": {
-      "message": "There was a problem deleting {file}",
+      "message": "There was a problem deleting {file}: {message}",
       "title": "Backup delete failure"
+    },
+    "load_error": {
+      "message": "There was a problem loading the list of available backups: {message}",
+      "title": "Database Backup load"
     },
     "row": {
       "total": "Total"
     }
+  },
+  "database_manager": {
+    "refresh_tooltip": "Refresh the database backup list"
   },
   "date_format_help": {
     "close": "Close",
