@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
+from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.tests.utils.api import (
@@ -243,10 +244,10 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
 
     assert rresult[1]['tx_hash'] == '0xec72748b8b784380ff6fcca9b897d649a0992eaa63b6c025ecbec885f64d2ac9'  # noqa: E501
     assert rresult[1]['nonce'] == 0
-    assert rresult[11201]['tx_hash'] == '0x28bbfec0ea9f9822e15e7a1b009b302d49da14a05c33a8a2b60347229382baaa'  # noqa: E501
-    assert rresult[11201]['nonce'] == 11161
-    assert rresult[16172]['tx_hash'] == '0xda2f5da4eb9de14c2a581a34ad973f824b207eafbf5e9733906989055f9975e0'  # noqa: E501
-    assert rresult[16172]['nonce'] == 16111
+    assert rresult[11201]['tx_hash'] == '0x118edf91d6d47fcc6bc9c7ceefe2ee2344e0ff3b5a1805a804fa9c9448efb746'  # noqa: E501
+    assert rresult[11201]['nonce'] == 11198
+    assert rresult[16172]['tx_hash'] == '0x92baec6dbf3351a1aea2371453bfcb5af898ffc8172fcf9577ca2e5335df4c71'  # noqa: E501
+    assert rresult[16172]['nonce'] == 16169
 
 
 def test_query_transactions_errors(rotkehlchen_api_server):
@@ -292,6 +293,20 @@ def test_query_transactions_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
+    # Invalid order_by_attribute
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_address_ethereum_transactions_resource',
+            address='0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7',
+        ), json={'order_by_attribute': 'tim3'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='no such column: tim3',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
 
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -332,7 +347,8 @@ def test_query_transactions_over_limit(
         nonce=x,
     ) for x in range(60)])
 
-    db.add_ethereum_transactions(transactions, from_etherscan=True)
+    dbethtx = DBEthTx(db)
+    dbethtx.add_ethereum_transactions(transactions)
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -342,12 +358,12 @@ def test_query_transactions_over_limit(
             ranges_to_query=[],
         )
 
-    free_expected_entries = [FREE_ETH_TX_LIMIT - 10, 10]
+    free_expected_entries_total = [FREE_ETH_TX_LIMIT - 10, 10]
+    free_expected_entries_found = [FREE_ETH_TX_LIMIT - 10, 60]
     premium_expected_entries = [FREE_ETH_TX_LIMIT - 10, 60]
 
     # Check that we get all transactions correctly even if we query two times
     for _ in range(2):
-        # rotki.chain_manager.ethereum.transactions.reset_count()
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
@@ -366,11 +382,13 @@ def test_query_transactions_over_limit(
             result = assert_proper_response_with_result(response)
             if start_with_valid_premium:
                 assert len(result['entries']) == premium_expected_entries[idx]
-                assert result['entries_found'] == all_transactions_num
+                assert result['entries_total'] == all_transactions_num
+                assert result['entries_found'] == premium_expected_entries[idx]
                 assert result['entries_limit'] == -1
             else:
-                assert len(result['entries']) == free_expected_entries[idx]
-                assert result['entries_found'] == all_transactions_num
+                assert len(result['entries']) == free_expected_entries_total[idx]
+                assert result['entries_total'] == all_transactions_num
+                assert result['entries_found'] == free_expected_entries_found[idx]
                 assert result['entries_limit'] == FREE_ETH_TX_LIMIT
 
 
@@ -421,7 +439,8 @@ def test_query_transactions_from_to_address(
         input_data=b'',
         nonce=55,
     )]
-    db.add_ethereum_transactions(transactions, from_etherscan=True)
+    dbethtx = DBEthTx(db)
+    dbethtx.add_ethereum_transactions(transactions)
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -443,7 +462,9 @@ def test_query_transactions_from_to_address(
             )
             result = assert_proper_response_with_result(response)
             assert len(result['entries']) == expected_entries[address]
-            assert result['entries_found'] == 3
+            assert result['entries_limit'] == FREE_ETH_TX_LIMIT
+            assert result['entries_found'] == expected_entries[address]
+            assert result['entries_total'] == 3
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -517,7 +538,8 @@ def test_query_transactions_removed_address(
         input_data=b'',
         nonce=0,
     )]
-    db.add_ethereum_transactions(transactions, from_etherscan=True)
+    dbethtx = DBEthTx(db)
+    dbethtx.add_ethereum_transactions(transactions)
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -602,6 +624,7 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         result = assert_proper_response_with_result(response)
         assert len(result['entries']) == 2
         assert result['entries_found'] == 2
+        assert result['entries_total'] == 2
 
         response = requests.get(
             api_url_for(
@@ -612,7 +635,8 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         )
         result = assert_proper_response_with_result(response)
         assert len(result['entries']) == 1
-        assert result['entries_found'] == 2
+        assert result['entries_found'] == 1
+        assert result['entries_total'] == 2
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
@@ -623,3 +647,4 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         result = assert_proper_response_with_result(response)
         assert len(result['entries']) == 2
         assert result['entries_found'] == 2
+        assert result['entries_total'] == 2

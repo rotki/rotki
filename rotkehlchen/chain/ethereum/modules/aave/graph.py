@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveRepayEvent,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.constants.ethereum import ATOKEN_ABI
+from rotkehlchen.constants.ethereum import ATOKEN_ABI, ATOKEN_V2_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
@@ -33,10 +33,10 @@ from .common import (
     AaveHistory,
     AaveInquirer,
     _get_reserve_address_decimals,
-    aave_reserve_to_asset,
-    asset_to_aave_reserve,
+    aave_reserve_address_to_reserve_asset,
+    asset_to_aave_reserve_address,
+    asset_to_atoken,
 )
-from .constants import ASSET_TO_ATOKENV1
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -195,6 +195,7 @@ class ATokenBalanceHistory(NamedTuple):
     balance: FVal
     tx_hash: str
     timestamp: Timestamp
+    version: int
 
 
 class AaveUserReserve(NamedTuple):
@@ -207,6 +208,13 @@ class AaveEventProcessingResult(NamedTuple):
     total_earned_interest: Dict[Asset, Balance]
     total_lost: Dict[Asset, Balance]
     total_earned_liquidations: Dict[Asset, Balance]
+
+
+def _get_version_from_reserveid(pairs: List[str], index: int) -> int:
+    """Gets the aave version from the reserve address id"""
+    if pairs[index] == '24a42fd28c976a61df5d00d0599c34c4f90748c8':
+        return 1  # lending pool provider v1
+    return 2
 
 
 def _calculate_loss(
@@ -304,8 +312,9 @@ def _parse_atoken_balance_history(
             )
             continue
 
+        version = _get_version_from_reserveid(pairs, 3)
         tx_hash = '0x' + pairs[4]
-        asset = aave_reserve_to_asset(reserve_address)
+        asset = aave_reserve_address_to_reserve_asset(reserve_address)
         if asset is None:
             log.error(
                 f'Unknown aave reserve address returned by atoken balance history '
@@ -329,6 +338,7 @@ def _parse_atoken_balance_history(
             balance=balance,
             tx_hash=tx_hash,
             timestamp=timestamp,
+            version=version,
         ))
 
     return result
@@ -345,7 +355,7 @@ def _get_reserve_asset_and_decimals(
         log.error(f'Failed to Deserialize reserve address {entry[reserve_key]["id"]}')
         return None
 
-    asset = aave_reserve_to_asset(reserve_address)
+    asset = aave_reserve_address_to_reserve_asset(reserve_address)
     if asset is None:
         log.error(
             f'Unknown aave reserve address returned by graph query: '
@@ -484,7 +494,7 @@ class AaveGraphInquirer(AaveInquirer):
             else:  # withdrawal
                 atoken_balances[action.asset] -= action.value.amount
 
-            action_reserve_address = asset_to_aave_reserve(action.asset)
+            action_reserve_address = asset_to_aave_reserve_address(action.asset)
             if action_reserve_address is None:
                 log.error(
                     f'Could not find aave reserve address for asset'
@@ -511,7 +521,7 @@ class AaveGraphInquirer(AaveInquirer):
                     diff = entry.balance - atoken_balances[action.asset]
                     if diff != ZERO:
                         atoken_balances[action.asset] = entry.balance
-                        asset = ASSET_TO_ATOKENV1.get(action.asset, None)
+                        asset = asset_to_atoken(asset=action.asset, version=entry.version)
                         if asset is None:
                             log.error(
                                 f'Could not find corresponding aToken to '
@@ -563,18 +573,26 @@ class AaveGraphInquirer(AaveInquirer):
 
         # Take aave unpaid interest into account
         for balance_asset, lending_balance in balances.lending.items():
-            atoken = ASSET_TO_ATOKENV1.get(balance_asset, None)
+            atoken = asset_to_atoken(balance_asset, version=lending_balance.version)
             if atoken is None:
                 log.error(
-                    f'Could not find corresponding aToken to '
-                    f'{balance_asset.identifier} during an aave graph unpair interest '
+                    f'Could not find corresponding v{lending_balance.version} aToken to '
+                    f'{balance_asset.identifier} during an aave graph unpaid interest '
                     f'query. Skipping entry...',
                 )
                 continue
+
+            if lending_balance.version == 1:
+                method = 'principalBalanceOf'
+                abi = ATOKEN_ABI
+            else:
+                method = 'scaledBalanceOf'
+                abi = ATOKEN_V2_ABI
+
             principal_balance = self.ethereum.call_contract(
                 contract_address=atoken.ethereum_address,
-                abi=ATOKEN_ABI,
-                method_name='principalBalanceOf',
+                abi=abi,
+                method_name=method,
                 arguments=[user_address],
             )
             unpaid_interest = lending_balance.balance.amount - (principal_balance / (FVal(10) ** FVal(atoken.decimals)))  # noqa: E501
@@ -686,6 +704,7 @@ class AaveGraphInquirer(AaveInquirer):
         except KeyError as e:
             self.msg_aggregator.add_warning(msg + f' Missing key {str(e)}')
             return
+
         for key, value in user_result.items():
             user_merged_data[key].extend(value)
 
@@ -807,10 +826,22 @@ class AaveGraphInquirer(AaveInquirer):
             )
             if result is None:
                 continue  # problem parsing, error already logged
+
+            pairs = entry['reserve']['id'].split('0x')
+            if len(pairs) != 3:
+                log.error(
+                    f'Could not parse the id entry for an aave deposit entry as '
+                    f'returned by graph: {entry}.  Skipping entry ...',
+                )
+                continue
+
+            version = _get_version_from_reserveid(pairs, 2)
             asset, balance = result
-            atoken = ASSET_TO_ATOKENV1.get(asset, None)
+            atoken = asset_to_atoken(asset=asset, version=version)
             if atoken is None:
-                log.error(f'Could not find an aToken for asset {asset} during aave deposit')
+                log.error(
+                    f'Could not find a v{version} aToken for asset {asset} during aave deposit',
+                )
                 continue
 
             events.append(AaveDepositWithdrawalEvent(
@@ -847,10 +878,22 @@ class AaveGraphInquirer(AaveInquirer):
             )
             if result is None:
                 continue  # problem parsing, error already logged
+
+            pairs = entry['reserve']['id'].split('0x')
+            if len(pairs) != 3:
+                log.error(
+                    f'Could not parse the id entry for an aave withdrawals entry as '
+                    f'returned by graph: {entry}.  Skipping entry ...',
+                )
+                continue
+
+            version = _get_version_from_reserveid(pairs, 2)
             asset, balance = result
-            atoken = ASSET_TO_ATOKENV1.get(asset, None)
+            atoken = asset_to_atoken(asset=asset, version=version)
             if atoken is None:
-                log.error(f'Could not find an aToken for asset {asset} during aave withdraw')
+                log.error(
+                    f'Could not find a v{version} aToken for asset {asset} during aave withdraw',
+                )
                 continue
 
             events.append(AaveDepositWithdrawalEvent(

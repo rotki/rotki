@@ -22,6 +22,7 @@ import requests
 from requests.adapters import Response
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitstamp
@@ -271,7 +272,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """Return the account trades on Bitstamp.
 
         NB: when `since_id` is used, the Bitstamp API v2 will return by default
@@ -301,7 +302,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             options=options,
             case='trades',
         )
-        return trades
+        return trades, (start_ts, end_ts)
 
     def validate_api_key(self) -> Tuple[bool, str]:
         """Validates that the Bitstamp API key is good for usage in rotki
@@ -552,7 +553,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         for symbol in BITSTAMP_ASSET_MOVEMENT_SYMBOLS:
             amount = deserialize_asset_amount(raw_movement.get(symbol, '0'))
             if amount != ZERO:
-                fee_asset = Asset(symbol)
+                fee_asset = asset_from_bitstamp(symbol)
                 break
 
         if amount == ZERO:
@@ -745,4 +746,11 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
+        return []  # noop for bitstamp
+
+    def query_online_income_loss_expense(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[LedgerAction]:
         return []  # noop for bitstamp

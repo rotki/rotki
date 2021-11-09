@@ -1,10 +1,10 @@
+import { BigNumber } from '@rotki/common/';
 import {
   DARK_MODE_ENABLED,
   DARK_THEME,
   LIGHT_THEME
 } from '@rotki/common/lib/settings';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
-import { default as BigNumber } from 'bignumber.js';
 import {
   AMOUNT_ROUNDING_MODE,
   CURRENCY_LOCATION,

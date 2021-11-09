@@ -1,9 +1,5 @@
-import { Balance } from '@rotki/common';
-import { default as BigNumber } from 'bignumber.js';
-import {
-  AAVE_BORROWING_EVENTS,
-  AAVE_LENDING_EVENTS
-} from '@/services/defi/consts';
+import { Balance, BigNumber } from '@rotki/common';
+import { AaveEventType } from '@rotki/common/lib/defi/aave';
 import { CompoundEventType } from '@/services/defi/types/compound';
 
 export type DSRMovementType = 'withdrawal' | 'deposit';
@@ -13,11 +9,6 @@ export type MakerDAOVaultEventType =
   | 'generate'
   | 'payback'
   | 'liquidation';
-
-export type AaveBorrowingEventType = typeof AAVE_BORROWING_EVENTS[number];
-type AaveLendingEventType = typeof AAVE_LENDING_EVENTS[number];
-
-export type AaveEventType = AaveLendingEventType | AaveBorrowingEventType;
 
 export type CollateralAssetType = 'ETH' | 'BAT' | 'USDC' | 'WBTC';
 export type DefiBalanceType = 'Asset' | 'Debt';

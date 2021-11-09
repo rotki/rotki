@@ -3,14 +3,27 @@ import hmac
 import json
 import logging
 from base64 import b64encode
+from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    overload,
+)
 
 import gevent
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_gemini
@@ -178,7 +191,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         url = f'{self.base_uri}{v_endpoint}'
         retries_left = QUERY_RETRY_TIMES
         while retries_left > 0:
-            if endpoint in ('mytrades', 'balances', 'transfers', 'roles'):
+            if endpoint in ('mytrades', 'balances', 'transfers', 'roles', 'balances/earn'):
                 # private endpoints
                 timestamp = str(ts_now_in_ms())
                 payload = {'request': v_endpoint, 'nonce': timestamp}
@@ -252,7 +265,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     @overload
     def _private_api_query(  # pylint: disable=no-self-use
             self,
-            endpoint: Literal['balances', 'mytrades', 'transfers'],
+            endpoint: Literal['balances', 'mytrades', 'transfers', 'balances/earn'],
             options: Optional[Dict[str, Any]] = None,
     ) -> List[Any]:
         ...
@@ -305,15 +318,20 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def query_balances(self) -> ExchangeQueryBalances:
         try:
             balances = self._private_api_query('balances')
+            balances.extend(self._private_api_query('balances/earn'))
         except (GeminiPermissionError, RemoteError) as e:
             msg = f'Gemini API request failed. {str(e)}'
             log.error(msg)
             return None, msg
 
-        returned_balances: Dict[Asset, Balance] = {}
+        returned_balances: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for entry in balances:
             try:
-                amount = deserialize_asset_amount(entry['amount'])
+                balance_type = entry['type']
+                if balance_type == 'exchange':
+                    amount = deserialize_asset_amount(entry['amount'])
+                else:  # should be 'Earn'
+                    amount = deserialize_asset_amount(entry['balance'])
                 # ignore empty balances
                 if amount == ZERO:
                     continue
@@ -323,12 +341,12 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     usd_price = Inquirer().find_usd_price(asset=asset)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
-                        f'Error processing gemini balance result due to inability to '
-                        f'query USD price: {str(e)}. Skipping balance entry',
+                        f'Error processing gemini {balance_type} balance result due to '
+                        f'inability to query USD price: {str(e)}. Skipping balance entry',
                     )
                     continue
 
-                returned_balances[asset] = Balance(
+                returned_balances[asset] += Balance(
                     amount=amount,
                     usd_value=amount * usd_price,
                 )
@@ -340,8 +358,8 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 continue
             except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found gemini balance result with unsupported asset '
-                    f'{e.asset_name}. Ignoring it.',
+                    f'Found gemini {balance_type} balance result with unsupported '
+                    f'asset {e.asset_name}. Ignoring it.',
                 )
                 continue
             except (DeserializationError, KeyError) as e:
@@ -349,11 +367,11 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
                 self.msg_aggregator.add_error(
-                    'Error processing a gemini balance. Check logs '
-                    'for details. Ignoring it.',
+                    f'Error processing a gemini {balance_type} balance. Check logs '
+                    f'for details. Ignoring it.',
                 )
                 log.error(
-                    'Error processing a gemini balance',
+                    f'Error processing a gemini {balance_type} balance',
                     error=msg,
                 )
                 continue
@@ -439,7 +457,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """Queries gemini for trades
         """
         log.debug('Query gemini trade history', start_ts=start_ts, end_ts=end_ts)
@@ -497,7 +515,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def query_online_deposits_withdrawals(
             self,
@@ -565,4 +583,11 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
+        return []  # noop for gemini
+
+    def query_online_income_loss_expense(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[LedgerAction]:
         return []  # noop for gemini

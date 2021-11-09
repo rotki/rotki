@@ -1,9 +1,6 @@
 <template>
   <v-navigation-drawer
-    class="notification-sidebar"
-    :class="
-      $vuetify.breakpoint.smAndDown ? 'notification-sidebar--mobile' : null
-    "
+    :class="{ [$style.mobile]: isMobile, [$style.sidebar]: true }"
     width="400px"
     absolute
     clipped
@@ -17,24 +14,23 @@
       <v-col cols="auto">
         <v-tooltip bottom>
           <template #activator="{ on }">
-            <v-btn
-              class="notification-sidebar__close"
-              text
-              icon
-              v-on="on"
-              @click="close()"
-            >
+            <v-btn text icon v-on="on" @click="close()">
               <v-icon>mdi-chevron-right</v-icon>
             </v-btn>
           </template>
-          <span v-text="$t('notification_sidebar.close_tooltip')" />
+          <span>{{ $t('notification_sidebar.close_tooltip') }}</span>
         </v-tooltip>
       </v-col>
       <v-col>
         <span
-          class="text-uppercase text--secondary text-caption font-weight-medium pl-1"
-          v-text="$t('notification_sidebar.title')"
-        />
+          class="
+            text-uppercase text--secondary text-caption
+            font-weight-medium
+            pl-1
+          "
+        >
+          {{ $t('notification_sidebar.title') }}
+        </span>
       </v-col>
       <v-col cols="auto">
         <v-btn
@@ -43,22 +39,23 @@
           color="accent"
           :disabled="notifications.length === 0"
           @click="confirmClear = true"
-          v-text="$t('notification_sidebar.clear_tooltip')"
-        />
+        >
+          {{ $t('notification_sidebar.clear_tooltip') }}
+        </v-btn>
       </v-col>
     </v-row>
-    <v-row no-gutters class="notification-sidebar__details">
-      <v-col
-        v-if="notifications.length === 0"
-        class="notification-sidebar__no-messages"
-      >
-        <v-icon size="64px" color="primary">mdi-information</v-icon>
-        <p
-          class="notification-sidebar__no-messages__label"
-          v-text="$t('notification_sidebar.no_messages')"
-        />
-      </v-col>
-      <v-col v-else class="notification-sidebar__messages pl-2">
+    <div
+      v-if="!hasRunningTasks && notifications.length === 0"
+      :class="$style['no-messages']"
+    >
+      <v-icon size="64px" color="primary">mdi-information</v-icon>
+      <div :class="$style.label">
+        {{ $t('notification_sidebar.no_messages') }}
+      </div>
+    </div>
+    <div v-else :class="$style.messages">
+      <pending-tasks />
+      <div v-if="notifications.length > 0" class="pl-2">
         <notification
           v-for="notification in notifications"
           :key="notification.id"
@@ -66,8 +63,8 @@
           :notification="notification"
           @dismiss="remove($event)"
         />
-      </v-col>
-    </v-row>
+      </div>
+    </div>
     <confirm-dialog
       :display="confirmClear"
       :title="$t('notification_sidebar.confirmation.title')"
@@ -79,95 +76,85 @@
 </template>
 
 <script lang="ts">
+import { computed, defineComponent, ref } from '@vue/composition-api';
 import orderBy from 'lodash/orderBy';
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { mapMutations, mapState } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import Notification from '@/components/status/notifications/Notification.vue';
-import { NotificationData } from '@/store/notifications/types';
+import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
+import { setupThemeCheck } from '@/composables/common';
+import { setupNotifications } from '@/composables/notifications';
+import { setupTaskStatus } from '@/composables/tasks';
 
-@Component({
-  components: { Notification, ConfirmDialog },
-  computed: {
-    ...mapState('notifications', ['data'])
+const NotificationSidebar = defineComponent({
+  components: { PendingTasks, Notification, ConfirmDialog },
+  props: {
+    visible: { required: true, type: Boolean }
   },
-  methods: {
-    ...mapMutations('notifications', ['remove', 'reset'])
+  emits: ['close'],
+  setup(props, { emit }) {
+    const confirmClear = ref(false);
+
+    const { reset, remove, data } = setupNotifications();
+    const close = () => {
+      emit('close');
+    };
+
+    const input = (visible: boolean) => {
+      if (visible) {
+        return;
+      }
+      close();
+    };
+
+    const clear = () => {
+      confirmClear.value = false;
+      reset();
+      close();
+    };
+
+    const notifications = computed(() => {
+      return orderBy(data.value, 'id', 'desc');
+    });
+
+    const { isMobile } = setupThemeCheck();
+    const { hasRunningTasks } = setupTaskStatus();
+
+    return {
+      isMobile,
+      notifications,
+      hasRunningTasks,
+      confirmClear,
+      input,
+      close,
+      clear,
+      remove
+    };
   }
-})
-export default class NotificationSidebar extends Vue {
-  @Prop({ required: true, type: Boolean })
-  visible!: boolean;
-
-  data!: NotificationData[];
-  confirmClear: boolean = false;
-  copyText: string = '';
-  remove!: (id: number) => void;
-  reset!: () => void;
-
-  clear() {
-    this.confirmClear = false;
-    this.reset();
-    this.close();
-  }
-
-  input(visible: boolean) {
-    if (visible) {
-      return;
-    }
-    this.close();
-  }
-
-  @Emit()
-  close() {}
-
-  get notifications(): NotificationData[] {
-    return orderBy(this.data, 'id', 'desc');
-  }
-}
+});
+export default NotificationSidebar;
 </script>
 
-<style scoped lang="scss">
-.notification-sidebar {
+<style module lang="scss">
+.sidebar {
   top: 64px !important;
   box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
   padding-top: 0 !important;
   border-top: var(--v-rotki-light-grey-darken1) solid thin;
 
-  &.v-navigation-drawer {
-    &--is-mobile {
-      padding-top: 0 !important;
+  :global {
+    .v-badge {
+      &__badge {
+        top: 0 !important;
+        right: 0 !important;
+      }
     }
-  }
 
-  &--mobile {
-    top: 56px !important;
-  }
-
-  &__details {
-    overflow-y: hidden;
-    height: calc(100% - 64px);
-    font-weight: 400;
-    color: rgba(0, 0, 0, 0.87);
-  }
-
-  &__no-messages {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    &__label {
-      font-size: 22px;
-      margin-top: 22px;
-      font-weight: 300;
-      color: rgb(0, 0, 0, 0.6);
+    .v-list-item {
+      &__action-text {
+        margin-right: -8px;
+        margin-top: -8px;
+      }
     }
-  }
-
-  &__messages {
-    height: calc(100% - 64px);
-    overflow-y: scroll !important;
   }
 
   @media only screen and (max-width: 960px) {
@@ -175,19 +162,28 @@ export default class NotificationSidebar extends Vue {
   }
 }
 
-::v-deep {
-  .v-badge {
-    &__badge {
-      top: 0 !important;
-      right: 0 !important;
-    }
-  }
+.mobile {
+  top: 56px !important;
+  padding-top: 0 !important;
+}
 
-  .v-list-item {
-    &__action-text {
-      margin-right: -8px;
-      margin-top: -8px;
-    }
-  }
+.no-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: calc(100% - 64px);
+}
+
+.label {
+  font-size: 22px;
+  margin-top: 22px;
+  font-weight: 300;
+  color: rgb(0, 0, 0, 0.6);
+}
+
+.messages {
+  height: calc(100% - 64px);
+  overflow-y: scroll !important;
 }
 </style>

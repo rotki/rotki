@@ -2,10 +2,12 @@
   <fragment>
     <v-menu
       id="balances-saved-dropdown"
+      v-model="visible"
       transition="slide-y-transition"
       offset-y
       bottom
-      :max-width="xsOnly ? '97%' : null"
+      :close-on-content-click="false"
+      :max-width="xsOnly ? '97%' : '350px'"
       z-index="215"
     >
       <template #activator="{ on }">
@@ -81,6 +83,17 @@
                     <v-icon left>mdi-content-save</v-icon>
                     {{ $t('sync_indicator.force_save') }}
                   </v-btn>
+                  <v-tooltip right max-width="300px">
+                    <template #activator="{ on, attrs }">
+                      <div v-bind="attrs" v-on="on">
+                        <v-checkbox
+                          v-model="ignoreErrors"
+                          label="Ignore Errors"
+                        />
+                      </div>
+                    </template>
+                    <span>{{ $t('sync_indicator.ignore_errors') }}</span>
+                  </v-tooltip>
                 </v-col>
                 <v-col cols="auto">
                   <v-tooltip bottom max-width="300px">
@@ -96,7 +109,7 @@
             </v-col>
           </v-row>
         </div>
-        <node-status :connected="nodeConnection" />
+        <node-status v-if="xsOnly" :connected="nodeConnection" />
       </div>
     </v-menu>
     <confirm-dialog
@@ -139,6 +152,7 @@ import PremiumMixin from '@/mixins/premium-mixin';
 import ThemeMixin from '@/mixins/theme-mixin';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, SyncAction } from '@/services/types-api';
 import { AllBalancePayload } from '@/store/balances/types';
+import { Writeable } from '@/types';
 
 @Component({
   components: {
@@ -164,11 +178,13 @@ import { AllBalancePayload } from '@/store/balances/types';
 export default class SyncIndicator extends Mixins(PremiumMixin, ThemeMixin) {
   pending: boolean = false;
   confirmChecked: boolean = false;
+  ignoreErrors: boolean = false;
+  visible: boolean = false;
   syncAction: SyncAction = SYNC_UPLOAD;
   lastBalanceSave!: number;
   lastDataUpload!: string;
   forceSync!: (action: SyncAction) => Promise<void>;
-  fetchBalances!: (payload: AllBalancePayload) => Promise<void>;
+  fetchBalances!: (payload: Partial<AllBalancePayload>) => Promise<void>;
   displayConfirmation: boolean = false;
 
   get xsOnly(): boolean {
@@ -190,13 +206,20 @@ export default class SyncIndicator extends Mixins(PremiumMixin, ThemeMixin) {
   }
 
   async refreshAllAndSave() {
-    await this.fetchBalances({
+    this.visible = false;
+    const payload: Writeable<Partial<AllBalancePayload>> = {
       ignoreCache: true,
       saveData: true
-    });
+    };
+
+    if (this.ignoreErrors) {
+      payload.ignoreErrors = true;
+    }
+    await this.fetchBalances(payload);
   }
 
   showConfirmation(action: SyncAction) {
+    this.visible = false;
     this.syncAction = action;
     this.displayConfirmation = true;
   }

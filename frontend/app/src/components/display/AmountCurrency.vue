@@ -1,38 +1,12 @@
 <template>
-  <span
-    v-if="showCurrency === 'ticker'"
-    class="amount-currency"
-    :style="assetStyle"
-  >
-    {{ currency.ticker_symbol }}
-  </span>
-  <span
-    v-else-if="showCurrency === 'symbol'"
-    class="amount-currency"
-    :style="assetStyle"
-  >
-    {{ currency.unicode_symbol }}
-  </span>
-  <span
-    v-else-if="showCurrency === 'name'"
-    class="amount-currency"
-    :style="assetStyle"
-  >
-    {{ currency.name }}
-  </span>
   <v-tooltip
-    v-else-if="!!asset"
+    v-if="!!asset"
     top
     :disabled="asset.length <= assetPadding"
     open-delay="400"
   >
     <template #activator="{ on, attrs }">
-      <span
-        v-bind="attrs"
-        class="amount-currency"
-        :style="assetStyle"
-        v-on="on"
-      >
+      <span v-bind="attrs" :style="assetStyle" v-on="on">
         {{ asset }}
       </span>
     </template>
@@ -41,57 +15,71 @@
     </span>
   </v-tooltip>
 
-  <span v-else class="amount-currency" :style="assetStyle" />
+  <span v-else :style="assetStyle">
+    {{ displayAsset }}
+  </span>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import { Currency } from '@/model/currency';
 
-@Component({
-  components: {}
-})
-export default class AmountCurrency extends Vue {
-  @Prop({ required: true })
-  currency!: Currency;
-  @Prop({
-    required: false,
-    default: 'none',
-    validator: showCurrency => {
-      return ['none', 'ticker', 'symbol', 'name'].indexOf(showCurrency) > -1;
+export default defineComponent({
+  name: 'AmountCurrency',
+  props: {
+    currency: { required: true, type: Object as PropType<Currency> },
+    showCurrency: {
+      required: false,
+      default: 'none',
+      type: String as PropType<'none' | 'ticker' | 'symbol' | 'name'>,
+      validator: (showCurrency: string) => {
+        return ['none', 'ticker', 'symbol', 'name'].indexOf(showCurrency) > -1;
+      }
+    },
+    asset: { required: false, default: '', type: String },
+    assetPadding: {
+      required: false,
+      type: Number,
+      default: 0,
+      validator: (chars: number) => chars >= 0 && chars <= 5
     }
-  })
-  showCurrency!: string;
-  @Prop({ required: false, default: '' })
-  asset!: string;
-  @Prop({
-    required: false,
-    type: Number,
-    default: 0,
-    validator: chars => chars >= 0 && chars <= 5
-  })
-  assetPadding!: number;
+  },
 
-  get assetStyle(): { [key: string]: string } {
-    if (!this.assetPadding) {
-      return {};
-    }
+  setup(props) {
+    const { assetPadding, showCurrency, currency } = toRefs(props);
+    const assetStyle = computed(() => {
+      if (!assetPadding.value) {
+        return {};
+      }
+      return {
+        width: `${assetPadding.value + 1}ch`,
+        'text-align': 'start'
+      };
+    });
+
+    const displayAsset = computed(() => {
+      const show = showCurrency.value;
+      const value = currency.value;
+      if (show === 'ticker') {
+        return value.ticker_symbol;
+      } else if (show === 'symbol') {
+        return value.unicode_symbol;
+      } else if (show === 'name') {
+        return value.name;
+      }
+
+      return '';
+    });
+
     return {
-      width: `${this.assetPadding + 1}ch`,
-      'text-align': 'start'
+      assetStyle,
+      displayAsset
     };
   }
-}
+});
 </script>
-
-<style scoped lang="scss">
-.amount-display {
-  .amount-currency {
-    max-width: 6ch;
-    font-size: 0.8em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
-</style>

@@ -16,6 +16,7 @@
     :filter="customFilter"
     :search-input.sync="search"
     :item-text="assetText"
+    auto-select-first
     :menu-props="{ closeOnContentClick: true }"
     :outlined="outlined"
     :class="outlined ? 'asset-select--outlined' : null"

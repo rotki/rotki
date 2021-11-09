@@ -121,9 +121,9 @@ def test_query_ledger_actions(events_historian, function_scope_messages_aggregat
     db.add_ledger_action(action)
 
     actions, length = events_historian.query_ledger_actions(
-        has_premium=True,
         from_ts=None,
         to_ts=Timestamp(selected_timestamp + 4),
+        only_cache=False,
     )
 
     assert any((action.timestamp < selected_timestamp for action in actions))

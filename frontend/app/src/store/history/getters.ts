@@ -1,6 +1,5 @@
 import { GetterTree } from 'vuex';
 import { RotkehlchenState } from '@/store/types';
-import { toUnit, Unit } from '@/utils/calculation';
 import { HistoryState, TradeEntry } from './types';
 
 export const getters: GetterTree<HistoryState, RotkehlchenState> = {
@@ -12,6 +11,15 @@ export const getters: GetterTree<HistoryState, RotkehlchenState> = {
   },
   assetMovementsLimit: ({ assetMovements }) => {
     return assetMovements.limit;
+  },
+  ledgerActions: ({ ledgerActions }) => {
+    return ledgerActions.data;
+  },
+  ledgerActionsTotal: ({ ledgerActions }) => {
+    return ledgerActions.found;
+  },
+  ledgerActionsLimit: ({ ledgerActions }) => {
+    return ledgerActions.limit;
   },
   trades: ({ trades }, _, _rs, { 'defi/basicDexTrades': dexTrades }) => {
     let dxTrades: TradeEntry[] = [];
@@ -26,18 +34,5 @@ export const getters: GetterTree<HistoryState, RotkehlchenState> = {
   },
   tradesLimit: ({ trades }) => {
     return trades.limit;
-  },
-  transactions: ({ transactions }) => {
-    return transactions.data.map(value => ({
-      ...value,
-      gasFee: toUnit(value.gasPrice.multipliedBy(value.gasUsed), Unit.ETH),
-      key: `${value.txHash}${value.nonce}${value.fromAddress}`
-    }));
-  },
-  transactionsTotal: ({ transactions }) => {
-    return transactions.found;
-  },
-  transactionsLimit: ({ transactions }) => {
-    return transactions.limit;
   }
 };

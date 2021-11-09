@@ -1,33 +1,46 @@
 <template>
   <a
+    v-if="href"
     :href="$interop.isPackaged ? undefined : href"
     target="_blank"
     class="text-no-wrap"
     @click="$interop.isPackaged ? openLink() : undefined"
   >
-    {{ displayText }}
+    <slot>
+      {{ displayText }}
+    </slot>
   </a>
+  <div v-else>
+    <slot />
+  </div>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { interop } from '@/electron-interop';
 import { truncateAddress } from '@/filters';
 
-@Component({})
-export default class BaseExternalLink extends Vue {
-  @Prop({ required: true })
-  href!: string;
-  @Prop({ required: true })
-  text!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  truncate!: boolean;
+export default defineComponent({
+  name: 'BaseExternalLink',
+  props: {
+    href: { required: false, type: String, default: null },
+    truncate: { required: false, type: Boolean, default: false },
+    text: { required: false, type: String, default: '' }
+  },
+  setup(props) {
+    const { href, truncate, text } = toRefs(props);
+    const openLink = () => {
+      interop.openUrl(href.value);
+    };
 
-  get displayText(): string {
-    return this.truncate ? truncateAddress(this.text) : this.text;
-  }
+    const displayText = computed(() =>
+      truncate.value ? truncateAddress(text.value) : text.value
+    );
 
-  openLink() {
-    this.$interop.openUrl(this.href);
+    return {
+      openLink,
+      displayText
+    };
   }
-}
+});
 </script>

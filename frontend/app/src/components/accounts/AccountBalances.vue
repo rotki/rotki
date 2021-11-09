@@ -69,6 +69,7 @@
 </template>
 
 <script lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
@@ -83,7 +84,6 @@ import {
   BlockchainBalancePayload,
   XpubPayload
 } from '@/store/balances/types';
-import { Blockchain, ETH } from '@/typing/types';
 
 @Component({
   components: {
@@ -177,7 +177,7 @@ export default class AccountBalances extends Vue {
       ignoreCache: true,
       blockchain: this.blockchain
     } as BlockchainBalancePayload);
-    if (this.blockchain === ETH) {
+    if (this.blockchain === Blockchain.ETH) {
       this.fetchLoopringBalances(true);
     }
   }

@@ -103,7 +103,11 @@
                 outlined
                 prominent
                 color="primary"
-                class="mx-auto text-justify text-body-2 create-account__analytics__content"
+                class="
+                  mx-auto
+                  text-justify text-body-2
+                  create-account__analytics__content
+                "
               >
                 {{ $t('create_account.usage_analytics.description') }}
               </v-alert>

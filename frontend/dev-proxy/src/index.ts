@@ -30,7 +30,7 @@ if (
   );
 }
 
-let mockedAsyncCalls = {};
+let mockedAsyncCalls: { [url: string]: any } = {};
 if (fs.existsSync('async-mock.json')) {
   try {
     console.info('Loading mock data from async-mock.json');
@@ -60,7 +60,7 @@ function manipulateResponse(res: Response, callback: (original: any) => any) {
       // @ts-ignore
       _write.call(res, payload);
       return true;
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       return false;
     }
@@ -281,10 +281,15 @@ function mockPreflight(res: Response) {
       // @ts-ignore
       _write.call(res, chunk);
       return true;
-    } catch (e) {
+    } catch (e: any) {
       return false;
     }
   };
+}
+
+function hasResponse(req: Request) {
+  const mockResponse = mockedAsyncCalls[req.url];
+  return !!mockResponse && !!mockResponse[req.method];
 }
 
 function onProxyRes(
@@ -309,6 +314,21 @@ function onProxyRes(
     handled = true;
   } else if (isPreflight(req)) {
     mockPreflight(res);
+    handled = true;
+  } else if (hasResponse(req)) {
+    manipulateResponse(res, () => {
+      const response = mockedAsyncCalls[req.url][req.method];
+      if (Array.isArray(response)) {
+        const index = getCounter(req.url, req.method);
+        let responseIndex = index;
+        if (index > response.length - 1) {
+          responseIndex = response.length - 1;
+        }
+        increaseCounter(req.url, req.method);
+        return response[responseIndex];
+      }
+      return response;
+    });
     handled = true;
   }
 

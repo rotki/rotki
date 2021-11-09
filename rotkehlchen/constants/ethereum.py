@@ -85,7 +85,7 @@ class EthereumConstants():
 MAKERDAO_DAI_JOIN = EthereumConstants().contract('MAKERDAO_DAI_JOIN')
 MAKERDAO_CDP_MANAGER = EthereumConstants().contract('MAKERDAO_CDP_MANAGER')
 MAKERDAO_GET_CDPS = EthereumConstants().contract('MAKERDAO_GET_CDPS')
-MAKERDAO_PROXY_REGISTRY = EthereumConstants().contract('MAKERDAO_PROXY_REGISTRY')
+DS_PROXY_REGISTRY = EthereumConstants().contract('DS_PROXY_REGISTRY')
 MAKERDAO_SPOT = EthereumConstants().contract('MAKERDAO_SPOT')
 MAKERDAO_POT = EthereumConstants().contract('MAKERDAO_POT')
 MAKERDAO_VAT = EthereumConstants().contract('MAKERDAO_VAT')
@@ -137,6 +137,7 @@ AAVE_V1_LENDING_POOL = EthereumConstants().contract('AAVE_V1_LENDING_POOL')
 AAVE_V2_LENDING_POOL = EthereumConstants().contract('AAVE_V2_LENDING_POOL')
 
 ATOKEN_ABI = EthereumConstants.abi('ATOKEN')
+ATOKEN_V2_ABI = EthereumConstants.abi('ATOKEN_V2')
 ZERION_ABI = EthereumConstants.abi('ZERION_ADAPTER')
 CTOKEN_ABI = EthereumConstants.abi('CTOKEN')
 ERC20TOKEN_ABI = EthereumConstants.abi('ERC20_TOKEN')
@@ -149,3 +150,6 @@ YEARN_VAULTS_PREFIX = 'yearn_vaults_events'
 YEARN_VAULTS_V2_PREFIX = 'yearn_vaults_v2_events'
 
 LIQUITY_TROVE_MANAGER = EthereumConstants().contract('TROVE_MANAGER')
+
+PICKLE_DILL_REWARDS = EthereumConstants().contract('DILL_REWARDS')
+PICKLE_DILL = EthereumConstants().contract('DILL')

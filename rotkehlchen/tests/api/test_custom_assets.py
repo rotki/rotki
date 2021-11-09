@@ -6,6 +6,7 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
@@ -498,6 +499,7 @@ def test_custom_asset_delete_guard(rotkehlchen_api_server):
         amount=FVal(1),
         location=Location.EXTERNAL,
         tags=None,
+        balance_type=BalanceType.ASSET,
     )])
     # Try to delete the asset and see it fails because a user owns it
     response = requests.delete(
@@ -563,6 +565,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
         'label': 'ICP account',
         'amount': '50.315',
         'location': 'blockchain',
+        'balance_type': 'asset',
     }]
     expected_balances = deepcopy(balances)
     expected_balances[0]['usd_value'] = str(FVal(balances[0]['amount']) * FVal('1.5'))
@@ -696,6 +699,7 @@ def test_replace_asset_not_in_globaldb(rotkehlchen_api_server, globaldb):
         'usd_value': '1.5',
         'tags': None,
         'location': 'external',
+        'balance_type': 'asset',
     }]
     # check the previous asset is not in globaldb owned assets
     global_cursor = globaldb._conn.cursor()

@@ -36,7 +36,6 @@ def init_ethereum(rpc_endpoint: str, use_other_nodes: bool) -> EthereumManager:
     ethereum = EthereumManager(
         ethrpc_endpoint=rpc_endpoint,
         etherscan=etherscan,
-        database=None,
         msg_aggregator=msg_aggregator,
         greenlet_manager=greenlet_manager,
         connect_at_start=nodes_to_connect,

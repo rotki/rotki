@@ -1,11 +1,14 @@
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import dayjs from 'dayjs';
 import { TaskType } from '@/model/task-type';
 import { taskManager } from '@/services/task-manager';
-import { Blockchain } from '@/typing/types';
+import { assert } from '@/utils/assertions';
 
 export interface Task<T extends TaskMeta> {
   readonly id: number;
   readonly type: TaskType;
   readonly meta: T;
+  readonly time: number;
 }
 
 export interface TaskMeta {
@@ -23,15 +26,26 @@ export interface BlockchainMetadata extends TaskMeta {
   readonly blockchain?: Blockchain;
 }
 
+export interface AddressMeta extends TaskMeta {
+  readonly address: string;
+}
+
 export const createTask: <T extends TaskMeta>(
   id: number,
   type: TaskType,
   meta: T
-) => Task<T> = (id, type, meta) => ({
-  id,
-  type,
-  meta
-});
+) => Task<T> = (id, type, meta) => {
+  assert(
+    !(id === null || id === undefined),
+    `missing id for ${TaskType[type]} with ${JSON.stringify(meta)}`
+  );
+  return {
+    id,
+    type,
+    meta,
+    time: dayjs().valueOf()
+  };
+};
 
 export function taskCompletion<R, M extends TaskMeta>(
   task: TaskType,

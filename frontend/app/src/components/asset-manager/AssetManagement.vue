@@ -25,25 +25,7 @@
         </v-tooltip>
       </v-col>
       <v-col md="2">
-        <v-btn depressed color="primary" @click="activateRestoreAssets()">
-          {{ $t('asset_update.restore.action') }}
-        </v-btn>
-        <confirm-dialog
-          :display="confirmRestore"
-          :title="$t('asset_update.restore.delete_confirmation.title')"
-          :message="$t('asset_update.restore.delete_confirmation.message')"
-          @confirm="restoreAssets"
-          @cancel="confirmRestore = false"
-        />
-        <confirm-dialog
-          v-if="done"
-          single-action
-          display
-          :title="$t('asset_update.restore.success.title')"
-          :primary-action="$t('asset_update.success.ok')"
-          :message="$t('asset_update.restore.success.description')"
-          @confirm="updateComplete()"
-        />
+        <restore-asset-db-button />
       </v-col>
     </v-row>
 
@@ -61,7 +43,7 @@
     <big-dialog
       :display="showForm"
       :title="dialogTitle"
-      :subtitle="dialogSubtitle"
+      subtitle=""
       :action-disabled="!validForm || saving"
       :primary-action="'save'"
       :loading="saving"
@@ -91,21 +73,29 @@
 
 <script lang="ts">
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { Component, Mixins } from 'vue-property-decorator';
-import { mapState, mapActions } from 'vuex';
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
+import { mapActions, mapState } from 'vuex';
 import AssetForm from '@/components/asset-manager/AssetForm.vue';
 import AssetTable from '@/components/asset-manager/AssetTable.vue';
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
+import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import RestoreAssetsDatabase from '@/mixins/restoreAssets-mixin';
-import { EthereumToken, ManagedAsset } from '@/services/assets/types';
+import { Routes } from '@/router/routes';
+import { ManagedAsset } from '@/services/assets/types';
 import { showError } from '@/store/utils';
 import { Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
 
 @Component({
-  components: { MergeDialog, ConfirmDialog, AssetForm, BigDialog, AssetTable },
+  components: {
+    RestoreAssetDbButton,
+    MergeDialog,
+    ConfirmDialog,
+    AssetForm,
+    BigDialog,
+    AssetTable
+  },
   computed: {
     ...mapState('balances', ['supportedAssets'])
   },
@@ -113,7 +103,19 @@ import { assert } from '@/utils/assertions';
     ...mapActions('session', ['logout'])
   }
 })
-export default class AssetManagement extends Mixins(RestoreAssetsDatabase) {
+export default class AssetManagement extends Vue {
+  @Prop({
+    type: String,
+    required: false,
+    default: null
+  })
+  identifier!: Nullable<string>;
+
+  @Watch('identifier')
+  onIdentifierChange(value: Nullable<string>) {
+    this.editAsset(value);
+  }
+
   loading: boolean = false;
   tokens: ManagedAsset[] = [];
   validForm: boolean = false;
@@ -136,12 +138,21 @@ export default class AssetManagement extends Mixins(RestoreAssetsDatabase) {
       : this.$t('asset_management.add_title').toString();
   }
 
-  get dialogSubtitle(): string {
-    return '';
-  }
-
   async mounted() {
     await this.refresh();
+    const identifier = this.identifier;
+    this.editAsset(identifier);
+  }
+
+  private editAsset(identifier: string | null) {
+    if (identifier) {
+      const token = this.supportedAssets.find(
+        ({ identifier: id }) => id === identifier
+      );
+      if (token) {
+        this.edit(token);
+      }
+    }
   }
 
   private async refresh() {
@@ -159,7 +170,7 @@ export default class AssetManagement extends Mixins(RestoreAssetsDatabase) {
     this.showForm = true;
   }
 
-  edit(token: EthereumToken) {
+  edit(token: SupportedAsset) {
     this.token = token;
     this.showForm = true;
   }
@@ -192,7 +203,7 @@ export default class AssetManagement extends Mixins(RestoreAssetsDatabase) {
       if (success) {
         await this.refresh();
       }
-    } catch (e) {
+    } catch (e: any) {
       showError(
         this.$t('asset_management.delete_error', {
           address,
@@ -208,7 +219,7 @@ export default class AssetManagement extends Mixins(RestoreAssetsDatabase) {
       if (success) {
         await this.refresh();
       }
-    } catch (e) {
+    } catch (e: any) {
       showError(
         this.$t('asset_management.delete_error', {
           address: identifier,
@@ -220,8 +231,7 @@ export default class AssetManagement extends Mixins(RestoreAssetsDatabase) {
 
   async closeDialog() {
     this.showForm = false;
+    await this.$router.push(Routes.ASSET_MANAGER);
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

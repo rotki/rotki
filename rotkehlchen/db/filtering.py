@@ -1,7 +1,14 @@
+import logging
 from dataclasses import dataclass
-from typing import Any, List, NamedTuple, Optional, Tuple, cast
+from typing import Any, List, NamedTuple, Optional, Tuple, Union, cast
 
+from rotkehlchen.errors import DeserializationError
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
+from rotkehlchen.utils.misc import hexstring_to_bytes
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class DBFilterOrder(NamedTuple):
@@ -63,6 +70,26 @@ class DBETHTransactionAddressFilter(DBFilter):
             bindings = [*self.addresses, *self.addresses]
 
         return filters, bindings
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBETHTransactionHashFilter(DBFilter):
+    tx_hash: Optional[Union[bytes, str]] = None
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        if self.tx_hash is None:
+            return [], []
+
+        if isinstance(self.tx_hash, str):
+            try:
+                value = hexstring_to_bytes(self.tx_hash)
+            except DeserializationError as e:
+                log.error(f'Failed to filter a DB transaction query by tx_hash: {str(e)}')
+                return [], []
+        else:
+            value = self.tx_hash
+
+        return ['tx_hash=?'], [value]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -136,24 +163,30 @@ class DBFilterQuery():
 class ETHTransactionsFilterQuery(DBFilterQuery):
 
     @property
-    def address_filter(self) -> DBETHTransactionAddressFilter:
-        assert len(self.filters) == 2
-        assert isinstance(self.filters[0], DBETHTransactionAddressFilter)
-        return self.filters[0]
+    def address_filter(self) -> Optional[DBETHTransactionAddressFilter]:
+        if len(self.filters) >= 1 and isinstance(self.filters[0], DBETHTransactionAddressFilter):
+            return self.filters[0]
+        return None
 
     @property
     def timestamp_filter(self) -> DBTimestampFilter:
-        assert len(self.filters) == 2
-        assert isinstance(self.filters[1], DBTimestampFilter)
-        return self.filters[1]
+        if len(self.filters) >= 2 and isinstance(self.filters[1], DBTimestampFilter):
+            return self.filters[1]
+        return DBTimestampFilter(and_op=True)  # no range specified
 
     @property
     def addresses(self) -> Optional[List[ChecksumEthAddress]]:
-        return self.address_filter.addresses
+        address_filter = self.address_filter
+        if address_filter is None:
+            return None
+        return address_filter.addresses
 
     @addresses.setter
     def addresses(self, addresses: Optional[List[ChecksumEthAddress]]) -> None:
-        self.address_filter.addresses = addresses
+        address_filter = self.address_filter
+        if address_filter is None:
+            return
+        address_filter.addresses = addresses
 
     @property
     def from_ts(self) -> Optional[Timestamp]:
@@ -182,6 +215,7 @@ class ETHTransactionsFilterQuery(DBFilterQuery):
             addresses: Optional[List[ChecksumEthAddress]] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
+            tx_hash: Optional[Union[str, bytes]] = None,
     ) -> 'ETHTransactionsFilterQuery':
         filter_query = cls.create(
             and_op=and_op,
@@ -191,13 +225,16 @@ class ETHTransactionsFilterQuery(DBFilterQuery):
             order_ascending=order_ascending,
         )
         filters: List[DBFilter] = []
-        filters.append(DBETHTransactionAddressFilter(and_op=False, addresses=addresses))
-        filters.append(
-            DBTimestampFilter(
-                and_op=True,
-                from_ts=from_ts,
-                to_ts=to_ts,
-            ),
-        )
+        if tx_hash:  # tx_hash means single result so make it as single filter
+            filters.append(DBETHTransactionHashFilter(and_op=False, tx_hash=tx_hash))
+        else:
+            filters.append(DBETHTransactionAddressFilter(and_op=False, addresses=addresses))
+            filters.append(
+                DBTimestampFilter(
+                    and_op=True,
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                ),
+            )
         filter_query.filters = filters
         return cast('ETHTransactionsFilterQuery', filter_query)

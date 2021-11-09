@@ -3,21 +3,20 @@ import { MutationTree } from 'vuex';
 import { Exchange } from '@/model/action-result';
 import {
   Balances,
-  BtcBalances,
+  BalanceType,
   BlockchainAssetBalances,
+  BtcBalances,
   ManualBalanceWithValue
 } from '@/services/balances/types';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
-import {
-  MUTATION_UPDATE_LOOPRING_BALANCES,
-  MUTATION_UPDATE_PRICES
-} from '@/store/balances/mutation-types';
+import { BalanceMutations } from '@/store/balances/mutation-types';
 import { defaultState } from '@/store/balances/state';
 import {
   AccountAssetBalances,
   AssetPrices,
   BalanceState,
-  EditExchange
+  EditExchange,
+  NonFungibleBalances
 } from '@/store/balances/types';
 import { ExchangeData, ExchangeInfo, ExchangeRates } from '@/typing/types';
 
@@ -118,16 +117,27 @@ export const mutations: MutationTree<BalanceState> = {
     state: BalanceState,
     manualBalances: ManualBalanceWithValue[]
   ) {
-    state.manualBalances = manualBalances;
+    state.manualBalances = manualBalances.filter(
+      x => x.balanceType === BalanceType.ASSET
+    );
+    state.manualLiabilities = manualBalances.filter(
+      x => x.balanceType === BalanceType.LIABILITY
+    );
   },
-  [MUTATION_UPDATE_PRICES](state: BalanceState, prices: AssetPrices) {
+  [BalanceMutations.UPDATE_PRICES](state: BalanceState, prices: AssetPrices) {
     state.prices = prices;
   },
-  [MUTATION_UPDATE_LOOPRING_BALANCES](
+  [BalanceMutations.UPDATE_LOOPRING_BALANCES](
     state: BalanceState,
     balances: AccountAssetBalances
   ) {
     state.loopringBalances = balances;
+  },
+  [BalanceMutations.UPDATE_NF_BALANCES](
+    state: BalanceState,
+    balances: NonFungibleBalances
+  ) {
+    state.nonFungibleBalances = balances;
   },
   reset(state: BalanceState) {
     Object.assign(state, defaultState());

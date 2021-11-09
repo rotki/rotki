@@ -124,6 +124,18 @@ class EthTokens():
             # to approach it as there is no way to assign a price to 1 veCRV. It
             # can be 1 CRV locked for 4 years or 4 CRV locked for 1 year etc.
             string_to_ethereum_address('0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2'),
+            # Ignore for now xsushi since is queried by defi SDK. We'll do it for now
+            # since the SDK entry might return other tokens from sushi and we don't
+            # fully support sushi now.
+            string_to_ethereum_address('0x8798249c2E607446EfB7Ad49eC89dD1865Ff4272'),
+            # Ignore the following tokens. They are old tokens of upgraded contracts which
+            # duplicated the balances at upgrade instead of doing a token swap.
+            # e.g.: https://github.com/rotki/rotki/issues/3548
+            # TODO: At some point we should actually remove them from the DB and
+            # upgrade possible occurences in the user DB
+            #
+            # Old contract of Fetch.ai
+            string_to_ethereum_address('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'),
         ]
         for asset in ignored_assets:  # don't query for the ignored tokens
             if asset.is_eth_token():  # type ignore since we know asset is a token

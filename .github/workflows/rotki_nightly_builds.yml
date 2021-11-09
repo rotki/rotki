@@ -220,6 +220,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Login to DockerHub
@@ -234,23 +236,27 @@ jobs:
           POSTFIX=$(if git describe --tags --exact-match "$REVISION" &>/dev/null; then echo ''; else echo '-dev'; fi)
           ROTKI_VERSION=${ROTKI_VERSION}${POSTFIX}-$(date +'%Y.%m.%d')
           echo "::set-output name=version::${ROTKI_VERSION}"
-      - name: Docker Tag
-        id: docker_tag
+      - name: Build Information
+        id: build_information
         run: |
           if [[ "$GITHUB_EVENT_NAME" == 'schedule' ]]; then
+            PLATFORMS='linux/amd64,linux/arm64'
             TAG=nightly
           else
+            PLATFORMS=linux/amd64
             TAG=dev
           fi
           echo "::set-output name=tag::$TAG"
+          echo "::set-output name=platforms::$PLATFORMS"
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfile
+          platforms: ${{ steps.build_information.outputs.platforms }}
           push: true
-          tags: rotki/rotki:${{ steps.docker_tag.outputs.tag }}
+          tags: rotki/rotki:${{ steps.build_information.outputs.tag }}
           build-args: |
             REVISION=${{ github.sha }}
             ROTKI_VERSION=${{ steps.rotki_version.outputs.version }}

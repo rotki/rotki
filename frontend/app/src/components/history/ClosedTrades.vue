@@ -28,6 +28,12 @@
               :disabled="selected.length === 0 || loading || refreshing"
               @ignore="ignoreTrades"
             />
+            <div v-if="selected.length > 0" class="mt-2 ms-1">
+              {{ $t('closed_trades.selected', { count: selected.length }) }}
+              <v-btn small text @click="setSelected(false)">
+                {{ $t('closed_trades.clear_selection') }}
+              </v-btn>
+            </div>
           </v-col>
           <v-col cols="12" sm="6">
             <table-filter
@@ -45,7 +51,6 @@
         show-expand
         sort-by="timestamp"
         class="closed-trades"
-        item-key="tradeId"
         :page.sync="page"
         :loading="refreshing"
       >
@@ -60,6 +65,7 @@
         <template #item.baseAsset="{ item }">
           <asset-details
             data-cy="trade_base"
+            opens-details
             hide-name
             :asset="item.baseAsset"
           />
@@ -67,6 +73,7 @@
         <template #item.quoteAsset="{ item }">
           <asset-details
             hide-name
+            opens-details
             :asset="item.quoteAsset"
             data-cy="trade_quote"
           />
@@ -123,7 +130,7 @@
         </template>
         <template
           v-if="tradesLimit <= tradesTotal && tradesLimit > 0"
-          #body.append="{ headers }"
+          #body.prepend="{ headers }"
         >
           <upgrade-row
             :limit="tradesLimit"
@@ -195,8 +202,12 @@ import AssetMixin from '@/mixins/asset-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
-import { HistoryActions, IGNORE_TRADES } from '@/store/history/consts';
-import { IgnoreActionPayload, TradeEntry } from '@/store/history/types';
+import { HistoryActions } from '@/store/history/consts';
+import {
+  IgnoreActionPayload,
+  IgnoreActionType,
+  TradeEntry
+} from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
 import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp } from '@/utils/date';
@@ -442,7 +453,7 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
     }
     const payload: IgnoreActionPayload = {
       actionIds: actionIds,
-      type: IGNORE_TRADES
+      type: IgnoreActionType.TRADES
     };
     if (ignore) {
       status = await this.ignoreActions(payload);
@@ -525,9 +536,10 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
   }
 
   promptForDelete(trade: TradeEntry) {
-    const prep = (trade.tradeType === 'buy'
-      ? this.$t('closed_trades.description.with').toString()
-      : this.$t('closed_trades.description.for').toString()
+    const prep = (
+      trade.tradeType === 'buy'
+        ? this.$t('closed_trades.description.with').toString()
+        : this.$t('closed_trades.description.for').toString()
     ).toLocaleLowerCase();
     this.confirmationMessage = this.$t('closed_trades.confirmation.message', {
       pair: `${this.getSymbol(trade.baseAsset)} ${prep} ${this.getSymbol(

@@ -1,31 +1,31 @@
+import { BigNumber } from '@rotki/common/';
 import { AxiosTransformer } from 'axios';
-import { default as BigNumber } from 'bignumber.js';
 
 const isNumber = /^-?\d+(\.\d+)?((\d(.\d+)?)?[Ee][-+]\d+)?$/;
 
-const createReviver = (
-  numericKeys: string[] | null
-): ((key: string, value: any) => any) => (key: string, value: any) => {
-  const checkForBN = numericKeys === null || numericKeys.includes(key);
-  if (
-    checkForBN &&
-    value &&
-    typeof value === 'string' &&
-    isNumber.test(value)
-  ) {
-    return new BigNumber(value);
-  }
+const createReviver =
+  (numericKeys: string[] | null): ((key: string, value: any) => any) =>
+  (key: string, value: any) => {
+    const checkForBN = numericKeys === null || numericKeys.includes(key);
+    if (
+      checkForBN &&
+      value &&
+      typeof value === 'string' &&
+      isNumber.test(value)
+    ) {
+      return new BigNumber(value);
+    }
 
-  if (numericKeys?.includes(key) && isObject(value)) {
-    for (const sub of Object.keys(value)) {
-      const valueElement = value[sub];
-      if (typeof valueElement === 'string' && isNumber.test(valueElement)) {
-        value[sub] = new BigNumber(valueElement);
+    if (numericKeys?.includes(key) && isObject(value)) {
+      for (const sub of Object.keys(value)) {
+        const valueElement = value[sub];
+        if (typeof valueElement === 'string' && isNumber.test(valueElement)) {
+          value[sub] = new BigNumber(valueElement);
+        }
       }
     }
-  }
-  return value;
-};
+    return value;
+  };
 
 const isObject = (data: any): boolean =>
   typeof data === 'object' &&
@@ -35,14 +35,24 @@ const isObject = (data: any): boolean =>
   !(data instanceof Date) &&
   !(data instanceof BigNumber);
 
-function getUpdatedKey(key: string, camelCase: boolean) {
+export function getUpdatedKey(key: string, camelCase: boolean) {
   if (camelCase) {
     return key.includes('_')
-      ? key.replace(/_(.)/gu, (_, p1) => p1.toLocaleUpperCase())
+      ? key.replace(/_(.)/gu, (_, p1) => p1.toUpperCase())
       : key;
   }
 
-  return key.replace(/([A-Z])/gu, (_, p1) => `_${p1.toLocaleLowerCase()}`);
+  return key.replace(/([A-Z])/gu, (_, p1, offset, string) => {
+    const nextCharOffset = offset + 1;
+    if (
+      (nextCharOffset < string.length &&
+        /([A-Z])/.test(string[nextCharOffset])) ||
+      nextCharOffset === string.length
+    ) {
+      return p1;
+    }
+    return `_${p1.toLowerCase()}`;
+  });
 }
 
 export const convertKeys = (
@@ -93,7 +103,7 @@ export const setupJsonTransformer: (
       try {
         result = JSON.parse(data, reviver);
         // eslint-disable-next-line no-empty
-      } catch (e) {}
+      } catch (e: any) {}
     }
     return result;
   };

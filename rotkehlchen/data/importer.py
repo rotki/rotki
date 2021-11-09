@@ -9,8 +9,9 @@ from typing import Any, Dict, List, Tuple
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.assets.converters import asset_from_nexo, asset_from_uphold
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_DAI, A_SAI, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -29,6 +30,8 @@ from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, Tra
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+SAI_TIMESTAMP = 1574035200
 
 
 def remap_header(fieldnames: List[str]) -> List[str]:
@@ -240,6 +243,7 @@ class DataImporter():
             'referral_card_cashback',
             'card_cashback_reverted',
             'reimbursement',
+            'viban_purchase',
         ):
             # variable mapping to raw data
             currency = csv_row['Currency']
@@ -281,8 +285,13 @@ class DataImporter():
             )
             self.db.add_trades([trade])
 
-        elif row_type in ('crypto_withdrawal', 'crypto_deposit'):
-            if row_type == 'crypto_withdrawal':
+        elif row_type in (
+            'crypto_withdrawal',
+            'crypto_deposit',
+            'viban_deposit',
+            'viban_card_top_up',
+        ):
+            if row_type in ('crypto_withdrawal', 'viban_deposit', 'viban_card_top_up'):
                 category = AssetMovementCategory.WITHDRAWAL
                 amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
             else:
@@ -406,18 +415,44 @@ class DataImporter():
         investments_withdrawals: Dict[str, List[Any]] = defaultdict(list)
         debited_row = None
         credited_row = None
+        expects_debited = False
+        credited_timestamp = None
         for row in data:
+            # If we don't have the corresponding debited entry ignore them
+            # and warn the user
+            if (
+                expects_debited is True and
+                row['Transaction Kind'] != f'{tx_kind}_debited'
+            ):
+                self.db.msg_aggregator.add_warning(
+                    f'Error during cryptocom CSV import consumption. Found {tx_kind}_credited '
+                    f'but no amount debited afterwards at date {row["Timestamp (UTC)"]}',
+                )
+                # Pop the last credited event as it's invalid. We always assume to be at least
+                # one debited event and one credited event. If we don't find the debited event
+                # we have to remove the credit at the right timestamp or our logic will break.
+                # We notify the user about this issue so (s)he can take actions.
+                multiple_rows.pop(credited_timestamp, None)
+                # reset expects_debited value
+                expects_debited = False
             if row['Transaction Kind'] == f'{tx_kind}_debited':
                 timestamp = deserialize_timestamp_from_date(
                     date=row['Timestamp (UTC)'],
                     formatstr='%Y-%m-%d %H:%M:%S',
                     location='cryptocom',
                 )
+                if expects_debited is False and timestamp != credited_timestamp:
+                    self.db.msg_aggregator.add_warning(
+                        f'Error during cryptocom CSV import consumption. Found {tx_kind}_debited'
+                        f' but no amount credited before at date {row["Timestamp (UTC)"]}',
+                    )
+                    continue
                 if timestamp not in multiple_rows:
                     multiple_rows[timestamp] = {}
                 if 'debited' not in multiple_rows[timestamp]:
                     multiple_rows[timestamp]['debited'] = []
                 multiple_rows[timestamp]['debited'].append(row)
+                expects_debited = False
             elif row['Transaction Kind'] == f'{tx_kind}_credited':
                 # They only is one credited row
                 timestamp = deserialize_timestamp_from_date(
@@ -427,6 +462,8 @@ class DataImporter():
                 )
                 if timestamp not in multiple_rows:
                     multiple_rows[timestamp] = {}
+                expects_debited = True
+                credited_timestamp = timestamp
                 multiple_rows[timestamp]['credited'] = row
             elif row['Transaction Kind'] == f'{tx_kind}_deposit':
                 asset = row['Currency']
@@ -439,8 +476,14 @@ class DataImporter():
             # When we convert multiple assets dust to CRO
             # in one time, it will create multiple debited rows with
             # the same timestamp
-            debited_rows = multiple_rows[timestamp]['debited']
-            credited_row = multiple_rows[timestamp]['credited']
+            try:
+                debited_rows = multiple_rows[timestamp]['debited']
+                credited_row = multiple_rows[timestamp]['credited']
+            except KeyError as e:
+                self.db.msg_aggregator.add_warning(
+                    f'Failed to get {str(e)} event at timestamp {timestamp}.',
+                )
+                continue
             total_debited_usd = functools.reduce(
                 lambda acc, row:
                     acc +
@@ -820,7 +863,14 @@ class DataImporter():
         - DeserializationError
         - sqlcipher.IntegrityError from db_ledger.add_ledger_action
         """
-        ignored_entries = ('ExchangeToWithdraw', 'DepositToExchange')
+        ignored_entries = (
+            'ExchangeToWithdraw',
+            'DepositToExchange',
+            'UnlockingTermDeposit',  # Move between nexo wallets
+            'LockingTermDeposit',  # Move between nexo wallets
+            'TransferIn',  # Transfer between nexo wallets
+            'TransferOut',  # Transfer between nexo wallets
+        )
 
         if 'rejected' not in csv_row['Details']:
             timestamp = deserialize_timestamp_from_date(
@@ -832,11 +882,17 @@ class DataImporter():
             log.debug(f'Ignoring rejected nexo entry {csv_row}')
             return
 
-        asset = symbol_to_asset_or_token(csv_row['Currency'])
+        asset = asset_from_nexo(csv_row['Currency'])
         amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
         entry_type = csv_row['Type']
         transaction = csv_row['Transaction']
 
+        if entry_type == 'Exchange':
+            self.db.msg_aggregator.add_warning(
+                'Found exchange transaction in nexo csv import but the entry will be ignored '
+                'since not enough information is provided about the trade.',
+            )
+            return
         if entry_type in ('Deposit', 'ExchangeDepositedOn', 'LockingTermDeposit'):
             asset_movement = AssetMovement(
                 location=Location.NEXO,
@@ -879,7 +935,15 @@ class DataImporter():
                 notes=f'{entry_type} from Nexo',
             )
             self.db_ledger.add_ledger_action(action)
-        elif entry_type in ('Interest', 'Bonus', 'Dividend'):
+        elif entry_type in ('Interest', 'Bonus', 'Dividend', 'FixedTermInterest'):
+            # A user shared a CSV file where some entries marked as interest had negative amounts.
+            # we couldn't find information about this since they seem internal transactions made
+            # by nexo but they appear like a trade from asset -> nexo in order to gain interest
+            # in nexo. There seems to always be another entry with the amount that the user
+            # received so we'll ignore interest rows with negative amounts.
+            if deserialize_asset_amount(csv_row['Amount']) < 0:
+                log.debug(f'Ignoring nexo entry {csv_row} with negative interest')
+                return
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
                 timestamp=timestamp,
@@ -930,6 +994,257 @@ class DataImporter():
                     continue
                 except UnsupportedCSVEntry as e:
                     self.db.msg_aggregator.add_warning(str(e))
+                    continue
+                except KeyError as e:
+                    return False, str(e)
+        return True, ''
+
+    def _consume_shapeshift_trade(self, csv_row: Dict[str, Any]) -> None:
+        """
+        Consume the file containing only trades from ShapeShift.
+        """
+        timestamp = deserialize_timestamp_from_date(
+            date=csv_row['timestamp'],
+            formatstr='iso8601',
+            location='ShapeShift',
+        )
+        buy_asset = symbol_to_asset_or_token(csv_row['outputCurrency'])
+        buy_amount = deserialize_asset_amount(csv_row['outputAmount'])
+        sold_asset = symbol_to_asset_or_token(csv_row['inputCurrency'])
+        sold_amount = deserialize_asset_amount(csv_row['inputAmount'])
+        rate = deserialize_asset_amount(csv_row['rate'])
+        fee = deserialize_fee(csv_row['minerFee'])
+        in_addr = csv_row['inputAddress']
+        out_addr = csv_row['outputAddress']
+        notes = f"""
+Trade from ShapeShift with ShapeShift Deposit Address:
+ {csv_row['inputAddress']}, and
+ Transaction ID: {csv_row['inputTxid']}.
+  Refund Address: {csv_row['refundAddress']}, and
+ Transaction ID: {csv_row['refundTxid']}.
+  Destination Address: {csv_row['outputAddress']}, and
+ Transaction ID: {csv_row['outputTxid']}.
+"""
+        if sold_amount == ZERO:
+            log.debug(f'Ignoring ShapeShift trade with sold_amount equal to zero. {csv_row}')
+            return
+        if in_addr == '' or out_addr == '':
+            log.debug(f'Ignoring ShapeShift trade which was performed on DEX. {csv_row}')
+            return
+        # Assuming that before launch of multi collateral dai everything was SAI.
+        # Converting DAI to SAI in buy_asset and sell_asset.
+        if buy_asset == A_DAI and timestamp <= SAI_TIMESTAMP:
+            buy_asset = A_SAI
+        if sold_asset == A_DAI and timestamp <= SAI_TIMESTAMP:
+            sold_asset = A_SAI
+        if rate <= ZERO:
+            log.warning(f'shapeshift csv entry has negative or zero rate. Ignoring. {csv_row}')
+            return
+
+        trade = Trade(
+            timestamp=timestamp,
+            location=Location.SHAPESHIFT,
+            base_asset=buy_asset,
+            quote_asset=sold_asset,
+            trade_type=TradeType.BUY,
+            amount=buy_amount,
+            rate=Price(1 / rate),
+            fee=Fee(fee),
+            fee_currency=buy_asset,  # Assumption that minerFee is denominated in outputCurrency
+            link='',
+            notes=notes,
+        )
+        self.db.add_trades([trade])
+
+    def import_shapeshift_trades_csv(self, filepath: Path) -> Tuple[bool, str]:
+        """
+        Information for the values that the columns can have has been obtained from sample CSVs
+        """
+        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+            data = csv.DictReader(csvfile)
+            for row in data:
+                try:
+                    self._consume_shapeshift_trade(row)
+                except UnknownAsset as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'During ShapeShift CSV import found action with unknown '
+                        f'asset {e.asset_name}. Ignoring entry',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'Deserialization error during ShapeShift CSV import. '
+                        f'{str(e)}. Ignoring entry',
+                    )
+                    continue
+                except KeyError as e:
+                    return False, str(e)
+        return True, ''
+
+    def _consume_uphold_transaction(self, csv_row: Dict[str, Any]) -> None:
+        """
+        Consume the file containing both trades and transactions from uphold.
+        This method can raise:
+        - UnknownAsset
+        - DeserializationError
+        - KeyError
+        """
+        timestamp = deserialize_timestamp_from_date(
+            date=csv_row['Date'],
+            formatstr='%a %b %d %Y %H:%M:%S %Z%z',
+            location='uphold',
+        )
+        destination = csv_row['Destination']
+        destination_asset = asset_from_uphold(csv_row['Destination Currency'])
+        destination_amount = deserialize_asset_amount(csv_row['Destination Amount'])
+        origin = csv_row['Origin']
+        origin_asset = asset_from_uphold(csv_row['Origin Currency'])
+        origin_amount = deserialize_asset_amount(csv_row['Origin Amount'])
+        if csv_row['Fee Amount'] == '':
+            fee = FVal(ZERO)
+        else:
+            fee = deserialize_fee(csv_row['Fee Amount'])
+        fee_asset = asset_from_uphold(csv_row['Fee Currency'] or csv_row['Origin Currency'])
+        transaction_type = csv_row['Type']
+        notes = f"""
+Activity from uphold with uphold transaction id:
+ {csv_row['Id']}, origin: {csv_row['Origin']},
+ and destination: {csv_row['Destination']}.
+  Type: {csv_row['Type']}.
+  Status: {csv_row['Status']}.
+"""
+        if origin == destination == 'uphold':  # On exchange Transfers / Trades
+            if origin_asset == destination_asset and origin_amount == destination_amount:
+                if transaction_type == 'in':
+                    action_type = LedgerActionType.INCOME
+                elif transaction_type == 'out':
+                    action_type = LedgerActionType.EXPENSE
+                else:
+                    log.debug(f'Ignoring uncaught transaction type of {transaction_type}.')
+                    return
+                action = LedgerAction(
+                    identifier=0,
+                    timestamp=timestamp,
+                    action_type=action_type,
+                    location=Location.UPHOLD,
+                    amount=destination_amount,
+                    asset=destination_asset,
+                    rate=None,
+                    rate_asset=None,
+                    link='',
+                    notes=notes,
+                )
+                self.db_ledger.add_ledger_action(action)
+            else:  # Assets or amounts differ (Trades)
+                # in uphold UI the exchanged amount includes the fee.
+                if fee_asset == destination_asset:
+                    destination_amount = AssetAmount(destination_amount + fee)
+                if destination_amount > 0:
+                    trade = Trade(
+                        timestamp=timestamp,
+                        location=Location.UPHOLD,
+                        base_asset=destination_asset,
+                        quote_asset=origin_asset,
+                        trade_type=TradeType.BUY,
+                        amount=destination_amount,
+                        rate=Price(origin_amount / destination_amount),
+                        fee=Fee(fee),
+                        fee_currency=fee_asset,
+                        link='',
+                        notes=notes,
+                    )
+                    self.db.add_trades([trade])
+                else:
+                    log.debug(f'Ignoring trade with Destination Amount: {destination_amount}.')
+        elif origin == 'uphold':
+            if transaction_type == 'out':
+                if origin_asset == destination_asset:  # Withdrawals
+                    asset_movement = AssetMovement(
+                        location=Location.UPHOLD,
+                        category=AssetMovementCategory.WITHDRAWAL,
+                        address=None,
+                        transaction_id=None,
+                        timestamp=timestamp,
+                        asset=origin_asset,
+                        amount=origin_amount,
+                        fee=Fee(fee),
+                        fee_asset=fee_asset,
+                        link='',
+                    )
+                    self.db.add_asset_movements([asset_movement])
+                else:  # Trades (sell)
+                    if origin_amount > 0:
+                        trade = Trade(
+                            timestamp=timestamp,
+                            location=Location.UPHOLD,
+                            base_asset=origin_asset,
+                            quote_asset=destination_asset,
+                            trade_type=TradeType.SELL,
+                            amount=origin_amount,
+                            rate=Price(destination_amount / origin_amount),
+                            fee=Fee(fee),
+                            fee_currency=fee_asset,
+                            link='',
+                            notes=notes,
+                        )
+                        self.db.add_trades([trade])
+                    else:
+                        log.debug(f'Ignoring trade with Origin Amount: {origin_amount}.')
+        elif destination == 'uphold':
+            if transaction_type == 'in':
+                if origin_asset == destination_asset:  # Deposits
+                    asset_movement = AssetMovement(
+                        location=Location.UPHOLD,
+                        category=AssetMovementCategory.DEPOSIT,
+                        address=None,
+                        transaction_id=None,
+                        timestamp=timestamp,
+                        asset=origin_asset,
+                        amount=origin_amount,
+                        fee=Fee(fee),
+                        fee_asset=fee_asset,
+                        link='',
+                    )
+                    self.db.add_asset_movements([asset_movement])
+                else:  # Trades (buy)
+                    if destination_amount > 0:
+                        trade = Trade(
+                            timestamp=timestamp,
+                            location=Location.UPHOLD,
+                            base_asset=destination_asset,
+                            quote_asset=origin_asset,
+                            trade_type=TradeType.BUY,
+                            amount=destination_amount,
+                            rate=Price(origin_amount / destination_amount),
+                            fee=Fee(fee),
+                            fee_currency=fee_asset,
+                            link='',
+                            notes=notes,
+                        )
+                        self.db.add_trades([trade])
+                    else:
+                        log.debug(f'Ignoring trade with Destination Amount: {destination_amount}.')
+
+    def import_uphold_transactions_csv(self, filepath: Path) -> Tuple[bool, str]:
+        """
+        Information for the values that the columns can have has been obtained from sample CSVs
+        """
+        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+            data = csv.DictReader(csvfile)
+            for row in data:
+                try:
+                    self._consume_uphold_transaction(row)
+                except UnknownAsset as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'During uphold CSV import found action with unknown '
+                        f'asset {e.asset_name}. Ignoring entry',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'Deserialization error during uphold CSV import. '
+                        f'{str(e)}. Ignoring entry',
+                    )
                     continue
                 except KeyError as e:
                     return False, str(e)

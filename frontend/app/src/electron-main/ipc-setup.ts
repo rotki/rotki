@@ -73,7 +73,7 @@ function setupMetamaskImport() {
         stopHttp();
         event.sender.send(IPC_METAMASK_IMPORT, { error: 'waiting timeout' });
       }, 120000);
-    } catch (e) {
+    } catch (e: any) {
       event.sender.send(IPC_METAMASK_IMPORT, { error: e.message });
     }
   });
@@ -89,7 +89,7 @@ function setupBackendRestart(getWindow: WindowProvider, pyHandler: PyHandler) {
         await pyHandler.exitPyProc(true);
         await pyHandler.createPyProc(win, options);
         success = true;
-      } catch (e) {
+      } catch (e: any) {
         console.error(e);
       }
 
@@ -192,7 +192,7 @@ function setupInstallUpdate(pyHandler: PyHandler) {
         try {
           autoUpdater.quitAndInstall();
           resolve();
-        } catch (e) {
+        } catch (e: any) {
           pyHandler.logToFile(e);
           reject(e);
         }
@@ -202,7 +202,7 @@ function setupInstallUpdate(pyHandler: PyHandler) {
     try {
       await quit;
       event.sender.send(IPC_INSTALL_UPDATE, true);
-    } catch (e) {
+    } catch (e: any) {
       pyHandler.logToFile(e);
       event.sender.send(IPC_INSTALL_UPDATE, e);
     }
@@ -220,7 +220,7 @@ function setupDownloadUpdate(getWindow: WindowProvider, pyHandler: PyHandler) {
     try {
       await autoUpdater.downloadUpdate();
       event.sender.send(IPC_DOWNLOAD_UPDATE, true);
-    } catch (e) {
+    } catch (e: any) {
       pyHandler.logToFile(e);
       event.sender.send(IPC_DOWNLOAD_UPDATE, false);
     } finally {
@@ -243,7 +243,7 @@ function setupCheckForUpdates(pyHandler: PyHandler) {
     });
     try {
       await autoUpdater.checkForUpdates();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       pyHandler.logToFile(e);
       event.sender.send(IPC_CHECK_FOR_UPDATES, false);

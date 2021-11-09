@@ -16,7 +16,8 @@
   >
     <template #append>
       <v-btn tabindex="-1" icon @click="revealed = !revealed">
-        <v-icon v-text="revealed ? 'mdi-eye' : 'mdi-eye-off'" />
+        <v-icon v-if="revealed">mdi-eye</v-icon>
+        <v-icon v-else>mdi-eye-off</v-icon>
       </v-btn>
     </template>
   </v-text-field>

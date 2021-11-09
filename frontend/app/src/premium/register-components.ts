@@ -1,4 +1,6 @@
 import Vue from 'vue';
+import AssetLink from '@/components/assets/AssetLink.vue';
+import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
 import UniswapPoolDetails from '@/components/defi/uniswap/UniswapPoolDetails.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -24,6 +26,7 @@ import TableExpandContainer from '@/components/helper/table/TableExpandContainer
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 
 export function registerComponents() {
@@ -67,4 +70,9 @@ export function registerComponents() {
   Vue.component('ConfirmDialog', ConfirmDialog);
   // Version 13 - 1.20
   Vue.component('UniswapPoolDetails', UniswapPoolDetails);
+  // Version 14 - 1.21
+  Vue.component('PaginatedCards', PaginatedCards);
+  Vue.component('AssetLink', AssetLink);
+  // Version 15 - 1.21.2
+  Vue.component('StatisticsGraphSettings', StatisticsGraphSettings);
 }

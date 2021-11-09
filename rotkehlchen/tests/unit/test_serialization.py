@@ -1,5 +1,6 @@
 import pytest
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance, add_manually_tracked_balances
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import DeserializationError
@@ -66,6 +67,7 @@ def test_deserialize_location(database):
             amount=FVal(1),
             location=data,
             tags=None,
+            balance_type=BalanceType.ASSET,
         ))
 
     with pytest.raises(DeserializationError):

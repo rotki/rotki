@@ -4,7 +4,7 @@ from hexbytes import HexBytes
 from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -20,14 +20,6 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.modules.adex import ADXStakingHistory
-from rotkehlchen.chain.ethereum.modules.liquity.trove import (
-    Trove,
-    LiquityTroveEvent,
-    LiquityStakeEvent,
-    TroveOperation,
-    LiquityStakeEventType,
-    StakePosition,
-)
 from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerBPTEventPoolToken,
     BalancerEvent,
@@ -36,6 +28,14 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerPoolTokenBalance,
 )
 from rotkehlchen.chain.ethereum.modules.compound import CompoundBalance, CompoundEvent
+from rotkehlchen.chain.ethereum.modules.liquity.trove import (
+    LiquityStakeEvent,
+    LiquityStakeEventType,
+    LiquityTroveEvent,
+    StakePosition,
+    Trove,
+    TroveOperation,
+)
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     MakerdaoVault,
@@ -43,6 +43,8 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     VaultEvent,
     VaultEventType,
 )
+from rotkehlchen.chain.ethereum.modules.nfts import NFTResult
+from rotkehlchen.chain.ethereum.modules.pickle.pickle import DillBalance
 from rotkehlchen.chain.ethereum.modules.uniswap import (
     UniswapPool,
     UniswapPoolAsset,
@@ -143,6 +145,8 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             LiquityStakeEvent,
             Trove,
             StakePosition,
+            DillBalance,
+            NFTResult,
     )):
         return process_result(entry.serialize())
     if isinstance(entry, (
@@ -181,6 +185,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             LiquityStakeEvent,
             TroveOperation,
             LiquityStakeEventType,
+            BalanceType,
     )):
         return str(entry)
 

@@ -8,7 +8,12 @@
         class="d-flex flex-column align-center justify-center"
       >
         <div
-          class="overall-balances__net-worth text-center font-weight-medium mb-2"
+          class="
+            overall-balances__net-worth
+            text-center
+            font-weight-medium
+            mb-2
+          "
         >
           <loading
             v-if="anyLoading"
@@ -24,7 +29,13 @@
         <div class="overall-balances__net-worth-change py-2">
           <span
             :class="balanceClass"
-            class="pa-1 px-2 d-flex flex-row overall-balances__net-worth-change__pill"
+            class="
+              pa-1
+              px-2
+              d-flex
+              flex-row
+              overall-balances__net-worth-change__pill
+            "
           >
             <span class="me-2">{{ indicator }}</span>
             <amount-display
@@ -44,7 +55,13 @@
       </v-col>
       <v-col cols="12" md="6" lg="7" class="d-flex">
         <div
-          class="d-flex justify-center align-center flex-grow-1 overall-balances__net-worth-chart"
+          class="
+            d-flex
+            justify-center
+            align-center
+            flex-grow-1
+            overall-balances__net-worth-chart
+          "
         >
           <net-worth-chart
             v-if="!anyLoading"
@@ -69,13 +86,13 @@
 </template>
 
 <script lang="ts">
+import { BigNumber } from '@rotki/common/';
 import { TimeUnit } from '@rotki/common/lib/settings';
 import {
   TimeFramePeriod,
   Timeframes,
   timeframes
 } from '@rotki/common/lib/settings/graphs';
-import { default as BigNumber } from 'bignumber.js';
 import dayjs from 'dayjs';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';

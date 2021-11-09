@@ -15,7 +15,7 @@ from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPri
 from rotkehlchen.typing import AVAILABLE_MODULES_MAP, ModuleName, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
-ROTKEHLCHEN_DB_VERSION = 29
+ROTKEHLCHEN_DB_VERSION = 30
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_INCLUDE_GAS_COSTS = True
@@ -42,6 +42,7 @@ DEFAULT_TAXABLE_LEDGER_ACTIONS = [
 ]
 DEFAULT_PNL_CSV_WITH_FORMULAS = True
 DEFAULT_PNL_CSV_HAVE_SUMMARY = False
+DEFAULT_SSF_0GRAPH_MULTIPLIER = 0
 
 JSON_KEYS = ('current_price_oracles', 'historical_price_oracles', 'taxable_ledger_actions')
 BOOLEAN_KEYS = (
@@ -61,6 +62,7 @@ INTEGER_KEYS = (
     'ui_floating_precision',
     'balance_save_frequency',
     'btc_derivation_gap_limit',
+    'ssf_0graph_multiplier',
 )
 STRING_KEYS = (
     'eth_rpc_endpoint',
@@ -101,6 +103,7 @@ class DBSettings(NamedTuple):
     taxable_ledger_actions: List[LedgerActionType] = DEFAULT_TAXABLE_LEDGER_ACTIONS
     pnl_csv_with_formulas: bool = DEFAULT_PNL_CSV_WITH_FORMULAS
     pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
+    ssf_0graph_multiplier: int = DEFAULT_SSF_0GRAPH_MULTIPLIER
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -127,6 +130,7 @@ class ModifiableDBSettings(NamedTuple):
     taxable_ledger_actions: Optional[List[LedgerActionType]] = None
     pnl_csv_with_formulas: Optional[bool] = None
     pnl_csv_have_summary: Optional[bool] = None
+    ssf_0graph_multiplier: Optional[int] = None
 
     def serialize(self) -> Dict[str, Any]:
         settings_dict = {}

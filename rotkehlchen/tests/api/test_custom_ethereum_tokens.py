@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BAT
@@ -532,6 +533,7 @@ def test_custom_tokens_delete_guard(rotkehlchen_api_server):
         amount=FVal(1),
         location=Location.EXTERNAL,
         tags=None,
+        balance_type=BalanceType.ASSET,
     )])
 
     # Try to delete the token and see it fails because a user owns it

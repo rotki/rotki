@@ -1,4 +1,5 @@
 import csv
+import json
 import logging
 from pathlib import Path
 from tempfile import mkdtemp
@@ -53,6 +54,7 @@ FILENAME_LOAN_SETTLEMENTS_CSV = 'loan_settlements.csv'
 FILENAME_DEFI_EVENTS_CSV = 'defi_events.csv'
 FILENAME_LEDGER_ACTIONS_CSV = 'ledger_actions.csv'
 FILENAME_ALL_CSV = 'all_events.csv'
+ETH_EXPLORER = 'https://etherscan.io/tx/'
 
 ACCOUNTING_SETTINGS = (
     'include_crypto2crypto',
@@ -102,6 +104,21 @@ class CSVExporter():
         self.create_csv = create_csv
         self.all_events: List[Dict[str, Any]] = []
         self.reset()
+
+        # get setting for prefered eth explorer
+        user_settings = self.database.get_settings()
+        try:
+            frontend_settings = json.loads(user_settings.frontend_settings)
+            if (
+                'explorers' in frontend_settings and
+                'ETH' in frontend_settings['explorers'] and
+                'transaction' in frontend_settings['explorers']['ETH']
+            ):
+                self.eth_explorer = frontend_settings['explorers']['ETH']['transaction']
+            else:
+                self.eth_explorer = ETH_EXPLORER
+        except (json.decoder.JSONDecodeError, KeyError):
+            self.eth_explorer = ETH_EXPLORER
 
     def reset(self) -> None:
         """Resets the CSVExporter and prepares it for a new profit/loss run"""
@@ -325,6 +342,8 @@ class CSVExporter():
             taxable_bought_cost: FVal = ZERO,
             total_bought_cost: FVal = ZERO,
             cost_basis_info: Optional['CostBasisInfo'] = None,
+            link: Optional[str] = '',
+            notes: Optional[str] = '',
     ) -> None:
         row = len(self.all_events_csv) + 2
         if event_type == EV_BUY:
@@ -390,10 +409,15 @@ class CSVExporter():
             'time': timestamp,
             'cost_basis': cost_basis_info.serialize() if cost_basis_info else None,
             'is_virtual': is_virtual,
+            'link': link,
+            'notes': notes,
         }
         log.debug('csv event', **entry)
         self.all_events.append(entry)
         new_entry = entry.copy()
+        # deleting and read link and notes for them to be at the end
+        del new_entry['link']
+        del new_entry['notes']
         new_entry['net_profit_or_loss'] = net_profit_or_loss_csv
         new_entry['time'] = self.timestamp_to_date(timestamp)
         new_entry[f'paid_in_{self.profit_currency.symbol}'] = paid_in_profit_currency
@@ -410,6 +434,8 @@ class CSVExporter():
         del new_entry['paid_in_profit_currency']
         del new_entry['taxable_received_in_profit_currency']
         del new_entry['taxable_bought_cost_in_profit_currency']
+        new_entry['link'] = link
+        new_entry['notes'] = notes
         self.all_events_csv.append(new_entry)
 
     def add_buy(
@@ -425,6 +451,8 @@ class CSVExporter():
             paid_with_asset_rate: FVal,
             timestamp: Timestamp,
             is_virtual: bool,
+            link: Optional[str],
+            notes: Optional[str],
     ) -> None:
         if not self.create_csv:
             return
@@ -448,6 +476,8 @@ class CSVExporter():
             'cost_basis': 'N/A',
             'is_virtual': is_virtual,
             f'total_bought_cost_in_{self.profit_currency.symbol}': ZERO,
+            'link': link,
+            'notes': notes,
         })
         self.add_to_allevents(
             event_type=EV_BUY,
@@ -461,6 +491,8 @@ class CSVExporter():
             total_received_in_profit_currency=ZERO,
             timestamp=timestamp,
             is_virtual=is_virtual,
+            link=link,
+            notes=notes,
         )
 
     def add_sell(
@@ -480,6 +512,8 @@ class CSVExporter():
             is_virtual: bool,
             cost_basis_info: 'CostBasisInfo',
             total_bought_cost: FVal,
+            link: Optional[str],
+            notes: Optional[str],
     ) -> None:
         if not self.create_csv:
             return
@@ -521,6 +555,8 @@ class CSVExporter():
             'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'is_virtual': is_virtual,
             f'total_bought_cost_in_{self.profit_currency.symbol}': total_bought_cost,
+            'link': link,
+            'notes': notes,
         })
         paid_in_profit_currency = ZERO
         self.add_to_allevents(
@@ -539,6 +575,8 @@ class CSVExporter():
             taxable_bought_cost=taxable_bought_cost,
             total_bought_cost=total_bought_cost,
             cost_basis_info=cost_basis_info,
+            link=link,
+            notes=notes,
         )
 
     def add_loan_settlement(
@@ -550,6 +588,8 @@ class CSVExporter():
             total_fee_in_profit_currency: FVal,
             timestamp: Timestamp,
             cost_basis_info: 'CostBasisInfo',
+            link: Optional[str],
+            notes: Optional[str],
     ) -> None:
         if not self.create_csv:
             return
@@ -569,6 +609,8 @@ class CSVExporter():
             f'loss_in_{self.profit_currency.symbol}': loss_csv,
             'cost_basis': cost_basis_info.to_string(self.timestamp_to_date),
             'time': self.timestamp_to_date(timestamp),
+            'link': link,
+            'notes': notes,
         })
         self.add_to_allevents(
             event_type=EV_LOAN_SETTLE,
@@ -582,6 +624,8 @@ class CSVExporter():
             total_received_in_profit_currency=ZERO,
             timestamp=timestamp,
             cost_basis_info=cost_basis_info,
+            link=link,
+            notes=notes,
         )
 
     def add_loan_profit(
@@ -593,6 +637,8 @@ class CSVExporter():
             lent_amount: FVal,
             open_time: Timestamp,
             close_time: Timestamp,
+            link: Optional[str],
+            notes: Optional[str],
     ) -> None:
         if not self.create_csv:
             return
@@ -605,6 +651,8 @@ class CSVExporter():
             'gained_amount': gained_amount,
             'lent_amount': lent_amount,
             f'profit_in_{self.profit_currency.symbol}': gain_in_profit_currency,
+            'link': link,
+            'notes': notes,
         })
         self.add_to_allevents(
             location=location,
@@ -617,6 +665,8 @@ class CSVExporter():
             taxable_received_in_profit_currency=gain_in_profit_currency,
             total_received_in_profit_currency=gain_in_profit_currency,
             timestamp=close_time,
+            link=link,
+            notes=notes,
         )
 
     def add_margin_position(
@@ -627,6 +677,8 @@ class CSVExporter():
             gain_loss_amount: FVal,
             gain_loss_in_profit_currency: FVal,
             timestamp: Timestamp,
+            link: str,
+            notes: str,
     ) -> None:
         if not self.create_csv:
             return
@@ -641,6 +693,8 @@ class CSVExporter():
             'gain_loss_asset': str(gain_loss_asset),
             'gain_loss_amount': gain_loss_amount,
             f'profit_loss_in_{self.profit_currency.symbol}': gain_loss_in_profit_currency,
+            'link': link,
+            'notes': notes,
         })
 
         paid_in_profit_currency = ZERO
@@ -665,6 +719,8 @@ class CSVExporter():
             taxable_received_in_profit_currency=received_in_profit_currency,
             total_received_in_profit_currency=received_in_profit_currency,
             timestamp=timestamp,
+            link=link,
+            notes=notes,
         )
 
     def add_asset_movement(
@@ -675,6 +731,7 @@ class CSVExporter():
             fee: Fee,
             rate: FVal,
             timestamp: Timestamp,
+            link: str,
     ) -> None:
         if not self.create_csv:
             return
@@ -686,6 +743,8 @@ class CSVExporter():
             'moving_asset': str(asset),
             'fee_in_asset': fee,
             f'fee_in_{self.profit_currency.symbol}': fee * rate,
+            'link': link,
+            'notes': '',
         })
         self.add_to_allevents(
             event_type=EV_ASSET_MOVE,
@@ -698,6 +757,8 @@ class CSVExporter():
             taxable_received_in_profit_currency=ZERO,
             total_received_in_profit_currency=ZERO,
             timestamp=timestamp,
+            link=link,
+            notes='',
         )
 
     def add_tx_gas_cost(
@@ -727,6 +788,8 @@ class CSVExporter():
             taxable_received_in_profit_currency=ZERO,
             total_received_in_profit_currency=ZERO,
             timestamp=timestamp,
+            link='',
+            notes='',
         )
 
     def add_defi_event(
@@ -738,6 +801,10 @@ class CSVExporter():
             return
 
         profit_loss_sum = FVal(sum(profit_loss_in_profit_currency_list))
+        if event.tx_hash:
+            link = f'{self.eth_explorer}{event.tx_hash}'
+        else:
+            link = ''
         self.defi_events_csv.append({
             'time': self.timestamp_to_date(event.timestamp),
             'type': str(event.event_type),
@@ -748,6 +815,8 @@ class CSVExporter():
             f'profit_loss_in_{self.profit_currency.symbol}': profit_loss_sum,
             'tx_hash': event.tx_hash if event.tx_hash else '',
             'description': event.to_string(timestamp_converter=self.timestamp_to_date),
+            'link': link,
+            'notes': '',
         })
 
         paid_asset: Union[EmptyStr, Asset]
@@ -784,6 +853,8 @@ class CSVExporter():
                 taxable_received_in_profit_currency=received_in_profit_currency,
                 total_received_in_profit_currency=received_in_profit_currency,
                 timestamp=event.timestamp,
+                link=link,
+                notes='',
             )
 
     def add_ledger_action(
@@ -831,6 +902,8 @@ class CSVExporter():
             taxable_received_in_profit_currency=received_in_profit_currency,
             total_received_in_profit_currency=received_in_profit_currency,
             timestamp=action.timestamp,
+            link=action.link,
+            notes=action.notes,
         )
 
     def create_files(self, dirpath: Path) -> Tuple[bool, str]:

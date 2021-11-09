@@ -549,6 +549,18 @@ rotki can import any trade CSV data exported from cointracking.info. But in gene
    :alt: Importing data from cointracking.info
    :align: center
 
+ShapeShift.com
+====================
+
+You can import trade CSV data exported from shapeshift.com.  Transactions will come from adding your Blockchain Accounts used with ShapeShift to rotki.
+
+Import data in the same section as the image above in the prior heading.  When exporting trades from ShapeShift, the selected wallet may show DEX trades in the user interface.  If it is not the Native wallet, DEX trades may not show up in the user interface, but they still export to CSV.  This importer ignores DEX trades, as they are covered by premium support for Uniswap and SushiSwap.
+
+uphold.com
+====================
+
+You can import transaction history CSV data exported from the uphold.com activity page.  Transactions will be created when the row's origin currency and destination currency are the same.  Trades will be created if the currencies differ and a rate will be determined automatically.
+
 Loopring balances
 ===================
 
@@ -581,7 +593,7 @@ Moving data to another system
 
 If you want to move your data to another system then you will need to do some manual steps. First identify the :ref:`rotki_data_directory` in both the source and the destination system. Then move the entire data directory from the source system to the destination system and make sure that the same rotki version is used in both syste
 
-.. _track_balances: 
+.. _track_balances:
 
 Tracking accounts and balances
 **********************************
@@ -612,6 +624,8 @@ Adding and Removing Blockchain Accounts
 rotki allows to track balances of blockchain accounts.
 
 To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Ethereum, Kusama, Polkadot and Avalanche chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button.
+When scrolling through the page the "+" will automatically switch the pre-selected chain based on the context. For example
+if the table displaying the screen center is the BTC table then BTC will be pre-selected when pressing "+".
 
 .. image:: images/add_blockchain_account.png
    :alt: Add a blockchain account
@@ -667,6 +681,28 @@ You can filter the tables by a combination of tags.
 
 Simply add the tags you wish to filter by in the filter textbox above the tables.
 
+NFTs
+=====================
+Rotki provides an NFT gallery where you can view the NFTs owned by your accounts.
+
+.. image:: images/sc_nfts.png
+   :alt: NFT Gallery
+   :align: center
+
+You have an overview of the total value of your NFTs in the application dashboard, on the NFTs table.
+
+.. image:: images/sc_nf_balances_dashboard.png
+   :alt: NFT Value Dashboard
+   :align: center
+
+An estimation of the value of the NFTs you own is counted into your total net worth. The estimation strategy is currently the maximum of either the floor price of the collection or the last sale of the NFT. If a manual price has been given this is always preferred.
+
+.. image:: images/sc_nf_price.png
+   :alt: NFT Value Dashboard
+   :align: center
+
+If a price cannot be found for an NFT asset or if you want to change the calculated price estimate you can easily set the price for an NFT asset manually. You can do this by either clicking on the ``>`` in the NFTs table in the dashboard or by going to ``Blockchains & Accounts`` -> ``Non-fungible balances``. And then click on the pen icon for the NFT you are interested in.
+
 ETH2 Staking
 =====================
 
@@ -688,6 +724,16 @@ Finally this can also be taken into account in the profit/loss report for any gi
    :alt: See ETH2 value earned
    :align: center
 
+Liquity Staking
+===============
+
+If you stake LQTY in the protocol you can see the amount staked and the changes in the staked amount.
+
+.. image:: images/sc_staking_liquity.png
+   :alt: See ETH2 value earned
+   :align: center
+
+
 Airdrops
 ==========
 
@@ -708,8 +754,22 @@ The list of currently supported airdrops is:
 - Lido
 - Curve
 
+Snapshots
+=========
+
+The application will on login snapshot to disk the information about balances from all the tracked sources every 24 hours (by default. The number of hours is configurable). This information is saved directly to your local database.
+You can force a snapshot taking by clicking in the floppy disk icon at the top bar and then on `Force Save`
+
+.. image:: images/rotki_snapshot_forcing.png
+   :alt: Force snapshots saves
+   :align: center
+
+Snapshots won't be saved if there is any error querying information for external sources. If you want to force the snapshot to be saved when an external source is reporting an error you can select the option `Ignore Errors`.
+
 Historical events
 ************************
+
+.. _adding-manual-trade:
 
 Adding manual trades
 ====================
@@ -729,6 +789,8 @@ In the ``amount`` field you can register the amount of the base asset bought or 
 In the Trades page you can see a table of all your external trades. You can edit or delete a trade by clicking on the appropriate icon at the rightmost part of each trade under the "Actions" column.
 
 Currently rotki tracks your balance by querying the different supported protocols, exchanges and blockchains. If you manually add information about a trade your balances will not be updated since trades are not consulted when updating the accounts' balances. If you want to manually update your balance for an asset please refer to the :ref:`manual balances section <track_balances>`.
+
+.. _adding-ledgeraction:
 
 Adding ledger actions
 =====================
@@ -868,7 +930,8 @@ There are two possible situations where you might need to merge two assets into 
 1. You added a custom asset that was later officially supported on rotki. In this case you should merge your
 custom asset to the the officially supported one. If you don't do this might split balances between entries,
 especially for supported exchanges that will use the officially supported entry.
-2. There was an issue and an Unknown asset notification is now visible.
+
+2. There was an issue and an Unknown asset notification is now visible. This can happen if you somehow end up deleting your global DB of assets. This way all your custom assets will be unknown. In this case you would need to re-add the deleted assets, and merge the old asset id that errors to the new one that you created.
 
 .. image:: images/rotki_merge_assets.png
    :alt: Optional information when adding a custom token
@@ -976,21 +1039,32 @@ The liquidity pool support allows premium users to see their balances, the per p
 Liabilities
 =============
 
-In the liabilities section you can find information on your Aave Borrowing, Compound Borrow, and MakerDAO Vaults.
+In the liabilities section you can find information on your Aave Borrowing, Compound Borrow, Liquity troves and MakerDAO Vaults.
 These collateralized loans can be autodetected from your ethereum accounts and information about each one of them is displayed.
 However you can manage the different modules and addresses that are queried to make the retrieval faster.
 For more information you can check :ref:`customize-module-settings`.
 
-As a normal non-premium user you can see all your vaults, and for each one inspect the locked collateral, collateralization, debt generated and the liquidation price.
+As a normal non-premium user you can see all your vaults/troves, and for each one inspect the locked collateral, collateralization, debt generated and the liquidation price.
 
 .. image:: images/sc_vaults_nonpremium.png
    :alt: MakerDAO vaults without a premium account
    :align: center
 
+The information displayed for a Liquity trove shows as in this capture
+
+.. image:: images/sc_liquity_troves.png
+   :alt: Liquity troves information
+   :align: center
 
 With a premium subscription you can also see additional information such as the creation time of the vault, list of historical activities, total interest owed and liquidation events.
 
 .. image:: images/sc_vaults_premium.png
+   :alt: MakerDAO vaults with a premium account
+   :align: center
+
+in the case of troves with a premium subscription you can see the history of events and the changes in collateral and debt
+
+.. image:: images/sc_liquity_premium.png
    :alt: MakerDAO vaults with a premium account
    :align: center
 
@@ -1031,13 +1105,16 @@ The currently supported DEXes are:
 Creating a profit/loss report
 *****************************
 
-rotki creates a profit/loss report for you based on your trades and other events and the provided accounting settings. This is essentially a calculation of profit or loss for all your events based on the given dates. Before getting into the details of generating a report, here's a few important details regarding the report generation algorithm:
+rotki creates a profit/loss report (called PnL for short) for you based on your trades and other events and the provided accounting settings. This is essentially a calculation of profit or loss for all your events based on the given dates. Before getting into the details of generating a report, here's a few important details regarding the report generation algorithm:
 
 - By default, rotki uses an accounting strategy called "First In - First Out" (short: FIFO). There are plans to implement other strategies (e.g. `"Last In - First Out" <https://github.com/rotki/rotki/issues/44>`_).
 - rotki allows users in jurisdictions offering a tax free holding period (e.g. Germany with 1 year) to specify the period in days. To adjust this value, see the section `Customizing the account settings <#tax-free-period>`_.
 - When generating a report for a custom period, where rotki is aware of the user's previous crypto holdings (e.g. we trade BTC between the years 2017 - 2019 but we ask for a report between 2018 - 2019), it takes all prior crypto holdings into account to calculate a starting balance for the given period. For example, say you traded BTC between 2017 - 2019 with a balance of 0.1 BTC on December 31, 2017. When generating a pnl report for 2018 - 2019, rotki will take the 0.1 BTC from December 31, 2017 as a start balance for its calculations in the period of 2018.
 
-To create a profit loss report click on the "Profit and Loss Report" button from the left menu. Choose a period for the report (or click on Custom to set a custom time range) and press on "Generate" to start the report.
+How to run the PnL report
+==========================
+
+To create a PnL report click on the "Profit and Loss Report" button from the left menu. Choose a period for the report (or click on Custom to set a custom time range) and press on "Generate" to start the report.
 
 .. image:: images/sc_pnl_report1.png
    :alt: Overview of the profit/loss report
@@ -1046,6 +1123,9 @@ To create a profit loss report click on the "Profit and Loss Report" button from
 The calculation may take some time. You can also see a summary of the accounting setting the report is running with in the "Accounting settings" section.
 
 If you encounter any problems during the profit/loss report check out the :ref:`troubleshooting-pnl-report` section.
+
+Results of the PnL report
+=========================
 
 Once done you have an overview of the profit/loss for the given period, how much of that is taxable, and how much each taxable event category contributes to the total.
 
@@ -1077,6 +1157,63 @@ Finally you can get a CSV export by pressing the "Export CSV" button. This expor
    To learn more about `profit_currency` or to adjust it, see the section :ref:`change_profit_currency`
 
 
+Cost basis
+=============
+
+Cost basis is a really important aspect of accounting. For each sell event it lets you know what was the price at which the sold asset was acquired depending on a number of settings.
+
+Cost basis is calculated in rotki for all trades/events we support. Trades/events that rotki recognizes are:
+
+- All trades performed in our supported centralized exchanges
+- All trades done in our supported AMMs. As of this writing this is uniswap, sushiswap, balancer.
+- All manual trades inserted by the user.
+- Not strictly trades, but income/expense events by manual inserted ledger actions.
+
+
+For all those trades you can see the cost basis when you create a profit loss report by:
+
+1. Either navigating to the trade in the generated table after the PnL report and pressing the arrow to show more details.
+
+.. image:: images/sc_costbasis_pnltable.png
+   :alt: Cost basis in PnL report table
+   :align: center
+
+2. Export the report to CSV and import it in a spreadsheet tool. We have tested it works with google spreadsheets and libreoffice. The cost basis column contains the info you seek.
+
+.. image:: images/sc_costbasis_spreadsheet.png
+   :alt: Cost basis in PnL report spreadsheet
+   :align: center
+
+
+
+.. _troubleshooting-pnl-report:
+
+PnL report creation problems
+===========================================
+
+No documented acquisition found
+---------------------------------
+
+It's possible that rotki is not able to find an acquisition event for a sale. In which case it will warn you and ask you to fix it.
+
+Example warning:
+
+.. image:: images/sc_acquisition_notfound.png
+   :alt: No documented acquisition found for asset
+   :align: center
+
+This can happen for many reasons. The asset may have been acquired in a non-supported exchange/protocol, some event not detected etc.
+
+
+The way to fix it is to add either a :ref:`manual trade<adding-manual-trade>` or a :ref:`manual income/expense<adding-ledgeraction>` event to tell rotki how you acquired that asset.
+
+
+Timeout or price not found for timestamp
+-------------------------------------------------
+
+Figure out which asset caused the price not found. Then check the historical price caches and make sure you have the historical price cache for that asset pair created. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. See :ref:`manage-historical-price-cache` on how to do it.
+
+
 Analytics
 **********
 
@@ -1097,6 +1234,12 @@ Following that you can see a graph of quantity of an asset superimposed on its U
 
 .. image:: images/sc_stats_asset_amount_value.png
    :alt: Asset amount and value over time
+   :align: center
+
+We have introduced an option in the asset graphs to select the `Missing snapshot multiplier`. It sets after how many hours between two snapshots the graph will display zero balances. This allows to improve graphs for periods where the balance of an asset was zero.
+
+.. image:: images/statistics_multipliying_option.png
+   :alt: Multiplying option in assets graphs
    :align: center
 
 Furthermore you can see a piechart of the distribution of your netvalue across different locations. So you can determine how exposed you are to having a big part of your net value in exchanges, in banks e.t.c.
@@ -1213,13 +1356,3 @@ Data with multiple accounts/devices is not synced
 ===================================================
 
 Please, make sure all your accounts have the "Allow data sync with rotki Server" switched on, and that on each log-in you make the appropriate choice when prompted to replace the local database. See the section :ref:`sync-data-with-rotki-server` for more information about how to sync data with multiple accounts/devices.
-
-.. _troubleshooting-pnl-report:
-
-Profit/loss report creation problems
-===========================================
-
-Timeout or price not found for timestamp
--------------------------------------------------
-
-Figure out which asset caused the price not found. Then check the historical price caches and make sure you have the historical price cache for that asset pair created. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. See :ref:`manage-historical-price-cache` on how to do it.

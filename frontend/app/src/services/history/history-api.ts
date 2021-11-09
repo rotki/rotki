@@ -7,18 +7,21 @@ import {
 import { AxiosInstance, AxiosTransformer } from 'axios';
 import {
   axiosSnakeCaseTransformer,
+  getUpdatedKey,
   setupTransformer
 } from '@/services/axios-tranformers';
 import {
   balanceAxiosTransformer,
   basicAxiosTransformer
 } from '@/services/consts';
-import { tradeNumericKeys } from '@/services/history/const';
+import { IgnoredActions, tradeNumericKeys } from '@/services/history/const';
 import {
   LedgerActionResult,
   NewTrade,
   Trade,
-  TradeLocation
+  TradeLocation,
+  TransactionRequestPayload,
+  Transactions
 } from '@/services/history/types';
 import {
   EntryWithMeta,
@@ -33,13 +36,11 @@ import {
 } from '@/services/utils';
 import { LedgerAction } from '@/store/history/types';
 import { ReportProgress } from '@/store/reports/types';
-import { assert } from '@/utils/assertions';
 
 export class HistoryApi {
   private readonly axios: AxiosInstance;
-  private readonly responseTransformer: AxiosTransformer[] = setupTransformer(
-    tradeNumericKeys
-  );
+  private readonly responseTransformer: AxiosTransformer[] =
+    setupTransformer(tradeNumericKeys);
   private readonly requestTransformer: AxiosTransformer[];
 
   constructor(axios: AxiosInstance) {
@@ -114,30 +115,49 @@ export class HistoryApi {
       .then(handleResponse);
   }
 
-  async ethTransactions(
-    address: string,
-    onlyCache: boolean
-  ): Promise<PendingTask> {
-    assert(address.length > 0);
+  private internalEthTransactions<T>(
+    payload: TransactionRequestPayload,
+    async: boolean
+  ): Promise<T> {
+    let url = `/blockchains/ETH/transactions`;
+    const { address, ...data } = payload;
+    if (address) {
+      url += `/${address}`;
+    }
     return this.axios
-      .get<ActionResult<PendingTask>>(
-        `/blockchains/ETH/transactions/${address}`,
-        {
-          params: axiosSnakeCaseTransformer({
-            asyncQuery: true,
-            onlyCache: onlyCache ? onlyCache : undefined
-          }),
-          validateStatus: validWithParamsSessionAndExternalService,
-          transformResponse: setupTransformer([])
-        }
-      )
+      .get<ActionResult<T>>(url, {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: async,
+          ...data,
+          orderByAttribute: getUpdatedKey(payload.orderByAttribute, false)
+        }),
+        validateStatus: validWithParamsSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      })
       .then(handleResponse);
+  }
+
+  async ethTransactionsTask(
+    payload: TransactionRequestPayload
+  ): Promise<PendingTask> {
+    return this.internalEthTransactions<PendingTask>(payload, true);
+  }
+
+  async ethTransactions(
+    payload: TransactionRequestPayload
+  ): Promise<Transactions> {
+    const ethTransactions = await this.internalEthTransactions<Transactions>(
+      payload,
+      false
+    );
+    return Transactions.parse(ethTransactions);
   }
 
   async ledgerActions(
     start: number = 0,
     end: number | undefined = undefined,
-    location: string | undefined = undefined
+    location: string | undefined = undefined,
+    onlyCache?: boolean
   ): Promise<PendingTask> {
     return this.axios
       .get<ActionResult<PendingTask>>(`/ledgeractions`, {
@@ -145,7 +165,8 @@ export class HistoryApi {
           asyncQuery: true,
           fromTimestamp: start,
           toTimestamp: end ? end : undefined,
-          location: location ? location : undefined
+          location: location ? location : undefined,
+          onlyCache: onlyCache ? onlyCache : undefined
         }),
         validateStatus: validStatus,
         transformResponse: basicAxiosTransformer
@@ -241,5 +262,15 @@ export class HistoryApi {
         transformRequest: this.requestTransformer
       })
       .then(handleResponse);
+  }
+
+  fetchIgnored(): Promise<IgnoredActions> {
+    return this.axios
+      .get<ActionResult<IgnoredActions>>('/actions/ignored', {
+        validateStatus: validStatus,
+        transformResponse: setupTransformer([])
+      })
+      .then(handleResponse)
+      .then(result => IgnoredActions.parse(result));
   }
 }

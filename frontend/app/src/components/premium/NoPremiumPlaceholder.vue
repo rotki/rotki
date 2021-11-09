@@ -1,61 +1,84 @@
 <template>
-  <div
-    class="no-premium-placeholder__empty d-flex flex-column align-center"
-    :class="$vuetify.breakpoint.xsOnly ? 'pa-2 mt-2' : null"
-    :style="`height: calc(100vh - ${top + 64}px);`"
-  >
+  <full-size-content>
     <v-row align="center" justify="center">
-      <v-col cols="auto" class="no-premium-placeholder__logo">
-        <v-img
-          contain
-          :max-width="$vuetify.breakpoint.mobile ? '100px' : '200px'"
-          :src="require('@/assets/images/rotkehlchen_no_text.png')"
-        />
+      <v-col cols="12">
+        <v-row align="center" justify="center">
+          <v-col cols="auto">
+            <div :class="$style.logo">
+              <v-img
+                contain
+                :class="$style.image"
+                :src="require('@/assets/images/rotkehlchen_no_text.png')"
+              />
+            </div>
+          </v-col>
+        </v-row>
+        <v-row class="text-center mt-14">
+          <v-col>
+            <p class="text-h5 font-weight-bold pb-4">
+              {{ $t('no_premium_placeholder.no_premium') }}
+            </p>
+            <div class="text--secondary text-no-wrap">
+              {{ $t('no_premium_placeholder.premium_only', { text }) }}
+            </div>
+            <i18n
+              path="no_premium_placeholder.get_premium"
+              tag="p"
+              class="text--secondary"
+            >
+              <base-external-link
+                text="website."
+                :href="$interop.premiumURL"
+                class="font-weight-medium"
+              />
+            </i18n>
+          </v-col>
+        </v-row>
       </v-col>
     </v-row>
-    <v-row class="text-center">
-      <v-col>
-        <p class="text-h5">
-          {{ $t('no_premium_placeholder.no_premium', { text }) }}
-        </p>
-        <i18n path="no_premium_placeholder.get_premium" tag="p" class="text-h6">
-          <base-external-link text="website." :href="$interop.premiumURL" />
-        </i18n>
-      </v-col>
-    </v-row>
-  </div>
+  </full-size-content>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import FullSizeContent from '@/components/common/FullSizeContent.vue';
 
-@Component({
-  components: { BaseExternalLink }
-})
-export default class NoPremiumPlaceholder extends Vue {
-  @Prop({ required: true, type: String })
-  text!: string;
-
-  private top: number = -1;
-
-  mounted() {
-    const { top } = this.$el.getBoundingClientRect();
-    this.top = top;
+export default defineComponent({
+  name: 'NoPremiumPlaceholder',
+  components: { FullSizeContent, BaseExternalLink },
+  props: {
+    text: {
+      type: String,
+      required: true
+    }
   }
-}
+});
 </script>
 
-<style scoped lang="scss">
-.no-premium-placeholder {
-  &__logo {
-    padding: 80px;
-    border-radius: 50%;
-    background-color: var(--v-rotki-light-grey-darken1);
-  }
+<style module lang="scss">
+.logo {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 300px !important;
+  height: 300px !important;
+  border-radius: 50%;
+  background-color: var(--v-rotki-light-grey-darken1);
 
-  &__empty {
-    height: 100%;
+  @media only screen and (max-width: 400px) {
+    width: 200px !important;
+    height: 200px !important;
+  }
+}
+
+.image {
+  width: 160px !important;
+  height: 160px !important;
+
+  @media only screen and (max-width: 400px) {
+    width: 110px !important;
+    height: 110px !important;
   }
 }
 </style>

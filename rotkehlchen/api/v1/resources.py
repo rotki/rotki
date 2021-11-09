@@ -16,14 +16,14 @@ from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AllBalancesQuerySchema,
-    AssetIconsSchema,
     AssetIconUploadSchema,
+    AssetResetRequestSchema,
     AssetSchema,
     AssetSchemaWithIdentifier,
     AssetsReplaceSchema,
-    AssetResetRequestSchema,
     AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
+    AsyncIgnoreCacheQueryArgumentSchema,
     AsyncQueryArgumentSchema,
     AsyncTasksQuerySchema,
     AvalancheTransactionQuerySchema,
@@ -66,6 +66,7 @@ from rotkehlchen.api.v1.encoding import (
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
     ModifyEthereumTokenSchema,
+    NameDeleteSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
     NamedOracleCacheGetSchema,
@@ -74,14 +75,15 @@ from rotkehlchen.api.v1.encoding import (
     OptionalEthereumAddressSchema,
     QueriedAddressesSchema,
     RequiredEthereumAddressSchema,
+    SingleAssetIdentifierSchema,
+    SingleFileSchema,
     StatisticsAssetBalanceSchema,
     StatisticsValueDistributionSchema,
     StringIdentifierSchema,
-    TagDeleteSchema,
     TagEditSchema,
     TagSchema,
+    TimedManualPriceSchema,
     TimerangeLocationCacheQuerySchema,
-    TimerangeLocationQuerySchema,
     TradeDeleteSchema,
     TradePatchSchema,
     TradeSchema,
@@ -240,8 +242,9 @@ class ExchangeRatesResource(BaseResource):
     get_schema = ExchangeRatesSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, currencies: List[Asset], async_query: bool) -> Response:
-        return self.rest_api.get_exchange_rates(given_currencies=currencies, async_query=async_query)  # noqa: E501
+    def get(self, currencies: List[Optional[Asset]], async_query: bool) -> Response:
+        valid_currencies = [currency for currency in currencies if currency is not None]
+        return self.rest_api.get_exchange_rates(given_currencies=valid_currencies, async_query=async_query)  # noqa: E501
 
 
 class ExchangesResource(BaseResource):
@@ -369,9 +372,16 @@ class AllBalancesResource(BaseResource):
     get_schema = AllBalancesQuerySchema()
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, save_data: bool, async_query: bool, ignore_cache: bool) -> Response:
+    def get(
+            self,
+            save_data: bool,
+            ignore_errors: bool,
+            async_query: bool,
+            ignore_cache: bool,
+    ) -> Response:
         return self.rest_api.query_all_balances(
             save_data=save_data,
+            ignore_errors=ignore_errors,
             async_query=async_query,
             ignore_cache=ignore_cache,
         )
@@ -394,6 +404,29 @@ class OwnedAssetsResource(BaseResource):
 
     def get(self) -> Response:
         return self.rest_api.query_owned_assets()
+
+
+class DatabaseInfoResource(BaseResource):
+
+    def get(self) -> Response:
+        return self.rest_api.get_database_info()
+
+
+class DatabaseBackupsResource(BaseResource):
+
+    delete_schema = SingleFileSchema()
+    get_schema = SingleFileSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, file: Path) -> Response:
+        return self.rest_api.download_database_backup(filepath=file)
+
+    def put(self) -> Response:
+        return self.rest_api.create_database_backup()
+
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, file: Path) -> Response:
+        return self.rest_api.delete_database_backup(filepath=file)
 
 
 class AllAssetsResource(BaseResource):
@@ -654,7 +687,7 @@ class TagsResource(BaseResource):
 
     put_schema = TagSchema()
     patch_schema = TagEditSchema()
-    delete_schema = TagDeleteSchema()
+    delete_schema = NameDeleteSchema()
 
     def get(self) -> Response:
         return self.rest_api.get_tags()
@@ -696,7 +729,7 @@ class TagsResource(BaseResource):
 
 class LedgerActionsResource(BaseResource):
 
-    get_schema = TimerangeLocationQuerySchema()
+    get_schema = TimerangeLocationCacheQuerySchema()
     put_schema = LedgerActionSchema()
     patch_schema = LedgerActionEditSchema()
     delete_schema = IntegerIdentifierSchema()
@@ -708,12 +741,14 @@ class LedgerActionsResource(BaseResource):
             to_timestamp: Timestamp,
             location: Optional[Location],
             async_query: bool,
+            only_cache: Optional[bool],
     ) -> Response:
         return self.rest_api.get_ledger_actions(
             from_ts=from_timestamp,
             to_ts=to_timestamp,
             location=location,
             async_query=async_query,
+            only_cache=only_cache,
         )
 
     @use_kwargs(put_schema, location='json')
@@ -1494,7 +1529,7 @@ class LoopringBalancesResource(BaseResource):
         return self.rest_api.get_loopring_balances(async_query=async_query)
 
 
-class LiquityTroves(BaseResource):
+class LiquityTrovesResource(BaseResource):
 
     get_schema = AsyncQueryArgumentSchema()
 
@@ -1503,7 +1538,7 @@ class LiquityTroves(BaseResource):
         return self.rest_api.get_liquity_troves(async_query=async_query)
 
 
-class LiquityTrovesHistory(BaseResource):
+class LiquityTrovesHistoryResource(BaseResource):
 
     get_schema = AsyncHistoricalQuerySchema()
 
@@ -1515,12 +1550,50 @@ class LiquityTrovesHistory(BaseResource):
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> Response:
-        return self.rest_api.get_liquity_events(
+        return self.rest_api.get_liquity_trove_events(
             async_query=async_query,
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
+
+
+class LiquityStakingHistoryResource(BaseResource):
+
+    get_schema = AsyncHistoricalQuerySchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+        self,
+        async_query: bool,
+        reset_db_data: bool,
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_liquity_stake_events(
+            async_query=async_query,
+            reset_db_data=reset_db_data,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
+class LiquityStakingResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_liquity_staked(async_query=async_query)
+
+
+class PickleDillResource(BaseResource):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_dill_balance(async_query=async_query)
 
 
 class BalancerBalancesResource(BaseResource):
@@ -1596,7 +1669,7 @@ class WatchersResource(BaseResource):
 
 class AssetIconsResource(BaseResource):
 
-    get_schema = AssetIconsSchema()
+    get_schema = SingleAssetIdentifierSchema()
     upload_schema = AssetIconUploadSchema()
 
     @use_kwargs(get_schema, location='view_args')
@@ -1627,7 +1700,25 @@ class AssetIconsResource(BaseResource):
 
 class CurrentAssetsPriceResource(BaseResource):
 
+    put_schema = ManualPriceSchema
     post_schema = CurrentAssetsPriceSchema()
+    delete_schema = SingleAssetIdentifierSchema()
+
+    def get(self) -> Response:
+        return self.rest_api.get_nfts_with_price()
+
+    @use_kwargs(put_schema, location='json')
+    def put(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            price: Price,
+    ) -> Response:
+        return self.rest_api.add_manual_current_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            price=price,
+        )
 
     @use_kwargs(post_schema, location='json')
     def post(
@@ -1644,12 +1735,16 @@ class CurrentAssetsPriceResource(BaseResource):
             async_query=async_query,
         )
 
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, asset: Asset) -> Response:
+        return self.rest_api.delete_manual_current_price(asset)
+
 
 class HistoricalAssetsPriceResource(BaseResource):
 
     post_schema = HistoricalAssetsPriceSchema()
-    put_schema = ManualPriceSchema()
-    patch_schema = ManualPriceSchema()
+    put_schema = TimedManualPriceSchema()
+    patch_schema = TimedManualPriceSchema()
     get_schema = ManualPriceRegisteredSchema()
     delete_schema = ManualPriceDeleteSchema()
 
@@ -1853,11 +1948,19 @@ class ERC20TokenInfoAVAX(BaseResource):
 
 
 class NFTSResource(BaseResource):
-    get_schema = AsyncQueryArgumentSchema()
+    get_schema = AsyncIgnoreCacheQueryArgumentSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_nfts(async_query)
+    def get(self, async_query: bool, ignore_cache: bool) -> Response:
+        return self.rest_api.get_nfts(async_query=async_query, ignore_cache=ignore_cache)
+
+
+class NFTSBalanceResource(BaseResource):
+    get_schema = AsyncIgnoreCacheQueryArgumentSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool, ignore_cache: bool) -> Response:
+        return self.rest_api.get_nfts_balances(async_query=async_query, ignore_cache=ignore_cache)
 
 
 class LimitsCounterResetResource(BaseResource):

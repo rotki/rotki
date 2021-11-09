@@ -1,7 +1,5 @@
-import { Balance } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { AxiosInstance, AxiosTransformer } from 'axios';
-import { IgnoreActionType } from '@/store/history/types';
 
 export const SYNC_UPLOAD = 'upload';
 export const SYNC_DOWNLOAD = 'download';
@@ -44,10 +42,6 @@ export interface LocationData {
   readonly time: number;
   readonly location: string;
   readonly usd_value: string;
-}
-
-export interface HasBalance {
-  readonly balance: Balance;
 }
 
 // This is equivalent to python's AssetBalance named tuple
@@ -109,10 +103,6 @@ export interface TaskStatus {
   readonly pending: number[];
   readonly completed: number[];
 }
-
-export type IgnoreActionResult = {
-  readonly [key in IgnoreActionType]?: string[];
-};
 
 export interface ApiImplementation {
   readonly axios: AxiosInstance;

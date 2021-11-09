@@ -174,6 +174,8 @@ def convert_to_int(
         # Since float string are not converted to int we have to first convert
         # to float and try to convert to int afterwards
         try:
+            if isinstance(val, str) and val.startswith('0x'):
+                return int(val, 16)
             return int(val)
         except ValueError:
             # else also try to turn it into a float
@@ -203,7 +205,11 @@ def taxable_gain_for_sell(
 
 
 def hexstring_to_bytes(hexstr: str) -> bytes:
-    return bytes.fromhex(hexstr.replace("0x", ""))
+    """May raise DeserializationError if it can't convert"""
+    try:
+        return bytes.fromhex(hexstr.replace("0x", ""))
+    except ValueError as e:
+        raise DeserializationError(f'Failed to turn {hexstr} to bytes') from e
 
 
 def get_system_spec() -> Dict[str, str]:
@@ -236,13 +242,13 @@ def hexstr_to_int(value: str) -> int:
     """Turns a hexstring into an int
 
     May raise:
-    - ConversionError if it can't convert a value to an int or if an unexpected
+    - DeserializationError if it can't convert a value to an int or if an unexpected
     type is given.
     """
     try:
         int_value = int(value, 16)
     except ValueError as e:
-        raise ConversionError(f'Could not convert string "{value}" to an int') from e
+        raise DeserializationError(f'Could not convert string "{value}" to an int') from e
 
     return int_value
 
@@ -278,10 +284,13 @@ def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
     """Turns a 32bit bytes/HexBytes or a hexstring into an address
 
     May raise:
-    - ConversionError if it can't convert a value to an int or if an unexpected
+    - DeserializationError if it can't convert a value to an int or if an unexpected
     type is given.
     """
-    hexstr = hex_or_bytes_to_str(value)
+    try:
+        hexstr = hex_or_bytes_to_str(value)
+    except ConversionError as e:
+        raise DeserializationError(f'Could not turn {value!r} to an ethereum address') from e
     return ChecksumEthAddress(to_checksum_address('0x' + hexstr[26:]))
 
 

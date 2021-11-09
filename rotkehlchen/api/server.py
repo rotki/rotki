@@ -41,6 +41,8 @@ from rotkehlchen.api.v1.resources import (
     CompoundBalancesResource,
     CompoundHistoryResource,
     CurrentAssetsPriceResource,
+    DatabaseBackupsResource,
+    DatabaseInfoResource,
     DataImportResource,
     DefiBalancesResource,
     ERC20TokenInfo,
@@ -69,8 +71,10 @@ from rotkehlchen.api.v1.resources import (
     InfoResource,
     LedgerActionsResource,
     LimitsCounterResetResource,
-    LiquityTroves,
-    LiquityTrovesHistory,
+    LiquityStakingHistoryResource,
+    LiquityStakingResource,
+    LiquityTrovesHistoryResource,
+    LiquityTrovesResource,
     LoopringBalancesResource,
     MakerdaoDSRBalanceResource,
     MakerdaoDSRHistoryResource,
@@ -80,10 +84,12 @@ from rotkehlchen.api.v1.resources import (
     MessagesResource,
     NamedEthereumModuleDataResource,
     NamedOracleCacheResource,
+    NFTSBalanceResource,
     NFTSResource,
     OraclesResource,
     OwnedAssetsResource,
     PeriodicDataResource,
+    PickleDillResource,
     PingResource,
     QueriedAddressesResource,
     SettingsResource,
@@ -208,8 +214,11 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/yearn/vaults/history', YearnVaultsHistoryResource),
     ('/blockchains/ETH/modules/yearn/vaultsv2/balances', YearnVaultsV2BalancesResource),
     ('/blockchains/ETH/modules/yearn/vaultsv2/history', YearnVaultsV2HistoryResource),
-    ('/blockchains/ETH/modules/liquity/balances', LiquityTroves),
-    ('/blockchains/ETH/modules/liquity/events', LiquityTrovesHistory),
+    ('/blockchains/ETH/modules/liquity/balances', LiquityTrovesResource),
+    ('/blockchains/ETH/modules/liquity/events/trove', LiquityTrovesHistoryResource),
+    ('/blockchains/ETH/modules/liquity/events/staking', LiquityStakingHistoryResource),
+    ('/blockchains/ETH/modules/liquity/staking', LiquityStakingResource),
+    ('/blockchains/ETH/modules/pickle/dill', PickleDillResource),
     ('/blockchains/ETH/modules/loopring/balances', LoopringBalancesResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
     ('/blockchains/BTC/xpub', BTCXpubResource),
@@ -236,7 +245,10 @@ URLS_V1: URLS = [
     ('/gitcoin/events', GitcoinEventsResource),
     ('/gitcoin/report', GitcoinReportResource),
     ('/nfts', NFTSResource),
+    ('/nfts/balances', NFTSBalanceResource),
     ('/limits/reset/<string:location>', LimitsCounterResetResource),
+    ('/database/info', DatabaseInfoResource),
+    ('/database/backups', DatabaseBackupsResource),
 ]
 
 logger = logging.getLogger(__name__)
@@ -327,7 +339,7 @@ class APIServer():
         self.ws_server: Optional[WebSocketServer] = None
 
         self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)  # type: ignore
-        self.flask_app.register_error_handler(Exception, self.unhandled_exception)
+        self.flask_app.register_error_handler(Exception, self.unhandled_exception)  # type: ignore
 
     @staticmethod
     def unhandled_exception(exception: Exception) -> Response:

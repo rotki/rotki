@@ -48,6 +48,9 @@
         <balance-saved-indicator />
         <back-button :can-navigate-back="canNavigateBack" />
         <v-spacer />
+        <v-btn v-if="isDevelopment" to="/playground" icon>
+          <v-icon>mdi-crane</v-icon>
+        </v-btn>
         <update-indicator />
         <theme-switch v-if="premium" />
         <theme-switch-lock v-else />
@@ -56,7 +59,6 @@
           class="app__app-bar__button"
           @click="notifications = !notifications"
         />
-        <progress-indicator v-if="!xsOnly" class="app__app-bar__button" />
         <currency-drop-down class="red--text app__app-bar__button" />
         <user-dropdown class="app__app-bar__button" />
         <help-indicator
@@ -125,7 +127,6 @@ import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
 import NotificationSidebar from '@/components/status/notifications/NotificationSidebar.vue';
-import ProgressIndicator from '@/components/status/ProgressIndicator.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import '@/services/task-manager';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
@@ -161,7 +162,6 @@ import { Message } from '@/store/types';
     ErrorScreen,
     AccountManagement,
     UpdateIndicator,
-    ProgressIndicator,
     NotificationIndicator,
     BalanceSavedIndicator: SyncIndicator,
     NodeStatusIndicator,
@@ -240,6 +240,10 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
     }
   }
 
+  get isDevelopment(): boolean {
+    return process.env.NODE_ENV === 'development';
+  }
+
   async created(): Promise<void> {
     this.$interop.onError((backendOutput: string, code: BackendCode) => {
       if (code === BackendCode.TERMINATED) {
@@ -256,7 +260,7 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
     });
 
     await this.$store.dispatch('connect');
-    if (process.env.NODE_ENV === 'development' && this.logged) {
+    if (this.isDevelopment && this.logged) {
       monitor.start();
     }
     this.$store.watch(

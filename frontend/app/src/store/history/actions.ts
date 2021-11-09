@@ -3,26 +3,32 @@ import {
   GitcoinGrantEventsPayload,
   GitcoinGrants
 } from '@rotki/common/lib/gitcoin';
-import { ActionTree } from 'vuex';
+import { ActionContext, ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
-import { TRADE_LOCATION_EXTERNAL, EXTERNAL_EXCHANGES } from '@/data/defaults';
+import { EXTERNAL_EXCHANGES, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
-import { createTask, taskCompletion, TaskMeta } from '@/model/task';
+import {
+  AddressMeta,
+  createTask,
+  taskCompletion,
+  TaskMeta
+} from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { SupportedExchange } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import {
+  IgnoredActions,
   movementNumericKeys,
-  tradeNumericKeys,
-  transactionNumericKeys
+  tradeNumericKeys
 } from '@/services/history/const';
 import {
   AssetMovement,
-  EthTransaction,
   NewTrade,
   Trade,
   TradeLocation,
-  TradeUpdate
+  TradeUpdate,
+  TransactionRequestPayload,
+  Transactions
 } from '@/services/history/types';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
@@ -33,23 +39,17 @@ import {
   FETCH_FROM_SOURCE,
   FETCH_REFRESH,
   HistoryActions,
-  HistoryMutations,
-  IGNORE_LEDGER_ACTION,
-  IGNORE_MOVEMENTS,
-  IGNORE_TRADES,
-  IGNORE_TRANSACTIONS
+  HistoryMutations
 } from '@/store/history/consts';
 import { defaultHistoricState } from '@/store/history/state';
 import {
-  AccountRequestMeta,
   AssetMovementEntry,
   AssetMovements,
-  EthTransactionEntry,
-  EthTransactions,
   FetchSource,
   HistoricData,
   HistoryState,
   IgnoreActionPayload,
+  IgnoreActionType,
   LedgerAction,
   LedgerActionEntry,
   LedgerActions,
@@ -57,19 +57,140 @@ import {
   TradeEntry,
   Trades
 } from '@/store/history/types';
+import { getKey } from '@/store/history/utils';
 import { Severity } from '@/store/notifications/consts';
-import { NotificationPayload } from '@/store/notifications/types';
-import { notify } from '@/store/notifications/utils';
+import { notify, userNotify } from '@/store/notifications/utils';
 import {
   ActionStatus,
   Message,
   RotkehlchenState,
   StatusPayload
 } from '@/store/types';
-import { setStatus } from '@/store/utils';
+import { getStatusUpdater } from '@/store/utils';
 import { Writeable } from '@/types';
-import { assert } from '@/utils/assertions';
 import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
+
+function getIgnored(type: string, result: IgnoredActions) {
+  let entries: string[] = [];
+  if (type === IgnoreActionType.TRADES) {
+    entries = result.trades ?? [];
+  } else if (type === IgnoreActionType.MOVEMENTS) {
+    entries = result.assetMovements ?? [];
+  } else if (type === IgnoreActionType.ETH_TRANSACTIONS) {
+    entries = result.ethereumTransactions ?? [];
+  } else if (type === IgnoreActionType.LEDGER_ACTIONS) {
+    entries = result.ledgerActions ?? [];
+  }
+  return entries;
+}
+
+const ignoreInAccounting = async (
+  { commit, state }: ActionContext<HistoryState, RotkehlchenState>,
+  { actionIds, type }: IgnoreActionPayload,
+  ignore: boolean
+) => {
+  let strings: string[] = [];
+  try {
+    const result = ignore
+      ? await api.ignoreActions(actionIds, type)
+      : await api.unignoreActions(actionIds, type);
+    strings = getIgnored(type, result);
+    const newState = { ...state.ignored, ...result };
+    commit(HistoryMutations.SET_IGNORED, newState);
+  } catch (e: any) {
+    let title: string;
+    let description: string;
+    if (ignore) {
+      title = i18n.t('actions.ignore.error.title').toString();
+    } else {
+      title = i18n.t('actions.unignore.error.title').toString();
+    }
+
+    if (ignore) {
+      description = i18n
+        .t('actions.ignore.error.description', { error: e.message })
+        .toString();
+    } else {
+      description = i18n
+        .t('actions.unignore.error.description', { error: e.message })
+        .toString();
+    }
+    commit(
+      'setMessage',
+      {
+        success: false,
+        title,
+        description
+      } as Message,
+      { root: true }
+    );
+    return { success: false };
+  }
+
+  if (type === IgnoreActionType.TRADES) {
+    const data = [...state.trades.data];
+
+    for (let i = 0; i < data.length; i++) {
+      const trade: Writeable<TradeEntry> = data[i];
+      data[i] = {
+        ...data[i],
+        ignoredInAccounting: strings.includes(trade.tradeId)
+      };
+    }
+    commit(HistoryMutations.SET_TRADES, {
+      data,
+      found: state.trades.found,
+      limit: state.trades.limit
+    } as Trades);
+  } else if (type === IgnoreActionType.MOVEMENTS) {
+    const data = [...state.assetMovements.data];
+
+    for (let i = 0; i < data.length; i++) {
+      const movement: Writeable<AssetMovementEntry> = data[i];
+
+      data[i] = {
+        ...data[i],
+        ignoredInAccounting: strings.includes(movement.identifier)
+      };
+    }
+    commit(HistoryMutations.SET_MOVEMENTS, {
+      data,
+      found: state.assetMovements.found,
+      limit: state.assetMovements.limit
+    } as AssetMovements);
+  } else if (type === IgnoreActionType.LEDGER_ACTIONS) {
+    const data = [...state.ledgerActions.data];
+
+    for (let i = 0; i < data.length; i++) {
+      const ledgerAction: Writeable<LedgerActionEntry> = data[i];
+      data[i] = {
+        ...data[i],
+        ignoredInAccounting: strings.includes(
+          ledgerAction.identifier.toString()
+        )
+      };
+    }
+    commit(HistoryMutations.SET_LEDGER_ACTIONS, {
+      data,
+      found: state.ledgerActions.found,
+      limit: state.ledgerActions.limit
+    } as LedgerActions);
+  } else if (type === IgnoreActionType.ETH_TRANSACTIONS) {
+    const transactions = state.transactions;
+    const data = [...transactions.entries];
+    for (let i = 0; i < data.length; i++) {
+      const tx = data[i];
+      tx.ignoredInAccounting = strings.includes(getKey(tx.entry));
+    }
+    commit(HistoryMutations.SET_TRANSACTIONS, {
+      ...transactions,
+      entries: data
+    });
+  }
+
+  return { success: true };
+};
 
 export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async [HistoryActions.FETCH_TRADES](
@@ -119,45 +240,44 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       ...connectedExchanges.map(exchange => exchange.location)
     ];
 
-    const fetchLocation: (
-      location: TradeLocation
-    ) => Promise<void> = async location => {
-      const { taskId } = await api.history.trades(
-        location,
-        source === FETCH_FROM_CACHE
-      );
-      const task = createTask<LocationRequestMeta>(taskId, taskType, {
-        title: i18n.tc('actions.trades.task.title'),
-        description: i18n.tc('actions.trades.task.description', undefined, {
-          exchange: exchangeName(location)
-        }),
-        ignoreResult: false,
-        location: location,
-        numericKeys: tradeNumericKeys
-      });
+    const fetchLocation: (location: TradeLocation) => Promise<void> =
+      async location => {
+        const { taskId } = await api.history.trades(
+          location,
+          source === FETCH_FROM_CACHE
+        );
+        const task = createTask<LocationRequestMeta>(taskId, taskType, {
+          title: i18n.tc('actions.trades.task.title'),
+          description: i18n.tc('actions.trades.task.description', undefined, {
+            exchange: exchangeName(location)
+          }),
+          ignoreResult: false,
+          location: location,
+          numericKeys: tradeNumericKeys
+        });
 
-      commit('tasks/add', task, { root: true });
+        commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<
-        LimitedResponse<EntryWithMeta<Trade>>,
-        TaskMeta
-      >(taskType, `${taskId}`);
+        const { result } = await taskCompletion<
+          LimitedResponse<EntryWithMeta<Trade>>,
+          TaskMeta
+        >(taskType, `${taskId}`);
 
-      const trades = [
-        ...state.trades.data.filter(trade => trade.location !== location),
-        ...result.entries.map(({ entry, ignoredInAccounting }) => ({
-          ...entry,
-          ignoredInAccounting
-        }))
-      ];
-      const data: HistoricData<TradeEntry> = {
-        data: trades,
-        found: result.entriesFound,
-        limit: result.entriesLimit
+        const trades = [
+          ...state.trades.data.filter(trade => trade.location !== location),
+          ...result.entries.map(({ entry, ignoredInAccounting }) => ({
+            ...entry,
+            ignoredInAccounting
+          }))
+        ];
+        const data: HistoricData<TradeEntry> = {
+          data: trades,
+          found: result.entriesFound,
+          limit: result.entriesLimit
+        };
+        commit(HistoryMutations.SET_TRADES, data);
+        setStatus(Status.PARTIALLY_LOADED);
       };
-      commit(HistoryMutations.SET_TRADES, data);
-      setStatus(Status.PARTIALLY_LOADED);
-    };
 
     const onError: (location: TradeLocation, message: string) => void = (
       location,
@@ -198,7 +318,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         await api.history.addExternalTrade(trade)
       );
       success = true;
-    } catch (e) {
+    } catch (e: any) {
       message = e.message;
     }
     return { success, message };
@@ -221,7 +341,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       };
       commit(HistoryMutations.UPDATE_TRADE, payload);
       success = true;
-    } catch (e) {
+    } catch (e: any) {
       message = e.message;
     }
     return { success, message };
@@ -238,7 +358,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       if (success) {
         commit(HistoryMutations.DELETE_TRADE, tradeId);
       }
-    } catch (e) {
+    } catch (e: any) {
       message = e.message;
     }
     return { success, message };
@@ -286,52 +406,51 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       .map(({ location }) => location)
       .filter(uniqueStrings);
 
-    const fetchLocation: (
-      location: TradeLocation
-    ) => Promise<void> = async location => {
-      const { taskId } = await api.history.assetMovements(
-        location,
-        source === FETCH_FROM_CACHE
-      );
-      const task = createTask<LocationRequestMeta>(taskId, taskType, {
-        title: i18n.tc('actions.asset_movements.task.title'),
-        description: i18n.tc(
-          'actions.asset_movements.task.description',
-          undefined,
-          {
-            exchange: exchangeName(location)
-          }
-        ),
-        ignoreResult: false,
-        location: location,
-        numericKeys: movementNumericKeys
-      });
+    const fetchLocation: (location: TradeLocation) => Promise<void> =
+      async location => {
+        const { taskId } = await api.history.assetMovements(
+          location,
+          source === FETCH_FROM_CACHE
+        );
+        const task = createTask<LocationRequestMeta>(taskId, taskType, {
+          title: i18n.tc('actions.asset_movements.task.title'),
+          description: i18n.tc(
+            'actions.asset_movements.task.description',
+            undefined,
+            {
+              exchange: exchangeName(location)
+            }
+          ),
+          ignoreResult: false,
+          location: location,
+          numericKeys: movementNumericKeys
+        });
 
-      commit('tasks/add', task, { root: true });
+        commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<
-        LimitedResponse<EntryWithMeta<AssetMovement>>,
-        TaskMeta
-      >(taskType, `${taskId}`);
+        const { result } = await taskCompletion<
+          LimitedResponse<EntryWithMeta<AssetMovement>>,
+          TaskMeta
+        >(taskType, `${taskId}`);
 
-      const movements = [
-        ...state.assetMovements.data.filter(
-          movement => movement.location !== location
-        ),
-        ...result.entries.map(({ entry, ignoredInAccounting }) => ({
-          ...entry,
-          ignoredInAccounting: ignoredInAccounting
-        }))
-      ];
+        const movements = [
+          ...state.assetMovements.data.filter(
+            movement => movement.location !== location
+          ),
+          ...result.entries.map(({ entry, ignoredInAccounting }) => ({
+            ...entry,
+            ignoredInAccounting: ignoredInAccounting
+          }))
+        ];
 
-      const data: HistoricData<AssetMovementEntry> = {
-        data: movements,
-        limit: result.entriesLimit,
-        found: result.entriesFound
+        const data: HistoricData<AssetMovementEntry> = {
+          data: movements,
+          limit: result.entriesLimit,
+          found: result.entriesFound
+        };
+        commit(HistoryMutations.SET_MOVEMENTS, data);
+        setStatus(Status.PARTIALLY_LOADED);
       };
-      commit(HistoryMutations.SET_MOVEMENTS, data);
-      setStatus(Status.PARTIALLY_LOADED);
-    };
 
     const onError: (location: TradeLocation, message: string) => void = (
       location,
@@ -350,10 +469,12 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     };
 
     await Promise.all(
-      ([
-        ...(source !== FETCH_FROM_SOURCE ? EXTERNAL_EXCHANGES : []),
-        ...locations
-      ] as TradeLocation[]).map(location =>
+      (
+        [
+          ...(source !== FETCH_FROM_SOURCE ? EXTERNAL_EXCHANGES : []),
+          ...locations
+        ] as TradeLocation[]
+      ).map(location =>
         fetchLocation(location).catch(e => onError(location, e.message))
       )
     );
@@ -364,18 +485,126 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async [HistoryActions.FETCH_TRANSACTIONS](
     {
       commit,
+      rootGetters: {
+        'tasks/isTaskRunning': isTaskRunning,
+        'balances/ethAddresses': ethAddresses,
+        status
+      }
+    },
+    payload: Partial<TransactionRequestPayload>
+  ): Promise<void> {
+    const { setStatus, loading, isFirstLoad } = getStatusUpdater(
+      commit,
+      Section.TX,
+      status
+    );
+    const fetchTransactions: (
+      parameters?: Partial<TransactionRequestPayload>
+    ) => Promise<Transactions> = async parameters => {
+      const taskType = TaskType.TX;
+      const defaults = {
+        limit: 1,
+        offset: 0,
+        ascending: false,
+        orderByAttribute: 'timestamp'
+      };
+
+      const params: TransactionRequestPayload = Object.assign(
+        defaults,
+        parameters
+      );
+
+      if (params.onlyCache) {
+        return await api.history.ethTransactions(params);
+      }
+
+      const { taskId } = await api.history.ethTransactionsTask(params);
+      const address = parameters?.address ?? '';
+      const task = createTask<AddressMeta>(taskId, taskType, {
+        title: i18n.t('actions.transactions.task.title').toString(),
+        description: address
+          ? i18n
+              .t('actions.transactions.task.description', {
+                address: address
+              })
+              .toString()
+          : undefined,
+        ignoreResult: false,
+        numericKeys: [],
+        address: address
+      });
+
+      commit('tasks/add', task, { root: true });
+
+      const { result } = await taskCompletion<Transactions, TaskMeta>(
+        taskType,
+        `${taskId}`
+      );
+
+      return Transactions.parse(result);
+    };
+
+    try {
+      const taskType = TaskType.TX;
+      const firstLoad = isFirstLoad();
+      const onlyCache = firstLoad ? false : payload.onlyCache;
+      if ((isTaskRunning(taskType) || loading()) && !onlyCache) {
+        return;
+      }
+
+      setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
+
+      const cacheParams = { ...payload, onlyCache: true };
+      const data = await fetchTransactions(cacheParams);
+      commit(HistoryMutations.SET_TRANSACTIONS, data);
+
+      if (!onlyCache) {
+        setStatus(Status.REFRESHING);
+        const refreshAddressTxs = ethAddresses.map((address: string) =>
+          fetchTransactions({ address }).catch(error => {
+            userNotify({
+              title: i18n.t('actions.transactions.error.title').toString(),
+              message: i18n
+                .t('actions.transactions.error.description', {
+                  error,
+                  address
+                })
+                .toString(),
+              display: true
+            });
+          })
+        );
+        await Promise.all(refreshAddressTxs);
+
+        if (!firstLoad) {
+          const cacheParams = { ...payload, onlyCache: true };
+          const data = await fetchTransactions(cacheParams);
+          commit(HistoryMutations.SET_TRANSACTIONS, data);
+        }
+      }
+
+      setStatus(isTaskRunning(TaskType.TX) ? Status.REFRESHING : Status.LOADED);
+    } catch (e: any) {
+      logger.error(e);
+      setStatus(Status.NONE);
+    }
+  },
+
+  async [HistoryActions.FETCH_LEDGER_ACTIONS](
+    {
+      commit,
       state,
       rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
       rootState: { balances }
     },
     source: FetchSource
   ): Promise<void> {
-    const taskType = TaskType.TX;
+    const taskType = TaskType.LEDGER_ACTIONS;
     if (isTaskRunning(taskType)) {
       return;
     }
 
-    const section = Section.TX;
+    const section = Section.LEDGER_ACTIONS;
     const currentStatus = status(section);
     const refresh = source === FETCH_REFRESH || source === FETCH_FROM_SOURCE;
 
@@ -399,122 +628,21 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
-    const { ethAccounts } = balances!;
-    const addresses = ethAccounts.map(address => address.address);
+    const locations = balances!.connectedExchanges
+      .map(({ location }) => location)
+      .filter(uniqueStrings);
 
-    const fetchAddress: (address: string) => Promise<void> = async address => {
-      const { taskId } = await api.history.ethTransactions(
-        address,
-        source === FETCH_FROM_CACHE
-      );
-      const task = createTask<AccountRequestMeta>(taskId, taskType, {
-        title: i18n.tc('actions.transactions.task.title'),
-        description: i18n.tc(
-          'actions.transactions.task.description',
-          undefined,
-          {
-            address
-          }
-        ),
-        ignoreResult: false,
-        address: address,
-        numericKeys: transactionNumericKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<
-        LimitedResponse<EntryWithMeta<EthTransaction>>,
-        AccountRequestMeta
-      >(taskType, `${taskId}`);
-      const newTransactions = result.entries.map(
-        ({ entry, ignoredInAccounting }) => ({
-          ...entry,
-          ignoredInAccounting: ignoredInAccounting
-        })
-      );
-
-      const transactions = [
-        ...state.transactions.data.filter(
-          tx => tx.fromAddress !== address && tx.toAddress !== address
-        ),
-        ...newTransactions
-      ];
-      const data: HistoricData<EthTransactionEntry> = {
-        data: transactions,
-        limit: result.entriesLimit,
-        found: result.entriesFound
-      };
-      commit(HistoryMutations.SET_TRANSACTIONS, data);
-      setStatus(Status.PARTIALLY_LOADED);
-    };
-
-    const onError: (address: string, message: string) => void = (
-      address,
-      message
-    ) => {
-      notify(
-        i18n.tc('actions.transactions.error.description', undefined, {
-          error: message,
-          address
-        }),
-        i18n.tc('actions.transactions.error.title'),
-        Severity.ERROR,
+    const fetchDefault: () => Promise<void> = async () => {
+      const { taskId } = await api.history.ledgerActions(
+        undefined,
+        undefined,
+        undefined,
         true
       );
-    };
-
-    await Promise.all(
-      addresses.map(address =>
-        fetchAddress(address).catch(e => onError(address, e.message))
-      )
-    );
-
-    setStatus(Status.LOADED);
-  },
-
-  async [HistoryActions.FETCH_LEDGER_ACTIONS](
-    {
-      commit,
-      dispatch,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status }
-    },
-    refresh: boolean
-  ): Promise<void> {
-    const taskType = TaskType.LEDGER_ACTIONS;
-    if (isTaskRunning(taskType)) {
-      return;
-    }
-
-    const section = Section.LEDGER_ACTIONS;
-    const currentStatus = status(section);
-
-    if (
-      currentStatus === Status.LOADING ||
-      currentStatus === Status.PARTIALLY_LOADED ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-    const setStatus: (newStatus: Status) => void = newStatus => {
-      if (status(section) === newStatus) {
-        return;
-      }
-      const payload: StatusPayload = {
-        section: section,
-        status: newStatus
-      };
-      commit('setStatus', payload, { root: true });
-    };
-
-    setStatus(refresh ? Status.REFRESHING : Status.LOADING);
-
-    try {
-      const { taskId } = await api.history.ledgerActions();
       const task = createTask<TaskMeta>(taskId, taskType, {
-        title: i18n.t('actions.ledger_actions.task.title').toString(),
+        title: i18n.t('actions.manual_ledger_actions.task.title').toString(),
         description: i18n
-          .t('actions.ledger_actions.task.description', {})
+          .t('actions.manual_ledger_actions.task.description', {})
           .toString(),
         ignoreResult: false,
         numericKeys: [...balanceKeys, 'rate']
@@ -526,6 +654,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         LimitedResponse<EntryWithMeta<LedgerAction>>,
         TaskMeta
       >(taskType, `${taskId}`);
+
       const data: HistoricData<LedgerActionEntry> = {
         data: result.entries.map(({ entry, ignoredInAccounting }) => ({
           ...entry,
@@ -535,27 +664,97 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         found: result.entriesFound
       };
       commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
-    } catch (e) {
-      const message = i18n
-        .t('actions.ledger_actions.error.description', {
-          error: e.message
-        })
-        .toString();
-      const title = i18n.t('actions.ledger_actions.error.title').toString();
+      setStatus(Status.PARTIALLY_LOADED);
+    };
 
-      await dispatch(
-        'notifications/notify',
-        {
-          title,
-          message: message,
-          severity: Severity.ERROR,
-          display: true
-        } as NotificationPayload,
-        { root: true }
+    const onDefaultError: (message: string) => void = message => {
+      notify(
+        i18n.tc('actions.manual_ledger_actions.error.description', undefined, {
+          error: message
+        }),
+        i18n.tc('actions.manual_ledger_actions.error.title'),
+        Severity.ERROR,
+        true
       );
-    } finally {
-      setStatus(Status.LOADED);
-    }
+    };
+
+    const fetchLocation: (location: TradeLocation) => Promise<void> =
+      async location => {
+        const { taskId } = await api.history.ledgerActions(
+          undefined,
+          undefined,
+          location,
+          source === FETCH_FROM_CACHE
+        );
+        const task = createTask<TaskMeta>(taskId, taskType, {
+          title: i18n.tc('actions.ledger_actions.task.title'),
+          description: i18n.tc(
+            'actions.ledger_actions.task.description',
+            undefined,
+            {
+              exchange: exchangeName(location)
+            }
+          ),
+          ignoreResult: false,
+          numericKeys: [...balanceKeys, 'rate']
+        });
+
+        commit('tasks/add', task, { root: true });
+
+        const { result } = await taskCompletion<
+          LimitedResponse<EntryWithMeta<LedgerAction>>,
+          TaskMeta
+        >(taskType, `${taskId}`);
+
+        const actions = [
+          ...state.ledgerActions.data.filter(
+            action => action.location !== location
+          ),
+          ...result.entries.map(({ entry, ignoredInAccounting }) => ({
+            ...entry,
+            ignoredInAccounting: ignoredInAccounting
+          }))
+        ];
+
+        const data: HistoricData<LedgerActionEntry> = {
+          data: actions,
+          limit: result.entriesLimit,
+          found: result.entriesFound
+        };
+
+        commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
+        setStatus(Status.PARTIALLY_LOADED);
+      };
+
+    const onError: (location: TradeLocation, message: string) => void = (
+      location,
+      message
+    ) => {
+      const exchange = exchangeName(location);
+      notify(
+        i18n.tc('actions.ledger_actions.error.description', undefined, {
+          exchange,
+          error: message
+        }),
+        i18n.tc('actions.ledger_actions.error.title', undefined, { exchange }),
+        Severity.ERROR,
+        true
+      );
+    };
+
+    await Promise.all([
+      fetchDefault().catch(e => onDefaultError(e.message)),
+      ...(
+        [
+          ...(source !== FETCH_FROM_SOURCE ? EXTERNAL_EXCHANGES : []),
+          ...locations
+        ] as TradeLocation[]
+      ).map(location =>
+        fetchLocation(location).catch(e => onError(location, e.message))
+      )
+    ]);
+
+    setStatus(Status.LOADED);
   },
 
   async [HistoryActions.ADD_LEDGER_ACTION](
@@ -569,7 +768,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         identifier
       } as LedgerAction);
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       return { success: false, message: e.message };
     }
   },
@@ -590,7 +789,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       };
       commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       return { success: false, message: e.message };
     }
   },
@@ -611,193 +810,22 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       };
       commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       return { success: false, message: e.message };
     }
   },
 
   async [HistoryActions.IGNORE_ACTIONS](
-    { commit, state },
-    { actionIds, type }: IgnoreActionPayload
+    context,
+    payload: IgnoreActionPayload
   ): Promise<ActionStatus> {
-    let strings: string[] = [];
-    try {
-      const result = await api.ignoreActions(actionIds, type);
-      const entries = result[type];
-      assert(entries, `expected entry for ${type} but there where non`);
-      strings = entries;
-    } catch (e) {
-      commit(
-        'setMessage',
-        {
-          success: false,
-          title: i18n.t('actions.ignore.error.title').toString(),
-          description: i18n
-            .t('actions.ignore.error.description', { error: e.message })
-            .toString()
-        } as Message,
-        { root: true }
-      );
-      return { success: false };
-    }
-
-    if (type === IGNORE_TRADES) {
-      const data = [...state.trades.data];
-
-      for (let i = 0; i < data.length; i++) {
-        const trade: Writeable<TradeEntry> = data[i];
-        if (strings.includes(trade.tradeId)) {
-          data[i] = { ...data[i], ignoredInAccounting: true };
-        }
-      }
-      commit(HistoryMutations.SET_TRADES, {
-        data,
-        found: state.trades.found,
-        limit: state.trades.limit
-      } as Trades);
-    } else if (type === IGNORE_MOVEMENTS) {
-      const data = [...state.assetMovements.data];
-
-      for (let i = 0; i < data.length; i++) {
-        const movement: Writeable<AssetMovementEntry> = data[i];
-        if (strings.includes(movement.identifier)) {
-          data[i] = { ...data[i], ignoredInAccounting: true };
-        }
-      }
-      commit(HistoryMutations.SET_MOVEMENTS, {
-        data,
-        found: state.assetMovements.found,
-        limit: state.assetMovements.limit
-      } as AssetMovements);
-    } else if (type === IGNORE_TRANSACTIONS) {
-      const data = [...state.transactions.data];
-
-      for (let i = 0; i < data.length; i++) {
-        const transaction: Writeable<EthTransactionEntry> = data[i];
-        const key =
-          transaction.txHash + transaction.fromAddress + transaction.nonce;
-        if (strings.includes(key)) {
-          data[i] = { ...data[i], ignoredInAccounting: true };
-        }
-      }
-      commit(HistoryMutations.SET_TRANSACTIONS, {
-        data,
-        found: state.transactions.found,
-        limit: state.transactions.limit
-      } as EthTransactions);
-    } else if (type === IGNORE_LEDGER_ACTION) {
-      const data = [...state.ledgerActions.data];
-
-      for (let i = 0; i < data.length; i++) {
-        const ledgerAction: Writeable<LedgerActionEntry> = data[i];
-
-        if (strings.includes(ledgerAction.identifier.toString())) {
-          data[i] = { ...data[i], ignoredInAccounting: true };
-        }
-      }
-      commit(HistoryMutations.SET_LEDGER_ACTIONS, {
-        data,
-        found: state.ledgerActions.found,
-        limit: state.ledgerActions.limit
-      } as LedgerActions);
-    }
-    return { success: true };
+    return ignoreInAccounting(context, payload, true);
   },
   async [HistoryActions.UNIGNORE_ACTION](
-    { commit, state },
-    { actionIds, type }: IgnoreActionPayload
+    context,
+    payload: IgnoreActionPayload
   ) {
-    let strings: string[] = [];
-    try {
-      const result = await api.unignoreActions(actionIds, type);
-      strings = result[type] ?? [];
-    } catch (e) {
-      commit(
-        'setMessage',
-        {
-          success: false,
-          title: i18n.t('actions.unignore.error.title').toString(),
-          description: i18n
-            .t('actions.unignore.error.description', { error: e.message })
-            .toString()
-        } as Message,
-        { root: true }
-      );
-      return { success: false };
-    }
-    if (type === IGNORE_TRADES) {
-      const data = [...state.trades.data];
-
-      for (let i = 0; i < data.length; i++) {
-        const trade: Writeable<TradeEntry> = data[i];
-        if (!trade.ignoredInAccounting) {
-          continue;
-        }
-        if (!strings.includes(trade.tradeId)) {
-          data[i] = { ...data[i], ignoredInAccounting: false };
-        }
-      }
-      commit(HistoryMutations.SET_TRADES, {
-        data,
-        found: state.trades.found,
-        limit: state.trades.limit
-      } as Trades);
-    } else if (type === IGNORE_MOVEMENTS) {
-      const data = [...state.assetMovements.data];
-
-      for (let i = 0; i < data.length; i++) {
-        const movement: Writeable<AssetMovementEntry> = data[i];
-        if (!movement.ignoredInAccounting) {
-          continue;
-        }
-        if (!strings.includes(movement.identifier)) {
-          data[i] = { ...data[i], ignoredInAccounting: false };
-        }
-      }
-      commit(HistoryMutations.SET_MOVEMENTS, {
-        data,
-        found: state.assetMovements.found,
-        limit: state.assetMovements.limit
-      } as AssetMovements);
-    } else if (type === IGNORE_TRANSACTIONS) {
-      const data = [...state.transactions.data];
-
-      for (let i = 0; i < data.length; i++) {
-        const transaction: Writeable<EthTransactionEntry> = data[i];
-        if (!transaction.ignoredInAccounting) {
-          continue;
-        }
-        const key =
-          transaction.txHash + transaction.fromAddress + transaction.nonce;
-        if (!strings.includes(key)) {
-          data[i] = { ...data[i], ignoredInAccounting: false };
-        }
-      }
-      commit(HistoryMutations.SET_TRANSACTIONS, {
-        data,
-        found: state.transactions.found,
-        limit: state.transactions.limit
-      } as EthTransactions);
-    } else if (type === IGNORE_LEDGER_ACTION) {
-      const data = [...state.ledgerActions.data];
-
-      for (let i = 0; i < data.length; i++) {
-        const ledgerAction: Writeable<LedgerActionEntry> = data[i];
-        if (!ledgerAction.ignoredInAccounting) {
-          continue;
-        }
-
-        if (!strings.includes(ledgerAction.identifier.toString())) {
-          data[i] = { ...data[i], ignoredInAccounting: false };
-        }
-      }
-      commit(HistoryMutations.SET_LEDGER_ACTIONS, {
-        data,
-        found: state.ledgerActions.found,
-        limit: state.ledgerActions.limit
-      } as LedgerActions);
-    }
-    return { success: true };
+    return ignoreInAccounting(context, payload, false);
   },
 
   async [HistoryActions.REMOVE_EXCHANGE_TRADES](
@@ -827,16 +855,6 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     };
 
     commit(HistoryMutations.SET_MOVEMENTS, trades);
-  },
-  async [HistoryActions.PURGE_TRANSACTIONS]({
-    commit,
-    rootGetters: { status }
-  }) {
-    commit(
-      HistoryMutations.SET_TRANSACTIONS,
-      defaultHistoricState<EthTransactions>()
-    );
-    setStatus(Status.NONE, Section.TX, status, commit);
   },
   async [HistoryActions.PURGE_EXCHANGE](
     { commit, dispatch },
@@ -875,11 +893,30 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       const { result } = await taskCompletion<GitcoinGrants, TaskMeta>(type);
 
       return { result, message: '' };
-    } catch (e) {
+    } catch (e: any) {
       return {
         result: {},
         message: e.message
       };
+    }
+  },
+  async [HistoryActions.FETCH_IGNORED]({ commit }) {
+    const notify = async (error?: any) => {
+      logger.error(error);
+      const message = error?.message ?? error ?? '';
+      await userNotify({
+        title: i18n.t('actions.history.fetch_ignored.error.title').toString(),
+        message: i18n
+          .t('actions.history.fetch_ignored.error.message', { message })
+          .toString(),
+        display: true
+      });
+    };
+    try {
+      const result = await api.history.fetchIgnored();
+      commit(HistoryMutations.SET_IGNORED, result);
+    } catch (e: any) {
+      await notify(e);
     }
   }
 };

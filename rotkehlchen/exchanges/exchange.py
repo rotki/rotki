@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import requests
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -22,7 +24,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 ExchangeQueryBalances = Tuple[Optional[Dict[Asset, Balance]], str]
 ExchangeHistorySuccessCallback = Callable[
-    [List[Trade], List[MarginPosition], List[AssetMovement], Any],
+    [List[Trade], List[MarginPosition], List[AssetMovement], List[LedgerAction], Any],
     None,
 ]
 
@@ -173,11 +175,15 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """Queries the exchange's API for the trade history of the user
 
         Should be implemented by subclasses if the exchange can return trade history in any form.
         This is not implemented only for bitmex as it only returns margin positions
+
+        Returns a tuple of the trades of the exchange and a Tuple of the queried time
+        range. The time range can differ from the given time range if an error happened
+        and the call stopped in the middle.
         """
         raise NotImplementedError(
             'query_online_trade_history() should only be implemented by subclasses',
@@ -210,6 +216,22 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             'query_online_deposits_withdrawals should only be implemented by subclasses',
         )
 
+    def query_online_income_loss_expense(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[LedgerAction]:
+        """Queries the exchange's API for the ledger actions of the user
+
+        Should be implemented in subclasses.
+        Has to be implemented by exchanges if they have anything exchange specific
+
+        For example coinbase
+        """
+        raise NotImplementedError(
+            'query_online_income_loss_expense should only be implemented by subclasses',
+        )
+
     @protect_with_lock()
     def query_trade_history(
             self,
@@ -222,6 +244,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         Limits the query to the given time range and also if only_cache is True returns
         only what is already saved in the DB without performing an exchange query
         """
+        log.debug(f'Querying trade history for {self.name} exchange')
         trades = self.db.get_trades(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -237,27 +260,31 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             end_ts=end_ts,
         )
 
-        new_trades = []
         for query_start_ts, query_end_ts in ranges_to_query:
             # If we have a time frame we have not asked the exchange for trades then
             # go ahead and do that now
-            new_trades.extend(self.query_online_trade_history(
+            log.debug(
+                f'Querying online trade history for {self.name} between '
+                f'{query_start_ts} and {query_end_ts}',
+            )
+            new_trades, queried_range = self.query_online_trade_history(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
-            ))
+            )
 
-        # make sure to add them to the DB
-        if new_trades != []:
-            self.db.add_trades(new_trades)
-        # and also set the used queried timestamp range for the exchange
-        ranges.update_used_query_range(
-            location_string=f'{str(self.location)}_trades',
-            start_ts=start_ts,
-            end_ts=end_ts,
-            ranges_to_query=ranges_to_query,
-        )
-        # finally append them to the already returned DB trades
-        trades.extend(new_trades)
+            # make sure to add them to the DB
+            if new_trades != []:
+                self.db.add_trades(new_trades)
+
+            # and also set the used queried timestamp range for the exchange
+            ranges.update_used_query_range(
+                location_string=f'{str(self.location)}_trades',
+                start_ts=queried_range[0],
+                end_ts=queried_range[1],
+                ranges_to_query=[queried_range],
+            )
+            # finally append them to the already returned DB trades
+            trades.extend(new_trades)
 
         return trades
 
@@ -268,6 +295,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
     ) -> List[MarginPosition]:
         """Queries the local DB and the remote exchange for the margin positions history of the user
         """
+        log.debug(f'Querying margin history for {self.name} exchange')
         margin_positions = self.db.get_margin_positions(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -281,6 +309,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         )
         new_positions = []
         for query_start_ts, query_end_ts in ranges_to_query:
+            log.debug(
+                f'Querying online margin history for {self.name} between '
+                f'{query_start_ts} and {query_end_ts}',
+            )
             new_positions.extend(self.query_online_margin_history(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
@@ -313,6 +345,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         If only_cache is true only what is already cached in the DB is returned without
         an actual exchange query.
         """
+        log.debug(f'Querying deposits/withdrawals history for {self.name} exchange')
         asset_movements = self.db.get_asset_movements(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -329,6 +362,10 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         )
         new_movements = []
         for query_start_ts, query_end_ts in ranges_to_query:
+            log.debug(
+                f'Querying online deposits/withdrawals for {self.name} between '
+                f'{query_start_ts} and {query_end_ts}',
+            )
             new_movements.extend(self.query_online_deposits_withdrawals(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
@@ -345,6 +382,52 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         asset_movements.extend(new_movements)
 
         return asset_movements
+
+    @protect_with_lock()
+    def query_income_loss_expense(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            only_cache: bool,
+    ) -> List[LedgerAction]:
+        """Queries the local DB and the exchange for the income/loss/expense history of the user
+
+        If only_cache is true only what is already cached in the DB is returned without
+        an actual exchange query.
+        """
+        db = DBLedgerActions(self.db, self.db.msg_aggregator)
+        ledger_actions = db.get_ledger_actions(
+            from_ts=start_ts,
+            to_ts=end_ts,
+            location=self.location,
+        )
+        if only_cache:
+            return ledger_actions
+
+        ranges = DBQueryRanges(self.db)
+        ranges_to_query = ranges.get_location_query_ranges(
+            location_string=f'{str(self.location)}_ledger_actions',
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+        new_ledger_actions = []
+        for query_start_ts, query_end_ts in ranges_to_query:
+            new_ledger_actions.extend(self.query_online_income_loss_expense(
+                start_ts=query_start_ts,
+                end_ts=query_end_ts,
+            ))
+
+        if new_ledger_actions != []:
+            db.add_ledger_actions(new_ledger_actions)
+        ranges.update_used_query_range(
+            location_string=f'{str(self.location)}_ledger_actions',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            ranges_to_query=ranges_to_query,
+        )
+        ledger_actions.extend(new_ledger_actions)
+
+        return ledger_actions
 
     def query_history_with_callbacks(
             self,
@@ -373,6 +456,11 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 end_ts=end_ts,
                 only_cache=False,
             )
+            ledger_actions = self.query_income_loss_expense(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                only_cache=False,
+            )
             exchange_specific_data = self.query_exchange_specific_history(  # pylint: disable=assignment-from-none  # noqa: E501
                 start_ts=start_ts,
                 end_ts=end_ts,
@@ -381,6 +469,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 trades_history,
                 margin_history,
                 asset_movements,
+                ledger_actions,
                 exchange_specific_data,
             )
 

@@ -7,7 +7,6 @@ export enum HistoryActions {
   ADD_LEDGER_ACTION = 'addLedgerAction',
   EDIT_LEDGER_ACTION = 'editLedgerAction',
   DELETE_LEDGER_ACTION = 'deleteLedgerAction',
-  PURGE_TRANSACTIONS = 'purgeTransactions',
   PURGE_EXCHANGE = 'purgeExchange',
   REMOVE_EXCHANGE_TRADES = 'removeExchangeTrades',
   REMOVE_EXCHANGE_MOVEMENTS = 'removeExchangeMovements',
@@ -17,6 +16,7 @@ export enum HistoryActions {
   DELETE_EXTERNAL_TRADE = 'deleteExternalTrade',
   IGNORE_ACTIONS = 'ignoreActions',
   UNIGNORE_ACTION = 'unignoreActions',
+  FETCH_IGNORED = 'fetchIgnored',
   FETCH_GITCOIN_GRANT = 'fetchGitcoinGrant'
 }
 
@@ -29,7 +29,8 @@ export enum HistoryMutations {
   DELETE_TRADE = 'deleteTrade',
   UPDATE_TRADE = 'updateTrade',
   ADD_TRADE = 'addTrade',
-  SET_TRADES = 'setTrades'
+  SET_TRADES = 'setTrades',
+  SET_IGNORED = 'setIgnored'
 }
 
 export enum LedgerActionType {
@@ -79,18 +80,6 @@ export const ledgerActionsData: ActionDataEntry[] = [
     label: i18n.t('ledger_actions.actions.grant').toString()
   }
 ];
-
-export const IGNORE_TRANSACTIONS = 'ethereum transaction';
-export const IGNORE_MOVEMENTS = 'asset movement';
-export const IGNORE_TRADES = 'trade';
-export const IGNORE_LEDGER_ACTION = 'ledger action';
-
-export const IGNORE_ACTION_TYPE = [
-  IGNORE_TRANSACTIONS,
-  IGNORE_MOVEMENTS,
-  IGNORE_TRADES,
-  IGNORE_LEDGER_ACTION
-] as const;
 
 export const FETCH_FROM_CACHE = 'fromCache' as const;
 export const FETCH_FROM_SOURCE = 'fromSource' as const;

@@ -92,7 +92,7 @@ const MUSHROOMS_FINANCE = 'Mushrooms Finance';
 const MUSHROOMS_FINANCE_STAKING = 'Mushrooms Finance • Staking';
 const AKROPOLIS_AKRO_STAKING = 'Akropolis • AKRO Staking';
 const AKROPOLIS_ADEL_STAKING = 'Akropolis • ADEL Staking';
-const LIQUITY = 'LIQUITY';
+export const LIQUITY = 'Liquity';
 const ALPHA_HOMORA = 'Alpha Homora';
 const ALPHA_HOMORA_V2 = 'Alpha Homora V2';
 const STAKE_DAO = 'Stake DAO';
@@ -107,6 +107,7 @@ const COZY_COMPOUND = 'Cozy • Compound';
 const UNAGII = 'Unagii';
 const ORIGIN_PROTOCOL = 'Origin Protocol • OGN Staking';
 const TIMEWARP = 'TimeWarp • Staking';
+const GELATO = 'Gelato Network • Locked GEL';
 
 export const OVERVIEW_PROTOCOLS = [
   YGOVFINANCEV1,
@@ -210,7 +211,8 @@ export const OVERVIEW_PROTOCOLS = [
   COZY_YEARN,
   UNAGII,
   ORIGIN_PROTOCOL,
-  TIMEWARP
+  TIMEWARP,
+  GELATO
 ] as const;
 
 const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
@@ -315,7 +317,8 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [COZY_YEARN]: 'cozy.svg',
   [UNAGII]: 'unagii.svg',
   [ORIGIN_PROTOCOL]: 'origin.png',
-  [TIMEWARP]: 'timewarp.png'
+  [TIMEWARP]: 'timewarp.png',
+  [GELATO]: 'gelato.svg'
 };
 
 export function getProtcolIcon(name: OverviewDefiProtocol): string {

@@ -4,6 +4,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.fval import FVal
@@ -36,6 +37,7 @@ def test_query_owned_assets(
             amount=FVal('1550'),
             location=Location.BANKS,
             tags=None,
+            balance_type=BalanceType.ASSET,
         )],
     )
 

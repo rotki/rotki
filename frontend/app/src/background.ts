@@ -30,7 +30,7 @@ const onReady = async () => {
     // Install Vue Devtools
     try {
       await installExtension(VUEJS_DEVTOOLS);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Vue Devtools failed to install:', e.toString());
     }
   }
@@ -120,7 +120,6 @@ async function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       sandbox: true,
-      enableRemoteModule: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     }

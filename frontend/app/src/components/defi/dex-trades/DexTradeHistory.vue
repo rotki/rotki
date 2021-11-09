@@ -9,8 +9,11 @@
       <template #message>{{ $t('dex_trades.loading') }}</template>
     </progress-screen>
     <div v-else>
-      <active-modules :modules="modules" class="dex-trade-history__modules" />
-      <dex-trades-table :refreshing="anyRefreshing" />
+      <dex-trades-table :refreshing="anyRefreshing">
+        <template #modules>
+          <active-modules :modules="modules" />
+        </template>
+      </dex-trades-table>
     </div>
   </div>
 </template>
@@ -84,14 +87,3 @@ export default class DexTradeHistory extends Mixins(
   }
 }
 </script>
-
-<style scoped lang="scss">
-.dex-trade-history {
-  &__modules {
-    display: inline-flex;
-    position: absolute;
-    right: 102px;
-    top: 43px;
-  }
-}
-</style>

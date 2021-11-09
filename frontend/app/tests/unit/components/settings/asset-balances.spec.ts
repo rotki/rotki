@@ -2,7 +2,7 @@ import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
-import { Task, TaskMeta } from '@/model/task';
+import { createTask, Task, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import store from '@/store/store';
 import '../../i18n';
@@ -14,13 +14,15 @@ describe('AssetBalances.vue', () => {
 
   beforeEach(() => {
     const vuetify = new Vuetify();
+
     wrapper = mount(AssetBalances, {
-      store,
       vuetify,
+      store,
+      provide: {
+        'vuex-store': store
+      },
       propsData: {
-        blockchain: 'ETH',
-        balances: [],
-        title: 'Blockchain assets'
+        balances: []
       }
     });
   });
@@ -30,14 +32,14 @@ describe('AssetBalances.vue', () => {
   });
 
   test('table enters into loading state when balances load', async () => {
-    const payload: Task<TaskMeta> = {
-      id: 1,
-      type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
-      meta: {
+    const payload: Task<TaskMeta> = createTask(
+      1,
+      TaskType.QUERY_BLOCKCHAIN_BALANCES,
+      {
         ignoreResult: false,
         title: 'test'
       }
-    };
+    );
     store.commit('tasks/add', payload);
     await wrapper.vm.$nextTick();
 

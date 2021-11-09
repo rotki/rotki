@@ -15,7 +15,8 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
   btcDerivationGapLimit: Defaults.BTC_DERIVATION_GAP_LIMIT,
   displayDateInLocaltime: Defaults.DISPLAY_DATE_IN_LOCALTIME,
   currentPriceOracles: [],
-  historicalPriceOracles: []
+  historicalPriceOracles: [],
+  ssf0GraphMultiplier: 0
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({

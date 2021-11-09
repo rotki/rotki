@@ -22,6 +22,7 @@ import gevent
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
@@ -254,6 +255,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     @property
     def symbols_to_pair(self) -> Dict[str, BinancePair]:
+        """Returns binance symbols to pair if in memory otherwise queries binance"""
         self.first_connection()
         return self._symbols_to_pair
 
@@ -414,7 +416,11 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> Dict:
         """May raise RemoteError and BinancePermissionError due to api_query"""
         result = self.api_query(api_type, method, options)
-        assert isinstance(result, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+        if not isinstance(result, dict):
+            error_msg = f'Expected dict but did not get it in {self.name} api response.'
+            log.error(f'{error_msg}. Got: {result}')
+            raise RemoteError(error_msg)
+
         return result
 
     def api_query_list(
@@ -425,7 +431,22 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List:
         """May raise RemoteError and BinancePermissionError due to api_query"""
         result = self.api_query(api_type, method, options)
-        assert isinstance(result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+        if isinstance(result, Dict):
+            if 'data' in result:
+                result = result['data']
+            elif 'total' in result and result['total'] == 0:
+                # This is a completely undocumented behavior of their api seen in the wild.
+                # At least one endpoint (/sapi/v1/fiat/payments) can omit the data
+                # key in the response object instead of returning an empty list like
+                # other endpoints.
+                # {'code': '000000', 'message': 'success', 'success': True, 'total': 0}
+                return []
+
+        if not isinstance(result, list):
+            error_msg = f'Expected list but did not get it in {self.name} api response.'
+            log.error(f'{error_msg}. Got: {result}')
+            raise RemoteError(error_msg)
+
         return result
 
     def _query_spot_balances(
@@ -795,7 +816,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
             markets: Optional[List[str]] = None,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """
 
         May raise due to api query and unexpected id:
@@ -891,7 +912,169 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             trades.append(trade)
 
+        fiat_payments = self._query_online_fiat_payments(start_ts=start_ts, end_ts=end_ts)
+        if fiat_payments:
+            trades += fiat_payments
+            trades.sort(key=lambda x: x.timestamp)
+
+        return trades, (start_ts, end_ts)
+
+    def _query_online_fiat_payments(self, start_ts: Timestamp, end_ts: Timestamp) -> List[Trade]:
+        fiat_buys = self._api_query_list_within_time_delta(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+            api_type='sapi',
+            method='fiat/payments',
+            additional_options={'transactionType': 0},
+        )
+        log.debug(f'{self.name} fiat buys history result', results_num=len(fiat_buys))
+        fiat_sells = self._api_query_list_within_time_delta(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+            api_type='sapi',
+            method='fiat/payments',
+            additional_options={'transactionType': 1},
+        )
+        log.debug(f'{self.name} fiat sells history result', results_num=len(fiat_sells))
+
+        trades = []
+        for idx, raw_fiat in enumerate(fiat_buys + fiat_sells):
+            trade_type = TradeType.BUY if idx < len(fiat_buys) else TradeType.SELL
+            trade = self._deserialize_fiat_payment(raw_fiat, trade_type=trade_type)
+            if trade:
+                trades.append(trade)
+
         return trades
+
+    def _deserialize_fiat_payment(
+            self,
+            raw_data: Dict[str, Any],
+            trade_type: TradeType,
+    ) -> Optional[Trade]:
+        """Processes a single deposit/withdrawal from binance and deserializes it
+
+        Can log error/warning and return None if something went wrong at deserialization
+        """
+        try:
+            if 'status' not in raw_data or raw_data['status'] != 'Completed':
+                log.error(
+                    f'Found {str(self.location)} fiat payment with failed status. Ignoring it.',
+                )
+                return None
+
+            fiat_asset = asset_from_binance(raw_data['fiatCurrency'])
+            tx_id = get_key_if_has_val(raw_data, 'orderNo')
+            timestamp = deserialize_timestamp_from_binance(raw_data['createTime'])
+            fee = Fee(deserialize_asset_amount(raw_data['totalFee']))
+            link_str = str(tx_id) if tx_id else ''
+            crypto_asset = asset_from_binance(raw_data['cryptoCurrency'])
+            obtain_amount = deserialize_asset_amount_force_positive(
+                raw_data['obtainAmount'],
+            )
+            rate = deserialize_price(raw_data['price'])
+            base_asset = crypto_asset
+            quote_asset = fiat_asset
+            return Trade(
+                timestamp=timestamp,
+                location=self.location,
+                base_asset=base_asset,
+                quote_asset=quote_asset,
+                trade_type=trade_type,
+                amount=obtain_amount,
+                rate=rate,
+                fee=fee,
+                fee_currency=quote_asset,
+                link=link_str,
+            )
+
+        except UnknownAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found {str(self.location)} fiat payment with unknown asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except UnsupportedAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found {str(self.location)} fiat payment with unsupported asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except (DeserializationError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key entry for {msg}.'
+            self.msg_aggregator.add_error(
+                f'Error processing a {str(self.location)} fiat payment. Check logs '
+                f'for details. Ignoring it.',
+            )
+            log.error(
+                f'Error processing a {str(self.location)} fiat payment',
+                asset_movement=raw_data,
+                error=msg,
+            )
+
+        return None
+
+    def _deserialize_fiat_movement(
+            self,
+            raw_data: Dict[str, Any],
+            category: AssetMovementCategory,
+    ) -> Optional[AssetMovement]:
+        """Processes a single deposit/withdrawal from binance and deserializes it
+
+        Can log error/warning and return None if something went wrong at deserialization
+        """
+        try:
+            if 'status' not in raw_data or raw_data['status'] not in ('Successful', 'Finished'):
+                log.error(
+                    f'Found {str(self.location)} fiat deposit/withdrawal with failed status. Ignoring it.',  # noqa: E501
+                )
+                return None
+
+            asset = asset_from_binance(raw_data['fiatCurrency'])
+            tx_id = get_key_if_has_val(raw_data, 'orderNo')
+            timestamp = deserialize_timestamp_from_binance(raw_data['createTime'])
+            fee = Fee(deserialize_asset_amount(raw_data['totalFee']))
+            link_str = str(tx_id) if tx_id else ''
+            amount = deserialize_asset_amount_force_positive(raw_data['amount'])
+            return AssetMovement(
+                location=self.location,
+                category=category,
+                address=deserialize_asset_movement_address(raw_data, 'address', asset),
+                transaction_id=tx_id,
+                timestamp=timestamp,
+                asset=asset,
+                amount=amount,
+                fee_asset=asset,
+                fee=fee,
+                link=link_str,
+            )
+
+        except UnknownAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found {str(self.location)} fiat deposit/withdrawal with unknown asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except UnsupportedAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found {str(self.location)} fiat deposit/withdrawal with unsupported asset '
+                f'{e.asset_name}. Ignoring it.',
+            )
+        except (DeserializationError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key entry for {msg}.'
+            self.msg_aggregator.add_error(
+                f'Error processing a {str(self.location)} fiat deposit/withdrawal. Check logs '
+                f'for details. Ignoring it.',
+            )
+            log.error(
+                f'Error processing a {str(self.location)} fiat deposit/withdrawal',
+                asset_movement=raw_data,
+                error=msg,
+            )
+
+        return None
 
     def _deserialize_asset_movement(self, raw_data: Dict[str, Any]) -> Optional[AssetMovement]:
         """Processes a single deposit/withdrawal from binance and deserializes it
@@ -962,7 +1145,13 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts: Timestamp,
             time_delta: Timestamp,
             api_type: BINANCE_API_TYPE,
-            method: Literal['capital/deposit/hisrec', 'capital/withdraw/history'],
+            method: Literal[
+                'capital/deposit/hisrec',
+                'capital/withdraw/history',
+                'fiat/orders',
+                'fiat/payments',
+            ],
+            additional_options: Dict = None,
     ) -> List[Dict[str, Any]]:
         """Request via `api_query_dict()` from `start_ts` `end_ts` using a time
         delta (offset) less than `time_delta`.
@@ -974,7 +1163,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
           - Timestamps are converted to milliseconds.
         """
         results: List[Dict[str, Any]] = []
-
         # Create required time references in milliseconds
         start_ts = Timestamp(start_ts * 1000)
         end_ts = Timestamp(end_ts * 1000)
@@ -995,6 +1183,8 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 'startTime': from_ts,
                 'endTime': to_ts,
             }
+            if additional_options:
+                options.update(additional_options)
             result = self.api_query_list(api_type, method, options=options)
             results.extend(result)
             # Case stop requesting
@@ -1038,9 +1228,34 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         )
         log.debug(f'{self.name} withdraw history result', results_num=len(withdraws))
 
+        fiat_deposits = self._api_query_list_within_time_delta(
+            start_ts=Timestamp(0),
+            end_ts=end_ts,
+            time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+            api_type='sapi',
+            method='fiat/orders',
+            additional_options={'transactionType': 0},
+        )
+        log.debug(f'{self.name} fiat deposit history result', results_num=len(fiat_deposits))
+        fiat_withdraws = self._api_query_list_within_time_delta(
+            start_ts=Timestamp(0),
+            end_ts=end_ts,
+            time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+            api_type='sapi',
+            method='fiat/orders',
+            additional_options={'transactionType': 1},
+        )
+        log.debug(f'{self.name} fiat withdraw history result', results_num=len(fiat_withdraws))
+
         movements = []
         for raw_movement in deposits + withdraws:
             movement = self._deserialize_asset_movement(raw_movement)
+            if movement:
+                movements.append(movement)
+
+        for idx, fiat_movement in enumerate(fiat_deposits + fiat_withdraws):
+            category = AssetMovementCategory.DEPOSIT if idx < len(fiat_deposits) else AssetMovementCategory.WITHDRAWAL  # noqa: E501
+            movement = self._deserialize_fiat_movement(fiat_movement, category=category)
             if movement:
                 movements.append(movement)
 
@@ -1051,6 +1266,13 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
+        return []  # noop for binance
+
+    def query_online_income_loss_expense(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[LedgerAction]:
         return []  # noop for binance
 
     def get_selected_pairs(self) -> List[str]:

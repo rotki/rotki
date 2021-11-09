@@ -12,9 +12,9 @@
   </div>
 </template>
 <script lang="ts">
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import ScrambleMixin from '@/mixins/scramble-mixin';
-import { DefiProtocol } from '@/services/defi/consts';
 
 type DefiProtocolInfo = {
   readonly identifier: string;

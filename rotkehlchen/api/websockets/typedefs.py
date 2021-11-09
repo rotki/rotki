@@ -9,7 +9,8 @@ from enum import Enum
 
 
 class WSMessageType(Enum):
-    LEGACY = 1
+    LEGACY = 0
+    BALANCE_SNAPSHOT_ERROR = 1
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

@@ -8,7 +8,14 @@
     <div v-if="!premiumVisible">
       <v-card class="account-management__card pb-6" :width="width" light>
         <div
-          class="pt-6 pb-3 text-h2 font-weight-black white--text account-management__card__title"
+          class="
+            pt-6
+            pb-3
+            text-h2
+            font-weight-black
+            white--text
+            account-management__card__title
+          "
         >
           <span class="px-6">{{ $t('app.name') }}</span>
           <span class="d-block mb-3 pl-6 text-caption">
@@ -183,7 +190,7 @@ export default class AccountManagement extends Mixins(BackendMixin) {
         }
       }
       // eslint-disable-next-line no-empty
-    } catch (e) {
+    } catch (e: any) {
     } finally {
       this.autolog = false;
     }
@@ -223,13 +230,8 @@ export default class AccountManagement extends Mixins(BackendMixin) {
   }
 
   async createAccount(credentials: Credentials) {
-    const {
-      username,
-      password,
-      apiKey,
-      apiSecret,
-      submitUsageAnalytics
-    } = credentials;
+    const { username, password, apiKey, apiSecret, submitUsageAnalytics } =
+      credentials;
     this.loading = true;
     this.accountCreationError = '';
     const { message, success } = await this.unlock({

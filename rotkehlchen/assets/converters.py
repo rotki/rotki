@@ -3,13 +3,18 @@ from typing import Dict, Optional
 from rotkehlchen.assets.asset import (
     WORLD_TO_BINANCE,
     WORLD_TO_BITFINEX,
+    WORLD_TO_BITSTAMP,
     WORLD_TO_BITTREX,
+    WORLD_TO_COINBASE,
     WORLD_TO_COINBASE_PRO,
     WORLD_TO_FTX,
+    WORLD_TO_GEMINI,
     WORLD_TO_ICONOMI,
     WORLD_TO_KRAKEN,
     WORLD_TO_KUCOIN,
+    WORLD_TO_NEXO,
     WORLD_TO_POLONIEX,
+    WORLD_TO_UPHOLD,
     Asset,
 )
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -349,9 +354,12 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # APM Coin. As of 16/11/2019 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-APM
     'APM',
+    'BTR',  # neither in coingecko nor cryptocompare
     'BST',  # No coingecko or cryptocompare yet. Beshare Token TODO: Review this one in a few days
     'CADX',  # no cryptocompare/coingecko data TODO: Review this one
     'CBC',  # neither in coingecko nor cryptocompare
+    'CIND',  # neither in coingecko nor cryptocompare
+    'CLI',  # Couldn't find a reference to this asset
     # Tether CNH. As of 30/09/2019 no data found outside of Bittrex for this token
     # https://medium.com/bittrex/new-bittrex-international-listing-tether-cnh-cnht-c9ad966ac303
     'CNHT',
@@ -359,6 +367,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # https://global.bittrex.com/Market/Index?MarketName=BTC-CTC
     'CTC',
     'DAF',  # neither in coingecko nor cryptocompare
+    'DATA',  # Couldn't find what token this is
     # Foresting. As of 22/03/2019 no data found.
     # Only exists in bittrex. Perhaps it will soon be added to other APIs.
     # https://international.bittrex.com/Market/Index?MarketName=BTC-PTON
@@ -420,6 +429,8 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # All ECOC data refer to a different coin called EcoCoin
     'ECOC',
     'EDG',
+    'EXO',  # neither in coingecko nor cryptocompare
+    'EXVA',  # neither in coingecko nor cryptocompare
     # As of 28/08/2020 the following assets don't have prices listed anywhere
     'FME',
     'FOL',  # neither in coingecko nor cryptocompare
@@ -436,9 +447,12 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'SMBSWAP',  # neither in coingecko nor cryptocompare
     'UPCO2',  # neither in coingecko nor cryptocompare
     'VIL',  # neither in coingecko nor cryptocompare (VICDeal)
+    'WIHC',  # neither in coingecko nor cryptocompare
     'WXBTC',  # neither in coingecko nor cryptocompare
     'XBN',  # neither in coingecko nor cryptocompare
+    'XSILV',  # No information found about its relation with XGOLD
     'ZILD',  # neither in coingecko nor cryptocompare
+    'ZK',  # couldn't find what asset is this
     # bittrex tokenized stocks -- not sure how to handle yet
     'AAPL',
     'ABNB',
@@ -512,6 +526,7 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'CHEX',  # no cryptocompare/coingecko data (chintai)
     'PLANETS',  # PlanetWatch (PLANETS) but has no cryptocompare/coingecko
     'MCS',  # no cryptocompare/coingecko data yet
+    'EXO',  # noqa: E501 #  https://blog.exordium.co/exo-security-token-to-be-listed-on-bitfinex-securities-ltd-24cb03dc8bb0 no cc/coingecko data
 )
 
 UNSUPPORTED_FTX_ASSETS = (
@@ -588,6 +603,10 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'BTCP',  # delisted
     'CADH',  # no cryptocompare/coingecko data
     'CBC',  # neither in coingecko nor cryptocompare
+    'DOGE3L',  # no cryptocompare/coingecko data
+    'DOGE3S',  # no cryptocompare/coingecko data
+    'DOT3L',  # no cryptocompare/coingecko data
+    'DOT3S',  # no cryptocompare/coingecko data
     'EOS3L',  # no cryptocompare/coingecko data
     'EOS3S',  # no cryptocompare/coingecko data
     'EPRX',  # delisted and no cryptocompare/coingecko data
@@ -601,15 +620,24 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'GZIL',  # delisted
     'HOTCROSS',  # no cryptocompare/coingecko data
     'KTS',  # delisted
+    'LINK3L',  # no cryptocompare/coingecko data
+    'LINK3S',  # no cryptocompare/coingecko data
     'LITH',  # no cryptocompare/coingecko data
+    'LUNA3L',  # no cryptocompare/coingecko data
+    'LUNA3S',  # no cryptocompare/coingecko data
     'LOL',  # delisted
     'LSS',  # no cryptocompare/coingecko data
     'LTC3L',  # no cryptocompare/coingecko data
     'LTC3S',  # no cryptocompare/coingecko data
     'MAP2',  # delisted
     'MEM',  # meme.com, no cryptocompare/coingecko data
+    'NAKA',  # Nakamoto.games, no cryptocompare/coingecko data
+    'RMRK',  # no cryptocompare/coingecko data
     'SATT',  # delisted
     'SERO',  # delisted
+    'SOL3L',  # no cryptocompare/coingecko data
+    'SOL3S',  # no cryptocompare/coingecko data
+    'SOV',  # Couldn't find what assets is this one
     'SPRK',  # delisted
     'TCP',  # The Crypto Prophecies no cryptocompare/coingecko data
     'TNC2',  # delisted and no cryptocompare/coingecko data
@@ -624,10 +652,20 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'DAPPX',  # no cryptocompare/coingecko data
     'OOE',  # no cryptocompare/coingecko data
     'SPHRI',  # no cryptocompare/coingecko data SpheriumFinance
-    'CFG',  # not released yet. TODO: Review this one later
     'MUSH',  # Couldn't find a listing post saying what asset is this one
-    'MOVR',  # Moonriver not in CC and shown as preview on coingecko. TODO yabir: review this one
     'MAKI',  # Couldn't find information about this asset at kucoin. Seems like is not public yet
+    'PBX',  # no cryptocompare/coingecko data
+    'XNL',  # no cryptocompare/coingecko data
+    'XRP3L',  # no cryptocompare/coingecko data
+    'XRP3S',  # no cryptocompare/coingecko data
+    'UNI3L',  # no cryptocompare/coingecko data
+    'UNI3S',  # no cryptocompare/coingecko data
+    'ATOM3L',  # no cryptocompare/coingecko data
+    'ATOM3S',  # no cryptocompare/coingecko data
+    'FTM3L',  # no cryptocompare/coingecko data
+    'FTM3S',  # no cryptocompare/coingecko data
+    'AXS3L',  # no cryptocompare/coingecko data
+    'AXS3S',  # no cryptocompare/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
@@ -636,6 +674,18 @@ UNSUPPORTED_ICONOMI_ASSETS = (
     'ETCPOLO',
     'FTR',  # delisted
     'TT',  # delisted
+)
+
+UNSUPPORTED_GEMINI_ASSETS = (
+    '2USD',  # no information about this asset
+    'AUSD',  # no information about this asset
+    'LFIL',  # no information about this asset
+    'LGBP',  # no information about this asset
+    'LSGD',  # no information about this asset
+    'LEUR',  # no information about this asset
+    'LHKD',  # no information about this asset
+    'LCAD',  # no information about this asset
+    'LAUD',  # no information about this asset
 )
 
 # Exchange symbols that are clearly for testing purposes. They appear in all
@@ -651,7 +701,6 @@ BITFINEX_EXCHANGE_TEST_ASSETS = (
     'TESTUSDTF0',
 )
 
-
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
@@ -661,6 +710,11 @@ KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
 KUCOIN_TO_WORLD = {v: k for k, v, in WORLD_TO_KUCOIN.items()}
 ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
 COINBASE_PRO_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE_PRO.items()}
+COINBASE_TO_WORLD = {v: k for k, v in WORLD_TO_COINBASE.items()}
+UPHOLD_TO_WORLD = {v: k for k, v in WORLD_TO_UPHOLD.items()}
+BITSTAMP_TO_WORLD = {v: k for k, v in WORLD_TO_BITSTAMP.items()}
+GEMINI_TO_WORLD = {v: k for k, v in WORLD_TO_GEMINI.items()}
+NEXO_TO_WORLD = {v: k for k, v in WORLD_TO_NEXO.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -759,7 +813,8 @@ def asset_from_bitstamp(bitstamp_name: str) -> Asset:
     if not isinstance(bitstamp_name, str):
         raise DeserializationError(f'Got non-string type {type(bitstamp_name)} for bitstamp asset')
 
-    return symbol_to_asset_or_token(bitstamp_name)
+    name = BITSTAMP_TO_WORLD.get(bitstamp_name, bitstamp_name)
+    return symbol_to_asset_or_token(name)
 
 
 def asset_from_bittrex(bittrex_name: str) -> Asset:
@@ -813,7 +868,9 @@ def asset_from_binance(binance_name: str) -> Asset:
 
 
 def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset:
-    """May raise UnknownAsset
+    """May raise:
+    - DeserializationError
+    - UnknownAsset
     """
     # During the transition from DAI(SAI) to MCDAI(DAI) coinbase introduced an MCDAI
     # wallet for the new DAI during the transition period. We should be able to handle this
@@ -827,11 +884,13 @@ def asset_from_coinbase(cb_name: str, time: Optional[Timestamp] = None) -> Asset
         if time < COINBASE_DAI_UPGRADE_END_TS:
             # Then it should be the single collateral version
             return A_SAI
-        # else
         return A_DAI
 
-    # else
-    return symbol_to_asset_or_token(cb_name)
+    if not isinstance(cb_name, str):
+        raise DeserializationError(f'Got non-string type {type(cb_name)} for coinbase asset')
+
+    name = COINBASE_TO_WORLD.get(cb_name, cb_name)
+    return symbol_to_asset_or_token(name)
 
 
 def asset_from_ftx(ftx_name: str) -> Asset:
@@ -874,7 +933,12 @@ def asset_from_gemini(symbol: str) -> Asset:
     """
     if not isinstance(symbol, str):
         raise DeserializationError(f'Got non-string type {type(symbol)} for gemini asset')
-    return symbol_to_asset_or_token(symbol)
+
+    if symbol in UNSUPPORTED_GEMINI_ASSETS:
+        raise UnsupportedAsset(symbol)
+
+    name = GEMINI_TO_WORLD.get(symbol, symbol)
+    return symbol_to_asset_or_token(name)
 
 
 def asset_from_iconomi(symbol: str) -> Asset:
@@ -890,3 +954,29 @@ def asset_from_iconomi(symbol: str) -> Asset:
         raise UnsupportedAsset(symbol)
     name = ICONOMI_TO_WORLD.get(symbol, symbol)
     return symbol_to_asset_or_token(name)
+
+
+def asset_from_uphold(symbol: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(symbol, str):
+        raise DeserializationError(f'Got non-string type {type(symbol)} for uphold asset')
+
+    name = UPHOLD_TO_WORLD.get(symbol, symbol)
+    return symbol_to_asset_or_token(name)
+
+
+def asset_from_nexo(nexo_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(nexo_name, str):
+        raise DeserializationError(f'Got non-string type {type(nexo_name)} for nexo asset')
+
+    our_name = NEXO_TO_WORLD.get(nexo_name, nexo_name)
+    return symbol_to_asset_or_token(our_name)

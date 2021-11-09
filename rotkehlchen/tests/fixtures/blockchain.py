@@ -111,7 +111,6 @@ def fixture_ethereum_manager(
         ethrpc_endpoint,
         ethereum_manager_connect_at_start,
         greenlet_manager,
-        database,
 ):
     if ethrpc_endpoint is None:
         endpoint = 'http://localhost:8545'
@@ -121,7 +120,6 @@ def fixture_ethereum_manager(
     manager = EthereumManager(
         ethrpc_endpoint=endpoint,
         etherscan=etherscan,
-        database=database,
         msg_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
         connect_at_start=ethereum_manager_connect_at_start,

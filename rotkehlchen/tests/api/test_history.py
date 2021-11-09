@@ -2,6 +2,8 @@ import csv
 import os
 import random
 import re
+import tempfile
+import zipfile
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
@@ -166,7 +168,7 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 6
+    assert len(errors) == 3
     assert 'Etherscan API request http://someurl.com returned invalid JSON response: [{' in errors[0]  # noqa: E501
 
     # The history processing is completely mocked away and omitted in this test.
@@ -322,6 +324,34 @@ def assert_csv_formulas_trades(row, profit_currency):
         )
 
 
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_query_history_external_exchanges(rotkehlchen_api_server):
+    """Test that history is processed for external exchanges too"""
+    start_ts = 0
+    end_ts = 1631455982
+
+    # import blockfi trades
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'blockfi-trades.csv'
+    json_data = {'source': 'blockfi-trades', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+
+    # Query history processing to start the history processing
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server, 'historyprocessingresource'),
+        json={'from_timestamp': start_ts, 'to_timestamp': end_ts},
+    )
+    outcome = assert_proper_response_with_result(response)
+    assert len(outcome['all_events']) == 2
+    assert FVal(outcome['overview']['total_taxable_profit_loss']) == FVal('5278.03086')
+
+
 def assert_csv_formulas_all_events(row, profit_currency):
     keys = list(row.keys())
     net_profit_loss = row['net_profit_or_loss']
@@ -371,11 +401,14 @@ def assert_csv_formulas_all_events(row, profit_currency):
         raise AssertionError(f'Unexpected CSV row type {row["type"]} encountered')
 
 
-def assert_csv_export_response(response, profit_currency, csv_dir):
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert data['result'] is True
+def assert_csv_export_response(response, profit_currency, csv_dir, is_download=False):
+    if is_download:
+        assert response.status_code == HTTPStatus.OK
+    else:
+        assert_proper_response(response)
+        data = response.json()
+        assert data['message'] == ''
+        assert data['result'] is True
 
     # and check the csv files were generated succesfully. Here we are only checking
     # for valid CSV and not for the values to be valid.
@@ -385,7 +418,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         count = 0
         for row in reader:
             assert_csv_formulas_trades(row, profit_currency)
-            assert len(row) == 17
+            assert len(row) == 19
             assert row['location'] in ('kraken', 'bittrex', 'binance', 'poloniex')
             assert row['type'] in ('buy', 'sell')
             assert row['asset'] is not None
@@ -406,6 +439,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert row['cost_basis'] is not None
             assert row['is_virtual'] in ('True', 'False')
             assert row[f'total_bought_cost_in_{profit_currency.identifier}'] is not None
+            assert 'link' in row and 'notes' in row
 
             count += 1
     num_trades = 19
@@ -415,7 +449,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 7
+            assert len(row) == 9
             assert row['location'] == 'poloniex'
             assert create_timestamp(row['open_time'], '%d/%m/%Y %H:%M:%S') > 0
             assert create_timestamp(row['close_time'], '%d/%m/%Y %H:%M:%S') > 0
@@ -431,13 +465,15 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 6
+            assert len(row) == 8
             assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
             assert row['exchange'] in [str(x) for x in SUPPORTED_EXCHANGES]
             assert row['type'] in ('deposit', 'withdrawal')
             assert row['moving_asset'] is not None
             assert FVal(row['fee_in_asset']) >= ZERO
             assert FVal(row[f'fee_in_{profit_currency.identifier}']) >= ZERO
+            assert row['link'] != ''
+            assert row['notes'] == ''
             count += 1
     num_asset_movements = 11
     assert count == num_asset_movements, 'Incorrect amount of asset movement CSV entries found'
@@ -459,13 +495,14 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 6
+            assert len(row) == 8
             assert row['location'] == 'bitmex'
             assert row['name'] is not None
             assert create_timestamp(row['time'], '%d/%m/%Y %H:%M:%S') > 0
             assert row['gain_loss_asset'] is not None
             assert FVal(row['gain_loss_amount']) is not None
             assert FVal(row[f'profit_loss_in_{profit_currency.identifier}']) is not None
+            assert 'link' in row and 'notes' in row
             count += 1
     num_margins = 2
     assert count == num_margins, 'Incorrect amount of margin CSV entries found'
@@ -491,7 +528,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
         count = 0
         for row in reader:
             assert_csv_formulas_all_events(row, profit_currency)
-            assert len(row) == 16
+            assert len(row) == 18
             assert row['location'] in (
                 'kraken',
                 'bittrex',
@@ -522,6 +559,7 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
             assert row['cost_basis'] is not None
             assert row[f'total_bought_cost_in_{profit_currency.identifier}'] is not None
             assert row[f'total_received_in_{profit_currency.identifier}'] is not None
+            assert 'link' in row and 'notes' in row
             count += 1
     assert count == (
         num_trades + num_loans + num_asset_movements + num_transactions + num_margins
@@ -534,11 +572,11 @@ def assert_csv_export_response(response, profit_currency, csv_dir):
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_history_export_csv(
+def test_history_export_download_csv(
         rotkehlchen_api_server_with_exchanges,
         tmpdir_factory,
 ):
-    """Test that the csv export REST API endpoint works correctly"""
+    """Test that the csv export/download REST API endpoint works correctly"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     profit_currency = rotki.data.db.get_main_currency()
     setup = prepare_rotki_for_history_processing_test(
@@ -555,22 +593,32 @@ def test_history_export_csv(
                 continue
             stack.enter_context(manager)
         response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, "historyprocessingresource"),
+            api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
         )
     assert_proper_response(response)
 
     # now query the export endpoint with json body
     response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource'),
         json={'directory_path': csv_dir},
     )
     assert_csv_export_response(response, profit_currency, csv_dir)
     # now query the export endpoint with query params
     response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource") +
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource') +
         f'?directory_path={csv_dir2}',
     )
     assert_csv_export_response(response, profit_currency, csv_dir2)
+    # now query the download CSV endpoint
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historydownloadingresource'))
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        tempzipfile = Path(tmpdirname, 'temp.zip')
+        extractdir = Path(tmpdirname, 'extractdir')
+        tempzipfile.write_bytes(response.content)
+        with zipfile.ZipFile(tempzipfile, 'r') as zip_ref:
+            zip_ref.extractall(extractdir)
+        assert_csv_export_response(response, profit_currency, extractdir, is_download=True)
 
 
 @pytest.mark.parametrize(
@@ -625,11 +673,11 @@ def test_history_export_csv_errors(
     )
 
     # And now provide valid path but not directory
-    tempfile = Path(Path(csv_dir) / 'f.txt')
-    tempfile.touch()
+    temporary_file = Path(Path(csv_dir) / 'f.txt')
+    temporary_file.touch()
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, "historyexportingresource"),
-        json={'directory_path': str(tempfile)},
+        json={'directory_path': str(temporary_file)},
     )
     assert_error_response(
         response=response,

@@ -3,6 +3,7 @@ from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Type, TypeVar
 
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import (
     ETHEREUM_DIRECTIVE,
     ETHEREUM_DIRECTIVE_LENGTH,
@@ -88,6 +89,18 @@ WORLD_TO_BITTREX = {
     strethaddress_to_identifier('0x15B543e986b8c34074DFc9901136d9355a537e7E'): 'STCCOIN',
     strethaddress_to_identifier('0x8f136Cc8bEf1fEA4A7b71aa2301ff1A52F084384'): 'STC',
     'MER': 'MER',
+    # For some reason seems that XSILV and XGOLD are the same asset in bittrex
+    strethaddress_to_identifier('0x670f9D9a26D3D42030794ff035d35a67AA092ead'): 'XGOLD',
+    strethaddress_to_identifier('0x3b58c52C03ca5Eb619EBa171091c86C34d603e5f'): 'CYCLUB',
+    strethaddress_to_identifier('0xE081b71Ed098FBe1108EA48e235b74F122272E68'): 'GOLD',
+    strethaddress_to_identifier('0x13339fD07934CD674269726EdF3B5ccEE9DD93de'): 'CURIO',
+    'YCE': 'MYCE',
+    strethaddress_to_identifier('0xF56b164efd3CFc02BA739b719B6526A6FA1cA32a'): 'CGT',
+}
+
+WORLD_TO_BITSTAMP = {
+    strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
 }
 
 WORLD_TO_FTX = {
@@ -254,6 +267,12 @@ WORLD_TO_KRAKEN = {
     strethaddress_to_identifier('0x09a3EcAFa817268f77BE1283176B946C4ff2E608'): 'MIR',
     strethaddress_to_identifier('0xBA11D00c5f74255f56a5E366F4F77f5A186d7f55'): 'BAND',
     strethaddress_to_identifier('0xe28b3B32B6c345A34Ff64674606124Dd5Aceca30'): 'INJ',
+    'MOVR': 'MOVR',
+    'SDN': 'SDN',
+    strethaddress_to_identifier('0x92D6C1e31e14520e676a687F0a93788B716BEff5'): 'DYDX',
+    'OXY': 'OXY',
+    'RAY': 'RAY',
+    strethaddress_to_identifier('0x6c5bA91642F10282b576d91922Ae6448C9d52f4E'): 'PHA',
 }
 
 WORLD_TO_BINANCE = {
@@ -300,6 +319,8 @@ WORLD_TO_BINANCE = {
     strethaddress_to_identifier('0xEA1ea0972fa092dd463f2968F9bB51Cc4c981D71'): 'MOD',
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
     strethaddress_to_identifier('0x8f693ca8D21b157107184d29D398A8D082b38b76'): 'DATA',
+    strethaddress_to_identifier('0x4824A7b64E3966B0133f4f4FFB1b9D6bEb75FFF7'): 'TCT',
+    strethaddress_to_identifier('0xba5BDe662c17e2aDFF1075610382B9B691296350'): 'RARE',
 }
 
 WORLD_TO_BITFINEX = {
@@ -330,8 +351,9 @@ WORLD_TO_BITFINEX = {
     strethaddress_to_identifier('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'): 'FET',
     # TerraUSD is TERRAUST in bitfinex
     'UST': 'TERRAUST',
-    strethaddress_to_identifier('0x8f693ca8D21b157107184d29D398A8D082b38b76'): 'DATA',
+    strethaddress_to_identifier('0x8f693ca8D21b157107184d29D398A8D082b38b76'): 'DAT',
     'XEC': 'BCHABC',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
 }
 
 WORLD_TO_KUCOIN = {
@@ -364,6 +386,11 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA'): 'GALAX',
     strethaddress_to_identifier('0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD'): 'PNT',
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    strethaddress_to_identifier('0xc221b7E65FfC80DE234bbB6667aBDd46593D34F0'): 'CFG',  # using wrapped centrifuge for now  # noqa: E501
+    strethaddress_to_identifier('0x88df592f8eb5d7bd38bfef7deb0fbc02cf3778a0'): 'TRB',
+    strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
+    strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
+    'EDG-2': 'EDG',
 }
 
 WORLD_TO_ICONOMI = {
@@ -400,6 +427,77 @@ WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85'): 'FET',
     strethaddress_to_identifier('0xd2877702675e6cEb975b4A1dFf9fb7BAF4C91ea9'): 'WLUNA',
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    strethaddress_to_identifier('0x0391D2021f89DC339F60Fff84546EA23E337750f'): 'BOND',
+}
+
+WORLD_TO_COINBASE = {
+    'SOL-2': 'SOL',
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    strethaddress_to_identifier('0x32353A6C91143bfd6C7d363B546e62a9A2489A20'): 'AGLD',
+    strethaddress_to_identifier('0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85'): 'FET',
+}
+
+WORLD_TO_UPHOLD = {
+    'BTC': 'BTC',
+    strethaddress_to_identifier('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'): 'AAVE',
+    'XRP': 'XRP',
+    'ETH': 'ETH',
+    strethaddress_to_identifier('0x0D8775F648430679A709E98d2b0Cb6250d2887EF'): 'BAT',
+    'ADA': 'ADA',
+    'ATOM': 'ATOM',
+    'BCH': 'BCH',
+    'BAL': 'BAL',
+    'BTG': 'BTG',  # Bitcoin Gold
+    strethaddress_to_identifier('0xc00e94Cb662C3520282E6f5717214004A7f26888'): 'COMP',
+    'DASH': 'DASH',
+    'DCR': 'DCR',
+    'DGB': 'DGB',
+    'DOGE': 'DOGE',
+    'DOT': 'DOT',
+    strethaddress_to_identifier('0xF629cBd94d3791C9250152BD8dfBDF380E2a3B9c'): 'ENJ',
+    'EOS': 'EOS',
+    'FIL': 'FIL',
+    'FLOW': 'FLOW',
+    strethaddress_to_identifier('0xc944E90C64B2c07662A292be6244BDf05Cda44a7'): 'GRT',
+    'HBAR': 'HBAR',
+    'HNT': 'HNT',
+    'IOTA': 'MIOTA',
+    strethaddress_to_identifier('0x514910771AF9Ca656af840dff83E8264EcF986CA'): 'LINK',
+    'LTC': 'LTC',
+    strethaddress_to_identifier('0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'): 'MATIC',
+    strethaddress_to_identifier('0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'): 'MKR',
+    'NANO': 'NANO',
+    'NEO': 'NEO',
+    strethaddress_to_identifier('0xd26114cd6EE289AccF82350c8d8487fedB8A0C07'): 'OMG',
+    strethaddress_to_identifier('0x4575f41308EC1483f3d399aa9a2826d74Da13Deb'): 'OXT',
+    strethaddress_to_identifier('0x408e41876cCCDC0F92210600ef50372656052a38'): 'REN',
+    strethaddress_to_identifier('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F'): 'SNX',
+    'SOL-2': 'SOL',
+    strethaddress_to_identifier('0x476c5E26a75bd202a9683ffD34359C0CC15be0fF'): 'SRM',
+    strethaddress_to_identifier('0x3883f5e181fccaF8410FA61e12b59BAd963fb645'): 'THETA',
+    strethaddress_to_identifier('0xf230b790E05390FC8295F4d3F60332c93BEd42e2'): 'TRX',
+    'VET': 'VET',
+    strethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'): 'WBTC',
+    strethaddress_to_identifier('0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828'): 'UMA',
+    strethaddress_to_identifier('0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'): 'UNI',
+    # 'UPT': 'UPT',
+    'XCH': 'XCH',
+    'XEM': 'NEM',
+    'XLM': 'XLM',
+    'XTZ': 'XTZ',
+    strethaddress_to_identifier('0x05f4a42e251f2d52b8ed15E9FEdAacFcEF1FAD27'): 'ZIL',
+    strethaddress_to_identifier('0xE41d2489571d322189246DaFA5ebDe1F4699F498'): 'ZRX',
+}
+
+WORLD_TO_GEMINI = {
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
+}
+
+WORLD_TO_NEXO = {
+    strethaddress_to_identifier('0xB62132e35a6c13ee1EE0f84dC5d40bad8d815206'): 'NEXONEXO',
+    'GBP': 'GBPX',
+    strethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7'): 'USDTERC',
 }
 
 # Create a generic variable that can be 'Asset', or any subclass.
@@ -447,6 +545,17 @@ class Asset():
             raise DeserializationError(
                 'Tried to initialize an asset out of a non-string identifier',
             )
+
+        if self.identifier.startswith(NFT_DIRECTIVE):  # probably should subclass better
+            object.__setattr__(self, 'name', f'nft with id {self.identifier}')
+            object.__setattr__(self, 'symbol', self.identifier[len(NFT_DIRECTIVE):])
+            object.__setattr__(self, 'asset_type', AssetType.NFT)
+            object.__setattr__(self, 'started', 0)
+            object.__setattr__(self, 'forked', None)
+            object.__setattr__(self, 'swapped_for', None)
+            object.__setattr__(self, 'cryptocompare', '')
+            object.__setattr__(self, 'coingecko', None)
+            return
 
         if direct_field_initialization:
             return

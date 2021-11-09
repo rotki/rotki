@@ -1,6 +1,19 @@
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_DOT, A_ETH, A_EUR, A_UNI, A_USD
+from rotkehlchen.constants.assets import (
+    A_BTC,
+    A_DAI,
+    A_SAI,
+    A_USDC,
+    A_DOT,
+    A_ETH,
+    A_LTC,
+    A_EUR,
+    A_UNI,
+    A_USD,
+    A_XRP,
+    A_BAT,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
@@ -491,6 +504,28 @@ def assert_nexo_results(rotki: Rotkehlchen):
         link='NXT0000000009',
         notes='Dividend from Nexo',
     ), LedgerAction(
+        identifier=4,
+        timestamp=Timestamp(1587739424),
+        action_type=LedgerActionType.INCOME,
+        location=Location.NEXO,
+        amount=AssetAmount(FVal('10')),
+        asset=symbol_to_asset_or_token('NEXO'),
+        rate=None,
+        rate_asset=None,
+        link='NXT0000000015',
+        notes='Interest from Nexo',
+    ), LedgerAction(
+        identifier=5,
+        timestamp=Timestamp(1587825824),
+        action_type=LedgerActionType.INCOME,
+        location=Location.NEXO,
+        amount=AssetAmount(FVal('10')),
+        asset=symbol_to_asset_or_token('ETH'),
+        rate=None,
+        rate_asset=None,
+        link='NXT0000000016',
+        notes='FixedTermInterest from Nexo',
+    ), LedgerAction(
         identifier=2,
         timestamp=Timestamp(1597492915),
         action_type=LedgerActionType.INCOME,
@@ -595,3 +630,186 @@ def assert_nexo_results(rotki: Rotkehlchen):
 
     assert ledger_actions == expected_actions
     assert asset_movements == expected_movements
+
+
+def assert_shapeshift_trades_import_results(rotki: Rotkehlchen):
+    """A utility function to help assert on correctness of importing trades data from shapeshift"""
+    trades = rotki.data.db.get_trades()
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    notes1 = """
+Trade from ShapeShift with ShapeShift Deposit Address:
+ 0xc181da8187a37f8c518a2d12733c763a491a873c, and
+ Transaction ID: 0xcd4b53bd1991c387558e4274fc49604487708c3878abc1a419b6120d1f489881.
+  Refund Address: , and
+ Transaction ID: .
+  Destination Address: JWPKHH2j5YubGNpexkRrElg7D0yuCusu0Q, and
+ Transaction ID: 9f9d6bb29d896080202f9f51ee1c767527bf88c468bd5e40cd568ecbad3cde61.
+"""
+    notes2 = """
+Trade from ShapeShift with ShapeShift Deposit Address:
+ 0xbc7b968df007c6b4d7507763e17971c7c8cb4812, and
+ Transaction ID: 0xaf026f6f53521563bb5d16e781f26f8ecd885010e5a731c6059902e01a8500a3.
+  Refund Address: , and
+ Transaction ID: 0x59383b5c0834d76118f7d4e3d283e512d05cbfa7d0127084642f0eb4e0188f70.
+  Destination Address: 0xf7ee0f8a9a1c67558c7fce768ab40cd0771c882a2, and
+ Transaction ID: 0x5395176bf37a198b7df9e7ace0f45f4cdcad0cf78a593912eae1a2fd6c40f7b9.
+"""
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    expected_trades = [
+        Trade(
+            timestamp=Timestamp(1561551116),
+            location=Location.SHAPESHIFT,
+            base_asset=symbol_to_asset_or_token('DASH'),
+            quote_asset=A_SAI,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.59420343')),
+            rate=Price(1 / FVal('0.00578758')),
+            fee=Fee(FVal('0.002')),
+            fee_currency=symbol_to_asset_or_token('DASH'),
+            link='',
+            notes=notes1,
+        ),
+        Trade(
+            timestamp=Timestamp(1630856301),
+            location=Location.SHAPESHIFT,
+            base_asset=A_ETH,
+            quote_asset=A_USDC,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.06198721')),
+            rate=Price(1 / FVal('0.00065004')),
+            fee=Fee(FVal('0.0042')),
+            fee_currency=A_ETH,
+            link='',
+            notes=notes2,
+        )]
+    assert trades[0].timestamp == expected_trades[0].timestamp
+    assert len(trades) == 2
+    assert trades == expected_trades
+
+
+def assert_uphold_transactions_import_results(rotki: Rotkehlchen):
+    """A utility function to help assert on correctness of importing trades data from uphold"""
+    trades = rotki.data.db.get_trades()
+    asset_movements = rotki.data.db.get_asset_movements()
+    ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
+    ledger_actions = ledger_db.get_ledger_actions(None, None, None)
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    notes1 = """
+Activity from uphold with uphold transaction id:
+ 1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d, origin: credit-card,
+ and destination: uphold.
+  Type: in.
+  Status: completed.
+"""
+    notes2 = """
+Activity from uphold with uphold transaction id:
+ 1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d, origin: uphold,
+ and destination: uphold.
+  Type: transfer.
+  Status: completed.
+"""
+    notes3 = """
+Activity from uphold with uphold transaction id:
+ 1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d, origin: uphold,
+ and destination: litecoin.
+  Type: out.
+  Status: completed.
+"""
+    notes4 = """
+Activity from uphold with uphold transaction id:
+ 1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d, origin: uphold,
+ and destination: xrp-ledger.
+  Type: out.
+  Status: completed.
+"""
+    notes5 = """
+Activity from uphold with uphold transaction id:
+ 1a2b3c4d-5e6f-1a2b-3c4d-5e6f1a2b3c4d, origin: uphold,
+ and destination: uphold.
+  Type: in.
+  Status: completed.
+"""
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    expected_trades = [Trade(
+        timestamp=Timestamp(1581426837),
+        location=Location.UPHOLD,
+        base_asset=A_BTC,
+        quote_asset=symbol_to_asset_or_token('GBP'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('0.00331961')),
+        rate=Price(FVal('7531.005148195119306183557707')),
+        fee=Fee(ZERO),
+        fee_currency=symbol_to_asset_or_token('GBP'),
+        link='',
+        notes=notes1,
+    ), Trade(
+        timestamp=Timestamp(1585484504),
+        location=Location.UPHOLD,
+        base_asset=symbol_to_asset_or_token('GBP'),
+        quote_asset=A_BTC,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('24.65')),
+        rate=Price(FVal('0.0001707910750507099391480730223')),
+        fee=Fee(ZERO),
+        fee_currency=A_BTC,
+        link='',
+        notes=notes2,
+    ), Trade(
+        timestamp=Timestamp(1589940026),
+        location=Location.UPHOLD,
+        base_asset=symbol_to_asset_or_token('NANO'),
+        quote_asset=A_LTC,
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal('133.362002	')),
+        rate=Price(FVal('0.009459633186970303580175708520')),
+        fee=Fee(FVal('0.111123')),
+        fee_currency=symbol_to_asset_or_token('NANO'),
+        link='',
+        notes=notes3,
+    ), Trade(
+        timestamp=Timestamp(1590516388),
+        location=Location.UPHOLD,
+        base_asset=A_BTC,
+        quote_asset=A_XRP,
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal('0.00714216')),
+        rate=Price(FVal('44054.19382931774141156176843')),
+        fee=Fee(FVal('0.0000021')),
+        fee_currency=A_BTC,
+        link='',
+        notes=notes4,
+    )]
+    expected_movements = [AssetMovement(
+        location=Location.UPHOLD,
+        category=AssetMovementCategory.WITHDRAWAL,
+        timestamp=Timestamp(1589376604),
+        address=None,
+        transaction_id=None,
+        asset=symbol_to_asset_or_token('GBP'),
+        amount=AssetAmount(FVal('24.65')),
+        fee_asset=symbol_to_asset_or_token('GBP'),
+        fee=Fee(ZERO),
+        link='',
+    )]
+    expected_ledger_actions = [LedgerAction(
+        identifier=ledger_actions[0].identifier,
+        location=Location.UPHOLD,
+        action_type=LedgerActionType.INCOME,
+        timestamp=Timestamp(1576780809),
+        asset=A_BAT,
+        amount=AssetAmount(FVal('5.15')),
+        rate=None,
+        rate_asset=None,
+        link='',
+        notes=notes5,
+    )]
+    assert len(trades) == 4
+    assert trades == expected_trades
+    assert len(asset_movements) == 1
+    assert asset_movements == expected_movements
+    assert len(ledger_actions) == 1
+    assert ledger_actions == expected_ledger_actions

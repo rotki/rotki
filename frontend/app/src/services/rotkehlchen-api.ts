@@ -1,3 +1,4 @@
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionResult } from '@rotki/common/lib/data';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { SupportedCurrency } from '@/data/currencies';
@@ -16,14 +17,15 @@ import {
 import { BalancesApi } from '@/services/balances/balances-api';
 import { basicAxiosTransformer } from '@/services/consts';
 import { DefiApi } from '@/services/defi/defi-api';
+import { IgnoredActions } from '@/services/history/const';
 import { HistoryApi } from '@/services/history/history-api';
 import { SessionApi } from '@/services/session/session-api';
 import {
   AsyncQuery,
+  BackendInfo,
   BtcAccountData,
   DBAssetBalance,
   GeneralAccountData,
-  IgnoreActionResult,
   LocationData,
   Messages,
   NetValue,
@@ -32,8 +34,7 @@ import {
   SingleAssetBalance,
   SyncAction,
   TaskNotFoundError,
-  TaskStatus,
-  BackendInfo
+  TaskStatus
 } from '@/services/types-api';
 import {
   handleResponse,
@@ -48,6 +49,7 @@ import {
 } from '@/services/utils';
 import {
   AccountPayload,
+  AllBalancePayload,
   BlockchainAccountPayload,
   ExchangePayload,
   XpubPayload
@@ -57,8 +59,6 @@ import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
 import {
   AccountSession,
-  Blockchain,
-  BTC,
   ExternalServiceKey,
   ExternalServiceName,
   SettingsUpdate,
@@ -270,17 +270,13 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  queryBalancesAsync(
-    ignoreCache: boolean = false,
-    saveData: boolean = false
-  ): Promise<AsyncQuery> {
+  queryBalancesAsync(payload: Partial<AllBalancePayload>): Promise<AsyncQuery> {
     return this.axios
       .get<ActionResult<AsyncQuery>>('/balances/', {
-        params: {
-          async_query: true,
-          ignore_cache: ignoreCache ? true : undefined,
-          save_data: saveData ? true : undefined
-        },
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          ...payload
+        }),
         validateStatus: validStatus
       })
       .then(handleResponse);
@@ -626,7 +622,7 @@ export class RotkehlchenApi {
     payload: BlockchainAccountPayload
   ): Promise<GeneralAccountData[]> {
     const { address, label, tags, blockchain } = payload;
-    assert(blockchain !== BTC, 'call editBtcAccount for btc');
+    assert(blockchain !== Blockchain.BTC, 'call editBtcAccount for btc');
     return this.axios
       .patch<ActionResult<GeneralAccountData[]>>(
         `/blockchains/${blockchain}`,
@@ -960,9 +956,9 @@ export class RotkehlchenApi {
   async ignoreActions(
     actionIds: string[],
     actionType: IgnoreActionType
-  ): Promise<IgnoreActionResult> {
+  ): Promise<IgnoredActions> {
     return this.axios
-      .put<ActionResult<IgnoreActionResult>>(
+      .put<ActionResult<IgnoredActions>>(
         '/actions/ignored',
         axiosSnakeCaseTransformer({
           actionIds,
@@ -973,15 +969,16 @@ export class RotkehlchenApi {
           transformResponse: basicAxiosTransformer
         }
       )
-      .then(handleResponse);
+      .then(handleResponse)
+      .then(data => IgnoredActions.parse(data));
   }
 
   async unignoreActions(
     actionIds: string[],
     actionType: IgnoreActionType
-  ): Promise<IgnoreActionResult> {
+  ): Promise<IgnoredActions> {
     return this.axios
-      .delete<ActionResult<IgnoreActionResult>>('/actions/ignored', {
+      .delete<ActionResult<IgnoredActions>>('/actions/ignored', {
         data: axiosSnakeCaseTransformer({
           actionIds,
           actionType
@@ -989,16 +986,33 @@ export class RotkehlchenApi {
         validateStatus: validStatus,
         transformResponse: basicAxiosTransformer
       })
-      .then(handleResponse);
+      .then(handleResponse)
+      .then(data => IgnoredActions.parse(data));
   }
 
   async erc20details(address: string): Promise<PendingTask> {
     return this.axios
-      .get<ActionResult<PendingTask>>('/blockchains/ETH/erc20details', {
+      .get<ActionResult<PendingTask>>('/blockchains/ETH/erc20details/', {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true,
           address
         }),
+        validateStatus: validWithoutSessionStatus,
+        transformResponse: basicAxiosTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async fetchNfts(payload?: { ignoreCache: boolean }): Promise<PendingTask> {
+    const params = Object.assign(
+      {
+        asyncQuery: true
+      },
+      payload
+    );
+    return this.axios
+      .get<ActionResult<PendingTask>>('/nfts', {
+        params: axiosSnakeCaseTransformer(params),
         validateStatus: validWithoutSessionStatus,
         transformResponse: basicAxiosTransformer
       })

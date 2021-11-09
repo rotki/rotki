@@ -39,7 +39,12 @@
         </template>
         <template #item="data">
           <div
-            class="binance-market-selector__list__item d-flex justify-space-between flex-grow-1"
+            class="
+              binance-market-selector__list__item
+              d-flex
+              justify-space-between
+              flex-grow-1
+            "
           >
             <div class="binance-market-selector__list__item__address-label">
               <v-chip :color="dark ? null : 'grey lighten-3'" filter>
@@ -92,7 +97,7 @@ export default class BinancePairsSelector extends Mixins(ThemeMixin) {
         this.name,
         this.location
       );
-    } catch (e) {
+    } catch (e: any) {
       const title = this.$t(
         'binance_market_selector.query_user.title'
       ).toString();
@@ -104,7 +109,7 @@ export default class BinancePairsSelector extends Mixins(ThemeMixin) {
 
     try {
       this.allMakerts = await this.$api.queryBinanceMarkets();
-    } catch (e) {
+    } catch (e: any) {
       const title = this.$t(
         'binance_market_selector.query_all.title'
       ).toString();

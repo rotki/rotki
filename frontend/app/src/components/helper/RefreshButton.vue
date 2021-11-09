@@ -18,15 +18,21 @@
   </v-tooltip>
 </template>
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class RefreshButton extends Vue {
-  @Prop({ required: true, type: Boolean })
-  loading!: boolean;
-  @Prop({ required: true, type: String })
-  tooltip!: string;
-  @Emit()
-  refresh() {}
-}
+export default defineComponent({
+  props: {
+    loading: { required: true, type: Boolean },
+    tooltip: { required: true, type: String }
+  },
+  emits: ['refresh'],
+  setup(_, { emit }) {
+    const refresh = () => {
+      emit('refresh');
+    };
+    return {
+      refresh
+    };
+  }
+});
 </script>

@@ -159,7 +159,7 @@
 </template>
 
 <script lang="ts">
-import { default as BigNumber } from 'bignumber.js';
+import { BigNumber } from '@rotki/common/';
 import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
@@ -173,8 +173,8 @@ import { HistoricPricePayload } from '@/store/balances/types';
 import { HistoryActions } from '@/store/history/consts';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
-import { assert } from '@/utils/assertions';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 @Component({
   components: { AssetSelect, DateTimePicker },
@@ -209,7 +209,6 @@ export default class ExternalTradeForm extends Vue {
   isTaskRunning!: (type: TaskType) => boolean;
   fetchHistoricPrice!: (payload: HistoricPricePayload) => Promise<BigNumber>;
 
-  private static format = 'DD/MM/YYYY HH:mm:ss';
   readonly baseRules = [
     (v: string) =>
       !!v || this.$t('external_trade_form.validation.non_empty_base')
@@ -292,7 +291,7 @@ export default class ExternalTradeForm extends Vue {
       return;
     }
 
-    const timestamp = dayjs(this.datetime, ExternalTradeForm.format).unix();
+    const timestamp = convertToTimestamp(this.datetime);
     const fromAsset = this.base;
     const toAsset = this.quote;
 
@@ -320,21 +319,14 @@ export default class ExternalTradeForm extends Vue {
     }
 
     const trade: Trade = this.edit;
-    assert(typeof trade.baseAsset === 'string');
-    assert(typeof trade.quoteAsset === 'string');
 
     this.base = trade.baseAsset;
     this.quote = trade.quoteAsset;
-    this.datetime = dayjs(trade.timestamp * 1000).format(
-      ExternalTradeForm.format
-    );
+    this.datetime = convertFromTimestamp(trade.timestamp, true);
     this.amount = trade.amount.toString();
     this.rate = trade.rate.toString();
     this.fee = trade.fee?.toString() ?? '';
-    this.feeCurrency =
-      trade.feeCurrency && typeof trade.feeCurrency === 'string'
-        ? trade.feeCurrency
-        : '';
+    this.feeCurrency = trade.feeCurrency ? trade.feeCurrency : '';
     this.link = trade.link ?? '';
     this.notes = trade.notes ?? '';
     this.type = trade.tradeType;
@@ -343,7 +335,7 @@ export default class ExternalTradeForm extends Vue {
 
   reset() {
     this.id = '';
-    this.datetime = dayjs().format(ExternalTradeForm.format);
+    this.datetime = convertFromTimestamp(dayjs().unix(), true);
     this.amount = '';
     this.rate = '';
     this.fee = '';
@@ -369,7 +361,7 @@ export default class ExternalTradeForm extends Vue {
       quoteAsset: this.quote,
       rate: rate.isNaN() ? Zero : rate,
       location: 'external',
-      timestamp: dayjs(this.datetime, ExternalTradeForm.format).unix(),
+      timestamp: convertToTimestamp(this.datetime),
       tradeType: this.type
     };
 

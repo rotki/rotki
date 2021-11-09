@@ -1,10 +1,10 @@
+import { AssetBalance, BigNumber } from '@rotki/common';
 import { TimeUnit } from '@rotki/common/lib/settings';
 import { TimeFramePeriod, timeframes } from '@rotki/common/lib/settings/graphs';
-import { default as BigNumber } from 'bignumber.js';
 import dayjs from 'dayjs';
 import { aggregateTotal } from '@/filters';
 import { NetValue } from '@/services/types-api';
-import { AssetBalance } from '@/store/balances/types';
+import { NonFungibleBalance } from '@/store/balances/types';
 import { OverallPerformance, StatisticsState } from '@/store/statistics/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
@@ -23,49 +23,51 @@ export const getters: Getters<
   RotkehlchenState,
   any
 > = {
-  netValue: (
-    state,
-    getters,
-    _rootState,
-    {
-      'balances/exchangeRate': exchangeRate,
-      'session/currencySymbol': currency
-    }
-  ) => (startingDate: number): NetValue => {
-    function convert(value: string | number | BigNumber): number {
-      const bigNumber =
-        typeof value === 'string' || typeof value === 'number'
-          ? bigNumberify(value)
-          : value;
-      const convertedValue =
-        currency === 'USD'
-          ? bigNumber
-          : bigNumber.multipliedBy(exchangeRate(currency));
-      return convertedValue.toNumber();
-    }
-
-    const { times, data } = state.netValue;
-    const netValue: NetValue = { times: [], data: [] };
-    if (times.length === 0 && data.length === 0) {
-      return netValue;
-    }
-
-    for (let i = 0; i < times.length; i++) {
-      const time = times[i];
-      if (time < startingDate) {
-        continue;
+  netValue:
+    (
+      state,
+      getters,
+      _rootState,
+      {
+        'balances/exchangeRate': exchangeRate,
+        'session/currencySymbol': currency
       }
-      netValue.times.push(time);
-      netValue.data.push(convert(data[i]));
-    }
+    ) =>
+    (startingDate: number): NetValue => {
+      function convert(value: string | number | BigNumber): number {
+        const bigNumber =
+          typeof value === 'string' || typeof value === 'number'
+            ? bigNumberify(value)
+            : value;
+        const convertedValue =
+          currency === 'USD'
+            ? bigNumber
+            : bigNumber.multipliedBy(exchangeRate(currency));
+        return convertedValue.toNumber();
+      }
 
-    const now = Math.floor(new Date().getTime() / 1000);
-    const netWorth = getters.totalNetWorth.toNumber();
-    return {
-      times: netWorth > 0 ? [...netValue.times, now] : [...netValue.times],
-      data: netWorth > 0 ? [...netValue.data, netWorth] : [...netValue.data]
-    };
-  },
+      const { times, data } = state.netValue;
+      const netValue: NetValue = { times: [], data: [] };
+      if (times.length === 0 && data.length === 0) {
+        return netValue;
+      }
+
+      for (let i = 0; i < times.length; i++) {
+        const time = times[i];
+        if (time < startingDate) {
+          continue;
+        }
+        netValue.times.push(time);
+        netValue.data.push(convert(data[i]));
+      }
+
+      const now = Math.floor(new Date().getTime() / 1000);
+      const netWorth = getters.totalNetWorth.toNumber();
+      return {
+        times: netWorth > 0 ? [...netValue.times, now] : [...netValue.times],
+        data: netWorth > 0 ? [...netValue.data, netWorth] : [...netValue.data]
+      };
+    },
 
   totalNetWorth: (
     state,
@@ -74,6 +76,7 @@ export const getters: Getters<
     {
       'balances/aggregatedBalances': aggregatedBalances,
       'balances/liabilities': liabilities,
+      'balances/nfBalances': nfBalances,
       'balances/exchangeRate': exchangeRate,
       'session/floatingPrecision': floatingPrecision,
       'session/currencySymbol': mainCurrency
@@ -81,13 +84,21 @@ export const getters: Getters<
   ) => {
     const balances = aggregatedBalances as AssetBalance[];
     const totalLiabilities = liabilities as AssetBalance[];
+    const nfbs = nfBalances as NonFungibleBalance[];
+    const rate = exchangeRate(mainCurrency);
+
+    const nfTotal = nfbs.reduce((sum, balance) => {
+      return sum
+        .plus(balance.usdPrice.multipliedBy(rate))
+        .dp(floatingPrecision, BigNumber.ROUND_DOWN);
+    }, Zero);
 
     const assetSum = aggregateTotal(
       balances,
       mainCurrency,
       exchangeRate(mainCurrency),
       floatingPrecision
-    );
+    ).plus(nfTotal);
     const liabilitySum = aggregateTotal(
       totalLiabilities,
       mainCurrency,
@@ -103,7 +114,8 @@ export const getters: Getters<
     _rootState,
     {
       'balances/aggregatedBalances': aggregatedBalances,
-      'balances/liabilities': liabilities
+      'balances/liabilities': liabilities,
+      'balances/nfTotalValue': nfTotalValue
     }
   ) => {
     const balances = aggregatedBalances as AssetBalance[];
@@ -119,7 +131,7 @@ export const getters: Getters<
       Zero
     );
 
-    return assetValue.minus(liabilityValue);
+    return assetValue.plus(nfTotalValue).minus(liabilityValue);
   },
   overall: (
     state,

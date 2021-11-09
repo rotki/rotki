@@ -52,6 +52,20 @@ import { Component, Mixins } from 'vue-property-decorator';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleMixin from '@/mixins/module-mixin';
 import { Module } from '@/services/session/consts';
+import { BalanceActions } from '@/store/balances/action-types';
+import { BalanceMutations } from '@/store/balances/mutation-types';
+
+const wasActivated = (
+  active: Module[],
+  previouslyActive: Module[],
+  module: Module
+) => active.includes(module) && !previouslyActive.includes(module);
+
+const wasDeactivated = (
+  active: Module[],
+  previouslyActive: Module[],
+  module: Module
+) => !active.includes(module) && previouslyActive.includes(module);
 
 @Component({})
 export default class ModuleSelector extends Mixins(ModuleMixin) {
@@ -65,19 +79,45 @@ export default class ModuleSelector extends Mixins(ModuleMixin) {
   }
 
   unselect(identifier: Module) {
+    const previouslyActive = [...this.selectedModules];
     const selectionIndex = this.selectedModules.indexOf(identifier);
     if (selectionIndex < 0) {
       return;
     }
     this.selectedModules.splice(selectionIndex, 1);
     this.update(this.selectedModules);
+
+    if (wasDeactivated(this.selectedModules, previouslyActive, Module.NFTS)) {
+      this.clearNfBalances();
+    }
   }
 
   async update(activeModules: Module[]) {
     this.loading = true;
     await this.activateModules(activeModules);
+    this.onModuleActivation(activeModules);
     this.selectedModules = activeModules;
     this.loading = false;
+  }
+
+  private onModuleActivation(active: Module[]) {
+    if (wasActivated(active, this.selectedModules, Module.NFTS)) {
+      this.fetchNfBalances();
+    }
+  }
+
+  private fetchNfBalances() {
+    const callback = () =>
+      this.$store
+        .dispatch(`balances/${BalanceActions.FETCH_NF_BALANCES}`)
+        .then();
+    setTimeout(callback, 800);
+  }
+
+  private clearNfBalances() {
+    const callback = () =>
+      this.$store.commit(`balances/${BalanceMutations.UPDATE_NF_BALANCES}`, {});
+    setTimeout(callback, 800);
   }
 }
 </script>

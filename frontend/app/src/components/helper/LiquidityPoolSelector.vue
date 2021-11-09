@@ -48,8 +48,8 @@
 </template>
 
 <script lang="ts">
+import { Pool } from '@rotki/common/lib/defi/balancer';
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { Pool } from '@/store/defi/types';
 
 @Component({
   name: 'LiquidityPoolSelector'

@@ -22,7 +22,7 @@ from typing_extensions import Literal
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.accounting.structures import ActionType
+from rotkehlchen.accounting.structures import ActionType, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -369,6 +369,22 @@ class BlockchainField(fields.Field):
         raise ValidationError(f'Unrecognized value {value} given for blockchain name')
 
 
+class BalanceTypeField(fields.Field):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> BalanceType:
+        if value == 'asset':
+            return BalanceType.ASSET
+        if value == 'liability':
+            return BalanceType.LIABILITY
+        raise ValidationError(f'Unrecognized value {value} given for balance type')
+
+
 class AssetField(fields.Field):
 
     def __init__(self, *, form_with_incomplete_data: bool = False, **kwargs: Any) -> None:  # noqa: E501
@@ -397,6 +413,39 @@ class AssetField(fields.Field):
         except (DeserializationError, UnknownAsset) as e:
             raise ValidationError(str(e)) from e
 
+        return asset
+
+
+class MaybeAssetField(fields.Field):
+
+    def __init__(self, *, form_with_incomplete_data: bool = False, **kwargs: Any) -> None:  # noqa: E501
+        self.form_with_incomplete_data = form_with_incomplete_data
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _serialize(
+            value: Asset,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Optional[str]:
+        # Asset can be missing so we need to handle None when serializing from schema
+        return str(value.identifier) if value else None
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Optional[Asset]:
+        try:
+            asset = Asset(value, form_with_incomplete_data=self.form_with_incomplete_data)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+        except UnknownAsset:
+            log.error(f'Failed to deserialize asset {value}')
+            return None
         return asset
 
 
@@ -814,6 +863,11 @@ class AsyncQueryArgumentSchema(Schema):
     async_query = fields.Boolean(load_default=False)
 
 
+class AsyncIgnoreCacheQueryArgumentSchema(Schema):
+    async_query = fields.Boolean(load_default=False)
+    ignore_cache = fields.Boolean(load_default=False)
+
+
 class AsyncHistoricalQuerySchema(AsyncQueryArgumentSchema):
     """A schema for getters that have 2 arguments.
     One to enable async querying and another to force reset DB data by querying everytying again"""
@@ -836,8 +890,8 @@ class DBPaginationSchema(Schema):
 
 
 class DBOrderBySchema(Schema):
-    order_by_attribute = fields.String(load_default=None)
-    ascending = fields.Boolean(load_default=True)
+    order_by_attribute = fields.String(load_default='timestamp')
+    ascending = fields.Boolean(load_default=False)
 
 
 class EthereumTransactionQuerySchema(
@@ -858,8 +912,8 @@ class EthereumTransactionQuerySchema(
     ) -> Dict[str, Any]:
         address = data.get('address')
         filter_query = ETHTransactionsFilterQuery.make(
-            order_by_attribute='timestamp',  # hard coding order by timestamp for API for now
-            order_ascending=False,  # most recent first
+            order_by_attribute=data['order_by_attribute'],
+            order_ascending=data['ascending'],
             limit=data['limit'],
             offset=data['offset'],
             addresses=[address] if address is not None else None,
@@ -970,6 +1024,7 @@ class ManuallyTrackedBalanceSchema(Schema):
     amount = PositiveAmountField(required=True)
     location = LocationField(required=True)
     tags = fields.List(fields.String(), load_default=None)
+    balance_type = BalanceTypeField(load_default=BalanceType.ASSET)
 
     @post_load
     def make_manually_tracked_balances(  # pylint: disable=no-self-use
@@ -1010,7 +1065,7 @@ class TagEditSchema(Schema):
     foreground_color = ColorField(load_default=None)
 
 
-class TagDeleteSchema(Schema):
+class NameDeleteSchema(Schema):
     name = fields.String(required=True)
 
 
@@ -1106,6 +1161,14 @@ class ModifiableSettingsSchema(Schema):
     taxable_ledger_actions = fields.List(LedgerActionTypeField, load_default=None)
     pnl_csv_with_formulas = fields.Bool(load_default=None)
     pnl_csv_have_summary = fields.Bool(load_default=None)
+    ssf_0graph_multiplier = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(
+            min=0,
+            error='The snapshot saving frequeny 0graph multiplier should be >= 0',
+        ),
+        load_default=None,
+    )
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -1151,6 +1214,7 @@ class ModifiableSettingsSchema(Schema):
             taxable_ledger_actions=data['taxable_ledger_actions'],
             pnl_csv_with_formulas=data['pnl_csv_with_formulas'],
             pnl_csv_have_summary=data['pnl_csv_have_summary'],
+            ssf_0graph_multiplier=data['ssf_0graph_multiplier'],
         )
 
 
@@ -1216,6 +1280,7 @@ class NewUserSchema(BaseUserSchema):
 class AllBalancesQuerySchema(Schema):
     async_query = fields.Boolean(load_default=False)
     save_data = fields.Boolean(load_default=False)
+    ignore_errors = fields.Boolean(load_default=False)
     ignore_cache = fields.Boolean(load_default=False)
 
 
@@ -1913,6 +1978,8 @@ class DataImportSchema(Schema):
                 'blockfi-transactions',
                 'blockfi-trades',
                 'nexo',
+                'shapeshift-trades',
+                'uphold',
             ),
         ),
     )
@@ -1926,7 +1993,7 @@ class AssetIconUploadSchema(Schema):
 
 class ExchangeRatesSchema(Schema):
     async_query = fields.Boolean(load_default=False)
-    currencies = DelimitedOrNormalList(AssetField(), required=True)
+    currencies = DelimitedOrNormalList(MaybeAssetField(), required=True)
 
 
 class WatcherSchema(Schema):
@@ -1968,7 +2035,7 @@ class WatchersDeleteSchema(Schema):
     watchers = fields.List(fields.String(required=True), required=True)
 
 
-class AssetIconsSchema(Schema):
+class SingleAssetIdentifierSchema(Schema):
     asset = AssetField(required=True, form_with_incomplete_data=True)
 
 
@@ -2049,6 +2116,9 @@ class ManualPriceSchema(Schema):
     from_asset = AssetField(required=True)
     to_asset = AssetField(required=True)
     price = PriceField(required=True)
+
+
+class TimedManualPriceSchema(ManualPriceSchema):
     timestamp = TimestampField(required=True)
 
 
@@ -2075,3 +2145,7 @@ class LimitsCounterResetSchema(Schema):
         required=True,
         validate=webargs.validate.OneOf(choices=('ethereum_transactions',)),
     )
+
+
+class SingleFileSchema(Schema):
+    file = FileField(required=True)

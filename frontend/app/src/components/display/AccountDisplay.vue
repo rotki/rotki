@@ -6,24 +6,28 @@
       </v-avatar>
     </v-col>
 
-    <v-col class="font-weight-bold mr-1 account-display__label">
+    <v-col class="font-weight-bold mr-1 account-display__label text-no-wrap">
       <span class="text-truncate">
         {{ account.label }}
       </span>
     </v-col>
-    <v-col cols="auto" :class="privacyMode ? 'blur-content' : ''">
+    <v-col
+      cols="auto"
+      :class="privacyMode ? 'blur-content' : ''"
+      class="text-no-wrap"
+    >
       ({{ truncateAddress(address) }})
     </v-col>
   </v-row>
 </template>
 
 <script lang="ts">
+import { GeneralAccount } from '@rotki/common/lib/account';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { truncateAddress } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
-import { GeneralAccount } from '@/typing/types';
 import { randomHex } from '@/typing/utils';
 
 @Component({

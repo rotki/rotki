@@ -124,7 +124,7 @@ const store: StoreOptions<RotkehlchenState> = {
             await dispatch('version');
           }
           // eslint-disable-next-line no-empty
-        } catch (e) {
+        } catch (e: any) {
         } finally {
           count++;
           if (count > 20) {
@@ -159,9 +159,11 @@ const store: StoreOptions<RotkehlchenState> = {
     message: (state: RotkehlchenState) => {
       return state.message.title.length > 0;
     },
-    status: (state: RotkehlchenState) => (section: Section): Status => {
-      return state.status[section] ?? Status.NONE;
-    },
+    status:
+      (state: RotkehlchenState) =>
+      (section: Section): Status => {
+        return state.status[section] ?? Status.NONE;
+      },
     detailsLoading: (state: RotkehlchenState) => {
       return (
         isLoading(state.status[Section.BLOCKCHAIN_ETH]) ||

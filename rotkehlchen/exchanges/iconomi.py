@@ -11,6 +11,7 @@ from urllib.parse import urlencode
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_ICONOMI_ASSETS, asset_from_iconomi
@@ -269,7 +270,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
 
         page = 0
         all_transactions = []
@@ -314,7 +315,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         trade=tx,
                     )
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def query_supported_tickers(
             self,
@@ -344,4 +345,11 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
+        return []  # noop for iconomi
+
+    def query_online_income_loss_expense(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[LedgerAction]:
         return []  # noop for iconomi

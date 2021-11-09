@@ -4,9 +4,10 @@
       {{ $t('exchange_balances.title') }}
     </template>
     <v-btn
-      absolute
+      v-blur
+      fixed
       fab
-      top
+      bottom
       right
       dark
       color="primary"
@@ -97,7 +98,7 @@
 </template>
 
 <script lang="ts">
-import { default as BigNumber } from 'bignumber.js';
+import { AssetBalance, BigNumber } from '@rotki/common';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
@@ -105,7 +106,6 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { tradeLocations } from '@/components/history/consts';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
 import { Exchange } from '@/model/action-result';
-import { AssetBalance } from '@/store/balances/types';
 import { ExchangeInfo } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';

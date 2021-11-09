@@ -1,7 +1,7 @@
 <template>
   <v-row
     no-gutters
-    class="percentage-display"
+    class="percentage-display flex-nowrap"
     :justify="justify"
     align="center"
   >
@@ -25,7 +25,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Mixins } from 'vue-property-decorator';
+import { Component, Mixins, Prop } from 'vue-property-decorator';
 import PrivacyMixin from '@/mixins/privacy-mixin';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 

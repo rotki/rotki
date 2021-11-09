@@ -26,7 +26,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap import (
     UNISWAP_TRADES_PREFIX,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType, LiquidityPoolEvent
-from rotkehlchen.chain.ethereum.modules.aave.constants import ATOKENV1_TO_ASSET
+from rotkehlchen.chain.ethereum.modules.aave.common import atoken_to_asset
 from rotkehlchen.chain.ethereum.modules.adex import (
     ADEX_EVENTS_PREFIX,
     AdexEventType,
@@ -52,8 +52,8 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import (
@@ -98,7 +98,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
     deserialize_hex_color_code,
-    deserialize_timestamp,
     deserialize_trade_type_from_db,
 )
 from rotkehlchen.typing import (
@@ -108,7 +107,6 @@ from rotkehlchen.typing import (
     BlockchainAccountData,
     BTCAddress,
     ChecksumEthAddress,
-    EthereumTransaction,
     ExchangeApiCredentials,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -129,6 +127,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
+PASSWORDCHECK_STATEMENT = 'SELECT name FROM sqlite_master WHERE type="table";'
 
 DBTupleType = Literal[
     'trade',
@@ -149,11 +148,14 @@ TABLES_WITH_ASSETS = (
     ('asset_movements', 'asset', 'fee_asset'),
     ('ledger_actions', 'asset', 'rate_asset'),
     ('amm_swaps', 'token0_identifier', 'token1_identifier'),
-    ('uniswap_events', 'token0_identifier', 'token1_identifier'),
+    ('amm_events', 'token0_identifier', 'token1_identifier'),
     ('adex_events', 'token'),
     ('balancer_events', 'pool_address_token'),
     ('timed_balances', 'currency'),
 )
+
+
+DB_BACKUP_RE = re.compile(r'(\d+)_rotkehlchen_db_v(\d+).backup')
 
 
 def _protect_password_sqlcipher(password: str) -> str:
@@ -285,15 +287,17 @@ class DBHandler:
         """Perform the actions that are needed after the first DB connection
 
         Such as:
-            - Create tables that are missing
+            - Check encryption password works
             - DB Upgrades
+            - Create tables that are missing for new version
 
         May raise:
         - AuthenticationError if a wrong password is given or if the DB is corrupt
         - DBUpgradeError if there is a problem with DB upgrading
         """
+        # Check password is correct
         try:
-            self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
+            self.conn.executescript(PASSWORDCHECK_STATEMENT)
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             errstr = str(e)
             migrated = False
@@ -314,6 +318,8 @@ class DBHandler:
 
         # Run upgrades if needed
         DBUpgradeManager(self).run_upgrades()
+        # create tables if needed (first run - or some new tables)
+        self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
 
     def get_md5hash(self) -> str:
         """Get the md5hash of the DB
@@ -534,7 +540,6 @@ class DBHandler:
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             ('last_data_upload_ts', str(ts)),
         )
-        self.conn.commit()
         self.update_last_write()
 
     def get_last_data_upload_ts(self) -> Timestamp:
@@ -556,7 +561,6 @@ class DBHandler:
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             ('premium_should_sync', str(should_sync)),
         )
-        self.conn.commit()
         self.update_last_write()
 
     def get_premium_sync(self) -> bool:
@@ -606,7 +610,6 @@ class DBHandler:
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             list(settings_dict.items()),
         )
-        self.conn.commit()
         self.update_last_write()
 
     def add_external_service_credentials(
@@ -618,7 +621,6 @@ class DBHandler:
             'INSERT OR REPLACE INTO external_service_credentials(name, api_key) VALUES(?, ?)',
             [c.serialize_for_db() for c in credentials],
         )
-        self.conn.commit()
         self.update_last_write()
 
     def delete_external_service_credentials(self, services: List[ExternalService]) -> None:
@@ -627,7 +629,7 @@ class DBHandler:
             'DELETE FROM external_service_credentials WHERE name=?;',
             [(service.name.lower(),) for service in services],
         )
-        self.conn.commit()
+        self.update_last_write()
 
     def get_all_external_service_credentials(self) -> List[ExternalServiceApiCredentials]:
         """Returns a list with all the external service credentials saved in the DB"""
@@ -671,7 +673,6 @@ class DBHandler:
             'INSERT INTO multisettings(name, value) VALUES(?, ?)',
             ('ignored_asset', asset.identifier),
         )
-        self.conn.commit()
         self.update_last_write()
 
     def remove_from_ignored_assets(self, asset: Asset) -> None:
@@ -680,7 +681,6 @@ class DBHandler:
             'DELETE FROM multisettings WHERE name="ignored_asset" AND value=?;',
             (asset.identifier,),
         )
-        self.conn.commit()
         self.update_last_write()
 
     def get_ignored_assets(self) -> List[Asset]:
@@ -705,7 +705,6 @@ class DBHandler:
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError('One of the given action ids already exists in the dataase') from e
 
-        self.conn.commit()
         self.update_last_write()
 
     def remove_from_ignored_action_ids(
@@ -730,7 +729,6 @@ class DBHandler:
                 f'Tried to remove {len(identifiers) - affected_rows} '
                 f'ignored actions that do not exist',
             )
-        self.conn.commit()
         self.update_last_write()
 
     def get_ignored_action_ids(
@@ -774,7 +772,6 @@ class DBHandler:
                     f'{entry.time} already exists. Skipping.',
                 )
                 continue
-        self.conn.commit()
         self.update_last_write()
 
     def add_aave_events(self, address: ChecksumEthAddress, events: Sequence[AaveEvent]) -> None:
@@ -808,7 +805,6 @@ class DBHandler:
                 )
                 continue
 
-        self.conn.commit()
         self.update_last_write()
 
     def get_aave_events(
@@ -816,12 +812,12 @@ class DBHandler:
             address: ChecksumEthAddress,
             atoken: Optional[EthereumToken] = None,
     ) -> List[AaveEvent]:
-        """Get aave for a single address and a single aToken"""
+        """Get aave for a single address and a single aToken """
         cursor = self.conn.cursor()
         querystr = 'SELECT * FROM aave_events '
         values: Tuple
         if atoken is not None:  # when called by blockchain
-            underlying_token = ATOKENV1_TO_ASSET.get(atoken, None)
+            underlying_token = atoken_to_asset(atoken)
             if underlying_token is None:  # should never happen
                 self.msg_aggregator.add_error(
                     'Tried to query aave events for atoken with no underlying token. '
@@ -851,7 +847,6 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM aave_events;')
         cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
-        self.conn.commit()
         self.update_last_write()
 
     def add_adex_events(
@@ -892,7 +887,6 @@ class DBHandler:
                 )
                 continue
 
-        self.conn.commit()
         self.update_last_write()
 
     def get_adex_events(
@@ -949,7 +943,6 @@ class DBHandler:
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{ADEX_EVENTS_PREFIX}%";',
         )
-        self.conn.commit()
         self.update_last_write()
 
     def add_balancer_events(
@@ -991,7 +984,6 @@ class DBHandler:
                 )
                 continue
 
-        self.conn.commit()
         self.update_last_write()
 
     def get_balancer_events(
@@ -1043,7 +1035,6 @@ class DBHandler:
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_TRADES_PREFIX}%";',
         )
-        self.conn.commit()
         self.update_last_write()
 
     def delete_balancer_events_data(self) -> None:
@@ -1053,7 +1044,6 @@ class DBHandler:
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_EVENTS_PREFIX}%";',
         )
-        self.conn.commit()
         self.update_last_write()
 
     def delete_eth2_deposits(self) -> None:
@@ -1061,20 +1051,18 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM eth2_deposits;')
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{ETH2_DEPOSITS_PREFIX}%";')
-        self.conn.commit()
         self.update_last_write()
 
     def delete_eth2_daily_stats(self) -> None:
         """Delete all historical ETH2 eth2_daily_staking_details data"""
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM eth2_daily_staking_details;')
-        self.conn.commit()
         self.update_last_write()
 
     def add_amm_events(self, events: Sequence[LiquidityPoolEvent]) -> None:
         query = (
             """
-            INSERT INTO uniswap_events (
+            INSERT INTO amm_events (
                 tx_hash,
                 log_index,
                 address,
@@ -1103,7 +1091,6 @@ class DBHandler:
                 )
                 continue
 
-        self.conn.commit()
         self.update_last_write()
 
     def get_amm_events(
@@ -1118,7 +1105,7 @@ class DBHandler:
         """
         cursor = self.conn.cursor()
         events_sql_str = ", ".join([f'"{EventType.serialize_for_db(event)}"' for event in events])
-        query = f'SELECT * FROM uniswap_events WHERE uniswap_events.type IN ({events_sql_str}) '
+        query = f'SELECT * FROM amm_events WHERE amm_events.type IN ({events_sql_str}) '
 
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
         if address is not None:
@@ -1202,7 +1189,6 @@ class DBHandler:
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_TRADES_PREFIX}%";',
         )
-        self.conn.commit()
         self.update_last_write()
 
     def delete_uniswap_events_data(self) -> None:
@@ -1212,12 +1198,11 @@ class DBHandler:
         burn_uniswap = EventType.serialize_for_db(EventType.BURN_UNISWAP)
         uniswap_types = f'"{mint_uniswap}", "{burn_uniswap}"'
         cursor.execute(
-            f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({uniswap_types});',
+            f'DELETE FROM amm_events WHERE amm_events.type IN ({uniswap_types});',
         )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_EVENTS_PREFIX}%";',
         )
-        self.conn.commit()
         self.update_last_write()
 
     def delete_sushiswap_trades_data(self) -> None:
@@ -1229,7 +1214,6 @@ class DBHandler:
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_TRADES_PREFIX}%";',
         )
-        self.conn.commit()
         self.update_last_write()
 
     def delete_sushiswap_events_data(self) -> None:
@@ -1239,12 +1223,11 @@ class DBHandler:
         burn_sushiswap = EventType.serialize_for_db(EventType.BURN_SUSHISWAP)
         sushiswap_types = f'"{mint_sushiswap}", "{burn_sushiswap}"'
         cursor.execute(
-            f'DELETE FROM uniswap_events WHERE uniswap_events.type IN ({sushiswap_types});',
+            f'DELETE FROM amm_events WHERE amm_events.type IN ({sushiswap_types});',
         )
         cursor.execute(
             f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_EVENTS_PREFIX}%";',
         )
-        self.conn.commit()
         self.update_last_write()
 
     def add_yearn_vaults_events(
@@ -1282,7 +1265,6 @@ class DBHandler:
                     f'Event data: {event_tuple}. Skipping...',
                 )
 
-        self.conn.commit()
         self.update_last_write()
 
     def get_yearn_vaults_events(
@@ -1339,7 +1321,6 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute(f'DELETE FROM yearn_vaults_events WHERE version={version};')
         cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{prefix}%";')
-        self.conn.commit()
         self.update_last_write()
         return None
 
@@ -1347,7 +1328,6 @@ class DBHandler:
         """Delete all loopring related data"""
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM multisettings WHERE name LIKE "loopring_%";')
-        self.conn.commit()
         self.update_last_write()
 
     def get_used_query_range(self, name: str) -> Optional[Tuple[Timestamp, Timestamp]]:
@@ -1357,6 +1337,7 @@ class DBHandler:
         - {exchange_name}_trades
         - {exchange_name}_margins
         - {exchange_name}_asset_movements
+        - {exchange_name}_ledger_actions
         - aave_events_{address}
         - yearn_vaults_events_{address}
         - yearn_vaults_v2_events_{address}
@@ -1378,7 +1359,6 @@ class DBHandler:
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
             (f'{str(location)}\\_%', '\\'),
         )
-        self.conn.commit()
         self.update_last_write()
 
     def purge_exchange_data(self, location: Location) -> None:
@@ -1400,18 +1380,6 @@ class DBHandler:
             'DELETE FROM asset_movements WHERE location = ?;',
             (location.serialize_for_db(),),
         )
-        self.conn.commit()
-        self.update_last_write()
-
-    def purge_ethereum_transaction_data(self) -> None:
-        """Deletes all ethereum transaction related data from the DB"""
-        cursor = self.conn.cursor()
-        cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            ('ethtxs\\_%', '\\'),
-        )
-        cursor.execute('DELETE FROM ethereum_transactions;')
-        self.conn.commit()
         self.update_last_write()
 
     def update_used_query_range(self, name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:
@@ -1420,7 +1388,6 @@ class DBHandler:
             'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, ?, ?)',
             (name, str(start_ts), str(end_ts)),
         )
-        self.conn.commit()
         self.update_last_write()
 
     def update_used_block_query_range(self, name: str, from_block: int, to_block: int) -> None:
@@ -1455,7 +1422,6 @@ class DBHandler:
                     f' already existing timestamp {entry.time}. Skipping.',
                 )
                 continue
-        self.conn.commit()
         self.update_last_write()
 
     def add_blockchain_accounts(
@@ -1482,7 +1448,6 @@ class DBHandler:
 
         insert_tag_mappings(cursor=cursor, data=account_data, object_reference_keys=['address'])
 
-        self.conn.commit()
         self.update_last_write()
 
     def edit_blockchain_accounts(
@@ -1521,7 +1486,6 @@ class DBHandler:
             raise AssertionError(msg)
         insert_tag_mappings(cursor=cursor, data=account_data, object_reference_keys=['address'])
 
-        self.conn.commit()
         self.update_last_write()
 
     def remove_blockchain_accounts(
@@ -1559,7 +1523,6 @@ class DBHandler:
             for address in accounts:
                 self.delete_data_for_ethereum_address(address)  # type: ignore
 
-        self.conn.commit()
         self.update_last_write()
 
     def _get_address_details_if_time(
@@ -1675,7 +1638,6 @@ class DBHandler:
             '(account, tokens_list, time) VALUES (?, ?, ?)',
             (address, json.dumps(new_details), now),
         )
-        self.conn.commit()
         self.update_last_write()
 
     def get_blockchain_accounts(self) -> BlockchainAccounts:
@@ -1748,25 +1710,34 @@ class DBHandler:
 
         return data
 
-    def get_manually_tracked_balances(self) -> List[ManuallyTrackedBalance]:
+    def get_manually_tracked_balances(
+        self,
+        balance_type: Optional[BalanceType] = BalanceType.ASSET,
+    ) -> List[ManuallyTrackedBalance]:
         """Returns the manually tracked balances from the DB"""
         cursor = self.conn.cursor()
+        query_balance_type = ''
+        if balance_type is not None:
+            query_balance_type = f'WHERE A.category="{balance_type.serialize_for_db()}"'
         query = cursor.execute(
-            'SELECT A.asset, A.label, A.amount, A.location, group_concat(B.tag_name,",") '
-            'FROM manually_tracked_balances as A '
-            'LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.label GROUP BY label;',
+            f'SELECT A.asset, A.label, A.amount, A.location, group_concat(B.tag_name,","), '
+            f'A.category FROM manually_tracked_balances as A '
+            f'LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.label '
+            f'{query_balance_type} GROUP BY label;',
         )
 
         data = []
         for entry in query:
             tags = deserialize_tags_from_db(entry[4])
             try:
+                balance_type = BalanceType.deserialize_from_db(entry[5])
                 data.append(ManuallyTrackedBalance(
                     asset=Asset(entry[0]),
                     label=entry[1],
                     amount=FVal(entry[2]),
                     location=Location.deserialize_from_db(entry[3]),
                     tags=tags,
+                    balance_type=balance_type,
                 ))
             except (DeserializationError, UnknownAsset, UnsupportedAsset, ValueError) as e:
                 # ValueError would be due to FVal failing
@@ -1788,12 +1759,13 @@ class DBHandler:
             entry.label,
             str(entry.amount),
             entry.location.serialize_for_db(),
+            entry.balance_type.serialize_for_db(),
         ) for entry in data]
         cursor = self.conn.cursor()
         try:
             cursor.executemany(
-                'INSERT INTO manually_tracked_balances(asset, label, amount, location) '
-                'VALUES (?, ?, ?, ?)', tuples,
+                'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '
+                'VALUES (?, ?, ?, ?, ?)', tuples,
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
@@ -1804,7 +1776,6 @@ class DBHandler:
         # make sure assets are included in the global db user owned assets
         GlobalDBHandler().add_user_owned_assets([x.asset for x in data])
 
-        self.conn.commit()
         self.update_last_write()
 
     def edit_manually_tracked_balances(self, data: List[ManuallyTrackedBalance]) -> None:
@@ -1831,11 +1802,12 @@ class DBHandler:
             entry.asset.identifier,
             str(entry.amount),
             entry.location.serialize_for_db(),
+            BalanceType.serialize_for_db(entry.balance_type),
             entry.label,
         ) for entry in data]
 
         cursor.executemany(
-            'UPDATE manually_tracked_balances SET asset=?, amount=?, location=? '
+            'UPDATE manually_tracked_balances SET asset=?, amount=?, location=?, category=?'
             'WHERE label=?;', tuples,
         )
         if cursor.rowcount != len(data):
@@ -1843,7 +1815,6 @@ class DBHandler:
             raise InputError(msg)
         insert_tag_mappings(cursor=cursor, data=data, object_reference_keys=['label'])
 
-        self.conn.commit()
         self.update_last_write()
 
     def remove_manually_tracked_balances(self, labels: List[str]) -> None:
@@ -1871,7 +1842,6 @@ class DBHandler:
                 f'manually tracked balance labels that do not exist',
             )
 
-        self.conn.commit()
         self.update_last_write()
 
     def remove(self) -> None:
@@ -1879,10 +1849,10 @@ class DBHandler:
         cursor.execute('DROP TABLE IF EXISTS timed_balances')
         cursor.execute('DROP TABLE IF EXISTS timed_location_data')
         cursor.execute('DROP TABLE IF EXISTS timed_unique_data')
-        self.conn.commit()
+        self.update_last_write()
 
     def save_balances_data(self, data: Dict[str, Any], timestamp: Timestamp) -> None:
-        """ The keys of the data dictionary can be any kind of asset plus 'location'
+        """The keys of the data dictionary can be any kind of asset plus 'location'
         and 'net_usd'. This gives us the balance data per assets, the balance data
         per location and finally the total balance
 
@@ -1901,6 +1871,7 @@ class DBHandler:
                 amount=str(val['amount']),
                 usd_value=str(val['usd_value']),
             ))
+
         for key, val in data['liabilities'].items():
             msg = f'at this point the key should be of Asset type and not {type(key)} {str(key)}'
             assert isinstance(key, Asset), msg
@@ -1963,7 +1934,6 @@ class DBHandler:
         if location == Location.FTX and ftx_subaccount_name is not None:
             self.set_ftx_subaccount(name, ftx_subaccount_name)
 
-        self.conn.commit()
         self.update_last_write()
 
     def edit_exchange(
@@ -2045,7 +2015,6 @@ class DBHandler:
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
 
         if should_commit is True:
-            self.conn.commit()
             self.update_last_write()
 
     def remove_exchange(self, name: str, location: Location) -> None:
@@ -2054,7 +2023,6 @@ class DBHandler:
             'DELETE FROM user_credentials WHERE name=? AND location=?',
             (name, location.serialize_for_db()),
         )
-        self.conn.commit()
         self.update_last_write()
 
     def get_exchange_credentials(
@@ -2129,7 +2097,6 @@ class DBHandler:
                 data,
             ),
         )
-        self.conn.commit()
         self.update_last_write()
 
     def get_binance_pairs(self, name: str, location: Location) -> List[str]:
@@ -2176,7 +2143,6 @@ class DBHandler:
             tuple_type: DBTupleType,
             query: str,
             tuples: List[Tuple[Any, ...]],
-            **kwargs: Any,
     ) -> None:
         cursor = self.conn.cursor()
         try:
@@ -2185,46 +2151,11 @@ class DBHandler:
             # That means that one of the tuples hit a constraint, most probably
             # already existing in the DB, in which case we resort to writing them
             # one by one to only reject the duplicates
-
-            nonces_set: Set[int] = set()
-            if tuple_type == 'ethereum_transaction':
-                nonces_set = set(range(len([t for t in tuples if t[10] == -1])))
-
             for entry in tuples:
                 try:
                     cursor.execute(query, entry)
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                     if tuple_type == 'ethereum_transaction':
-                        nonce = entry[10]
-                        # If it's not an internal transaction with the same hash
-                        # ignore it. That is since it's indeed a duplicate because
-                        # when we query etherscan we get all transactions where
-                        # the given address is either the from or the to.
-                        if nonce != -1:
-                            continue
-
-                        if 'from_etherscan' in kwargs and kwargs['from_etherscan'] is True:
-                            # If it's an internal transaction with the same hash then
-                            # still input it as there is no way to distinguish between
-                            # multiple etherscan internal transactions with the same
-                            # original transaction hash. Here we trust the data source.
-                            # To differentiate between them in Rotkehlchen we use a
-                            # more negative nonce
-                            entry_list = list(entry)
-                            # Make sure that the internal etherscan transaction nonce
-                            # is increasingly negative (> -1)
-                            # If a key error is thrown here due to popping from an empty
-                            # set then something is really wrong so not catching it
-                            entry_list[10] = -1 - nonces_set.pop() - 1
-                            entry = tuple(entry_list)
-                            try:
-                                cursor.execute(query, entry)
-                                # Success so just go to the next entry
-                                continue
-                            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                                # the error is logged right below
-                                pass
-
                         # if we reach here it means the transaction is already in the DB
                         # But this can't be avoided with the way we query etherscan
                         # right now since we don't query transactions in a specific
@@ -2256,7 +2187,6 @@ class DBHandler:
                 f' DB. Tuples: {tuples} with query: {query}',
             )
 
-        self.conn.commit()
         self.update_last_write()
 
     def add_margin_positions(self, margin_positions: List[MarginPosition]) -> None:
@@ -2423,96 +2353,6 @@ class DBHandler:
         query = cursor.execute(cursorstr)
         return query.fetchone()[0]
 
-    def add_ethereum_transactions(
-            self,
-            ethereum_transactions: List[EthereumTransaction],
-            from_etherscan: bool,
-    ) -> None:
-        """Adds ethereum transactions to the database
-
-        If from_etherscan is True then this means that the source of the transactions
-        is an etherscan query. This is used to determine how we should handle the
-        transactions with nonce "-1" as this is how we currently identify internal
-        ethereum transactions from etherscan.
-        """
-        tx_tuples: List[Tuple[Any, ...]] = []
-        for tx in ethereum_transactions:
-            tx_tuples.append((
-                tx.tx_hash,
-                tx.timestamp,
-                tx.block_number,
-                tx.from_address,
-                tx.to_address,
-                str(tx.value),
-                str(tx.gas),
-                str(tx.gas_price),
-                str(tx.gas_used),
-                tx.input_data,
-                tx.nonce,
-            ))
-
-        query = """
-            INSERT INTO ethereum_transactions(
-              tx_hash,
-              timestamp,
-              block_number,
-              from_address,
-              to_address,
-              value,
-              gas,
-              gas_price,
-              gas_used,
-              input_data,
-              nonce)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        self.write_tuples(
-            tuple_type='ethereum_transaction',
-            query=query,
-            tuples=tx_tuples,
-            from_etherscan=from_etherscan,
-        )
-
-    def get_ethereum_transactions(
-            self,
-            filter_: ETHTransactionsFilterQuery,
-    ) -> List[EthereumTransaction]:
-        """Returns a list of ethereum transactions optionally filtered by time and/or from address
-
-        The returned list is ordered from oldest to newest
-        """
-        cursor = self.conn.cursor()
-        query, bindings = filter_.prepare()
-        query = 'SELECT * FROM ethereum_transactions ' + query
-        results = cursor.execute(query, bindings)
-
-        ethereum_transactions = []
-        for result in results:
-            try:
-                tx = EthereumTransaction(
-                    tx_hash=result[0],
-                    timestamp=deserialize_timestamp(result[1]),
-                    block_number=result[2],
-                    from_address=result[3],
-                    to_address=result[4],
-                    value=int(result[5]),
-                    gas=int(result[6]),
-                    gas_price=int(result[7]),
-                    gas_used=int(result[8]),
-                    input_data=result[9],
-                    nonce=result[10],
-                )
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing ethereum transaction from the DB. '
-                    f'Skipping it. Error was: {str(e)}',
-                )
-                continue
-
-            ethereum_transactions.append(tx)
-
-        return ethereum_transactions
-
     def delete_data_for_ethereum_address(self, address: ChecksumEthAddress) -> None:
         """Deletes all ethereum related data from the DB for a single ethereum address"""
         other_eth_accounts = self.get_blockchain_accounts().eth
@@ -2544,7 +2384,7 @@ class DBHandler:
         cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
         cursor.execute('DELETE FROM adex_events WHERE address = ?', (address,))
         cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
-        cursor.execute('DELETE FROM uniswap_events WHERE address=?;', (address,))
+        cursor.execute('DELETE FROM amm_events WHERE address=?;', (address,))
         cursor.execute(
             'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
             (address,),
@@ -2571,7 +2411,6 @@ class DBHandler:
         cursor.execute('DELETE FROM amm_swaps WHERE address=?;', (address,))
         cursor.execute('DELETE FROM eth2_deposits WHERE from_address=?;', (address,))
 
-        self.conn.commit()
         self.update_last_write()
 
     def add_trades(self, trades: List[Trade]) -> None:
@@ -2650,7 +2489,7 @@ class DBHandler:
         if cursor.rowcount == 0:
             return False, 'Tried to edit non existing trade id'
 
-        self.conn.commit()
+        self.update_last_write()
         return True, ''
 
     def get_trades(
@@ -2694,7 +2533,7 @@ class DBHandler:
         cursor.execute('DELETE FROM trades WHERE id=?', (trade_id,))
         if cursor.rowcount == 0:
             return False, 'Tried to delete non-existing trade'
-        self.conn.commit()
+        self.update_last_write()
         return True, ''
 
     def add_amm_swaps(self, swaps: List[AMMSwap]) -> None:
@@ -2792,7 +2631,7 @@ class DBHandler:
             cursor.execute(
                 'DELETE FROM user_credentials WHERE name=?', ('rotkehlchen',),
             )
-            self.conn.commit()
+            self.update_last_write()
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             log.error(f'Could not delete rotki premium keys: {str(e)}')
             return False
@@ -2852,6 +2691,7 @@ class DBHandler:
             from_ts = Timestamp(0)
         if to_ts is None:
             to_ts = ts_now()
+        settings = self.get_settings()
 
         querystr = (
             f'SELECT time, amount, usd_value, category FROM timed_balances '
@@ -2865,15 +2705,36 @@ class DBHandler:
         results = cursor.execute(querystr)
         results = results.fetchall()
         balances = []
-        for result in results:
+        results_length = len(results)
+        for idx, result in enumerate(results):
+            entry_time = result[0]
+            category = BalanceType.deserialize_from_db(result[3])
             balances.append(
                 SingleDBAssetBalance(
-                    time=result[0],
+                    time=entry_time,
                     amount=result[1],
                     usd_value=result[2],
-                    category=BalanceType.deserialize_from_db(result[3]),
+                    category=category,
                 ),
             )
+            if settings.ssf_0graph_multiplier == 0 or idx == results_length - 1:
+                continue
+
+            next_result_time = results[idx + 1][0]
+            max_diff = settings.balance_save_frequency * HOUR_IN_SECONDS * settings.ssf_0graph_multiplier  # noqa: E501
+            while next_result_time - entry_time > max_diff:
+                entry_time = entry_time + settings.balance_save_frequency * HOUR_IN_SECONDS
+                if entry_time >= next_result_time:
+                    break
+
+                balances.append(
+                    SingleDBAssetBalance(
+                        time=entry_time,
+                        amount='0',
+                        usd_value='0',
+                        category=category,
+                    ),
+                )
 
         return balances
 
@@ -2934,7 +2795,6 @@ class DBHandler:
             'INSERT OR IGNORE INTO assets(identifier) VALUES(?);',
             [(x,) for x in asset_identifiers],
         )
-        self.conn.commit()
         self.update_last_write()
 
     def add_globaldb_assetids(self) -> None:
@@ -2961,7 +2821,6 @@ class DBHandler:
                 f'the user owns it now or did some time in the past',
             ) from e
 
-        self.conn.commit()
         self.update_last_write()
 
     def replace_asset_identifier(self, source_identifier: str, target_asset: Asset) -> None:
@@ -3000,7 +2859,6 @@ class DBHandler:
                 'UPDATE assets SET identifier=? WHERE identifier=?;',
                 (target_asset.identifier, source_identifier),
             )
-            self.conn.commit()
             self.update_last_write()
 
     def get_latest_location_value_distribution(self) -> List[LocationData]:
@@ -3046,9 +2904,9 @@ class DBHandler:
             f'CAST(usd_value AS REAL) DESC;',
         )
         results = results.fetchall()
-        assets = []
+        asset_balances = []
         for result in results:
-            assets.append(
+            asset_balances.append(
                 DBAssetBalance(
                     time=result[0],
                     asset=Asset(result[1]),
@@ -3058,7 +2916,7 @@ class DBHandler:
                 ),
             )
 
-        return assets
+        return asset_balances
 
     def get_tags(self) -> Dict[str, Tag]:
         cursor = self.conn.cursor()
@@ -3124,7 +2982,6 @@ class DBHandler:
             log.error('Unexpected DB error: {msg} while adding a tag')
             raise
 
-        self.conn.commit()
         self.update_last_write()
 
     def edit_tag(
@@ -3163,7 +3020,6 @@ class DBHandler:
             raise TagConstraintError(
                 f'Tried to edit tag with name "{name}" which does not exist',
             )
-        self.conn.commit()
         self.update_last_write()
 
     def delete_tag(self, name: str) -> None:
@@ -3183,7 +3039,6 @@ class DBHandler:
             raise TagConstraintError(
                 f'Tried to delete tag with name "{name}" which does not exist',
             )
-        self.conn.commit()
         self.update_last_write()
 
     def ensure_tags_exist(
@@ -3241,7 +3096,6 @@ class DBHandler:
                 f'Xpub {xpub_data.xpub.xpub} with derivation path '
                 f'{xpub_data.derivation_path} is already tracked',
             ) from e
-        self.conn.commit()
         self.update_last_write()
 
     def delete_bitcoin_xpub(self, xpub_data: XpubData) -> None:
@@ -3294,7 +3148,6 @@ class DBHandler:
             (xpub_data.xpub.xpub, xpub_data.serialize_derivation_path_for_db()),
         )
 
-        self.conn.commit()
         self.update_last_write()
 
     def edit_bitcoin_xpub(self, xpub_data: XpubData) -> None:
@@ -3327,7 +3180,6 @@ class DBHandler:
                 f'There was an error when updating Xpub {xpub_data.xpub.xpub} with '
                 f'derivation path {xpub_data.derivation_path}',
             ) from e
-        self.conn.commit()
         self.update_last_write()
 
     def get_bitcoin_xpub_data(self) -> List[XpubData]:
@@ -3432,7 +3284,6 @@ class DBHandler:
                 # mapping already exists
                 continue
 
-        self.conn.commit()
         self.update_last_write()
 
     def _ensure_data_integrity(
@@ -3475,3 +3326,47 @@ class DBHandler:
         self._ensure_data_integrity('margin_positions', MarginPosition)
         self.conn.commit()
         log.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')
+
+    def get_db_info(self) -> Dict[str, Any]:
+        filepath = self.user_data_dir / 'rotkehlchen.db'
+        size = Path(self.user_data_dir / 'rotkehlchen.db').stat().st_size
+        version = self.get_version()
+        return {
+            'filepath': str(filepath),
+            'size': int(size),
+            'version': int(version),
+        }
+
+    def get_backups(self) -> List[Dict[str, Any]]:
+        """Returns a list of tuples with possible backups of the user DB"""
+        backups = []
+        for root, _, files in os.walk(self.user_data_dir):
+            for filename in files:
+                match = DB_BACKUP_RE.search(filename)
+                if match:
+                    timestamp = match.group(1)
+                    version = match.group(2)
+                    try:
+                        size: Optional[int] = Path(Path(root) / filename).stat().st_size
+                    except OSError:
+                        size = None
+                    backups.append({
+                        'time': int(timestamp),
+                        'version': int(version),
+                        'size': size,
+                    })
+
+        return backups
+
+    def create_db_backup(self) -> Path:
+        """May raise:
+        - OSError
+        """
+        version = self.get_version()
+        new_db_filename = f'{ts_now()}_rotkehlchen_db_v{version}.backup'
+        new_db_path = self.user_data_dir / new_db_filename
+        shutil.copyfile(
+            self.user_data_dir / 'rotkehlchen.db',
+            new_db_path,
+        )
+        return new_db_path

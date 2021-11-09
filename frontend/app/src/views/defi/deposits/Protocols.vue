@@ -1,17 +1,17 @@
 <template>
   <module-not-active v-if="!anyModuleEnabled" :modules="modules" />
-  <lending v-else />
+  <deposits v-else />
 </template>
 
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
-import Lending from '@/components/defi/Lending.vue';
+import Deposits from '@/components/defi/Deposits.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ModuleMixin from '@/mixins/module-mixin';
 import { Module } from '@/services/session/consts';
 
 @Component({
-  components: { ModuleNotActive, Lending }
+  components: { ModuleNotActive, Deposits }
 })
 export default class Protocols extends Mixins(ModuleMixin) {
   readonly modules: Module[] = [

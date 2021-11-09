@@ -2,22 +2,94 @@
 Changelog
 =========
 
+* :feature:`3579` Users will now be able to sort the NFTs in the gallery by name, collection and price.
+* :feature:`3640` Liquity users that created troves using DefiSaver will be now able to track them.
+* :feature:`1451` Improves performance of the Transactions page.
+* :feature:`3594` Users can now sort the dashboard assets and blockchain balance per asset tables using the price field.
+* :bug:`3328` The asset update resolution dialog should now be usable on mobile screens.
+* :feature:`1513` Users will now be able to add manual liabilities.
+* :feature:`1536` The Account & Balances add button will now be fixed to the right bottom of the screen. The blockchain balances add button will now properly select the appropriate blockchain based on the visible table.
+* :feature:`3335` Users will now be able to find the pending tasks in the notification sidebar.
+
+* :release:`1.21.3 <2021-10-28>`
+* :bug:`2178` Premium DB sync popup should no longer popup if you only use one instance of rotki in one system.
+* :bug:`3643` The price currency will now be properly visible on the NFT balance header sorting when using a mobile device.
+* :bug:`3629` Kraken api rate limiting should no longer cause a query to get stuck in a loop.
+* :bug:`3624` Editing a CEX api key should now work properly again.
+* :bug:`3619` Binance users should now be able to properly process fiat payments, deposits and withdrawals.
+* :bug:`3613` Users should be now able to save a ledger action without specifying seconds.
+* :bug:`3630` Users will be able to properly see their MakerDAO vault loans
+* :bug:`3647` It should be now possible for users to properly ignore DEX trades in the trade history page.
+
+* :release:`1.21.2 <2021-10-14>`
+* :bug:`-` Users can now ignore any errors when force saving balances.
+* :bug:`3576` User asset charts should no longer have arbitrary zero amounts. There is now a setting they can choose which is off by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
+* :bug:`3578` Adding an external trade on a specific date without specifying time will now be possible. Any backend validation errors on the date field should now be properly visible.
+* :bug:`-` The NFT gallery will correctly display NFTs that include a video extension but not at the end of the url.
+* :bug:`3593` Sorting by asset in the dashboard asset table and blockchain balances per asset table should now properly sort alphabetically by the asset symbol.
+* :bug:`3591` Uphold trades will reflect exchanged value instead of received value for base amount.  This will properly arrive at the received amount when the fee is accounted for.
+* :bug:`3580` NFT balances will now get removed from the UI when the user deactivates the module.
+* :bug:`3602` Kusama/Polkadot balances should now be queried properly again.
+* :bug:`3603` The PnL execution will now continue despite potential error calling the compound subgraph.
+
+* :release:`1.21.1 <2021-10-07>`
+* :feature:`3554` Gemini users will now have their earn balances tracked in rotki.
+* :bug:`3555` Users should now be able to see the total value in the table of NFTs in the dashboard
+* :bug:`3579` Asset type selector will now be properly disabled when editing an asset.
+* :bug:`-` Statistics per asset graph will now properly display the name of the NFT.
+* :bug:`3547` Coinbase transactions without network data returned should now be processed properly.
+* :bug:`3546` Coinbase users with trades/deposits/withdrawals/balances of FET (Fetch.ai) should have it properly detected.
+* :bug:`2613` Graphs of assets that used to miss all 0 balance data points between two time point will now properly show a 0 amount in the asset graph for the time period.
+* :bug:`3552` Users with semi-fungible tokens in different ethereum wallets will see them correctly in the NFT gallery.
+* :bug:`-` Docker users will be able to retrieve automatic information for tokens when adding new ethereum assets.
+* :bug:`3414` Coinbase conversions should display the correct fee.
+* :bug:`3208` Rotki will now allow to track the same account for different blockchain types.
+* :bug:`-` The value of NFTs will now be properly included as part of the total net worth when calculating an asset's percentage.
+
+* :release:`1.21.0 <2021-09-30>`
+* :feature:`3251` Users will now be able to easily access the asset edit page from the asset details page.
+* :feature:`3020` Users will now be able to copy their ETH1 addresses when visiting the ETH2 staking page.
+* :feature:`2362` Binance users will now be able to query their fiat deposit/withdrawals and fiat orders and have it taken into account in rotki.
+* :feature:`3326` Introduces pagination for liquidity pool balances to help users with a great number of lps.
+* :feature:`1097` Users will now be able to view their NFTs, track and manage their prices, and also see their value as part of their total net worth.
 * :feature:`2764` Users will now be able to restore the local assets database to its initial state.
 * :feature:`2847` Users will now be able to use a combination of filters in the search for trades and deposits/withdrawals.
 * :feature:`3254` Users can now add a custom Covalent API key in rotki.
+* :feature:`3416` Users will now be able to import ShapeShift trade history CSVs exported from shapeshift.com.
+* :feature:`1345` Users will now be able to import uphold transaction history CSVs exported from uphold.com.
+* :feature:`-` Users will now be able to track balances locked in pickle's DILL.
+* :feature:`2891` Users will now see notes and links for trades in the exported CSV files.
+* :feature:`2836` Users will now be able to track Liquity's troves and staking in the Liquity protocol.
+* :feature:`3474` Users of coinbase will now see deposits for coinbase earn and inflation rewards.
+* :bug:`3239` Users will now see only the relevant addresses suggested when filtering DeFi deposits.
+* :bug:`3340` Users will now be able to properly see the favicon when accessing the frontend using Firefox.
 * :bug:`3266` Users will now be able to properly access most of the top bar content using a mobile device.
 * :bug:`3268` Users will now be able to properly scroll to the hidden tabs when using a mobile device.
 * :bug:`3267` Frontend will now occupy all the available screen when accessed from a mobile device.
-* :bug:`3208` Rotki is now able to accept and track the same account for different blockchain types.
+* :bug:`3463` Users using Turkish localization will now be able to use the application.
+* :bug:`3448` Improve Kucoin api rate limit handling. Recognize CFG asset in Kucoin as WCFG.
+* :bug:`3452` Trades from externally imported exchanges (blockfi, crypto.com etc.) should now be properly taken into accounting in the PnL report again.
+* :bug:`3437` Fix a bug where for some active aave v2 lending positions the entire aToken balance would be shown as profit.
+* :bug:`3406` Sushiswap events will now be taken into account during the profit and loss report.
+* :bug:`3407` Users will now see correctly reported their amount of xSUSHI.
+* :bug:`3421` Users will now be able to see solana properly in coinbase assets
+* :bug:`3418` Users will now be able to finish import from crypto.com's CSV files when there is a time mismatch between rows.
+* :bug:`3056` Users will now be better notified when an error occurred while importing information from crypto.com on credit/debit events with special cases.
+* :bug:`3493` Users of Bitstamp will see correctly imported assets movements with fees in any coin.
+* :bug:`3491` Coinbasepro users who own Barnbridge governance token (BOND) will now be able to properly see it in balances, trades and deposits/withdrawals.
+* :bug:`-` Users importing information from Nexo CSVs will correctly detect interest gains and detect special assets symbols.
+* :bug:`3502` MakerDAO vault users who saw double the amount of liabilities for some of their vault/s should now see the proper amount again.
+* :bug:`3490` If a user had historic trades of a delisted asset in coinbasepro the trades query will now work again.
+* :bug:`3535` There should no longer be a problem when changing active modules while an ETH account is already being added.
 
 * :release:`1.20.1 <2021-08-27>`
 * :feature:`3349` AMM swaps now have a transaction hash link in the trade history section.
 * :bug:`3329` Users will now properly see their sushiswap trades in the history page if they have the sushiswap module activated.
 * :bug:`3310` For the edge case of a MakerDAO vault event containing a zero amount the MakerDAO DeFi section and PnL report should no longer get an error.
-* :bug:`3311` The PnL CSV export in Windows should now now longer contain the double number of lines and as such the formulas at the summary should be correct. 
+* :bug:`3311` The PnL CSV export in Windows should now now longer contain the double number of lines and as such the formulas at the summary should be correct.
 * :bug:`3313` Discrepancies on the sign of net_profit_loss in PnL CSV export between exports with and without formulas should now be fixed.
 * :bug:`3355` Yearn V2 vaults should now display a correct price.
-* :bug:`3373` The form to add a FTX account will now work correctly when the subaccount field is modified and then cleared. 
+* :bug:`3373` The form to add a FTX account will now work correctly when the subaccount field is modified and then cleared.
 
 * :release:`1.20.0 <2021-08-06>`
 * :feature:`2426` Sushiswap is now supported. Premium users can see their LP balances, swaps history and LP pool join/exits. Finally the balancer trades are now taken into account in the profit/loss report.
@@ -49,7 +121,7 @@ Changelog
 * :feature:`1666` Users will now be able to see their yearn v2 vaults in in the defi section.
 * :feature:`2456` Users will now be able to correctly retrieve prices for Curve LP tokens.
 * :feature:`2778` Users will now be able to enable modules and queried addresses when adding an ethereum account
-* :feature:`1857` Premium users will now be able to query Aave V2 events. 
+* :feature:`1857` Premium users will now be able to query Aave V2 events.
 * :feature:`2722` The sync conflict dialog dates will now be consistent with the user specified date format.
 * :feature:`3114` Users can easily check and manage which addresses are queried for each defi module directly from the respective module page.
 * :feature:`3069` When adding an asset coingecko/cryptocompare identifiers will now be validated and non-existing ones will be rejected.

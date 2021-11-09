@@ -24,6 +24,8 @@ ModuleName = Literal[
     'eth2',
     'sushiswap',
     'liquity',
+    'pickle_finance',
+    'nfts',
 ]
 
 # TODO: Turn this into some kind of light data structure and not just a mapping
@@ -42,6 +44,8 @@ AVAILABLE_MODULES_MAP = {
     'eth2': 'Eth2',
     'sushiswap': 'Sushiswap',
     'liquity': 'Liquity',
+    'pickle_finance': 'Pickle Finance',
+    'nfts': 'NFTs',
 }
 
 
@@ -52,6 +56,8 @@ IMPORTABLE_LOCATIONS = Literal[
     'blockfi-trades',
     'nexo',
     'gitcoin',
+    'shapeshift-trades',
+    'uphold',
 ]
 
 UNISWAP_PROTOCOL = 'UNI-V2'
@@ -350,6 +356,8 @@ class Location(DBEnumMixIn):
     INDEPENDENTRESERVE = 29
     GITCOIN = 30
     SUSHISWAP = 31
+    SHAPESHIFT = 32
+    UPHOLD = 33
 
 
 class AssetMovementCategory(DBEnumMixIn):
@@ -376,5 +384,11 @@ class ExchangeApiCredentials(NamedTuple):
     passphrase: Optional[str] = None
 
 
-EXTERNAL_EXCHANGES: List = [Location.CRYPTOCOM, Location.BLOCKFI, Location.NEXO]
+EXTERNAL_EXCHANGES: List = [
+    Location.CRYPTOCOM,
+    Location.BLOCKFI,
+    Location.NEXO,
+    Location.SHAPESHIFT,
+    Location.UPHOLD,
+]
 EXTERNAL_LOCATION = [Location.EXTERNAL] + EXTERNAL_EXCHANGES

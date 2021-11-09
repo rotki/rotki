@@ -1,4 +1,8 @@
 {
+  "aave_lending": {
+    "history": "Aave History",
+    "header": "Aave Loan ({asset})"
+  },
   "about": {
     "copy_tooltip": "Copy the application information",
     "data_directory": "Data Directory:",
@@ -21,7 +25,7 @@
   },
   "active_modules": {
     "activate": "Activate the {name} module",
-    "view_addresses": "View the queried addresses for the {name}",
+    "view_addresses": "View the queried addresses for {name}",
     "enable": {
       "description": "Would you like to enable the {name} module?",
       "title": "Enabled module"
@@ -44,8 +48,8 @@
     "headers": {
       "amount": "Amount",
       "asset": "Asset",
-      "price": "Price in {symbol}",
-      "value": "{symbol} Value"
+      "price": "Price in {currency}",
+      "value": "{currency} Value"
     },
     "loading": "Please wait while rotki queries the blockchain...",
     "total": "Total"
@@ -218,6 +222,13 @@
       "password_missmatch": "The password confirmation does not match the provided password"
     }
   },
+  "collapsed_pending_tasks": {
+    "title": "{count} pending task | {count} pending tasks"
+  },
+  "compound_lending": {
+    "history": "Compound History",
+    "header": "Compound Loan ({asset})"
+  },
   "conflict_dialog": {
     "action": {
       "local": "Local",
@@ -307,7 +318,8 @@
     "nok": "Norwegian krone",
     "usd": "United States Dollar",
     "zar": "South African Rand",
-    "inr": "Indian rupee"
+    "inr": "Indian rupee",
+    "dkk": "Danish krone"
   },
   "currency_drop_down": {
     "hint": "Select as the main currency",
@@ -416,10 +428,41 @@
     },
     "tooltip": "Help"
   },
+  "liabilities": {
+    "no_selection": "Select a loan to view more information"
+  },
+  "liquity_lending": {
+    "header": "Liquity Trove {troveId}",
+    "trove_events": "Trove Events"
+  },
+  "liquity_page": {
+    "loading": "Liquity Staking information is loading",
+    "no_premium": "Liquity Staking"
+  },
+  "liquity_staking_details": {
+    "refresh_tooltip": "Refresh the staked amounts and events",
+    "select_account": "Select account"
+  },
+  "loan_debt": {
+    "outstanding_debt": "Outstanding debt",
+    "title": "Debt"
+  },
+  "loan_stake": {
+    "stake": "Staked amount",
+    "title": "Stake"
+  },
   "macos_unsupported": {
     "header": "Unsupported macOS Version",
     "terminate": "Terminate",
     "message": "rotki's minimum supported macOs version is Mojave(10.14)"
+  },
+  "maker_dao_vault_loan": {
+    "header": "Maker Vault #{identifier} ({collateralType})",
+    "borrowing_history": "Borrowing History"
+  },
+  "makerdao_vault_debt": {
+    "stability_fee": "Stability fee",
+    "total_lost": "Total lost due to interest"
   },
   "merge_dialog": {
     "cancel": "Cancel",
@@ -445,6 +488,71 @@
     "subtitle": "Select which modules should be queried for this account",
     "title": "Enabled modules"
   },
+  "no_task_running": {
+    "description": "No Pending tasks"
+  },
+  "non_fungible_balance": {
+    "column": {
+      "actions": "Actions",
+      "custom_price": "Custom Price",
+      "name": "Name",
+      "price": "Price in {currency}",
+      "price_in_asset": "Price in Asset"
+    }
+  },
+  "non_fungible_balance_edit": {
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "price": "Price",
+    "title": "Edit or set the price for the asset"
+  },
+  "nft_balance_table": {
+    "column": {
+      "name": "Name",
+      "percentage": "% of net Value",
+      "price": "Price in {currency}",
+      "price_in_asset": "Price in asset"
+    },
+    "row": {
+      "total": "Total"
+    },
+    "title": "NFT Balances"
+  },
+  "non_fungible_balances": {
+    "delete": {
+      "error": {
+        "message": "Could not delete the current price for {asset}",
+        "title": "Deleting custom current price"
+      },
+      "message": "Are you sure wou want to delete the custom price for {asset}?",
+      "title": "Delete custom price"
+    },
+    "refresh": "Refresh the balances",
+    "row": {
+      "delete": "Delete the custom price",
+      "edit": "Edit or set the custom price",
+      "total": "Total"
+    },
+    "title": "Non Fungible Balances"
+  },
+  "nft_gallery": {
+    "empty_filter": "No NFTs matching the filter parameters",
+    "empty_subtitle": "No NFTs have been detected",
+    "empty_title": "No NFTs detected",
+    "error_title": "Error while loading NFTs",
+    "loading": "Loading NFTs",
+    "refresh_tooltip": "Reload NFTs",
+    "select_collection": "Select collection",
+    "select_account": "Select account",
+    "sort": {
+      "collection": "Collection",
+      "name": "Name",
+      "price": "Price"
+    },
+    "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
+  },
   "no_filter_available": {
     "hint": {
       "description": "* type the filter and then press enter e.g.",
@@ -457,6 +565,9 @@
   "notes_display": {
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
+  },
+  "pagination": {
+    "of": "of {length}"
   },
   "price_form": {
     "date": "Date",
@@ -549,6 +660,21 @@
     "value_rounding_hint": "Specify how the value (e.g the FIAT value of an owned asset) is rounded.",
     "amount_rounding_hint": "Specify how the amount (e.g. the amount of an owned asset) is rounded."
   },
+  "sorting_selector": {
+    "desc": {
+      "sort_desc_tooltip": "Sort descending",
+      "sort_asc_tooltip": "Sort ascending"
+    }
+  },
+  "statistics_graph_settings": {
+    "label": "Multiplier",
+    "off": "No missed snapshots will be considered as being zero.",
+    "on": "If there is a period of {period} hours or more between two existing balance snapshots then the graph will consider zero balances for that period.",
+    "save": "Save",
+    "subtitle": "Set after how many hours between two existing balance snapshots the graph will consider zero balances for that period.",
+    "title": "Missing snapshot multiplier",
+    "tooltip": "Change graph zero snapshot multiplier"
+  },
   "sushiswap": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "premium": "Sushiswap feature "
@@ -626,7 +752,7 @@
   },
   "date_time_picker": {
     "default_format": "Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM format",
-    "seconds_format": "Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM:ss format"
+    "seconds_format": "Date should be in DD/MM/YYYY [[HH:MM]:ss] format"
   },
   "module_address_selector": {
     "back": "Back",
@@ -856,6 +982,14 @@
       "income": "Income",
       "loss": "Loss"
     },
+    "filter": {
+      "asset": "filter by the asset of the ledger action",
+      "date_hint": "format DD/MM/YYYY HH:mm:ss (time/seconds are optional)",
+      "end_date": "filter by the end date of the ledger action period",
+      "location": "filter by the ledger action location",
+      "start_date": "filter by the start date of the ledger action period",
+      "action_type": "filter by the ledger action type (income, loss, etc...)"
+    },
     "delete": {
       "message": "Are you sure wou want to delete this ledger action?",
       "title": "Delete LedgerAction"
@@ -893,13 +1027,7 @@
     "loading": "Please wait while your ledger actions are getting loaded...",
     "loading_subtitle": "The loading of ledger actions might take a while depending on the number of actions you performed.",
     "refresh_tooltip": "Refresh your ledger actions",
-    "title": "Ledger Actions",
-    "ignore": {
-      "no_actions": {
-        "description": "All the selected actions are already ignored | All the selected actions are already included",
-        "title": "No actions to ignore | No actions to unignore"
-      }
-    }
+    "title": "Ledger Actions"
   },
   "ledger_action_settings": {
     "header": {
@@ -1034,9 +1162,6 @@
     "loan_settlement": "Loan settlement",
     "margin_position_close": "Margin Position Close",
     "sell": "Sell"
-  },
-  "progress_indicator": {
-    "no_tasks": "No running tasks"
   },
   "progress_screen": {
     "progress": "{progress} %"
@@ -1336,6 +1461,7 @@
     }
   },
   "closed_trades": {
+    "clear_selection": "Clear Selection",
     "description": {
       "with": "With",
       "for": "For"
@@ -1349,6 +1475,7 @@
       "start_date": "filter by the start date of the trade period",
       "trade_type": "filter by the trade action (buy or sell)"
     },
+    "selected": "{count} trades selected",
     "title": "Closed Orders",
     "headers": {
       "location": "Location",
@@ -1423,12 +1550,12 @@
       "title": "Details",
       "no_details": "No details found."
     },
-    "loading_subtitle": "The loading of asset movements might take a while depending on the amount of exchanges, and actions you performed on these exchanges.",
-    "ignore": {
-      "no_actions": {
-        "description": "All the selected actions are already ignored | All the selected actions are already included",
-        "title": "No actions to ignore | No actions to unignore"
-      }
+    "loading_subtitle": "The loading of asset movements might take a while depending on the amount of exchanges, and actions you performed on these exchanges."
+  },
+  "ignore": {
+    "no_items": {
+      "description": "All the selected entries are already ignored | All the selected entries are already included",
+      "title": "No entries to ignore | No entries to unignore"
     }
   },
   "history": {
@@ -1594,14 +1721,32 @@
         }
       }
     },
-    "ledger_actions": {
+    "history": {
+      "fetch_ignored": {
+        "error": {
+          "message": "Failed to retrieve the ignored actions\": {message}",
+          "title": "Querying ignored actions"
+        }
+      }
+    },
+    "manual_ledger_actions": {
       "error": {
         "description": "Failed query for ledger actions: {error}",
         "title": "Ledger actions"
       },
       "task": {
-        "description": "actions.ledger_actions.task.description",
-        "title": "Retrieving ledger actions"
+        "description": "Retrieving manual ledger actions",
+        "title": "Ledger actions"
+      }
+    },
+    "ledger_actions": {
+      "task": {
+        "title": "Ledger actions",
+        "description": "Retrieving ledger actions for {exchange}"
+      },
+      "error": {
+        "description": "Failed query for {exchange}: {error}",
+        "title": "Ledger actions for {exchange}"
       }
     },
     "ignore": {
@@ -1623,6 +1768,15 @@
       "error": {
         "description": "Failed query for {exchange}: {error}",
         "title": "Deposits & withdrawals for {exchange}"
+      }
+    },
+    "nft_balances": {
+      "error": {
+        "message": "An error occurred while querying the NFT balances: {message}",
+        "title": "NFT balance querying"
+      },
+      "task": {
+        "title": "Querying NFT balances"
       }
     },
     "notifications": {
@@ -1755,6 +1909,44 @@
         "error": {
           "title": "DSR History",
           "description": "Failed to retrieve DSR history: {error}"
+        }
+      },
+      "liquity": {
+        "task": {
+          "title": "Querying Liquity Balances"
+        }
+      },
+      "liquity_balances": {
+        "error": {
+          "description": "Failed to retrieve Liquity balances: {message}",
+          "title": "Liquity Balances"
+        }
+      },
+      "liquity_events": {
+        "error": {
+          "description": "Failed to retrieve Liquity events: {message}",
+          "title": "Liquity Events"
+        },
+        "task": {
+          "title": "Querying Liquity Events"
+        }
+      },
+      "liquity_staking": {
+        "error": {
+          "description": "Failed to retreive liquity staking: {message}",
+          "title": "Liquity staking"
+        },
+        "task": {
+          "title": "Querying Liquity staking"
+        }
+      },
+      "liquity_staking_events": {
+        "error": {
+          "description": "Failed to retrieve Liquity staking events: {message}",
+          "title": "Liquity staking events"
+        },
+        "task": {
+          "title": "Querying Liquity staking events"
         }
       },
       "makerdao_vaults": {
@@ -2012,6 +2204,11 @@
           "message": "Failure to delete a queriable address: {message}"
         }
       },
+      "fetch_nfts": {
+        "task": {
+          "title": "Querying NFTs"
+        }
+      },
       "fetch_prices": {
         "error": {
           "message": "Failed to fetch prices: {error}",
@@ -2151,6 +2348,7 @@
     },
     "defi": "DeFi",
     "manage_prices": "Manage Prices",
+    "nfts": "NFTs",
     "statistics": "Statistics",
     "profit_loss_report": "Profit and Loss Report",
     "defi_sub": {
@@ -2163,7 +2361,8 @@
     "staking": "Staking",
     "staking_sub": {
       "adex": "AdEx",
-      "eth2": "Eth2"
+      "eth2": "Eth2",
+      "liquity": "Liquity"
     },
     "manage_assets": "Manage Assets"
   },
@@ -2176,11 +2375,8 @@
     "transaction": "TX:"
   },
   "transactions": {
-    "ignore": {
-      "no_actions": {
-        "description": "All the selected actions are already ignored | All the selected actions are already included",
-        "title": "No actions to ignore | No actions to unignore"
-      }
+    "filter": {
+      "label": "Filter by account"
     },
     "loading": "Please wait while your transactions are getting loaded...",
     "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",
@@ -2240,10 +2436,7 @@
     "vault": "Maker Vault"
   },
   "loan_header": {
-    "owned_by": "Owned by:",
-    "aave_loan": "Aave Loan ({asset})",
-    "maker_vault": "Maker Vault #{identifier} ({collateralType})",
-    "compound_loan": "Compound Loan ({asset})"
+    "owned_by": "Owned by:"
   },
   "borrowing": {
     "loading": "Please wait while your liabilities are getting loaded...",
@@ -2266,6 +2459,9 @@
       "actions": "Actions",
       "usd_value_eth": "Total {symbol} value of account's assets",
       "usd_value": "{symbol} value"
+    },
+    "tabs": {
+      "nonfungible": "Non Fungible Balances"
     },
     "total": "Total",
     "confirm_delete": {
@@ -2290,7 +2486,9 @@
     "history": "History"
   },
   "loan_collateral": {
+    "liquidation_price": "Liquidation Price",
     "per_asset": "Collateral Assets",
+    "ratio": "Collateralization Ratio",
     "title": "Collateral",
     "locked_collateral": "Locked up collateral",
     "current_ratio": "Current ratio",
@@ -2321,7 +2519,8 @@
       "asset": "Asset",
       "amount": "Amount",
       "location": "Location",
-      "tags": "Tags"
+      "tags": "Tags",
+      "liability": "Is a liability"
     },
     "validation": {
       "label_exists": "Label {label} already exists",
@@ -2586,8 +2785,7 @@
     }
   },
   "statistics": {
-    "no_premium": "@:common.no_premium Statistics are @:common.available_to_premium",
-    "get_premium": "@:common.visit_website"
+    "no_premium_label": "Statistics are"
   },
   "profit_loss_report": {
     "download_csv": "Download CSV",
@@ -2646,6 +2844,22 @@
       "line_one": "[Experimental] If you find an issue with the imported data let us know so we can adapt the code accordingly.",
       "note": "Important notes for importing data from {0}'s CSV exports."
     },
+    "shapeshift": {
+      "import": "Import {0} from ShapeShift",
+      "import_trade": "trades",
+      "name": "ShapeShift",
+      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
+      "line_two": "ShapeShift lets you export a trades file. Trades will be imported from the file that only contains trades.",
+      "note": "Important notes for importing data from {0}'s CSV exports."
+    },
+    "uphold": {
+      "import": "Import {0} from uphold",
+      "import_trade": "trades",
+      "name": "uphold",
+      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
+      "line_two": "Uphold lets you export a transactions file. It can be found under activity at the top right of the activity list.",
+      "note": "Important notes for importing data from {0}'s CSV exports."
+    },
     "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
     "title": "Import Data",
     "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
@@ -2696,6 +2910,7 @@
     }
   },
   "sync_indicator": {
+    "ignore_errors": "Save the balance snapshot ignoring any errors on external APIs. This can cause the snapshot to be incomplete.",
     "menu_tooltip": "View the date of the last balances snapshot | View the date of the last balances snapshot, and the time of the last premium database sync",
     "snapshot_title": "Last balances snapshot",
     "never_saved": "Never",
@@ -2797,6 +3012,7 @@
     "balance": "Balance"
   },
   "staking": {
+    "liquity": "Liquity",
     "title": "Staking",
     "eth2": "ETH2",
     "adex": "AdEx"
@@ -2812,7 +3028,8 @@
   },
   "no_premium_placeholder": {
     "get_premium": "@:common.visit_website",
-    "no_premium": "@:common.no_premium {text} @:common.available_to_premium"
+    "no_premium": "@:common.no_premium",
+    "premium_only": " {text} @:common.available_to_premium"
   },
   "l2": {
     "loopring": "Loopring"

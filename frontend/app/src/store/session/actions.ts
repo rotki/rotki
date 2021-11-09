@@ -1,3 +1,4 @@
+import { ActionResult } from '@rotki/common/lib/data';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { ActionTree } from 'vuex';
 import {
@@ -21,7 +22,6 @@ import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES,
-  ALL_TRANSACTIONS,
   Module
 } from '@/services/session/consts';
 import {
@@ -35,9 +35,13 @@ import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { HistoryActions } from '@/store/history/consts';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { ACTION_PURGE_CACHED_DATA } from '@/store/session/const';
+import {
+  ACTION_PURGE_CACHED_DATA,
+  SessionActions
+} from '@/store/session/const';
 import {
   ChangePasswordPayload,
+  NftResponse,
   PremiumCredentialsPayload,
   SessionState
 } from '@/store/session/types';
@@ -115,6 +119,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         root: true
       };
       const async = [
+        dispatch(`history/${HistoryActions.FETCH_IGNORED}`, null, options),
         dispatch('fetchIgnoredAssets'),
         dispatch('balances/fetchSupportedAssets', null, options),
         dispatch('session/fetchWatchers', null, options),
@@ -128,7 +133,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         dispatch('balances/refreshPrices', false, options)
       );
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       if (e instanceof SyncConflictError) {
         commit('syncConflict', { message: e.message, payload: e.payload });
         return { success: false, message: '' };
@@ -168,7 +173,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       if (lastDataUploadTs !== lastDataUpload) {
         commit('updateLastDataUpload', lastDataUploadTs);
       }
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.session.periodic_query.error.message', {
@@ -188,7 +193,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       await api.logout(state.username);
       await dispatch('stop');
-    } catch (e) {
+    } catch (e: any) {
       showError(e.message, 'Logout failed');
     }
   },
@@ -200,7 +205,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         await api.logout(user);
       }
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       showError(e.message, 'Logout failed');
       return { success: false, message: e.message };
     }
@@ -228,7 +233,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       return {
         success: true
       };
-    } catch (e) {
+    } catch (e: any) {
       showError(
         e.message,
         i18n.t('actions.session.tag_add.error.title').toString()
@@ -243,7 +248,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   async editTag({ commit }, tag: Tag) {
     try {
       commit('tags', await api.editTag(tag));
-    } catch (e) {
+    } catch (e: any) {
       showError(
         e.message,
         i18n.t('actions.session.tag_edit.error.title').toString()
@@ -254,7 +259,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   async deleteTag({ commit, dispatch }, tagName: string) {
     try {
       commit('tags', await api.deleteTag(tagName));
-    } catch (e) {
+    } catch (e: any) {
       showError(
         e.message,
         i18n.t('actions.session.tag_delete.error.title').toString()
@@ -282,7 +287,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         } as Message,
         { root: true }
       );
-    } catch (e) {
+    } catch (e: any) {
       showError(
         e.message,
         i18n.t('actions.session.kraken_account.error.title').toString()
@@ -321,7 +326,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       commit('generalSettings', convertToGeneralSettings(settings));
       commit('accountingSettings', convertToAccountingSettings(settings));
       success = true;
-    } catch (e) {
+    } catch (e: any) {
       message = e.message;
     }
     return {
@@ -338,7 +343,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const watchers = await api.session.watchers();
       commit('watchers', watchers);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.session.fetch_watchers.error.message', {
@@ -377,7 +382,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const queriedAddresses = await api.session.queriedAddresses();
       commit('queriedAddresses', queriedAddresses);
-    } catch (e) {
+    } catch (e: any) {
       showError(
         i18n
           .t('actions.session.fetch_queriable_address.error.message', {
@@ -415,7 +420,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const queriedAddresses = await api.session.addQueriedAddress(payload);
       commit('queriedAddresses', queriedAddresses);
-    } catch (e) {
+    } catch (e: any) {
       showError(
         i18n
           .t('actions.session.add_queriable_address.error.message', {
@@ -430,7 +435,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const queriedAddresses = await api.session.deleteQueriedAddress(payload);
       commit('queriedAddresses', queriedAddresses);
-    } catch (e) {
+    } catch (e: any) {
       showError(
         i18n
           .t('actions.session.delete_queriable_address.error.message', {
@@ -456,7 +461,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         commit('premium', true);
       }
       return { success };
-    } catch (e) {
+    } catch (e: any) {
       return {
         success: false,
         message: e.message
@@ -471,7 +476,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         commit('premium', false);
       }
       return { success };
-    } catch (e) {
+    } catch (e: any) {
       return {
         success: false,
         message: e.message
@@ -493,7 +498,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       return {
         success
       };
-    } catch (e) {
+    } catch (e: any) {
       showError(i18n.t('actions.session.password_change.error').toString());
       return {
         success: false,
@@ -506,7 +511,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     try {
       const ignoredAssets = await api.assets.ignoredAssets();
       commit('ignoreAssets', ignoredAssets);
-    } catch (e) {
+    } catch (e: any) {
       const title = i18n.tc('actions.session.ignored_assets.error.title');
       const message = i18n.tc(
         'actions.session.ignored_assets.error.message',
@@ -523,7 +528,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const ignoredAssets = await api.assets.modifyAsset(true, asset);
       commit('ignoreAssets', ignoredAssets);
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       return { success: false, message: e.message };
     }
   },
@@ -532,7 +537,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const ignoredAssets = await api.assets.modifyAsset(false, asset);
       commit('ignoreAssets', ignoredAssets);
       return { success: true };
-    } catch (e) {
+    } catch (e: any) {
       return { success: false, message: e.message };
     }
   },
@@ -560,7 +565,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       if (action === SYNC_DOWNLOAD) {
         await dispatch('logout');
       }
-    } catch (e) {
+    } catch (e: any) {
       const title = i18n.tc('actions.session.force_sync.error.title');
       const message = i18n.tc('actions.session.force_sync.error.message', 0, {
         error: e.message
@@ -579,12 +584,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     } else if (purgable === ALL_DECENTRALIZED_EXCHANGES) {
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.UNISWAP, opts);
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.BALANCER, opts);
-    } else if (purgable === ALL_TRANSACTIONS) {
-      await dispatch(
-        `history/${HistoryActions.PURGE_TRANSACTIONS}`,
-        undefined,
-        opts
-      );
     } else if (purgable === ALL_MODULES) {
       await dispatch(`staking/${ACTION_PURGE_DATA}`, ALL_MODULES, opts);
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, ALL_MODULES, opts);
@@ -603,6 +602,32 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       } else {
         await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, purgable, opts);
       }
+    }
+  },
+
+  async [SessionActions.FETCH_NFTS](
+    { commit },
+    payload?: { ignoreCache: boolean }
+  ): Promise<ActionResult<NftResponse | null>> {
+    try {
+      const taskType = TaskType.FETCH_NFTS;
+      const { taskId } = await api.fetchNfts(payload);
+      const task = createTask(taskId, taskType, {
+        title: i18n.t('actions.session.fetch_nfts.task.title').toString(),
+        ignoreResult: false,
+        numericKeys: []
+      });
+      commit('tasks/add', task, { root: true });
+      const { result } = await taskCompletion<NftResponse, TaskMeta>(taskType);
+      return {
+        result: NftResponse.parse(result),
+        message: ''
+      };
+    } catch (e: any) {
+      return {
+        result: null,
+        message: e.message
+      };
     }
   }
 };

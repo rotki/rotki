@@ -41,16 +41,16 @@ from rotkehlchen.chain.ethereum.modules import (
     Balancer,
     Compound,
     Eth2,
+    Liquity,
     Loopring,
     MakerdaoDsr,
     MakerdaoVaults,
+    PickleFinance,
     Sushiswap,
     Uniswap,
     YearnVaults,
     YearnVaultsV2,
-    Liquity,
 )
-from rotkehlchen.chain.ethereum.nft import NFTManager
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
@@ -59,7 +59,17 @@ from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODE_CONNECTION_TIMEOUT,
     POLKADOT_NODE_CONNECTION_TIMEOUT,
 )
-from rotkehlchen.constants.assets import A_ADX, A_AVAX, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
+from rotkehlchen.constants.assets import (
+    A_ADX,
+    A_AVAX,
+    A_BTC,
+    A_DAI,
+    A_DOT,
+    A_ETH,
+    A_ETH2,
+    A_KSM,
+    A_LQTY,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -94,6 +104,7 @@ from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_l
 if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.modules.nfts import Nfts
     from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDetails
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -140,6 +151,12 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Multi-Collateral Dai': True,  # True means all
     # We already got some pie dao tokens in all_assets.json
     'PieDAO': ['BCP', 'BTC++', 'DEFI++', 'DEFI+S', 'DEFI+L', 'YPIE'],
+}
+DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
+    'Multi-Collateral Dai': True,  # True means all
+    'Aave': True,
+    'Aave V2': True,
+    'Compound': True,
 }
 
 
@@ -337,7 +354,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             ethereum_manager=self.ethereum,
             msg_aggregator=self.msg_aggregator,
         )
-        self.nft_manager = NFTManager(database=self.database, msg_aggregator=self.msg_aggregator)
 
     def __del__(self) -> None:
         del self.ethereum
@@ -351,7 +367,14 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def set_dot_rpc_endpoint(self, endpoint: str) -> Tuple[bool, str]:
         return self.polkadot.set_rpc_endpoint(endpoint)
 
+    def activate_premium_status(self, premium: Premium) -> None:
+        self.premium = premium
+        for _, module in self.iterate_modules():
+            if getattr(module, 'premium', None):
+                module.premium = premium  # type: ignore
+
     def deactivate_premium_status(self) -> None:
+        self.premium = None
         for _, module in self.iterate_modules():
             if getattr(module, 'premium', None):
                 module.premium = None  # type: ignore
@@ -366,10 +389,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         modules_to_remove = existing_names.difference(given_modules_set)
         modules_to_add = given_modules_set.difference(existing_names)
 
-        for name in modules_to_remove:
-            self.deactivate_module(name)
-        for name in modules_to_add:
-            self.activate_module(name)
+        with self.eth_lock:
+            for name in modules_to_remove:
+                self.deactivate_module(name)
+            for name in modules_to_add:
+                self.activate_module(name)
 
     def iterate_modules(self) -> Iterator[Tuple[str, EthereumModule]]:
         for name, module in self.eth_modules.items():
@@ -477,6 +501,14 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def get_module(self, module_name: Literal['liquity']) -> Optional[Liquity]:
         ...
 
+    @overload
+    def get_module(self, module_name: Literal['pickle_finance']) -> Optional[PickleFinance]:
+        ...
+
+    @overload
+    def get_module(self, module_name: Literal['nfts']) -> Optional['Nfts']:
+        ...
+
     def get_module(self, module_name: ModuleName) -> Optional[Any]:
         instance = self.eth_modules.get(module_name, None)
         if instance is None:  # not activated
@@ -506,21 +538,13 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 f'Blockchain account/s {",".join(existing_accounts)} already exist',
             )
 
-    def get_all_nfts(self) -> Dict[str, Any]:
-        result = self.nft_manager.get_all_nfts(
-            addresses=self.accounts.eth,
-            has_premium=self.premium is not None,
-        )
-        return result.serialize()
-
     @protect_with_lock(arguments_matter=True)
-    @cache_response_timewise()
+    @cache_response_timewise(forward_ignore_cache=True)
     def query_balances(
-            self,  # pylint: disable=unused-argument
+            self,
             blockchain: Optional[SupportedBlockchain] = None,
             force_token_detection: bool = False,
-            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
-            **kwargs: Any,
+            ignore_cache: bool = False,
     ) -> BlockchainBalancesUpdate:
         """Queries either all, or specific blockchain balances
 
@@ -539,21 +563,28 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         should_query_avax = not blockchain or blockchain == SupportedBlockchain.AVALANCHE
 
         if should_query_eth:
-            self.query_ethereum_balances(force_token_detection=force_token_detection)
+            self.query_ethereum_balances(
+                force_token_detection=force_token_detection,
+                ignore_cache=ignore_cache,
+            )
         if should_query_btc:
-            self.query_btc_balances()
+            self.query_btc_balances(ignore_cache=ignore_cache)
         if should_query_ksm:
-            self.query_kusama_balances()
+            self.query_kusama_balances(ignore_cache=ignore_cache)
         if should_query_dot:
-            self.query_polkadot_balances()
+            self.query_polkadot_balances(ignore_cache=ignore_cache)
         if should_query_avax:
-            self.query_avalanche_balances()
+            self.query_avalanche_balances(ignore_cache=ignore_cache)
 
         return self.get_balances_update()
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_btc_balances(self) -> None:
+    def query_btc_balances(
+            self,  # pylint: disable=unused-argument
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
         """Queries blockchain.info/blockstream for the balance of all BTC accounts
 
         May raise:
@@ -576,7 +607,12 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_kusama_balances(self, wait_available_node: bool = True) -> None:
+    def query_kusama_balances(
+            self,  # pylint: disable=unused-argument
+            wait_available_node: bool = True,
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
         """Queries the KSM balances of the accounts via Kusama endpoints.
 
         May raise:
@@ -607,7 +643,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_avalanche_balances(self) -> None:
+    def query_avalanche_balances(
+            self,  # pylint: disable=unused-argument
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
         """Queries the AVAX balances of the accounts via Avalanche/Covalent endpoints.
         May raise:
         - RemotError: if no nodes are available or the balances request fails.
@@ -633,7 +673,12 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_polkadot_balances(self, wait_available_node: bool = True) -> None:
+    def query_polkadot_balances(
+            self,  # pylint: disable=unused-argument
+            wait_available_node: bool = True,
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
         """Queries the DOT balances of the accounts via Polkadot endpoints.
 
         May raise:
@@ -964,7 +1009,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         # chain to populate the self.balances mapping.
         if not self.balances.is_queried(blockchain):
             self.query_balances(blockchain, ignore_cache=True)
-            self.flush_cache('query_balances', arguments_matter=True, blockchain=blockchain, ignore_cache=True)  # noqa: E501
+            self.flush_cache('query_balances', blockchain=blockchain, ignore_cache=True)  # noqa: E501
 
         result = self.modify_blockchain_accounts(
             blockchain=blockchain,
@@ -1051,9 +1096,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.check_accounts_exist(blockchain, accounts)
 
                 # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_btc_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.BITCOIN)  # noqa: E501
+                self.flush_cache('query_btc_balances')
+                self.flush_cache('query_balances')
+                self.flush_cache('query_balances', blockchain=SupportedBlockchain.BITCOIN)
                 for idx, account in enumerate(accounts):
                     a_balance = already_queried_balances[idx] if already_queried_balances else None
                     self.modify_btc_account(
@@ -1069,10 +1114,10 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.check_accounts_exist(blockchain, accounts)
 
                 # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=False)  # noqa: E501
-                self.flush_cache('query_ethereum_balances', arguments_matter=True, force_token_detection=True)  # noqa: E501
-                self.flush_cache('query_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
+                self.flush_cache('query_ethereum_balances', force_token_detection=False)
+                self.flush_cache('query_ethereum_balances', force_token_detection=True)
+                self.flush_cache('query_balances')
+                self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM)
                 for account in accounts:
                     # when the API adds or removes an address, the deserialize function at
                     # EthereumAddressField is called, so we expect from the addresses retrieved by
@@ -1122,9 +1167,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.check_accounts_exist(blockchain, accounts)
 
                 # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_kusama_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.KUSAMA)  # noqa: E501
+                self.flush_cache('query_kusama_balances')
+                self.flush_cache('query_balances')
+                self.flush_cache('query_balances', blockchain=SupportedBlockchain.KUSAMA)
                 for account in accounts:
                     self.modify_kusama_account(
                         account=KusamaAddress(account),
@@ -1137,9 +1182,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.check_accounts_exist(blockchain, accounts)
 
                 # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_polkadot_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.POLKADOT)  # noqa: 
+                self.flush_cache('query_polkadot_balances')
+                self.flush_cache('query_balances')
+                self.flush_cache('query_balances', blockchain=SupportedBlockchain.POLKADOT)
                 for account in accounts:
                     self.modify_polkadot_account(
                         account=PolkadotAddress(account),
@@ -1152,9 +1197,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     self.check_accounts_exist(blockchain, accounts)
 
                 # we are adding/removing accounts, make sure query cache is flushed
-                self.flush_cache('query_avalanche_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True)
-                self.flush_cache('query_balances', arguments_matter=True, blockchain=SupportedBlockchain.AVALANCHE)  # noqa: E501
+                self.flush_cache('query_avalanche_balances')
+                self.flush_cache('query_balances')
+                self.flush_cache('query_balances', blockchain=SupportedBlockchain.AVALANCHE)  # noqa: E501
                 for account in accounts:
                     address = string_to_ethereum_address(account)
                     self.modify_avalanche_account(
@@ -1285,7 +1330,12 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
-    def query_ethereum_balances(self, force_token_detection: bool) -> None:
+    def query_ethereum_balances(
+            self,  # pylint: disable=unused-argument
+            force_token_detection: bool,
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
         """Queries all the ethereum balances and populates the state
 
         May raise:
@@ -1347,7 +1397,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                     eth_balances[address] += entry
                     self.totals += entry
 
-            proxy_mappings = vaults_module._get_accounts_having_maker_proxy()
+            proxy_mappings = vaults_module._get_accounts_having_proxy()
             proxy_to_address = {}
             proxy_addresses = []
             for user_address, proxy_address in proxy_mappings.items():
@@ -1392,6 +1442,35 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 eth_balances[address].assets[A_ADX] += balance
                 self.totals.assets[A_ADX] += balance
 
+        pickle_module = self.get_module('pickle_finance')
+        if pickle_module is not None:
+            pickle_balances_per_address = pickle_module.balances_in_protocol(
+                addresses=self.queried_addresses_for_module('pickle_finance'),
+            )
+            for address, pickle_balances in pickle_balances_per_address.items():
+                for asset_balance in pickle_balances:
+                    eth_balances[address].assets[asset_balance.asset] += asset_balance.balance
+                    self.totals.assets[asset_balance.asset] += asset_balance.balance
+
+        liquity_module = self.get_module('liquity')
+        if liquity_module is not None:
+            # Get trove information
+            liquity_balances = liquity_module.get_positions(
+                addresses=self.queried_addresses_for_module('liquity'),
+            )
+            for address, deposits in liquity_balances.items():
+                collateral = deposits.collateral.balance
+                eth_balances[address].assets[A_ETH] += collateral
+                self.totals.assets[A_ETH] += collateral
+            # Get staked amounts
+            liquity_staked = liquity_module.liquity_staking_balances(
+                addresses=self.queried_addresses_for_module('liquity'),
+            )
+            for address, staked_info in liquity_staked.items():
+                deposited_lqty = staked_info.staked.balance
+                eth_balances[address].assets[A_LQTY] += deposited_lqty
+                self.totals.assets[A_LQTY] += deposited_lqty
+
         # Count ETH staked in Eth2 beacon chain
         self.account_for_staked_eth2_balances(addresses=self.queried_addresses_for_module('eth2'))
         # Finally count the balances detected in various protocols in defi balances
@@ -1404,16 +1483,23 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     ) -> None:
         """Add a single account's defi balances to per account and totals"""
         for entry in balances:
+            found_double_entry = False
+            # filter our specific protocols for double entries
+            for skip_mapping, balance_type in (
+                    (DEFI_PROTOCOLS_TO_SKIP_ASSETS, 'Asset'),
+                    (DEFI_PROTOCOLS_TO_SKIP_LIABILITIES, 'Debt'),
+            ):
+                skip_list = skip_mapping.get(entry.protocol.name, None)  # type: ignore
+                double_entry = (
+                    entry.balance_type == balance_type and
+                    skip_list and
+                    (skip_list is True or entry.base_balance.token_symbol in skip_list)
+                )
+                if double_entry:
+                    found_double_entry = True
+                    break
 
-            skip_list = DEFI_PROTOCOLS_TO_SKIP_ASSETS.get(entry.protocol.name, None)
-            double_entry = (
-                entry.balance_type == 'Asset' and
-                skip_list and
-                (skip_list is True or entry.base_balance.token_symbol in skip_list)  # type: ignore
-            )
-
-            # We have to filter out specific balances/protocols here to not get double entries
-            if double_entry:
+            if found_double_entry:
                 continue
 
             if entry.balance_type == 'Asset' and entry.base_balance.token_symbol == 'ETH':
@@ -1523,6 +1609,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     ) -> List[DefiEvent]:
         """May raise:
         - ModuleInactive if eth2 module is not activated
+        - RemoteError if a remote query to beacon chain fails and is not caught in the method
         """
         eth2 = self.get_module('eth2')
         if eth2 is None:
@@ -1537,12 +1624,20 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             if entry.validator_index is None:
                 continue  # don't query stats for validators without an index yet
 
-            stats = eth2.get_validator_daily_stats(
-                validator_index=entry.validator_index,
-                msg_aggregator=self.msg_aggregator,
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-            )
+            try:
+                stats = eth2.get_validator_daily_stats(
+                    validator_index=entry.validator_index,
+                    msg_aggregator=self.msg_aggregator,
+                    from_timestamp=from_timestamp,
+                    to_timestamp=to_timestamp,
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Will not include details for validator {entry.validator_index} '
+                    f'due to {str(e)}',
+                )
+                continue
+
             for stats_entry in stats:
                 got_asset = got_balance = spent_asset = spent_balance = None
                 if stats_entry.pnl_balance.amount == ZERO:
@@ -1571,7 +1666,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @cache_response_timewise()
     def get_loopring_balances(self) -> Dict[Asset, Balance]:
-        """Query loopring balances if the module is activated"""
+        """Query loopring balances if the module is activated
+
+        May raise:
+        - RemoteError if there is problems querying loopring api
+        """
         # Check if the loopring module is activated
         loopring_module = self.get_module('loopring')
         if loopring_module is None:

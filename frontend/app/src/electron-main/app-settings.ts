@@ -25,7 +25,7 @@ class AppSettingManager {
     const json = JSON.stringify(settings);
     try {
       fs.writeFileSync(appConfig, json, { encoding: 'utf8' });
-    } catch (e) {
+    } catch (e: any) {
       console.error(e, 'Could not write the app settings file');
     }
   }
@@ -39,14 +39,13 @@ class AppSettingManager {
       try {
         const file = fs.readFileSync(appConfig, { encoding: 'utf8' });
         const loadedSettings = JSON.parse(file) as Partial<AppSettings>;
-        console.log(loadedSettings);
         for (const [key, value] of Object.entries(loadedSettings)) {
           if (typeof settings[key as keyof AppSettings] === typeof value) {
             // @ts-ignore
             settings[key] = loadedSettings[key];
           }
         }
-      } catch (e) {
+      } catch (e: any) {
         console.log(e);
       }
     }

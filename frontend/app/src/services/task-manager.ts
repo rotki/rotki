@@ -7,6 +7,7 @@ import { TaskNotFoundError } from '@/services/types-api';
 import store from '@/store/store';
 import { TaskMap } from '@/store/tasks/state';
 import { assert } from '@/utils/assertions';
+import { logger } from '@/utils/logging';
 
 const error: (task: Task<TaskMeta>, message?: string) => ActionResult<{}> = (
   task,
@@ -86,7 +87,8 @@ class TaskManager {
       const result = await api.queryTaskResult(task.id, task.meta.numericKeys);
       assert(result !== null);
       this.handleResult(result, task);
-    } catch (e) {
+    } catch (e: any) {
+      logger.error('Task handling failed', e);
       if (e instanceof TaskNotFoundError) {
         this.remove(task.id);
         this.handleResult(error(task, e.message), task);
@@ -105,16 +107,21 @@ class TaskManager {
       this.handler[task.type] ?? this.handler[`${task.type}-${task.id}`];
 
     if (!handler) {
-      // eslint-disable-next-line no-console
-      console.warn(`missing handler for ${task.type} with ${task.id}`);
+      logger.warn(
+        `missing handler for ${TaskType[task.type]} with id ${task.id}`
+      );
       this.remove(task.id);
       return;
     }
 
     try {
       handler(result, task.meta);
-    } catch (e) {
+    } catch (e: any) {
       handler(error(task, e.message), task.meta);
+      logger.error(
+        `Error while running task ${TaskType[task.type]} with id ${task.id}`,
+        e
+      );
     }
     this.remove(task.id);
   }

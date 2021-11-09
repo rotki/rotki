@@ -295,7 +295,7 @@ class Premium():
         Raises RemoteError if there are problems reaching the server or if
         there is an error returned by the server
         """
-        signature, data = self.sign('statistics_rendererv2')
+        signature, data = self.sign('statistics_rendererv2', version=1)
         self.session.headers.update({
             'API-SIGN': base64.b64encode(signature.digest()),  # type: ignore
         })

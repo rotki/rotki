@@ -41,7 +41,8 @@
 </template>
 
 <script lang="ts">
-import { default as BigNumber } from 'bignumber.js';
+import { BigNumber } from '@rotki/common/';
+import { GeneralAccount } from '@rotki/common/lib/account';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
@@ -50,7 +51,6 @@ import DataTable from '@/components/helper/DataTable.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { AssetBreakdown, AssetPriceInfo } from '@/store/balances/types';
-import { GeneralAccount } from '@/typing/types';
 
 @Component({
   components: { DataTable, LabeledAddressDisplay, CardTitle },

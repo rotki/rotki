@@ -14,8 +14,8 @@ class LockableQueryMixIn():
     use the @protect_with_lock decorator
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)  # type: ignore  # https://github.com/python/mypy/issues/5887  # noqa: E501
         self.query_locks_map: Dict[int, Semaphore] = defaultdict(Semaphore)
         # Accessing and writing to the query_locks map also needs to be protected
         self.query_locks_map_lock = Semaphore()
@@ -33,7 +33,13 @@ def protect_with_lock(arguments_matter: bool = False) -> Callable:
     def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: LockableQueryMixIn, *args: Any, **kwargs: Any) -> Any:
-            lock_key = function_sig_key(f.__name__, arguments_matter, *args, **kwargs)
+            lock_key = function_sig_key(
+                f.__name__,        # name
+                arguments_matter,  # arguments_matter
+                False,             # skip_ignore_cache
+                *args,
+                **kwargs,
+            )
             with wrappingobj.query_locks_map_lock:
                 lock = wrappingobj.query_locks_map[lock_key]
             with lock:

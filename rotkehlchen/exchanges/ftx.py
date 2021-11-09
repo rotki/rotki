@@ -5,12 +5,13 @@ from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union, overload
-from urllib.parse import urlencode, quote
+from urllib.parse import quote, urlencode
 
 import gevent
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_ftx
@@ -425,7 +426,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
 
         raw_data = self._api_query('fills', start_time=start_ts, end_time=end_ts)
         log.debug('FTX trades history result', results_num=len(raw_data))
@@ -462,7 +463,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 continue
             if trade:
                 trades.append(trade)
-        return trades
+        return trades, (start_ts, end_ts)
 
     def _deserialize_asset_movement(
         self,
@@ -570,4 +571,11 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
+        return []  # noop for FTX
+
+    def query_online_income_loss_expense(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[LedgerAction]:
         return []  # noop for FTX

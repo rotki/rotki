@@ -1,25 +1,26 @@
 <template>
   <data-table
-    :headers="headers"
+    :headers="tableHeaders"
     :items="balances"
-    :loading="isLoading"
+    :loading="loading"
     :loading-text="$t('asset_balances.loading')"
+    :custom-sort="sortItems"
     sort-by="usdValue"
   >
     <template #header.usdValue>
       <div class="text-no-wrap">
         {{
           $t('asset_balances.headers.value', {
-            symbol
+            currency
           })
         }}
       </div>
     </template>
-    <template #header.price>
+    <template #header.usdPrice>
       <div class="text-no-wrap">
         {{
           $t('asset_balances.headers.price', {
-            symbol
+            currency
           })
         }}
       </div>
@@ -27,14 +28,16 @@
     <template #item.asset="{ item }">
       <asset-details opens-details :asset="item.asset" />
     </template>
-    <template #item.price="{ item }">
+    <template #item.usdPrice="{ item }">
       <amount-display
+        v-if="item.usdPrice && item.usdPrice.gte(0)"
         tooltip
         show-currency="symbol"
         fiat-currency="USD"
         :price-asset="item.asset"
-        :value="prices[item.asset] ? prices[item.asset] : '-'"
+        :value="item.usdPrice"
       />
+      <span v-else>-</span>
     </template>
     <template #item.amount="{ item }">
       <amount-display :value="item.amount" />
@@ -49,13 +52,13 @@
     </template>
     <template v-if="balances.length > 0" #body.append>
       <tr v-if="$vuetify.breakpoint.smAndUp" class="asset-balances__total">
-        <td v-text="$t('asset_balances.total')" />
-        <td />
+        <td colspan="3" v-text="$t('asset_balances.total')" />
+
         <td class="text-end">
           <amount-display
             fiat-currency="USD"
             show-currency="symbol"
-            :value="balanceSum(balances.map(val => val.usdValue))"
+            :value="total"
           />
         </td>
       </tr>
@@ -69,7 +72,7 @@
               <amount-display
                 fiat-currency="USD"
                 show-currency="symbol"
-                :value="balanceSum(balances.map(val => val.usdValue))"
+                :value="total"
               />
             </v-col>
           </v-row>
@@ -80,86 +83,83 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { DataTableHeader } from 'vuetify';
-import { mapGetters, mapState } from 'vuex';
+import { AssetBalanceWithPrice } from '@rotki/common';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import { IVueI18n } from 'vue-i18n';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import { CURRENCY_USD } from '@/data/currencies';
+import { setupAssetInfoRetrieval } from '@/composables/balances';
+import { currency } from '@/composables/session';
+import { setupTaskStatus } from '@/composables/tasks';
 import { balanceSum } from '@/filters';
-import { Currency } from '@/model/currency';
+import i18n from '@/i18n';
 import { TaskType } from '@/model/task-type';
-import {
-  AssetBalance,
-  AssetPrices,
-  ExchangeRateGetter
-} from '@/store/balances/types';
+import { getSortItems } from '@/utils/assets';
 
-@Component({
+const tableHeaders = (i18n: IVueI18n) => {
+  return [
+    {
+      text: i18n.t('asset_balances.headers.asset').toString(),
+      value: 'asset',
+      class: 'text-no-wrap',
+      cellClass: 'asset-info'
+    },
+    {
+      text: i18n.t('asset_balances.headers.price').toString(),
+      value: 'usdPrice',
+      align: 'end',
+      class: 'text-no-wrap'
+    },
+    {
+      text: i18n.t('asset_balances.headers.amount').toString(),
+      value: 'amount',
+      align: 'end',
+      class: 'text-no-wrap',
+      cellClass: 'asset-divider'
+    },
+    {
+      text: i18n.t('asset_balances.headers.value').toString(),
+      value: 'usdValue',
+      align: 'end',
+      cellClass: 'user-asset-value',
+      class: 'text-no-wrap'
+    }
+  ];
+};
+
+const AssetBalancesTable = defineComponent({
+  name: 'AssetBalancesTable',
   components: { DataTable, AmountDisplay },
-  computed: {
-    ...mapGetters('tasks', ['isTaskRunning']),
-    ...mapGetters('session', ['floatingPrecision', 'currency']),
-    ...mapGetters('balances', ['exchangeRate']),
-    ...mapState('balances', ['prices'])
-  }
-})
-export default class AssetBalances extends Vue {
-  @Prop({ required: true })
-  balances!: AssetBalance[];
-  @Prop({})
-  title!: string;
+  props: {
+    balances: {
+      required: true,
+      type: Array as PropType<AssetBalanceWithPrice[]>
+    }
+  },
+  setup(props) {
+    const { balances } = toRefs(props);
+    const total = computed(() => {
+      return balanceSum(balances.value.map(({ usdValue }) => usdValue));
+    });
 
-  currency!: Currency;
-  floatingPrecision!: number;
-  prices!: AssetPrices;
-  exchangeRate!: ExchangeRateGetter;
-  isTaskRunning!: (type: TaskType) => boolean;
-  readonly balanceSum = balanceSum;
-
-  get symbol(): string {
-    return this.currency.ticker_symbol;
+    const { isTaskRunning } = setupTaskStatus();
+    const { getAssetInfo } = setupAssetInfoRetrieval();
+    return {
+      total,
+      tableHeaders: tableHeaders(i18n),
+      loading: isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
+      sortItems: getSortItems(getAssetInfo),
+      currency
+    };
   }
+});
 
-  get isLoading(): boolean {
-    return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
-  }
-
-  get headers(): DataTableHeader[] {
-    return [
-      {
-        text: this.$t('asset_balances.headers.asset').toString(),
-        value: 'asset',
-        class: 'text-no-wrap',
-        cellClass: 'asset-info'
-      },
-      {
-        text: this.$t('asset_balances.headers.price', {
-          symbol: this.symbol ?? CURRENCY_USD
-        }).toString(),
-        value: 'price',
-        align: 'end',
-        class: 'text-no-wrap'
-      },
-      {
-        text: this.$t('asset_balances.headers.amount').toString(),
-        value: 'amount',
-        align: 'end',
-        class: 'text-no-wrap',
-        cellClass: 'asset-divider'
-      },
-      {
-        text: this.$t('asset_balances.headers.value', {
-          symbol: this.symbol ?? CURRENCY_USD
-        }).toString(),
-        value: 'usdValue',
-        align: 'end',
-        cellClass: 'user-asset-value',
-        class: 'text-no-wrap'
-      }
-    ];
-  }
-}
+export default AssetBalancesTable;
 </script>
 
 <style scoped lang="scss">
@@ -197,6 +197,10 @@ export default class AssetBalances extends Vue {
 
   &__total {
     font-weight: 500;
+
+    &:hover {
+      background-color: transparent !important;
+    }
   }
 }
 </style>

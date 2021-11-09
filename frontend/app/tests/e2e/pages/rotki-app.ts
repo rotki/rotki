@@ -13,6 +13,7 @@ export class RotkiApp {
     cy.get('.create-account__boxes__user-prompted').click();
     cy.get('.create-account__buttons__continue').click();
     cy.get('.create-account__analytics__buttons__confirm').click();
+    cy.get('.account-management__loading').should('not.exist');
     cy.updateAssets();
   }
 
@@ -21,7 +22,7 @@ export class RotkiApp {
       timeout: 10000
     }).should('include.text', 'Upgrade to Premium');
     cy.get('.premium-reminder__buttons__cancel').click();
-    cy.get('.premium-reminder').should('not.be.visible');
+    cy.get('.premium-reminder').should('not.exist');
   }
 
   login(username: string, password: string = '1234') {
@@ -49,7 +50,6 @@ export class RotkiApp {
   }
 
   drawerIsVisible(isVisible: boolean) {
-    cy.get('.account-management__loading').should('not.be.visible');
     cy.get('.app__navigation-drawer').should(
       isVisible ? 'be.visible' : 'not.be.visible'
     );

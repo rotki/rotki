@@ -1,7 +1,7 @@
 """Ethereum/defi protocol structures that need to be accessed from multiple places"""
 
 import dataclasses
-from typing import Any, Dict, NamedTuple, Optional, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from typing_extensions import Literal
 
@@ -10,10 +10,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.ethereum import EthereumContract
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import (
-    deserialize_optional_fval,
-    deserialize_timestamp,
-)
+from rotkehlchen.serialization.deserialize import deserialize_optional_fval, deserialize_timestamp
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
 AAVE_EVENT_TYPE = Literal['deposit', 'withdrawal', 'interest', 'borrow', 'repay', 'liquidation']
@@ -478,3 +475,21 @@ class YearnVault(NamedTuple):
     contract: EthereumContract
     underlying_token: EthereumToken
     token: EthereumToken
+
+
+@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class EthereumTxReceiptLog:
+    log_index: int
+    data: bytes
+    address: ChecksumEthAddress
+    removed: bool
+    topics: List[bytes] = dataclasses.field(default_factory=list)
+
+
+@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class EthereumTxReceipt:
+    tx_hash: bytes
+    contract_address: Optional[ChecksumEthAddress]
+    status: bool
+    type: int
+    logs: List[EthereumTxReceiptLog] = dataclasses.field(default_factory=list)

@@ -1,4 +1,5 @@
-import { Eth2Deposit, Eth2Detail, StakingState } from '@/store/staking/types';
+import { Eth2Deposit, Eth2Detail } from '@rotki/common/lib/staking/eth2';
+import { StakingState } from '@/store/staking/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 

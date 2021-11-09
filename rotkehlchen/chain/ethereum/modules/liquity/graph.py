@@ -29,6 +29,7 @@ QUERY_TROVE = (
             transaction{
                 id
                 blockNumber
+                sequenceNumber
                 timestamp
             }
         }
@@ -49,6 +50,7 @@ QUERY_STAKE = (
             changes{
                 transaction {
                     id
+                    sequenceNumber
                     timestamp
                 }
                 stakeOperation

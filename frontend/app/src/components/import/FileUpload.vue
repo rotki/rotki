@@ -33,7 +33,13 @@
           />
           <i18n
             path="file_upload.drop_area"
-            class="mt-2 text-caption text--secondary d-flex flex-column text-center"
+            class="
+              mt-2
+              text-caption text--secondary
+              d-flex
+              flex-column
+              text-center
+            "
             tag="div"
           >
             <v-btn
@@ -66,7 +72,9 @@ const SOURCES = [
   'nexo',
   'blockfi-transactions',
   'blockfi-trades',
-  'gitcoin'
+  'gitcoin',
+  'shapeshift-trades',
+  'uphold'
 ];
 
 @Component({})
@@ -146,7 +154,7 @@ export default class FileUpload extends Vue {
     try {
       await this.$api.importDataFrom(this.source, file);
       this.done();
-    } catch (e) {
+    } catch (e: any) {
       this.onError(e.message);
     }
   }

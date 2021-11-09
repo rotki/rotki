@@ -61,6 +61,21 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     identifier: Module.SUSHISWAP,
     name: 'SushiSwap',
     icon: require('@/assets/images/modules/sushiswap.svg')
+  },
+  {
+    identifier: Module.NFTS,
+    name: 'NFTs',
+    icon: require('@/assets/images/nfts.png')
+  },
+  {
+    identifier: Module.PICKLE,
+    name: 'Pickle Finance',
+    icon: require('@/assets/images/modules/pickle.svg')
+  },
+  {
+    identifier: Module.LIQUITY,
+    name: 'Liquity',
+    icon: require('@/assets/images/defi/liquity.svg')
   }
 ];
 

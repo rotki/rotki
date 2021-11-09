@@ -20,6 +20,18 @@ def test_unknown_asset():
         Asset('jsakdjsladjsakdj')
 
 
+def test_asset_nft():
+    a = Asset('_nft_foo')
+    assert a.identifier == '_nft_foo'
+    assert a.symbol is not None
+    assert a.name == 'nft with id _nft_foo'
+    assert a.started is not None
+    assert a.forked is None
+    assert a.swapped_for is None
+    assert a.cryptocompare is not None
+    assert a.coingecko is None
+
+
 def test_repr():
     btc_repr = repr(Asset('BTC'))
     assert btc_repr == '<Asset identifier:BTC name:Bitcoin symbol:BTC>'
@@ -128,6 +140,18 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0xDa007777D86AC6d989cC9f79A73261b3fC5e0DA0'),  # noqa: E501 # Dappnode (NODE) but another NODE in CC
         'QI',  # noqa: E501 # BENQI (QI) but another QI in CC
         ethaddress_to_identifier('0x1A4b46696b2bB4794Eb3D4c26f1c55F9170fa4C5'),  # noqa: E501 # BitDao (BIT) but another BIT in CC
+        ethaddress_to_identifier('0x993864E43Caa7F7F12953AD6fEb1d1Ca635B875F'),  # noqa: E501 # Singularity DAO (SDAO) but another SDAO in CC
+        ethaddress_to_identifier('0x114f1388fAB456c4bA31B1850b244Eedcd024136'),  # noqa: E501 # Cool Vauld (COOL) but another COOL in CC
+        ethaddress_to_identifier('0xD70240Dd62F4ea9a6A2416e0073D72139489d2AA'),  # noqa: E501 # Glyph vault (GLYPH) but another GLYPH in CC
+        ethaddress_to_identifier('0x269616D549D7e8Eaa82DFb17028d0B212D11232A'),  # noqa: E501 # PUNK vault (PUNK) but another PUNK in CC
+        ethaddress_to_identifier('0x2d94AA3e47d9D5024503Ca8491fcE9A2fB4DA198'),  # noqa: E501 # Bankless token (BANK) but another BANK in CC
+        ethaddress_to_identifier('0x1456688345527bE1f37E9e627DA0837D6f08C925'),  # noqa: E501 # USDP stablecoin (USDP) but another USDP in CC
+        'POLIS',  # noqa: E501 # Star Atlas DAO (POLIS) but another POLIS in CC
+        ethaddress_to_identifier('0x670f9D9a26D3D42030794ff035d35a67AA092ead'),  # noqa: E501 # XBullion Token (GOLD) but another GOLD in CC
+        ethaddress_to_identifier('0x3b58c52C03ca5Eb619EBa171091c86C34d603e5f'),  # noqa: E501 # MCI Coin (MCI) but another MCI in CC
+        ethaddress_to_identifier('0x5dD57Da40e6866C9FcC34F4b6DDC89F1BA740DfE'),  # noqa: E501 # Bright(BRIGHT) but another BRIGHT in CC
+        ethaddress_to_identifier('0x40284109c3309A7C3439111bFD93BF5E0fBB706c'),  # noqa: E501 # Motiv protocol but another MOV in CC
+        ethaddress_to_identifier('0xba5BDe662c17e2aDFF1075610382B9B691296350'),  # noqa: E501 # Super Rare but another RARE in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -314,6 +338,14 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x9d9223436dDD466FC247e9dbbD20207e640fEf58'),
         # Coingecko has orica and we have origami
         ethaddress_to_identifier('0xd2Fa8f92Ea72AbB35dBD6DECa57173d22db2BA49'),
+        # Coingeckop has a different storm token
+        ethaddress_to_identifier('0xD0a4b8946Cb52f0661273bfbC6fD0E0C75Fc6433'),
+        # We have Centra (CTR) but coingecko has creator platform
+        ethaddress_to_identifier('0x96A65609a7B84E8842732DEB08f56C3E21aC6f8a'),
+        # We have Gladius Token (GLA) but coingecko has Galaxy adventure
+        ethaddress_to_identifier('0x71D01dB8d6a2fBEa7f8d434599C237980C234e4C'),
+        # We have reftoken (REF) and coingecko has Ref Finance
+        ethaddress_to_identifier('0x89303500a7Abfb178B274FD89F2469C264951e1f'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

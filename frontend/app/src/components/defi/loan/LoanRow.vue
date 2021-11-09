@@ -1,7 +1,9 @@
 <template>
   <div
     class="d-flex justify-space-between py-1"
-    :class="medium ? 'font-weight-medium' : ''"
+    :class="{
+      'font-weight-medium': medium
+    }"
   >
     <div>
       {{ title }}
@@ -13,15 +15,13 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class LoanRow extends Vue {
-  @Prop({ required: false, type: String, default: '' })
-  title!: string;
-  @Prop({ required: false, type: Boolean, default: true })
-  medium!: boolean;
-}
+export default defineComponent({
+  name: 'LoanRow',
+  props: {
+    title: { required: false, type: String, default: '' },
+    medium: { required: false, type: Boolean, default: true }
+  }
+});
 </script>
-
-<style scoped></style>

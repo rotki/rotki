@@ -57,7 +57,11 @@ async function run(): Promise<void> {
       core.setOutput(DOCUMENTATION_TASKS, true)
     }
   } catch (error) {
-    core.setFailed(error.message)
+    if (error instanceof Error) {
+      core.setFailed(error.message)
+    } else {
+      core.setFailed('unknown error')
+    }
   }
 }
 

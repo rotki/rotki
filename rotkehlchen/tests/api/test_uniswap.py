@@ -7,20 +7,19 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType
 from rotkehlchen.chain.ethereum.manager import NodeName
-from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import (
+    UNISWAP_EVENTS_PREFIX,
     UniswapPoolEvent,
     UniswapPoolEventsBalance,
 )
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
-from rotkehlchen.constants.assets import A_ADAI_V1, A_DAI, A_LEND, A_USDC, A_WETH
+from rotkehlchen.constants.assets import A_DAI, A_LEND, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.premium.premium import Premium
-from rotkehlchen.tests.utils.aave import AAVE_TEST_ACC_1
+from rotkehlchen.tests.utils.aave import A_ADAI_V1, AAVE_TEST_ACC_1
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -81,7 +80,6 @@ SKIPPED_UNISWAP_TEST_OPTIONS = [UNISWAP_TEST_OPTIONS[-1]]
 def test_get_balances(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,
         start_with_valid_premium,
 ):
     """Check querying the uniswap balances endpoint works. Uses real data
@@ -92,16 +90,6 @@ def test_get_balances(
     THIS IS SUPER FREAKING SLOW. BE WARNED.
     """
     async_query = random.choice([False, True])
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
-    premium = None
-    if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials)
-
-    # Set module premium attribute
-    uniswap = rotki.chain_manager.get_module('uniswap')
-    uniswap.premium = premium
-
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'uniswapbalancesresource'),
         json={'async_query': async_query},
@@ -461,8 +449,6 @@ def _query_and_assert_simple_uniswap_trades(setup, api_server, async_query):
 def test_get_uniswap_trades_history(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
 ):
     """Test that the last 11/23 uniswap trades of the account since 1605437542
     are parsed and returned correctly
@@ -673,8 +659,6 @@ def get_bothin_trades():
 def test_get_uniswap_exotic_history(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
 ):
     """Test a uniswap trading address with exotic token swaps (unicode symbol names)"""
     async_query = random.choice([False, True])
@@ -871,8 +855,6 @@ def get_expected_events_balances_2():
 def test_get_events_history_filtering_by_timestamp_case1(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
 ):
     """Test the events balances from 1604273256 to 1604283808 (both included).
 
@@ -950,8 +932,6 @@ def test_get_events_history_filtering_by_timestamp_case1(
 def test_get_events_history_filtering_by_timestamp_case2(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
 ):
     """Test the events balances from 1598270334 to 1599000975 (both included).
 
@@ -1037,21 +1017,11 @@ PNL_TEST_ACC = '0x1F9fbD2F6a8754Cd56D4F56ED35338A63C5Bfd1f'
 def test_events_pnl(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
 ):
     """Test the uniswap events history profit and loss calculation"""
     async_query = random.choice([False, True])
+
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
-    # Set module premium is required for calling `get_balances()`
-    premium = None
-    if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials)
-
-    uniswap = rotki.chain_manager.get_module('uniswap')
-    uniswap.premium = premium
-
     setup = setup_balances(
         rotki,
         ethereum_accounts=ethereum_accounts,
@@ -1104,21 +1074,11 @@ def test_events_pnl(
 def test_get_events_history_get_all_events_empty(
         rotkehlchen_api_server,
         ethereum_accounts,  # pylint: disable=unused-argument
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
 ):
     """Test get all the events balances for an address without events.
     """
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
-    # Set module premium is required for calling `get_balances()`
-    premium = None
-    if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials)
-
-    uniswap = rotki.chain_manager.get_module('uniswap')
-    uniswap.premium = premium
 
     setup = setup_balances(
         rotki,

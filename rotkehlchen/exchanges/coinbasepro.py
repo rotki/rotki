@@ -15,6 +15,7 @@ import gevent
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbasepro
@@ -113,6 +114,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.base_uri = 'https://api.pro.coinbase.com'
         self.msg_aggregator = msg_aggregator
         self.account_to_currency: Optional[Dict[str, Asset]] = None
+        self.available_products = {0}
 
         self.session.headers.update({
             'Content-Type': 'Application/JSON',
@@ -165,6 +167,14 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return True, ''
 
+    def first_connection(self) -> None:
+        if self.first_connection_made:
+            return
+
+        products_response, _ = self._api_query('products')
+        self.available_products = {x['id'] for x in products_response}
+        self.first_connection_made = True
+
     def _api_query(
             self,
             endpoint: str,
@@ -195,12 +205,6 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             request_url += '?' + urlencode(query_options)
 
         message = timestamp + request_method + request_url + stringified_options
-        log.debug(
-            'Coinbase Pro API query',
-            request_method=request_method,
-            request_url=request_url,
-            options=options,
-        )
 
         if 'products' not in endpoint:
             try:
@@ -219,6 +223,12 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         retries_left = QUERY_RETRY_TIMES
         while retries_left > 0:
+            log.debug(
+                'Coinbase Pro API query',
+                request_method=request_method,
+                request_url=request_url,
+                options=options,
+            )
             full_url = self.base_uri + request_url
             try:
                 response = self.session.request(
@@ -234,7 +244,9 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 # Backoff a bit by sleeping. Sleep more, the more retries have been made
-                gevent.sleep(QUERY_RETRY_TIMES / retries_left)
+                backoff_secs = QUERY_RETRY_TIMES / retries_left
+                log.debug(f'Backing off coinbase pro api query for {backoff_secs} secs')
+                gevent.sleep(backoff_secs)
                 retries_left -= 1
             else:
                 # get out of the retry loop, we did not get 429 complaint
@@ -408,7 +420,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if entry.get('completed_at', None) is None:
                     log.warning(
                         f'Skipping coinbase pro deposit/withdrawal '
-                        f'due not having been completed: {entry}',
+                        f'due to not having been completed: {entry}',
                     )
                     continue
 
@@ -420,8 +432,8 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 asset = account_to_currency.get(entry['account_id'], None)
                 if asset is None:
                     log.warning(
-                        f'Skipping coinbase pro asset_movement {entry} due to inability to '
-                        f'match account id to an asset',
+                        f'Skipping coinbase pro asset_movement {entry} due to '
+                        f'inability to match account id to an asset',
                     )
                     continue
 
@@ -484,9 +496,10 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """Queries coinbase pro for trades"""
         log.debug('Query coinbasepro trade history', start_ts=start_ts, end_ts=end_ts)
+        self.first_connection()
 
         trades = []
         # first get all orders, to see which product ids we need to query fills for
@@ -514,8 +527,8 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 continue
 
-            if product_id in queried_product_ids:
-                continue  # already queried this product id
+            if product_id in queried_product_ids or product_id not in self.available_products:
+                continue  # already queried this product id or delisted product id
 
             # Now let's get all fills for this product id
             queried_product_ids.add(product_id)
@@ -587,11 +600,18 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-        return trades
+        return trades, (start_ts, end_ts)
 
     def query_online_margin_history(
             self,  # pylint: disable=no-self-use
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
+        return []  # noop for coinbasepro
+
+    def query_online_income_loss_expense(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[LedgerAction]:
         return []  # noop for coinbasepro

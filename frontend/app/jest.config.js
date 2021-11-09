@@ -12,6 +12,9 @@ module.exports = {
   globals: {
     'vue-jest': {
       experimentalCSSCompile: false
+    },
+    'ts-jest': {
+      tsConfig: 'tsconfig.jest.json'
     }
   }
 };

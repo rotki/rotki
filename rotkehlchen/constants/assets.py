@@ -1,13 +1,13 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 12/08/2021 19:54:12.
+# tools/scripts/generate_constant_assets.py at 10/09/2021 22:20:13.
 # Do not edit manually!
 
 from typing import List
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.typing import Timestamp
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.typing import Timestamp
 
 CONSTANT_ASSETS: List[Asset] = []
 
@@ -289,6 +289,18 @@ A_LQTY = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_LQTY)
+A_PICKLE = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5'),
+    decimals=18,
+    name="PickleToken",
+    symbol='PICKLE',
+    started=Timestamp(1599694316),
+    swapped_for=None,
+    coingecko='pickle-finance',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_PICKLE)
 
 A_AAVE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'),
@@ -728,30 +740,6 @@ A_AETH_V1 = EthereumToken.initialize(
     protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AETH_V1)
-A_AENJ_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x712DB54daA836B53Ef1EcBb9c6ba3b9Efb073F40'),
-    decimals=18,
-    name="Aave Interest bearing ENJ",
-    symbol='aENJ',
-    started=Timestamp(1594921488),
-    swapped_for=None,
-    coingecko='aave-enj',
-    cryptocompare='ENJ',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_AENJ_V1)
-A_ADAI_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d'),
-    decimals=18,
-    name="Aave Interest bearing DAI",
-    symbol='aDAI',
-    started=Timestamp(1578501167),
-    swapped_for=None,
-    coingecko='aave-dai',
-    cryptocompare='DAI',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_ADAI_V1)
 A_AUSDC_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x9bA00D6856a4eDF4665BcA2C2309936572473B7E'),
     decimals=6,
@@ -764,114 +752,6 @@ A_AUSDC_V1 = EthereumToken.initialize(
     protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AUSDC_V1)
-A_ASUSD_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x625aE63000f46200499120B906716420bd059240'),
-    decimals=18,
-    name="Aave Interest bearing SUSD",
-    symbol='aSUSD',
-    started=Timestamp(1578501472),
-    swapped_for=None,
-    coingecko='aave-susd',
-    cryptocompare='sUSD',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_ASUSD_V1)
-A_ATUSD_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x4DA9b813057D04BAef4e5800E36083717b4a0341'),
-    decimals=18,
-    name="Aave Interest bearing TUSD",
-    symbol='aTUSD',
-    started=Timestamp(1578501282),
-    swapped_for=None,
-    coingecko='aave-tusd',
-    cryptocompare='TUSD',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_ATUSD_V1)
-A_AUSDT_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x71fc860F7D3A592A4a98740e39dB31d25db65ae8'),
-    decimals=6,
-    name="Aave Interest bearing USDT",
-    symbol='aUSDT',
-    started=Timestamp(1578501450),
-    swapped_for=None,
-    coingecko='aave-usdt',
-    cryptocompare='USDT',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_AUSDT_V1)
-A_ABUSD_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x6Ee0f7BB50a54AB5253dA0667B0Dc2ee526C30a8'),
-    decimals=18,
-    name="Aave Interest bearing Binance USD",
-    symbol='aBUSD',
-    started=Timestamp(1585230197),
-    swapped_for=None,
-    coingecko='aave-busd',
-    cryptocompare='BUSD',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_ABUSD_V1)
-A_ABAT_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0xE1BA0FB44CCb0D11b80F92f4f8Ed94CA3fF51D00'),
-    decimals=18,
-    name="Aave Interest bearing BAT",
-    symbol='aBAT',
-    started=Timestamp(1578501629),
-    swapped_for=None,
-    coingecko='aave-bat',
-    cryptocompare='BAT',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_ABAT_V1)
-A_AKNC_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x9D91BE44C06d373a8a226E1f3b146956083803eB'),
-    decimals=18,
-    name="Aave Interest bearing KNC",
-    symbol='aKNC',
-    started=Timestamp(1578501790),
-    swapped_for=None,
-    coingecko='aave-knc',
-    cryptocompare='KNC',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_AKNC_V1)
-A_ALEND_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x7D2D3688Df45Ce7C552E19c27e007673da9204B8'),
-    decimals=18,
-    name="Aave Interest bearing LEND",
-    symbol='aLEND',
-    started=Timestamp(1578501530),
-    swapped_for=None,
-    coingecko='aave-lend',
-    cryptocompare='LEND',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_ALEND_V1)
-A_AMANA_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x6FCE4A401B6B80ACe52baAefE4421Bd188e76F6f'),
-    decimals=18,
-    name="Aave Interest bearing MANA",
-    symbol='aMANA',
-    started=Timestamp(1578502029),
-    swapped_for=None,
-    coingecko='aave-mana',
-    cryptocompare='MANA',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_AMANA_V1)
-A_AMKR_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x7deB5e830be29F91E298ba5FF1356BB7f8146998'),
-    decimals=18,
-    name="Aave Interest bearing MKR",
-    symbol='aMKR',
-    started=Timestamp(1578502011),
-    swapped_for=None,
-    coingecko='aave-mkr',
-    cryptocompare='MKR',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_AMKR_V1)
 A_AREP_V1 = EthereumToken.initialize(
     address=string_to_ethereum_address('0x71010A9D003445aC60C4e6A7017c1E89A477B438'),
     decimals=18,
@@ -884,90 +764,6 @@ A_AREP_V1 = EthereumToken.initialize(
     protocol='aave',
 )
 CONSTANT_ASSETS.append(A_AREP_V1)
-A_AREN_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x69948cC03f478B95283F7dbf1CE764d0fc7EC54C'),
-    decimals=18,
-    name="Aave Interest bearing REN",
-    symbol='aREN',
-    started=Timestamp(1594923128),
-    swapped_for=None,
-    coingecko='aave-ren',
-    cryptocompare='REN',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_AREN_V1)
-A_ASNX_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x328C4c80BC7aCa0834Db37e6600A6c49E12Da4DE'),
-    decimals=18,
-    name="Aave Interest bearing SNX",
-    symbol='aSNX',
-    started=Timestamp(1578502126),
-    swapped_for=None,
-    coingecko='aave-snx',
-    cryptocompare='SNX',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_ASNX_V1)
-A_AWBTC_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0xFC4B8ED459e00e5400be803A9BB3954234FD50e3'),
-    decimals=8,
-    name="Aave Interest bearing WBTC",
-    symbol='aWBTC',
-    started=Timestamp(1578503540),
-    swapped_for=None,
-    coingecko='aave-wbtc',
-    cryptocompare='WBTC',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_AWBTC_V1)
-A_AYFI_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x12e51E77DAAA58aA0E9247db7510Ea4B46F9bEAd'),
-    decimals=18,
-    name="Aave Interest bearing YFI",
-    symbol='aYFI',
-    started=Timestamp(1598605878),
-    swapped_for=None,
-    coingecko='ayfi',
-    cryptocompare='YFI',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_AYFI_V1)
-A_AZRX_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0x6Fb0855c404E09c47C3fBCA25f08d4E41f9F062f'),
-    decimals=18,
-    name="Aave Interest bearing ZRX",
-    symbol='aZRX',
-    started=Timestamp(1578502051),
-    swapped_for=None,
-    coingecko='aave-zrx',
-    cryptocompare='ZRX',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_AZRX_V1)
-A_AAAVE_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0xba3D9687Cf50fE253cd2e1cFeEdE1d6787344Ed5'),
-    decimals=18,
-    name="Aave Interest bearing Aave Token",
-    symbol='aAAVE',
-    started=Timestamp(1603204313),
-    swapped_for=None,
-    coingecko='aave',
-    cryptocompare='AAVE',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_AAAVE_V1)
-A_AUNI_V1 = EthereumToken.initialize(
-    address=string_to_ethereum_address('0xB124541127A0A657f056D9Dd06188c4F1b0e5aab'),
-    decimals=18,
-    name="Aave Interest bearing Uniswap",
-    symbol='aUNI',
-    started=Timestamp(1603718736),
-    swapped_for=None,
-    coingecko='uniswap',
-    cryptocompare='UNI',
-    protocol='aave',
-)
-CONSTANT_ASSETS.append(A_AUNI_V1)
 
 # compound tokens -- TODO: Can also be handled programmatically
 A_CDAI = EthereumToken.initialize(
@@ -2120,7 +1916,7 @@ A_WOO = EthereumToken.initialize(
     symbol='WOO',
     started=Timestamp(1602855151),
     swapped_for=None,
-    coingecko='wootrade-network',
+    coingecko='woo-network',
     cryptocompare=None,
     protocol=None,
 )
@@ -2360,7 +2156,7 @@ A_SX = EthereumToken.initialize(
     symbol='SX',
     started=Timestamp(1610747210),
     swapped_for=None,
-    coingecko='sportx',
+    coingecko='sx-network',
     cryptocompare=None,
     protocol=None,
 )
@@ -2384,7 +2180,7 @@ A_FOX = EthereumToken.initialize(
     symbol='FOX',
     started=Timestamp(1553639047),
     swapped_for=None,
-    coingecko='fox-token',
+    coingecko='shapeshift-fox-token',
     cryptocompare=None,
     protocol=None,
 )

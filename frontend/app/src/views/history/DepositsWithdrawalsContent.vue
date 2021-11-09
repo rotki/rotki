@@ -25,7 +25,7 @@
       </v-row>
     </template>
     <data-table
-      :headers="headers"
+      :headers="tableHeaders"
       :items="visibleItems"
       show-expand
       single-expand
@@ -76,7 +76,7 @@
       <template #item.timestamp="{ item }">
         <date-display :timestamp="item.timestamp" />
       </template>
-      <template v-if="showUpgradeRow" #body.append="{ headers }">
+      <template v-if="showUpgradeRow" #body.prepend="{ headers }">
         <upgrade-row
           :total="total"
           :limit="limit"
@@ -95,17 +95,14 @@
 import {
   computed,
   defineComponent,
-  inject,
   onMounted,
   PropType,
   Ref,
   ref,
   toRefs,
-  UnwrapRef,
   watch
 } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
-import { Store } from 'vuex';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -125,13 +122,11 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import i18n from '@/i18n';
 import { AssetSymbolGetter } from '@/store/balances/types';
-import { HistoryActions, IGNORE_MOVEMENTS } from '@/store/history/consts';
-import { AssetMovementEntry, IgnoreActionPayload } from '@/store/history/types';
-import store from '@/store/store';
-import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
-import { assert } from '@/utils/assertions';
+import { AssetMovementEntry, IgnoreActionType } from '@/store/history/types';
+import { useStore } from '@/store/utils';
 import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp } from '@/utils/date';
+import { setupIgnore } from '@/views/history/composables/ignore';
 import { setupSelectionMode } from '@/views/history/composables/selection';
 import DepositWithdrawalDetails from '@/views/history/DepositWithdrawalDetails.vue';
 
@@ -143,7 +138,7 @@ enum DepositWithdrawalFilters {
   END = 'end'
 }
 
-const headers: DataTableHeader[] = [
+const tableHeaders: DataTableHeader[] = [
   { text: '', value: 'selection', width: '34px', sortable: false },
   {
     text: i18n.t('deposits_withdrawals.headers.location').toString(),
@@ -184,7 +179,8 @@ const setupFilter = (
   assets: Ref<string[]>,
   locations: Ref<string[]>,
   items: Ref<AssetMovementEntry[]>,
-  visibleItems: Ref<AssetMovementEntry[]>
+  visibleItems: Ref<AssetMovementEntry[]>,
+  getSymbol: AssetSymbolGetter
 ) => {
   const filter = ref<MatchedKeyword<DepositWithdrawalFilters>>({});
   const matchers: SearchMatcher<DepositWithdrawalFilters>[] = [
@@ -234,7 +230,8 @@ const setupFilter = (
     const endFilter = filter.value[DepositWithdrawalFilters.END];
 
     visibleItems.value = items.value.filter(value => {
-      const assetMatch = checkIfMatch(value.asset, assetFilter);
+      const asset = getSymbol(value.asset);
+      const assetMatch = checkIfMatch(asset, assetFilter);
       const locationMatch = checkIfMatch(value.location, locationFilter);
       const actionMatch = checkIfMatch(value.category, actionFilter);
       const isStartMatch = startMatch(value.timestamp, startFilter);
@@ -260,72 +257,6 @@ const setupFilter = (
     filter,
     applyFilter,
     updateFilter
-  };
-};
-
-const setupIgnore = (
-  selected: Ref<UnwrapRef<string[]>>,
-  items: Ref<AssetMovementEntry[]>
-) => {
-  const setMessage = (message: Message) => {
-    store.commit('setMessage', message);
-  };
-  const ignoreActions = async (payload: IgnoreActionPayload) => {
-    return (await store.dispatch(
-      `history/${HistoryActions.IGNORE_ACTIONS}`,
-      payload
-    )) as ActionStatus;
-  };
-
-  const unignoreActions = async (payload: IgnoreActionPayload) => {
-    return (await store.dispatch(
-      `history/${HistoryActions.UNIGNORE_ACTION}`,
-      payload
-    )) as ActionStatus;
-  };
-  const ignore = async (ignored: boolean) => {
-    const ids = items.value
-      .filter(({ identifier, ignoredInAccounting }) => {
-        return (
-          (ignored ? !ignoredInAccounting : ignoredInAccounting) &&
-          selected.value.includes(identifier)
-        );
-      })
-      .map(({ identifier }) => identifier)
-      .filter(uniqueStrings);
-
-    let status: ActionStatus;
-
-    if (ids.length === 0) {
-      const choice = ignored ? 1 : 2;
-      setMessage({
-        success: false,
-        title: i18n
-          .tc('deposits_withdrawals.ignore.no_actions.title', choice)
-          .toString(),
-        description: i18n
-          .tc('deposits_withdrawals.ignore.no_actions.description', choice)
-          .toString()
-      });
-      return;
-    }
-    const payload: IgnoreActionPayload = {
-      actionIds: ids,
-      type: IGNORE_MOVEMENTS
-    };
-    if (ignored) {
-      status = await ignoreActions(payload);
-    } else {
-      status = await unignoreActions(payload);
-    }
-
-    if (status.success) {
-      selected.value = [];
-    }
-  };
-
-  return {
-    ignore
   };
 };
 
@@ -376,8 +307,7 @@ export default defineComponent({
       items.value.map(({ location }) => location).filter(uniqueStrings)
     );
 
-    const store = inject<Store<RotkehlchenState>>('vuex-store');
-    assert(store);
+    const store = useStore();
     const getSymbol = store.getters[
       'balances/assetSymbol'
     ] as AssetSymbolGetter;
@@ -399,13 +329,18 @@ export default defineComponent({
     const selectionMode = setupSelectionMode(items, item => item.identifier);
 
     return {
-      headers,
+      tableHeaders,
       visibleItems,
       page,
       showUpgradeRow,
       expanded: ref([]),
-      ...setupIgnore(selectionMode.selected, items),
-      ...setupFilter(assets, locations, items, visibleItems),
+      ...setupIgnore(
+        IgnoreActionType.MOVEMENTS,
+        selectionMode.selected,
+        items,
+        item => item.identifier
+      ),
+      ...setupFilter(assets, locations, items, visibleItems, getSymbol),
       ...selectionMode
     };
   }

@@ -1,17 +1,20 @@
 # build stage
-FROM node:lts-alpine as frontend-build-stage
+FROM node:14-buster as frontend-build-stage
 
 WORKDIR /app
 COPY frontend/ .
-RUN apk add python3 make g++
-RUN npm install -g npm@7 && if ! npm ci --exit-code; then npm ci; fi
+RUN apt-get update && apt-get install -y build-essential python3
+RUN npm install -g npm@7
+RUN npm ci
 RUN npm run docker:build
 
 FROM python:3.7-buster as backend-build-stage
 
-ARG PYINSTALLER_VERSION=3.5
+ARG PYINSTALLER_VERSION=v3.5
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+
+RUN apt-get update && apt-get install -y build-essential zlib1g-dev
 
 RUN git clone https://github.com/sqlcipher/sqlcipher && \
     cd sqlcipher && \
@@ -38,8 +41,14 @@ RUN pip install -r requirements.txt
 
 COPY . /app
 
+RUN git clone https://github.com/pyinstaller/pyinstaller.git && cd pyinstaller && \
+    git checkout ${PYINSTALLER_VERSION} && \
+    cd bootloader && \
+    ./waf all && \
+    cd .. && \
+    python setup.py install
+
 RUN pip install -e . && \
-    pip install pyinstaller==$PYINSTALLER_VERSION && \
     python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 

@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import reduce
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 from operator import add
 
 from eth_utils import to_checksum_address
@@ -27,6 +27,7 @@ from rotkehlchen.chain.ethereum.graph import (
 )
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default, PriceHistorian
@@ -34,7 +35,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Timestamp
-from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.serialization.deserialize import (
@@ -48,7 +48,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
-CONTRACT_ADDRESS = '0xA39739EF8b0231DbFA0DcdA07d7e29faAbCf4bb2'
 MIN_COLL_RATE = '1.1'
 
 logger = logging.getLogger(__name__)
@@ -62,7 +61,7 @@ class TroveOperation(SerializableEnumMixin):
     ACCRUEREWARDS = 4
     LIQUIDATEINNORMALMODE = 5
     LIQUIDATEINRECOVERYMODE = 6
-    REEDEM = 7
+    REDEEMCOLLATERAL = 7
 
     def __str__(self) -> str:
         if self == TroveOperation.OPENTROVE:
@@ -77,7 +76,7 @@ class TroveOperation(SerializableEnumMixin):
             return 'Liquidation In Normal Mode'
         if self == TroveOperation.LIQUIDATEINRECOVERYMODE:
             return 'Liquidation In Recovery Mode'
-        if self == TroveOperation.REEDEM:
+        if self == TroveOperation.REDEEMCOLLATERAL:
             return 'Redeem Collateral'
         # else
         raise AssertionError(f'Invalid value {self} for TroveOperation')
@@ -112,11 +111,13 @@ class LiquityEvent:
     tx: str
     address: str
     timestamp: Timestamp
+    sequence_number: str
 
     def serialize(self) -> Dict[str, Any]:
         return {
             'kind': self.kind,
             'tx': self.tx,
+            'sequence_number': self.sequence_number,
             'address': self.address,
             'timestamp': self.timestamp,
         }
@@ -161,7 +162,7 @@ class LiquityStakeEvent(LiquityEvent):
 class Trove(NamedTuple):
     collateral: AssetBalance
     debt: AssetBalance
-    collateralization_ratio: FVal
+    collateralization_ratio: Optional[FVal]
     liquidation_price: Optional[FVal]
     active: bool
     trove_id: int
@@ -184,7 +185,7 @@ class StakePosition(NamedTuple):
         return self.staked.serialize()
 
 
-class Liquity(EthereumModule):
+class Liquity(HasDSProxy):
 
     def __init__(
             self,
@@ -193,10 +194,12 @@ class Liquity(EthereumModule):
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.ethereum = ethereum_manager
-        self.database = database
-        self.msg_aggregator = msg_aggregator
-        self.premium = premium
+        super().__init__(
+            ethereum_manager=ethereum_manager,
+            database=database,
+            premium=premium,
+            msg_aggregator=msg_aggregator,
+        )
         self.history_lock = Semaphore()
         try:
             self.graph = Graph(
@@ -211,12 +214,17 @@ class Liquity(EthereumModule):
     def get_positions(
         self,
         addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, Dict[str, Union[Trove, StakePosition]]]:
+    ) -> Dict[ChecksumEthAddress, Trove]:
         contract = EthereumContract(
             address=LIQUITY_TROVE_MANAGER.address,
             abi=LIQUITY_TROVE_MANAGER.abi,
             deployed_block=LIQUITY_TROVE_MANAGER.deployed_block,
         )
+
+        proxied_addresses = self._get_accounts_having_proxy()
+        proxies_to_address = {v: k for k, v in proxied_addresses.items()}
+        addresses += proxied_addresses.values()
+
         calls = [
             (LIQUITY_TROVE_MANAGER.address, contract.encode(method_name='Troves', arguments=[x]))
             for x in addresses
@@ -227,15 +235,17 @@ class Liquity(EthereumModule):
             calls=calls,
         )
 
-        data: Dict[ChecksumEthAddress, Dict[str, Union[Trove, StakePosition]]] = {}
+        data: Dict[ChecksumEthAddress, Trove] = {}
         eth_price = Inquirer().find_usd_price(A_ETH)
         lusd_price = Inquirer().find_usd_price(A_LUSD)
-        lqty_price = Inquirer().find_usd_price(A_LQTY)
         for idx, output in enumerate(outputs):
             status, result = output
             if status is True:
                 try:
                     trove_info = contract.decode(result, 'Troves', arguments=[addresses[idx]])
+                    trove_is_active = bool(trove_info[3])  # pylint: disable=unsubscriptable-object
+                    if not trove_is_active:
+                        continue
                     collateral = deserialize_asset_amount(
                         token_normalized_value_decimals(trove_info[1], 18),  # noqa: E501 pylint: disable=unsubscriptable-object
                     )
@@ -256,13 +266,27 @@ class Liquity(EthereumModule):
                             usd_value=lusd_price * debt,
                         ),
                     )
-                    data[addresses[idx]] = {}
-                    data[addresses[idx]]['trove'] = Trove(
+                    # Avoid division errors
+                    collateralization_ratio: Optional[FVal]
+                    liquidation_price: Optional[FVal]
+                    if debt > 0:
+                        collateralization_ratio = eth_price * collateral / debt * 100
+                    else:
+                        collateralization_ratio = None
+                    if collateral > 0:
+                        liquidation_price = debt * lusd_price * FVal(MIN_COLL_RATE) / collateral
+                    else:
+                        liquidation_price = None
+
+                    account_address = addresses[idx]
+                    if account_address in proxies_to_address:
+                        account_address = proxies_to_address[account_address]
+                    data[account_address] = Trove(
                         collateral=collateral_balance,
                         debt=debt_balance,
-                        collateralization_ratio=eth_price * collateral / debt * 100,
-                        liquidation_price=debt * lusd_price * FVal(MIN_COLL_RATE) / collateral,
-                        active=bool(trove_info[3]),  # pylint: disable=unsubscriptable-object
+                        collateralization_ratio=collateralization_ratio,
+                        liquidation_price=liquidation_price,
+                        active=trove_is_active,
                         trove_id=trove_info[4],  # pylint: disable=unsubscriptable-object
                     )
                 except DeserializationError as e:
@@ -270,30 +294,36 @@ class Liquity(EthereumModule):
                         f'Ignoring Liquity trove information. '
                         f'Failed to decode contract information. {str(e)}.',
                     )
+        return data
 
-        if self.premium:
-            staked = self._get_raw_history(addresses, 'stake')
-            for stake in staked['lqtyStakes']:
-                try:
-                    owner = to_checksum_address(stake['id'])
-                    amount = deserialize_optional_fval(stake['amount'], 'amount', 'liquity')
-                    position = AssetBalance(
-                        asset=A_LQTY,
-                        balance=Balance(
-                            amount=amount,
-                            usd_value=lqty_price * amount,
-                        ),
-                    )
-                    data[owner]['stake'] = StakePosition(position)
-                except (DeserializationError, KeyError) as e:
-                    msg = str(e)
-                    if isinstance(e, KeyError):
-                        msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_warning(
-                        f'Ignoring Liquity staking information. '
-                        f'Failed to decode remote response. {msg}.',
-                    )
-                    continue
+    def liquity_staking_balances(
+        self,
+        addresses: List[ChecksumEthAddress],
+    ) -> Dict[ChecksumEthAddress, StakePosition]:
+        staked = self._get_raw_history(addresses, 'stake')
+        lqty_price = Inquirer().find_usd_price(A_LQTY)
+        data = {}
+        for stake in staked['lqtyStakes']:
+            try:
+                owner = to_checksum_address(stake['id'])
+                amount = deserialize_optional_fval(stake['amount'], 'amount', 'liquity')
+                position = AssetBalance(
+                    asset=A_LQTY,
+                    balance=Balance(
+                        amount=amount,
+                        usd_value=lqty_price * amount,
+                    ),
+                )
+                data[owner] = StakePosition(position)
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_warning(
+                    f'Ignoring Liquity staking information. '
+                    f'Failed to decode remote response. {msg}.',
+                )
+                continue
         return data
 
     def _process_trove_events(
@@ -442,24 +472,19 @@ class Liquity(EthereumModule):
             param_values=param_values,
         )
 
-    def get_history(
+    def get_trove_history(
         self,
         addresses: List[ChecksumEthAddress],
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
-    ) -> Dict[ChecksumEthAddress, Dict[str, List[LiquityEvent]]]:
+    ) -> Dict[ChecksumEthAddress, List[LiquityEvent]]:
         try:
             query = self._get_raw_history(addresses, 'trove')
         except RemoteError as e:
             log.error(f'Failed to query trove graph events for liquity. {str(e)}')
             query = {}
-        try:
-            staked = self._get_raw_history(addresses, 'stake')
-        except RemoteError as e:
-            log.error(f'Failed to query stake graph events for liquity. {str(e)}')
-            staked = {}
 
-        result: Dict[ChecksumEthAddress, Dict[str, List[LiquityEvent]]] = defaultdict(lambda: defaultdict(list))  # noqa: E501
+        result: Dict[ChecksumEthAddress, List[LiquityEvent]] = defaultdict(list)
         for trove in query.get('troves', []):
             owner = to_checksum_address(trove['owner']['id'])
             for change in trove['changes']:
@@ -518,8 +543,9 @@ class Liquity(EthereumModule):
                             ),
                         ),
                         trove_operation=operation,
+                        sequence_number=str(change['transaction']['sequenceNumber']),
                     )
-                    result[owner]['trove'].append(event)
+                    result[owner].append(event)
                 except (DeserializationError, KeyError) as e:
                     log.debug(f'Failed to deserialize Liquity trove event: {change}')
                     msg = str(e)
@@ -531,6 +557,21 @@ class Liquity(EthereumModule):
                     )
                     continue
 
+        return result
+
+    def get_staking_history(
+        self,
+        addresses: List[ChecksumEthAddress],
+        from_timestamp: Timestamp,
+        to_timestamp: Timestamp,
+    ) -> Dict[ChecksumEthAddress, List[LiquityEvent]]:
+        try:
+            staked = self._get_raw_history(addresses, 'stake')
+        except RemoteError as e:
+            log.error(f'Failed to query stake graph events for liquity. {str(e)}')
+            staked = {}
+
+        result: Dict[ChecksumEthAddress, List[LiquityEvent]] = defaultdict(list)
         for stake in staked.get('lqtyStakes', []):
             owner = to_checksum_address(stake['id'])
             for change in stake['changes']:
@@ -589,8 +630,9 @@ class Liquity(EthereumModule):
                             ),
                         ),
                         stake_operation=operation_stake,
+                        sequence_number=str(change['transaction']['sequenceNumber']),
                     )
-                    result[owner]['stake'].append(stake_event)
+                    result[owner].append(stake_event)
                 except (DeserializationError, KeyError) as e:
                     msg = str(e)
                     log.debug(f'Failed to deserialize Liquity entry: {change}')
@@ -615,18 +657,18 @@ class Liquity(EthereumModule):
             changes = self._process_trove_events(trove['changes'], from_timestamp, to_timestamp)
             result.append(changes)
         # Flatten the result (list of lists to list)
-        return reduce(add, result)
+        if result:
+            return reduce(add, result)
+        return []
 
     # -- Methods following the EthereumModule interface -- #
-    def on_startup(self) -> None:
-        pass
-
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
-        info = self.get_positions([address])
-        return [info[address]['trove'].collateral, info[address]['stake'].staked]  # type: ignore
-
-    def on_account_removal(self, address: ChecksumEthAddress) -> None:
-        pass
-
-    def deactivate(self) -> None:
-        pass
+        super().on_account_addition(address)
+        trove_info = self.get_positions([address])
+        result = []
+        if address in trove_info:
+            result.append(trove_info[address].collateral)
+        stake_info = self.liquity_staking_balances([address])
+        if address in stake_info:
+            result.append(stake_info[address].staked)
+        return result

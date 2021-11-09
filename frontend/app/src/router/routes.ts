@@ -9,6 +9,7 @@ export const Routes = {
   STAKING: '/staking',
   STAKING_ETH2: '/staking/eth2',
   STAKING_ADEX: '/staking/adex',
+  STAKING_LIQUITY: '/staking/liquity',
   DEFI_AIRDROPS: '/defi/airdrops',
   PROFIT_LOSS_REPORT: '/profit-loss-report',
   HISTORY_LEDGER_ACTIONS: '/history/ledger-actions',
@@ -23,5 +24,7 @@ export const Routes = {
   DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP: '/defi/deposits/liquidity/sushiswap',
   HISTORY_TRANSACTIONS: '/history/transactions',
   HISTORY_TRADES: '/history/trades',
-  HISTORY_DEPOSITS_WITHDRAWALS: '/history/deposits-withdrawals'
+  HISTORY_DEPOSITS_WITHDRAWALS: '/history/deposits-withdrawals',
+  NFTS: '/nfts',
+  NON_FUNGIBLE: '/accounts-balances/nonfungible'
 };

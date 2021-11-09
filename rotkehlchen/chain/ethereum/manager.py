@@ -1,6 +1,7 @@
 import json
 import logging
 import random
+from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, overload
 from urllib.parse import urlparse
 
@@ -17,17 +18,17 @@ from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
-from web3.exceptions import BadFunctionCallOutput
+from web3.exceptions import BadFunctionCallOutput, TransactionNotFound
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import FilterParams
 
+from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2 import ETH2_DEPOSIT
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import (
     BlockchainQueryError,
     DeserializationError,
@@ -41,14 +42,19 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
+    deserialize_ethereum_transaction,
     deserialize_int_from_hex,
 )
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import ChecksumEthAddress, SupportedBlockchain, Timestamp
+from rotkehlchen.typing import (
+    ChecksumEthAddress,
+    EthereumTransaction,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 from rotkehlchen.utils.network import request_get_dict
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 
 from .typing import NodeName
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
@@ -119,14 +125,18 @@ def _query_web3_get_logs(
         # is infura can throw an error here which we can only parse by catching the  exception
         try:
             new_events_web3: List[Dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
-        except ValueError as e:
-            try:
-                decoded_error = json.loads(str(e).replace("'", '"'))
-            except json.JSONDecodeError:
-                # reraise the value error if the error is not json
-                raise e from None
+        except (ValueError, KeyError) as e:
+            if isinstance(e, ValueError):
+                try:
+                    decoded_error = json.loads(str(e).replace("'", '"'))
+                except json.JSONDecodeError:
+                    # reraise the value error if the error is not json
+                    raise e from None
 
-            msg = decoded_error.get('message', '')
+                msg = decoded_error.get('message', '')
+            else:  # temporary hack for key error seen from pokt
+                msg = 'query returned more than 10000 results'
+
             # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
             if msg in ('query returned more than 10000 results', 'query timeout exceeded'):
                 block_range = block_range // 2
@@ -134,7 +144,7 @@ def _query_web3_get_logs(
                     raise  # stop retrying if block range gets too small
                 # repeat the query with smaller block range
                 continue
-            # else, well we tried .. reraise the Value error
+            # else, well we tried .. reraise the error
             raise e
 
         # Turn all HexBytes into hex strings
@@ -196,7 +206,6 @@ class EthereumManager():
             self,
             ethrpc_endpoint: str,
             etherscan: Etherscan,
-            database: DBHandler,
             msg_aggregator: MessagesAggregator,
             greenlet_manager: GreenletManager,
             connect_at_start: Sequence[NodeName],
@@ -209,11 +218,8 @@ class EthereumManager():
         self.etherscan = etherscan
         self.msg_aggregator = msg_aggregator
         self.eth_rpc_timeout = eth_rpc_timeout
-        self.transactions = EthTransactions(
-            database=database,
-            etherscan=etherscan,
-            msg_aggregator=msg_aggregator,
-        )
+        self.archive_connection = False
+        self.queried_archive_connection = False
         for node in connect_at_start:
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
@@ -227,6 +233,10 @@ class EthereumManager():
         self.blocks_subgraph = Graph(
             'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks',
         )
+        # Used by the transactions class. Can't be instantiated there since that is
+        # stateless object and thus wouldn't persist.
+        # Not really happy with this approach but well ...
+        self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
 
     def connected_to_any_web3(self) -> bool:
         return (
@@ -397,7 +407,13 @@ class EthereumManager():
 
             try:
                 result = method(web3, **kwargs)
-            except (RemoteError, BlockchainQueryError, requests.exceptions.RequestException) as e:
+            except (
+                    RemoteError,
+                    requests.exceptions.RequestException,
+                    BlockchainQueryError,
+                    TransactionNotFound,
+                    KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
+            ) as e:  # noqa: E501
                 log.warning(f'Failed to query {node} for {str(method)} due to {str(e)}')
                 # Catch all possible errors here and just try next node call
                 continue
@@ -422,6 +438,51 @@ class EthereumManager():
             method=self._get_latest_block_number,
             call_order=call_order if call_order is not None else self.default_call_order(),
         )
+
+    def get_historical_eth_balance(
+            self,
+            address: ChecksumEthAddress,
+            block_number: int,
+    ) -> Optional[FVal]:
+        """Attempts to get a historical eth balance from the local own node only.
+        If there is no node or the node can't query historical balance (not archive) then
+        returns None"""
+        web3 = self.web3_mapping.get(NodeName.OWN)
+        if web3 is None:
+            return None
+
+        try:
+            result = web3.eth.get_balance(address, block_identifier=block_number)
+        except (
+                requests.exceptions.RequestException,
+                BlockchainQueryError,
+                TransactionNotFound,
+                KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
+        ):
+            return None
+
+        try:
+            balance = from_wei(FVal(result))
+        except ValueError:
+            return None
+
+        return balance
+
+    def have_archive(self, requery: bool = False) -> bool:
+        """Checks to see if our own connected node is an archive node
+
+        If requery is True it always queries the node. Otherwise it remembers last query.
+        """
+        if self.queried_archive_connection and requery is False:
+            return self.archive_connection
+
+        balance = self.get_historical_eth_balance(
+            address=string_to_ethereum_address('0x50532e4Be195D1dE0c2E6DfA46D9ec0a4Fee6861'),
+            block_number=87042,
+        )
+        self.archive_connection = balance is not None and balance == FVal('5.1063307')
+        self.queried_archive_connection = True
+        return self.archive_connection
 
     def query_eth_highest_block(self) -> BlockNumber:
         """ Attempts to query an external service for the block height
@@ -728,6 +789,7 @@ class EthereumManager():
                 ) from e
             return tx_receipt
 
+        # Can raise TransactionNotFound if the user's node is pruned and transaction is old
         tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
         return process_result(tx_receipt)
 
@@ -738,6 +800,36 @@ class EthereumManager():
     ) -> Dict[str, Any]:
         return self.query(
             method=self._get_transaction_receipt,
+            call_order=call_order if call_order is not None else self.default_call_order(),
+            tx_hash=tx_hash,
+        )
+
+    def _get_transaction_by_hash(
+            self,
+            web3: Optional[Web3],
+            tx_hash: str,
+    ) -> Optional[EthereumTransaction]:
+        if web3 is None:
+            tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
+        else:
+            tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
+
+        try:
+            transaction = deserialize_ethereum_transaction(data=tx_data, ethereum=self)
+        except (DeserializationError, ValueError) as e:
+            raise RemoteError(
+                f'Couldnt deserialize ethereum transaction data from {tx_data}. Error: {str(e)}',
+            ) from e
+
+        return transaction
+
+    def get_transaction_by_hash(
+            self,
+            tx_hash: str,
+            call_order: Optional[Sequence[NodeName]] = None,
+    ) -> Optional[EthereumTransaction]:
+        return self.query(
+            method=self._get_transaction_by_hash,
             call_order=call_order if call_order is not None else self.default_call_order(),
             tx_hash=tx_hash,
         )

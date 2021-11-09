@@ -1,12 +1,16 @@
-import { ActionContext, Commit } from 'vuex';
+import { inject } from '@vue/composition-api';
+import * as logger from 'loglevel';
+import { ActionContext, Commit, Store } from 'vuex';
 import i18n from '@/i18n';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
+import { TaskType } from '@/model/task-type';
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
 import { Message, RotkehlchenState, StatusPayload } from '@/store/types';
 import { FetchPayload } from '@/store/typing';
+import { assert } from '@/utils/assertions';
 
 export async function fetchAsync<S, T extends TaskMeta, R>(
   {
@@ -14,7 +18,7 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
     rootGetters: { status },
     rootState: { session }
   }: ActionContext<S, RotkehlchenState>,
-  payload: FetchPayload<T>
+  payload: FetchPayload<T, R>
 ): Promise<void> {
   const { activeModules } = session!.generalSettings;
   if (
@@ -42,8 +46,9 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
     const task = createTask(taskId, payload.taskType, payload.meta);
     commit('tasks/add', task, { root: true });
     const { result } = await taskCompletion<R, T>(payload.taskType);
-    commit(payload.mutation, result);
-  } catch (e) {
+    commit(payload.mutation, payload.parser ? payload.parser(result) : result);
+  } catch (e: any) {
+    logger.error(`action failure for task ${TaskType[payload.taskType]}:`, e);
     notify(
       payload.onError.error(e.message),
       payload.onError.title,
@@ -88,6 +93,31 @@ export const setStatus: (
   commit('setStatus', payload, { root: true });
 };
 
+export const getStatusUpdater = (
+  commit: Commit,
+  section: Section,
+  getStatus: (section: Section) => Status
+) => {
+  const setStatus = (status: Status) => {
+    if (getStatus(section) === status) {
+      return;
+    }
+    const payload: StatusPayload = {
+      section: section,
+      status: status
+    };
+    commit('setStatus', payload, { root: true });
+  };
+
+  const loading = () => isLoading(getStatus(section));
+  const isFirstLoad = () => getStatus(section) === Status.NONE;
+  return {
+    loading,
+    isFirstLoad,
+    setStatus
+  };
+};
+
 export function isLoading(status: Status): boolean {
   return (
     status === Status.LOADING ||
@@ -111,4 +141,10 @@ export function filterAddresses<T>(
     }
     item(entries[address]);
   }
+}
+
+export function useStore(): Store<RotkehlchenState> {
+  const store = inject<Store<RotkehlchenState>>('vuex-store');
+  assert(store);
+  return store;
 }

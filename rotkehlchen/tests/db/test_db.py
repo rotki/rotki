@@ -15,7 +15,6 @@ from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
@@ -32,6 +31,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_MAIN_CURRENCY,
     DEFAULT_PNL_CSV_HAVE_SUMMARY,
     DEFAULT_PNL_CSV_WITH_FORMULAS,
+    DEFAULT_SSF_0GRAPH_MULTIPLIER,
     DEFAULT_TAXABLE_LEDGER_ACTIONS,
     DEFAULT_UI_FLOATING_PRECISION,
     ROTKEHLCHEN_DB_VERSION,
@@ -58,10 +58,6 @@ from rotkehlchen.tests.utils.constants import (
     A_SUSHI,
     A_XMR,
     DEFAULT_TESTS_MAIN_CURRENCY,
-    ETH_ADDRESS1,
-    ETH_ADDRESS2,
-    ETH_ADDRESS3,
-    MOCK_INPUT_DATA,
 )
 from rotkehlchen.tests.utils.database import mock_dbhandler_update_owned_assets
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
@@ -71,7 +67,6 @@ from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
     BlockchainAccountData,
-    EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -101,6 +96,9 @@ TABLES_AT_INIT = [
     'multisettings',
     'trades',
     'ethereum_transactions',
+    'ethtx_receipts',
+    'ethtx_receipt_logs',
+    'ethtx_receipt_log_topics',
     'manually_tracked_balances',
     'trade_type',
     'location',
@@ -113,7 +111,7 @@ TABLES_AT_INIT = [
     'xpubs',
     'xpub_mappings',
     'amm_swaps',
-    'uniswap_events',
+    'amm_events',
     'eth2_deposits',
     'eth2_daily_staking_details',
     'adex_events',
@@ -125,6 +123,7 @@ TABLES_AT_INIT = [
     'ledger_actions_gitcoin_data',
     'gitcoin_tx_type',
     'gitcoin_grant_metadata',
+    'nfts',
 ]
 
 
@@ -241,6 +240,7 @@ def test_export_import_db(data_dir, username):
         amount=FVal(10),
         location=Location.BANKS,
         tags=None,
+        balance_type=BalanceType.ASSET,
     )
     data.db.add_manually_tracked_balances([starting_balance])
     encoded_data, _ = data.compress_and_encrypt_db('123')
@@ -348,6 +348,7 @@ def test_writing_fetching_data(data_dir, username):
         'taxable_ledger_actions': DEFAULT_TAXABLE_LEDGER_ACTIONS,
         'pnl_csv_with_formulas': DEFAULT_PNL_CSV_WITH_FORMULAS,
         'pnl_csv_have_summary': DEFAULT_PNL_CSV_HAVE_SUMMARY,
+        'ssf_0graph_multiplier': DEFAULT_SSF_0GRAPH_MULTIPLIER,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 
@@ -576,11 +577,13 @@ def test_query_timed_balances(data_dir, username):
     assert result[0].amount == '500'
     assert result[0].usd_value == '500'
 
-    result = data.db.query_timed_balances(
+    all_data = data.db.query_timed_balances(
         from_ts=1451606300,
         to_ts=1485907000,
         asset=A_ETH,
     )
+    assert len(all_data) == 2
+    result = [x for x in all_data if x.amount != '0']
     assert len(result) == 2
     assert result[0].time == 1451606401
     assert result[0].category == BalanceType.ASSET
@@ -591,7 +594,9 @@ def test_query_timed_balances(data_dir, username):
     assert result[1].amount == '10'
     assert result[1].usd_value == '123'
 
-    result = data.db.query_timed_balances(A_ETH)
+    all_data = data.db.query_timed_balances(A_ETH)
+    assert len(all_data) == 4
+    result = [x for x in all_data if x.amount != '0']
     assert len(result) == 4
     result = data.db.query_timed_balances(A_ETH, balance_type=BalanceType.LIABILITY)
     assert len(result) == 1
@@ -962,76 +967,6 @@ def test_add_asset_movements(data_dir, username, caplog):
     ) in caplog.text
     returned_movements = data.db.get_asset_movements()
     assert returned_movements == [movement1, movement2, movement3]
-
-
-def test_add_ethereum_transactions(data_dir, username):
-    """Test that adding and retrieving ethereum transactions from the DB works fine.
-
-    Also duplicates should be ignored and an error returned
-    """
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator)
-    data.unlock(username, '123', create_new=True)
-
-    tx1 = EthereumTransaction(
-        tx_hash=b'1',
-        timestamp=Timestamp(1451606400),
-        block_number=1,
-        from_address=ETH_ADDRESS1,
-        to_address=ETH_ADDRESS3,
-        value=FVal('2000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
-        input_data=MOCK_INPUT_DATA,
-        nonce=1,
-    )
-    tx2 = EthereumTransaction(
-        tx_hash=b'2',
-        timestamp=Timestamp(1451706400),
-        block_number=3,
-        from_address=ETH_ADDRESS2,
-        to_address=ETH_ADDRESS3,
-        value=FVal('4000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
-        input_data=MOCK_INPUT_DATA,
-        nonce=1,
-    )
-    tx3 = EthereumTransaction(
-        tx_hash=b'3',
-        timestamp=Timestamp(1452806400),
-        block_number=5,
-        from_address=ETH_ADDRESS3,
-        to_address=ETH_ADDRESS1,
-        value=FVal('1000000'),
-        gas=FVal('5000000'),
-        gas_price=FVal('2000000000'),
-        gas_used=FVal('25000000'),
-        input_data=MOCK_INPUT_DATA,
-        nonce=3,
-    )
-
-    # Add and retrieve the first 2 margins. All should be fine.
-    data.db.add_ethereum_transactions([tx1, tx2], from_etherscan=True)
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    filter_query = ETHTransactionsFilterQuery.make()
-    returned_transactions = data.db.get_ethereum_transactions(filter_query)
-    assert returned_transactions == [tx1, tx2]
-
-    # Add the last 2 transactions. Since tx2 already exists in the DB it should be
-    # ignored (no errors shown for attempting to add already existing transaction)
-    data.db.add_ethereum_transactions([tx2, tx3], from_etherscan=True)
-    errors = msg_aggregator.consume_errors()
-    warnings = msg_aggregator.consume_warnings()
-    assert len(errors) == 0
-    assert len(warnings) == 0
-    returned_transactions = data.db.get_ethereum_transactions(filter_query)
-    assert returned_transactions == [tx1, tx2, tx3]
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[]])

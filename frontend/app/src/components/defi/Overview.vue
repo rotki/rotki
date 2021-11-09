@@ -4,11 +4,18 @@
     :title="summary.protocol.name"
     :protocol-icon="icon"
     bordered
-    class="overview"
+    :class="$style.overview"
   >
-    <div v-if="summary.liabilitiesUrl">
+    <div v-if="summary.liabilities">
       <span
-        class="text-subtitle-1 font-weight-bold pb-2 d-flex flex-row justify-space-between"
+        class="
+          text-subtitle-1
+          font-weight-bold
+          pb-2
+          d-flex
+          flex-row
+          justify-space-between
+        "
       >
         {{ $t('overview.stat_card.headers.borrowing') }}
         <v-btn :to="summary.liabilitiesUrl" icon small color="primary">
@@ -27,32 +34,41 @@
       />
       <v-divider class="my-4" />
     </div>
-    <div
-      class="pb-2 d-flex flex-row justify-space-between text-subtitle-1 font-weight-medium"
-    >
-      {{ $t('overview.stat_card.headers.lending') }}
-      <v-btn
-        v-if="summary.depositsUrl"
-        :to="summary.depositsUrl"
-        icon
-        small
-        color="primary"
+    <div v-if="summary.deposits">
+      <div
+        class="
+          pb-2
+          d-flex
+          flex-row
+          justify-space-between
+          text-subtitle-1
+          font-weight-medium
+        "
       >
-        <v-icon small color="primary">mdi-launch</v-icon>
-      </v-btn>
+        {{ $t('overview.stat_card.headers.lending') }}
+        <v-btn
+          v-if="summary.depositsUrl"
+          :to="summary.depositsUrl"
+          icon
+          small
+          color="primary"
+        >
+          <v-icon small color="primary">mdi-launch</v-icon>
+        </v-btn>
+      </div>
+      <info-row
+        :title="$t('overview.stat_card.content.labels.total_deposited')"
+        fiat
+        :value="summary.totalLendingDepositUsd"
+      />
     </div>
-    <info-row
-      :title="$t('overview.stat_card.content.labels.total_deposited')"
-      fiat
-      :value="summary.totalLendingDepositUsd"
-    />
   </stat-card>
   <stat-card
     v-else
     bordered
     :title="summary.protocol.name"
     :protocol-icon="icon"
-    class="overview"
+    :class="$style.overview"
   >
     <span class="text-subtitle-1 font-weight-bold pb-2">
       {{ summary.tokenInfo.tokenName }}
@@ -86,7 +102,7 @@
         <v-card-subtitle>
           {{ $t('overview.details_dialog.subtitle') }}
         </v-card-subtitle>
-        <v-card-text class="overview__details">
+        <v-card-text :class="$style.details">
           <div v-for="(asset, index) in assets" :key="index">
             <defi-asset :asset="asset" />
             <v-divider />
@@ -98,52 +114,73 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs
+} from '@vue/composition-api';
 import DefiAsset from '@/components/defi/DefiAsset.vue';
 import InfoRow from '@/components/defi/display/InfoRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
-import { DefiProtocolSummary, DefiAsset as Asset } from '@/store/defi/types';
+import { DefiProtocolSummary } from '@/store/defi/types';
 
-@Component({
-  components: { DefiAsset, StatCard, InfoRow }
-})
-export default class Overview extends Vue {
-  @Prop({ required: true })
-  summary!: DefiProtocolSummary;
-
-  details: boolean = false;
-
-  get assets(): Asset[] {
-    return this.summary.assets.sort(
-      ({ balance: { usdValue } }, { balance: { usdValue: otherUsdValue } }) => {
-        if (usdValue.eq(otherUsdValue)) {
-          return 0;
-        }
-        return usdValue.gt(otherUsdValue) ? -1 : 1;
-      }
-    );
-  }
-
-  get icon(): string {
-    const protocol = this.summary.protocol;
-    if (!protocol.icon) {
-      return '';
+export default defineComponent({
+  name: 'Overview',
+  components: { DefiAsset, StatCard, InfoRow },
+  props: {
+    summary: {
+      required: true,
+      type: Object as PropType<DefiProtocolSummary>
     }
-    return require(`@/assets/images/defi/${protocol.icon}`);
+  },
+  setup(props) {
+    const details = ref(false);
+    const { summary } = toRefs(props);
+    const icon = computed(() => {
+      const { protocol } = summary.value;
+      if (!protocol.icon) {
+        return '';
+      }
+      return require(`@/assets/images/defi/${protocol.icon}`);
+    });
+
+    const assets = computed(() => {
+      const { assets } = summary.value;
+      return assets.sort(
+        (
+          { balance: { usdValue } },
+          { balance: { usdValue: otherUsdValue } }
+        ) => {
+          if (usdValue.eq(otherUsdValue)) {
+            return 0;
+          }
+          return usdValue.gt(otherUsdValue) ? -1 : 1;
+        }
+      );
+    });
+
+    return {
+      details,
+      icon,
+      assets
+    };
   }
-}
+});
 </script>
 
-<style scoped lang="scss">
+<style module lang="scss">
 @import '~@/scss/scroll';
 
 .overview {
-  min-height: 250px;
+  min-height: 250px !important;
   min-width: 300px;
+}
 
-  &__details {
-    height: 300px;
-    @extend .themed-scrollbar;
-  }
+.details {
+  height: 300px;
+
+  @extend .themed-scrollbar;
 }
 </style>

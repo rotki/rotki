@@ -14,6 +14,9 @@ from rotkehlchen.tests.fixtures import *  # noqa: F401,F403
 # monkey patch web3's non-thread safe lru cache with our own version
 from rotkehlchen.chain.ethereum import patch_web3  # isort:skip # pylint: disable=unused-import # lgtm[py/unused-import] # noqa
 
+assert sys.version_info.major == 3, 'Need to use python 3 for rotki'
+assert 6 <= sys.version_info.minor <= 7, 'Need to use python 3.6 or python 3.7 for rotki'
+
 
 def pytest_addoption(parser):
     parser.addoption(

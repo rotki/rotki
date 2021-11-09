@@ -1,19 +1,31 @@
 <template>
-  <div class="card-title" :class="dark ? 'theme--dark' : null">
+  <div
+    class="card-title"
+    :class="{
+      [$style.title]: true,
+      [$style.dark]: dark
+    }"
+  >
     <slot />
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
-import ThemeMixin from '@/mixins/theme-mixin';
+import { defineComponent } from '@vue/composition-api';
+import { setupThemeCheck } from '@/composables/common';
 
-@Component({})
-export default class CardTitle extends Mixins(ThemeMixin) {}
+export default defineComponent({
+  setup() {
+    const { dark } = setupThemeCheck();
+    return {
+      dark
+    };
+  }
+});
 </script>
 
-<style scoped lang="scss">
-.card-title {
+<style module lang="scss">
+.title {
   font-size: 14px;
   line-height: 17px;
   /* identical to box height */
@@ -27,11 +39,7 @@ export default class CardTitle extends Mixins(ThemeMixin) {}
   align-items: center;
 }
 
-.theme {
-  &--dark {
-    .card-title {
-      color: #62a4af;
-    }
-  }
+.dark {
+  color: #62a4af;
 }
 </style>

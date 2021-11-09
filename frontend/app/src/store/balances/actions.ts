@@ -1,4 +1,5 @@
-import { BigNumber } from 'bignumber.js';
+import { BigNumber } from '@rotki/common/';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
@@ -25,11 +26,9 @@ import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { Module } from '@/services/session/consts';
 import { XpubAccountData } from '@/services/types-api';
+import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
-import {
-  MUTATION_UPDATE_LOOPRING_BALANCES,
-  MUTATION_UPDATE_PRICES
-} from '@/store/balances/mutation-types';
+import { BalanceMutations } from '@/store/balances/mutation-types';
 import {
   AccountAssetBalances,
   AccountPayload,
@@ -46,29 +45,22 @@ import {
   ExchangeSetupPayload,
   HistoricPricePayload,
   HistoricPrices,
+  NonFungibleBalances,
   OracleCachePayload,
   XpubPayload
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
+import { notify, userNotify } from '@/store/notifications/utils';
 import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
 import { isLoading, setStatus, showError } from '@/store/utils';
 import { Writeable } from '@/types';
-import {
-  Blockchain,
-  BTC,
-  ETH,
-  ExchangeRates,
-  KSM,
-  DOT,
-  AVAX,
-  SupportedBlockchains
-} from '@/typing/types';
+import { ExchangeRates } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 import { chunkArray } from '@/utils/data';
 import { convertFromTimestamp } from '@/utils/date';
+import { logger } from '@/utils/logging';
 
 function removeTag(tags: string[] | null, tagName: string): string[] | null {
   if (!tags) {
@@ -126,25 +118,21 @@ const updateBalancePrice: (
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async fetchBalances(
     { commit, rootGetters, dispatch },
-    payload: AllBalancePayload = {
-      ignoreCache: false,
-      saveData: false
-    }
+    payload: Partial<AllBalancePayload> = {}
   ) {
-    const { ignoreCache, saveData } = payload;
     const isTaskRunning = rootGetters['tasks/isTaskRunning'];
     if (isTaskRunning(TaskType.QUERY_BALANCES)) {
       return;
     }
     try {
-      const result = await api.queryBalancesAsync(ignoreCache, saveData);
+      const result = await api.queryBalancesAsync(payload);
       const task = createTask(result.task_id, TaskType.QUERY_BALANCES, {
         title: i18n.t('actions.balances.all_balances.task.title').toString(),
         ignoreResult: true
       });
 
       commit('tasks/add', task, { root: true });
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.balances.all_balances.error.message', {
@@ -219,7 +207,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         location: location,
         balances: result
       });
-    } catch (e) {
+    } catch (e: any) {
       const message = i18n
         .t('actions.balances.exchange_balances.error.message', {
           location,
@@ -258,7 +246,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       );
 
       commit('usdToFiatExchangeRates', result);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.balances.exchange_rates.error.message', {
@@ -281,7 +269,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     const chains: Blockchain[] = [];
     if (!blockchain) {
-      chains.push(...SupportedBlockchains);
+      chains.push(...Object.values(Blockchain));
     } else {
       chains.push(blockchain);
     }
@@ -325,7 +313,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     };
     try {
       await Promise.all(chains.map(fetch));
-    } catch (e) {
+    } catch (e: any) {
       const message = i18n.tc(
         'actions.balances.blockchain.error.description',
         0,
@@ -362,6 +350,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       await dispatch('addExchanges', exchanges);
     }
     await dispatch('fetchBlockchainBalances');
+    await dispatch(BalanceActions.FETCH_NF_BALANCES);
   },
 
   async updateBalances(
@@ -378,23 +367,23 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     } = perAccount;
     const chain = payload.chain;
 
-    if (!chain || chain === ETH) {
+    if (!chain || chain === Blockchain.ETH) {
       commit('updateEth', ethBalances ?? {});
     }
 
-    if (!chain || chain === KSM) {
+    if (!chain || chain === Blockchain.KSM) {
       commit('updateKsm', ksmBalances ?? {});
     }
 
-    if (!chain || chain === DOT) {
+    if (!chain || chain === Blockchain.DOT) {
       commit('updateDot', dotBalances ?? {});
     }
 
-    if (!chain || chain === BTC) {
+    if (!chain || chain === Blockchain.BTC) {
       commit('updateBtc', btcBalances ?? {});
     }
 
-    if (!chain || chain === AVAX) {
+    if (!chain || chain === Blockchain.AVAX) {
       commit('updateAvax', avaxBalances ?? {});
     }
 
@@ -420,7 +409,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
             xpub: payload.xpub
           }
         ),
-        blockchain: BTC,
+        blockchain: Blockchain.BTC,
         numericKeys: blockchainBalanceKeys
       } as BlockchainMetadata);
       commit('tasks/add', task, { root: true });
@@ -428,8 +417,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         BlockchainBalances,
         BlockchainMetadata
       >(taskType);
-      await dispatch('updateBalances', { chain: BTC, balances: result });
-    } catch (e) {
+      await dispatch('updateBalances', {
+        chain: Blockchain.BTC,
+        balances: result
+      });
+    } catch (e: any) {
       const title = i18n.tc('actions.balances.xpub_removal.error.title');
       const description = i18n.tc(
         'actions.balances.xpub_removal.error.description',
@@ -476,7 +468,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       await dispatch('updateBalances', { chain: blockchain, balances: result });
       commit('defi/reset', undefined, { root: true });
       await dispatch('resetDefiStatus', {}, { root: true });
-    } catch (e) {
+    } catch (e: any) {
       const title = i18n.tc(
         'actions.balances.blockchain_account_removal.error.title',
         0,
@@ -556,7 +548,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         BlockchainMetadata
       >(taskType, `${taskId}`);
 
-      if (modules && blockchain === ETH) {
+      if (modules && blockchain === Blockchain.ETH) {
         await dispatch(
           'session/enableModule',
           {
@@ -579,6 +571,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         commit('defi/reset', undefined, options);
         await dispatch('resetDefiStatus', {}, options);
         await dispatch('refreshPrices', false);
+        await dispatch(BalanceActions.FETCH_NF_BALANCES);
       })
       .catch(e => {
         const title = i18n.tc(
@@ -626,7 +619,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           balances: result
         });
 
-        if (blockchain === ETH && payload.modules) {
+        if (blockchain === Blockchain.ETH && payload.modules) {
           await dispatch(
             'session/enableModule',
             {
@@ -639,6 +632,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         await commit('defi/reset', undefined, { root: true });
         await dispatch('resetDefiStatus', {}, { root: true });
         await dispatch('refreshPrices', false);
+        await dispatch(BalanceActions.FETCH_NF_BALANCES);
       })
       .catch(e => {
         const title = i18n.tc(
@@ -659,15 +653,15 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async editAccount({ commit }, payload: BlockchainAccountPayload) {
     const { blockchain } = payload;
-    const isBTC = blockchain === BTC;
+    const isBTC = blockchain === Blockchain.BTC;
     if (!isBTC) {
       const accountData = await api.editAccount(payload);
 
-      if (blockchain === ETH) {
+      if (blockchain === Blockchain.ETH) {
         commit('ethAccounts', accountData);
-      } else if (blockchain === KSM) {
+      } else if (blockchain === Blockchain.KSM) {
         commit('ksmAccounts', accountData);
-      } else if (blockchain === DOT) {
+      } else if (blockchain === Blockchain.DOT) {
         commit('dotAccounts', accountData);
       } else {
         commit('avaxAccounts', accountData);
@@ -680,26 +674,21 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async accounts({ commit }) {
     try {
-      const [
-        ethAccounts,
-        btcAccounts,
-        ksmAccounts,
-        dotAccounts,
-        avaxAccounts
-      ] = await Promise.all([
-        api.accounts(ETH),
-        api.btcAccounts(),
-        api.accounts(KSM),
-        api.accounts(DOT),
-        api.accounts(AVAX)
-      ]);
+      const [ethAccounts, btcAccounts, ksmAccounts, dotAccounts, avaxAccounts] =
+        await Promise.all([
+          api.accounts(Blockchain.ETH),
+          api.btcAccounts(),
+          api.accounts(Blockchain.KSM),
+          api.accounts(Blockchain.DOT),
+          api.accounts(Blockchain.AVAX)
+        ]);
 
       commit('ethAccounts', ethAccounts);
       commit('btcAccounts', btcAccounts);
       commit('ksmAccounts', ksmAccounts);
       commit('dotAccounts', dotAccounts);
       commit('avaxAccounts', avaxAccounts);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         `Failed to accounts: ${e}`,
         'Querying accounts',
@@ -740,7 +729,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     try {
       const netvalueData = await api.queryNetvalueData();
       commit('netvalueData', netvalueData);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.balances.net_value.error.message', { message: e.message })
@@ -758,7 +747,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     try {
       const supportedAssets = await api.assets.allAssets();
       commit('supportedAssets', convertSupportedAssets(supportedAssets));
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.balances.supported_assets.error.message', {
@@ -795,7 +784,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       );
 
       commit('manualBalances', result.balances);
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.balances.manual_balances.error.message', {
@@ -822,7 +811,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       return {
         success: true
       };
-    } catch (e) {
+    } catch (e: any) {
       return {
         success: false,
         message: e.message
@@ -841,7 +830,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       return {
         success: true
       };
-    } catch (e) {
+    } catch (e: any) {
       return {
         success: false,
         message: e.message
@@ -853,7 +842,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     try {
       const { balances } = await api.balances.deleteManualBalances([label]);
       commit('manualBalances', balances);
-    } catch (e) {
+    } catch (e: any) {
       showError(
         `${e.message}`,
         i18n.t('actions.balances.manual_delete.error.title').toString()
@@ -889,7 +878,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       } as ExchangeBalancePayload).then(() => dispatch('refreshPrices', false));
 
       return success;
-    } catch (e) {
+    } catch (e: any) {
       showError(
         i18n
           .t('actions.balances.exchange_setup.description', {
@@ -934,7 +923,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         }
       }
       return success;
-    } catch (e) {
+    } catch (e: any) {
       showError(
         i18n.tc('actions.balances.exchange_removal.description', 0, {
           exchange,
@@ -947,7 +936,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async updatePrices({ commit, state }, prices: AssetPrices): Promise<void> {
-    const manualBalances = [...state.manualBalances];
+    const manualBalances = [
+      ...state.manualBalances,
+      ...state.manualLiabilities
+    ];
     const totals = { ...state.totals };
     const eth = { ...state.eth };
     const btc: BtcBalances = {
@@ -992,7 +984,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     commit('updateEth', eth);
 
-    const btcPrice = prices[BTC];
+    const btcPrice = prices[Blockchain.BTC];
     if (btcPrice) {
       for (const address in btc.standalone) {
         const balance = btc.standalone[address];
@@ -1083,7 +1075,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         taskType,
         `${taskId}`
       );
-      commit(MUTATION_UPDATE_PRICES, {
+      commit(BalanceMutations.UPDATE_PRICES, {
         ...state.prices,
         ...result.assets
       });
@@ -1093,7 +1085,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       await Promise.all(
         chunkArray<string>(assets, 100).map(value => fetchPrices(value))
       );
-    } catch (e) {
+    } catch (e: any) {
       const title = i18n
         .t('actions.session.fetch_prices.error.title')
         .toString();
@@ -1170,7 +1162,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       return {
         success: result
       };
-    } catch (e) {
+    } catch (e: any) {
       return {
         success: false,
         message: i18n
@@ -1262,8 +1254,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         taskType
       );
 
-      commit(MUTATION_UPDATE_LOOPRING_BALANCES, result);
-    } catch (e) {
+      commit(BalanceMutations.UPDATE_LOOPRING_BALANCES, result);
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.balances.loopring.error.description', {
@@ -1294,7 +1286,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       const { result } = await taskCompletion<ERC20Token, TaskMeta>(taskType);
       return result;
-    } catch (e) {
+    } catch (e: any) {
       notify(
         i18n
           .t('actions.assets.erc20.error.description', {
@@ -1306,6 +1298,48 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         true
       );
       return {};
+    }
+  },
+
+  async [BalanceActions.FETCH_NF_BALANCES](
+    { commit, rootGetters: { status }, rootState: { session } },
+    payload?: { ignoreCache: boolean }
+  ): Promise<void> {
+    const { activeModules } = session!!.generalSettings;
+    if (!activeModules.includes(Module.NFTS)) {
+      return;
+    }
+    const section = Section.NON_FUNGIBLE_BALANCES;
+    try {
+      setStatus(Status.LOADING, section, status, commit);
+      const taskType = TaskType.NF_BALANCES;
+      const { taskId } = await api.balances.fetchNfBalances(payload);
+      const task = createTask(taskId, taskType, {
+        title: i18n.t('actions.nft_balances.task.title').toString(),
+        ignoreResult: false,
+        numericKeys: []
+      });
+      commit('tasks/add', task, { root: true });
+      const { result } = await taskCompletion<NonFungibleBalances, TaskMeta>(
+        taskType
+      );
+      commit(
+        BalanceMutations.UPDATE_NF_BALANCES,
+        NonFungibleBalances.parse(result)
+      );
+      setStatus(Status.LOADED, section, status, commit);
+    } catch (e: any) {
+      logger.error(e);
+      await userNotify({
+        title: i18n.t('actions.nft_balances.error.title').toString(),
+        message: i18n
+          .t('actions.nft_balances.error.message', {
+            message: e.message
+          })
+          .toString(),
+        display: true
+      });
+      setStatus(Status.NONE, section, status, commit);
     }
   }
 };

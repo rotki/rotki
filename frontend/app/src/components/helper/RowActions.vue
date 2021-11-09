@@ -1,5 +1,5 @@
 <template>
-  <span>
+  <span :class="$style.actions">
     <v-tooltip top>
       <template #activator="{ on, attrs }">
         <v-btn
@@ -23,7 +23,7 @@
           small
           v-bind="attrs"
           icon
-          :disabled="disabled"
+          :disabled="disabled || deleteDisabled"
           class="mx-1"
           data-cy="row-delete"
           v-on="on"
@@ -44,11 +44,13 @@ import { defineComponent } from '@vue/composition-api';
 export default defineComponent({
   name: 'RowAction',
   props: {
-    disabled: { required: false, type: Boolean },
+    disabled: { required: false, type: Boolean, default: false },
+    deleteDisabled: { required: false, type: Boolean, default: false },
     editTooltip: { required: true, type: String },
     deleteTooltip: { required: false, type: String, default: '' },
     noDelete: { required: false, type: Boolean, default: false }
   },
+  emits: ['edit-click', 'delete-click'],
   setup(_, { emit }) {
     return {
       editClick: () => emit('edit-click'),
@@ -57,3 +59,11 @@ export default defineComponent({
   }
 });
 </script>
+
+<style module lang="scss">
+.actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+}
+</style>

@@ -13,6 +13,12 @@
         "ignorePseudoElements": ["v-deep"]
       }
     ],
+    "selector-pseudo-class-no-unknown": [
+      true,
+      {
+        "ignorePseudoClasses": ["global"]
+      }
+    ],
     "scss/selector-nest-combinators": "always",
     "scss/selector-no-redundant-nesting-selector": true,
     "plugin/stylelint-bem-namics": {

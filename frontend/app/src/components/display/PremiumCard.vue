@@ -9,16 +9,17 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import PremiumLock from '../premium/PremiumLock.vue';
 
-@Component({
-  components: { PremiumLock }
-})
-export default class PremiumCard extends Vue {
-  @Prop({ required: true })
-  title!: string;
-}
+export default defineComponent({
+  name: 'PremiumCard',
+  components: { PremiumLock },
+  props: {
+    title: {
+      required: true,
+      type: String
+    }
+  }
+});
 </script>
-
-<style scoped></style>

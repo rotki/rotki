@@ -174,6 +174,8 @@
   </v-form>
 </template>
 <script lang="ts">
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import { PropType } from 'vue';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import {
@@ -197,13 +199,6 @@ import {
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { Message } from '@/store/types';
-import {
-  Blockchain,
-  BTC,
-  ETH,
-  GeneralAccount,
-  SupportedBlockchains
-} from '@/typing/types';
 import { trimOnPaste } from '@/utils/event';
 import { getMetamaskAddresses } from '@/utils/metamask';
 
@@ -265,9 +260,9 @@ const validationErrors: () => ValidationErrors = () => ({
   }
 })
 export default class AccountForm extends Vue {
-  readonly items = SupportedBlockchains;
+  readonly items = Object.values(Blockchain);
   isTaskRunning!: (type: TaskType) => boolean;
-  blockchain: Blockchain = ETH;
+  blockchain: Blockchain = Blockchain.ETH;
   pending: boolean = false;
   xpub: string = '';
   derivationPath: string = '';
@@ -278,7 +273,6 @@ export default class AccountForm extends Vue {
   multiple: boolean = false;
   readonly errorMessages: ValidationErrors = validationErrors();
   xpubKeyPrefix: XpubPrefix = XPUB_VALUE;
-  account!: (address: string) => GeneralAccount | undefined;
   addAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
   addAccounts!: (payload: AddAccountsPayload) => Promise<void>;
   editAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
@@ -308,11 +302,11 @@ export default class AccountForm extends Vue {
   }
 
   get isEth(): boolean {
-    return this.blockchain === ETH;
+    return this.blockchain === Blockchain.ETH;
   }
 
   get isBtc(): boolean {
-    return this.blockchain === BTC;
+    return this.blockchain === Blockchain.BTC;
   }
 
   get isXpub(): boolean {
@@ -362,16 +356,23 @@ export default class AccountForm extends Vue {
   }
 
   private checkIfExists(value: string): boolean | string {
-    return (
-      (!!value && !this.account(value)) ||
-      this.$tc('account_form.validation.address_exists')
-    );
+    return !!value || this.$tc('account_form.validation.address_exists');
   }
 
   @Prop({ required: false, default: null })
   edit!: BlockchainAccount | null;
   @Prop({ required: true, type: Boolean, default: false })
   value!: boolean;
+  @Prop({ required: true, type: String as PropType<Blockchain> })
+  context!: Blockchain;
+
+  @Watch('context')
+  onContextChange() {
+    if (!this.edit) {
+      return;
+    }
+    this.blockchain = this.context;
+  }
 
   private setEditMode() {
     if (!this.edit) {
@@ -397,6 +398,9 @@ export default class AccountForm extends Vue {
 
   mounted() {
     this.setEditMode();
+    if (!this.edit) {
+      this.blockchain = this.context;
+    }
   }
 
   @Watch('address')
@@ -483,7 +487,7 @@ export default class AccountForm extends Vue {
     this.xpub = '';
     this.derivationPath = '';
     (this.$refs.form as any).resetValidation();
-    this.blockchain = ETH;
+    this.blockchain = Blockchain.ETH;
     this.inputMode = MANUAL_ADD;
     this.multiple = false;
   }
@@ -522,12 +526,12 @@ export default class AccountForm extends Vue {
       }));
 
       await this.addAccounts({
-        blockchain: ETH,
+        blockchain: Blockchain.ETH,
         payload: payload,
         modules: this.selectedModules
       });
       return true;
-    } catch (e) {
+    } catch (e: any) {
       const title = this.$tc('blockchain_balances.metamask_import.error.title');
       const description = this.$tc(
         'blockchain_balances.metamask_import.error.description',
@@ -585,7 +589,7 @@ export default class AccountForm extends Vue {
       }
 
       this.reset();
-    } catch (e) {
+    } catch (e: any) {
       const apiErrorMessage = deserializeApiErrorMessage(e.message);
       if (apiErrorMessage && Object.keys(apiErrorMessage).length > 0) {
         const errors: ValidationErrors = validationErrors();

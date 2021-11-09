@@ -13,6 +13,7 @@ import {
   Themes,
   TimeUnit
 } from '@rotki/common/lib/settings';
+import * as CompositionAPI from '@vue/composition-api';
 import Chart from 'chart.js';
 import dayjs from 'dayjs';
 import Vue from 'vue';
@@ -20,6 +21,7 @@ import Vuex from 'vuex';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { registerComponents } from '@/premium/register-components';
+import { statisticsApi } from '@/premium/statistics-api';
 import { api } from '@/services/rotkehlchen-api';
 import { HistoryActions } from '@/store/history/consts';
 import { FrontendSettingsPayload } from '@/store/settings/types';
@@ -72,7 +74,8 @@ const data: DataUtilities = {
         payload
       );
     }
-  }
+  },
+  statistics: statisticsApi
 };
 
 const settings: SettingsApi = {
@@ -98,9 +101,10 @@ export const setupPremium = () => {
   window.Vue = Vue;
   window.Chart = Chart;
   window.Vue.use(Vuex);
+  window['@vue/composition-api'] = CompositionAPI;
   window.rotki = {
     useHostComponents: true,
-    version: 13,
+    version: 15,
     utils: {
       date,
       data,

@@ -21,6 +21,11 @@ export default new Router({
       component: () => import('../views/Dashboard.vue')
     },
     {
+      path: Routes.NFTS,
+      name: 'nfts',
+      component: () => import('../views/Nft.vue')
+    },
+    {
       path: '/statistics',
       name: 'statistics',
       component: () => import('../views/Statistics.vue')
@@ -142,6 +147,11 @@ export default new Router({
           props: true
         },
         {
+          path: Routes.NON_FUNGIBLE,
+          component: () =>
+            import('../views/accountsbalances/NonFungibleBalancePage.vue')
+        },
+        {
           path: 'manual-balances',
           component: () => import('../components/accounts/ManualBalances.vue')
         }
@@ -228,6 +238,10 @@ export default new Router({
         {
           path: Routes.STAKING_ADEX,
           component: () => import('../views/staking/AdexPage.vue')
+        },
+        {
+          path: Routes.STAKING_LIQUITY,
+          component: () => import('../views/staking/LiquityPage.vue')
         }
       ]
     },
@@ -249,7 +263,8 @@ export default new Router({
     },
     {
       path: Routes.ASSET_MANAGER,
-      component: () => import('../views/AssetManager.vue')
+      component: () => import('../views/AssetManager.vue'),
+      props: route => ({ identifier: route.query.id ?? null })
     },
     ...(process.env.NODE_ENV === 'development'
       ? [

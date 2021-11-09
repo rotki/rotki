@@ -51,7 +51,12 @@
         </template>
         <template #item="data">
           <div
-            class="blockchain-account-selector__list__item d-flex justify-space-between flex-grow-1"
+            class="
+              blockchain-account-selector__list__item
+              d-flex
+              justify-space-between
+              flex-grow-1
+            "
           >
             <div class="blockchain-account-selector__list__item__address-label">
               <v-chip
@@ -84,13 +89,15 @@
 </template>
 
 <script lang="ts">
+import { GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 
 import ThemeMixin from '@/mixins/theme-mixin';
-import { Blockchain, GeneralAccount, Tags } from '@/typing/types';
+import { Tags } from '@/typing/types';
 
 @Component({
   components: { AccountDisplay, TagIcon },

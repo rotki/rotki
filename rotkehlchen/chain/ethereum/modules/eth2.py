@@ -6,6 +6,7 @@ import gevent
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.eth2_utils import scrape_validator_daily_stats
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.typing import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
     Eth2Deposit,
@@ -95,7 +96,8 @@ class Eth2(EthereumModule):
             from_ts=from_ts,
             to_ts=to_ts,
         )
-        transactions = self.ethereum.transactions.query(
+        tx_module = EthTransactions(ethereum=self.ethereum, database=self.database)
+        transactions, _ = tx_module.query(
             filter_query=filter_query,
             with_limit=False,
             only_cache=False,
@@ -337,7 +339,10 @@ class Eth2(EthereumModule):
         """Gets the daily stats of an ETH2 validator by index
 
         First queries the DB for the already known stats and then if needed also scrapes
-        the beacocha.in website for more. Saves all new entries to the DB.
+        the beaconcha.in website for more. Saves all new entries to the DB.
+
+        May raise:
+        - RemoteError due to problems with beaconcha.in
         """
         dbeth2 = DBEth2(self.database)
         known_stats = dbeth2.get_validator_daily_stats(

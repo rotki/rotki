@@ -36,9 +36,9 @@
 </template>
 
 <script lang="ts">
+import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import DefiProtocolDetails from '@/components/helper/DefiProtocolDetails.vue';
-import { DefiProtocol } from '@/services/defi/consts';
 
 export interface Protocol {
   name: string;
@@ -80,6 +80,11 @@ export default class DefiProtocolSelector extends Vue {
       identifier: DefiProtocol.MAKERDAO_VAULTS,
       name: 'MakerDAO Vaults',
       icon: require('@/assets/images/defi/makerdao.svg')
+    },
+    {
+      identifier: DefiProtocol.LIQUITY,
+      name: 'Liquity',
+      icon: require('@/assets/images/defi/liquity.svg')
     }
   ];
 

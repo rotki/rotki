@@ -54,7 +54,7 @@
 </template>
 
 <script lang="ts">
-import { default as BigNumber } from 'bignumber.js';
+import { BigNumber } from '@rotki/common/';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import { EthTransaction } from '@/services/history/types';

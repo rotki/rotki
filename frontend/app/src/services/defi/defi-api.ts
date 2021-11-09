@@ -127,4 +127,24 @@ export class DefiApi {
     const url = 'blockchains/ETH/modules/sushiswap/history/events';
     return fetchExternalAsync(this.api, url);
   }
+
+  async fetchLiquityBalances(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/liquity/balances';
+    return fetchExternalAsync(this.api, url);
+  }
+
+  async fetchLiquityTroveEvents(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/liquity/events/trove';
+    return fetchExternalAsync(this.api, url);
+  }
+
+  fetchLiquityStaking(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/liquity/staking';
+    return fetchExternalAsync(this.api, url);
+  }
+
+  fetchLiquityStakingEvents(): Promise<PendingTask> {
+    const url = 'blockchains/ETH/modules/liquity/events/staking';
+    return fetchExternalAsync(this.api, url);
+  }
 }

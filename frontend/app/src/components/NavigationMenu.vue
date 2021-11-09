@@ -64,7 +64,7 @@
 
 <script lang="ts">
 import { VueConstructor } from 'vue';
-import { Component, Vue, Prop } from 'vue-property-decorator';
+import { Component, Prop, Vue } from 'vue-property-decorator';
 import GitcoinIcon from '@/components/icons/GitcoinIcon.vue';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 import { Routes } from '@/router/routes';
@@ -107,6 +107,13 @@ export default class NavigationMenu extends Vue {
       route: '/accounts-balances',
       class: 'accounts-balances',
       icon: 'mdi-briefcase-variant'
+    },
+    {
+      type: 'item',
+      text: this.$t('navigation_menu.nfts').toString(),
+      route: Routes.NFTS,
+      class: 'nfts',
+      icon: 'mdi-image-area'
     },
     {
       type: 'group',
@@ -230,6 +237,14 @@ export default class NavigationMenu extends Vue {
           icon: '',
           cryptoIcon: 'ADX',
           class: 'staking-adex'
+        },
+        {
+          type: 'item',
+          text: `${this.$t('navigation_menu.staking_sub.liquity')}`,
+          route: Routes.STAKING_LIQUITY,
+          icon: '',
+          cryptoIcon: 'LQTY',
+          class: 'staking-liquity'
         }
       ]
     },

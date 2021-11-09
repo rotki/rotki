@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
 
 from eth_utils.address import to_checksum_address
+from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.asset_rename import rename_assets_in_db
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
@@ -31,6 +32,7 @@ from rotkehlchen.db.upgrades.v25_v26 import upgrade_v25_to_v26
 from rotkehlchen.db.upgrades.v26_v27 import upgrade_v26_to_v27
 from rotkehlchen.db.upgrades.v27_v28 import upgrade_v27_to_v28
 from rotkehlchen.db.upgrades.v28_v29 import upgrade_v28_to_v29
+from rotkehlchen.db.upgrades.v29_v30 import upgrade_v29_to_v30
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -199,6 +201,10 @@ UPGRADES_LIST = [
         from_version=28,
         function=upgrade_v28_to_v29,
     ),
+    UpgradeRecord(
+        from_version=29,
+        function=upgrade_v29_to_v30,
+    ),
 ]
 
 
@@ -215,7 +221,11 @@ class DBUpgradeManager():
         - DBUpgradeError if the user uses a newer version than the one we
         upgrade to or if there is a problem during upgrade.
         """
-        our_version = self.db.get_version()
+        try:
+            our_version = self.db.get_version()
+        except sqlcipher.OperationalError:  # pylint: disable=no-member
+            return  # fresh database. Nothing to upgrade.
+
         if our_version > ROTKEHLCHEN_DB_VERSION:
             raise DBUpgradeError(
                 'Your database version is newer than the version expected by the '

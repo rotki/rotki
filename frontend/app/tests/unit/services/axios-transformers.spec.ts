@@ -28,6 +28,17 @@ describe('axios transformers', () => {
     );
   });
 
+  test('transform capital to snake_case', async () => {
+    const object = {
+      ETH: 1,
+      BTC: 2
+    };
+
+    expect(JSON.stringify(axiosSnakeCaseTransformer(object))).toMatch(
+      '{"ETH":1,"BTC":2}'
+    );
+  });
+
   test('null keys transformer converts all numeric keys', () => {
     const json = '{"amount":"10","test_label":"1","data":[{"amount":"2"}]}';
     const parsed = setupJsonTransformer(null)(json);
