@@ -566,6 +566,15 @@
     "empty_notes": "No notes found for this entry",
     "notes": "Notes"
   },
+  "notification_messages": {
+    "backend": {
+      "title": "Backend"
+    },
+    "snapshot_failed": {
+      "message": "Could not save the balance snapshot at {location} {error}",
+      "title": "Balance Snapshot failed"
+    }
+  },
   "pagination": {
     "of": "of {length}"
   },
