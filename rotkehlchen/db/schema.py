@@ -551,6 +551,14 @@ CREATE TABLE IF NOT EXISTS amm_events (
 );
 """
 
+DB_CREATE_ETH2_VALIDATORS = """
+CREATE TABLE IF NOT EXISTS eth2_validators (
+    validator_index INTEGER NOT NULL PRIMARY KEY,
+    public_key TEXT,
+    eth1_deposit_address TEXT
+);
+"""
+
 DB_CREATE_ETH2_DEPOSITS = """
 CREATE TABLE IF NOT EXISTS eth2_deposits (
     tx_hash VARCHAR[42] NOT NULL,
@@ -584,9 +592,10 @@ CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
     proposer_attester_slashings INTEGER,
     deposits_number INTEGER,
     amount_deposited TEXT,
+    FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (validator_index, timestamp)
 );
-"""
+"""  # noqa: E501
 
 DB_CREATE_ADEX_EVENTS = """
 CREATE TABLE IF NOT EXISTS adex_events (
