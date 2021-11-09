@@ -101,6 +101,7 @@ WORLD_TO_BITTREX = {
 WORLD_TO_BITSTAMP = {
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    strethaddress_to_identifier('0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85'): 'FET',
 }
 
 WORLD_TO_FTX = {
@@ -161,6 +162,7 @@ WORLD_TO_POLONIEX = {
     strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
     strethaddress_to_identifier('0xfB7B4564402E5500dB5bB6d63Ae671302777C75a'): 'DEXT',
+    strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
 }
 
 WORLD_TO_KRAKEN = {
@@ -273,6 +275,7 @@ WORLD_TO_KRAKEN = {
     'OXY': 'OXY',
     'RAY': 'RAY',
     strethaddress_to_identifier('0x6c5bA91642F10282b576d91922Ae6448C9d52f4E'): 'PHA',
+    'BNC': 'BNC',
 }
 
 WORLD_TO_BINANCE = {
@@ -391,6 +394,7 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
     'EDG-2': 'EDG',
+    strethaddress_to_identifier('0x8f693ca8D21b157107184d29D398A8D082b38b76'): 'DATA',
 }
 
 WORLD_TO_ICONOMI = {

@@ -87,8 +87,8 @@ AIRDROPS = {
     'ens': (
         'https://raw.githubusercontent.com/rotki/data/main/airdrops/ens.csv',
         A_ENS,
-        'https://claim.ens.domains/', 
-    )
+        'https://claim.ens.domains/',
+    ),
 }
 
 POAP_AIRDROPS = {

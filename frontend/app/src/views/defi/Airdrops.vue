@@ -235,7 +235,7 @@ export default class Airdrops extends Mixins(StatusMixin) {
       icon: require('@/assets/images/airdrops/FOX_Icon_dark.svg'),
       name: 'ShapeShift'
     },
-    [AIRDROP_ENS: {
+    [AIRDROP_ENS]: {
       icon: require('@/assets/images/airdrops/ens.svg'),
       name: 'ENS'
     }
