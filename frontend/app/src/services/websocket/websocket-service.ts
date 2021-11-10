@@ -1,14 +1,14 @@
 import * as logger from 'loglevel';
-import i18n from '@/i18n';
 import {
-  BalanceSnapshotError,
+  handleLegacyMessage,
+  handleSnapshotError
+} from '@/services/websocket/message-handling';
+import {
   LegacyMessageData,
   MESSAGE_WARNING,
   SocketMessageType,
   WebsocketMessage
 } from '@/services/websocket/messages';
-import { Severity } from '@/store/notifications/consts';
-import { userNotify } from '@/store/notifications/utils';
 import { Nullable } from '@/types';
 
 class WebsocketService {
@@ -35,26 +35,13 @@ class WebsocketService {
         );
 
         if (message.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
-          console.log(message);
-          const data = BalanceSnapshotError.parse(message.data);
-          await userNotify({
-            title: i18n
-              .t('notification_messages.snapshot_failed.title')
-              .toString(),
-            message: i18n
-              .t('notification_messages.snapshot_failed.message', data)
-              .toString(),
-            display: true
-          });
+          await handleSnapshotError(message);
         } else if (message.type === SocketMessageType.LEGACY) {
           const data = LegacyMessageData.parse(message.data);
-          const isWarning = data.verbosity === MESSAGE_WARNING;
-          await userNotify({
-            title: i18n.t('notification_messages.backend.title').toString(),
-            message: data.value,
-            display: !isWarning,
-            severity: isWarning ? Severity.WARNING : Severity.ERROR
-          });
+          await handleLegacyMessage(
+            data.value,
+            data.verbosity === MESSAGE_WARNING
+          );
         } else {
           logger.warn(`Unsupported socket message received: ${message}`);
         }

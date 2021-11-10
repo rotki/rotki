@@ -1,12 +1,17 @@
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { Severity } from '@/store/notifications/consts';
+import {
+  handleLegacyMessage,
+  handleSnapshotError
+} from '@/services/websocket/message-handling';
+import { SocketMessageType } from '@/services/websocket/messages';
 import { NotificationState } from '@/store/notifications/state';
 import { NotificationPayload } from '@/store/notifications/types';
-import { createNotification } from '@/store/notifications/utils';
+import { createNotification, userNotify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
 import { backoff } from '@/utils/backoff';
+import { logger } from '@/utils/logging';
 
 const consume = {
   isRunning: false
@@ -20,8 +25,25 @@ const unique = function (
   return array.indexOf(value) === index;
 };
 
+const notify = async (message: string, isWarning: boolean) => {
+  try {
+    const object = JSON.parse(message);
+    if (!object.type) {
+      await handleLegacyMessage(message, isWarning);
+    }
+
+    if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
+      await handleSnapshotError(object);
+    } else {
+      logger.error('unsupported message:', object);
+    }
+  } catch (e: any) {
+    await handleLegacyMessage(message, isWarning);
+  }
+};
+
 export const actions: ActionTree<NotificationState, RotkehlchenState> = {
-  async consume({ commit, getters, state: { data } }): Promise<void> {
+  async consume({ state: { data } }): Promise<void> {
     if (consume.isRunning) {
       return;
     }
@@ -34,44 +56,21 @@ export const actions: ActionTree<NotificationState, RotkehlchenState> = {
     try {
       const messages = await backoff(3, () => api.consumeMessages(), 10000);
       const existing = data.map(({ message }) => message);
-      let id = getters.nextId;
-      const errors = messages.errors
+      messages.errors
         .filter(unique)
         .filter(error => !existing.includes(error))
-        .map(message =>
-          createNotification(id++, {
-            title,
-            message,
-            severity: Severity.ERROR,
-            display: true
-          })
-        );
-      const warnings = messages.warnings
+        .forEach(message => notify(message, false));
+      messages.warnings
         .filter(unique)
         .filter(warning => !existing.includes(warning))
-        .map(message =>
-          createNotification(id++, {
-            title,
-            message,
-            severity: Severity.WARNING
-          })
-        );
-
-      const notifications = errors.concat(warnings);
-      if (notifications.length === 0) {
-        return;
-      }
-      commit('update', notifications);
+        .forEach(message => notify(message, true));
     } catch (e: any) {
       const message = e.message || e;
-      commit('update', [
-        createNotification(getters.nextId, {
-          title,
-          message,
-          severity: Severity.ERROR,
-          display: true
-        })
-      ]);
+      await userNotify({
+        title,
+        message,
+        display: true
+      });
     } finally {
       consume.isRunning = false;
     }
