@@ -363,6 +363,7 @@ export const AIRDROP_CURVE = 'curve';
 export const AIRDROP_POAP = 'poap';
 export const AIRDROP_CONVEX = 'convex';
 export const AIRDROP_FOX = 'fox';
+export const AIRDROP_ENS = 'ens';
 
 export const AIRDROPS = [
   AIRDROP_1INCH,
@@ -375,5 +376,6 @@ export const AIRDROPS = [
   AIRDROP_CURVE,
   AIRDROP_POAP,
   AIRDROP_CONVEX,
-  AIRDROP_FOX
+  AIRDROP_FOX,
+  AIRDROP_ENS
 ] as const;

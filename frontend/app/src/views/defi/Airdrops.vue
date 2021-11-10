@@ -109,6 +109,7 @@ import {
   AIRDROP_CONVEX,
   AIRDROP_CORNICHON,
   AIRDROP_CURVE,
+  AIRDROP_ENS,
   AIRDROP_FOX,
   AIRDROP_FURUCOMBO,
   AIRDROP_GRAIN,
@@ -233,6 +234,10 @@ export default class Airdrops extends Mixins(StatusMixin) {
     [AIRDROP_FOX]: {
       icon: require('@/assets/images/airdrops/FOX_Icon_dark.svg'),
       name: 'ShapeShift'
+    },
+    [AIRDROP_ENS]: {
+      icon: require('@/assets/images/airdrops/ens.svg'),
+      name: 'ENS'
     }
   };
 

@@ -202,6 +202,11 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0x23b75Bc7AaF28e2d6628C3f424B3882F8f072a3c'),
     'BTCS',
     strethaddress_to_identifier('0x491C9A23DB85623EEd455a8EfDd6AbA9b911C5dF'),
+    strethaddress_to_identifier('0x8aA33A7899FCC8eA5fBe6A608A109c3893A1B8b2'),
+    'ARB-2',
+    'BAY',
+    'UNITY',
+    strethaddress_to_identifier('0x8d80de8A78198396329dfA769aD54d24bF90E7aa'),
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

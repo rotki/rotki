@@ -343,6 +343,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'FCT2',  # neither in coingecko nor cryptocompare
     'XFLR',  # neither in coingecko nor cryptocompare (is an iou for FLR - SPARK)
     'SUNX',  # neither in coingecko nor cryptocompare
+    'SQUID',  # neither in coingecko nor cryptocompare
 )
 
 UNSUPPORTED_BITTREX_ASSETS = (
@@ -354,6 +355,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # APM Coin. As of 16/11/2019 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-APM
     'APM',
+    'ARTII',  # neither in coingecko nor cryptocompare
     'BTR',  # neither in coingecko nor cryptocompare
     'BST',  # No coingecko or cryptocompare yet. Beshare Token TODO: Review this one in a few days
     'CADX',  # no cryptocompare/coingecko data TODO: Review this one
@@ -368,6 +370,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'CTC',
     'DAF',  # neither in coingecko nor cryptocompare
     'DATA',  # Couldn't find what token this is
+    'MPC',  # neither in coingecko nor cryptocompare
     # Foresting. As of 22/03/2019 no data found.
     # Only exists in bittrex. Perhaps it will soon be added to other APIs.
     # https://international.bittrex.com/Market/Index?MarketName=BTC-PTON
@@ -445,6 +448,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'TYB',  # neither in coingecko nor cryptocompare
     'PANDO',  # neither in coingecko nor cryptocompare (own blockchain, released on 2020)
     'SMBSWAP',  # neither in coingecko nor cryptocompare
+    'SQUID',  # neither in coingecko nor cryptocompare
     'UPCO2',  # neither in coingecko nor cryptocompare
     'VIL',  # neither in coingecko nor cryptocompare (VICDeal)
     'WIHC',  # neither in coingecko nor cryptocompare
@@ -545,6 +549,7 @@ UNSUPPORTED_FTX_ASSETS = (
     'BABA',
     'BB',
     'BILI',
+    'BITO',  # no cryptocompare/coingecko data
     'BITW',
     'BNTX',
     'DOGEBEAR2021',  # no cryptocompare/coingecko data
@@ -555,6 +560,7 @@ UNSUPPORTED_FTX_ASSETS = (
     'GOOGL',
     'GRTBEAR',  # no cryptocompare/coingecko data
     'GRTBULL',  # no cryptocompare/coingecko data
+    'KSHIB',  # kiloshiba no cryptocompare/coingecko data
     'MSTR',
     'NFLX',
     'NOK',
@@ -594,10 +600,14 @@ UNSUPPORTED_FTX_ASSETS = (
 
 # https://api.kucoin.com/api/v1/currencies
 UNSUPPORTED_KUCOIN_ASSETS = (
+    'AAVE3L',  # no cryptocompare/coingecko data
+    'AAVE3S',  # no cryptocompare/coingecko data
     'AI',  # no cryptocompare/coingecko data
     'AXE',  # delisted
     'BCH3L',  # no cryptocompare/coingecko data
     'BCH3S',  # no cryptocompare/coingecko data
+    'BNB3L',  # no cryptocompare/coingecko data
+    'BNB3S',  # no cryptocompare/coingecko data
     'BTC3L',  # no cryptocompare/coingecko data
     'BTC3S',  # no cryptocompare/coingecko data
     'BTCP',  # delisted
@@ -613,6 +623,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'ETH3L',  # no cryptocompare/coingecko data
     'ETH3S',  # no cryptocompare/coingecko data
     'ETF',  # delisted and no cryptocompare/coingecko data
+    'FTG',  # no cryptocompare/coingecko data
     'GENS',  # Genesis. no cryptocompare/coingecko data
     'GGC',  # delisted and no cryptocompare/coingecko data
     'GMB',  # delisted
@@ -629,16 +640,25 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'LSS',  # no cryptocompare/coingecko data
     'LTC3L',  # no cryptocompare/coingecko data
     'LTC3S',  # no cryptocompare/coingecko data
+    'MATIC3L',  # no cryptocompare/coingecko data
+    'MATIC3S',  # no cryptocompare/coingecko data
     'MAP2',  # delisted
     'MEM',  # meme.com, no cryptocompare/coingecko data
     'NAKA',  # Nakamoto.games, no cryptocompare/coingecko data
+    'NEAR3L',  # no cryptocompare/coingecko data
+    'NEAR3S',  # no cryptocompare/coingecko data
     'RMRK',  # no cryptocompare/coingecko data
+    'SAND3L',  # no cryptocompare/coingecko data
+    'SAND3S',  # no cryptocompare/coingecko data
     'SATT',  # delisted
     'SERO',  # delisted
+    'SHILL',  # The one in kucoin is not at coingecko/cc
     'SOL3L',  # no cryptocompare/coingecko data
     'SOL3S',  # no cryptocompare/coingecko data
     'SOV',  # Couldn't find what assets is this one
     'SPRK',  # delisted
+    'SUSHI3L',  # no cryptocompare/coingecko data
+    'SUSHI3S',  # no cryptocompare/coingecko data
     'TCP',  # The Crypto Prophecies no cryptocompare/coingecko data
     'TNC2',  # delisted and no cryptocompare/coingecko data
     'TT',  # delisted

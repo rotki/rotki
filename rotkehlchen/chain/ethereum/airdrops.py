@@ -13,6 +13,7 @@ from rotkehlchen.constants.assets import (
     A_CORN,
     A_CRV,
     A_CVX,
+    A_ENS,
     A_FOX,
     A_GRAIN,
     A_LDO,
@@ -82,6 +83,11 @@ AIRDROPS = {
         'https://raw.githubusercontent.com/rotki/data/main/airdrops/shapeshift.csv',
         A_FOX,
         'https://shapeshift.com/shapeshift-decentralize-airdrop',
+    ),
+    'ens': (
+        'https://raw.githubusercontent.com/rotki/data/main/airdrops/ens.csv',
+        A_ENS,
+        'https://claim.ens.domains/',
     ),
 }
 

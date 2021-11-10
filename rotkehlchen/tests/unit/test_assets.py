@@ -152,6 +152,18 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0x5dD57Da40e6866C9FcC34F4b6DDC89F1BA740DfE'),  # noqa: E501 # Bright(BRIGHT) but another BRIGHT in CC
         ethaddress_to_identifier('0x40284109c3309A7C3439111bFD93BF5E0fBB706c'),  # noqa: E501 # Motiv protocol but another MOV in CC
         ethaddress_to_identifier('0xba5BDe662c17e2aDFF1075610382B9B691296350'),  # noqa: E501 # Super Rare but another RARE in CC
+        ethaddress_to_identifier('0x9D65fF81a3c488d585bBfb0Bfe3c7707c7917f54'),  # noqa: E501 # SSV token but another SSV in CC
+        ethaddress_to_identifier('0x7b35Ce522CB72e4077BaeB96Cb923A5529764a00'),  # noqa: E501 # Impermax but another IMX in CC
+        ethaddress_to_identifier('0x47481c1b44F2A1c0135c45AA402CE4F4dDE4D30e'),  # noqa: E501 # Meetple but another MPT in CC
+        'CATE',  # catecoin but another CATE in CC
+        'CHESS'  # tranchess but another CHESS in CC
+        'BNC',  # Bifrost but another BNC in CC
+        'BNX',  # BinaryX but anohter BNX in CC
+        'DAR',  # Mines of Dalarnia but a different DAR in CC
+        ethaddress_to_identifier('0xEf51c9377FeB29856E61625cAf9390bD0B67eA18'),  # noqa: E501 # Bionic but another BNC in CC
+        'CHESS',  # tranchess but another chess in CC
+        'BNC',  # bifrost but another BNC in CC
+        ethaddress_to_identifier('0x9e6C59321CEB205d5d3BC6c539c017aF6159B16c'),  # noqa: E501 # Mindcell but another MDC in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -346,6 +358,22 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x71D01dB8d6a2fBEa7f8d434599C237980C234e4C'),
         # We have reftoken (REF) and coingecko has Ref Finance
         ethaddress_to_identifier('0x89303500a7Abfb178B274FD89F2469C264951e1f'),
+        # We have Aidus (AID) and coingecko has aidcoin
+        ethaddress_to_identifier('0xD178b20c6007572bD1FD01D205cC20D32B4A6015'),
+        # We have depository network but coingecko has depo
+        ethaddress_to_identifier('0x89cbeAC5E8A13F0Ebb4C74fAdFC69bE81A501106'),
+        # Sinthetic ETH but coingecko has iEthereum
+        ethaddress_to_identifier('0xA9859874e1743A32409f75bB11549892138BBA1E'),
+        # blocklancer but coingecko has Linker
+        ethaddress_to_identifier('0x63e634330A20150DbB61B15648bC73855d6CCF07'),
+        # Kora network but coingecko Knekted
+        ethaddress_to_identifier('0xfF5c25D2F40B47C4a37f989DE933E26562Ef0Ac0'),
+        # gambit but coingecko has another gambit
+        ethaddress_to_identifier('0xF67451Dc8421F0e0afEB52faa8101034ed081Ed9'),
+        # publica but coingecko has another polkalab
+        ethaddress_to_identifier('0x55648De19836338549130B1af587F16beA46F66B'),
+        # Spin protocol but spinada in coingecko
+        ethaddress_to_identifier('0x4F22310C27eF39FEAA4A756027896DC382F0b5E2'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
