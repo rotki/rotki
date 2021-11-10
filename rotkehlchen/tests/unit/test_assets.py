@@ -90,7 +90,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'CTX',     # Centauri coin but CarTaxi in CC
         ethaddress_to_identifier('0xf14922001A2FB8541a433905437ae954419C2439'),  # noqa: E501 # Direct insurance token but DitCoin in CC
         'DRM',     # Dreamcoin but Dreamchain in CC
-        ethaddress_to_identifier('0x82fdedfB7635441aA5A92791D001fA7388da8025'),  # noqa: E501 # test_cryptocompare_asset_supportDigital Ticks but Data Exchange in CC
+        ethaddress_to_identifier('0x82fdedfB7635441aA5A92791D001fA7388da8025'),  # noqa: E501 # Digital Ticks but Data Exchange in CC
         'GNC',     # Galaxy network but Greencoin in CC
         ethaddress_to_identifier('0xfF5c25D2F40B47C4a37f989DE933E26562Ef0Ac0'),  # noqa: E501 # Kora network but Knekted in CC
         ethaddress_to_identifier('0x49bD2DA75b1F7AF1E4dFd6b1125FEcDe59dBec58'),  # noqa: E501 # Linkey but LuckyCoin in CC
@@ -163,6 +163,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0xEf51c9377FeB29856E61625cAf9390bD0B67eA18'),  # noqa: E501 # Bionic but another BNC in CC
         'CHESS',  # tranchess but another chess in CC
         'BNC',  # bifrost but another BNC in CC
+        ethaddress_to_identifier('0x9e6C59321CEB205d5d3BC6c539c017aF6159B16c'),  # noqa: E501 # Mindcell but another MDC in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (

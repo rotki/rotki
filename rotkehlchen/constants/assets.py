@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 08/11/2021 14:26:02.
+# tools/scripts/generate_constant_assets.py at 10/11/2021 07:22:20.
 # Do not edit manually!
 
 from typing import List
