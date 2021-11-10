@@ -71,6 +71,7 @@ class RotkiNotifier():
         message_data = {'type': str(message_type), 'data': to_send_data}
         message = json.dumps(message_data)  # TODO: Check for dumps error
         to_remove_indices = set()
+        spawned_one_broadcast = False
         for idx, websocket in enumerate(self.subscribers):
             if websocket.closed is True:
                 to_remove_indices.add(idx)
@@ -88,11 +89,15 @@ class RotkiNotifier():
                 failure_callback=failure_callback,
                 failure_callback_args=failure_callback_args,
             )
+            spawned_one_broadcast = True
 
         if len(to_remove_indices) != 0:  # removed closed websockets from the list
             self.subscribers = [
                 i for j, i in enumerate(self.subscribers) if j not in to_remove_indices
             ]
+        if spawned_one_broadcast is False and failure_callback is not None:
+            failure_callback_args = {} if failure_callback_args is None else failure_callback_args  # noqa: E501
+            failure_callback(**failure_callback_args)
 
 
 class RotkiWSApp(WebSocketApplication):
