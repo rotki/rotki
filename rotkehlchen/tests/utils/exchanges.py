@@ -17,6 +17,7 @@ from rotkehlchen.exchanges.binance import (
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
 from rotkehlchen.exchanges.bitmex import Bitmex
+from rotkehlchen.exchanges.bitpanda import Bitpanda
 from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.coinbase import Coinbase
@@ -782,6 +783,25 @@ def create_test_independentreserve(
         name='independentreserve',
         api_key=make_api_key(),
         secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_bitpanda(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        api_key: Optional[ApiKey] = None,
+        secret: Optional[ApiSecret] = None,
+) -> Bitpanda:
+    if api_key is None:
+        api_key = make_api_key()
+    if secret is None:
+        secret = make_api_secret()
+    return Bitpanda(
+        name='bitpanda',
+        api_key=api_key,
+        secret=secret,
         database=database,
         msg_aggregator=msg_aggregator,
     )
