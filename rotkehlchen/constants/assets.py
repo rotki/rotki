@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 10/11/2021 07:22:20.
+# tools/scripts/generate_constant_assets.py at 10/11/2021 07:29:02.
 # Do not edit manually!
 
 from typing import List
@@ -2193,7 +2193,7 @@ A_ENS = EthereumToken.initialize(
     started=Timestamp(1635800117),
     swapped_for=None,
     coingecko='ethereum-name-service',
-    cryptocompare=None,
+    cryptocompare='ENS',
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_ENS)
