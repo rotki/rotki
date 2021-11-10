@@ -74,6 +74,7 @@ If you get a problem when starting the application or during its usage please op
 
 OSX
 ========
+
 Homebrew
 --------
 
@@ -83,6 +84,9 @@ Manual installation
 -------------------
 
 Go to the `releases <https://github.com/rotki/rotki/releases>`_ page and download the darwin-x64 dmg package from the `latest release <https://github.com/rotki/rotki/releases/latest>`_.
+
+   .. note::
+      rotki's minimum supported macOS version is Mojave(10.14). If you can't upgrade to Mojave(hardware older than 2012) either buy new Mac hardware or switch to Linux or Windows. This does not depend on us. It's Apple's policy to force their users buy more hardware.
 
 Click on the dmg installer and when prompted drag the rotki logo to your Applications. This will install the application and once finished you can select rotki from your applications folder and launch it.
 
