@@ -1,13 +1,13 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 10/11/2021 07:29:02.
+# tools/scripts/generate_constant_assets.py at 10/11/2021 11:07:26.
 # Do not edit manually!
 
 from typing import List
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.typing import Timestamp
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.typing import Timestamp
 
 CONSTANT_ASSETS: List[Asset] = []
 
@@ -301,6 +301,18 @@ A_PICKLE = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_PICKLE)
+A_BEST = EthereumToken.initialize(
+    address=string_to_ethereum_address('0x1B073382E63411E3BcfFE90aC1B9A43feFa1Ec6F'),
+    decimals=8,
+    name="Bitpanda Ecosystem Token",
+    symbol='BEST',
+    started=Timestamp(1564487711),
+    swapped_for=None,
+    coingecko='bitpanda-ecosystem-token',
+    cryptocompare='BEST',
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_BEST)
 
 A_AAVE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'),
