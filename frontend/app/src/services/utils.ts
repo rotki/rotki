@@ -20,8 +20,13 @@ export function fetchExternalAsync(
     .then(handleResponse);
 }
 
-export function handleResponse<T>(response: AxiosResponse<ActionResult<T>>): T {
-  const { result, message } = response.data;
+type Parser<T> = (response: AxiosResponse<ActionResult<T>>) => ActionResult<T>;
+
+export function handleResponse<T>(
+  response: AxiosResponse<ActionResult<T>>,
+  parse: Parser<T> = response => response.data
+): T {
+  const { result, message } = parse(response);
   if (result) {
     return result;
   }

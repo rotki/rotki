@@ -28,3 +28,14 @@ export function nonNullProperties<T>(object: T): Partial<T> {
   }
   return partial;
 }
+
+export const size = (bytes: number) => {
+  let i = 0;
+
+  for (i; bytes > 1024; i++) {
+    bytes /= 1024;
+  }
+
+  const symbol = 'KMGTPEZY'[i - 1] || '';
+  return `${bytes.toFixed(2)}  ${symbol}B`;
+};

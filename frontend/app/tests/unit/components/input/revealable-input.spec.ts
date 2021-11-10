@@ -34,7 +34,7 @@ describe('RevealableInput.vue', () => {
   test('should change to type text', async () => {
     const input = wrapper.find('input');
     await wrapper.vm.$nextTick();
-    wrapper.find('.v-btn').trigger('click');
+    wrapper.find('button').trigger('click');
     await wrapper.vm.$nextTick();
     expect(input.attributes('type')).toBe('text');
   });

@@ -25,5 +25,3 @@ export default class EventTypeDisplay extends Vue {
   }
 }
 </script>
-
-<style scoped></style>

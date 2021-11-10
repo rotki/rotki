@@ -38,4 +38,3 @@ export default class ConnectionFailure extends Vue {
   }
 }
 </script>
-<style scoped lang="scss"></style>

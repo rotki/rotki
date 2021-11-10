@@ -106,5 +106,3 @@ export default class UserDropdown extends Vue {
   }
 }
 </script>
-
-<style scoped></style>

@@ -1,11 +1,18 @@
-jest.mock('@/services/rotkehlchen-api');
-
 import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import store from '@/store/store';
 import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
 import '../../i18n';
+import { BackupApi } from '../../../../src/services/backup/backup-api';
+import { api } from '../../../../src/services/rotkehlchen-api';
+import { stub } from '../../../common/utils';
+
+jest.spyOn(api, 'backups', 'get').mockReturnValue(
+  stub<BackupApi>({
+    info: jest.fn()
+  })
+);
 
 Vue.use(Vuetify);
 
@@ -23,6 +30,7 @@ describe('UserSecuritySettings.vue', () => {
         'asset-select',
         'asset-update',
         'confirm-dialog',
+        'data-table',
         'card'
       ],
       mocks: {

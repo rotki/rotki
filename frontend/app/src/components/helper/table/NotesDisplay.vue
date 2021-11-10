@@ -28,5 +28,3 @@ export default class NotesDisplay extends Vue {
   notes!: string | null;
 }
 </script>
-
-<style scoped lang="scss"></style>

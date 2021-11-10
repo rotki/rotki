@@ -12,6 +12,7 @@ Changelog
 * :feature:`1536` The Account & Balances add button will now be fixed to the right bottom of the screen. The blockchain balances add button will now properly select the appropriate blockchain based on the visible table.
 * :feature:`3686` Users can now see if any of their addresses have ENS available to claim from the ENS airdrop.
 * :feature:`3335` Users will now be able to find the pending tasks in the notification sidebar.
+* :feature:`3235` Users will now be able to create and manage database backups, and view information related to the rotki databases.
 
 * :release:`1.21.3 <2021-10-28>`
 * :bug:`2178` Premium DB sync popup should no longer popup if you only use one instance of rotki in one system.

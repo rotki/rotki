@@ -39,3 +39,9 @@ export const floatingPrecision = computed(() => {
   const { floatingPrecision } = sessionState.generalSettings;
   return floatingPrecision;
 });
+
+export const dateDisplayFormat = computed(() => {
+  const sessionState = getSessionState();
+  const { dateDisplayFormat } = sessionState.generalSettings;
+  return dateDisplayFormat;
+});

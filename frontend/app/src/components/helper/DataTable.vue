@@ -58,5 +58,3 @@ export default class DataTable extends Mixins(SettingsMixin) {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

@@ -308,5 +308,3 @@ export default class FrontendSettings extends Mixins<
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

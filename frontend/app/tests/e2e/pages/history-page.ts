@@ -36,9 +36,11 @@ export class HistoryPage {
   }
 
   confirmDelete() {
-    cy.get('.confirm-dialog__title').should('contain', 'Delete Trade');
-    cy.get('.confirm-dialog__buttons__confirm').click();
-    cy.get('.confirm-dialog__title').should('not.be.visible');
+    cy.get('[data-cy=confirm-dialog]')
+      .find('[data-cy=dialog-title]')
+      .should('contain', 'Delete Trade');
+    cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
+    cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
   }
 
   visibleEntries(visible: number) {

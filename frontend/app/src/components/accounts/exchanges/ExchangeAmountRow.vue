@@ -35,5 +35,3 @@ export default class ExchangeAmountRow extends Vue {
   exchange!: SupportedExchange;
 }
 </script>
-
-<style scoped lang="scss"></style>

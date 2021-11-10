@@ -1,61 +1,57 @@
 <template>
-  <v-row no-gutters>
-    <v-col>
-      <v-card>
-        <v-card-title>
-          <card-title>{{ $t('change_password.title') }}</card-title>
-        </v-card-title>
+  <card>
+    <template #title>{{ $t('change_password.title') }}</template>
 
-        <v-form ref="form">
-          <v-card-text>
-            <v-alert
-              v-if="premiumSync"
-              type="warning"
-              prominent
-              outlined
-              v-text="$t('change_password.sync_warning')"
-            />
-            <revealable-input
-              v-model="currentPassword"
-              class="user-security-settings__fields__current-password"
-              :label="$t('change_password.labels.password')"
-              :rules="passwordRules"
-            />
-            <revealable-input
-              v-model="newPassword"
-              class="user-security-settings__fields__new-password"
-              :label="$t('change_password.labels.new_password')"
-              :rules="passwordRules"
-            />
-            <revealable-input
-              v-model="newPasswordConfirm"
-              class="user-security-settings__fields__new-password-confirm"
-              :label="$t('change_password.labels.confirm_password')"
-              prepend-icon="mdi-repeat"
-              :rules="passwordConfirmRules"
-              :error-messages="errorMessages"
-            />
-          </v-card-text>
-          <v-card-actions>
-            <v-btn
-              depressed
-              class="user-security-settings__buttons__change-password"
-              color="primary"
-              :disabled="
-                !(
-                  currentPassword &&
-                  newPassword &&
-                  newPassword === newPasswordConfirm
-                )
-              "
-              @click="change()"
-              v-text="$t('change_password.button')"
-            />
-          </v-card-actions>
-        </v-form>
-      </v-card>
-    </v-col>
-  </v-row>
+    <v-form ref="form">
+      <v-alert
+        v-if="premiumSync"
+        type="warning"
+        prominent
+        outlined
+        v-text="$t('change_password.sync_warning')"
+      />
+      <revealable-input
+        v-model="currentPassword"
+        class="user-security-settings__fields__current-password"
+        :label="$t('change_password.labels.password')"
+        :rules="passwordRules"
+        outlined
+      />
+      <revealable-input
+        v-model="newPassword"
+        class="user-security-settings__fields__new-password"
+        :label="$t('change_password.labels.new_password')"
+        :rules="passwordRules"
+        outlined
+      />
+      <revealable-input
+        v-model="newPasswordConfirm"
+        class="user-security-settings__fields__new-password-confirm"
+        :label="$t('change_password.labels.confirm_password')"
+        prepend-icon="mdi-repeat"
+        :rules="passwordConfirmRules"
+        :error-messages="errorMessages"
+        outlined
+      />
+    </v-form>
+
+    <template #buttons>
+      <v-btn
+        depressed
+        class="user-security-settings__buttons__change-password"
+        color="primary"
+        :disabled="
+          !(
+            currentPassword &&
+            newPassword &&
+            newPassword === newPasswordConfirm
+          )
+        "
+        @click="change()"
+        v-text="$t('change_password.button')"
+      />
+    </template>
+  </card>
 </template>
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';

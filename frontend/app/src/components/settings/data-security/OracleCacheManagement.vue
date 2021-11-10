@@ -309,5 +309,3 @@ export default class OracleCacheManagement extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

@@ -48,8 +48,8 @@ import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue'
 import Fragment from '@/components/helper/Fragment';
 import { tradeLocations } from '@/components/history/consts';
 import {
-  ALL_DECENTRALIZED_EXCHANGES,
   ALL_CENTRALIZED_EXCHANGES,
+  ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES,
   ALL_TRANSACTIONS,
   PURGABLE
@@ -113,5 +113,3 @@ export default class PurgeSelector extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

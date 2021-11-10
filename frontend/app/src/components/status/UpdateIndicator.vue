@@ -33,5 +33,3 @@ export default class UpdateIndicator extends Vue {
   }
 }
 </script>
-
-<style scoped></style>

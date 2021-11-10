@@ -55,5 +55,3 @@ export default class RoundingSelector extends Vue {
   ];
 }
 </script>
-
-<style scoped lang="scss"></style>

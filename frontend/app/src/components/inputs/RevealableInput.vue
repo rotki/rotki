@@ -2,8 +2,8 @@
   <v-text-field
     v-bind="$attrs"
     :value="value"
-    class="revealable-input"
-    :prepend-icon="prependIcon"
+    :prepend-icon="outlined ? null : prependIcon"
+    :prepend-inner-icon="outlined ? prependIcon : null"
     :type="revealed ? 'text' : 'password'"
     :rules="rules"
     :label="label"
@@ -11,49 +11,72 @@
     :disabled="disabled"
     :persistent-hint="!!hint"
     :error-messages="errorMessages"
+    :outlined="outlined"
+    single-line
+    :append-icon="revealed ? 'mdi-eye' : 'mdi-eye-off'"
     v-on="$listeners"
+    @click:append="revealed = !revealed"
     @input="input"
-  >
-    <template #append>
-      <v-btn tabindex="-1" icon @click="revealed = !revealed">
-        <v-icon v-if="revealed">mdi-eye</v-icon>
-        <v-icon v-else>mdi-eye-off</v-icon>
-      </v-btn>
-    </template>
-  </v-text-field>
+  />
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType, ref } from '@vue/composition-api';
 
-@Component({})
-export default class RevealableInput extends Vue {
-  revealed: boolean = false;
-
-  @Prop({ required: true })
-  value!: string;
-
-  @Prop({ required: false, default: () => [] })
-  rules!: ((v: string) => boolean | string)[];
-
-  @Prop({ required: false, default: '' })
-  label!: string;
-
-  @Prop({ required: false, default: 'mdi-key' })
-  prependIcon!: string;
-
-  @Prop({ required: false, default: '' })
-  hint!: string;
-
-  @Prop({ required: false, default: '' })
-  errorMessages!: string | any[];
-
-  @Prop({ required: false, default: false })
-  disabled!: boolean;
-
-  @Emit()
-  input(_value: string) {}
-}
+const RevealableInput = defineComponent({
+  name: 'RevealableInput',
+  props: {
+    value: {
+      required: true,
+      type: String
+    },
+    rules: {
+      required: false,
+      default: () => [],
+      type: Array as PropType<((v: string) => boolean | string)[]>
+    },
+    outlined: {
+      required: false,
+      type: Boolean,
+      default: false
+    },
+    disabled: {
+      required: false,
+      type: Boolean,
+      default: false
+    },
+    label: {
+      required: false,
+      type: String,
+      default: ''
+    },
+    hint: {
+      required: false,
+      type: String,
+      default: ''
+    },
+    prependIcon: {
+      required: false,
+      type: String,
+      default: 'mdi-key'
+    },
+    errorMessages: {
+      required: false,
+      type: [String, Array],
+      default: ''
+    }
+  },
+  emits: ['input'],
+  setup(_, { emit }) {
+    const revealed = ref(false);
+    const input = (value: string | null) => {
+      emit('input', value);
+    };
+    return {
+      revealed,
+      input
+    };
+  }
+});
+export default RevealableInput;
 </script>
-
-<style scoped></style>

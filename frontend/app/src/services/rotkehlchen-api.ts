@@ -14,6 +14,7 @@ import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
+import { BackupApi } from '@/services/backup/backup-api';
 import { BalancesApi } from '@/services/balances/balances-api';
 import { basicAxiosTransformer } from '@/services/consts';
 import { DefiApi } from '@/services/defi/defi-api';
@@ -79,6 +80,7 @@ export class RotkehlchenApi {
   private _balances: BalancesApi;
   private _history: HistoryApi;
   private _assets: AssetApi;
+  private _backups: BackupApi;
   private _serverUrl: string;
   private readonly baseTransformer = setupTransformer([]);
 
@@ -90,6 +92,15 @@ export class RotkehlchenApi {
     return this._serverUrl === process.env.VUE_APP_BACKEND_URL;
   }
 
+  private setupApis = (axios: AxiosInstance) => ({
+    defi: new DefiApi(axios),
+    session: new SessionApi(axios),
+    balances: new BalancesApi(axios),
+    history: new HistoryApi(axios),
+    assets: new AssetApi(axios),
+    backups: new BackupApi(axios)
+  });
+
   constructor() {
     this._serverUrl = process.env.VUE_APP_BACKEND_URL!;
     this.axios = axios.create({
@@ -97,11 +108,14 @@ export class RotkehlchenApi {
       timeout: 30000
     });
     this.baseTransformer = setupTransformer();
-    this._defi = new DefiApi(this.axios);
-    this._session = new SessionApi(this.axios);
-    this._balances = new BalancesApi(this.axios);
-    this._history = new HistoryApi(this.axios);
-    this._assets = new AssetApi(this.axios);
+    ({
+      defi: this._defi,
+      session: this._session,
+      balances: this._balances,
+      history: this._history,
+      assets: this._assets,
+      backups: this._backups
+    } = this.setupApis(this.axios));
   }
 
   get defi(): DefiApi {
@@ -124,17 +138,24 @@ export class RotkehlchenApi {
     return this._assets;
   }
 
+  get backups(): BackupApi {
+    return this._backups;
+  }
+
   setup(serverUrl: string) {
     this._serverUrl = serverUrl;
     this.axios = axios.create({
       baseURL: `${serverUrl}/api/1/`,
       timeout: 30000
     });
-    this._defi = new DefiApi(this.axios);
-    this._session = new SessionApi(this.axios);
-    this._balances = new BalancesApi(this.axios);
-    this._history = new HistoryApi(this.axios);
-    this._assets = new AssetApi(this.axios);
+    ({
+      defi: this._defi,
+      session: this._session,
+      balances: this._balances,
+      history: this._history,
+      assets: this._assets,
+      backups: this._backups
+    } = this.setupApis(this.axios));
   }
 
   checkIfLogged(username: string): Promise<boolean> {

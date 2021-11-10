@@ -42,5 +42,3 @@ export default class OracleEntry extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>

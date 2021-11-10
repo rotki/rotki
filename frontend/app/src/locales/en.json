@@ -186,6 +186,10 @@
     "subtitle": "Modify the backend settings",
     "title": "Backend Settings"
   },
+  "backup_manager": {
+    "backup_button": "Create new Backup",
+    "title": "User Database Backups"
+  },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "premium": "Balancer feature "
@@ -324,6 +328,53 @@
   "currency_drop_down": {
     "hint": "Select as the main currency",
     "profit_currency": "Profit Currency"
+  },
+  "database_backups": {
+    "action": {
+      "delete": "Delete the backup",
+      "download": "Download the backup"
+    },
+    "backup": {
+      "message": "A database backup was successfully created {filepath}",
+      "title": "Database Backup"
+    },
+    "backup_error": {
+      "message": "There was a problem creating the database backup: {message}",
+      "title": "Database Backup failure"
+    },
+    "column": {
+      "size": "Size",
+      "time": "Time",
+      "version": "Version"
+    },
+    "confirm": {
+      "message": "Are you sure you want to delete the {size} database backup from {date}?",
+      "title": "Delete database backup"
+    },
+    "delete_error": {
+      "message": "There was a problem deleting {file}: {message}",
+      "title": "Backup delete failure"
+    },
+    "load_error": {
+      "message": "There was a problem loading the list of available backups: {message}",
+      "title": "Database Backup load"
+    },
+    "row": {
+      "total": "Total"
+    }
+  },
+  "database_info_display": {
+    "title": "Database Info",
+    "userdb": "User Database",
+    "userdb_version": "Database Version:",
+    "userdb_size": "Size on disk:",
+    "directory": "Database Directory:",
+    "globaldb_schema": "Schema version:",
+    "globaldb_assets": "Assets version:",
+    "globaldb": "Global Database"
+  },
+  "database_manager": {
+    "refresh_tooltip": "Refresh the database backup list"
   },
   "date_format_help": {
     "close": "Close",

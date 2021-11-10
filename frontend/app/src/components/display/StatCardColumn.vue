@@ -21,5 +21,3 @@ export default class StatCardColumn extends Vue {
   lock!: boolean;
 }
 </script>
-
-<style scoped></style>

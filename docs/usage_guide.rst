@@ -361,6 +361,21 @@ By choosing the "user & security" section of the settings you can change the use
    :alt: Changing the user's password
    :align: center
 
+Database Info & User Database Backups
+-------------------------------------
+
+By visiting the database info section you can see information about your user and global database,
+such as the user database directory, size and version.
+
+.. image:: images/sc_db_backup.png
+   :alt: Creating database backups
+   :align: center
+
+You can create new database backups by pressing the ``Create new backup`` button.
+To delete a backup you can press the trash can icon on the database row.
+
+The download button provides an easy way to save the backups locally, and it can be
+especially helpful if you run the docker instance on a remote machine.
 
 Purging data
 -----------------

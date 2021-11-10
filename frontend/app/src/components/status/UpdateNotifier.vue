@@ -51,5 +51,3 @@ export default class UpdateNotifier extends Vue {
   }
 }
 </script>
-
-<style scoped lang="scss"></style>
