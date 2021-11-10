@@ -284,6 +284,12 @@ export default class AccountForm extends Vue {
   readonly FIELD_ADDRESS = FIELD_ADDRESS;
   readonly FIELD_DERIVATION_PATH = FIELD_DERIVATION_PATH;
 
+  @Watch('blockchain')
+  onSelectionChange() {
+    (this.$refs.form as any).resetValidation();
+    this.clearErrors('address');
+  }
+
   get entries(): string[] {
     const addresses = this.addresses
       .split(',')
