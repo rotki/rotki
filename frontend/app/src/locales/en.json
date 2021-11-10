@@ -187,15 +187,8 @@
     "title": "Backend Settings"
   },
   "backup_manager": {
-    "backup_button": "Backup",
-    "directory": "Database Directory:",
-    "globaldb_schema": "Schema version: {schema}",
-    "globaldb_assets": "Assets version: {assets}",
-    "globaldb": "Global Database:",
-    "title": "Database Backups",
-    "userdb": "User Database:",
-    "userdb_version": "v{version}",
-    "userdb_size": "Size on disk: {size}"
+    "backup_button": "Create new Backup",
+    "title": "User Database Backups"
   },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
@@ -369,6 +362,16 @@
     "row": {
       "total": "Total"
     }
+  },
+  "database_info_display": {
+    "title": "Database Info",
+    "userdb": "User Database",
+    "userdb_version": "Database Version:",
+    "userdb_size": "Size on disk:",
+    "directory": "Database Directory:",
+    "globaldb_schema": "Schema version:",
+    "globaldb_assets": "Assets version:",
+    "globaldb": "Global Database"
   },
   "database_manager": {
     "refresh_tooltip": "Refresh the database backup list"

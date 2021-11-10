@@ -1,54 +1,54 @@
 <template>
-  <div>
-    <v-row align="start">
-      <v-col :class="$style.label" cols="auto">
-        {{ $t('backup_manager.directory') }}
-      </v-col>
-      <v-col>{{ directory }}</v-col>
-    </v-row>
+  <card>
+    <template #title>{{ $t('database_info_display.title') }}</template>
+
     <v-row>
       <v-col>
-        <v-row align="start">
+        <v-row>
+          <v-col class="text-h6">
+            {{ $t('database_info_display.userdb') }}
+          </v-col>
+        </v-row>
+        <v-row align="start" no-gutters class="mt-2">
           <v-col :class="$style.label" cols="auto">
-            {{ $t('backup_manager.userdb') }}
+            {{ $t('database_info_display.directory') }}
           </v-col>
-          <v-col>
-            <div>
-              {{
-                $t('backup_manager.userdb_version', { version: userDb.version })
-              }}
-            </div>
-            <div>
-              {{ $t('backup_manager.userdb_size', { size: userDb.size }) }}
-            </div>
+          <v-col>{{ directory }}</v-col>
+        </v-row>
+        <v-row align="start" no-gutters>
+          <v-col :class="$style.label" cols="auto">
+            {{ $t('database_info_display.userdb_version') }}
           </v-col>
+          <v-col>{{ userDb.version }}</v-col>
+        </v-row>
+        <v-row align="start" no-gutters>
+          <v-col :class="$style.label" cols="auto">
+            {{ $t('database_info_display.userdb_size') }}
+          </v-col>
+          <v-col>{{ userDb.size }}</v-col>
         </v-row>
       </v-col>
       <v-col>
-        <v-row align="start">
+        <v-row>
+          <v-col class="text-h6">
+            {{ $t('database_info_display.globaldb') }}
+          </v-col>
+        </v-row>
+        <v-row align="start" no-gutters class="mt-2">
           <v-col :class="$style.label" cols="auto">
-            {{ $t('backup_manager.globaldb') }}
+            {{ $t('database_info_display.globaldb_schema') }}
           </v-col>
-          <v-col>
-            <div>
-              {{
-                $t('backup_manager.globaldb_schema', {
-                  schema: globalDb.schema
-                })
-              }}
-            </div>
-            <div>
-              {{
-                $t('backup_manager.globaldb_assets', {
-                  assets: globalDb.assets
-                })
-              }}
-            </div>
+          <v-col>{{ globalDb.schema }}</v-col>
+        </v-row>
+        <v-row align="start" no-gutters>
+          <v-col :class="$style.label" cols="auto">
+            {{ $t('database_info_display.globaldb_assets') }}
           </v-col>
+          <v-col>{{ globalDb.assets }}</v-col>
         </v-row>
       </v-col>
     </v-row>
-  </div>
+  </card>
 </template>
 <script lang="ts">
 import { defineComponent, PropType } from '@vue/composition-api';

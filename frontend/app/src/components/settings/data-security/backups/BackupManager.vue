@@ -1,38 +1,39 @@
 <template>
-  <card outlined-body>
-    <template #title>{{ $t('backup_manager.title') }}</template>
-    <template #actions>
-      <database-info-display
-        :directory="directory"
-        :global-db="globalDb"
-        :user-db="userDb"
-      />
-    </template>
-    <template #details>
-      <refresh-button
-        :loading="loading"
-        :tooltip="$t('database_manager.refresh_tooltip')"
-        @refresh="loadInfo"
-      />
-    </template>
-    <database-backups
-      :loading="loading"
-      :items="backups"
+  <fragment>
+    <database-info-display
+      class="mt-8"
       :directory="directory"
-      @remove="remove"
+      :global-db="globalDb"
+      :user-db="userDb"
     />
-    <template #buttons>
-      <v-btn
-        depressed
-        color="primary"
-        :disabled="saving"
-        :loading="saving"
-        @click="backup"
-      >
-        {{ $t('backup_manager.backup_button') }}
-      </v-btn>
-    </template>
-  </card>
+    <card outlined-body class="mt-8">
+      <template #title>{{ $t('backup_manager.title') }}</template>
+      <template #details>
+        <refresh-button
+          :loading="loading"
+          :tooltip="$t('database_manager.refresh_tooltip')"
+          @refresh="loadInfo"
+        />
+      </template>
+      <database-backups
+        :loading="loading"
+        :items="backups"
+        :directory="directory"
+        @remove="remove"
+      />
+      <template #buttons>
+        <v-btn
+          depressed
+          color="primary"
+          :disabled="saving"
+          :loading="saving"
+          @click="backup"
+        >
+          {{ $t('backup_manager.backup_button') }}
+        </v-btn>
+      </template>
+    </card>
+  </fragment>
 </template>
 
 <script lang="ts">
@@ -43,6 +44,7 @@ import {
   Ref,
   ref
 } from '@vue/composition-api';
+import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import DatabaseInfoDisplay from '@/components/settings/data-security/backups/DatabaseInfoDisplay.vue';
@@ -199,6 +201,7 @@ function setupBackupActions(
 const BackupManager = defineComponent({
   name: 'BackupManager',
   components: {
+    Fragment,
     RefreshButton,
     DatabaseInfoDisplay,
     DatabaseBackups
