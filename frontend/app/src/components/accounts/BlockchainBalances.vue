@@ -122,6 +122,7 @@ import {
   computed,
   defineComponent,
   onMounted,
+  Ref,
   ref
 } from '@vue/composition-api';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
@@ -129,7 +130,7 @@ import AccountForm from '@/components/accounts/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
-import { setupBlockchainData } from '@/composables/balances';
+import { BlockchainData, setupBlockchainData } from '@/composables/balances';
 import { useProxy } from '@/composables/common';
 import i18n from '@/i18n';
 import { BlockchainAccountWithBalance } from '@/store/balances/types';
@@ -218,9 +219,29 @@ const BlockchainBalances = defineComponent({
       };
     };
 
+    const blockchainData = setupBlockchainData();
+
+    const getFirstContext = (data: BlockchainData) => {
+      const hasData = (data: Ref<BlockchainAccountWithBalance[]>) => {
+        return data.value.length > 0;
+      };
+
+      if (hasData(data.btcAccounts)) {
+        return Blockchain.BTC;
+      } else if (hasData(data.kusamaBalances)) {
+        return Blockchain.KSM;
+      } else if (hasData(data.polkadotBalances)) {
+        return Blockchain.DOT;
+      } else if (hasData(data.avaxAccounts)) {
+        return Blockchain.AVAX;
+      }
+
+      return Blockchain.ETH;
+    };
+
     const context = computed(() => {
       const intersect = intersections.value;
-      let currentContext = Blockchain.ETH;
+      let currentContext = getFirstContext(blockchainData);
 
       for (const current in Blockchain) {
         if (intersect[current as Blockchain]) {
@@ -238,9 +259,9 @@ const BlockchainBalances = defineComponent({
       [Blockchain.KSM]: (entries: IntersectionObserverEntry[]) =>
         updateWhenRatio(entries, Blockchain.KSM),
       [Blockchain.DOT]: (entries: IntersectionObserverEntry[]) =>
-        updateWhenRatio(entries, Blockchain.KSM),
+        updateWhenRatio(entries, Blockchain.DOT),
       [Blockchain.AVAX]: (entries: IntersectionObserverEntry[]) =>
-        updateWhenRatio(entries, Blockchain.KSM)
+        updateWhenRatio(entries, Blockchain.AVAX)
     };
 
     return {
@@ -256,7 +277,7 @@ const BlockchainBalances = defineComponent({
       clearDialog,
       saveAccount,
       observers,
-      ...setupBlockchainData(),
+      ...blockchainData,
       threshold: [1]
     };
   }

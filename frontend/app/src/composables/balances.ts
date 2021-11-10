@@ -1,5 +1,5 @@
 import { AssetBalanceWithPrice } from '@rotki/common';
-import { computed } from '@vue/composition-api';
+import { computed, Ref } from '@vue/composition-api';
 import {
   AssetInfoGetter,
   AssetSymbolGetter,
@@ -13,7 +13,16 @@ export const setupExchangeRateGetter = () => {
   return store.getters['balances/exchangeRate'] as ExchangeRateGetter;
 };
 
-export const setupBlockchainData = () => {
+export type BlockchainData = {
+  btcAccounts: Ref<BlockchainAccountWithBalance[]>;
+  polkadotBalances: Ref<BlockchainAccountWithBalance[]>;
+  blockchainAssets: Ref<AssetBalanceWithPrice[]>;
+  ethAccounts: Ref<BlockchainAccountWithBalance[]>;
+  avaxAccounts: Ref<BlockchainAccountWithBalance[]>;
+  kusamaBalances: Ref<BlockchainAccountWithBalance[]>;
+};
+
+export const setupBlockchainData = (): BlockchainData => {
   const store = useStore();
 
   const ethAccounts = computed<BlockchainAccountWithBalance[]>(
