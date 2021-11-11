@@ -614,6 +614,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'BTCP',  # delisted
     'CADH',  # no cryptocompare/coingecko data
     'CBC',  # neither in coingecko nor cryptocompare
+    'CWAR',  # neither in coingecko nor cryptocompare
     'DOGE3L',  # no cryptocompare/coingecko data
     'DOGE3S',  # no cryptocompare/coingecko data
     'DOT3L',  # no cryptocompare/coingecko data
