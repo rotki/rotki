@@ -9,6 +9,7 @@ import gevent
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_bitpanda
@@ -16,13 +17,14 @@ from rotkehlchen.constants.assets import A_BEST
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
-from rotkehlchen.exchanges.data_structures import Trade, TradeType
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade, TradeType
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
+    deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_int_from_str,
     deserialize_trade_type,
@@ -130,13 +132,79 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return changed
 
+    def _deserialize_fiattx(
+            self,
+            entry: Dict[str, Any],
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> Optional[AssetMovement]:
+        """Deserializes a bitpanda fiatwallets/transactions entry to a deposit/withdrawal
+
+        Returns None and logs error is there is a problem or simpy None if
+        it's not a type of entry we are interested in
+        """
+        try:
+            if entry['type'] != 'fiat_wallet_transaction' or entry['attributes']['status'] != 'finished':  # noqa: E501
+                return None
+            time = Timestamp(deserialize_int_from_str(
+                symbol=entry['attributes']['time']['unix'],
+                location='bitpanda fiat wallet transaction',
+            ))
+            if time < from_ts or time > to_ts:
+                # should we also stop querying from calling method?
+                # Probably yes but docs don't mention anything about results
+                # being ordered by time so let's be conservative
+                return None
+
+            try:
+                movement_category = deserialize_asset_movement_category(entry['attributes']['type'])  # noqa: E501
+            except DeserializationError:
+                return None  # not a deposit/withdrawal
+
+            fiat_id = entry['attributes']['fiat_id']
+            fiat_asset = self.fiat_map.get(fiat_id)
+            if fiat_asset is None:
+                self.msg_aggregator.add_error(
+                    f'Could not find bitpanda fiat with id {fiat_id} in the mapping',
+                )
+                return None
+            amount = deserialize_asset_amount(entry['attributes']['amount'])
+            fee = deserialize_fee(entry['attributes']['fee'])
+            tx_id = entry['id']
+
+        except (DeserializationError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key {msg} for fiat transaction entry'
+
+            self.msg_aggregator.add_error(f'Error processing bitpanda fiat transaction entry due to {msg}')  # noqa: E501
+            log.error(
+                'Error processing bitpanda fiat transaction entry',
+                error=msg,
+                entry=entry,
+            )
+            return None
+
+        return AssetMovement(
+            location=Location.BITPANDA,
+            category=movement_category,
+            address=None,
+            transaction_id=None,
+            timestamp=time,
+            asset=fiat_asset,
+            amount=amount,
+            fee_asset=fiat_asset,
+            fee=fee,
+            link=tx_id,
+        )
+
     def _deserialize_trade(
             self,
             entry: Dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> Optional[Trade]:
-        """Deserializes a bitpanda entry to a Trade
+        """Deserializes a bitpanda trades result entry to a Trade
 
         Returns None and logs error is there is a problem or simpy None if
         it's not a type of trade we are interested in
@@ -219,7 +287,7 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     @overload
     def _api_query(  # pylint: disable=no-self-use
             self,
-            endpoint: Literal['wallets', 'fiatwallets', 'trades'],
+            endpoint: Literal['wallets', 'fiatwallets', 'trades', 'fiatwallets/transactions'],
             options: Optional[Dict[str, Any]] = None,
     ) -> Tuple[List[Any], Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         ...
@@ -293,13 +361,33 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         return decoded_json['data'], decoded_json.get('meta'), decoded_json.get('links')
 
-    def _query_endpoint_until_end(
+    @overload
+    def _query_endpoint_until_end(  # pylint: disable=no-self-use
             self,
             endpoint: Literal['trades'],
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             options: Optional[Dict[str, Any]] = None,
     ) -> List[Trade]:
+        ...
+
+    @overload
+    def _query_endpoint_until_end(  # pylint: disable=no-self-use
+            self,
+            endpoint: Literal['fiatwallets/transactions'],
+            from_ts: Optional[Timestamp],
+            to_ts: Optional[Timestamp],
+            options: Optional[Dict[str, Any]] = None,
+    ) -> List[AssetMovement]:
+        ...
+
+    def _query_endpoint_until_end(
+            self,
+            endpoint: Literal['trades', 'fiatwallets/transactions'],
+            from_ts: Optional[Timestamp],
+            to_ts: Optional[Timestamp],
+            options: Optional[Dict[str, Any]] = None,
+    ) -> Union[List[Trade], List[AssetMovement]]:
         """Query a paginated endpoint until all pages are read
 
         May raise RemoteError
@@ -309,7 +397,8 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         given_options = options.copy() if options else {}
         page = 1
         count_so_far = 0
-        trades = []
+        result = []
+        deserialize_fn = self._deserialize_trade if endpoint == 'trades' else self._deserialize_fiattx  # noqa: E501
         while True:
             given_options['page_size'] = MAX_PAGE_SIZE
             given_options['page'] = page
@@ -319,9 +408,9 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
 
             for entry in data:
-                trade = self._deserialize_trade(entry, from_timestamp, to_timestamp)
-                if trade is not None:
-                    trades.append(trade)
+                decoded_entry = deserialize_fn(entry, from_timestamp, to_timestamp)
+                if decoded_entry is not None:
+                    result.append(decoded_entry)
 
             count_so_far += len(data)
             if meta is None or meta.get('total_count') is None:
@@ -334,7 +423,7 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             page += 1
 
-        return trades
+        return result  # type: ignore
 
     # ---- General exchanges interface ----
     @protect_with_lock()
@@ -411,3 +500,32 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             to_ts=end_ts,
         )
         return trades, (start_ts, end_ts)
+
+    def query_online_deposits_withdrawals(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> List[AssetMovement]:
+        self.first_connection()
+        # Should probably also query wallets/transactions for crypto deposits/withdrawals
+        # but it does not seem as if they contain them
+        movements = self._query_endpoint_until_end(
+            endpoint='fiatwallets/transactions',
+            from_ts=start_ts,
+            to_ts=end_ts,
+        )
+        return movements
+
+    def query_online_margin_history(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[MarginPosition]:
+        return []  # noop for Bitpanda
+
+    def query_online_income_loss_expense(
+            self,  # pylint: disable=no-self-use
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> List[LedgerAction]:
+        return []  # noop for Bitpanda
