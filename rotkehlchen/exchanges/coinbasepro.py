@@ -22,7 +22,7 @@ from rotkehlchen.assets.converters import asset_from_coinbasepro
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -235,6 +235,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     request_method.lower(),
                     full_url,
                     data=stringified_options,
+                    timeout=DEFAULT_TIMEOUT_TUPLE,
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(

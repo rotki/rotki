@@ -3,6 +3,7 @@ from typing import Dict, Optional
 from rotkehlchen.assets.asset import (
     WORLD_TO_BINANCE,
     WORLD_TO_BITFINEX,
+    WORLD_TO_BITPANDA,
     WORLD_TO_BITSTAMP,
     WORLD_TO_BITTREX,
     WORLD_TO_COINBASE,
@@ -735,6 +736,7 @@ UPHOLD_TO_WORLD = {v: k for k, v in WORLD_TO_UPHOLD.items()}
 BITSTAMP_TO_WORLD = {v: k for k, v in WORLD_TO_BITSTAMP.items()}
 GEMINI_TO_WORLD = {v: k for k, v in WORLD_TO_GEMINI.items()}
 NEXO_TO_WORLD = {v: k for k, v in WORLD_TO_NEXO.items()}
+BITPANDA_TO_WORLD = {v: k for k, v in WORLD_TO_BITPANDA.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -999,4 +1001,17 @@ def asset_from_nexo(nexo_name: str) -> Asset:
         raise DeserializationError(f'Got non-string type {type(nexo_name)} for nexo asset')
 
     our_name = NEXO_TO_WORLD.get(nexo_name, nexo_name)
+    return symbol_to_asset_or_token(our_name)
+
+
+def asset_from_bitpanda(bitpanda_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(bitpanda_name, str):
+        raise DeserializationError(f'Got non-string type {type(bitpanda_name)} for bitpanda asset')
+
+    our_name = BITPANDA_TO_WORLD.get(bitpanda_name, bitpanda_name)
     return symbol_to_asset_or_token(our_name)

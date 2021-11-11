@@ -43,6 +43,7 @@ SUPPORTED_EXCHANGES = [
     Location.KUCOIN,
     Location.FTX,
     Location.INDEPENDENTRESERVE,
+    Location.BITPANDA,
 ]
 EXCHANGES_WITH_PASSPHRASE = (Location.COINBASEPRO, Location.KUCOIN)
 # Exchanges for which we allow import via CSV

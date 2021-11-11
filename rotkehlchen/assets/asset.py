@@ -505,6 +505,15 @@ WORLD_TO_NEXO = {
     strethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7'): 'USDTERC',
 }
 
+WORLD_TO_BITPANDA = {
+    'IOTA': 'MIOTA',
+    strethaddress_to_identifier('0x536381a8628dBcC8C70aC9A30A7258442eAb4c92'): 'PAN',  # Pantos
+    strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',  # ANT v2
+    strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',  # AXS v2
+    'SOL-2': 'SOL',  # Solana
+    'LUNA-2': 'LUNA',  # Luna Terra
+}
+
 # Create a generic variable that can be 'Asset', or any subclass.
 Z = TypeVar('Z', bound='Asset')
 

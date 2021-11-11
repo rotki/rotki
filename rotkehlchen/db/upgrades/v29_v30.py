@@ -19,4 +19,6 @@ def upgrade_v29_to_v30(db: 'DBHandler') -> None:
         "CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category);",
     )
     cursor.execute('PRAGMA foreign_keys = 1;')
+    # Insert the new bitpanda location
+    cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("b", 34);')
     db.conn.commit()

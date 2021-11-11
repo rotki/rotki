@@ -92,6 +92,7 @@ def create_coinbasepro_query_mock(
     def mock_coinbasepro_request(
             request_method: Literal['get', 'post'],  # pylint: disable=unused-argument
             url: str,
+            timeout: int,  # pylint: disable=unused-argument
             data: str = '',  # pylint: disable=unused-argument
             allow_redirects: bool = True,  # pylint: disable=unused-argument
     ) -> MockResponse:

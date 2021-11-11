@@ -358,6 +358,7 @@ class Location(DBEnumMixIn):
     SUSHISWAP = 31
     SHAPESHIFT = 32
     UPHOLD = 33
+    BITPANDA = 34
 
 
 class AssetMovementCategory(DBEnumMixIn):

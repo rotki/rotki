@@ -86,6 +86,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('_', 31);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('`', 32);
 /* Uphold */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('a', 33);
+/* Bitpanda */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('b', 34);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
