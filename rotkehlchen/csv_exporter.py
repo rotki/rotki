@@ -3,7 +3,7 @@ import json
 import logging
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from zipfile import ZipFile
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
@@ -19,7 +19,6 @@ from rotkehlchen.constants import (
     EV_MARGIN_CLOSE,
     EV_SELL,
     EV_TX_GAS_COST,
-    S_EMPTYSTR,
     ZERO,
 )
 from rotkehlchen.constants.assets import A_ETH
@@ -28,7 +27,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
-    EmptyStr,
     EventType,
     Fee,
     Location,
@@ -330,9 +328,9 @@ class CSVExporter():
             event_type: EventType,
             location: Location,
             paid_in_profit_currency: FVal,
-            paid_asset: Union[Asset, EmptyStr],
+            paid_asset: Optional[Asset],
             paid_in_asset: FVal,
-            received_asset: Union[Asset, EmptyStr],
+            received_asset: Optional[Asset],
             received_in_asset: FVal,
             taxable_received_in_profit_currency: FVal,
             total_received_in_profit_currency: FVal,
@@ -388,21 +386,15 @@ class CSVExporter():
         else:
             raise ValueError('Illegal event type "{}" at add_to_allevents'.format(event_type))
 
-        exported_paid_asset = (
-            paid_asset if isinstance(paid_asset, str) else str(paid_asset)
-        )
-        exported_received_asset = (
-            received_asset if isinstance(received_asset, str) else str(received_asset)
-        )
         entry: Dict[str, Any] = {
             'type': event_type,
             'location': str(location),
             'paid_in_profit_currency': paid_in_profit_currency,
-            'paid_asset': exported_paid_asset,
+            'paid_asset': paid_asset.identifier if paid_asset else '',
             'paid_in_asset': paid_in_asset,
             'taxable_amount': taxable_amount,
             'taxable_bought_cost_in_profit_currency': taxable_bought_cost,
-            'received_asset': exported_received_asset,
+            'received_asset': received_asset.identifier if received_asset else '',
             'taxable_received_in_profit_currency': taxable_received_in_profit_currency,
             'received_in_asset': received_in_asset,
             'net_profit_or_loss': net_profit_or_loss,
@@ -418,6 +410,9 @@ class CSVExporter():
         # deleting and read link and notes for them to be at the end
         del new_entry['link']
         del new_entry['notes']
+        # for CSV use the str(asset) and not pure identifier
+        new_entry['paid_asset'] = str(paid_asset) if paid_asset else ''
+        new_entry['received_asset'] = str(received_asset) if received_asset else ''
         new_entry['net_profit_or_loss'] = net_profit_or_loss_csv
         new_entry['time'] = self.timestamp_to_date(timestamp)
         new_entry[f'paid_in_{self.profit_currency.symbol}'] = paid_in_profit_currency
@@ -518,9 +513,6 @@ class CSVExporter():
         if not self.create_csv:
             return
 
-        processed_receiving_asset: Union[EmptyStr, Asset] = (
-            EmptyStr('') if receiving_asset is None else receiving_asset
-        )
         exported_receiving_asset = '' if receiving_asset is None else str(receiving_asset)
         processed_receiving_amount = ZERO if not receiving_amount else receiving_amount
         exchange_rate_key = f'exchanged_asset_{self.profit_currency.symbol}_exchange_rate'
@@ -565,7 +557,7 @@ class CSVExporter():
             paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=selling_asset,
             paid_in_asset=selling_amount,
-            received_asset=processed_receiving_asset,
+            received_asset=receiving_asset,
             received_in_asset=processed_receiving_amount,
             taxable_received_in_profit_currency=taxable_profit_received,
             total_received_in_profit_currency=gain_in_profit_currency,
@@ -618,7 +610,7 @@ class CSVExporter():
             paid_in_profit_currency=paid_in_profit_currency,
             paid_asset=asset,
             paid_in_asset=amount,
-            received_asset=S_EMPTYSTR,
+            received_asset=None,
             received_in_asset=ZERO,
             taxable_received_in_profit_currency=ZERO,
             total_received_in_profit_currency=ZERO,
@@ -658,7 +650,7 @@ class CSVExporter():
             location=location,
             event_type=EV_INTEREST_PAYMENT,
             paid_in_profit_currency=ZERO,
-            paid_asset=S_EMPTYSTR,
+            paid_asset=None,
             paid_in_asset=ZERO,
             received_asset=gained_asset,
             received_in_asset=gained_amount,
@@ -712,7 +704,7 @@ class CSVExporter():
             event_type=EV_MARGIN_CLOSE,
             location=location,
             paid_in_profit_currency=paid_in_profit_currency,
-            paid_asset=S_EMPTYSTR,
+            paid_asset=None,
             paid_in_asset=paid_in_asset,
             received_asset=gain_loss_asset,
             received_in_asset=received_in_asset,
@@ -752,7 +744,7 @@ class CSVExporter():
             paid_in_profit_currency=fee * rate,
             paid_asset=asset,
             paid_in_asset=fee,
-            received_asset=S_EMPTYSTR,
+            received_asset=None,
             received_in_asset=ZERO,
             taxable_received_in_profit_currency=ZERO,
             total_received_in_profit_currency=ZERO,
@@ -783,7 +775,7 @@ class CSVExporter():
             paid_in_profit_currency=eth_burned_as_gas * rate,
             paid_asset=A_ETH,
             paid_in_asset=eth_burned_as_gas,
-            received_asset=S_EMPTYSTR,
+            received_asset=None,
             received_in_asset=ZERO,
             taxable_received_in_profit_currency=ZERO,
             total_received_in_profit_currency=ZERO,
@@ -819,8 +811,8 @@ class CSVExporter():
             'notes': '',
         })
 
-        paid_asset: Union[EmptyStr, Asset]
-        received_asset: Union[EmptyStr, Asset]
+        paid_asset: Optional[Asset]
+        received_asset: Optional[Asset]
         if event.pnl is None:
             return  # don't pollute all events csv with entries that are not useful
 
@@ -828,7 +820,7 @@ class CSVExporter():
             if entry.balance.amount > ZERO:
                 paid_in_profit_currency = ZERO
                 paid_in_asset = ZERO
-                paid_asset = S_EMPTYSTR
+                paid_asset = None
                 received_asset = entry.asset
                 received_in_asset = entry.balance.amount
                 # The index should be the same as the precalculated profit_currency list amounts
@@ -838,7 +830,7 @@ class CSVExporter():
                 paid_in_profit_currency = profit_loss_in_profit_currency_list[idx]
                 paid_in_asset = entry.balance.amount
                 paid_asset = entry.asset
-                received_asset = S_EMPTYSTR
+                received_asset = None
                 received_in_asset = ZERO
                 received_in_profit_currency = ZERO
 
@@ -874,12 +866,12 @@ class CSVExporter():
             f'profit_loss_in_{self.profit_currency.symbol}': profit_loss_in_profit_currency,
         })
 
-        paid_asset: Union[EmptyStr, Asset]
-        received_asset: Union[EmptyStr, Asset]
+        paid_asset: Optional[Asset]
+        received_asset: Optional[Asset]
         if action.is_profitable():
             paid_in_profit_currency = ZERO
             paid_in_asset = ZERO
-            paid_asset = S_EMPTYSTR
+            paid_asset = None
             received_asset = action.asset
             received_in_asset = action.amount
             received_in_profit_currency = profit_loss_in_profit_currency
@@ -887,7 +879,7 @@ class CSVExporter():
             paid_in_profit_currency = profit_loss_in_profit_currency
             paid_in_asset = action.amount
             paid_asset = action.asset
-            received_asset = S_EMPTYSTR
+            received_asset = None
             received_in_asset = AssetAmount(ZERO)
             received_in_profit_currency = ZERO
 
