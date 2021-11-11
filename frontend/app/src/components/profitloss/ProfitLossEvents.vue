@@ -44,10 +44,31 @@
             <amount-display :value="item.paidInProfitCurrency" />
           </template>
           <template #item.paidInAsset="{ item }">
-            <amount-display
-              :value="item.paidInAsset"
-              :asset="item.paidAsset ? item.paidAsset : ''"
-            />
+            <v-row
+              no-gutters
+              justify="space-between"
+              align="center"
+              class="flex-nowrap"
+            >
+              <v-col cols="auto">
+                <asset-link
+                  icon
+                  :asset="item.paidAsset ? item.paidAsset : ''"
+                  class="pr-2"
+                >
+                  <asset-icon
+                    :identifier="item.paidAsset ? item.paidAsset : ''"
+                    size="24px"
+                  />
+                </asset-link>
+              </v-col>
+              <v-col>
+                <amount-display
+                  :value="item.paidInAsset"
+                  :asset="item.paidAsset ? item.paidAsset : ''"
+                />
+              </v-col>
+            </v-row>
           </template>
           <template #item.taxableAmount="{ item }">
             <amount-display :value="item.taxableAmount" />
@@ -56,10 +77,31 @@
             <amount-display :value="item.taxableBoughtCostInProfitCurrency" />
           </template>
           <template #item.receivedInAsset="{ item }">
-            <amount-display
-              :value="item.receivedInAsset"
-              :asset="item.receivedAsset ? item.receivedAsset : ''"
-            />
+            <v-row
+              no-gutters
+              justify="space-between"
+              align="center"
+              class="flex-nowrap"
+            >
+              <v-col cols="auto">
+                <asset-link
+                  icon
+                  :asset="item.receivedAsset ? item.receivedAsset : ''"
+                  class="pr-2"
+                >
+                  <asset-icon
+                    :identifier="item.receivedAsset ? item.receivedAsset : ''"
+                    size="24px"
+                  />
+                </asset-link>
+              </v-col>
+              <v-col>
+                <amount-display
+                  :value="item.receivedInAsset"
+                  :asset="item.receivedAsset ? item.receivedAsset : ''"
+                />
+              </v-col>
+            </v-row>
           </template>
           <template #item.taxableReceivedInProfitCurrency="{ item }">
             <amount-display :value="item.taxableReceivedInProfitCurrency" />
