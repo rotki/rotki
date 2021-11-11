@@ -62,8 +62,6 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             secret=secret,
             database=database,
         )
-
-        # self.uri = 'https://api.exchange.bitpanda.com/public/v1'
         self.uri = 'https://api.bitpanda.com/v1'
         self.session.headers.update({'X-API-KEY': self.api_key})
         self.msg_aggregator = msg_aggregator
@@ -133,6 +131,14 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self.session.headers.update({'X-API-KEY': self.api_key})
 
         return changed
+
+    def validate_api_key(self) -> Tuple[bool, str]:
+        """Validates that the Bitpanda API key is good for usage in rotki"""
+        try:
+            self._api_query('wallets')
+        except RemoteError as e:
+            return False, f'Error validating Bitpanda API Key due to {str(e)}'
+        return True, ''
 
     def _deserialize_fiattx(
             self,

@@ -107,6 +107,7 @@ def test_setup_exchange(rotkehlchen_api_server):
                 KUCOIN_API_KEY_ERROR_CODE[400003],
                 'Error validating API Keys',
                 'ApiKey has invalid value',
+                'Error validating Bitpanda API Key',
             ],
             status_code=HTTPStatus.CONFLICT,
         )
