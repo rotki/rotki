@@ -19,6 +19,7 @@
       <component
         :is="item.component"
         v-else-if="typeof item.component !== 'undefined'"
+        :width="size"
       />
       <v-icon v-else color="accent"> {{ item.icon }} </v-icon>
     </span>
@@ -28,20 +29,21 @@
   </span>
 </template>
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import { TradeLocationData } from '@/components/history/type';
 
-@Component({})
-export default class LocationIcon extends Vue {
-  @Prop({ required: true })
-  item!: TradeLocationData;
-  @Prop({ required: false, type: Boolean, default: false })
-  horizontal!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  icon!: boolean;
-  @Prop({ required: false, type: String, default: '24px' })
-  size!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  noPadding!: boolean;
-}
+const LocationIcon = defineComponent({
+  name: 'LocationIcon',
+  props: {
+    item: {
+      required: true,
+      type: Object as PropType<TradeLocationData>
+    },
+    horizontal: { required: false, type: Boolean, default: false },
+    icon: { required: false, type: Boolean, default: false },
+    size: { required: false, type: String, default: '24px' },
+    noPadding: { required: false, type: Boolean, default: false }
+  }
+});
+export default LocationIcon;
 </script>
