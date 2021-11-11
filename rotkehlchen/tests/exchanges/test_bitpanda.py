@@ -10,11 +10,11 @@ from rotkehlchen.assets.converters import asset_from_bitpanda
 from rotkehlchen.constants.assets import A_ADA, A_BEST, A_ETH, A_EUR, A_LTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError, UnknownAsset
-from rotkehlchen.exchanges.data_structures import Trade, TradeType
+from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_AXS, A_TRY
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Location
+from rotkehlchen.typing import AssetMovementCategory, Location
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_list
 
@@ -176,15 +176,8 @@ TRADES_RESPONSE = """{"data":[
 """  # noqa: E501
 
 
-@pytest.mark.parametrize('mocked_current_prices', [{
-    A_BEST: FVal(20),
-    A_ETH: FVal(3000),
-    A_AXS: FVal(40),
-    A_EUR: FVal(0.85),
-    A_TRY: FVal(0.103),
-}])
 def test_trades(mock_bitpanda):
-    """Test that balances are correctly queried"""
+    """Test that trades are correctly queried"""
 
     def mock_bitpanda_query(url: str, **kwargs):  # pylint: disable=unused-argument
         if '/wallets' in url:
@@ -229,3 +222,60 @@ def test_trades(mock_bitpanda):
         link='tradeid2',
     )]
     assert expected_trades == trades
+
+
+FIATWALLETS_TX_RESPONSE = """{"data":[
+{"type":"fiat_wallet_transaction","attributes":{"fiat_wallet_id":"foo","user_id":"foo","fiat_id":"1","amount":"25.00","fee":"0.00","to_eur_rate":"1.00000000","time":{"date_iso8601":"2021-09-08T09:09:28+01:00","unix":"1631088548"},"in_or_out":"incoming","type":"deposit","status":"finished","confirmation_by":"not_required","confirmed":true,"payment_option_id":"5","requires_2fa_approval":false,"is_savings":true,"last_changed":{"date_iso8601":"2021-09-08T09:09:28+01:00","unix":"1631088548"},"tags":[{"type":"tag","attributes":{"short_name":"savings.reserved_for_trade","name":"F\\u00fcr den Trade reserviert"}}],"public_status":"finished","bank_account_details":{"type":"bank_account_detail","attributes":{"country_id":"XX","iban":"XXX","bic":"XX","bank_name":"XX","holder":"XX"}},"is_index":false,"is_card":false,"is_card_order_charge":false},"id":"movementid1"},
+{"type":"fiat_wallet_transaction","attributes":{"fiat_wallet_id":"foo","user_id":"foo","fiat_id":"1","amount":"50.00","fee":"0.01","to_eur_rate":"1.00000000","time":{"date_iso8601":"2021-09-17T15:22:28+01:00","unix":"1631888548"},"in_or_out":"outgoing","type":"withdrawal","status":"finished","confirmation_by":"not_required","confirmed":true,"payment_option_id":"5","requires_2fa_approval":false,"is_savings":true,"last_changed":{"date_iso8601":"2021-09-17T15:22:28+01:00","unix":"1631888548"},"tags":[{"type":"tag","attributes":{"short_name":"savings.reserved_for_trade","name":"F\\u00fcr den Trade reserviert"}}],"public_status":"finished","is_index":false,"is_card":false,"is_card_order_charge":false},"id":"movementid2"}],
+"meta":{"total_count":2,"page":1,"page_size":100},"links":{"self":"?page=1&page_size=100"}}"""  # noqa: E501
+
+
+def test_asset_movements(mock_bitpanda):
+    """Test that deposits/withdrawals are correctly queried"""
+
+    def mock_bitpanda_query(url: str, **kwargs):  # pylint: disable=unused-argument
+        if '/wallets' in url:
+            return MockResponse(status_code=HTTPStatus.OK, text=WALLETS_RESPONSE)
+        if '/fiatwallets/transactions' in url:
+            return MockResponse(status_code=HTTPStatus.OK, text=FIATWALLETS_TX_RESPONSE)
+        if '/fiatwallets' in url:
+            return MockResponse(status_code=HTTPStatus.OK, text=FIAT_WALLETS_RESPONSE)
+
+        # else
+        raise AssertionError(f'Unexpected url {url} in bitpanda test')
+
+    with patch.object(mock_bitpanda.session, 'get', side_effect=mock_bitpanda_query):
+        movements = mock_bitpanda.query_deposits_withdrawals(
+            start_ts=0,
+            end_ts=ts_now(),
+            only_cache=False,
+        )
+
+    warnings = mock_bitpanda.msg_aggregator.consume_warnings()
+    errors = mock_bitpanda.msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
+
+    expected_movements = [AssetMovement(
+        location=Location.BITPANDA,
+        category=AssetMovementCategory.DEPOSIT,
+        address=None,
+        transaction_id=None,
+        timestamp=1631088548,
+        asset=A_EUR,
+        amount=FVal('25'),
+        fee_asset=A_EUR,
+        fee=ZERO,
+        link='movementid1',
+    ), AssetMovement(
+        location=Location.BITPANDA,
+        category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
+        timestamp=1631888548,
+        asset=A_EUR,
+        amount=FVal('50'),
+        fee_asset=A_EUR,
+        fee=FVal('0.01'),
+        link='movementid2')]
+    assert expected_movements == movements
