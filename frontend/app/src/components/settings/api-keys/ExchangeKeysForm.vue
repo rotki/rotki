@@ -93,6 +93,7 @@
       />
 
       <revealable-input
+        v-if="exchange.location !== 'bitpanda'"
         outlined
         :disabled="edit && !editKeys"
         :value="exchange.apiSecret"
@@ -156,6 +157,7 @@ import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import {
   EXCHANGE_BINANCE,
   EXCHANGE_BINANCEUS,
+  EXCHANGE_BITPANDA,
   EXCHANGE_COINBASEPRO,
   EXCHANGE_KRAKEN,
   EXCHANGE_KUCOIN,
@@ -255,7 +257,7 @@ export default class ExchangeKeysForm extends Vue {
       newName: null,
       location: exchange,
       apiKey: null,
-      apiSecret: null,
+      apiSecret: exchange === EXCHANGE_BITPANDA ? '' : null,
       passphrase: null,
       krakenAccountType: exchange === EXCHANGE_KRAKEN ? 'starter' : null,
       binanceMarkets: null,
@@ -296,16 +298,6 @@ export default class ExchangeKeysForm extends Vue {
           .v-label {
             color: green !important;
           }
-        }
-      }
-    }
-  }
-
-  .v-text-field {
-    &--outlined {
-      .v-input {
-        &__append-inner {
-          margin-top: 10px;
         }
       }
     }

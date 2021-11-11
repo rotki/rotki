@@ -1,4 +1,5 @@
 import { TradeLocationData } from '@/components/history/type';
+import BitpandaIcon from '@/components/icons/BitpandaIcon.vue';
 import FOXIcon from '@/components/icons/FOXIcon.vue';
 import UpholdIcon from '@/components/icons/UpholdIcon.vue';
 import {
@@ -8,6 +9,7 @@ import {
   EXCHANGE_BITCOIN_DE,
   EXCHANGE_BITFINEX,
   EXCHANGE_BITMEX,
+  EXCHANGE_BITPANDA,
   EXCHANGE_BITSTAMP,
   EXCHANGE_BITTREX,
   EXCHANGE_BLOCKFI,
@@ -57,6 +59,14 @@ export const tradeLocations: TradeLocationData[] = [
     name: 'Bitmex',
     icon: require('@/assets/images/bitmex.png'),
     imageIcon: true,
+    exchange: true
+  },
+  {
+    identifier: EXCHANGE_BITPANDA,
+    name: 'Bitpanda',
+    icon: '',
+    imageIcon: false,
+    component: BitpandaIcon,
     exchange: true
   },
   {
