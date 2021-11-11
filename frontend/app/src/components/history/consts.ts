@@ -8,6 +8,7 @@ import {
   EXCHANGE_BITCOIN_DE,
   EXCHANGE_BITFINEX,
   EXCHANGE_BITMEX,
+  EXCHANGE_BITPANDA,
   EXCHANGE_BITSTAMP,
   EXCHANGE_BITTREX,
   EXCHANGE_BLOCKFI,
@@ -56,6 +57,13 @@ export const tradeLocations: TradeLocationData[] = [
     identifier: EXCHANGE_BITMEX,
     name: 'Bitmex',
     icon: require('@/assets/images/bitmex.png'),
+    imageIcon: true,
+    exchange: true
+  },
+  {
+    identifier: EXCHANGE_BITPANDA,
+    name: 'Bitpanda',
+    icon: require('@/assets/images/exchanges/bitpanda.svg'),
     imageIcon: true,
     exchange: true
   },
