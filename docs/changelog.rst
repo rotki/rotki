@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1146` Bitpanda exchange is now supported. Bitpanda balances are now shown and rotki can query trades and deposit/withdrawals from the exchange.
 * :feature:`2483` Users will now get properly notified when saving the balance snapshot fails.
 * :feature:`3579` Users will now be able to sort the NFTs in the gallery by name, collection and price.
 * :feature:`3640` Liquity users that created troves using DefiSaver will be now able to track them.
