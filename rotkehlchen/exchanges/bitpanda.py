@@ -78,7 +78,9 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             wallets, _, _ = self._api_query('wallets')
             fiat_wallets, _, _ = self._api_query('fiatwallets')
         except RemoteError as e:
-            msg = f'Failed to query Bitpanda wallets at first connection. {str(e)}'
+            self.msg_aggregator.add_error(
+                f'Failed to query Bitpanda wallets at first connection. {str(e)}',
+            )
             return
 
         wallets_len = len(wallets)
@@ -330,7 +332,8 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 response = self.session.get(request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Bitpanda API request failed due to {str(e)}') from e
-            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS and retries_left != 0:
+
+            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 backoff_in_seconds = int(20 / retries_left)
                 retries_left -= 1
                 log.debug(
@@ -348,6 +351,9 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             # we got it, so break
             break
+
+        else:  # retries left are zero
+            raise RemoteError(f'Ran out of retries for Bitpanda query of {request_url}')
 
         try:
             decoded_json = jsonloads_dict(response.text)
