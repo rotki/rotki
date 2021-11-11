@@ -146,9 +146,7 @@ export default class AssetManagement extends Vue {
 
   private editAsset(identifier: string | null) {
     if (identifier) {
-      const token = this.supportedAssets.find(
-        ({ identifier: id }) => id === identifier
-      );
+      const token = this.tokens.find(({ identifier: id }) => id === identifier);
       if (token) {
         this.edit(token);
       }
@@ -170,7 +168,7 @@ export default class AssetManagement extends Vue {
     this.showForm = true;
   }
 
-  edit(token: SupportedAsset) {
+  edit(token: ManagedAsset) {
     this.token = token;
     this.showForm = true;
   }

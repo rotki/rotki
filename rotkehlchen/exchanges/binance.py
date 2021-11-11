@@ -920,6 +920,9 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return trades, (start_ts, end_ts)
 
     def _query_online_fiat_payments(self, start_ts: Timestamp, end_ts: Timestamp) -> List[Trade]:
+        if self.location == Location.BINANCEUS:
+            return []  # dont exist for Binance US: https://github.com/rotki/rotki/issues/3664
+
         fiat_buys = self._api_query_list_within_time_delta(
             start_ts=start_ts,
             end_ts=end_ts,
@@ -1228,24 +1231,28 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         )
         log.debug(f'{self.name} withdraw history result', results_num=len(withdraws))
 
-        fiat_deposits = self._api_query_list_within_time_delta(
-            start_ts=Timestamp(0),
-            end_ts=end_ts,
-            time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
-            api_type='sapi',
-            method='fiat/orders',
-            additional_options={'transactionType': 0},
-        )
-        log.debug(f'{self.name} fiat deposit history result', results_num=len(fiat_deposits))
-        fiat_withdraws = self._api_query_list_within_time_delta(
-            start_ts=Timestamp(0),
-            end_ts=end_ts,
-            time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
-            api_type='sapi',
-            method='fiat/orders',
-            additional_options={'transactionType': 1},
-        )
-        log.debug(f'{self.name} fiat withdraw history result', results_num=len(fiat_withdraws))
+        if self.location != Location.BINANCEUS:
+            # dont exist for Binance US: https://github.com/rotki/rotki/issues/3664
+            fiat_deposits = self._api_query_list_within_time_delta(
+                start_ts=Timestamp(0),
+                end_ts=end_ts,
+                time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+                api_type='sapi',
+                method='fiat/orders',
+                additional_options={'transactionType': 0},
+            )
+            log.debug(f'{self.name} fiat deposit history result', results_num=len(fiat_deposits))
+            fiat_withdraws = self._api_query_list_within_time_delta(
+                start_ts=Timestamp(0),
+                end_ts=end_ts,
+                time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+                api_type='sapi',
+                method='fiat/orders',
+                additional_options={'transactionType': 1},
+            )
+            log.debug(f'{self.name} fiat withdraw history result', results_num=len(fiat_withdraws))
+        else:
+            fiat_deposits = fiat_withdraws = []
 
         movements = []
         for raw_movement in deposits + withdraws:

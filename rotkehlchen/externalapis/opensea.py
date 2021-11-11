@@ -18,7 +18,7 @@ from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.serialization.deserialize import deserialize_optional_fval
+from rotkehlchen.serialization.deserialize import deserialize_optional_to_optional_fval
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -86,7 +86,7 @@ class Opensea(ExternalServiceWithApiKey):
     @overload
     def _query(  # pylint: disable=no-self-use
             self,
-            endpoint: Literal['assets'],
+            endpoint: Literal['assets', 'collectionstats'],
             options: Optional[Dict[str, Any]] = None,
             timeout: Optional[Tuple[int, int]] = None,
     ) -> Dict[str, Any]:
@@ -103,12 +103,15 @@ class Opensea(ExternalServiceWithApiKey):
 
     def _query(
             self,
-            endpoint: Literal['assets', 'collections'],
+            endpoint: Literal['assets', 'collections', 'collectionstats'],
             options: Optional[Dict[str, Any]] = None,
             timeout: Optional[Tuple[int, int]] = None,
     ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """May raise RemoteError"""
-        query_str = f'https://api.opensea.io/api/v1/{endpoint}'
+        if endpoint == 'collectionstats':
+            query_str = f'https://api.opensea.io/api/v1/collection/{options["name"]}/stats'  # type: ignore  # noqa: E501
+        else:
+            query_str = f'https://api.opensea.io/api/v1/{endpoint}'
 
         backoff = 1
         backoff_limit = 33
@@ -252,16 +255,23 @@ class Opensea(ExternalServiceWithApiKey):
             if len(entry['primary_asset_contracts']) == 0:
                 continue  # skip if no contract (opensea makes everything a collection of 1)
             name = entry['name']
+            if name in self.collections:
+                continue  # do not requery already queried collection
+
+            # To get the floor price we need to query a different endpoint since opensea are idiots
+            # https://github.com/rotki/rotki/issues/3676
+            stats_result = self._query(endpoint='collectionstats', options={'name': entry['slug']})
+            floor_price = deserialize_optional_to_optional_fval(
+                value=stats_result['stats']['floor_price'],  # pylint: disable=unsubscriptable-object  # noqa: E501
+                name='floor price',
+                location='opensea',
+            )
             self.collections[name] = Collection(
                 name=name,
                 banner_image=entry['banner_image_url'],
                 description=entry['description'],
                 large_image=entry['large_image_url'],
-                floor_price=deserialize_optional_fval(
-                    value=entry['stats']['floor_price'],
-                    name='floor_price',
-                    location='opensea',
-                ),
+                floor_price=floor_price,
             )
 
     def get_account_nfts(self, account: ChecksumEthAddress) -> List[NFT]:

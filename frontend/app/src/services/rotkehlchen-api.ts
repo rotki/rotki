@@ -190,7 +190,12 @@ export class RotkehlchenApi {
         },
         { validateStatus: validAccountOperationStatus }
       )
-      .then(handleResponse);
+      .then(value => {
+        if (value.status === 409) {
+          return true;
+        }
+        return handleResponse(value);
+      });
   }
 
   queryPeriodicData(): Promise<PeriodicClientQueryResult> {

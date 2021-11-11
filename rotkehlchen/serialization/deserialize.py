@@ -217,7 +217,20 @@ def deserialize_timestamp_from_binance(time: int) -> Timestamp:
     return Timestamp(int(time / 1000))
 
 
-def deserialize_optional_fval(
+def deserialize_fval(
+        value: AcceptableFValInitInput,
+        name: str,
+        location: str,
+) -> FVal:
+    try:
+        result = FVal(value)
+    except ValueError as e:
+        raise DeserializationError(f'Failed to deserialize value entry: {str(e)} fpr {name} during {location}') from e  # noqa: E501
+
+    return result
+
+
+def deserialize_optional_to_fval(
         value: Optional[AcceptableFValInitInput],
         name: str,
         location: str,
@@ -230,12 +243,21 @@ def deserialize_optional_fval(
             f'Failed to deserialize value entry for {name} during {location} since null was given',
         )
 
-    try:
-        result = FVal(value)
-    except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize value entry: {str(e)}') from e
+    return deserialize_fval(value=value, name=name, location=location)
 
-    return result
+
+def deserialize_optional_to_optional_fval(
+        value: Optional[AcceptableFValInitInput],
+        name: str,
+        location: str,
+) -> Optional[FVal]:
+    """
+    Deserializes an FVal from a field that was optional and if None returns None
+    """
+    if value is None:
+        return None
+
+    return deserialize_fval(value=value, name=name, location=location)
 
 
 def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:

@@ -1,48 +1,42 @@
+import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from functools import reduce
-import logging
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 from operator import add
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
 from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.accounting.structures import (
-    AssetBalance,
-    Balance,
-    DefiEvent,
-    DefiEventType,
-)
-from rotkehlchen.chain.ethereum.utils import multicall_2
-from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH, A_LUSD, A_LQTY, A_USD
-from rotkehlchen.constants.ethereum import LIQUITY_TROVE_MANAGER
+from rotkehlchen.chain.ethereum.contracts import EthereumContract
+from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.graph import (
     SUBGRAPH_REMOTE_ERROR_MSG,
     Graph,
     format_query_indentation,
 )
-from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
+from rotkehlchen.chain.ethereum.utils import multicall_2, token_normalized_value_decimals
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD, A_USD
+from rotkehlchen.constants.ethereum import LIQUITY_TROVE_MANAGER
 from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.price import query_usd_price_or_use_default, PriceHistorian
+from rotkehlchen.history.price import PriceHistorian, query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Timestamp
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
-    deserialize_optional_fval,
+    deserialize_optional_to_fval,
 )
+from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
-from .graph import QUERY_TROVE, QUERY_STAKE
+from .graph import QUERY_STAKE, QUERY_TROVE
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -306,7 +300,11 @@ class Liquity(HasDSProxy):
         for stake in staked['lqtyStakes']:
             try:
                 owner = to_checksum_address(stake['id'])
-                amount = deserialize_optional_fval(stake['amount'], 'amount', 'liquity')
+                amount = deserialize_optional_to_fval(
+                    value=stake['amount'],
+                    name='amount',
+                    location='liquity',
+                )
                 position = AssetBalance(
                     asset=A_LQTY,
                     balance=Balance(
@@ -495,8 +493,16 @@ class Liquity(HasDSProxy):
                     if timestamp > to_timestamp:
                         break
                     operation = TroveOperation.deserialize(change['troveOperation'])
-                    collateral_change = deserialize_optional_fval(change['collateralChange'], 'collateralChange', 'liquity')  # noqa: E501
-                    debt_change = deserialize_optional_fval(change['debtChange'], 'debtChange', 'liquity')  # noqa: E501
+                    collateral_change = deserialize_optional_to_fval(
+                        value=change['collateralChange'],
+                        name='collateralChange',
+                        location='liquity',
+                    )
+                    debt_change = deserialize_optional_to_fval(
+                        value=change['debtChange'],
+                        name='debtChange',
+                        location='liquity',
+                    )
                     lusd_price = PriceHistorian().query_historical_price(
                         from_asset=A_LUSD,
                         to_asset=A_USD,
@@ -507,8 +513,16 @@ class Liquity(HasDSProxy):
                         to_asset=A_USD,
                         timestamp=timestamp,
                     )
-                    debt_after_amount = deserialize_optional_fval(change['debtAfter'], 'debtAfter', 'liquity')  # noqa: E501
-                    collateral_after_amount = deserialize_optional_fval(change['collateralAfter'], 'collateralAfter', 'liquity')  # noqa: E501
+                    debt_after_amount = deserialize_optional_to_fval(
+                        value=change['debtAfter'],
+                        name='debtAfter',
+                        location='liquity',
+                    )
+                    collateral_after_amount = deserialize_optional_to_fval(
+                        value=change['collateralAfter'],
+                        name='collateralAfter',
+                        location='liquity',
+                    )
                     event = LiquityTroveEvent(
                         kind='trove',
                         tx=change['transaction']['id'],
@@ -592,10 +606,26 @@ class Liquity(HasDSProxy):
                         to_asset=A_USD,
                         timestamp=timestamp,
                     )
-                    stake_after = deserialize_optional_fval(change['stakedAmountAfter'], 'stakedAmountAfter', 'liquity')  # noqa: E501
-                    stake_change = deserialize_optional_fval(change['stakedAmountChange'], 'stakedAmountChange', 'liquity')  # noqa: E501
-                    issuance_gain = deserialize_optional_fval(change['issuanceGain'], 'issuanceGain', 'liquity')  # noqa: E501
-                    redemption_gain = deserialize_optional_fval(change['redemptionGain'], 'redemptionGain', 'liquity')  # noqa: E501
+                    stake_after = deserialize_optional_to_fval(
+                        value=change['stakedAmountAfter'],
+                        name='stakedAmountAfter',
+                        location='liquity',
+                    )
+                    stake_change = deserialize_optional_to_fval(
+                        value=change['stakedAmountChange'],
+                        name='stakedAmountChange',
+                        location='liquity',
+                    )
+                    issuance_gain = deserialize_optional_to_fval(
+                        value=change['issuanceGain'],
+                        name='issuanceGain',
+                        location='liquity',
+                    )
+                    redemption_gain = deserialize_optional_to_fval(
+                        value=change['redemptionGain'],
+                        name='redemptionGain',
+                        location='liquity',
+                    )
                     stake_event = LiquityStakeEvent(
                         kind='stake',
                         tx=change['transaction']['id'],
