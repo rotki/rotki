@@ -164,6 +164,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'CHESS',  # tranchess but another chess in CC
         'BNC',  # bifrost but another BNC in CC
         ethaddress_to_identifier('0x9e6C59321CEB205d5d3BC6c539c017aF6159B16c'),  # noqa: E501 # Mindcell but another MDC in CC
+        'TIME',  # Wonderland but another TIME in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
