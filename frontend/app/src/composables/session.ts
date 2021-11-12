@@ -45,3 +45,8 @@ export const dateDisplayFormat = computed(() => {
   const { dateDisplayFormat } = sessionState.generalSettings;
   return dateDisplayFormat;
 });
+
+export const tags = computed(() => {
+  const sessionState = getSessionState();
+  return sessionState.tags;
+});

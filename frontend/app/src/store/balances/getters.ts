@@ -2,8 +2,8 @@ import {
   AssetBalance,
   AssetBalanceWithPrice,
   Balance,
-  HasBalance,
-  BigNumber
+  BigNumber,
+  HasBalance
 } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
@@ -13,7 +13,6 @@ import map from 'lodash/map';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import {
   BlockchainAssetBalances,
-  ManualBalanceWithValue,
   SupportedExchange
 } from '@/services/balances/types';
 import { GeneralAccountData } from '@/services/types-api';
@@ -58,7 +57,6 @@ export interface BalanceGetters {
   aggregatedAssets: string[];
   liabilities: AssetBalanceWithPrice[];
   manualBalanceByLocation: LocationBalance[];
-  manualBalanceWithLiabilities: ManualBalanceWithValue[];
   blockchainTotal: BigNumber;
   blockchainTotals: BlockchainTotal[];
   accountAssets: (account: string) => AssetBalance[];
@@ -379,10 +377,6 @@ export const getters: Getters<
         usdValue: aggregateManualBalancesByLocation[location]
       }))
       .sort((a, b) => b.usdValue.minus(a.usdValue).toNumber());
-  },
-
-  manualBalanceWithLiabilities: (state): ManualBalanceWithValue[] => {
-    return state.manualLiabilities.concat(state.manualBalances);
   },
 
   blockchainTotal: (_, getters) => {
