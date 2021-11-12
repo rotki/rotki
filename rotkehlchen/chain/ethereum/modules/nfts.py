@@ -78,11 +78,13 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                         remaining_size = FREE_NFT_LIMIT - total_nfts_num
                     else:
                         remaining_size = nfts_num
+
                     if remaining_size != 0:
                         result[address] = nfts[:remaining_size]
                         total_nfts_num += remaining_size
+                        continue
 
-                    break  # we hit the nft limit
+                    break  # else we hit the nft limit so break
 
                 result[address] = nfts
                 total_nfts_num += nfts_num
