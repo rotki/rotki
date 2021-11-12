@@ -153,7 +153,8 @@ export default new Router({
         },
         {
           path: 'manual-balances',
-          component: () => import('../components/accounts/ManualBalances.vue')
+          component: () =>
+            import('../components/accounts/manual-balances/ManualBalances.vue')
         }
       ]
     },

@@ -68,3 +68,25 @@ export const setupAssetInfoRetrieval = () => {
     getAssetName
   };
 };
+
+export const setupManualBalances = () => {
+  const store = useStore();
+  const fetchManualBalances = async () => {
+    await store.dispatch('balances/fetchManualBalances');
+  };
+
+  const deleteManualBalance = async (label: string) => {
+    await store.dispatch('balances/deleteManualBalance', label);
+  };
+
+  const manualBalances = computed(() => store.state.balances!.manualBalances);
+  const manualLiabilities = computed(
+    () => store.state.balances!.manualLiabilities
+  );
+  return {
+    fetchManualBalances,
+    deleteManualBalance,
+    manualBalances,
+    manualLiabilities
+  };
+};
