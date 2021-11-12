@@ -120,6 +120,7 @@ import {
   computed,
   defineComponent,
   PropType,
+  Ref,
   ref,
   toRefs
 } from '@vue/composition-api';
@@ -134,38 +135,43 @@ import i18n from '@/i18n';
 import { Nullable } from '@/types';
 import { getSortItems } from '@/utils/assets';
 
-const tableHeaders = [
-  {
-    text: i18n.t('dashboard_asset_table.headers.asset').toString(),
-    value: 'asset',
-    cellClass: 'asset-info'
-  },
-  {
-    text: i18n.t('dashboard_asset_table.headers.price').toString(),
-    value: 'usdPrice',
-    align: 'end'
-  },
-  {
-    text: i18n.t('dashboard_asset_table.headers.amount'),
-    value: 'amount',
-    align: 'end',
-    cellClass: 'asset-divider'
-  },
-  {
-    text: i18n.t('dashboard_asset_table.headers.value').toString(),
-    value: 'usdValue',
-    align: 'end',
-    class: 'text-no-wrap'
-  },
-  {
-    text: i18n.t('dashboard_asset_table.headers.percentage').toString(),
-    value: 'percentage',
-    align: 'end',
-    cellClass: 'asset-percentage',
-    class: 'text-no-wrap',
-    sortable: false
-  }
-];
+const tableHeaders = (totalNetWorthUsd: Ref<BigNumber>) =>
+  computed(() => {
+    return [
+      {
+        text: i18n.t('dashboard_asset_table.headers.asset').toString(),
+        value: 'asset',
+        cellClass: 'asset-info'
+      },
+      {
+        text: i18n.t('dashboard_asset_table.headers.price').toString(),
+        value: 'usdPrice',
+        align: 'end'
+      },
+      {
+        text: i18n.t('dashboard_asset_table.headers.amount'),
+        value: 'amount',
+        align: 'end',
+        cellClass: 'asset-divider'
+      },
+      {
+        text: i18n.t('dashboard_asset_table.headers.value').toString(),
+        value: 'usdValue',
+        align: 'end',
+        class: 'text-no-wrap'
+      },
+      {
+        text: totalNetWorthUsd.value.gt(0)
+          ? i18n.t('dashboard_asset_table.headers.percentage').toString()
+          : i18n.t('dashboard_asset_table.headers.percentage_total').toString(),
+        value: 'percentage',
+        align: 'end',
+        cellClass: 'asset-percentage',
+        class: 'text-no-wrap',
+        sortable: false
+      }
+    ];
+  });
 
 const DashboardAssetTable = defineComponent({
   name: 'DashboardAssetTable',
@@ -209,15 +215,24 @@ const DashboardAssetTable = defineComponent({
       return symbol.indexOf(keyword) >= 0 || name.indexOf(keyword) >= 0;
     };
 
+    const totalUsd = computed(() => {
+      return balances.value.reduce(
+        (sum, balance) => sum.plus(balance.usdValue),
+        new BigNumber(0)
+      );
+    });
+
     const percentage = (value: BigNumber) => {
-      return value.div(totalNetWorthUsd.value).multipliedBy(100).toFixed(2);
+      const netWorth = totalNetWorthUsd.value;
+      const total = netWorth.lt(0) ? totalUsd.value : netWorth;
+      return value.div(total).multipliedBy(100).toFixed(2);
     };
 
     const { getAssetInfo } = setupAssetInfoRetrieval();
     return {
       search,
       total,
-      tableHeaders,
+      tableHeaders: tableHeaders(totalNetWorthUsd),
       currencySymbol,
       floatingPrecision,
       sortItems: getSortItems(getAssetInfo),
