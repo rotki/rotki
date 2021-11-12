@@ -2587,12 +2587,16 @@
   },
   "manual_balances_form": {
     "fields": {
+      "balance_type": "Balance Type",
       "label": "Label",
       "asset": "Asset",
       "amount": "Amount",
       "location": "Location",
-      "tags": "Tags",
-      "liability": "Is a liability"
+      "tags": "Tags"
+    },
+    "type": {
+      "asset": "Asset",
+      "liability": "Liability"
     },
     "validation": {
       "label_exists": "Label {label} already exists",
