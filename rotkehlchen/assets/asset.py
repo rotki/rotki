@@ -433,6 +433,7 @@ WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0xd2877702675e6cEb975b4A1dFf9fb7BAF4C91ea9'): 'WLUNA',
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
     strethaddress_to_identifier('0x0391D2021f89DC339F60Fff84546EA23E337750f'): 'BOND',
+    strethaddress_to_identifier('0x2565ae0385659badCada1031DB704442E1b69982'): 'ASM',
 }
 
 WORLD_TO_COINBASE = {
