@@ -1,5 +1,11 @@
 <template>
-  <v-form ref="form" :value="valid" class="manual-balances-form" @input="input">
+  <v-form
+    ref="form"
+    :value="valid"
+    :class="$style.form"
+    data-cy="manual-balance-form"
+    @input="input"
+  >
     <v-text-field
       v-model="label"
       class="manual-balances-form__label"
@@ -10,6 +16,14 @@
       :disabled="pending || !!edit"
       @focus="delete errors['label']"
     />
+
+    <v-select
+      v-model="balanceType"
+      :label="$t('manual_balances_form.fields.balance_type')"
+      :items="balanceTypes"
+      outlined
+    />
+
     <asset-select
       v-model="asset"
       :label="$t('manual_balances_form.fields.asset')"
@@ -48,165 +62,199 @@
       :label="$t('manual_balances_form.fields.location')"
       @focus="delete errors['location']"
     />
-    <v-checkbox
-      v-model="isLiability"
-      :label="$t('manual_balances_form.fields.liability')"
-      :disabled="pending"
-      @change="liabilityToggle"
-    />
   </v-form>
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import {
+  defineComponent,
+  PropType,
+  Ref,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
+import { IVueI18n } from 'vue-i18n';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TagInput from '@/components/inputs/TagInput.vue';
+import { setupManualBalances } from '@/composables/balances';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import i18n from '@/i18n';
 import { BalanceType, ManualBalance } from '@/services/balances/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { TradeLocation } from '@/services/history/types';
-import { ActionStatus } from '@/store/types';
 import { bigNumberify } from '@/utils/bignumbers';
 
-@Component({
+const setupRules = (i18n: IVueI18n) => {
+  const amountRules = [
+    (v: string) => !!v || i18n.t('manual_balances_form.validation.amount')
+  ];
+  const assetRules = [
+    (v: string) => !!v || i18n.t('manual_balances_form.validation.asset')
+  ];
+  const labelRules = [
+    (v: string) => !!v || i18n.t('manual_balances_form.validation.label_empty')
+  ];
+
+  return {
+    amountRules,
+    assetRules,
+    labelRules
+  };
+};
+
+const ManualBalancesForm = defineComponent({
+  name: 'ManualBalancesForm',
   components: { LocationSelector, TagInput, AssetSelect },
-  computed: {
-    ...mapGetters('balances', ['manualLabels'])
+  props: {
+    edit: {
+      required: false,
+      type: Object as PropType<ManualBalance>,
+      default: null
+    },
+    value: { required: true, type: Boolean }
   },
-  methods: {
-    ...mapActions('balances', ['addManualBalance', 'editManualBalance'])
-  }
-})
-export default class ManualBalancesForm extends Vue {
-  @Prop({ required: false, default: null })
-  edit!: ManualBalance | null;
-  @Prop({ required: true, type: Boolean })
-  value!: boolean;
+  emits: ['clear', 'input'],
+  setup(props, { emit }) {
+    const { edit } = toRefs(props);
 
-  editManualBalance!: (balance: ManualBalance) => Promise<ActionStatus>;
-  addManualBalance!: (balance: ManualBalance) => Promise<ActionStatus>;
+    const valid = ref(false);
+    const pending = ref(false);
 
-  @Watch('edit', { immediate: true })
-  onEdit(balance: ManualBalance | null) {
-    if (!balance) {
-      this.reset();
-      return;
-    }
-    this.asset = balance.asset;
-    this.label = balance.label;
-    this.amount = balance.amount.toString();
-    this.tags = balance.tags ?? [];
-    this.location = balance.location;
-    this.balanceType = balance.balanceType;
-    if (balance.balanceType === BalanceType.LIABILITY) {
-      this.isLiability = true;
-    }
-  }
+    const errors: Ref<{ [key: string]: string[] }> = ref({});
 
-  @Watch('label')
-  onLabel(label: string) {
-    if (this.edit) {
-      return;
-    }
+    const asset = ref('');
+    const label = ref('');
+    const amount = ref('');
+    const tags: Ref<string[]> = ref([]);
+    const location: Ref<TradeLocation> = ref(TRADE_LOCATION_EXTERNAL);
+    const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
+    const form = ref<any>(null);
 
-    const errors = this.errors['label'];
-    if (this.manualLabels.includes(label)) {
-      if (errors && errors.length > 0) {
+    const reset = () => {
+      form.value?.reset();
+      errors.value = {};
+    };
+
+    const clear = () => {
+      emit('clear');
+      reset();
+    };
+
+    const input = (balance: ManualBalance) => {
+      emit('input', balance);
+    };
+
+    const set = (balance: ManualBalance) => {
+      asset.value = balance.asset;
+      label.value = balance.label;
+      amount.value = balance.amount.toString();
+      tags.value = balance.tags ?? [];
+      location.value = balance.location;
+      balanceType.value = balance.balanceType;
+    };
+
+    watch(
+      edit,
+      balance => {
+        if (!balance) {
+          reset();
+        } else {
+          set(balance);
+        }
+      },
+      { immediate: true }
+    );
+
+    const { editBalance, addBalance, manualLabels } = setupManualBalances();
+
+    const save = async () => {
+      pending.value = true;
+      const balance: ManualBalance = {
+        asset: asset.value,
+        amount: bigNumberify(amount.value),
+        label: label.value,
+        tags: tags.value,
+        location: location.value,
+        balanceType: balanceType.value
+      };
+      const status = await (edit ? editBalance(balance) : addBalance(balance));
+
+      pending.value = false;
+
+      if (status.success) {
+        clear();
+        return true;
+      }
+
+      if (status.message) {
+        const errorMessages = deserializeApiErrorMessage(status.message);
+        errors.value = (errorMessages?.balances[0] as any) ?? {};
+      }
+      return false;
+    };
+
+    watch(label, label => {
+      if (edit.value) {
         return;
       }
-      this.errors['label'] = [
-        this.$tc('manual_balances_form.validation.label_exists', 0, { label })
-      ];
-    } else {
-      delete this.errors['label'];
-    }
-  }
 
-  valid: boolean = false;
-  pending: boolean = false;
+      const validationErrors = errors.value['label'];
+      if (manualLabels.value.includes(label)) {
+        if (validationErrors && validationErrors.length > 0) {
+          return;
+        }
+        errors.value = {
+          ...errors.value,
+          label: [
+            i18n
+              .t('manual_balances_form.validation.label_exists', { label })
+              .toString()
+          ]
+        };
+      } else {
+        const { label, ...data } = errors.value;
+        errors.value = data;
+      }
+    });
 
-  manualLabels!: string[];
-  errors: { [key: string]: string[] } = {};
+    const balanceTypes = [
+      {
+        value: BalanceType.ASSET,
+        text: i18n.t('manual_balances_form.type.asset')
+      },
+      {
+        value: BalanceType.LIABILITY,
+        text: i18n.t('manual_balances_form.type.liability')
+      }
+    ];
 
-  asset: string = '';
-  label: string = '';
-  amount: string = '';
-  tags: string[] = [];
-  location: TradeLocation = TRADE_LOCATION_EXTERNAL;
-  balanceType: BalanceType = BalanceType.ASSET;
-  isLiability: boolean = false;
-
-  readonly amountRules = [
-    (v: string) => !!v || this.$t('manual_balances_form.validation.amount')
-  ];
-  readonly assetRules = [
-    (v: string) => !!v || this.$t('manual_balances_form.validation.asset')
-  ];
-  readonly labelRules = [
-    (v: string) => !!v || this.$t('manual_balances_form.validation.label_empty')
-  ];
-
-  @Emit()
-  clear() {
-    this.reset();
-  }
-
-  @Emit()
-  input(_valid: boolean) {}
-
-  private reset() {
-    (this.$refs?.form as any)?.reset();
-    this.errors = {};
-  }
-
-  async save(): Promise<boolean> {
-    this.pending = true;
-    const balance: ManualBalance = {
-      asset: this.asset,
-      amount: bigNumberify(this.amount),
-      label: this.label,
-      tags: this.tags,
-      location: this.location,
-      balanceType: this.balanceType
+    return {
+      form,
+      valid,
+      pending,
+      errors,
+      asset,
+      label,
+      amount,
+      tags,
+      location,
+      balanceType,
+      ...setupRules(i18n),
+      balanceTypes,
+      input,
+      save,
+      clear,
+      reset
     };
-    const status = await (this.edit
-      ? this.editManualBalance(balance)
-      : this.addManualBalance(balance));
-
-    this.pending = false;
-
-    if (status.success) {
-      this.clear();
-      this.reset();
-      return true;
-    }
-
-    if (status.message) {
-      const errorMessages = deserializeApiErrorMessage(status.message);
-      this.errors = (errorMessages?.balances[0] as any) ?? {};
-    }
-    return false;
   }
-
-  liabilityToggle() {
-    this.isLiability = !this.isLiability;
-    if (this.isLiability) {
-      this.balanceType = BalanceType.ASSET;
-    } else {
-      this.balanceType = BalanceType.LIABILITY;
-    }
-  }
-}
+});
+export default ManualBalancesForm;
 </script>
 
-<style scoped lang="scss">
-.manual-balances-form {
+<style module lang="scss">
+.form {
   padding-top: 12px;
-
-  &__save {
-    margin-right: 8px;
-  }
 }
 </style>

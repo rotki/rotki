@@ -102,7 +102,7 @@ const ManualBalances = defineComponent({
     BigDialog
   },
   setup() {
-    const form = ref<ManualBalancesForm | null>(null);
+    const form = ref<any | null>(null);
     const balanceToEdit: Ref<ManualBalance | null> = ref(null);
     const loading = ref(false);
     const valid = ref(false);
