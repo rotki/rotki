@@ -142,9 +142,6 @@ ListOfBlockchainAddresses = Union[
 ]
 
 
-T_EmptyStr = str
-EmptyStr = NewType('EmptyStr', T_EmptyStr)
-
 T_Fee = FVal
 Fee = NewType('Fee', T_Fee)
 

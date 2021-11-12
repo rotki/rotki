@@ -1,8 +1,5 @@
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import EmptyStr, EventType
-
-S_EMPTYSTR = EmptyStr('')
-
+from rotkehlchen.typing import EventType
 
 EV_BUY = EventType('buy')
 EV_SELL = EventType('sell')

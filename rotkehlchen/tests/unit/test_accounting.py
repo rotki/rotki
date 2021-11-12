@@ -787,7 +787,7 @@ def test_defi_event_zero_amount(accountant):
         'is_virtual': False,
         'location': 'blockchain',
         'net_profit_or_loss': ZERO,
-        'paid_asset': 'WBTC(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599)',
+        'paid_asset': '_ceth_0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
         'paid_in_asset': ZERO,
         'paid_in_profit_currency': ZERO,
         'received_asset': '',
