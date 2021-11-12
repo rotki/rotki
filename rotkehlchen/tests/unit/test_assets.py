@@ -165,6 +165,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'BNC',  # bifrost but another BNC in CC
         ethaddress_to_identifier('0x9e6C59321CEB205d5d3BC6c539c017aF6159B16c'),  # noqa: E501 # Mindcell but another MDC in CC
         'TIME',  # Wonderland but another TIME in CC
+        'STARS',  # StarLaunch but another STARS in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -375,6 +376,10 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x55648De19836338549130B1af587F16beA46F66B'),
         # Spin protocol but spinada in coingecko
         ethaddress_to_identifier('0x4F22310C27eF39FEAA4A756027896DC382F0b5E2'),
+        # REBL but another REBL (rebel finance) in coingecko
+        ethaddress_to_identifier('0x5F53f7A8075614b699Baad0bC2c899f4bAd8FBBF'),
+        # Sp8de (SPX) but another SPX in coingecko
+        ethaddress_to_identifier('0x05aAaA829Afa407D83315cDED1d45EB16025910c'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
