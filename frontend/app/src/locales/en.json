@@ -2957,6 +2957,7 @@
     "headers": {
       "asset": "Asset",
       "amount": "Amount",
+      "percentage_total": "% of total",
       "value": "{symbol} value",
       "percentage": "% of net Value",
       "price": "Price in {symbol}"
