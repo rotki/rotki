@@ -659,6 +659,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'SOL3S',  # no cryptocompare/coingecko data
     'SOV',  # Couldn't find what assets is this one
     'SPRK',  # delisted
+    'SWP',  # Couldn't find a list anouncement about this asset
     'SUSHI3L',  # no cryptocompare/coingecko data
     'SUSHI3S',  # no cryptocompare/coingecko data
     'TCP',  # The Crypto Prophecies no cryptocompare/coingecko data
