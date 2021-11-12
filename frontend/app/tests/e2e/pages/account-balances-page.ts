@@ -41,7 +41,7 @@ export class AccountBalancesPage {
 
   visibleEntries(visible: number) {
     // the total row is added to the visible entries
-    cy.get('.manual-balances-list tbody')
+    cy.get('[data-cy="manual-balances"] tbody')
       .find('tr')
       .should('have.length', visible + 1);
   }
@@ -49,7 +49,7 @@ export class AccountBalancesPage {
   balanceShouldMatch(balances: FixtureManualBalance[]) {
     let i = 0;
     for (const balance of balances) {
-      cy.get('.manual-balances-list tbody').find('tr').eq(i).as('row');
+      cy.get('[data-cy="manual-balances"] tbody').find('tr').eq(i).as('row');
 
       cy.get('@row')
         .find('.manual-balances-list__amount')
@@ -62,7 +62,7 @@ export class AccountBalancesPage {
   balanceShouldNotMatch(balances: FixtureManualBalance[]) {
     let i = 0;
     for (const balance of balances) {
-      cy.get('.manual-balances-list tbody').find('tr').eq(i).as('row');
+      cy.get('[data-cy="manual-balances"] tbody').find('tr').eq(i).as('row');
 
       cy.get('@row')
         .find('.manual-balances-list__amount')
@@ -73,17 +73,18 @@ export class AccountBalancesPage {
   }
 
   isVisible(position: number, balance: FixtureManualBalance) {
-    cy.get('.manual-balances-list tbody').find('tr').eq(position).as('row');
+    cy.get('[data-cy="manual-balances"] tbody')
+      .find('tr')
+      .eq(position)
+      .as('row');
 
-    cy.get('@row')
-      .find('.manual-balances-list__label')
-      .should('contain', balance.label);
+    cy.get('@row').find('[data-cy=label]').should('contain', balance.label);
 
     cy.get('@row')
       .find('.manual-balances-list__amount')
       .should('contain', formatAmount(balance.amount));
 
-    cy.get('.manual-balances-list thead').scrollIntoView();
+    cy.get('[data-cy="manual-balances"] thead').scrollIntoView();
 
     cy.get('@row')
       .find('.manual-balances-list__location')
@@ -109,10 +110,10 @@ export class AccountBalancesPage {
     ];
 
     balanceLocations.forEach(balanceLocation => {
-      cy.get('.manual-balances-list tr').then($rows => {
+      cy.get('[data-cy="manual-balances"] tr').then($rows => {
         if ($rows.text().includes(balanceLocation.location)) {
           cy.get(
-            `.manual-balances-list tr:contains(${balanceLocation.location})`
+            `[data-cy="manual-balances"] tr:contains(${balanceLocation.location})`
           ).each($row => {
             // loops over all manual balances rows and adds up the total per location
             // TODO: extract the replace(',', '') as to use user settings (when implemented)
@@ -149,20 +150,20 @@ export class AccountBalancesPage {
   }
 
   editBalance(position: number, amount: string) {
-    cy.get('.manual-balances-list tbody')
+    cy.get('[data-cy="manual-balances"] tbody')
       .find('tr')
       .eq(position)
       .find('button.manual-balances-list__actions__edit')
       .click();
 
-    cy.get('.manual-balances-form').as('edit-form');
+    cy.get('[data-cy="manual-balance-form"]').as('edit-form');
     cy.get('@edit-form').find('.manual-balances-form__amount input').clear();
     cy.get('@edit-form').find('.manual-balances-form__amount').type(amount);
     cy.get('.big-dialog__buttons__confirm').click();
   }
 
   deleteBalance(position: number) {
-    cy.get('.manual-balances-list tbody')
+    cy.get('[data-cy="manual-balances"] tbody')
       .find('tr')
       .eq(position)
       .find('.manual-balances-list__actions__delete')
@@ -177,7 +178,7 @@ export class AccountBalancesPage {
   }
 
   showsCurrency(currency: string) {
-    cy.get('.manual-balances-list')
+    cy.get('[data-cy="manual-balances"]')
       .scrollIntoView()
       .contains(`${currency} Value`)
       .should('be.visible');

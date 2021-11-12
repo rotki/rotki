@@ -20,6 +20,7 @@
           threshold
         }
       }"
+      data-cy="manual-balances"
       :title="$t('manual_balances.balances')"
       :balances="manualBalances"
       :loading="loading"
@@ -33,6 +34,7 @@
           threshold
         }
       }"
+      data-cy="manual-liabilities"
       :title="$t('manual_balances.liabilities')"
       class="mt-8"
       :balances="manualLiabilities"
