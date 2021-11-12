@@ -2468,13 +2468,23 @@
     "open_link": "Open in external block explorer: {url}"
   },
   "manual_balances": {
-    "title": "Manually Tracked Balances"
+    "dialog": {
+      "add": {
+        "title": "Add Manual Balance"
+      },
+      "edit": {
+        "subtitle": "Modify balance amount, location, and tags",
+        "title": "Edit Manual Balance"
+      }
+    },
+    "balances": "Manually Tracked Balances",
+    "liabilities": "Manually Tracked Liabilities"
   },
-  "manual_balances_list": {
+  "manual_balances_table": {
     "refresh": {
       "tooltip": "Refresh manual balances"
     },
-    "headers": {
+    "columns": {
       "actions": "Actions",
       "amount": "Amount",
       "asset": "Asset",
@@ -2482,11 +2492,13 @@
       "location": "Location",
       "value": "{symbol} Value"
     },
+    "rows": {
+      "total": "Total"
+    },
     "delete_dialog": {
       "title": "Delete manually tracked balance",
       "message": "Are you sure you want to delete this entry?"
-    },
-    "total": "Total"
+    }
   },
   "labeled_address_display": {
     "label": "{label}",
@@ -2575,12 +2587,16 @@
   },
   "manual_balances_form": {
     "fields": {
+      "balance_type": "Balance Type",
       "label": "Label",
       "asset": "Asset",
       "amount": "Amount",
       "location": "Location",
-      "tags": "Tags",
-      "liability": "Is a liability"
+      "tags": "Tags"
+    },
+    "type": {
+      "asset": "Asset",
+      "liability": "Liability"
     },
     "validation": {
       "label_exists": "Label {label} already exists",

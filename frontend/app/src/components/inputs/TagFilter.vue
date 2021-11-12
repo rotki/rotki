@@ -10,6 +10,7 @@
     item-text="name"
     :menu-props="{ closeOnContentClick: true }"
     outlined
+    dense
     item-value="name"
     multiple
     @input="input"
@@ -17,6 +18,7 @@
     <template #selection="{ item, selected, select }">
       <v-chip
         label
+        small
         class="font-weight-medium"
         :input-value="selected"
         :color="`#${item.background_color}`"
