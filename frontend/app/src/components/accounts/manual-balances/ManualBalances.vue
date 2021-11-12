@@ -14,6 +14,12 @@
       <v-icon> mdi-plus </v-icon>
     </v-btn>
     <manual-balance-table
+      v-intersect="{
+        handler: observers.asset,
+        options: {
+          threshold
+        }
+      }"
       :title="$t('manual_balances.balances')"
       :balances="manualBalances"
       :loading="loading"
@@ -21,6 +27,12 @@
       @refresh="refresh"
     />
     <manual-balance-table
+      v-intersect="{
+        handler: observers.liability,
+        options: {
+          threshold
+        }
+      }"
       :title="$t('manual_balances.liabilities')"
       class="mt-8"
       :balances="manualLiabilities"
@@ -38,13 +50,24 @@
       @confirm="save()"
       @cancel="cancel()"
     >
-      <manual-balances-form ref="form" v-model="valid" :edit="balanceToEdit" />
+      <manual-balances-form
+        ref="form"
+        v-model="valid"
+        :edit="balanceToEdit"
+        :context="context"
+      />
     </big-dialog>
   </fragment>
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, Ref, ref } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  Ref,
+  ref
+} from '@vue/composition-api';
 import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
 import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -52,7 +75,7 @@ import Fragment from '@/components/helper/Fragment';
 import { setupManualBalances } from '@/composables/balances';
 import { useRouter } from '@/composables/common';
 import i18n from '@/i18n';
-import { ManualBalance } from '@/services/balances/types';
+import { BalanceType, ManualBalance } from '@/services/balances/types';
 
 const setupDialog = (balanceToEdit: Ref<ManualBalance | null>) => {
   const dialogTitle = ref('');
@@ -138,6 +161,33 @@ const ManualBalances = defineComponent({
       openDialog.value = !!currentRoute.query.add;
     });
 
+    const intersections = ref({
+      [BalanceType.ASSET]: false,
+      [BalanceType.LIABILITY]: false
+    });
+
+    const updateWhenRatio = (
+      entries: IntersectionObserverEntry[],
+      value: BalanceType
+    ) => {
+      intersections.value = {
+        ...intersections.value,
+        [value]: entries[0].isIntersecting
+      };
+    };
+
+    const observers = {
+      [BalanceType.ASSET]: (entries: IntersectionObserverEntry[]) =>
+        updateWhenRatio(entries, BalanceType.ASSET),
+      [BalanceType.LIABILITY]: (entries: IntersectionObserverEntry[]) =>
+        updateWhenRatio(entries, BalanceType.LIABILITY)
+    };
+
+    const context = computed(() => {
+      const intersect = intersections.value;
+      return intersect.liability ? BalanceType.LIABILITY : BalanceType.ASSET;
+    });
+
     return {
       ...dialog,
       loading,
@@ -147,7 +197,10 @@ const ManualBalances = defineComponent({
       manualBalances,
       manualLiabilities,
       refresh,
-      save
+      save,
+      observers,
+      context,
+      threshold: [1]
     };
   }
 });

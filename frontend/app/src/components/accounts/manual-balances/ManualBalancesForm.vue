@@ -113,11 +113,12 @@ const ManualBalancesForm = defineComponent({
       type: Object as PropType<ManualBalance>,
       default: null
     },
-    value: { required: true, type: Boolean }
+    value: { required: true, type: Boolean },
+    context: { required: true, type: String as PropType<BalanceType> }
   },
   emits: ['clear', 'input'],
   setup(props, { emit }) {
-    const { edit } = toRefs(props);
+    const { edit, context } = toRefs(props);
 
     const valid = ref(false);
     const pending = ref(false);
@@ -134,6 +135,7 @@ const ManualBalancesForm = defineComponent({
 
     const reset = () => {
       form.value?.reset();
+      balanceType.value = context.value;
       errors.value = {};
     };
 
