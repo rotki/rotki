@@ -29,6 +29,7 @@
           <v-col
             cols="12"
             class="font-weight-medium"
+            data-cy="label"
             :class="{
               'pt-0': !item.tags,
               [$style.label]: true
@@ -145,8 +146,8 @@ import { assert } from '@/utils/assertions';
 const setupHeaders: (
   i18n: IVueI18n,
   currency: Ref<string>
-) => DataTableHeader[] = (i18n, currency) => {
-  return [
+) => Ref<DataTableHeader[]> = (i18n, currency) =>
+  computed(() => [
     {
       text: i18n.t('manual_balances_table.columns.location').toString(),
       value: 'location',
@@ -182,8 +183,7 @@ const setupHeaders: (
       sortable: false,
       width: '50'
     }
-  ];
-};
+  ]);
 
 const ManualBalanceTable = defineComponent({
   name: 'ManualBalanceTable',

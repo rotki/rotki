@@ -181,7 +181,9 @@ const ManualBalancesForm = defineComponent({
         location: location.value,
         balanceType: balanceType.value
       };
-      const status = await (edit ? editBalance(balance) : addBalance(balance));
+      const status = await (edit.value
+        ? editBalance(balance)
+        : addBalance(balance));
 
       pending.value = false;
 

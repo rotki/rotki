@@ -54,7 +54,7 @@ describe('Accounts', () => {
       cy.get('.manual-balances__add-balance').should('be.visible');
       cy.get('.manual-balances__add-balance').click();
       tagManager.addTag(
-        '.manual-balances-form',
+        '[data-cy="manual-balance-form"]',
         'public',
         'Public Accounts',
         '#EF703C',
