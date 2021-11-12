@@ -142,7 +142,8 @@ class DBEthTx():
           or if the receipt already exists in the DB. TODO: Differentiate?
         """
         tx_hash_b = hexstring_to_bytes(data['transactionHash'])
-        tx_type = hexstr_to_int(data['type'])
+        # some nodes miss the type field for older non EIP1559 transactions. So assume legacy (0)
+        tx_type = hexstr_to_int(data.get('type', '0x0'))
         cursor = self.db.conn.cursor()
         status = data.get('status', 1)  # status may be missing for older txs. Assume 1.
         contract_address = deserialize_ethereum_address(data['contractAddress']) if data['contractAddress'] else None  # noqa: E501

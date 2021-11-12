@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.manager import (
     OPEN_NODES_WEIGHT_MAP,
     NodeName,
 )
+from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.constants.ethereum import (
     ATOKEN_ABI,
     ERC20TOKEN_ABI,
@@ -15,13 +16,16 @@ from rotkehlchen.constants.ethereum import (
     ZERO_ADDRESS,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
+    ETHEREUM_FULL_TEST_PARAMETERS,
     ETHEREUM_TEST_PARAMETERS,
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.typing import EthereumTransaction
+from rotkehlchen.utils.misc import hexstring_to_bytes
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
@@ -36,18 +40,20 @@ def test_get_block_by_number(ethereum_manager, call_order, ethereum_manager_conn
     assert block['hash'] == '0xe2217ba1639c6ca2183f40b0f800185b3901faece2462854b3162d4c5077752c'
 
 
-@pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_get_transaction_receipt(ethereum_manager, call_order, ethereum_manager_connect_at_start):
+@pytest.mark.parametrize(*ETHEREUM_FULL_TEST_PARAMETERS)
+def test_get_transaction_receipt(
+        ethereum_manager,
+        call_order,
+        ethereum_manager_connect_at_start,
+        database,
+):
     wait_until_all_nodes_connected(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         ethereum=ethereum_manager,
     )
-    result = ethereum_manager.get_transaction_receipt(
-        '0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89',
-        call_order=call_order,
-    )
+    tx_hash = '0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89'
+    result = ethereum_manager.get_transaction_receipt(tx_hash, call_order=call_order)
     block_hash = '0x6f3a7838a8788c3371b88df170c3643d19bad896c915a7368681292882b6ad61'
-
     assert result['blockHash'] == block_hash
     assert len(result['logs']) == 2
     assert result['gasUsed'] == 144046
@@ -60,6 +66,50 @@ def test_get_transaction_receipt(ethereum_manager, call_order, ethereum_manager_
     assert result['logs'][1]['transactionIndex'] == 110
     assert result['logs'][0]['logIndex'] == 235
     assert result['logs'][1]['logIndex'] == 236
+
+    tx_hash_bytes = hexstring_to_bytes(tx_hash)
+    db = DBEthTx(database)
+    db.add_ethereum_transactions([EthereumTransaction(  # need to add the tx first
+        tx_hash=tx_hash_bytes,
+        timestamp=1,  # all other fields don't matter for this test
+        block_number=1,
+        from_address='0x0',
+        to_address='0x0',
+        value=1,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    )])
+
+    # also test receipt can be stored and retrieved from the DB.
+    # This tests that all node types (say openethereum) are processed properly
+    db.add_receipt_data(result)
+    receipt = db.get_receipt(tx_hash_bytes)
+    assert receipt == EthereumTxReceipt(
+        tx_hash=tx_hash_bytes,
+        contract_address=None,
+        status=True,
+        type=0,
+        logs=[
+            EthereumTxReceiptLog(
+                log_index=235,
+                data=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02T\x0b\xe4\x00',  # noqa: E501
+                address='0x5bEaBAEBB3146685Dd74176f68a0721F91297D37',
+                removed=False,
+                topics=[
+                    b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef',  # noqa: E501
+                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00s(*c\xf0\xe3\xd7\xe9`EuB\x0fwsa\xec\xa3\xc8j',  # noqa: E501
+                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6 \xf1\x93ME\x84\xdd\xa6\x99\x9e\xdc\xad\xd3)\x81)dj\xa5',  # noqa: E501
+                ]), EthereumTxReceiptLog(
+                    log_index=236,
+                    data=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6 \xf1\x93ME\x84\xdd\xa6\x99\x9e\xdc\xad\xd3)\x81)dj\xa5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6 \xf1\x93ME\x84\xdd\xa6\x99\x9e\xdc\xad\xd3)\x81)dj\xa5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00[\xea\xba\xeb\xb3\x14f\x85\xddt\x17oh\xa0r\x1f\x91)}7\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02T\x0b\xe4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\r\xe0\xb6\xb3\xa7d\x00\x00',  # noqa: E501
+                    address='0x73282A63F0e3D7e9604575420F777361ecA3C86A',
+                    removed=False,
+                    topics=[b'\xd6\xd4\xf5h\x1c$l\x9fB\xc2\x03\xe2\x87\x97Z\xf1`\x1f\x8d\xf8\x03Z\x92Q\xf7\x9a\xab\\\x8f\t\xe2\xf8'],  # noqa: E501
+            ),
+        ])
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
