@@ -50,16 +50,9 @@
               align="center"
               class="flex-nowrap"
             >
-              <v-col cols="auto">
-                <asset-link
-                  icon
-                  :asset="item.paidAsset ? item.paidAsset : ''"
-                  class="pr-2"
-                >
-                  <asset-icon
-                    :identifier="item.paidAsset ? item.paidAsset : ''"
-                    size="24px"
-                  />
+              <v-col v-if="item.paidAsset" cols="auto">
+                <asset-link icon :asset="item.paidAsset" class="pr-2">
+                  <asset-icon :identifier="item.paidAsset" size="24px" />
                 </asset-link>
               </v-col>
               <v-col>
@@ -83,12 +76,8 @@
               align="center"
               class="flex-nowrap"
             >
-              <v-col cols="auto">
-                <asset-link
-                  icon
-                  :asset="item.receivedAsset ? item.receivedAsset : ''"
-                  class="pr-2"
-                >
+              <v-col v-if="item.receivedAsset" cols="auto">
+                <asset-link icon :asset="item.receivedAsset" class="pr-2">
                   <asset-icon
                     :identifier="item.receivedAsset ? item.receivedAsset : ''"
                     size="24px"
