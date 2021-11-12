@@ -5,7 +5,7 @@
     show-expand
     single-expand
     :expanded="expanded"
-    :server-items-length="found"
+    :server-items-length="itemLength"
     :options.sync="options"
     :class="$style.table"
   >
@@ -63,7 +63,7 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import {
   computed,
   defineComponent,
@@ -76,6 +76,7 @@ import {
 import { DataTableHeader } from 'vuetify';
 import TransactionsDetails from '@/components/history/TransactionsDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import {
   EthTransaction,
@@ -173,7 +174,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const expanded = ref([]);
     const options: Ref<PaginationOptions | null> = ref(null);
-    const { selected, transactions } = toRefs(props);
+    const { selected, transactions, found, limit } = toRefs(props);
 
     const getKey = ({ fromAddress, nonce, txHash }: EthTransaction) =>
       `${txHash}${nonce}${fromAddress}`;
@@ -221,11 +222,24 @@ export default defineComponent({
 
     watch(options, updatePagination);
 
+    const premium = getPremium();
+    const itemLength = computed(() => {
+      const isPremium = premium.value;
+      const totalFound = found.value;
+      if (isPremium) {
+        return totalFound;
+      }
+
+      const entryLimit = limit.value;
+      return totalFound > entryLimit ? entryLimit : totalFound;
+    });
+
     return {
       expanded,
       tableHeaders,
       txs,
       options,
+      itemLength,
       selectionChanged,
       isSelected,
       gasFee: (tx: EthTransaction) =>
