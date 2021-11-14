@@ -496,3 +496,22 @@ class EthereumTxReceipt:
     status: bool
     type: int
     logs: List[EthereumTxReceiptLog] = dataclasses.field(default_factory=list)
+
+
+Eth2ValidatorDBTuple = Tuple[int, str]
+
+
+@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class Eth2Validator:
+    index: int
+    public_key: str
+
+    def serialize_for_db(self) -> Eth2ValidatorDBTuple:
+        return self.index, self.public_key
+
+    @classmethod
+    def deserialize_from_db(cls, result: Eth2ValidatorDBTuple) -> 'Eth2Validator':
+        return cls(
+            index=result[0],
+            public_key=result[1],
+        )

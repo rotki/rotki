@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING, List, Optional, Sequence
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.chain.ethereum.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDailyStats
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
+from rotkehlchen.errors import InputError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 
@@ -52,7 +54,6 @@ class DBEth2():
                 )
                 continue
 
-        self.db.conn.commit()
         self.db.update_last_write()
 
     def get_eth2_deposits(
@@ -120,7 +121,6 @@ class DBEth2():
                     f'Eth2 staking detail entry {str(entry)} already existed in the DB. Skipping.',
                 )
 
-        self.db.conn.commit()
         self.db.update_last_write()
 
     def get_validator_daily_stats(
@@ -159,3 +159,40 @@ class DBEth2():
         )
         results = cursor.execute(querystr, (validator_index, *bindings))
         return [ValidatorDailyStats.deserialize_from_db(x) for x in results]
+
+    def get_validators(self) -> List[Eth2Validator]:
+        cursor = self.db.conn.cursor()
+        results = cursor.execute('SELECT * from eth2_validators;')
+        return [Eth2Validator.deserialize_from_db(x) for x in results]
+
+    def add_validators(self, validators: List[Eth2Validator]) -> None:
+        cursor = self.db.conn.cursor()
+        cursor.executemany(
+            'INSERT OR IGNORE INTO '
+            'eth2_validators(validator_index, public_key, eth1_deposit_address) VALUES(?, ?, ?)',
+            [x.serialize_for_db() for x in validators],
+        )
+        self.db.update_last_write()
+
+    def delete_validator(self, validator_index: Optional[int], public_key: Optional[str]) -> None:
+        """Deletes the given validator from the DB. Due to marshmallow here at least one
+        of the two arguments is not None.
+
+        May raise:
+        - InputError if the given validator to delete does not exist in the DB
+        """
+        cursor = self.db.conn.cursor()
+        if validator_index is not None:
+            field = 'validator_index'
+            input_tuple = (validator_index,)
+        else:  # public key can't be None due to marshmallow
+            field = 'public_key'
+            input_tuple = (public_key,)  # type: ignore
+
+        cursor.execute(f'DELETE FROM eth2_validators WHERE {field} == ?', input_tuple)
+        if cursor.rowcount != 1:
+            raise InputError(
+                f'Tried to delete eth2 validator with {field} '
+                f'{input_tuple[0]} from the DB but it did not exist',
+            )
+        self.db.update_last_write()

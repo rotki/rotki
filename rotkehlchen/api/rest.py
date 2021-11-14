@@ -2220,6 +2220,67 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
+    def _add_eth2_validator(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[str],
+    ) -> Dict[str, Any]:
+        try:
+            self.rotkehlchen.chain_manager.add_eth2_validator(
+                validator_index=validator_index,
+                public_key=public_key,
+            )
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        except ModuleInactive as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+
+        return {'result': True, 'message': ''}
+
+    @require_premium_user(active_check=False)
+    def add_eth2_validator(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[str],
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_add_eth2_validator',
+                validator_index=validator_index,
+                public_key=public_key,
+            )
+
+        response = self._add_eth2_validator(validator_index=validator_index, public_key=public_key)
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_premium_user(active_check=False)
+    def delete_eth2_validator(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[str],
+    ) -> Response:
+        try:
+            self.rotkehlchen.chain_manager.delete_eth2_validator(
+                validator_index=validator_index,
+                public_key=public_key,
+            )
+            result = OK_RESULT
+            status_code = HTTPStatus.OK
+        except InputError as e:
+            result = {'result': None, 'message': str(e)}
+            status_code = HTTPStatus.CONFLICT
+        except ModuleInactive as e:
+            result = {'result': None, 'message': str(e)}
+            status_code = HTTPStatus.CONFLICT
+
+        return api_response(result, status_code=status_code)
+
     def _get_defi_balances(self) -> Dict[str, Any]:
         """
         This returns the typical async response dict but with the

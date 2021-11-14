@@ -87,7 +87,7 @@ from rotkehlchen.typing import (
     Timestamp,
     TradeType,
 )
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -2151,3 +2151,57 @@ class LimitsCounterResetSchema(Schema):
 
 class SingleFileSchema(Schema):
     file = FileField(required=True)
+
+
+class Eth2ValidatorSchema(Schema):
+    validator_index = fields.Integer(
+        load_default=None,
+        validate=webargs.validate.Range(
+            min=0,
+            error='Validator index must be an integer >= 0',
+        ),
+    )
+    public_key = fields.String(load_default=None)
+
+    @validates_schema
+    def validate_eth2_validator_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        validator_index = data.get('validator_index')
+        public_key = data.get('public_key')
+        if validator_index is None and public_key is None:
+            raise ValidationError(
+                'Need to provide either a validator index or a pulic key for an eth2 validator',
+            )
+
+        if public_key is not None:
+            try:
+                pubkey_bytes = hexstring_to_bytes(public_key)
+            except DeserializationError as e:
+                raise ValidationError(f'The given eth2 public key {public_key} is not valid hex') from e  # noqa: E501
+
+            bytes_length = len(pubkey_bytes)
+            if bytes_length != 48:
+                raise ValidationError(
+                    f'The given eth2 public key {public_key} has {bytes_length} '
+                    f'bytes. Expected 48.',
+                )
+
+    @post_load
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        public_key = data.get('public_key')
+        if public_key is not None and not public_key.startswith('0x'):
+            # since we started storing eth2 pubkey with '0x' in eth2_deposits let's keep the format
+            data['public_key'] = '0x' + public_key
+
+        return data
+
+
+class Eth2ValidatorPutSchema(Eth2ValidatorSchema):
+    async_query = fields.Boolean(load_default=False)

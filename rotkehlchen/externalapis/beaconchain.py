@@ -1,6 +1,6 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, overload
 
 import gevent
 import requests
@@ -48,17 +48,20 @@ class BeaconChain(ExternalServiceWithApiKey):
     def _query(
             self,
             module: Literal['validator'],
-            endpoint: Literal['balancehistory', 'performance', 'eth1'],
+            endpoint: Optional[Literal['balancehistory', 'performance', 'eth1']],
             encoded_args: str,
     ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        if endpoint == 'eth1':
+        if endpoint is None:  # for now only validator data
+            query_str = f'{self.url}{module}/{encoded_args}'
+        elif endpoint == 'eth1':
             query_str = f'{self.url}{module}/{endpoint}/{encoded_args}'
         else:
             query_str = f'{self.url}{module}/{encoded_args}/{endpoint}'
+
         api_key = self._get_api_key()
         if api_key is not None:
             query_str += f'?apikey={api_key}'

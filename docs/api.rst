@@ -7401,6 +7401,86 @@ Getting Eth2 Staking deposits
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
+Adding an Eth2 validator
+==========================
+
+.. http:put:: /api/(version)/blockchains/ETH2/validators
+
+   Doing a PUT on the eth2 validators endpoint will input information and track an ETH2 validator. 
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/ETH2/validators HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson validator_index int: An optional integer representing the validator index of the validator to track. If this is not given then the pulic key of the validator has to be given!
+   :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to track. If this is not given the the validator index has to be given!
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true
+        "message": "",
+      }
+
+   :statuscode 200: Eth2 validator succesfully added.
+   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as beaconcha.in could not be reached or returned unexpected response.
+
+
+Deleting an Eth2 validator
+==========================
+
+.. http:delete:: /api/(version)/blockchains/ETH2/validators
+
+   Doing a DELETE on the eth2 validators endpoint will delete information and stop tracking an ETH2 validator.
+
+   .. note::
+      This endpoint is only available for premium users
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/ETH2/validators HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson validator_index int: An optional integer representing the validator index of the validator to delete. If this is not given then the pulic key of the validator has to be given!
+   :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to delete. If this is not given the the validator index has to be given!
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true
+        "message": "",
+      }
+
+   :statuscode 200: Eth2 validator succesfully delete.
+   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 500: Internal rotki error.
+
+
 Getting Pickle's DILL balances
 ==============================
 

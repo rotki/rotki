@@ -38,6 +38,8 @@ from rotkehlchen.api.v1.encoding import (
     DataImportSchema,
     EditSettingsSchema,
     ERC20InfoSchema,
+    Eth2ValidatorPutSchema,
+    Eth2ValidatorSchema,
     EthereumTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangeRatesSchema,
@@ -1204,6 +1206,32 @@ class DataImportResource(BaseResource):
             )
 
         return response
+
+
+class Eth2ValidatorsResource(BaseResource):
+
+    put_schema = Eth2ValidatorPutSchema()
+    delete_schema = Eth2ValidatorSchema()
+
+    @use_kwargs(put_schema, location='json')
+    def put(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[str],
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.add_eth2_validator(
+            validator_index=validator_index,
+            public_key=public_key,
+            async_query=async_query,
+        )
+
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, validator_index: Optional[int], public_key: Optional[str]) -> Response:
+        return self.rest_api.delete_eth2_validator(
+            validator_index=validator_index,
+            public_key=public_key,
+        )
 
 
 class Eth2StakeDepositsResource(BaseResource):

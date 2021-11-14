@@ -71,6 +71,7 @@ from rotkehlchen.constants.assets import (
     A_LQTY,
 )
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import (
@@ -1663,6 +1664,37 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 ))
 
         return defi_events
+
+    def add_eth2_validator(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[str],
+    ) -> None:
+        """May raise:
+        - ModuleInactive if eth2 module is not activated
+        - RemoteError if there is a problem querying beaconcha.in
+        """
+        eth2 = self.get_module('eth2')
+        if eth2 is None:
+            raise ModuleInactive('Cant add eth2 validator since eth2 module is not active')
+        return eth2.add_validator(validator_index=validator_index, public_key=public_key)
+
+    def delete_eth2_validator(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[str],
+    ) -> None:
+        """May raise:
+        - ModuleInactive if eth2 module is not activated
+        - InputError if the validator is not found in the DB
+        """
+        eth2 = self.get_module('eth2')
+        if eth2 is None:
+            raise ModuleInactive('Cant delete eth2 validator since eth2 module is not active')
+        return DBEth2(self.database).delete_validator(
+            validator_index=validator_index,
+            public_key=public_key,
+        )
 
     @cache_response_timewise()
     def get_loopring_balances(self) -> Dict[Asset, Balance]:
