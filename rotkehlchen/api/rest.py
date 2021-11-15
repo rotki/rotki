@@ -74,6 +74,8 @@ from rotkehlchen.errors import (
     TagConstraintError,
     UnknownAsset,
     UnsupportedAsset,
+    WriteError,
+    InvalidData,
 )
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
@@ -2231,7 +2233,7 @@ class RestAPI():
                 addresses=self.rotkehlchen.chain_manager.accounts.eth,
                 data_dir=self.rotkehlchen.data_dir,
             )
-        except RemoteError as e:
+        except (RemoteError, WriteError, InvalidData) as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
 
         return _wrap_in_ok_result(process_result(data))
