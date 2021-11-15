@@ -7480,6 +7480,43 @@ Deleting an Eth2 validator
    :statuscode 409: User is not logged in. Or eth2 module is not activated.
    :statuscode 500: Internal rotki error.
 
+Getting tracked Eth2 validators
+===============================
+
+.. http:delete:: /api/(version)/blockchains/ETH2/validators
+
+   Doing a DELETE on the eth2 validators endpoint will delete information and stop tracking an ETH2 validator.
+
+   .. note::
+      This endpoint is only available for premium users
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/ETH2/validators HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson validator_index int: An optional integer representing the validator index of the validator to delete. If this is not given then the pulic key of the validator has to be given!
+   :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to delete. If this is not given the the validator index has to be given!
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true
+        "message": "",
+      }
+
+   :statuscode 200: Eth2 validator succesfully delete.
+   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 500: Internal rotki error.
+
 
 Getting Pickle's DILL balances
 ==============================

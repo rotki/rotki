@@ -515,3 +515,6 @@ class Eth2Validator:
             index=result[0],
             public_key=result[1],
         )
+
+    def serialize(self) -> Dict[str, Any]:
+        return {'index': self.index, 'public_key': self.public_key}

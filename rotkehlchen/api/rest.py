@@ -2220,6 +2220,17 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
+    @require_premium_user(active_check=False)
+    def get_eth2_validators(self) -> Response:
+        try:
+            validators = self.rotkehlchen.chain_manager.get_eth2_validators()
+        except ModuleInactive as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        return api_response(
+            _wrap_in_ok_result([x.serialize() for x in validators]),
+            status_code=HTTPStatus.OK,
+        )
+
     def _add_eth2_validator(
             self,
             validator_index: Optional[int],
@@ -2232,7 +2243,7 @@ class RestAPI():
             )
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
-        except ModuleInactive as e:
+        except (InputError, ModuleInactive) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
         return {'result': True, 'message': ''}

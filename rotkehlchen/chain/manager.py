@@ -51,6 +51,7 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaults,
     YearnVaultsV2,
 )
+from rotkehlchen.chain.ethereum.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
@@ -1664,6 +1665,15 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 ))
 
         return defi_events
+
+    def get_eth2_validators(self) -> List[Eth2Validator]:
+        """May raise:
+        - ModuleInactive if eth2 module is not activated
+        """
+        eth2 = self.get_module('eth2')
+        if eth2 is None:
+            raise ModuleInactive('Cant get eth2 validators since the eth2 module is not active')
+        return DBEth2(self.database).get_validators()
 
     def add_eth2_validator(
             self,

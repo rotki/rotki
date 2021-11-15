@@ -1213,6 +1213,9 @@ class Eth2ValidatorsResource(BaseResource):
     put_schema = Eth2ValidatorPutSchema()
     delete_schema = Eth2ValidatorSchema()
 
+    def get(self) -> Response:
+        return self.rest_api.get_eth2_validators()
+
     @use_kwargs(put_schema, location='json')
     def put(
             self,
