@@ -2173,7 +2173,7 @@ class Eth2ValidatorSchema(Schema):
         public_key = data.get('public_key')
         if validator_index is None and public_key is None:
             raise ValidationError(
-                'Need to provide either a validator index or a pulic key for an eth2 validator',
+                'Need to provide either a validator index or a public key for an eth2 validator',
             )
 
         if public_key is not None:

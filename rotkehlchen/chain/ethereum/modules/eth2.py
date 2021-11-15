@@ -20,13 +20,12 @@ from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
-from rotkehlchen.errors import DeserializationError, RemoteError
+from rotkehlchen.errors import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
@@ -394,17 +393,27 @@ class Eth2(EthereumModule):
 
         May raise:
         - RemoteError if there is a problem with querying beaconcha.in for more info
+        - InputError if the validator is already in the DB
         """
         valid_index: int
         valid_pubkey: str
+        dbeth2 = DBEth2(self.database)
         if validator_index is not None and public_key is not None:
+            field = 'validator_index'
             valid_index = validator_index
             valid_pubkey = public_key
+            if dbeth2.validator_exists(field=field, arg=valid_index):
+                raise InputError(f'Validator {valid_index} already exists in the DB')
         else:  # we are missing one of the 2
             if validator_index is None:
+                field = 'public_key'
                 arg = public_key
             else:  # we should have valid index
+                field = 'validator_index'
                 arg = validator_index  # type: ignore
+
+            if dbeth2.validator_exists(field=field, arg=arg):  # type: ignore
+                raise InputError(f'Validator {arg} already exists in the DB')
 
             # at this point we gotta query for one of the two
             result = self.beaconchain._query(
@@ -414,15 +423,12 @@ class Eth2(EthereumModule):
             )
             if not isinstance(result, dict):
                 raise RemoteError(
-                    f'The validator data request for {arg} should have returned a dict')
+                    f'Validator data for {arg} could not be found. Likely invalid validator.')
 
             try:
-                valid_index = deserialize_int_from_str(
-                    symbol=result['validatorindex'],
-                    location='beacon chain validator data',
-                )
+                valid_index = result['validatorindex']
                 valid_pubkey = result['pubkey']
-            except (DeserializationError, KeyError) as e:
+            except KeyError as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
@@ -430,7 +436,6 @@ class Eth2(EthereumModule):
                 raise RemoteError(f'Failed to query beaconcha.in for validator data due to: {msg}') from e  # noqa: E501
 
         # by now we have a valid index and pubkey. Add to DB
-        dbeth2 = DBEth2(self.database)
         dbeth2.add_validators([Eth2Validator(index=valid_index, public_key=valid_pubkey)])
 
     # -- Methods following the EthereumModule interface -- #

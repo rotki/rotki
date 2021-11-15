@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDailyStats
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors import InputError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Timestamp, Union
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -160,6 +160,11 @@ class DBEth2():
         results = cursor.execute(querystr, (validator_index, *bindings))
         return [ValidatorDailyStats.deserialize_from_db(x) for x in results]
 
+    def validator_exists(self, field: str, arg: Union[int, str]) -> bool:
+        cursor = self.db.conn.cursor()
+        result = cursor.execute(f'SELECT COUNT(*) from eth2_validators WHERE {field}=?', (arg,))
+        return result.fetchone()[0] == 1
+
     def get_validators(self) -> List[Eth2Validator]:
         cursor = self.db.conn.cursor()
         results = cursor.execute('SELECT * from eth2_validators;')
@@ -169,7 +174,7 @@ class DBEth2():
         cursor = self.db.conn.cursor()
         cursor.executemany(
             'INSERT OR IGNORE INTO '
-            'eth2_validators(validator_index, public_key, eth1_deposit_address) VALUES(?, ?, ?)',
+            'eth2_validators(validator_index, public_key) VALUES(?, ?)',
             [x.serialize_for_db() for x in validators],
         )
         self.db.update_last_write()
