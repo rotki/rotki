@@ -144,6 +144,7 @@ def setup_starting_environment(
         premium_credentials: PremiumCredentials,
         remote_data: bytes = REMOTE_DATA,
         sync_approval: Literal['yes', 'no', 'unknown'] = 'yes',
+        sync_database: bool = True,
 ):
     """
     Sets up the starting environment for premium testing when the user
@@ -192,6 +193,7 @@ def setup_starting_environment(
             username=username,
             create_new=create_new,
             sync_approval=sync_approval,
+            sync_database=sync_database,
         )
 
 
@@ -222,3 +224,9 @@ def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
 
     assert main_db_exists
     assert backup_db_exists
+
+
+def asset_database_wasnt_replaced(rotkehlchen_instance: Rotkehlchen):
+    msg = 'Test default main currency should be different from the restored currency'
+    assert DEFAULT_TESTS_MAIN_CURRENCY != A_GBP, msg
+    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY

@@ -1274,6 +1274,7 @@ class UserPremiumSyncSchema(AsyncQueryArgumentSchema):
 class NewUserSchema(BaseUserSchema):
     premium_api_key = fields.String(load_default='')
     premium_api_secret = fields.String(load_default='')
+    sync_database = fields.Boolean(load_default=True)
     initial_settings = fields.Nested(ModifiableSettingsSchema, load_default=None)
 
 

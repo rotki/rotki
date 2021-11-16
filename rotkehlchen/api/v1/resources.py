@@ -801,6 +801,7 @@ class UsersResource(BaseResource):
             password: str,
             premium_api_key: str,
             premium_api_secret: str,
+            sync_database: bool,
             initial_settings: Optional[ModifiableDBSettings],
     ) -> Response:
         return self.rest_api.create_new_user(
@@ -808,6 +809,7 @@ class UsersResource(BaseResource):
             password=password,
             premium_api_key=premium_api_key,
             premium_api_secret=premium_api_secret,
+            sync_database=sync_database,
             initial_settings=initial_settings,
         )
 
