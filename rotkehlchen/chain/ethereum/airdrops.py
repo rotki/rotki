@@ -1,6 +1,7 @@
 import csv
 from collections import defaultdict
 from json.decoder import JSONDecodeError
+import logging
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, TextIO, Tuple
 
@@ -21,10 +22,15 @@ from rotkehlchen.constants.assets import (
     A_UNI,
 )
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+SMALLEST_AIRDROP_SIZE = 20900
 AIRDROPS = {
     'uniswap': (
         # is checksummed
@@ -40,7 +46,7 @@ AIRDROPS = {
     ),
     'tornado': (
         # is checksummed
-        'https://raw.githubusercontent.com/tornadocash/airdrop/master/airdrop.csv',
+        'https://raw.githubusercontent.com/rotki/data/main/airdrops/tornado.csv',
         A_TORN,
         'https://tornado.cash/',
     ),
@@ -198,13 +204,24 @@ def get_airdrop_data(name: str, data_dir: Path) -> Tuple[Iterator, TextIO]:
     if not filename.is_file():
         # if not cached, get it from the gist
         try:
-            request = requests.get(url=AIRDROPS[name][0], timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = requests.get(url=AIRDROPS[name][0], timeout=DEFAULT_TIMEOUT_TUPLE)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Airdrops Gist request failed due to {str(e)}') from e
-
-        with open(filename, 'w') as f:
-            f.write(request.content.decode('utf-8'))
-
+        try:
+            content = response.text
+            if (
+                not csv.Sniffer().has_header(content) or
+                len(response.content) < SMALLEST_AIRDROP_SIZE
+            ):
+                raise csv.Error
+            with open(filename, 'w') as f:
+                f.write(content)
+        except csv.Error as e:
+            log.debug(f'airdrop file {filename} contains invalid data {content}')
+            raise UnableToDecryptRemoteData(
+                f'File {filename} contains invalid data. Check logs.',
+            ) from e
+    # Verify the CSV file
     csvfile = open(filename, 'r')
     iterator = csv.reader(csvfile)
     next(iterator)  # skip header
@@ -247,7 +264,12 @@ def check_airdrops(
     found_data: Dict[ChecksumEthAddress, Dict] = defaultdict(lambda: defaultdict(dict))
     for protocol_name, airdrop_data in AIRDROPS.items():
         data, csvfile = get_airdrop_data(protocol_name, data_dir)
-        for addr, amount, *_ in data:
+        for row in data:
+            if len(row) < 2:
+                raise UnableToDecryptRemoteData(
+                    f'Airdrop CSV for {protocol_name} contains an invalid row: {row}',
+                )
+            addr, amount, *_ = row
             # not doing to_checksum_address() here since the file addresses are checksummed
             # and doing to_checksum_address() so many times hits performance
             if protocol_name in ('cornichon', 'tornado', 'grain', 'lido'):

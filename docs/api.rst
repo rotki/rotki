@@ -7508,6 +7508,7 @@ Querying ethereum airdrops
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal rotki error
    :statuscode 502: Could not query an airdrop file
+   :statuscode 507: Failed to store CSV files for airdrops.
 
 Get addresses to query per protocol
 =======================================

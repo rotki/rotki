@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`3714` Airdrops section will now work again for Windows users.
+
 * :release:`1.22.0 <2021-11-12>`
 * :feature:`1146` Bitpanda exchange is now supported. Bitpanda balances are now shown and rotki can query trades and deposit/withdrawals from the exchange.
 * :feature:`2483` Users will now get properly notified when saving the balance snapshot fails.
