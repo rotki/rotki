@@ -123,11 +123,3 @@ class ModuleInitializationFailure(Exception):
 
 class ModuleInactive(Exception):
     """Raises when call happens for a module that is not initialized"""
-
-
-class WriteError(Exception):
-    """Raises when there is an error writing a file to disk"""
-
-
-class InvalidData(Exception):
-    """Raises when there is an error writing a file to disk"""

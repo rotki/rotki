@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops, AIRDROPS
 from rotkehlchen.constants.assets import A_UNI, A_1INCH, A_GRAIN
-from rotkehlchen.errors import InvalidData
+from rotkehlchen.errors import UnableToDecryptRemoteData
 
 TEST_ADDR1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 TEST_ADDR2 = '0x51985CE8BB9AB1708746b24e22e37CD7A980Ec24'
@@ -67,7 +67,7 @@ def test_check_airdrops(ethereum_accounts, data_dir):
 
 @pytest.mark.parametrize('airdrop_list', [NOT_CSV_WEBPAGE])
 def test_airdrop_fail(data_dir, mock_airdrop_list):  # pylint: disable=unused-argument
-    with pytest.raises(InvalidData):
+    with pytest.raises(UnableToDecryptRemoteData):
         check_airdrops(
             addresses=[TEST_ADDR1],
             data_dir=data_dir,

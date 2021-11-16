@@ -72,10 +72,9 @@ from rotkehlchen.errors import (
     RotkehlchenPermissionError,
     SystemPermissionError,
     TagConstraintError,
+    UnableToDecryptRemoteData,
     UnknownAsset,
     UnsupportedAsset,
-    WriteError,
-    InvalidData,
 )
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
@@ -2233,8 +2232,10 @@ class RestAPI():
                 addresses=self.rotkehlchen.chain_manager.accounts.eth,
                 data_dir=self.rotkehlchen.data_dir,
             )
-        except (RemoteError, WriteError, InvalidData) as e:
+        except (RemoteError, UnableToDecryptRemoteData) as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+        except OSError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.INSUFFICIENT_STORAGE)
 
         return _wrap_in_ok_result(process_result(data))
 
