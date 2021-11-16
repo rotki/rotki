@@ -1984,6 +1984,7 @@ class DataImportSchema(Schema):
         ),
     )
     file = FileField(required=True, allowed_extensions=('.csv',))
+    timestamp_format = fields.String(load_default=None)
 
 
 class AssetIconUploadSchema(Schema):

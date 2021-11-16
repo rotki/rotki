@@ -96,7 +96,11 @@ class DataImporter():
         self.db = db
         self.db_ledger = DBLedgerActions(self.db, self.db.msg_aggregator)
 
-    def _consume_cointracking_entry(self, csv_row: Dict[str, Any]) -> None:
+    def _consume_cointracking_entry(
+        self,
+        csv_row: Dict[str, Any],
+        extra_parameters: Dict[str, Any],
+    ) -> None:
         """Consumes a cointracking entry row from the CSV and adds it into the database
         Can raise:
             - DeserializationError if something is wrong with the format of the expected values
@@ -108,7 +112,7 @@ class DataImporter():
         row_type = csv_row['Type']
         timestamp = deserialize_timestamp_from_date(
             date=csv_row['Date'],
-            formatstr='%d.%m.%Y %H:%M:%S',
+            formatstr=extra_parameters.get('timestamp_format', '%d.%m.%Y %H:%M:%S'),
             location='cointracking.info',
         )
         notes = csv_row['Comment']
@@ -178,13 +182,17 @@ class DataImporter():
                 f'data import. Ignoring entry',
             )
 
-    def import_cointracking_csv(self, filepath: Path) -> Tuple[bool, str]:
+    def import_cointracking_csv(
+        self,
+        filepath: Path,
+        extra_parameters: Dict[str, Any],
+    ) -> Tuple[bool, str]:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.reader(csvfile, delimiter=',', quotechar='"')
             header = remap_header(next(data))
             for row in data:
                 try:
-                    self._consume_cointracking_entry(dict(zip(header, row)))
+                    self._consume_cointracking_entry(dict(zip(header, row)), extra_parameters)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During cointracking CSV import found action with unknown '
@@ -211,7 +219,11 @@ class DataImporter():
 
         return True, ''
 
-    def _consume_cryptocom_entry(self, csv_row: Dict[str, Any]) -> None:
+    def _consume_cryptocom_entry(
+        self,
+        csv_row: Dict[str, Any],
+        extra_parameters: Dict[str, Any],
+    ) -> None:
         """Consumes a cryptocom entry row from the CSV and adds it into the database
         Can raise:
             - DeserializationError if something is wrong with the format of the expected values
@@ -223,7 +235,7 @@ class DataImporter():
         row_type = csv_row['Transaction Kind']
         timestamp = deserialize_timestamp_from_date(
             date=csv_row['Timestamp (UTC)'],
-            formatstr='%Y-%m-%d %H:%M:%S',
+            formatstr=extra_parameters.get('timestamp_format', '%Y-%m-%d %H:%M:%S'),
             location='cryptocom',
         )
         description = csv_row['Transaction Description']
@@ -397,7 +409,12 @@ class DataImporter():
                 f'cryptocom data import. Ignoring entry',
             )
 
-    def _import_cryptocom_associated_entries(self, data: Any, tx_kind: str) -> None:
+    def _import_cryptocom_associated_entries(
+        self,
+        data: Any,
+        tx_kind: str,
+        extra_parameters: Dict[str, Any],
+    ) -> None:
         """Look for events that have associated entries and handle them as trades.
 
         This method looks for `*_debited` and `*_credited` entries using the
@@ -417,6 +434,7 @@ class DataImporter():
         credited_row = None
         expects_debited = False
         credited_timestamp = None
+        timestamp_format = extra_parameters.get('timestamp_format', '%Y-%m-%d %H:%M:%S')
         for row in data:
             # If we don't have the corresponding debited entry ignore them
             # and warn the user
@@ -438,7 +456,7 @@ class DataImporter():
             if row['Transaction Kind'] == f'{tx_kind}_debited':
                 timestamp = deserialize_timestamp_from_date(
                     date=row['Timestamp (UTC)'],
-                    formatstr='%Y-%m-%d %H:%M:%S',
+                    formatstr=timestamp_format,
                     location='cryptocom',
                 )
                 if expects_debited is False and timestamp != credited_timestamp:
@@ -457,7 +475,7 @@ class DataImporter():
                 # They only is one credited row
                 timestamp = deserialize_timestamp_from_date(
                     date=row['Timestamp (UTC)'],
-                    formatstr='%Y-%m-%d %H:%M:%S',
+                    formatstr=timestamp_format,
                     location='cryptocom',
                 )
                 if timestamp not in multiple_rows:
@@ -554,7 +572,7 @@ class DataImporter():
                     investments_withdrawals[asset],
                     key=lambda x: deserialize_timestamp_from_date(
                         date=x['Timestamp (UTC)'],
-                        formatstr='%Y-%m-%d %H:%M:%S',
+                        formatstr=timestamp_format,
                         location='cryptocom',
                     ),
                 )
@@ -562,7 +580,7 @@ class DataImporter():
                     investments_deposits[asset],
                     key=lambda x: deserialize_timestamp_from_date(
                         date=x['Timestamp (UTC)'],
-                        formatstr='%Y-%m-%d %H:%M:%S',
+                        formatstr=timestamp_format,
                         location='cryptocom',
                     ),
                 )
@@ -570,14 +588,14 @@ class DataImporter():
                 for withdrawal in withdrawals_rows:
                     withdrawal_date = deserialize_timestamp_from_date(
                         date=withdrawal['Timestamp (UTC)'],
-                        formatstr='%Y-%m-%d %H:%M:%S',
+                        formatstr=timestamp_format,
                         location='cryptocom',
                     )
                     amount_deposited = ZERO
                     for deposit in investments_rows:
                         deposit_date = deserialize_timestamp_from_date(
                             date=deposit['Timestamp (UTC)'],
-                            formatstr='%Y-%m-%d %H:%M:%S',
+                            formatstr=timestamp_format,
                             location='cryptocom',
                         )
                         if last_date < deposit_date <= withdrawal_date:
@@ -602,27 +620,39 @@ class DataImporter():
                         )
                         self.db_ledger.add_ledger_action(action)
 
-    def import_cryptocom_csv(self, filepath: Path) -> Tuple[bool, str]:
+    def import_cryptocom_csv(
+        self,
+        filepath: Path,
+        extra_parameters: Dict[str, Any],
+    ) -> Tuple[bool, str]:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
             try:
                 #  Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,
                 # `crypto_wallet_swap_*`, ...) into one entry named `dynamic_coin_swap_*`.
-                self._import_cryptocom_associated_entries(data, 'dynamic_coin_swap')
+                self._import_cryptocom_associated_entries(
+                    data,
+                    'dynamic_coin_swap',
+                    extra_parameters,
+                )
                 # reset the iterator
                 csvfile.seek(0)
                 # pass the header since seek(0) make the first row to be the header
                 next(data)
 
-                self._import_cryptocom_associated_entries(data, 'dust_conversion')
+                self._import_cryptocom_associated_entries(
+                    data,
+                    'dust_conversion',
+                    extra_parameters,
+                )
                 csvfile.seek(0)
                 next(data)
 
-                self._import_cryptocom_associated_entries(data, 'interest_swap')
+                self._import_cryptocom_associated_entries(data, 'interest_swap', extra_parameters)
                 csvfile.seek(0)
                 next(data)
 
-                self._import_cryptocom_associated_entries(data, 'invest')
+                self._import_cryptocom_associated_entries(data, 'invest', extra_parameters)
                 csvfile.seek(0)
                 next(data)
             except KeyError as e:
@@ -639,7 +669,7 @@ class DataImporter():
 
             for row in data:
                 try:
-                    self._consume_cryptocom_entry(row)
+                    self._consume_cryptocom_entry(row, extra_parameters)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During cryptocom CSV import found action with unknown '
@@ -667,7 +697,11 @@ class DataImporter():
                     return False, str(e)
         return True, ''
 
-    def _consume_blockfi_entry(self, csv_row: Dict[str, Any]) -> None:
+    def _consume_blockfi_entry(
+        self,
+        csv_row: Dict[str, Any],
+        extra_parameters: Dict[str, Any],
+    ) -> None:
         """
         Process entry for BlockFi transaction history. Trades for this file are ignored
         and istead should be extracted from the file containing only trades.
@@ -680,7 +714,7 @@ class DataImporter():
         if len(csv_row['Confirmed At']) != 0:
             timestamp = deserialize_timestamp_from_date(
                 date=csv_row['Confirmed At'],
-                formatstr='%Y-%m-%d %H:%M:%S',
+                formatstr=extra_parameters.get('timestamp_format', '%Y-%m-%d %H:%M:%S'),
                 location='BlockFi',
             )
         else:
@@ -755,7 +789,11 @@ class DataImporter():
         else:
             raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
 
-    def import_blockfi_transactions_csv(self, filepath: Path) -> Tuple[bool, str]:
+    def import_blockfi_transactions_csv(
+        self,
+        filepath: Path,
+        extra_parameters: Dict[str, Any],
+    ) -> Tuple[bool, str]:
         """
         Information for the values that the columns can have has been obtained from
         https://github.com/BittyTax/BittyTax/blob/06794f51223398759852d6853bc7112ffb96129a/bittytax/conv/parsers/blockfi.py#L67
@@ -764,7 +802,7 @@ class DataImporter():
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_blockfi_entry(row)
+                    self._consume_blockfi_entry(row, extra_parameters)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During BlockFi CSV import found action with unknown '
@@ -792,7 +830,11 @@ class DataImporter():
                     return False, str(e)
         return True, ''
 
-    def _consume_blockfi_trade(self, csv_row: Dict[str, Any]) -> None:
+    def _consume_blockfi_trade(
+        self,
+        csv_row: Dict[str, Any],
+        extra_parameters: Dict[str, Any],
+    ) -> None:
         """
         Consume the file containing only trades from BlockFi. As per my investigations
         (@yabirgb) this file can only contain confirmed trades.
@@ -801,7 +843,7 @@ class DataImporter():
         """
         timestamp = deserialize_timestamp_from_date(
             date=csv_row['Date'],
-            formatstr='%Y-%m-%d %H:%M:%S',
+            formatstr=extra_parameters.get('timestamp_format', '%Y-%m-%d %H:%M:%S'),
             location='BlockFi',
         )
 
@@ -828,7 +870,11 @@ class DataImporter():
         )
         self.db.add_trades([trade])
 
-    def import_blockfi_trades_csv(self, filepath: Path) -> Tuple[bool, str]:
+    def import_blockfi_trades_csv(
+        self,
+        filepath: Path,
+        extra_parameters: Dict[str, Any],
+    ) -> Tuple[bool, str]:
         """
         Information for the values that the columns can have has been obtained from
         the issue in github #1674
@@ -837,7 +883,7 @@ class DataImporter():
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_blockfi_trade(row)
+                    self._consume_blockfi_trade(row, extra_parameters)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During BlockFi CSV import found action with unknown '
@@ -854,7 +900,7 @@ class DataImporter():
                     return False, str(e)
         return True, ''
 
-    def _consume_nexo(self, csv_row: Dict[str, Any]) -> None:
+    def _consume_nexo(self, csv_row: Dict[str, Any], extra_parameters: Dict[str, Any]) -> None:
         """
         Consume CSV file from NEXO.
         This method can raise:
@@ -875,7 +921,7 @@ class DataImporter():
         if 'rejected' not in csv_row['Details']:
             timestamp = deserialize_timestamp_from_date(
                 date=csv_row['Date / Time'],
-                formatstr='%Y-%m-%d %H:%M:%S',
+                formatstr=extra_parameters.get('timestamp_format', '%Y-%m-%d %H:%M:%S'),
                 location='NEXO',
             )
         else:
@@ -962,7 +1008,11 @@ class DataImporter():
         else:
             raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
 
-    def import_nexo_csv(self, filepath: Path) -> Tuple[bool, str]:
+    def import_nexo_csv(
+        self,
+        filepath: Path,
+        extra_parameters: Dict[str, Any],
+    ) -> Tuple[bool, str]:
         """
         Information for the values that the columns can have has been obtained from
         https://github.com/BittyTax/BittyTax/blob/06794f51223398759852d6853bc7112ffb96129a/bittytax/conv/parsers/nexo.py
@@ -971,7 +1021,7 @@ class DataImporter():
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_nexo(row)
+                    self._consume_nexo(row, extra_parameters)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During Nexo CSV import found action with unknown '
@@ -999,13 +1049,17 @@ class DataImporter():
                     return False, str(e)
         return True, ''
 
-    def _consume_shapeshift_trade(self, csv_row: Dict[str, Any]) -> None:
+    def _consume_shapeshift_trade(
+        self,
+        csv_row: Dict[str, Any],
+        extra_parameters: Dict[str, Any],
+    ) -> None:
         """
         Consume the file containing only trades from ShapeShift.
         """
         timestamp = deserialize_timestamp_from_date(
             date=csv_row['timestamp'],
-            formatstr='iso8601',
+            formatstr=extra_parameters.get('timestamp_format', 'iso8601'),
             location='ShapeShift',
         )
         buy_asset = symbol_to_asset_or_token(csv_row['outputCurrency'])
@@ -1056,7 +1110,11 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         )
         self.db.add_trades([trade])
 
-    def import_shapeshift_trades_csv(self, filepath: Path) -> Tuple[bool, str]:
+    def import_shapeshift_trades_csv(
+        self,
+        filepath: Path,
+        extra_parameters: Dict[str, Any],
+    ) -> Tuple[bool, str]:
         """
         Information for the values that the columns can have has been obtained from sample CSVs
         """
@@ -1064,7 +1122,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_shapeshift_trade(row)
+                    self._consume_shapeshift_trade(row, extra_parameters)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During ShapeShift CSV import found action with unknown '
@@ -1081,7 +1139,11 @@ Trade from ShapeShift with ShapeShift Deposit Address:
                     return False, str(e)
         return True, ''
 
-    def _consume_uphold_transaction(self, csv_row: Dict[str, Any]) -> None:
+    def _consume_uphold_transaction(
+        self,
+        csv_row: Dict[str, Any],
+        extra_parameters: Dict[str, Any],
+    ) -> None:
         """
         Consume the file containing both trades and transactions from uphold.
         This method can raise:
@@ -1091,7 +1153,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         """
         timestamp = deserialize_timestamp_from_date(
             date=csv_row['Date'],
-            formatstr='%a %b %d %Y %H:%M:%S %Z%z',
+            formatstr=extra_parameters.get('timestamp_format', '%a %b %d %Y %H:%M:%S %Z%z'),
             location='uphold',
         )
         destination = csv_row['Destination']
@@ -1225,7 +1287,11 @@ Activity from uphold with uphold transaction id:
                     else:
                         log.debug(f'Ignoring trade with Destination Amount: {destination_amount}.')
 
-    def import_uphold_transactions_csv(self, filepath: Path) -> Tuple[bool, str]:
+    def import_uphold_transactions_csv(
+        self,
+        filepath: Path,
+        extra_parameters: Dict[str, Any],
+    ) -> Tuple[bool, str]:
         """
         Information for the values that the columns can have has been obtained from sample CSVs
         """
@@ -1233,7 +1299,7 @@ Activity from uphold with uphold transaction id:
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_uphold_transaction(row)
+                    self._consume_uphold_transaction(row, extra_parameters)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During uphold CSV import found action with unknown '
