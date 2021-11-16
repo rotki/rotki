@@ -65,7 +65,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                 'https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v2',
             )
             self.graph_v3 = Graph(
-                'https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph',
+                'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3',
             )
         except RemoteError as e:
             self.msg_aggregator.add_error(
