@@ -214,7 +214,7 @@ def get_airdrop_data(name: str, data_dir: Path) -> Tuple[Iterator, TextIO]:
                 len(response.content) < SMALLEST_AIRDROP_SIZE
             ):
                 raise csv.Error
-            with open(filename, 'w', newline='') as f:
+            with open(filename, 'w') as f:
                 f.write(content)
         except csv.Error as e:
             log.debug(f'airdrop file {filename} contains invalid data {content}')
