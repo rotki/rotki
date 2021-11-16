@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`3714` Airdrops section will now work again for Windows users.
+* :bug:`-` Uniswap trades will be queried correctly now.
 
 * :release:`1.22.0 <2021-11-12>`
 * :feature:`1146` Bitpanda exchange is now supported. Bitpanda balances are now shown and rotki can query trades and deposit/withdrawals from the exchange.
