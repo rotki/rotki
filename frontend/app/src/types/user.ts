@@ -1,111 +1,75 @@
+import { z } from 'zod';
 import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
-import { Module } from '@/services/session/consts';
-import { Exchange } from '@/types/exchanges';
-import { LedgerActionType } from '@/types/ledger-actions';
+import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
+import { defaultState } from '@/store/settings/state';
+import { SettingsState } from '@/store/settings/types';
+import { Writeable } from '@/types';
+import { Exchange, KrakenAccountType } from '@/types/exchanges';
+import { LedgerActionEnum } from '@/types/ledger-actions';
+import { ModuleEnum } from '@/types/modules';
 
-const PRICE_ORACLES = ['cryptocompare', 'coingecko'] as const;
-export type PriceOracles = typeof PRICE_ORACLES[number];
+export const PriceOracle = z.enum(['cryptocompare', 'coingecko', 'manual']);
+export type PriceOracle = z.infer<typeof PriceOracle>;
 
-export interface UserAccount {
-  readonly premium: boolean;
-  readonly settings: UserSettings;
-  readonly exchanges: Exchange[];
-}
+const OtherSettings = z.object({
+  krakenAccountType: KrakenAccountType.optional(),
+  frontendSettings: z.string().transform(arg => {
+    const loadedSettings: Writeable<SettingsState> = defaultState();
+    if (arg) {
+      const fns = axiosCamelCaseTransformer(JSON.parse(arg));
 
-export interface UserSettings {
-  readonly taxable_ledger_actions: LedgerActionType[];
-  readonly have_premium: boolean;
-  readonly version: number;
-  readonly last_write_ts: number;
-  readonly premium_should_sync?: boolean;
-  readonly submit_usage_analytics: boolean;
-  readonly include_crypto2crypto: boolean;
-  readonly include_gas_costs: boolean;
-  readonly last_data_upload_ts: number;
-  readonly ui_floating_precision: number;
-  readonly taxfree_after_period: number;
-  readonly balance_save_frequency: number;
-  readonly eth_rpc_endpoint: string;
-  readonly ksm_rpc_endpoint: string;
-  readonly dot_rpc_endpoint: string;
-  readonly main_currency: string;
-  readonly last_balance_save: number;
-  readonly date_display_format: string;
-  readonly kraken_account_type: string;
-  readonly active_modules: Module[];
-  readonly frontend_settings: string;
-  readonly account_for_assets_movements: boolean;
-  readonly btc_derivation_gap_limit: number;
-  readonly calculate_past_cost_basis: boolean;
-  readonly display_date_in_localtime: boolean;
-  readonly current_price_oracles: PriceOracles[];
-  readonly historical_price_oracles: PriceOracles[];
-  readonly pnl_csv_with_formulas: boolean;
-  readonly pnl_csv_have_summary: boolean;
-  readonly ssf_0graph_multiplier: number;
-}
+      for (const [key, value] of Object.entries(loadedSettings)) {
+        if (typeof fns[key] === typeof value) {
+          // @ts-ignore
+          loadedSettings[key] = fns[key];
+        }
+      }
+    }
 
-export interface GeneralSettings {
-  readonly floatingPrecision: number;
-  readonly anonymousUsageAnalytics: boolean;
-  readonly ethRpcEndpoint: string;
-  readonly ksmRpcEndpoint: string;
-  readonly dotRpcEndpoint: string;
-  readonly balanceSaveFrequency: number;
-  readonly dateDisplayFormat: string;
-  readonly selectedCurrency: Currency;
-  readonly activeModules: Module[];
-  readonly btcDerivationGapLimit: number;
-  readonly displayDateInLocaltime: boolean;
-  readonly currentPriceOracles: PriceOracles[];
-  readonly historicalPriceOracles: PriceOracles[];
-  readonly ssf0GraphMultiplier: number;
-}
+    return loadedSettings;
+  }),
+  premiumShouldSync: z.boolean(),
+  havePremium: z.boolean()
+});
 
-export interface AccountingSettings {
-  readonly calculatePastCostBasis: boolean;
-  readonly haveCSVSummary: boolean;
-  readonly exportCSVFormulas: boolean;
-  readonly includeCrypto2Crypto: boolean;
-  readonly includeGasCosts: boolean;
-  readonly taxFreeAfterPeriod: number | null;
-  readonly accountForAssetsMovements: boolean;
-  readonly taxableLedgerActions: LedgerActionType[];
-}
+type OtherSettings = z.infer<typeof OtherSettings>;
+
+const GeneralSettings = z.object({
+  uiFloatingPrecision: z.number(),
+  submitUsageAnalytics: z.boolean(),
+  ethRpcEndpoint: z.string(),
+  ksmRpcEndpoint: z.string(),
+  dotRpcEndpoint: z.string(),
+  balanceSaveFrequency: z.number(),
+  dateDisplayFormat: z.string(),
+  mainCurrency: z.string().transform(currency => findCurrency(currency)),
+  activeModules: z.array(ModuleEnum),
+  btcDerivationGapLimit: z.number(),
+  displayDateInLocaltime: z.boolean(),
+  currentPriceOracles: z.array(PriceOracle),
+  historicalPriceOracles: z.array(PriceOracle),
+  ssf0graphMultiplier: z.number()
+});
+
+export type GeneralSettings = z.infer<typeof GeneralSettings>;
+
+const AccountingSettings = z.object({
+  calculatePastCostBasis: z.boolean(),
+  pnlCsvWithFormulas: z.boolean(),
+  pnlCsvHaveSummary: z.boolean(),
+  includeCrypto2crypto: z.boolean(),
+  includeGasCosts: z.boolean(),
+  taxfreeAfterPeriod: z.number().nullable(),
+  accountForAssetsMovements: z.boolean(),
+  taxableLedgerActions: z.array(LedgerActionEnum)
+});
+
+export type AccountingSettings = z.infer<typeof AccountingSettings>;
 
 export type AccountingSettingsUpdate = Partial<AccountingSettings>;
-export type SettingsUpdate = Partial<SettingsPayload>;
 
-interface SettingsPayload {
-  balance_save_frequency: number;
-  main_currency: string;
-  submit_usage_analytics: boolean;
-  eth_rpc_endpoint: string;
-  ksm_rpc_endpoint: string;
-  dot_rpc_endpoint: string;
-  ui_floating_precision: number;
-  date_display_format: string;
-  include_gas_costs: boolean;
-  include_crypto2crypto: boolean;
-  taxfree_after_period: number;
-  kraken_account_type: string;
-  premium_should_sync: boolean;
-  active_modules: Module[];
-  frontend_settings: string;
-  account_for_assets_movements: boolean;
-  btc_derivation_gap_limit: number;
-  calculate_past_cost_basis: boolean;
-  display_date_in_localtime: boolean;
-  current_price_oracles: string[];
-  historical_price_oracles: string[];
-  taxable_ledger_actions: LedgerActionType[];
-  pnl_csv_with_formulas: boolean;
-  pnl_csv_have_summary: boolean;
-  ssf_0graph_multiplier: number;
-}
-
-export const findCurrency = (currencySymbol: string) => {
+const findCurrency = (currencySymbol: string) => {
   const currency: Currency | undefined = currencies.find(
     currency => currency.ticker_symbol === currencySymbol
   );
@@ -114,33 +78,85 @@ export const findCurrency = (currencySymbol: string) => {
   }
   return currency;
 };
-export const convertToGeneralSettings = (
-  settings: UserSettings
-): GeneralSettings => ({
-  floatingPrecision: settings.ui_floating_precision,
-  selectedCurrency: findCurrency(settings.main_currency),
-  dateDisplayFormat: settings.date_display_format,
-  balanceSaveFrequency: settings.balance_save_frequency,
-  ethRpcEndpoint: settings.eth_rpc_endpoint,
-  ksmRpcEndpoint: settings.ksm_rpc_endpoint,
-  dotRpcEndpoint: settings.dot_rpc_endpoint,
-  anonymousUsageAnalytics: settings.submit_usage_analytics,
-  activeModules: settings.active_modules,
-  btcDerivationGapLimit: settings.btc_derivation_gap_limit,
-  displayDateInLocaltime: settings.display_date_in_localtime,
-  currentPriceOracles: settings.current_price_oracles,
-  historicalPriceOracles: settings.historical_price_oracles,
-  ssf0GraphMultiplier: settings.ssf_0graph_multiplier
+
+const Settings = GeneralSettings.merge(AccountingSettings).merge(OtherSettings);
+
+const SettingsUpdate = Settings.merge(
+  z.object({
+    mainCurrency: z.string(),
+    frontendSettings: z.string()
+  })
+);
+
+export type SettingsUpdate = Partial<z.infer<typeof SettingsUpdate>>;
+
+const BaseData = z.object({
+  version: z.number(),
+  lastWriteTs: z.number(),
+  lastDataUploadTs: z.number(),
+  lastBalanceSave: z.number()
 });
-export const convertToAccountingSettings = (
-  settings: UserSettings
-): AccountingSettings => ({
-  taxFreeAfterPeriod: settings.taxfree_after_period,
-  includeGasCosts: settings.include_gas_costs,
-  exportCSVFormulas: settings.pnl_csv_with_formulas,
-  haveCSVSummary: settings.pnl_csv_have_summary,
-  includeCrypto2Crypto: settings.include_crypto2crypto,
-  accountForAssetsMovements: settings.account_for_assets_movements,
-  calculatePastCostBasis: settings.calculate_past_cost_basis,
-  taxableLedgerActions: settings.taxable_ledger_actions
+
+type BaseData = z.infer<typeof BaseData>;
+
+export const UserSettings = BaseData.merge(Settings);
+
+type UserSettings = z.infer<typeof UserSettings>;
+
+const getAccountingSettings = (settings: UserSettings): AccountingSettings => ({
+  taxfreeAfterPeriod: settings.taxfreeAfterPeriod,
+  pnlCsvWithFormulas: settings.pnlCsvWithFormulas,
+  pnlCsvHaveSummary: settings.pnlCsvHaveSummary,
+  includeGasCosts: settings.includeGasCosts,
+  includeCrypto2crypto: settings.includeCrypto2crypto,
+  accountForAssetsMovements: settings.accountForAssetsMovements,
+  calculatePastCostBasis: settings.calculatePastCostBasis,
+  taxableLedgerActions: settings.taxableLedgerActions
 });
+
+const getGeneralSettings = (settings: UserSettings): GeneralSettings => ({
+  uiFloatingPrecision: settings.uiFloatingPrecision,
+  mainCurrency: settings.mainCurrency,
+  dateDisplayFormat: settings.dateDisplayFormat,
+  balanceSaveFrequency: settings.balanceSaveFrequency,
+  ethRpcEndpoint: settings.ethRpcEndpoint,
+  ksmRpcEndpoint: settings.ksmRpcEndpoint,
+  dotRpcEndpoint: settings.dotRpcEndpoint,
+  submitUsageAnalytics: settings.submitUsageAnalytics,
+  activeModules: settings.activeModules,
+  btcDerivationGapLimit: settings.btcDerivationGapLimit,
+  displayDateInLocaltime: settings.displayDateInLocaltime,
+  currentPriceOracles: settings.currentPriceOracles,
+  historicalPriceOracles: settings.historicalPriceOracles,
+  ssf0graphMultiplier: settings.ssf0graphMultiplier
+});
+
+const getOtherSettings = (settings: UserSettings): OtherSettings => ({
+  krakenAccountType: settings.krakenAccountType,
+  frontendSettings: settings.frontendSettings,
+  premiumShouldSync: settings.premiumShouldSync,
+  havePremium: settings.havePremium
+});
+
+const getData = (settings: UserSettings): BaseData => ({
+  lastDataUploadTs: settings.lastDataUploadTs,
+  lastBalanceSave: settings.lastBalanceSave,
+  version: settings.version,
+  lastWriteTs: settings.lastWriteTs
+});
+
+export const UserSettingsModel = UserSettings.transform(settings => ({
+  general: getGeneralSettings(settings),
+  accounting: getAccountingSettings(settings),
+  other: getOtherSettings(settings),
+  data: getData(settings)
+}));
+
+export type UserSettingsModel = z.infer<typeof UserSettingsModel>;
+
+export const UserAccount = z.object({
+  settings: UserSettingsModel,
+  exchanges: z.array(Exchange)
+});
+
+export type UserAccount = z.infer<typeof UserAccount>;

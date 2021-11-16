@@ -15,7 +15,6 @@ import {
   balanceAxiosTransformer,
   basicAxiosTransformer
 } from '@/services/consts';
-import { Module } from '@/services/session/consts';
 import { ApiImplementation, PendingTask } from '@/services/types-api';
 import {
   fetchExternalAsync,
@@ -25,7 +24,8 @@ import {
   validWithSessionAndExternalService
 } from '@/services/utils';
 import { SupportedExchange } from '@/types/exchanges';
-import { PriceOracles } from '@/types/user';
+import { Module } from '@/types/modules';
+import { PriceOracle } from '@/types/user';
 
 export class BalancesApi {
   private readonly axios: AxiosInstance;
@@ -157,7 +157,7 @@ export class BalancesApi {
   }
 
   async createPriceCache(
-    source: PriceOracles,
+    source: PriceOracle,
     fromAsset: string,
     toAsset: string,
     purgeOld: boolean = false
@@ -180,7 +180,7 @@ export class BalancesApi {
   }
 
   async deletePriceCache(
-    source: PriceOracles,
+    source: PriceOracle,
     fromAsset: string,
     toAsset: string
   ): Promise<boolean> {
@@ -196,7 +196,7 @@ export class BalancesApi {
       .then(handleResponse);
   }
 
-  async getPriceCache(source: PriceOracles): Promise<OracleCacheMeta[]> {
+  async getPriceCache(source: PriceOracle): Promise<OracleCacheMeta[]> {
     return this.axios
       .get<ActionResult<OracleCacheMeta[]>>(`/oracles/${source}/cache`, {
         validateStatus: validWithSessionAndExternalService,

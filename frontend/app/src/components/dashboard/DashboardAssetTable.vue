@@ -234,7 +234,7 @@ const DashboardAssetTable = defineComponent({
       total,
       tableHeaders: tableHeaders(totalNetWorthUsd),
       currencySymbol,
-      floatingPrecision,
+      floatingPrecision: floatingPrecision,
       sortItems: getSortItems(getAssetInfo),
       assetFilter,
       percentage

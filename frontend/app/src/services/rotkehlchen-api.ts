@@ -5,7 +5,6 @@ import { SupportedCurrency } from '@/data/currencies';
 import { ExternalServiceKeys } from '@/model/action-result';
 import { AssetApi } from '@/services/assets/asset-api';
 import {
-  axiosCamelCaseTransformer,
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
@@ -51,10 +50,10 @@ import {
   XpubPayload
 } from '@/store/balances/types';
 import { IgnoreActionType } from '@/store/history/types';
+import { SyncConflictPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
-import { Writeable } from '@/types';
 import { Exchange } from '@/types/exchanges';
-import { SettingsUpdate, UserAccount, UserSettings } from '@/types/user';
+import { SettingsUpdate, UserAccount, UserSettingsModel } from '@/types/user';
 import {
   AccountSession,
   ExternalServiceKey,
@@ -262,18 +261,19 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  setSettings(settings: SettingsUpdate): Promise<UserSettings> {
-    return this.axios
-      .put<ActionResult<UserSettings>>(
-        '/settings',
-        {
-          settings: settings
-        },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
+  async setSettings(settings: SettingsUpdate): Promise<UserSettingsModel> {
+    const response = await this.axios.put<ActionResult<UserSettingsModel>>(
+      '/settings',
+      axiosSnakeCaseTransformer({
+        settings: settings
+      }),
+      {
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    const data = handleResponse(response);
+    return UserSettingsModel.parse(data);
   }
 
   queryExchangeBalances(
@@ -436,69 +436,65 @@ export class RotkehlchenApi {
         apiKey,
         apiSecret,
         submitUsageAnalytics !== undefined
-          ? { submit_usage_analytics: submitUsageAnalytics }
+          ? { submitUsageAnalytics }
           : undefined
       );
     }
-    const state: Writeable<UserAccount> = await this.login(
-      username,
-      password,
-      syncApproval
-    );
-    // TODO: Remove after migrating settings logic to use the transformers
-    state.exchanges = axiosCamelCaseTransformer(state.exchanges);
-    return state;
+    return await this.login(username, password, syncApproval);
   }
 
-  registerUser(
+  async registerUser(
     name: string,
     password: string,
     apiKey?: string,
     apiSecret?: string,
     initialSettings?: SettingsUpdate
   ): Promise<UserAccount> {
-    return this.axios
-      .put<ActionResult<UserAccount>>(
-        '/users',
-        {
-          name,
-          password,
-          premium_api_key: apiKey,
-          premium_api_secret: apiSecret,
-          initial_settings: initialSettings
-        },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
+    const response = await this.axios.put<ActionResult<UserAccount>>(
+      '/users',
+      axiosSnakeCaseTransformer({
+        name,
+        password,
+        premiumApiKey: apiKey,
+        premiumApiSecret: apiSecret,
+        initialSettings: initialSettings
+      }),
+      {
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    const account = handleResponse(response);
+    return UserAccount.parse(account);
   }
 
-  login(
+  async login(
     name: string,
     password: string,
     syncApproval: SyncApproval = 'unknown'
   ): Promise<UserAccount> {
-    return this.axios
-      .patch<ActionResult<UserAccount>>(
-        `/users/${name}`,
-        {
-          action: 'login',
-          password,
-          sync_approval: syncApproval
-        },
-        { validateStatus: validAccountOperationStatus }
-      )
-      .then(response => {
-        if (response.status === 300) {
-          throw new SyncConflictError(
-            response.data.message,
-            axiosCamelCaseTransformer(response.data.result)
-          );
-        }
-        return response;
-      })
-      .then(handleResponse);
+    const response = await this.axios.patch<
+      ActionResult<UserAccount | SyncConflictPayload>
+    >(
+      `/users/${name}`,
+      axiosSnakeCaseTransformer({
+        action: 'login',
+        password,
+        syncApproval: syncApproval
+      }),
+      {
+        validateStatus: validAccountOperationStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    if (response.status === 300) {
+      const { result, message } = response.data;
+      throw new SyncConflictError(message, SyncConflictPayload.parse(result));
+    }
+
+    const account = handleResponse(response);
+    return UserAccount.parse(account);
   }
 
   removeExchange({ location, name }: Exchange): Promise<boolean> {
@@ -726,9 +722,9 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async getSettings(): Promise<UserSettings> {
+  async getSettings(): Promise<UserSettingsModel> {
     return this.axios
-      .get<ActionResult<UserSettings>>('/settings', {
+      .get<ActionResult<UserSettingsModel>>('/settings', {
         validateStatus: validWithSessionStatus
       })
       .then(handleResponse);

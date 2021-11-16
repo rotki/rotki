@@ -28,7 +28,7 @@ export const actions: ActionTree<SettingsState, RotkehlchenState> & Actions = {
 
     try {
       await api.setSettings({
-        frontend_settings: JSON.stringify(axiosSnakeCaseTransformer(state))
+        frontendSettings: JSON.stringify(axiosSnakeCaseTransformer(state))
       });
       success = true;
     } catch (e: any) {

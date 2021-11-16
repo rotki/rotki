@@ -9,7 +9,6 @@ import {
   BtcBalances,
   ManualBalanceWithValue
 } from '@/services/balances/types';
-import { Module } from '@/services/session/consts';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { Section } from '@/store/const';
 import { Nullable } from '@/types';
@@ -18,7 +17,8 @@ import {
   KrakenAccountType,
   SupportedExchange
 } from '@/types/exchanges';
-import { PriceOracles } from '@/types/user';
+import { Module } from '@/types/modules';
+import { PriceOracle } from '@/types/user';
 import {
   ExchangeData,
   ExchangeRates,
@@ -169,7 +169,7 @@ export type AssetPriceResponse = {
 };
 
 export type OracleCachePayload = {
-  readonly source: PriceOracles;
+  readonly source: PriceOracle;
   readonly fromAsset: string;
   readonly toAsset: string;
   readonly purgeOld: boolean;

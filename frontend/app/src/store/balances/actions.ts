@@ -23,7 +23,6 @@ import {
 import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
-import { Module } from '@/services/session/consts';
 import { XpubAccountData } from '@/services/types-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
@@ -55,6 +54,7 @@ import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
 import { isLoading, setStatus, showError } from '@/store/utils';
 import { Writeable } from '@/types';
 import { Exchange } from '@/types/exchanges';
+import { Module } from '@/types/modules';
 import { ExchangeRates } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';

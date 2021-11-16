@@ -48,13 +48,13 @@ import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
   ALL_MODULES,
-  ALL_TRANSACTIONS,
-  Module
+  ALL_TRANSACTIONS
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
 import { ACTION_PURGE_CACHED_DATA } from '@/store/session/const';
 import { ActionStatus } from '@/store/types';
 import { SUPPORTED_EXCHANGES, SupportedExchange } from '@/types/exchanges';
+import { Module } from '@/types/modules';
 
 @Component({
   components: { PurgeSelector, StatusButton, ConfirmDialog },

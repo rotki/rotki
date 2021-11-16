@@ -1,10 +1,10 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
-import { Module } from '@/services/session/consts';
 import {
   QueriedAddresses,
   QueriedAddressPayload
 } from '@/services/session/types';
+import { Module } from '@/types/modules';
 import { SettingsUpdate } from '@/types/user';
 
 @Component({
@@ -38,6 +38,6 @@ export default class ModuleMixin extends Vue {
   }
 
   async activateModules(modules: Module[]) {
-    await this.updateSettings({ active_modules: modules });
+    await this.updateSettings({ activeModules: modules });
   }
 }

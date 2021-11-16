@@ -65,7 +65,7 @@ export default class LedgerActionSettings extends Mixins(SettingsMixin) {
     }
 
     const status = await this.settingsUpdate({
-      taxable_ledger_actions: taxableActions
+      taxableLedgerActions: taxableActions
     });
 
     if (!status.success) {

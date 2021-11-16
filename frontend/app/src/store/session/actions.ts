@@ -13,8 +13,7 @@ import { api } from '@/services/rotkehlchen-api';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
-  ALL_MODULES,
-  Module
+  ALL_MODULES
 } from '@/services/session/consts';
 import {
   Purgeable,
@@ -41,45 +40,32 @@ import {
   LAST_KNOWN_TIMEFRAME,
   TIMEFRAME_SETTING
 } from '@/store/settings/consts';
-import { loadFrontendSettings } from '@/store/settings/utils';
 import { ACTION_PURGE_DATA } from '@/store/staking/consts';
 import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
 import { showError, showMessage } from '@/store/utils';
 import {
   Exchange,
+  KrakenAccountType,
   SUPPORTED_EXCHANGES,
   SupportedExchange
 } from '@/types/exchanges';
-import {
-  convertToAccountingSettings,
-  convertToGeneralSettings,
-  SettingsUpdate,
-  UserSettings
-} from '@/types/user';
+import { Module } from '@/types/modules';
+import { SettingsUpdate, UserSettingsModel } from '@/types/user';
 import { SyncConflictError, Tag, UnlockPayload } from '@/typing/types';
 import { backoff } from '@/utils/backoff';
 import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
 
 const periodic = {
   isRunning: false
 };
 
 export const actions: ActionTree<SessionState, RotkehlchenState> = {
-  start({ commit }, payload: { settings: UserSettings }) {
-    const { settings } = payload;
-
-    commit('premium', settings.have_premium);
-    commit('premiumSync', settings.premium_should_sync);
-    commit('updateLastBalanceSave', settings.last_balance_save);
-    commit('updateLastDataUpload', settings.last_data_upload_ts);
-    commit('generalSettings', convertToGeneralSettings(settings));
-    commit('accountingSettings', convertToAccountingSettings(settings));
-  },
   async unlock(
     { commit, dispatch, state, rootState },
     payload: UnlockPayload
   ): Promise<ActionStatus> {
-    let settings: UserSettings;
+    let settings: UserSettingsModel;
     let exchanges: Exchange[];
 
     try {
@@ -95,8 +81,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         ({ settings, exchanges } = await api.unlockUser(payload));
       }
 
-      if (settings.frontend_settings) {
-        loadFrontendSettings(commit, settings.frontend_settings);
+      if (settings.other.frontendSettings) {
+        commit('settings/restore', settings.other.frontendSettings, {
+          root: true
+        });
         const timeframeSetting = rootState.settings![TIMEFRAME_SETTING];
         if (timeframeSetting !== TimeFramePersist.REMEMBER) {
           commit('setTimeframe', timeframeSetting);
@@ -105,9 +93,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         }
       }
 
-      await dispatch('start', {
-        settings
-      });
+      commit('premium', settings.other.havePremium);
+      commit('premiumSync', settings.other.premiumShouldSync);
+      commit('updateLastBalanceSave', settings.data.lastBalanceSave);
+      commit('updateLastDataUpload', settings.data.lastDataUploadTs);
+      commit('generalSettings', settings.general);
+      commit('accountingSettings', settings.accounting);
 
       monitor.start();
       commit('tags', await api.getTags());
@@ -132,6 +123,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       );
       return { success: true };
     } catch (e: any) {
+      logger.error(e);
       if (e instanceof SyncConflictError) {
         commit('syncConflict', { message: e.message, payload: e.payload });
         return { success: false, message: '' };
@@ -266,12 +258,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     dispatch('balances/removeTag', tagName, { root: true });
   },
 
-  async setKrakenAccountType({ commit }, account_type: string) {
+  async setKrakenAccountType({ commit }, krakenAccountType: KrakenAccountType) {
     try {
       const settings = await api.setSettings({
-        kraken_account_type: account_type
+        krakenAccountType
       });
-      commit('generalSettings', convertToGeneralSettings(settings));
+      commit('generalSettings', settings.general);
       commit(
         'setMessage',
         {
@@ -313,16 +305,16 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     let message = '';
     try {
       const settings = await api.setSettings(update);
-      if (state.premium !== settings.have_premium) {
-        commit('premium', settings.have_premium);
+      if (state.premium !== settings.other.havePremium) {
+        commit('premium', settings.other.havePremium);
       }
 
-      if (state.premiumSync !== settings.premium_should_sync) {
-        commit('premiumSync', settings.premium_should_sync);
+      if (state.premiumSync !== settings.other.premiumShouldSync) {
+        commit('premiumSync', settings.other.premiumShouldSync);
       }
 
-      commit('generalSettings', convertToGeneralSettings(settings));
-      commit('accountingSettings', convertToAccountingSettings(settings));
+      commit('generalSettings', settings.general);
+      commit('accountingSettings', settings.accounting);
       success = true;
     } catch (e: any) {
       message = e.message;

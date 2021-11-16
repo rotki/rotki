@@ -134,8 +134,8 @@ import { mapActions, mapGetters } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { ExternalServiceKeys } from '@/model/action-result';
-import { Module } from '@/services/session/consts';
 import { Message } from '@/store/types';
+import { Module } from '@/types/modules';
 import { ExternalServiceKey, ExternalServiceName } from '@/typing/types';
 
 @Component({

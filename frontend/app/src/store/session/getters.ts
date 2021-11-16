@@ -1,9 +1,9 @@
 import { Currency } from '@/model/currency';
-import { Module } from '@/services/session/consts';
 import { Watcher, WatcherType } from '@/services/session/types';
 import { SessionState } from '@/store/session/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
+import { Module } from '@/types/modules';
 import { Tag } from '@/typing/types';
 
 interface SessionGetters {
@@ -23,7 +23,7 @@ export const getters: Getters<
   any
 > = {
   floatingPrecision: (state: SessionState) => {
-    return state.generalSettings.floatingPrecision;
+    return state.generalSettings.uiFloatingPrecision;
   },
 
   dateDisplayFormat: (state: SessionState) => {
@@ -31,7 +31,7 @@ export const getters: Getters<
   },
 
   currency: (state: SessionState) => {
-    return state.generalSettings.selectedCurrency;
+    return state.generalSettings.mainCurrency;
   },
 
   currencySymbol: (_, getters) => {

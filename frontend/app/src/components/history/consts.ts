@@ -20,51 +20,33 @@ import {
 } from '@/data/defaults';
 import i18n from '@/i18n';
 import { TradeLocation } from '@/services/history/types';
-import {
-  EXCHANGE_BINANCE,
-  EXCHANGE_BINANCEUS,
-  EXCHANGE_BITCOIN_DE,
-  EXCHANGE_BITFINEX,
-  EXCHANGE_BITMEX,
-  EXCHANGE_BITPANDA,
-  EXCHANGE_BITSTAMP,
-  EXCHANGE_BITTREX,
-  EXCHANGE_COINBASE,
-  EXCHANGE_COINBASEPRO,
-  EXCHANGE_FTX,
-  EXCHANGE_GEMINI,
-  EXCHANGE_ICONOMI,
-  EXCHANGE_INDEPENDENTRESERVE,
-  EXCHANGE_KRAKEN,
-  EXCHANGE_KUCOIN,
-  EXCHANGE_POLONIEX
-} from '@/types/exchanges';
+import { SupportedExchange } from '@/types/exchanges';
 import { assert } from '@/utils/assertions';
 
 export const tradeLocations: TradeLocationData[] = [
   {
-    identifier: EXCHANGE_KRAKEN,
+    identifier: SupportedExchange.KRAKEN,
     name: 'Kraken',
     icon: require('@/assets/images/kraken.png'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_POLONIEX,
+    identifier: SupportedExchange.POLONIEX,
     name: 'Poloniex',
     icon: require('@/assets/images/poloniex.png'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_BITMEX,
+    identifier: SupportedExchange.BITMEX,
     name: 'Bitmex',
     icon: require('@/assets/images/bitmex.png'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_BITPANDA,
+    identifier: SupportedExchange.BITPANDA,
     name: 'Bitpanda',
     icon: '',
     imageIcon: false,
@@ -72,63 +54,63 @@ export const tradeLocations: TradeLocationData[] = [
     exchange: true
   },
   {
-    identifier: EXCHANGE_BINANCE,
+    identifier: SupportedExchange.BINANCE,
     name: 'Binance',
     icon: require('@/assets/images/binance.png'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_BINANCEUS,
+    identifier: SupportedExchange.BINANCEUS,
     name: 'Binance US',
     icon: require('@/assets/images/binance.png'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_BITTREX,
+    identifier: SupportedExchange.BITTREX,
     name: 'Bittrex',
     icon: require('@/assets/images/bittrex.png'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_BITFINEX,
+    identifier: SupportedExchange.BITFINEX,
     name: 'Bitfinex',
     icon: require('@/assets/images/bitfinex.svg'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_BITCOIN_DE,
+    identifier: SupportedExchange.BITCOIN_DE,
     name: 'bitcoin.de',
     icon: require('@/assets/images/btcde.svg'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_ICONOMI,
+    identifier: SupportedExchange.ICONOMI,
     name: 'Iconomi',
     icon: require('@/assets/images/iconomi.svg'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_GEMINI,
+    identifier: SupportedExchange.GEMINI,
     name: 'Gemini',
     icon: require('@/assets/images/gemini.png'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_COINBASE,
+    identifier: SupportedExchange.COINBASE,
     name: 'Coinbase',
     icon: require('@/assets/images/coinbase.png'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_COINBASEPRO,
+    identifier: SupportedExchange.COINBASEPRO,
     name: 'Coinbase Pro',
     icon: require('@/assets/images/coinbasepro.png'),
     imageIcon: true,
@@ -177,21 +159,21 @@ export const tradeLocations: TradeLocationData[] = [
     exchange: true
   },
   {
-    identifier: EXCHANGE_BITSTAMP,
+    identifier: SupportedExchange.BITSTAMP,
     name: 'Bitstamp',
     icon: require('@/assets/images/bitstamp.png'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_KUCOIN,
+    identifier: SupportedExchange.KUCOIN,
     name: 'KuCoin',
     icon: require('@/assets/images/exchanges/kucoin.svg'),
     imageIcon: true,
     exchange: true
   },
   {
-    identifier: EXCHANGE_FTX,
+    identifier: SupportedExchange.FTX,
     name: 'FTX',
     icon: require('@/assets/images/exchanges/ftx.png'),
     imageIcon: true,
@@ -206,7 +188,7 @@ export const tradeLocations: TradeLocationData[] = [
     exchange: true
   },
   {
-    identifier: EXCHANGE_INDEPENDENTRESERVE,
+    identifier: SupportedExchange.INDEPENDENTRESERVE,
     name: 'IndependentReserve',
     icon: require('@/assets/images/exchanges/independentreserve.png'),
     imageIcon: true,

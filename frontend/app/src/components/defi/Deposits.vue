@@ -203,11 +203,11 @@ import {
 } from '@/premium/premium';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
-import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 import { DefiGetterTypes } from '@/store/defi/getters';
 import { BaseDefiBalance, ProfitLossModel } from '@/store/defi/types';
 import { Nullable } from '@/types';
+import { Module } from '@/types/modules';
 
 @Component({
   components: {

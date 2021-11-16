@@ -85,11 +85,11 @@ import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
 import { ExchangePayload, ExchangeSetupPayload } from '@/store/balances/types';
 import { Nullable, Writeable } from '@/types';
-import { Exchange, EXCHANGE_KRAKEN } from '@/types/exchanges';
+import { Exchange, SupportedExchange } from '@/types/exchanges';
 import { assert } from '@/utils/assertions';
 
 const placeholder: () => ExchangePayload = () => ({
-  location: EXCHANGE_KRAKEN,
+  location: SupportedExchange.KRAKEN,
   name: '',
   newName: null,
   apiKey: null,

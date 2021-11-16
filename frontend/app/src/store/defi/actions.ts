@@ -23,7 +23,7 @@ import {
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { api } from '@/services/rotkehlchen-api';
-import { ALL_MODULES, Module } from '@/services/session/consts';
+import { ALL_MODULES } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import {
   ACTION_PURGE_PROTOCOL,
@@ -47,6 +47,7 @@ import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
 import { fetchAsync, isLoading, setStatus } from '@/store/utils';
+import { Module } from '@/types/modules';
 import { Zero } from '@/utils/bignumbers';
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {

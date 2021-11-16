@@ -224,7 +224,7 @@ export default class PremiumSettings extends Vue {
   }
 
   async onSyncChange() {
-    await this.updateSettings({ premium_should_sync: this.sync });
+    await this.updateSettings({ premiumShouldSync: this.sync });
   }
 }
 </script>

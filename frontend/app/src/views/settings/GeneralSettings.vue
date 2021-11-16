@@ -406,7 +406,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     await this.update(
-      { btc_derivation_gap_limit: parseInt(limit) },
+      { btcDerivationGapLimit: parseInt(limit) },
       SETTING_BTC_DERIVATION_GAP_LIMIT,
       message
     );
@@ -436,7 +436,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
       })}`
     );
     await this.update(
-      { main_currency: symbol },
+      { mainCurrency: symbol },
       SETTING_SELECTED_CURRENCY,
       message
     );
@@ -506,7 +506,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   }
 
   async onFloatingPrecisionChange(precision: string) {
-    const previousValue = this.generalSettings.floatingPrecision.toString();
+    const previousValue = this.generalSettings.uiFloatingPrecision.toString();
 
     if (!this.notTheSame(precision, previousValue)) {
       return;
@@ -527,7 +527,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     const success = await this.update(
-      { ui_floating_precision: parseInt(precision) },
+      { uiFloatingPrecision: parseInt(precision) },
       SETTING_FLOATING_PRECISION,
       message
     );
@@ -543,7 +543,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     await this.update(
-      { submit_usage_analytics: enabled },
+      { submitUsageAnalytics: enabled },
       SETTING_ANONYMOUS_USAGE_ANALYTICS,
       message
     );
@@ -557,7 +557,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     await this.update(
-      { display_date_in_localtime: enabled },
+      { displayDateInLocaltime: enabled },
       SETTING_DISPLAY_DATE_IN_LOCALTIME,
       message
     );
@@ -585,7 +585,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     const success = await this.update(
-      { balance_save_frequency: parseInt(frequency) },
+      { balanceSaveFrequency: parseInt(frequency) },
       SETTING_BALANCE_SAVE_FREQUENCY,
       message
     );
@@ -608,7 +608,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     await this.update(
-      { date_display_format: dateFormat },
+      { dateDisplayFormat: dateFormat },
       SETTING_DATE_DISPLAY_FORMAT,
       message
     );
@@ -631,7 +631,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     const success = await this.update(
-      { eth_rpc_endpoint: endpoint },
+      { ethRpcEndpoint: endpoint },
       SETTING_RPC_ENDPOINT,
       message
     );
@@ -660,7 +660,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     const success = await this.update(
-      { ksm_rpc_endpoint: endpoint },
+      { ksmRpcEndpoint: endpoint },
       SETTING_KSM_RPC_ENDPOINT,
       message
     );
@@ -689,7 +689,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     const success = await this.update(
-      { dot_rpc_endpoint: endpoint },
+      { dotRpcEndpoint: endpoint },
       SETTING_DOT_RPC_ENDPOINT,
       message
     );
@@ -733,8 +733,8 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   private loadFromState() {
     this.selectedCurrency = this.currency;
     const settings = this.generalSettings;
-    this.floatingPrecision = settings.floatingPrecision.toString();
-    this.anonymousUsageAnalytics = settings.anonymousUsageAnalytics;
+    this.floatingPrecision = settings.uiFloatingPrecision.toString();
+    this.anonymousUsageAnalytics = settings.submitUsageAnalytics;
     this.rpcEndpoint = settings.ethRpcEndpoint;
     this.ksmRpcEndpoint = settings.ksmRpcEndpoint;
     this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();

@@ -54,7 +54,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
-import { Module } from '@/services/session/consts';
+import { Module } from '@/types/modules';
 
 @Component({})
 export default class ModuleNotActive extends Vue {

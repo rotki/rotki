@@ -107,7 +107,7 @@ export default class CurrencyDropDown extends Mixins(ThemeMixin) {
       return;
     }
 
-    await this.updateSettings({ main_currency: currency.ticker_symbol });
+    await this.updateSettings({ mainCurrency: currency.ticker_symbol });
   }
 }
 </script>

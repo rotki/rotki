@@ -99,12 +99,12 @@ import { isSectionLoading } from '@/composables/common';
 import { currency } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { Module } from '@/services/session/consts';
 import { BalanceActions } from '@/store/balances/action-types';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { Section } from '@/store/const';
 import { userNotify } from '@/store/notifications/utils';
 import { useStore } from '@/store/utils';
+import { Module } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 

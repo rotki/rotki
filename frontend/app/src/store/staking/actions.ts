@@ -6,7 +6,7 @@ import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
-import { ALL_MODULES, Module } from '@/services/session/consts';
+import { ALL_MODULES } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
@@ -20,6 +20,7 @@ import {
 import { StakingState } from '@/store/staking/types';
 import { RotkehlchenState } from '@/store/types';
 import { isLoading, setStatus } from '@/store/utils';
+import { Module } from '@/types/modules';
 
 export const actions: ActionTree<StakingState, RotkehlchenState> = {
   async fetchStakingDetails(

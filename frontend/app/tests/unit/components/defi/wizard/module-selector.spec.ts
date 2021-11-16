@@ -3,10 +3,10 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { api } from '@/services/rotkehlchen-api';
-import { Module } from '@/services/session/consts';
 import store from '@/store/store';
 import '../../../i18n';
-import { GeneralSettings } from '../../../../../src/types/user';
+import { Module } from '../../../../../src/types/modules';
+import { GeneralSettingsModel } from '../../../../../src/types/user';
 
 jest.mock('@/services/rotkehlchen-api');
 
@@ -26,7 +26,7 @@ describe('ModuleSelector.vue', () => {
 
   beforeEach(() => {
     document.body.setAttribute('data-app', 'true');
-    const settings: GeneralSettings = {
+    const settings: GeneralSettingsModel = {
       ...store.state.session!.generalSettings,
       activeModules: [Module.AAVE]
     };

@@ -137,10 +137,10 @@ import { setupThemeCheck } from '@/composables/common';
 import i18n from '@/i18n';
 import { AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
-import { Module } from '@/services/session/consts';
 import { SessionActions } from '@/store/session/const';
 import { GalleryNft, Nft, NftResponse, Nfts } from '@/store/session/types';
 import { useStore } from '@/store/utils';
+import { Module } from '@/types/modules';
 import { uniqueStrings } from '@/utils/data';
 
 const requestPrices = () => {

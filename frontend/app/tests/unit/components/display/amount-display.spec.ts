@@ -42,10 +42,10 @@ describe('AmountDisplay.vue', () => {
 
   beforeEach(async () => {
     store.commit('session/generalSettings', {
-      selectedCurrency: findCurrency(currencies[1].ticker_symbol)
+      mainCurrency: findCurrency(currencies[1].ticker_symbol)
     });
     store.commit('balances/usdToFiatExchangeRates', { EUR: 1.2 });
-    store.commit('session/generalSettings', { floatingPrecision: 2 });
+    store.commit('session/generalSettings', { uiFloatingPrecision: 2 });
   });
 
   afterEach(() => {

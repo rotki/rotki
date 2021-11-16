@@ -189,7 +189,6 @@ import { AccountInput } from '@/components/accounts/types';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { Module } from '@/services/session/consts';
 import {
   AddAccountsPayload,
   BlockchainAccount,
@@ -199,6 +198,7 @@ import {
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { Message } from '@/store/types';
+import { Module } from '@/types/modules';
 import { trimOnPaste } from '@/utils/event';
 import { getMetamaskAddresses } from '@/utils/metamask';
 

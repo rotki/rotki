@@ -31,12 +31,14 @@ export interface SessionState {
   timeframe: TimeFramePeriod;
 }
 
-export interface SyncConflictPayload {
-  readonly localSize: string;
-  readonly remoteSize: string;
-  readonly localLastModified: number;
-  readonly remoteLastModified: number;
-}
+export const SyncConflictPayload = z.object({
+  localSize: z.string(),
+  remoteSize: z.string(),
+  localLastModified: z.number(),
+  remoteLastModified: z.number()
+});
+
+export type SyncConflictPayload = z.infer<typeof SyncConflictPayload>;
 
 export interface SyncConflict {
   readonly message: string;

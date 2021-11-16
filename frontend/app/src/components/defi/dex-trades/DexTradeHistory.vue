@@ -29,8 +29,8 @@ import ModuleMixin from '@/mixins/module-mixin';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { DexTradesTable } from '@/premium/premium';
-import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
+import { Module } from '@/types/modules';
 
 @Component({
   components: {
