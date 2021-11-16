@@ -173,7 +173,7 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { Account, DefiAccount } from '@rotki/common/lib/account';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import Component from 'vue-class-component';

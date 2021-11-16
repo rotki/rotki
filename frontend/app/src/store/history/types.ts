@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { TaskMeta } from '@/model/task';
 import { IgnoredActions } from '@/services/history/const';
 import {

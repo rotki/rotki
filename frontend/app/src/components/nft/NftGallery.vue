@@ -112,7 +112,7 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { ActionResult } from '@rotki/common/lib/data';
 import {

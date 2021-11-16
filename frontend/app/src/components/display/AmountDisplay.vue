@@ -60,7 +60,7 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';

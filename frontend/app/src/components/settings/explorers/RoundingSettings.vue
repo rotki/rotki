@@ -36,7 +36,7 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import RoundingSelector from '@/components/settings/explorers/RoundingSelector.vue';

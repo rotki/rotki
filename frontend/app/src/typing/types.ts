@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { PriceOracles } from '@/model/action-result';
 import { Currency } from '@/model/currency';
 import { Module } from '@/services/session/consts';

@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import {
   DARK_MODE_ENABLED,
   DARK_THEME,
