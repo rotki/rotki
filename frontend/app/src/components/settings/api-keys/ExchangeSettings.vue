@@ -83,10 +83,9 @@ import RowActions from '@/components/helper/RowActions.vue';
 import { exchangeName } from '@/components/history/consts';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/ExchangeKeysForm.vue';
-import { EXCHANGE_KRAKEN } from '@/data/defaults';
-import { Exchange } from '@/model/action-result';
 import { ExchangePayload, ExchangeSetupPayload } from '@/store/balances/types';
 import { Nullable, Writeable } from '@/types';
+import { Exchange, EXCHANGE_KRAKEN } from '@/types/exchanges';
 import { assert } from '@/utils/assertions';
 
 const placeholder: () => ExchangePayload = () => ({

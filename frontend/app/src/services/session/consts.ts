@@ -1,4 +1,5 @@
-import { EXTERNAL_EXCHANGES, SUPPORTED_EXCHANGES } from '@/data/defaults';
+import { EXTERNAL_EXCHANGES } from '@/data/defaults';
+import { SUPPORTED_EXCHANGES } from '@/types/exchanges';
 
 export enum Module {
   YEARN = 'yearn_vaults',

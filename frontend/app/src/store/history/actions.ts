@@ -14,7 +14,6 @@ import {
   TaskMeta
 } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import { SupportedExchange } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import {
   IgnoredActions,
@@ -68,6 +67,7 @@ import {
 } from '@/store/types';
 import { getStatusUpdater } from '@/store/utils';
 import { Writeable } from '@/types';
+import { SupportedExchange } from '@/types/exchanges';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 

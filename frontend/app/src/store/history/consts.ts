@@ -1,4 +1,5 @@
 import i18n from '@/i18n';
+import { LedgerActionType } from '@/types/ledger-actions';
 
 export enum HistoryActions {
   FETCH_TRADES = 'fetchTrades',
@@ -31,17 +32,6 @@ export enum HistoryMutations {
   ADD_TRADE = 'addTrade',
   SET_TRADES = 'setTrades',
   SET_IGNORED = 'setIgnored'
-}
-
-export enum LedgerActionType {
-  ACTION_INCOME = 'income',
-  ACTION_LOSS = 'loss',
-  ACTION_DONATION = 'donation received',
-  ACTION_EXPENSE = 'expense',
-  ACTION_DIVIDENDS = 'dividends income',
-  ACTION_AIRDROP = 'airdrop',
-  ACTION_GIFT = 'gift',
-  ACTION_GRANT = 'grant'
 }
 
 type ActionDataEntry = { readonly identifier: string; readonly label: string };

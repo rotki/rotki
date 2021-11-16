@@ -105,7 +105,7 @@ import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { tradeLocations } from '@/components/history/consts';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
-import { Exchange } from '@/model/action-result';
+import { Exchange } from '@/types/exchanges';
 import { ExchangeInfo } from '@/typing/types';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';

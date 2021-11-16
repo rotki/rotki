@@ -5,8 +5,8 @@ import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { api } from '@/services/rotkehlchen-api';
 import { Module } from '@/services/session/consts';
 import store from '@/store/store';
-import { GeneralSettings } from '@/typing/types';
 import '../../../i18n';
+import { GeneralSettings } from '../../../../../src/types/user';
 
 jest.mock('@/services/rotkehlchen-api');
 

@@ -1,20 +1,12 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { ActionTree } from 'vuex';
-import {
-  convertToAccountingSettings,
-  convertToGeneralSettings
-} from '@/data/converters';
-import { EXTERNAL_EXCHANGES, SUPPORTED_EXCHANGES } from '@/data/defaults';
+import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
-import { DBSettings, Exchange } from '@/model/action-result';
 import { createTask, taskCompletion, TaskMeta } from '@/model/task';
 import { TaskType } from '@/model/task-type';
-import {
-  SupportedExchange,
-  SupportedExternalExchanges
-} from '@/services/balances/types';
+import { SupportedExternalExchanges } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
@@ -54,11 +46,17 @@ import { ACTION_PURGE_DATA } from '@/store/staking/consts';
 import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
 import { showError, showMessage } from '@/store/utils';
 import {
+  Exchange,
+  SUPPORTED_EXCHANGES,
+  SupportedExchange
+} from '@/types/exchanges';
+import {
+  convertToAccountingSettings,
+  convertToGeneralSettings,
   SettingsUpdate,
-  SyncConflictError,
-  Tag,
-  UnlockPayload
-} from '@/typing/types';
+  UserSettings
+} from '@/types/user';
+import { SyncConflictError, Tag, UnlockPayload } from '@/typing/types';
 import { backoff } from '@/utils/backoff';
 import { uniqueStrings } from '@/utils/data';
 
@@ -67,7 +65,7 @@ const periodic = {
 };
 
 export const actions: ActionTree<SessionState, RotkehlchenState> = {
-  start({ commit }, payload: { settings: DBSettings }) {
+  start({ commit }, payload: { settings: UserSettings }) {
     const { settings } = payload;
 
     commit('premium', settings.have_premium);
@@ -81,7 +79,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     { commit, dispatch, state, rootState },
     payload: UnlockPayload
   ): Promise<ActionStatus> {
-    let settings: DBSettings;
+    let settings: UserSettings;
     let exchanges: Exchange[];
 
     try {

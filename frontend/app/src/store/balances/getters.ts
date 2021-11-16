@@ -11,10 +11,7 @@ import { SupportedAsset } from '@rotki/common/lib/data';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
-import {
-  BlockchainAssetBalances,
-  SupportedExchange
-} from '@/services/balances/types';
+import { BlockchainAssetBalances } from '@/services/balances/types';
 import { GeneralAccountData } from '@/services/types-api';
 import {
   AccountAssetBalances,
@@ -36,6 +33,7 @@ import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { Writeable } from '@/types';
+import { SupportedExchange } from '@/types/exchanges';
 import { ExchangeInfo, L2_LOOPRING } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';

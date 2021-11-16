@@ -281,11 +281,8 @@ import {
 } from '@/store/settings/consts';
 import { FrontendSettingsPayload } from '@/store/settings/types';
 import { ActionStatus } from '@/store/types';
-import {
-  CURRENCY_AFTER,
-  CurrencyLocation,
-  SettingsUpdate
-} from '@/typing/types';
+import { SettingsUpdate } from '@/types/user';
+import { CURRENCY_AFTER, CurrencyLocation } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
 import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
 

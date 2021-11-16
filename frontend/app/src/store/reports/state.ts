@@ -12,7 +12,7 @@ import {
   ReportProgress
 } from '@/store/reports/types';
 
-import { AccountingSettings } from '@/typing/types';
+import { AccountingSettings } from '@/types/user';
 
 export interface ReportState {
   firstProcessedTimestamp: number;

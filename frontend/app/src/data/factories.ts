@@ -1,6 +1,6 @@
 import { currencies } from '@/data/currencies';
 import { Defaults } from '@/data/defaults';
-import { AccountingSettings, GeneralSettings } from '@/typing/types';
+import { AccountingSettings, GeneralSettings } from '@/types/user';
 
 export const defaultGeneralSettings = (): GeneralSettings => ({
   floatingPrecision: Defaults.FLOATING_PRECISION,

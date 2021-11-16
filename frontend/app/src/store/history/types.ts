@@ -7,8 +7,9 @@ import {
   TradeLocation,
   Transactions
 } from '@/services/history/types';
-import { FETCH_SOURCE, LedgerActionType } from '@/store/history/consts';
+import { FETCH_SOURCE } from '@/store/history/consts';
 import { Nullable } from '@/types';
+import { LedgerActionType } from '@/types/ledger-actions';
 
 export interface HistoricData<T> {
   readonly limit: number;

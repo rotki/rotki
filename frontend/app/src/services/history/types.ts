@@ -1,11 +1,9 @@
 import { NumericString, BigNumber } from '@rotki/common';
 import { z } from 'zod';
-import {
-  SupportedExchange,
-  SupportedTradeLocation
-} from '@/services/balances/types';
+import { SupportedTradeLocation } from '@/services/balances/types';
 import { TradeEntry } from '@/store/history/types';
 import { Nullable } from '@/types';
+import { SupportedExchange } from '@/types/exchanges';
 
 export type TradeType = 'buy' | 'sell';
 

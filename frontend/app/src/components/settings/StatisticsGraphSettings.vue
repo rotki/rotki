@@ -56,7 +56,7 @@ import {
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { RotkehlchenState } from '@/store/types';
 import { useStore } from '@/store/utils';
-import { SettingsUpdate } from '@/typing/types';
+import { SettingsUpdate } from '@/types/user';
 
 export default defineComponent({
   name: 'StatisticsGraphSettings',

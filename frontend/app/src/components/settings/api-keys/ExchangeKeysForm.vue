@@ -154,6 +154,7 @@ import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import { tradeLocations } from '@/components/history/consts';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import { ExchangePayload } from '@/store/balances/types';
 import {
   EXCHANGE_BINANCE,
   EXCHANGE_BINANCEUS,
@@ -161,11 +162,10 @@ import {
   EXCHANGE_COINBASEPRO,
   EXCHANGE_KRAKEN,
   EXCHANGE_KUCOIN,
-  SUPPORTED_EXCHANGES
-} from '@/data/defaults';
-import { SupportedExchange } from '@/services/balances/types';
-import { KRAKEN_ACCOUNT_TYPES } from '@/store/balances/const';
-import { ExchangePayload } from '@/store/balances/types';
+  KRAKEN_ACCOUNT_TYPES,
+  SUPPORTED_EXCHANGES,
+  SupportedExchange
+} from '@/types/exchanges';
 import { trimOnPaste } from '@/utils/event';
 
 @Component({

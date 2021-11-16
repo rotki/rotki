@@ -3,11 +3,11 @@ import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { findCurrency } from '@/data/converters';
 import { currencies } from '@/data/currencies';
 import store from '@/store/store';
-import { Zero, bigNumberify } from '@/utils/bignumbers';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
 import '@/filters';
+import { findCurrency } from '../../../../src/types/user';
 
 Vue.use(Vuetify);
 

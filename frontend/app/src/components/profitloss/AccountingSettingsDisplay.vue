@@ -76,7 +76,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { AccountingSettings } from '@/typing/types';
+import { AccountingSettings } from '@/types/user';
 
 @Component({})
 export default class AccountingSettingsDisplay extends Vue {

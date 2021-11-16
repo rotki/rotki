@@ -2,7 +2,6 @@ import { Nullable } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionResult } from '@rotki/common/lib/data';
 import { AxiosInstance } from 'axios';
-import { PriceOracles } from '@/model/action-result';
 import {
   axiosSnakeCaseTransformer,
   setupTransformer
@@ -10,8 +9,7 @@ import {
 import {
   ManualBalance,
   ManualBalances,
-  OracleCacheMeta,
-  SupportedExchange
+  OracleCacheMeta
 } from '@/services/balances/types';
 import {
   balanceAxiosTransformer,
@@ -26,6 +24,8 @@ import {
   validWithParamsSessionAndExternalService,
   validWithSessionAndExternalService
 } from '@/services/utils';
+import { SupportedExchange } from '@/types/exchanges';
+import { PriceOracles } from '@/types/user';
 
 export class BalancesApi {
   private readonly axios: AxiosInstance;

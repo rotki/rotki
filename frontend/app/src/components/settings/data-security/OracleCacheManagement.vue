@@ -141,13 +141,13 @@ import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue'
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import OracleEntry from '@/components/settings/OracleEntry.vue';
-import { PriceOracles } from '@/model/action-result';
 import { TaskType } from '@/model/task-type';
 import { OracleCacheMeta } from '@/services/balances/types';
 import { OracleCachePayload } from '@/store/balances/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { ActionStatus } from '@/store/types';
+import { PriceOracles } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
 @Component({

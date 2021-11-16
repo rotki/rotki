@@ -61,7 +61,7 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { currencies } from '@/data/currencies';
 import ThemeMixin from '@/mixins/theme-mixin';
 import { Currency } from '@/model/currency';
-import { SettingsUpdate } from '@/typing/types';
+import { SettingsUpdate } from '@/types/user';
 
 @Component({
   components: { MenuTooltipButton },

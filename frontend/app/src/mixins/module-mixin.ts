@@ -5,7 +5,7 @@ import {
   QueriedAddresses,
   QueriedAddressPayload
 } from '@/services/session/types';
-import { SettingsUpdate } from '@/typing/types';
+import { SettingsUpdate } from '@/types/user';
 
 @Component({
   computed: {

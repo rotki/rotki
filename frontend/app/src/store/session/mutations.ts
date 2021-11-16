@@ -10,9 +10,9 @@ import { SessionState, SyncConflict } from '@/store/session/types';
 import {
   AccountingSettings,
   AccountingSettingsUpdate,
-  GeneralSettings,
-  Tags
-} from '@/typing/types';
+  GeneralSettings
+} from '@/types/user';
+import { Tags } from '@/typing/types';
 
 export const mutations: MutationTree<SessionState> = {
   login(

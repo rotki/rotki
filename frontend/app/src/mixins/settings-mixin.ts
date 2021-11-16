@@ -8,7 +8,7 @@ import {
   AccountingSettings,
   GeneralSettings,
   SettingsUpdate
-} from '@/typing/types';
+} from '@/types/user';
 
 type TargetState = keyof BaseMessage;
 

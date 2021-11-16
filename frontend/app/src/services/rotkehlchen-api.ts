@@ -2,12 +2,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionResult } from '@rotki/common/lib/data';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { SupportedCurrency } from '@/data/currencies';
-import {
-  AccountState,
-  DBSettings,
-  Exchange,
-  ExternalServiceKeys
-} from '@/model/action-result';
+import { ExternalServiceKeys } from '@/model/action-result';
 import { AssetApi } from '@/services/assets/asset-api';
 import {
   axiosCamelCaseTransformer,
@@ -58,11 +53,12 @@ import {
 import { IgnoreActionType } from '@/store/history/types';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
+import { Exchange } from '@/types/exchanges';
+import { SettingsUpdate, UserAccount, UserSettings } from '@/types/user';
 import {
   AccountSession,
   ExternalServiceKey,
   ExternalServiceName,
-  SettingsUpdate,
   SyncApproval,
   SyncConflictError,
   Tag,
@@ -266,9 +262,9 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  setSettings(settings: SettingsUpdate): Promise<DBSettings> {
+  setSettings(settings: SettingsUpdate): Promise<UserSettings> {
     return this.axios
-      .put<ActionResult<DBSettings>>(
+      .put<ActionResult<UserSettings>>(
         '/settings',
         {
           settings: settings
@@ -423,7 +419,7 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async unlockUser(payload: UnlockPayload): Promise<AccountState> {
+  async unlockUser(payload: UnlockPayload): Promise<UserAccount> {
     const {
       create,
       username,
@@ -444,7 +440,7 @@ export class RotkehlchenApi {
           : undefined
       );
     }
-    const state: Writeable<AccountState> = await this.login(
+    const state: Writeable<UserAccount> = await this.login(
       username,
       password,
       syncApproval
@@ -460,9 +456,9 @@ export class RotkehlchenApi {
     apiKey?: string,
     apiSecret?: string,
     initialSettings?: SettingsUpdate
-  ): Promise<AccountState> {
+  ): Promise<UserAccount> {
     return this.axios
-      .put<ActionResult<AccountState>>(
+      .put<ActionResult<UserAccount>>(
         '/users',
         {
           name,
@@ -482,9 +478,9 @@ export class RotkehlchenApi {
     name: string,
     password: string,
     syncApproval: SyncApproval = 'unknown'
-  ): Promise<AccountState> {
+  ): Promise<UserAccount> {
     return this.axios
-      .patch<ActionResult<AccountState>>(
+      .patch<ActionResult<UserAccount>>(
         `/users/${name}`,
         {
           action: 'login',
@@ -730,9 +726,9 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async getSettings(): Promise<DBSettings> {
+  async getSettings(): Promise<UserSettings> {
     return this.axios
-      .get<ActionResult<DBSettings>>('/settings', {
+      .get<ActionResult<UserSettings>>('/settings', {
         validateStatus: validWithSessionStatus
       })
       .then(handleResponse);

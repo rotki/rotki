@@ -1,21 +1,24 @@
-import { Balance, HasBalance, BigNumber } from '@rotki/common';
+import { Balance, BigNumber, HasBalance } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { z } from 'zod';
-import { Exchange, PriceOracles } from '@/model/action-result';
 import { PriceInformation } from '@/services/assets/types';
 import {
   BlockchainAssetBalances,
   BtcBalances,
-  ManualBalanceWithValue,
-  SupportedExchange
+  ManualBalanceWithValue
 } from '@/services/balances/types';
 import { Module } from '@/services/session/consts';
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
-import { KRAKEN_ACCOUNT_TYPES } from '@/store/balances/const';
 import { Section } from '@/store/const';
 import { Nullable } from '@/types';
+import {
+  Exchange,
+  KrakenAccountType,
+  SupportedExchange
+} from '@/types/exchanges';
+import { PriceOracles } from '@/types/user';
 import {
   ExchangeData,
   ExchangeRates,
@@ -210,8 +213,6 @@ export type AssetInfoGetter = (
 
 export type IdentifierForSymbolGetter = (symbol: string) => string | undefined;
 export type AssetSymbolGetter = (identifier: string) => string;
-
-export type KrakenAccountType = typeof KRAKEN_ACCOUNT_TYPES[number];
 
 export const NonFungibleBalance = PriceInformation.merge(
   z.object({

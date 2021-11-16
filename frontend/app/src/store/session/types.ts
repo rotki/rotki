@@ -1,4 +1,4 @@
-import { NumericString, BigNumber } from '@rotki/common';
+import { BigNumber, NumericString } from '@rotki/common';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { z } from 'zod';
 import {
@@ -6,7 +6,8 @@ import {
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
-import { AccountingSettings, GeneralSettings, Tags } from '@/typing/types';
+import { AccountingSettings, GeneralSettings } from '@/types/user';
+import { Tags } from '@/typing/types';
 
 export interface SessionState {
   newAccount: boolean;

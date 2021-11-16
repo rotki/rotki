@@ -3,7 +3,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
-import { Exchange } from '@/model/action-result';
 import {
   BlockchainMetadata,
   createTask,
@@ -55,6 +54,7 @@ import { notify, userNotify } from '@/store/notifications/utils';
 import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
 import { isLoading, setStatus, showError } from '@/store/utils';
 import { Writeable } from '@/types';
+import { Exchange } from '@/types/exchanges';
 import { ExchangeRates } from '@/typing/types';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';

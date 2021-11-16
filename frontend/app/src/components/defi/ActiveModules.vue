@@ -71,7 +71,7 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import { Module } from '@/services/session/consts';
 import { Nullable } from '@/types';
-import { SettingsUpdate } from '@/typing/types';
+import { SettingsUpdate } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
 type ModuleWithStatus = {
