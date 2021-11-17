@@ -690,7 +690,7 @@ class Rotkehlchen():
                 problem_free = False
                 self.msg_aggregator.add_message(
                     message_type=WSMessageType.BALANCE_SNAPSHOT_ERROR,
-                    data={'location': 'loopring', 'error': str(e)},
+                    data={'location': 'nfts', 'error': str(e)},
                 )
             else:
                 if len(nft_mapping) != 0:

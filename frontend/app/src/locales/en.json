@@ -622,7 +622,7 @@
       "title": "Backend"
     },
     "snapshot_failed": {
-      "message": "Could not save the balance snapshot at {location} {error}",
+      "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
     }
   },
