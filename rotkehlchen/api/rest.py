@@ -2091,16 +2091,12 @@ class RestAPI():
             self,
             source: IMPORTABLE_LOCATIONS,
             filepath: Path,
-            timestamp_format: str,
+            timestamp_format: Optional[str],
     ) -> Response:
-        extra_parameters = {}
-        if timestamp_format is not None:
-            extra_parameters['timestamp_format'] = timestamp_format
-
         if source == 'cointracking.info':
             success, msg = self.rotkehlchen.data_importer.import_cointracking_csv(
                 filepath=filepath,
-                extra_parameters=extra_parameters,
+                timestamp_format=timestamp_format,
             )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
@@ -2108,7 +2104,7 @@ class RestAPI():
         elif source == 'cryptocom':
             success, msg = self.rotkehlchen.data_importer.import_cryptocom_csv(
                 filepath=filepath,
-                extra_parameters=extra_parameters,
+                timestamp_format=timestamp_format,
             )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
@@ -2116,7 +2112,7 @@ class RestAPI():
         elif source == 'blockfi-transactions':
             success, msg = self.rotkehlchen.data_importer.import_blockfi_transactions_csv(
                 filepath=filepath,
-                extra_parameters=extra_parameters,
+                timestamp_format=timestamp_format,
             )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
@@ -2124,7 +2120,7 @@ class RestAPI():
         elif source == 'blockfi-trades':
             success, msg = self.rotkehlchen.data_importer.import_blockfi_trades_csv(
                 filepath=filepath,
-                extra_parameters=extra_parameters,
+                timestamp_format=timestamp_format,
             )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
@@ -2132,7 +2128,7 @@ class RestAPI():
         elif source == 'nexo':
             success, msg = self.rotkehlchen.data_importer.import_nexo_csv(
                 filepath=filepath,
-                extra_parameters=extra_parameters,
+                timestamp_format=timestamp_format,
             )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
@@ -2149,7 +2145,7 @@ class RestAPI():
         elif source == 'shapeshift-trades':
             success, msg = self.rotkehlchen.data_importer.import_shapeshift_trades_csv(
                 filepath=filepath,
-                extra_parameters=extra_parameters,
+                timestamp_format=timestamp_format,
             )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
@@ -2157,7 +2153,7 @@ class RestAPI():
         elif source == 'uphold':
             success, msg = self.rotkehlchen.data_importer.import_uphold_transactions_csv(
                 filepath=filepath,
-                extra_parameters=extra_parameters,
+                timestamp_format=timestamp_format,
             )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')

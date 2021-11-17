@@ -1176,7 +1176,7 @@ class DataImportResource(BaseResource):
         self,
         source: IMPORTABLE_LOCATIONS,
         file: Path,
-        timestamp_format: str,
+        timestamp_format: Optional[str],
     ) -> Response:
         return self.rest_api.import_data(
             source=source,
@@ -1189,7 +1189,7 @@ class DataImportResource(BaseResource):
             self,
             source: IMPORTABLE_LOCATIONS,
             file: FileStorage,
-            timestamp_format: str,
+            timestamp_format: Optional[str],
     ) -> Response:
         with TemporaryDirectory() as temp_directory:
             filename = file.filename if file.filename else f'{source}.csv'
