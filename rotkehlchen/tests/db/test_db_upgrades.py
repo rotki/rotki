@@ -1769,15 +1769,13 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
 
     # Check errors/warnings
     warnings = msg_aggregator.consume_warnings()
-    assert len(warnings) == 13
+    assert len(warnings) == 11
     for idx in (0, 1, 3, 5, 7):
         assert "During v24 -> v25 DB upgrade could not find key '_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94'" in warnings[idx]  # noqa: E501
     for idx in (2, 4, 6):
         assert "During v24 -> v25 DB upgrade could not find key '_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e'" in warnings[idx]  # noqa: E501
-    for idx in (9, 11):
-        assert 'Unknown/unsupported asset _ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94' in warnings[idx]  # noqa: E501
-    for idx in (10, 12):
-        assert 'Unknown/unsupported asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e' in warnings[idx]  # noqa: E501
+    assert 'Unknown/unsupported asset _ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94' in warnings[9]  # noqa: E501
+    assert 'Unknown/unsupported asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e' in warnings[10]  # noqa: E501
     errors = msg_aggregator.consume_errors()
     assert len(errors) == 0
     # Finally also make sure that we have updated to the target version
@@ -2103,10 +2101,9 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
 
     # Check errors/warnings
     warnings = msg_aggregator.consume_warnings()
-    assert len(warnings) == 3
+    assert len(warnings) == 2
     assert 'During v25 -> v26 DB upgrade found timed_balances entry of unknown asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e' in warnings[0]  # noqa: E501
-    for idx in (1, 2):
-        assert 'Unknown/unsupported asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e found in the database' in warnings[idx]  # noqa: E501
+    assert 'Unknown/unsupported asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e found in the database' in warnings[1]  # noqa: E501
     errors = msg_aggregator.consume_errors()
     assert len(errors) == 0
 
