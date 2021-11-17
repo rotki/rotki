@@ -227,7 +227,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async fetchExchangeRates({ commit }): Promise<void> {
     try {
       const { taskId } = await api.getFiatExchangeRates(
-        currencies.map(value => value.ticker_symbol)
+        currencies.map(value => value.tickerSymbol)
       );
 
       const meta: TaskMeta = {

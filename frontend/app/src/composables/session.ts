@@ -30,8 +30,8 @@ export const getPremium = () => {
 
 export const currency = computed(() => {
   const sessionState = getSessionState();
-  const { ticker_symbol } = sessionState.generalSettings.mainCurrency;
-  return ticker_symbol;
+  const { tickerSymbol } = sessionState.generalSettings.mainCurrency;
+  return tickerSymbol;
 });
 
 export const floatingPrecision = computed(() => {

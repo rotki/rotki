@@ -66,8 +66,8 @@ import { mapGetters, mapState } from 'vuex';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import AssetMixin from '@/mixins/asset-mixin';
-import { Currency } from '@/model/currency';
 import { ExchangeRateGetter } from '@/store/balances/types';
+import { Currency } from '@/types/currency';
 import { CurrencyLocation } from '@/types/currency-location';
 import {
   AMOUNT_ROUNDING_MODE,
@@ -154,7 +154,7 @@ export default class AmountDisplay extends Mixins(AssetMixin) {
   }
 
   get isPriceAsset(): boolean {
-    return this.currency.ticker_symbol === this.priceAsset;
+    return this.currency.tickerSymbol === this.priceAsset;
   }
 
   get renderValue(): BigNumber {
@@ -168,7 +168,7 @@ export default class AmountDisplay extends Mixins(AssetMixin) {
         .plus(BigNumber.random(2));
     }
 
-    if (this.amount && this.fiatCurrency === this.currency.ticker_symbol) {
+    if (this.amount && this.fiatCurrency === this.currency.tickerSymbol) {
       valueToRender = this.amount;
     } else {
       valueToRender = this.value;
@@ -182,8 +182,8 @@ export default class AmountDisplay extends Mixins(AssetMixin) {
   }
 
   get convertFiat(): boolean {
-    const { ticker_symbol } = this.currency;
-    return !!this.fiatCurrency && this.fiatCurrency !== ticker_symbol;
+    const { tickerSymbol } = this.currency;
+    return !!this.fiatCurrency && this.fiatCurrency !== tickerSymbol;
   }
 
   get formattedValue(): string {
@@ -201,8 +201,8 @@ export default class AmountDisplay extends Mixins(AssetMixin) {
   }
 
   get rounding(): RoundingMode | undefined {
-    const { ticker_symbol } = this.currency;
-    const isValue = this.fiatCurrency === ticker_symbol;
+    const { tickerSymbol } = this.currency;
+    const isValue = this.fiatCurrency === tickerSymbol;
     let rounding: BigNumber.RoundingMode | undefined = undefined;
     if (isValue) {
       rounding = this.valueRoundingMode;
@@ -213,8 +213,8 @@ export default class AmountDisplay extends Mixins(AssetMixin) {
   }
 
   private convertValue(value: BigNumber): BigNumber {
-    const { ticker_symbol } = this.currency;
-    const rate = this.exchangeRate(ticker_symbol);
+    const { tickerSymbol } = this.currency;
+    const rate = this.exchangeRate(tickerSymbol);
     return rate ? value.multipliedBy(rate) : value;
   }
 

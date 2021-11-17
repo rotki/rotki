@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { currencies } from '@/data/currencies';
-import { Currency } from '@/model/currency';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
 import { defaultState } from '@/store/settings/state';
+import { Currency } from '@/types/currency';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { FrontendSettings } from '@/types/frontend-settings';
 import { LedgerActionEnum } from '@/types/ledger-actions';
@@ -61,7 +61,7 @@ export type AccountingSettingsUpdate = Partial<AccountingSettings>;
 
 const findCurrency = (currencySymbol: string) => {
   const currency: Currency | undefined = currencies.find(
-    currency => currency.ticker_symbol === currencySymbol
+    currency => currency.tickerSymbol === currencySymbol
   );
   if (!currency) {
     throw new Error(`Could not find ${currencySymbol}`);

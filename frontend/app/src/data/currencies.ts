@@ -1,5 +1,5 @@
 import i18n from '@/i18n';
-import { Currency } from '@/model/currency';
+import { Currency } from '@/types/currency';
 
 export const CURRENCY_USD = 'USD';
 const CURRENCY_EUR = 'EUR';

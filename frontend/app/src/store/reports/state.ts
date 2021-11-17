@@ -36,7 +36,7 @@ export const defaultState = (): ReportState => ({
   firstProcessedTimestamp: -1,
   accountingSettings: null,
   reportPeriod: emptyPeriod(),
-  currency: currencies[0].ticker_symbol,
+  currency: currencies[0].tickerSymbol,
   loaded: false,
   progress: {
     processingState: '',

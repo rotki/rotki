@@ -320,7 +320,7 @@ export const getters: Getters<
     { exchangeRate },
     { session }
   ): LocationBalance[] => {
-    const mainCurrency = session?.generalSettings.mainCurrency.ticker_symbol;
+    const mainCurrency = session?.generalSettings.mainCurrency.tickerSymbol;
 
     assert(mainCurrency, 'main currency was not properly set');
 

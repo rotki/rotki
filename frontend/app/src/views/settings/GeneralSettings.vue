@@ -116,7 +116,7 @@
             outlined
             class="general-settings__fields__currency-selector"
             :label="$t('general_settings.amount.labels.main_currency')"
-            item-text="ticker_symbol"
+            item-text="tickerSymbol"
             return-object
             :items="currencies"
             :success-messages="settingsMessages[SELECTED_CURRENCY].success"
@@ -125,14 +125,14 @@
           >
             <template #item="{ item, attrs, on }">
               <v-list-item
-                :id="`currency__${item.ticker_symbol.toLocaleLowerCase()}`"
+                :id="`currency__${item.tickerSymbol.toLocaleLowerCase()}`"
                 v-bind="attrs"
                 v-on="on"
               >
                 <v-list-item-avatar
                   class="general-settings__currency-list primary--text"
                 >
-                  {{ item.unicode_symbol }}
+                  {{ item.unicodeSymbol }}
                 </v-list-item-avatar>
                 <v-list-item-content>
                   <v-list-item-title>
@@ -273,8 +273,8 @@ import { currencies } from '@/data/currencies';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { Defaults } from '@/data/defaults';
 import SettingsMixin from '@/mixins/settings-mixin';
-import { Currency } from '@/model/currency';
 import { ActionStatus } from '@/store/types';
+import { Currency } from '@/types/currency';
 import { CurrencyLocation } from '@/types/currency-location';
 import {
   CURRENCY_LOCATION,
@@ -428,7 +428,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   }
 
   async onSelectedCurrencyChange(currency: Currency) {
-    const symbol = currency.ticker_symbol;
+    const symbol = currency.tickerSymbol;
     const message = makeMessage(
       `${this.$t('general_settings.validation.currency.error')}`,
       `${this.$t('general_settings.validation.currency.success', {

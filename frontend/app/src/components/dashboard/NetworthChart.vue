@@ -42,8 +42,8 @@ import {
 import dayjs from 'dayjs';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
-import { Currency } from '@/model/currency';
 import { NetValue } from '@/services/types-api';
+import { Currency } from '@/types/currency';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -215,7 +215,7 @@ export default class NetWorthChart extends Vue {
   }
 
   private tooltipOptions(): ChartTooltipOptions {
-    const symbol = () => this.currency.unicode_symbol;
+    const symbol = () => this.currency.unicodeSymbol;
 
     const setCaretPosition = (
       classList: DOMTokenList,

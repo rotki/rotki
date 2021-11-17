@@ -84,8 +84,8 @@ export default class AssetIcon extends Mixins(AssetMixin) {
     if (this.asset === Blockchain.BTC || this.asset === Blockchain.ETH) {
       return undefined;
     }
-    return currencies.find(({ ticker_symbol }) => ticker_symbol === this.asset)
-      ?.unicode_symbol;
+    return currencies.find(({ tickerSymbol }) => tickerSymbol === this.asset)
+      ?.unicodeSymbol;
   }
 
   get url(): string {

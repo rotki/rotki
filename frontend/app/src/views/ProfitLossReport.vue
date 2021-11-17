@@ -99,10 +99,10 @@ import AccountingSettingsDisplay from '@/components/profitloss/AccountingSetting
 import Generate from '@/components/profitloss/Generate.vue';
 import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
-import { Currency } from '@/model/currency';
 import { TaskType } from '@/model/task-type';
 import { ReportError, ReportPeriod } from '@/store/reports/types';
 import { Message } from '@/store/types';
+import { Currency } from '@/types/currency';
 import { AccountingSettings } from '@/types/user';
 import { ProfitLossPeriod } from '@/typing/types';
 
@@ -150,7 +150,7 @@ export default class ProfitLossReport extends Vue {
   }
 
   generate(event: ProfitLossPeriod) {
-    this.$store.commit('reports/currency', this.currency.ticker_symbol);
+    this.$store.commit('reports/currency', this.currency.tickerSymbol);
     this.$store.dispatch('reports/generate', event);
   }
 

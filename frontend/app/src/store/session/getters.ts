@@ -1,8 +1,8 @@
-import { Currency } from '@/model/currency';
 import { Watcher, WatcherType } from '@/services/session/types';
 import { SessionState } from '@/store/session/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
+import { Currency } from '@/types/currency';
 import { Module } from '@/types/modules';
 import { Tag } from '@/typing/types';
 
@@ -35,7 +35,7 @@ export const getters: Getters<
   },
 
   currencySymbol: (_, getters) => {
-    return getters.currency.ticker_symbol;
+    return getters.currency.tickerSymbol;
   },
 
   tags: (state: SessionState) => {
