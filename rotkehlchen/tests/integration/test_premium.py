@@ -18,7 +18,6 @@ from rotkehlchen.tests.utils.premium import (
     VALID_PREMIUM_KEY,
     VALID_PREMIUM_SECRET,
     assert_db_got_replaced,
-    asset_database_wasnt_replaced,
     create_patched_requests_get_for_premium,
     get_different_hash,
     setup_starting_environment,
@@ -198,7 +197,9 @@ def test_try_premium_at_start_new_account_rejects_data(
         db_can_sync_setting=False,
         sync_database=False,
     )
-    asset_database_wasnt_replaced(rotkehlchen_instance=rotkehlchen_instance)
+    msg = 'Test default main currency should be different from the restored currency'
+    assert DEFAULT_TESTS_MAIN_CURRENCY != A_GBP, msg
+    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

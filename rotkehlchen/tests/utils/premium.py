@@ -224,9 +224,3 @@ def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
 
     assert main_db_exists
     assert backup_db_exists
-
-
-def asset_database_wasnt_replaced(rotkehlchen_instance: Rotkehlchen):
-    msg = 'Test default main currency should be different from the restored currency'
-    assert DEFAULT_TESTS_MAIN_CURRENCY != A_GBP, msg
-    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
