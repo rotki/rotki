@@ -495,23 +495,25 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
     const endFilter = filter[TradeFilterKeys.END];
     const startFilter = filter[TradeFilterKeys.START];
 
-    this.visibleTrades = this.data.filter(trade => {
-      const quoteSymbol = this.getSymbol(trade.quoteAsset);
-      const baseSymbol = this.getSymbol(trade.baseAsset);
-      const quoteMatch = checkIfMatch(quoteSymbol, quoteFilter);
-      const baseMatch = checkIfMatch(baseSymbol, baseFilter);
-      const actionMatch = checkIfMatch(trade.tradeType, actionFilter);
-      const locationMatch = checkIfMatch(trade.location, locationFilter);
+    this.visibleTrades = this.data
+      .filter(trade => {
+        const quoteSymbol = this.getSymbol(trade.quoteAsset);
+        const baseSymbol = this.getSymbol(trade.baseAsset);
+        const quoteMatch = checkIfMatch(quoteSymbol, quoteFilter);
+        const baseMatch = checkIfMatch(baseSymbol, baseFilter);
+        const actionMatch = checkIfMatch(trade.tradeType, actionFilter);
+        const locationMatch = checkIfMatch(trade.location, locationFilter);
 
-      return (
-        quoteMatch &&
-        actionMatch &&
-        endMatch(trade.timestamp, endFilter) &&
-        startMatch(trade.timestamp, startFilter) &&
-        baseMatch &&
-        locationMatch
-      );
-    });
+        return (
+          quoteMatch &&
+          actionMatch &&
+          endMatch(trade.timestamp, endFilter) &&
+          startMatch(trade.timestamp, startFilter) &&
+          baseMatch &&
+          locationMatch
+        );
+      })
+      .map((value, index) => ({ ...value, id: index }));
   }
 
   @Watch('data')
