@@ -209,10 +209,14 @@ def test_add_and_query_manually_tracked_balances(
             result = assert_proper_response_with_result(response)
 
     assets = result['assets']
+    assert len(assets) == 5
     assert assets['BTC']['amount'] == '1.425'
     assert assets['XMR']['amount'] == '50.315'
     assert assets[A_BNB.identifier]['amount'] == '155'
+    assert assets['ETH']['amount'] == '3E-12'  # from ethereum on-chain balances
+    assert assets[A_RDN.identifier]['amount'] == '4E-12'  # from ethereum on-chain balances
     liabilities = result['liabilities']
+    assert len(liabilities) == 2
     assert liabilities['ETH']['amount'] == '2'
     assert liabilities['USD']['amount'] == '100'
     # Check DB to make sure a save happened
@@ -288,7 +292,7 @@ def test_edit_manually_tracked_balances(rotkehlchen_api_server):
     _populate_tags(rotkehlchen_api_server)
     balances = _populate_initial_balances(rotkehlchen_api_server)
 
-    balances_to_edit = balances[:-2]
+    balances_to_edit = balances[0:2]
     # Give only 2/3 balances for editing to make sure non-given balances are not touched
     balances_to_edit[0]['amount'] = '165.1'
     balances_to_edit[0]['location'] = 'kraken'
@@ -306,6 +310,7 @@ def test_edit_manually_tracked_balances(rotkehlchen_api_server):
         result = outcome['result']
     else:
         result = assert_proper_response_with_result(response)
+
     expected_balances = balances_to_edit + balances[2:]
     assert_balances_match(
         expected_balances=expected_balances,
@@ -635,7 +640,7 @@ def test_delete_manually_tracked_balances(rotkehlchen_api_server):
         'My monero wallet',
         'The ETH I owe to Siretfel. Must pay money or with my life',
     ]
-    expected_balances = balances[:2]
+    expected_balances = [b for b in balances if b['label'] not in labels_to_delete]
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
