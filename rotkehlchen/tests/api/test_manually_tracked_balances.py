@@ -122,6 +122,20 @@ def _populate_initial_balances(api_server) -> List[Dict[str, Any]]:
         'tags': ['private'],
         "location": "blockchain",
         'balance_type': 'liability',
+    }, {
+        "asset": "ETH",
+        "label": "ETH owed to the Finanzamt",
+        "amount": "1",
+        'tags': ['private'],
+        "location": "blockchain",
+        'balance_type': 'liability',
+    }, {
+        "asset": "USD",
+        "label": "My gambling debt",
+        "amount": "100",
+        'tags': None,
+        "location": "external",
+        'balance_type': 'liability',
     }]
     response = requests.put(
         api_url_for(
@@ -194,10 +208,13 @@ def test_add_and_query_manually_tracked_balances(
         else:
             result = assert_proper_response_with_result(response)
 
-    result = result['assets']
-    assert result['BTC']['amount'] == '1.425'
-    assert result['XMR']['amount'] == '50.315'
-    assert result[A_BNB.identifier]['amount'] == '155'
+    assets = result['assets']
+    assert assets['BTC']['amount'] == '1.425'
+    assert assets['XMR']['amount'] == '50.315'
+    assert assets[A_BNB.identifier]['amount'] == '155'
+    liabilities = result['liabilities']
+    assert liabilities['ETH']['amount'] == '2'
+    assert liabilities['USD']['amount'] == '100'
     # Check DB to make sure a save happened
     assert rotki.data.db.get_last_balance_save_time() >= now
     assert set(rotki.data.db.query_owned_assets()) == {
