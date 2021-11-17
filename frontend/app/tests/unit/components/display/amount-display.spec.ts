@@ -7,7 +7,6 @@ import { currencies } from '@/data/currencies';
 import store from '@/store/store';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import '@/filters';
-import { findCurrency } from '../../../../src/types/user';
 
 Vue.use(Vuetify);
 
@@ -42,7 +41,7 @@ describe('AmountDisplay.vue', () => {
 
   beforeEach(async () => {
     store.commit('session/generalSettings', {
-      mainCurrency: findCurrency(currencies[1].ticker_symbol)
+      mainCurrency: currencies[1]
     });
     store.commit('balances/usdToFiatExchangeRates', { EUR: 1.2 });
     store.commit('session/generalSettings', { uiFloatingPrecision: 2 });

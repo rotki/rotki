@@ -68,11 +68,11 @@ import { displayAmountFormatter } from '@/data/amount_formatter';
 import AssetMixin from '@/mixins/asset-mixin';
 import { Currency } from '@/model/currency';
 import { ExchangeRateGetter } from '@/store/balances/types';
+import { CurrencyLocation } from '@/types/currency-location';
 import {
   AMOUNT_ROUNDING_MODE,
   VALUE_ROUNDING_MODE
-} from '@/store/settings/consts';
-import { CurrencyLocation } from '@/typing/types';
+} from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
 

@@ -1,12 +1,12 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
+import { BackupApi } from '@/services/backup/backup-api';
+import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
 import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
-import '../../i18n';
-import { BackupApi } from '../../../../src/services/backup/backup-api';
-import { api } from '../../../../src/services/rotkehlchen-api';
 import { stub } from '../../../common/utils';
+import '../../i18n';
 
 jest.spyOn(api, 'backups', 'get').mockReturnValue(
   stub<BackupApi>({

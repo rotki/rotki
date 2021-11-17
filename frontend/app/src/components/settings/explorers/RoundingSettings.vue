@@ -43,10 +43,10 @@ import RoundingSelector from '@/components/settings/explorers/RoundingSelector.v
 import SettingsMixin from '@/mixins/settings-mixin';
 import {
   AMOUNT_ROUNDING_MODE,
+  RoundingMode,
   VALUE_ROUNDING_MODE
-} from '@/store/settings/consts';
+} from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
-import RoundingMode = BigNumber.RoundingMode;
 
 @Component({
   components: { RoundingSelector },

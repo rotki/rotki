@@ -274,15 +274,15 @@ import { displayDateFormatter } from '@/data/date_formatter';
 import { Defaults } from '@/data/defaults';
 import SettingsMixin from '@/mixins/settings-mixin';
 import { Currency } from '@/model/currency';
+import { ActionStatus } from '@/store/types';
+import { CurrencyLocation } from '@/types/currency-location';
 import {
   CURRENCY_LOCATION,
   DECIMAL_SEPARATOR,
+  FrontendSettingsPayload,
   THOUSAND_SEPARATOR
-} from '@/store/settings/consts';
-import { FrontendSettingsPayload } from '@/store/settings/types';
-import { ActionStatus } from '@/store/types';
+} from '@/types/frontend-settings';
 import { SettingsUpdate } from '@/types/user';
-import { CURRENCY_AFTER, CurrencyLocation } from '@/typing/types';
 import { bigNumberify } from '@/utils/bignumbers';
 import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
 
@@ -346,7 +346,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   dateDisplayFormat: string = '';
   thousandSeparator: string = '';
   decimalSeparator: string = '';
-  currencyLocation: CurrencyLocation = CURRENCY_AFTER;
+  currencyLocation: CurrencyLocation = CurrencyLocation.AFTER;
   selectedCurrency: Currency = currencies[0];
   btcDerivationGapLimit: string = '20';
   displayDateInLocaltime: boolean = true;

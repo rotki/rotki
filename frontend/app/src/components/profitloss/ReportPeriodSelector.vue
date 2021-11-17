@@ -56,8 +56,7 @@
 <script lang="ts">
 import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { ALL, Q1, Q2, Q3, Q4, QUARTERS } from '@/store/settings/consts';
-import { Quarter } from '@/store/settings/types';
+import { Quarter } from '@/types/frontend-settings';
 
 export type PeriodChangedEvent = {
   start: string;
@@ -70,19 +69,19 @@ export type SelectionChangedEvent = {
 };
 
 const QUARTER_STARTS: { [quarter in Quarter]: string } = {
-  [ALL]: '01/01',
-  [Q1]: '01/01',
-  [Q2]: '01/04',
-  [Q3]: '01/07',
-  [Q4]: '01/10'
+  [Quarter.ALL]: '01/01',
+  [Quarter.Q1]: '01/01',
+  [Quarter.Q2]: '01/04',
+  [Quarter.Q3]: '01/07',
+  [Quarter.Q4]: '01/10'
 };
 
 const QUARTER_ENDS: { [quarter in Quarter]: string } = {
-  [Q1]: '31/03',
-  [Q2]: '30/06',
-  [Q3]: '30/09',
-  [Q4]: '31/12',
-  [ALL]: '31/12'
+  [Quarter.Q1]: '31/03',
+  [Quarter.Q2]: '30/06',
+  [Quarter.Q3]: '30/09',
+  [Quarter.Q4]: '31/12',
+  [Quarter.ALL]: '31/12'
 };
 
 @Component({})
@@ -96,8 +95,8 @@ export default class ReportPeriodSelector extends Vue {
   @Prop({
     required: true,
     type: String,
-    default: ALL,
-    validator: value => QUARTERS.includes(value)
+    default: Quarter.ALL,
+    validator: value => Object.values(Quarter).includes(value)
   })
   quarter!: Quarter;
 
@@ -171,23 +170,23 @@ export default class ReportPeriodSelector extends Vue {
   get subPeriod() {
     return [
       {
-        id: ALL,
+        id: Quarter.ALL,
         name: this.$t('generate.sub_period.all').toString()
       },
       {
-        id: Q1,
+        id: Quarter.Q1,
         name: 'Q1'
       },
       {
-        id: Q2,
+        id: Quarter.Q2,
         name: 'Q2'
       },
       {
-        id: Q3,
+        id: Quarter.Q3,
         name: 'Q3'
       },
       {
-        id: Q4,
+        id: Quarter.Q4,
         name: 'Q4'
       }
     ];

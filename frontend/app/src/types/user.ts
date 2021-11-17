@@ -3,9 +3,8 @@ import { currencies } from '@/data/currencies';
 import { Currency } from '@/model/currency';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
 import { defaultState } from '@/store/settings/state';
-import { SettingsState } from '@/store/settings/types';
-import { Writeable } from '@/types';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
+import { FrontendSettings } from '@/types/frontend-settings';
 import { LedgerActionEnum } from '@/types/ledger-actions';
 import { ModuleEnum } from '@/types/modules';
 
@@ -15,19 +14,10 @@ export type PriceOracle = z.infer<typeof PriceOracle>;
 const OtherSettings = z.object({
   krakenAccountType: KrakenAccountType.optional(),
   frontendSettings: z.string().transform(arg => {
-    const loadedSettings: Writeable<SettingsState> = defaultState();
     if (arg) {
-      const fns = axiosCamelCaseTransformer(JSON.parse(arg));
-
-      for (const [key, value] of Object.entries(loadedSettings)) {
-        if (typeof fns[key] === typeof value) {
-          // @ts-ignore
-          loadedSettings[key] = fns[key];
-        }
-      }
+      return FrontendSettings.parse(axiosCamelCaseTransformer(JSON.parse(arg)));
     }
-
-    return loadedSettings;
+    return defaultState();
   }),
   premiumShouldSync: z.boolean(),
   havePremium: z.boolean()

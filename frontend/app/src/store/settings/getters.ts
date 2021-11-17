@@ -1,14 +1,15 @@
 import { DARK_MODE_ENABLED } from '@rotki/common/lib/settings';
+import { SettingsState } from '@/store/settings/state';
+import { RotkehlchenState } from '@/store/types';
+import { Getters } from '@/store/typing';
+import { CurrencyLocation } from '@/types/currency-location';
 import {
   CURRENCY_LOCATION,
   DECIMAL_SEPARATOR,
   PROFIT_LOSS_PERIOD,
+  ProfitLossTimeframe,
   THOUSAND_SEPARATOR
-} from '@/store/settings/consts';
-import { SettingsState, ProfitLossTimeframe } from '@/store/settings/types';
-import { RotkehlchenState } from '@/store/types';
-import { Getters } from '@/store/typing';
-import { CurrencyLocation } from '@/typing/types';
+} from '@/types/frontend-settings';
 
 type SettingsGetters = {
   [PROFIT_LOSS_PERIOD]: ProfitLossTimeframe;

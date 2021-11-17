@@ -104,10 +104,12 @@ import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { NetValue } from '@/services/types-api';
 import { Section } from '@/store/const';
-import { LAST_KNOWN_TIMEFRAME } from '@/store/settings/consts';
-import { FrontendSettingsPayload } from '@/store/settings/types';
 import { isPeriodAllowed } from '@/store/settings/utils';
 import { ActionStatus } from '@/store/types';
+import {
+  FrontendSettingsPayload,
+  LAST_KNOWN_TIMEFRAME
+} from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
 
 @Component({

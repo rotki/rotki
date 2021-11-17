@@ -2,12 +2,6 @@ import { BigNumber } from '@rotki/common';
 import { AssetBalances } from '@/store/balances/types';
 import { SyncConflictPayload } from '@/store/session/types';
 
-export const CURRENCY_BEFORE = 'before';
-export const CURRENCY_AFTER = 'after';
-
-export const CURRENCY_LOCATION = [CURRENCY_AFTER, CURRENCY_BEFORE] as const;
-export type CurrencyLocation = typeof CURRENCY_LOCATION[number];
-
 export interface Credentials {
   readonly username: string;
   readonly password: string;

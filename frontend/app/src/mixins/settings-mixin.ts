@@ -2,8 +2,8 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapState } from 'vuex';
 import { BaseMessage, SettingsMessages } from '@/components/settings/utils';
 import i18n from '@/i18n';
-import { FrontendSettingsPayload } from '@/store/settings/types';
 import { ActionStatus } from '@/store/types';
+import { FrontendSettingsPayload } from '@/types/frontend-settings';
 import {
   AccountingSettings,
   GeneralSettings,

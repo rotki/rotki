@@ -1,11 +1,10 @@
-import { SUPPORTED_EXCHANGES } from '@/types/exchanges';
-import { CURRENCY_AFTER, CurrencyLocation } from '@/typing/types';
+import { CurrencyLocation } from '@/types/currency-location';
 
 export class Defaults {
   static DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z';
   static DEFAULT_THOUSAND_SEPARATOR = ',';
   static DEFAULT_DECIMAL_SEPARATOR = '.';
-  static DEFAULT_CURRENCY_LOCATION: CurrencyLocation = CURRENCY_AFTER;
+  static DEFAULT_CURRENCY_LOCATION = CurrencyLocation.AFTER;
   static FLOATING_PRECISION = 2;
   static RPC_ENDPOINT = 'http://localhost:8545';
   static KSM_RPC_ENDPOINT = 'http://localhost:9933';
@@ -49,11 +48,6 @@ export const SUPPORTED_TRADE_LOCATIONS = [
   TRADE_LOCATION_REALESTATE,
   TRADE_LOCATION_COMMODITIES,
   TRADE_LOCATION_BLOCKCHAIN
-] as const;
-
-export const ALL_TRADE_LOCATIONS = [
-  ...SUPPORTED_TRADE_LOCATIONS,
-  ...SUPPORTED_EXCHANGES
 ] as const;
 
 export const EXTERNAL_EXCHANGES = [

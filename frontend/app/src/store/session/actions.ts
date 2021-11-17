@@ -36,10 +36,6 @@ import {
   PremiumCredentialsPayload,
   SessionState
 } from '@/store/session/types';
-import {
-  LAST_KNOWN_TIMEFRAME,
-  TIMEFRAME_SETTING
-} from '@/store/settings/consts';
 import { ACTION_PURGE_DATA } from '@/store/staking/consts';
 import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
 import { showError, showMessage } from '@/store/utils';
@@ -49,6 +45,10 @@ import {
   SUPPORTED_EXCHANGES,
   SupportedExchange
 } from '@/types/exchanges';
+import {
+  LAST_KNOWN_TIMEFRAME,
+  TIMEFRAME_SETTING
+} from '@/types/frontend-settings';
 import { Module } from '@/types/modules';
 import { SettingsUpdate, UserSettingsModel } from '@/types/user';
 import { SyncConflictError, Tag, UnlockPayload } from '@/typing/types';

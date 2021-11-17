@@ -111,12 +111,12 @@ import SettingsMixin from '@/mixins/settings-mixin';
 import { ThemeManager } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import {
+  FrontendSettingsPayload,
   GRAPH_ZERO_BASED,
   QUERY_PERIOD,
   REFRESH_PERIOD,
   TIMEFRAME_SETTING
-} from '@/store/settings/consts';
-import { FrontendSettingsPayload } from '@/store/settings/types';
+} from '@/types/frontend-settings';
 
 const SETTING_SCRAMBLE_DATA = 'scrambleData';
 const SETTING_TIMEFRAME = 'timeframe';
