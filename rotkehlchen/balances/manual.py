@@ -22,15 +22,18 @@ class ManuallyTrackedBalance(NamedTuple):
 
 
 class ManuallyTrackedBalanceWithValue(NamedTuple):
-    # NamedTuples can't use inheritance. Make sure this has same fields as
-    # ManuallyTrackedBalance until usd_value
     asset: Asset
     label: str
-    amount: FVal
+    value: Balance
     location: Location
     tags: Optional[List[str]]
-    usd_value: FVal
     balance_type: BalanceType
+
+    def serialize(self) -> Dict[str, Any]:
+        result = self._asdict()  # pylint: disable=no-member
+        del result['value']
+        result = {**result, **self.value.serialize()}
+        return result
 
 
 def get_manually_tracked_balances(
@@ -50,9 +53,14 @@ def get_manually_tracked_balances(
             )
             price = Price(ZERO)
 
+        value = Balance(amount=entry.amount, usd_value=price * entry.amount)
         balances_with_value.append(ManuallyTrackedBalanceWithValue(
-            **entry._asdict(),
-            usd_value=price * entry.amount,
+            asset=entry.asset,
+            label=entry.label,
+            value=value,
+            location=entry.location,
+            tags=entry.tags,
+            balance_type=entry.balance_type,
         ))
 
     return balances_with_value
