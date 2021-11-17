@@ -5,6 +5,7 @@ Changelog
 * :bug:`3726` Manual liabilities should not count as assets and should be deducted from total net value when taking a snapshot. Also multiple liabilities of same asset should now be properly summed.
 * :bug:`3714` Airdrops section will now work again for Windows users.
 * :bug:`-` Uniswap trades will be queried correctly now.
+* :bug:`3724` Users should see their per asset liabilities properly aggregated on dashboard.
 
 * :release:`1.22.0 <2021-11-12>`
 * :feature:`1146` Bitpanda exchange is now supported. Bitpanda balances are now shown and rotki can query trades and deposit/withdrawals from the exchange.
