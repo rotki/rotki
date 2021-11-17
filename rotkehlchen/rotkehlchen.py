@@ -158,6 +158,7 @@ class Rotkehlchen():
             sync_approval: Literal['yes', 'no', 'unknown'],
             premium_credentials: Optional[PremiumCredentials],
             initial_settings: Optional[ModifiableDBSettings] = None,
+            sync_database: bool = True,
     ) -> None:
         """Unlocks an existing user or creates a new one if `create_new` is True
 
@@ -174,6 +175,7 @@ class Rotkehlchen():
             user=user,
             create_new=create_new,
             sync_approval=sync_approval,
+            sync_database=sync_database,
             initial_settings=initial_settings,
         )
 
@@ -194,6 +196,7 @@ class Rotkehlchen():
                 username=user,
                 create_new=create_new,
                 sync_approval=sync_approval,
+                sync_database=sync_database,
             )
         except PremiumAuthenticationError:
             # Reraise it only if this is during the creation of a new account where

@@ -1130,6 +1130,7 @@ class RestAPI():
             password: str,
             premium_api_key: str,
             premium_api_secret: str,
+            sync_database: bool,
             initial_settings: Optional[ModifiableDBSettings],
     ) -> Response:
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
@@ -1170,6 +1171,7 @@ class RestAPI():
                 sync_approval='yes',
                 premium_credentials=premium_credentials,
                 initial_settings=initial_settings,
+                sync_database=sync_database,
             )
         # not catching RotkehlchenPermissionError here as for new account with premium
         # syncing there is no way that permission needs to be asked by the user
