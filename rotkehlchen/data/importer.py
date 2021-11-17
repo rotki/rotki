@@ -1320,3 +1320,80 @@ Activity from uphold with uphold transaction id:
                 except KeyError as e:
                     return False, str(e)
         return True, ''
+
+    def _consume_bisq_trade(self, csv_row: Dict[str, Any]) -> None:
+        """
+        Consume the file containing only trades from BlockFi. As per my investigations
+        (@yabirgb) this file can only contain confirmed trades.
+        - UnknownAsset
+        - DeserializationError
+        """
+        timestamp = deserialize_timestamp_from_date(
+            date=csv_row['Date/Time'],
+            formatstr='%Y-%m-%d %H:%M:%S',
+            location='Bisq',
+        )
+
+        offer = csv_row['Offer type'].split()
+        assets1_symbol, asset2_symbol = csv_row['Market'].split('/')
+        if offer[0] == 'Sell':
+            if offer[1] == assets1_symbol:
+                sold_asset = symbol_to_asset_or_token(assets1_symbol)
+                buy_asset = symbol_to_asset_or_token(assets2_symbol)
+            else:
+                sold_asset = symbol_to_asset_or_token(assets2_symbol)
+                buy_asset = symbol_to_asset_or_token(assets1_symbol)
+        else:
+            if offer[1] == assets1_symbol:
+                buy_asset = symbol_to_asset_or_token(assets1_symbol)
+                sold_asset = symbol_to_asset_or_token(assets2_symbol)
+            else:
+                buy_asset = symbol_to_asset_or_token(assets2_symbol)
+                sold_asset = symbol_to_asset_or_token(assets1_symbol)
+    
+        buy_amount = deserialize_asset_amount(csv_row['Buy Quantity'])
+        sold_amount = deserialize_asset_amount(csv_row['Sold Quantity'])
+        if sold_amount == ZERO:
+            log.debug(f'Ignoring BlockFi trade with sold_amount equal to zero. {csv_row}')
+            return
+        rate = Price(buy_amount / sold_amount)
+        trade = Trade(
+            timestamp=timestamp,
+            location=Location.BLOCKFI,
+            base_asset=buy_asset,
+            quote_asset=sold_asset,
+            trade_type=TradeType.BUY,
+            amount=buy_amount,
+            rate=rate,
+            fee=None,  # BlockFI doesn't provide this information
+            fee_currency=None,
+            link='',
+            notes=csv_row['Type'],
+        )
+        self.db.add_trades([trade])
+
+    def import_bisq_trades_csv(self, filepath: Path) -> Tuple[bool, str]:
+        """
+        Information for the values that the columns can have has been obtained from
+        the issue in github #1674
+        """
+        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+            data = csv.DictReader(csvfile)
+            for row in data:
+                try:
+                    self._consume_bisq_trade(row)
+                except UnknownAsset as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'During BlockFi CSV import found action with unknown '
+                        f'asset {e.asset_name}. Ignoring entry',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'Deserialization error during BlockFi CSV import. '
+                        f'{str(e)}. Ignoring entry',
+                    )
+                    continue
+                except KeyError as e:
+                    return False, str(e)
+        return True, ''
