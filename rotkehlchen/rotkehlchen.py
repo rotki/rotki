@@ -16,7 +16,7 @@ from rotkehlchen.accounting.structures import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import (
-    account_for_manually_tracked_balances,
+    account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
 )
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
@@ -708,7 +708,7 @@ class Rotkehlchen():
                                 usd_value=balance_entry['usd_price'],
                             )
 
-        balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
+        balances = account_for_manually_tracked_asset_balances(db=self.data.db, balances=balances)
 
         # Calculate usd totals
         assets_total_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)

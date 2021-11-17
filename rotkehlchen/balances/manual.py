@@ -106,22 +106,21 @@ def remove_manually_tracked_balances(db: 'DBHandler', labels: List[str]) -> None
     db.remove_manually_tracked_balances(labels)
 
 
-def account_for_manually_tracked_balances(
+def account_for_manually_tracked_asset_balances(
         db: 'DBHandler',
         balances: Dict[str, Dict[Asset, Balance]],
 ) -> Dict[str, Any]:
-    """Given the big balances mapping adds to it all manually tracked balances"""
-    manually_tracked_balances = get_manually_tracked_balances(db)
+    """Given the big balances mapping adds to it all manually tracked asset balances"""
+    manually_tracked_balances = get_manually_tracked_balances(
+        db=db,
+        balance_type=BalanceType.ASSET,
+    )
     for m_entry in manually_tracked_balances:
         location_str = str(m_entry.location)
-        balance = Balance(
-            amount=m_entry.amount,
-            usd_value=m_entry.usd_value,
-        )
         if location_str not in balances:
-            balances[location_str] = {m_entry.asset: balance}
+            balances[location_str] = {m_entry.asset: m_entry.value}
         elif m_entry.asset not in balances[location_str]:
-            balances[location_str][m_entry.asset] = balance
+            balances[location_str][m_entry.asset] = m_entry.value
         else:
-            balances[location_str][m_entry.asset] += balance
+            balances[location_str][m_entry.asset] += m_entry.value
     return balances
