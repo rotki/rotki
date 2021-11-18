@@ -250,6 +250,7 @@ class DataImporter():
             'card_cashback_reverted',
             'reimbursement',
             'viban_purchase',
+            'crypto_viban_exchange',
         ):
             # variable mapping to raw data
             currency = csv_row['Currency']
@@ -261,7 +262,7 @@ class DataImporter():
 
             trade_type = TradeType.BUY if to_currency != native_currency else TradeType.SELL
 
-            if row_type == 'crypto_exchange':
+            if row_type in ('crypto_exchange', 'crypto_viban_exchange'):
                 # trades crypto to crypto
                 base_asset = symbol_to_asset_or_token(to_currency)
                 quote_asset = symbol_to_asset_or_token(currency)
@@ -318,13 +319,36 @@ class DataImporter():
                 link='',
             )
             self.db.add_asset_movements([asset_movement])
-        elif row_type in ('airdrop_to_exchange_transfer', 'mco_stake_reward'):
+        elif row_type in (
+            'airdrop_to_exchange_transfer',
+            'mco_stake_reward',
+            'crypto_payment_refund',
+            'pay_checkout_reward'
+            'transfer_cashback',
+            'rewards_platform_deposit_credited',
+        ):
             asset = symbol_to_asset_or_token(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
                 timestamp=timestamp,
                 action_type=LedgerActionType.INCOME,
+                location=Location.CRYPTOCOM,
+                amount=amount,
+                asset=asset,
+                rate=None,
+                rate_asset=None,
+                link=None,
+                notes=None,
+            )
+            self.db_ledger.add_ledger_action(action)
+        elif row_type in ('crypto_payment', 'reimbursement_reverted'):
+            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            amount = deserialize_asset_amount(csv_row['Amount'])
+            action = LedgerAction(
+                identifier=0,  # whatever is not used at insertion
+                timestamp=timestamp,
+                action_type=LedgerActionType.EXPENSE,
                 location=Location.CRYPTOCOM,
                 amount=amount,
                 asset=asset,
@@ -366,6 +390,27 @@ class DataImporter():
                 link='',
             )
             self.db.add_asset_movements([asset_movement])
+        elif row_type == 'crypto_transfer':
+            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            amount = deserialize_asset_amount(csv_row['Amount'])
+            if amount < 0:
+                action_type = LedgerActionType.EXPENSE
+                amount = abs(amount)
+            else:
+                action_type = LedgerActionType.INCOME
+            action = LedgerAction(
+                identifier=0,  # whatever is not used at insertion
+                timestamp=timestamp,
+                action_type=action_type,
+                location=Location.CRYPTOCOM,
+                amount=amount,
+                asset=asset,
+                rate=None,
+                rate_asset=None,
+                link=None,
+                notes=None,
+            )
+            self.db_ledger.add_ledger_action(action)
         elif row_type in (
             'crypto_earn_program_created',
             'crypto_earn_program_withdrawn',
