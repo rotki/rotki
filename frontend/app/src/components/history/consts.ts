@@ -206,8 +206,8 @@ export const tradeLocations: TradeLocationData[] = [
   {
     identifier: EXCHANGE_BISQ,
     name: 'bisq',
-    icon: '',
-    imageIcon: require('@/assets/images/bisq.svg'),
+    icon: require('@/assets/images/bisq.svg'),
+    imageIcon: true,
     exchange: true
   },
   {

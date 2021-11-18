@@ -1,13 +1,13 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 10/11/2021 11:07:26.
+# tools/scripts/generate_constant_assets.py at 18/11/2021 15:06:03.
 # Do not edit manually!
 
 from typing import List
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.typing import Timestamp
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 
 CONSTANT_ASSETS: List[Asset] = []
 
@@ -143,6 +143,18 @@ A_DOGE = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_DOGE)
+A_BSQ = Asset.initialize(
+    identifier='BSQ',
+    asset_type=AssetType.OTHER,
+    name="BSQ",
+    symbol='Bisq DAO Token',
+    started=Timestamp(1555286400),
+    forked=None,
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+)
+CONSTANT_ASSETS.append(A_BSQ)
 
 
 A_BAL = EthereumToken.initialize(
@@ -1432,11 +1444,11 @@ CONSTANT_ASSETS.append(A_OKB)
 A_KEEP = EthereumToken.initialize(
     address=string_to_ethereum_address('0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC'),
     decimals=18,
-    name="KEEP Token ",
+    name="KEEP Token",
     symbol='KEEP',
-    started=Timestamp(1588042366),
+    started=Timestamp(1608747211),
     swapped_for=None,
-    coingecko='keep-network',
+    coingecko='1inch',
     cryptocompare=None,
     protocol=None,
 )

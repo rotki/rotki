@@ -11,7 +11,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.converters import asset_from_nexo, asset_from_uphold
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.constants.assets import A_DAI, A_SAI, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_SAI, A_USD, A_BSQ
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -326,6 +326,9 @@ class DataImporter():
             'pay_checkout_reward'
             'transfer_cashback',
             'rewards_platform_deposit_credited',
+            'reinbursment',
+            'pay_checkout_reward',
+            'transfer_cashback',
         ):
             asset = symbol_to_asset_or_token(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
@@ -339,12 +342,12 @@ class DataImporter():
                 rate=None,
                 rate_asset=None,
                 link=None,
-                notes=None,
+                notes=notes,
             )
             self.db_ledger.add_ledger_action(action)
         elif row_type in ('crypto_payment', 'reimbursement_reverted'):
             asset = symbol_to_asset_or_token(csv_row['Currency'])
-            amount = deserialize_asset_amount(csv_row['Amount'])
+            amount = abs(deserialize_asset_amount(csv_row['Amount']))
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
                 timestamp=timestamp,
@@ -355,7 +358,7 @@ class DataImporter():
                 rate=None,
                 rate_asset=None,
                 link=None,
-                notes=None,
+                notes=notes,
             )
             self.db_ledger.add_ledger_action(action)
         elif row_type == 'invest_deposit':
@@ -408,7 +411,7 @@ class DataImporter():
                 rate=None,
                 rate_asset=None,
                 link=None,
-                notes=None,
+                notes=notes,
             )
             self.db_ledger.add_ledger_action(action)
         elif row_type in (
@@ -1321,58 +1324,77 @@ Activity from uphold with uphold transaction id:
                     return False, str(e)
         return True, ''
 
-    def _consume_bisq_trade(self, csv_row: Dict[str, Any]) -> None:
+    def _consume_bisq_trade(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:
         """
         Consume the file containing only trades from BlockFi. As per my investigations
         (@yabirgb) this file can only contain confirmed trades.
         - UnknownAsset
         - DeserializationError
         """
+        if csv_row['Status'] == 'Canceled':
+            return
+        formatstr = kwargs.get('timestamp_format')
         timestamp = deserialize_timestamp_from_date(
             date=csv_row['Date/Time'],
-            formatstr='%Y-%m-%d %H:%M:%S',
+            formatstr=formatstr if formatstr is not None else '%d %b %Y %H:%M:%S',
             location='Bisq',
         )
-
+        # Get assets and amounts sold
         offer = csv_row['Offer type'].split()
-        assets1_symbol, asset2_symbol = csv_row['Market'].split('/')
+        assets1_symbol, assets2_symbol = csv_row['Market'].split('/')
         if offer[0] == 'Sell':
+            trade_type = TradeType.SELL
             if offer[1] == assets1_symbol:
-                sold_asset = symbol_to_asset_or_token(assets1_symbol)
-                buy_asset = symbol_to_asset_or_token(assets2_symbol)
+                base_asset = symbol_to_asset_or_token(assets1_symbol)
+                quote_asset = symbol_to_asset_or_token(assets2_symbol)
             else:
-                sold_asset = symbol_to_asset_or_token(assets2_symbol)
-                buy_asset = symbol_to_asset_or_token(assets1_symbol)
+                base_asset = symbol_to_asset_or_token(assets2_symbol)
+                quote_asset = symbol_to_asset_or_token(assets1_symbol)
+
+            if base_asset == A_BTC:
+                buy_amount = deserialize_asset_amount(csv_row['Amount'])
+            else:
+                buy_amount = deserialize_asset_amount(csv_row['Amount in BTC'])
+
         else:
+            trade_type = TradeType.BUY
             if offer[1] == assets1_symbol:
-                buy_asset = symbol_to_asset_or_token(assets1_symbol)
-                sold_asset = symbol_to_asset_or_token(assets2_symbol)
+                base_asset = symbol_to_asset_or_token(assets1_symbol)
+                quote_asset = symbol_to_asset_or_token(assets2_symbol)
             else:
-                buy_asset = symbol_to_asset_or_token(assets2_symbol)
-                sold_asset = symbol_to_asset_or_token(assets1_symbol)
-    
-        buy_amount = deserialize_asset_amount(csv_row['Buy Quantity'])
-        sold_amount = deserialize_asset_amount(csv_row['Sold Quantity'])
-        if sold_amount == ZERO:
-            log.debug(f'Ignoring BlockFi trade with sold_amount equal to zero. {csv_row}')
-            return
-        rate = Price(buy_amount / sold_amount)
+                base_asset = symbol_to_asset_or_token(assets2_symbol)
+                quote_asset = symbol_to_asset_or_token(assets1_symbol)
+
+            if base_asset == A_BTC:
+                buy_amount = deserialize_asset_amount(csv_row['Amount in BTC'])
+            else:
+                buy_amount = deserialize_asset_amount(csv_row['Amount'])
+
+        rate = Price(deserialize_asset_amount(csv_row['Price']))
+        # Get trade fee
+        if len(csv_row['Trade Fee BSQ']) != 0:
+            fee_amount = deserialize_fee(csv_row['Trade Fee BSQ'])
+            fee_currency = A_BSQ
+        else:
+            fee_amount = deserialize_fee(csv_row['Trade Fee BTC'])
+            fee_currency = A_BTC
+
         trade = Trade(
             timestamp=timestamp,
-            location=Location.BLOCKFI,
-            base_asset=buy_asset,
-            quote_asset=sold_asset,
-            trade_type=TradeType.BUY,
+            location=Location.BISQ,
+            base_asset=base_asset,
+            quote_asset=quote_asset,
+            trade_type=trade_type,
             amount=buy_amount,
             rate=rate,
-            fee=None,  # BlockFI doesn't provide this information
-            fee_currency=None,
+            fee=fee_amount,
+            fee_currency=fee_currency,
             link='',
-            notes=csv_row['Type'],
+            notes=f'ID: {csv_row["Trade ID"]}',
         )
         self.db.add_trades([trade])
 
-    def import_bisq_trades_csv(self, filepath: Path) -> Tuple[bool, str]:
+    def import_bisq_trades_csv(self, filepath: Path, **kwargs: Any) -> Tuple[bool, str]:
         """
         Information for the values that the columns can have has been obtained from
         the issue in github #1674
@@ -1381,7 +1403,7 @@ Activity from uphold with uphold transaction id:
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_bisq_trade(row)
+                    self._consume_bisq_trade(row, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During BlockFi CSV import found action with unknown '

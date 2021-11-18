@@ -1,8 +1,5 @@
 <template>
-  <import-source 
-    source="bisq"
-    :icon="require('@/assets/images/bisq.svg')"
-  >
+  <import-source source="bisq" :icon="require('@/assets/images/bisq.svg')">
     <template #upload-title>
       <i18n tag="span" path="import_data.bisq.import">
         <strong>{{ $t('import_data.bisq.import_trade') }}</strong>

@@ -1981,6 +1981,7 @@ class DataImportSchema(Schema):
                 'nexo',
                 'shapeshift-trades',
                 'uphold',
+                'bisq',
             ),
         ),
     )

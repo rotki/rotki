@@ -2940,7 +2940,7 @@
       "import": "Import {0} from bisq",
       "import_trade": "trades",
       "name": "Bisq",
-      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly." ,
+      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "note": "Important notes for importing data from {0}'s CSV exports."
     },
     "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
