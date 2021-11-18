@@ -8986,10 +8986,11 @@ Data imports
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"source": "cointracking.info", "filepath": "/path/to/data/file"}
+      {"source": "cointracking.info", "filepath": "/path/to/data/file", "timestamp_format": "%d/%m/%Y %H:%M:%S"}
 
    :reqjson str source: The source of the data to import. Valid values are ``"cointracking.info"``, ``"cryptocom"``, ``"blockfi-transactions"``, ``"blockfi-trades"``, ``"nexo"``, ``"gitcoin"``, ``"shapeshift-trades"``, ``"uphold"``.
    :reqjson str filepath: The filepath to the data for importing
+   :reqjson str timestamp_format: Optional. Custom format to use for dates in the CSV file. Should follow rules at `Datetime docs <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__.
 
    **Example Response**:
 

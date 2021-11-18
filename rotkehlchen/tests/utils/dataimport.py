@@ -813,3 +813,40 @@ Activity from uphold with uphold transaction id:
     assert asset_movements == expected_movements
     assert len(ledger_actions) == 1
     assert ledger_actions == expected_ledger_actions
+
+
+def assert_custom_cointracking(rotki: Rotkehlchen):
+    """
+    A utility function to help assert on correctness of importing data from cointracking.info
+    when using custom formats for dates
+    """
+    asset_movements = rotki.data.db.get_asset_movements()
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    expected_movements = [AssetMovement(
+        location=Location.POLONIEX,
+        category=AssetMovementCategory.DEPOSIT,
+        timestamp=Timestamp(1504646040),
+        address=None,
+        transaction_id=None,
+        asset=A_XMR,
+        amount=AssetAmount(FVal('5')),
+        fee_asset=A_USD,
+        fee=Fee(ZERO),
+        link='',
+    ), AssetMovement(
+        location=Location.COINBASE,
+        category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
+        timestamp=Timestamp(1504646040),
+        asset=A_ETH,
+        amount=AssetAmount(FVal('0.05770427')),
+        fee_asset=A_ETH,
+        fee=Fee(FVal("0.0001")),
+        link='',
+    )]
+    assert expected_movements == asset_movements

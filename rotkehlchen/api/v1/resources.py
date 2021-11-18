@@ -1178,20 +1178,30 @@ class DataImportResource(BaseResource):
         self,
         source: IMPORTABLE_LOCATIONS,
         file: Path,
+        timestamp_format: Optional[str],
     ) -> Response:
-        return self.rest_api.import_data(source=source, filepath=file)
+        return self.rest_api.import_data(
+            source=source,
+            filepath=file,
+            timestamp_format=timestamp_format,
+        )
 
     @use_kwargs(upload_schema, location='form_and_file')
     def post(
             self,
             source: IMPORTABLE_LOCATIONS,
             file: FileStorage,
+            timestamp_format: Optional[str],
     ) -> Response:
         with TemporaryDirectory() as temp_directory:
             filename = file.filename if file.filename else f'{source}.csv'
             filepath = Path(temp_directory) / filename
             file.save(str(filepath))
-            response = self.rest_api.import_data(source=source, filepath=filepath)
+            response = self.rest_api.import_data(
+                source=source,
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
 
         return response
 
