@@ -52,12 +52,12 @@ import {
 import { IgnoreActionType } from '@/store/history/types';
 import { SyncConflictPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
-import { Exchange } from '@/types/exchanges';
+import { Exchange, Exchanges } from '@/types/exchanges';
 import {
   AccountSession,
-  SyncApproval,
-  SyncConflictError,
-  UnlockPayload
+  CreateAccountPayload,
+  LoginCredentials,
+  SyncConflictError
 } from '@/types/login';
 import { TaskResultResponse } from '@/types/task';
 import {
@@ -424,45 +424,21 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async unlockUser(payload: UnlockPayload): Promise<UserAccount> {
-    const {
-      create,
-      username,
-      password,
-      apiKey,
-      apiSecret,
-      syncApproval,
-      submitUsageAnalytics
-    } = payload;
-    if (create) {
-      return this.registerUser(
-        username,
-        password,
-        apiKey,
-        apiSecret,
-        submitUsageAnalytics !== undefined
-          ? { submitUsageAnalytics }
-          : undefined
-      );
-    }
-    return await this.login(username, password, syncApproval);
-  }
+  async createAccount(payload: CreateAccountPayload): Promise<UserAccount> {
+    const { credentials, premiumSetup } = payload;
+    const { username, password } = credentials;
 
-  async registerUser(
-    name: string,
-    password: string,
-    apiKey?: string,
-    apiSecret?: string,
-    initialSettings?: SettingsUpdate
-  ): Promise<UserAccount> {
     const response = await this.axios.put<ActionResult<UserAccount>>(
       '/users',
       axiosSnakeCaseTransformer({
-        name,
+        name: username,
         password,
-        premiumApiKey: apiKey,
-        premiumApiSecret: apiSecret,
-        initialSettings: initialSettings
+        premiumApiKey: premiumSetup?.apiKey,
+        premiumApiSecret: premiumSetup?.apiSecret,
+        initialSettings: {
+          submitUsageAnalytics: premiumSetup?.submitUsageAnalytics
+        },
+        syncDatabase: premiumSetup?.syncDatabase
       }),
       {
         validateStatus: validStatus,
@@ -473,19 +449,16 @@ export class RotkehlchenApi {
     return UserAccount.parse(account);
   }
 
-  async login(
-    name: string,
-    password: string,
-    syncApproval: SyncApproval = 'unknown'
-  ): Promise<UserAccount> {
+  async login(credentials: LoginCredentials): Promise<UserAccount> {
+    const { password, syncApproval, username } = credentials;
     const response = await this.axios.patch<
       ActionResult<UserAccount | SyncConflictPayload>
     >(
-      `/users/${name}`,
+      `/users/${username}`,
       axiosSnakeCaseTransformer({
         action: 'login',
         password,
-        syncApproval: syncApproval
+        syncApproval
       }),
       {
         validateStatus: validAccountOperationStatus,
@@ -728,20 +701,29 @@ export class RotkehlchenApi {
   }
 
   async getSettings(): Promise<UserSettingsModel> {
-    return this.axios
-      .get<ActionResult<UserSettingsModel>>('/settings', {
-        validateStatus: validWithSessionStatus
-      })
-      .then(handleResponse);
+    const response = await this.axios.get<ActionResult<UserSettingsModel>>(
+      '/settings',
+      {
+        validateStatus: validWithSessionStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    const data = handleResponse(response);
+    return UserSettingsModel.parse(data);
   }
 
-  async getExchanges(): Promise<Exchange[]> {
-    return this.axios
-      .get<ActionResult<Exchange[]>>('/exchanges', {
-        transformResponse: this.baseTransformer,
+  async getExchanges(): Promise<Exchanges> {
+    const response = await this.axios.get<ActionResult<Exchanges>>(
+      '/exchanges',
+      {
+        transformResponse: basicAxiosTransformer,
         validateStatus: validWithSessionStatus
-      })
-      .then(handleResponse);
+      }
+    );
+
+    const data = handleResponse(response);
+    return Exchanges.parse(data);
   }
 
   async queryExternalServices(): Promise<ExternalServiceKeys> {

@@ -10,8 +10,10 @@
           v-model="username"
           class="login__fields__username"
           color="secondary"
+          outlined
+          single-line
           :label="$t('login.label_username')"
-          prepend-icon="mdi-account"
+          prepend-inner-icon="mdi-account"
           :rules="usernameRules"
           :disabled="loading || !!syncConflict.message || customBackendDisplay"
           required
@@ -21,6 +23,7 @@
         <revealable-input
           ref="password"
           v-model="password"
+          outlined
           :rules="passwordRules"
           :disabled="loading || !!syncConflict.message || customBackendDisplay"
           type="password"
@@ -230,7 +233,7 @@ import {
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { SyncConflict } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
-import { Credentials, SyncApproval } from '@/types/login';
+import { LoginCredentials, SyncApproval } from '@/types/login';
 
 const KEY_REMEMBER = 'rotki.remember';
 const KEY_USERNAME = 'rotki.username';
@@ -435,7 +438,7 @@ export default class Login extends Vue {
   }
 
   login(syncApproval: SyncApproval = 'unknown') {
-    const credentials: Credentials = {
+    const credentials: LoginCredentials = {
       username: this.username,
       password: this.password,
       syncApproval

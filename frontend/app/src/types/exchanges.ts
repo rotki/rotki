@@ -39,6 +39,10 @@ export const Exchange = z.object({
 
 export type Exchange = z.infer<typeof Exchange>;
 
+export const Exchanges = z.array(Exchange);
+
+export type Exchanges = z.infer<typeof Exchanges>;
+
 export interface ExchangeInfo {
   readonly location: string;
   readonly balances: AssetBalances;
