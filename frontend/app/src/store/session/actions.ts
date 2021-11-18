@@ -4,8 +4,6 @@ import { ActionTree } from 'vuex';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
-import { createTask, taskCompletion, TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { SupportedExternalExchanges } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { monitor } from '@/services/monitoring';
@@ -49,9 +47,11 @@ import {
   LAST_KNOWN_TIMEFRAME,
   TIMEFRAME_SETTING
 } from '@/types/frontend-settings';
+import { SyncConflictError, UnlockPayload } from '@/types/login';
 import { Module } from '@/types/modules';
-import { SettingsUpdate, UserSettingsModel } from '@/types/user';
-import { SyncConflictError, Tag, UnlockPayload } from '@/typing/types';
+import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
+import { SettingsUpdate, Tag, UserSettingsModel } from '@/types/user';
 import { backoff } from '@/utils/backoff';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';

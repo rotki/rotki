@@ -14,16 +14,13 @@ import { Section } from '@/store/const';
 import { Nullable } from '@/types';
 import {
   Exchange,
+  ExchangeData,
   KrakenAccountType,
   SupportedExchange
 } from '@/types/exchanges';
 import { Module } from '@/types/modules';
-import { PriceOracle } from '@/types/user';
-import {
-  ExchangeData,
-  ExchangeRates,
-  SupportedL2Protocol
-} from '@/typing/types';
+import { SupportedL2Protocol } from '@/types/protocols';
+import { ExchangeRates, PriceOracle } from '@/types/user';
 
 export interface LocationBalance {
   readonly location: string;

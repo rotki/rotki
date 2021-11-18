@@ -3,14 +3,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
-import {
-  BlockchainMetadata,
-  createTask,
-  ExchangeMeta,
-  taskCompletion,
-  TaskMeta
-} from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { blockchainBalanceKeys } from '@/services/balances/consts';
 import {
   Balances,
@@ -55,7 +47,15 @@ import { isLoading, setStatus, showError } from '@/store/utils';
 import { Writeable } from '@/types';
 import { Exchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
-import { ExchangeRates } from '@/typing/types';
+import {
+  BlockchainMetadata,
+  createTask,
+  ExchangeMeta,
+  taskCompletion,
+  TaskMeta
+} from '@/types/task';
+import { TaskType } from '@/types/task-type';
+import { ExchangeRates } from '@/types/user';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 import { chunkArray } from '@/utils/data';
@@ -233,7 +233,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const meta: TaskMeta = {
         title: i18n.t('actions.balances.exchange_rates.task.title').toString(),
         ignoreResult: false,
-        numericKeys: null
+        numericKeys: []
       };
 
       const type = TaskType.EXCHANGE_RATES;
@@ -245,7 +245,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         type
       );
 
-      commit('usdToFiatExchangeRates', result);
+      commit('usdToFiatExchangeRates', ExchangeRates.parse(result));
     } catch (e: any) {
       notify(
         i18n

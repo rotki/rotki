@@ -187,7 +187,6 @@ import TagIcon from '@/components/tags/TagIcon.vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { balanceSum } from '@/filters';
 import StatusMixin from '@/mixins/status-mixin';
-import { TaskType } from '@/model/task-type';
 import { chainSection } from '@/store/balances/const';
 import {
   BlockchainAccountWithBalance,
@@ -196,7 +195,8 @@ import {
 } from '@/store/balances/types';
 import { Properties } from '@/types';
 import { Currency } from '@/types/currency';
-import { Tags } from '@/typing/types';
+import { TaskType } from '@/types/task-type';
+import { Tags } from '@/types/user';
 import { Zero } from '@/utils/bignumbers';
 
 @Component({

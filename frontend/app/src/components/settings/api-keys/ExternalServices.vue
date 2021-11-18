@@ -133,10 +133,13 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import { ExternalServiceKeys } from '@/model/action-result';
 import { Message } from '@/store/types';
 import { Module } from '@/types/modules';
-import { ExternalServiceKey, ExternalServiceName } from '@/typing/types';
+import {
+  ExternalServiceKey,
+  ExternalServiceKeys,
+  ExternalServiceName
+} from '@/types/user';
 
 @Component({
   components: { ServiceKey, ConfirmDialog },
@@ -171,11 +174,11 @@ export default class ExternalServices extends Vue {
     beaconchain,
     loopring
   }: ExternalServiceKeys) {
-    this.cryptocompareKey = cryptocompare?.api_key || '';
-    this.covalentKey = covalent?.api_key || '';
-    this.etherscanKey = etherscan?.api_key || '';
-    this.beaconchainKey = beaconchain?.api_key || '';
-    this.loopringKey = loopring?.api_key || '';
+    this.cryptocompareKey = cryptocompare?.apiKey || '';
+    this.covalentKey = covalent?.apiKey || '';
+    this.etherscanKey = etherscan?.apiKey || '';
+    this.beaconchainKey = beaconchain?.apiKey || '';
+    this.loopringKey = loopring?.apiKey || '';
   }
 
   async mounted() {
@@ -186,7 +189,7 @@ export default class ExternalServices extends Vue {
 
   async save(serviceName: ExternalServiceName, key: string) {
     const keys: ExternalServiceKey[] = [
-      { name: serviceName, api_key: key.trim() }
+      { name: serviceName, apiKey: key.trim() }
     ];
 
     try {

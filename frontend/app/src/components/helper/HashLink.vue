@@ -70,7 +70,7 @@ import { truncateAddress } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 import ThemeMixin from '@/mixins/theme-mixin';
 import { ExplorersSettings } from '@/types/frontend-settings';
-import { randomHex } from '@/typing/utils';
+import { randomHex } from '@/utils/data';
 
 @Component({
   computed: {

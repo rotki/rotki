@@ -6,8 +6,7 @@ import {
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
-import { AccountingSettings, GeneralSettings } from '@/types/user';
-import { Tags } from '@/typing/types';
+import { AccountingSettings, GeneralSettings, Tags } from '@/types/user';
 
 export interface SessionState {
   newAccount: boolean;

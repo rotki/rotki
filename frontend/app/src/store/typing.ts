@@ -1,8 +1,8 @@
-import { TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { PendingTask } from '@/services/types-api';
 import { Section } from '@/store/const';
 import { Module } from '@/types/modules';
+import { TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 
 type GettersDefinition<S, G, RS, RG> = {
   [P in keyof G]: (

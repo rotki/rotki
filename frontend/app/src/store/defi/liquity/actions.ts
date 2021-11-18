@@ -6,8 +6,6 @@ import {
 } from '@rotki/common/lib/liquity';
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
-import { TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
 import { Section, Status } from '@/store/const';
 import { LiquityMutations } from '@/store/defi/liquity/mutation-types';
@@ -15,6 +13,8 @@ import { LiquityState } from '@/store/defi/liquity/types';
 import { RotkehlchenState } from '@/store/types';
 import { fetchAsync, setStatus } from '@/store/utils';
 import { Module } from '@/types/modules';
+import { TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 
 export const actions: ActionTree<LiquityState, RotkehlchenState> = {
   async fetchBalances(context, refresh: boolean = false) {

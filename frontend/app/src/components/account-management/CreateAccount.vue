@@ -158,7 +158,7 @@
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { Credentials } from '@/typing/types';
+import { Credentials } from '@/types/login';
 
 @Component({
   components: { RevealableInput, PremiumCredentials }

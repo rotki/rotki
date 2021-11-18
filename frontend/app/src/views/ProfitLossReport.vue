@@ -99,12 +99,12 @@ import AccountingSettingsDisplay from '@/components/profitloss/AccountingSetting
 import Generate from '@/components/profitloss/Generate.vue';
 import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
-import { TaskType } from '@/model/task-type';
 import { ReportError, ReportPeriod } from '@/store/reports/types';
 import { Message } from '@/store/types';
 import { Currency } from '@/types/currency';
+import { ProfitLossPeriod } from '@/types/pnl';
+import { TaskType } from '@/types/task-type';
 import { AccountingSettings } from '@/types/user';
-import { ProfitLossPeriod } from '@/typing/types';
 
 @Component({
   components: {

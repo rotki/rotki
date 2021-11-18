@@ -1,7 +1,7 @@
+import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { currencies } from '@/data/currencies';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
-import { defaultState } from '@/store/settings/state';
 import { Currency } from '@/types/currency';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { FrontendSettings } from '@/types/frontend-settings';
@@ -14,10 +14,8 @@ export type PriceOracle = z.infer<typeof PriceOracle>;
 const OtherSettings = z.object({
   krakenAccountType: KrakenAccountType.optional(),
   frontendSettings: z.string().transform(arg => {
-    if (arg) {
-      return FrontendSettings.parse(axiosCamelCaseTransformer(JSON.parse(arg)));
-    }
-    return defaultState();
+    const data = arg ? axiosCamelCaseTransformer(JSON.parse(arg)) : {};
+    return FrontendSettings.parse(data);
   }),
   premiumShouldSync: z.boolean(),
   havePremium: z.boolean()
@@ -150,3 +148,40 @@ export const UserAccount = z.object({
 });
 
 export type UserAccount = z.infer<typeof UserAccount>;
+
+const ApiKey = z.object({
+  apiKey: z.string()
+});
+
+export const ExternalServiceKeys = z.object({
+  etherscan: ApiKey.optional(),
+  cryptocompare: ApiKey.optional(),
+  covalent: ApiKey.optional(),
+  beaconchain: ApiKey.optional(),
+  loopring: ApiKey.optional()
+});
+
+export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;
+export type ExternalServiceName = keyof ExternalServiceKeys;
+
+export interface ExternalServiceKey {
+  readonly name: ExternalServiceName;
+  readonly apiKey: string;
+}
+
+export const Tag = z.object({
+  name: z.string(),
+  description: z.string(),
+  backgroundColor: z.string(),
+  foregroundColor: z.string()
+});
+
+export type Tag = z.infer<typeof Tag>;
+
+export const Tags = z.record(Tag);
+
+export type Tags = z.infer<typeof Tags>;
+
+export const ExchangeRates = z.record(NumericString);
+
+export type ExchangeRates = z.infer<typeof ExchangeRates>;

@@ -1,5 +1,4 @@
 import { BigNumber } from '@rotki/common';
-import { TaskMeta } from '@/model/task';
 import { IgnoredActions } from '@/services/history/const';
 import {
   AssetMovement,
@@ -10,6 +9,7 @@ import {
 import { FETCH_SOURCE } from '@/store/history/consts';
 import { Nullable } from '@/types';
 import { LedgerActionType } from '@/types/ledger-actions';
+import { TaskMeta } from '@/types/task';
 
 export interface HistoricData<T> {
   readonly limit: number;

@@ -4,7 +4,7 @@ import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { Currency } from '@/types/currency';
 import { Module } from '@/types/modules';
-import { Tag } from '@/typing/types';
+import { Tag } from '@/types/user';
 
 interface SessionGetters {
   floatingPrecision: number;

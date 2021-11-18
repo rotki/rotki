@@ -121,7 +121,7 @@ import {
 } from '@/services/session/types';
 import { Nullable } from '@/types';
 import { Module } from '@/types/modules';
-import { Tags } from '@/typing/types';
+import { Tags } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
 @Component({

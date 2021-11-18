@@ -3,9 +3,9 @@ import flushPromises from 'flush-promises';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
-import { ExternalServiceKeys } from '@/model/action-result';
 import store from '@/store/store';
 import '../../../i18n';
+import { ExternalServiceKeys } from '../../../../../src/types/user';
 
 Vue.use(Vuetify);
 
@@ -17,10 +17,10 @@ describe('ExternalServices.vue', () => {
 
   const mockResponse: ExternalServiceKeys = {
     etherscan: {
-      api_key: '123'
+      apiKey: '123'
     },
     cryptocompare: {
-      api_key: '123'
+      apiKey: '123'
     }
   };
 
@@ -70,7 +70,7 @@ describe('ExternalServices.vue', () => {
         .trigger('click');
       await flushPromises();
       expect(setExternalServices).toHaveBeenCalledWith([
-        { name: 'etherscan', api_key: '123' }
+        { name: 'etherscan', apiKey: '123' }
       ]);
     });
 
@@ -88,7 +88,7 @@ describe('ExternalServices.vue', () => {
       await flushPromises();
       expect(store.state.message.description).toMatch('cryptocompare');
       expect(setExternalServices).toHaveBeenCalledWith([
-        { name: 'cryptocompare', api_key: '123' }
+        { name: 'cryptocompare', apiKey: '123' }
       ]);
     });
 

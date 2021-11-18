@@ -97,7 +97,7 @@ import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 
 import ThemeMixin from '@/mixins/theme-mixin';
-import { Tags } from '@/typing/types';
+import { Tags } from '@/types/user';
 
 @Component({
   components: { AccountDisplay, TagIcon },

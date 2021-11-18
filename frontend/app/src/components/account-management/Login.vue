@@ -230,7 +230,7 @@ import {
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { SyncConflict } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
-import { Credentials, SyncApproval } from '@/typing/types';
+import { Credentials, SyncApproval } from '@/types/login';
 
 const KEY_REMEMBER = 'rotki.remember';
 const KEY_USERNAME = 'rotki.username';

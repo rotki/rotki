@@ -99,7 +99,7 @@ import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import BackendMixin from '@/mixins/backend-mixin';
 import { SyncConflict } from '@/store/session/types';
 import { ActionStatus, Message } from '@/store/types';
-import { Credentials, UnlockPayload } from '@/typing/types';
+import { Credentials, UnlockPayload } from '@/types/login';
 
 @Component({
   components: {

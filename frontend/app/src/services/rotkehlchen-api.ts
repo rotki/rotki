@@ -2,9 +2,9 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionResult } from '@rotki/common/lib/data';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { SupportedCurrency } from '@/data/currencies';
-import { ExternalServiceKeys } from '@/model/action-result';
 import { AssetApi } from '@/services/assets/asset-api';
 import {
+  axiosNoRootCamelCaseTransformer,
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
@@ -53,18 +53,23 @@ import { IgnoreActionType } from '@/store/history/types';
 import { SyncConflictPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
 import { Exchange } from '@/types/exchanges';
-import { SettingsUpdate, UserAccount, UserSettingsModel } from '@/types/user';
 import {
   AccountSession,
-  ExternalServiceKey,
-  ExternalServiceName,
   SyncApproval,
   SyncConflictError,
+  UnlockPayload
+} from '@/types/login';
+import { TaskResultResponse } from '@/types/task';
+import {
+  ExternalServiceKey,
+  ExternalServiceKeys,
+  ExternalServiceName,
+  SettingsUpdate,
   Tag,
   Tags,
-  TaskResult,
-  UnlockPayload
-} from '@/typing/types';
+  UserAccount,
+  UserSettingsModel
+} from '@/types/user';
 import { assert } from '@/utils/assertions';
 import { nonNullProperties } from '@/utils/data';
 
@@ -323,7 +328,7 @@ export class RotkehlchenApi {
       : this.axios.defaults.transformResponse;
 
     return this.axios
-      .get<ActionResult<TaskResult<ActionResult<T>>>>(`/tasks/${id}`, {
+      .get<ActionResult<TaskResultResponse<ActionResult<T>>>>(`/tasks/${id}`, {
         validateStatus: validTaskStatus,
         transformResponse: transformer
       })
@@ -739,84 +744,100 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  queryExternalServices(): Promise<ExternalServiceKeys> {
-    return this.axios
-      .get<ActionResult<ExternalServiceKeys>>('/external_services/', {
-        validateStatus: validWithSessionStatus
-      })
-      .then(handleResponse);
+  async queryExternalServices(): Promise<ExternalServiceKeys> {
+    const response = await this.axios.get<ActionResult<ExternalServiceKeys>>(
+      '/external_services/',
+      {
+        validateStatus: validWithSessionStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    const data = handleResponse(response);
+    return ExternalServiceKeys.parse(data);
   }
 
   async setExternalServices(
     keys: ExternalServiceKey[]
   ): Promise<ExternalServiceKeys> {
-    return this.axios
-      .put<ActionResult<ExternalServiceKeys>>(
-        '/external_services/',
-        {
-          services: keys
-        },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
+    const response = await this.axios.put<ActionResult<ExternalServiceKeys>>(
+      '/external_services/',
+      axiosSnakeCaseTransformer({
+        services: keys
+      }),
+      {
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    const data = handleResponse(response);
+    return ExternalServiceKeys.parse(data);
   }
 
   async deleteExternalServices(
     serviceToDelete: ExternalServiceName
   ): Promise<ExternalServiceKeys> {
-    return this.axios
-      .delete<ActionResult<ExternalServiceKeys>>('/external_services/', {
+    const response = await this.axios.delete<ActionResult<ExternalServiceKeys>>(
+      '/external_services/',
+      {
         data: {
           services: [serviceToDelete]
         },
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    const data = handleResponse(response);
+    return ExternalServiceKeys.parse(data);
   }
 
   async getTags(): Promise<Tags> {
-    return this.axios
-      .get<ActionResult<Tags>>('/tags', {
-        validateStatus: validWithSessionStatus
-      })
-      .then(handleResponse);
+    const response = await this.axios.get<ActionResult<Tags>>('/tags', {
+      validateStatus: validWithSessionStatus
+    });
+
+    const data = handleResponse(response);
+    return Tags.parse(axiosNoRootCamelCaseTransformer(data));
   }
 
   async addTag(tag: Tag): Promise<Tags> {
-    return this.axios
-      .put<ActionResult<Tags>>(
-        '/tags',
-        { ...tag },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
+    const response = await this.axios.put<ActionResult<Tags>>(
+      '/tags',
+      axiosSnakeCaseTransformer(tag),
+      {
+        validateStatus: validStatus
+      }
+    );
+
+    const data = handleResponse(response);
+    return Tags.parse(axiosNoRootCamelCaseTransformer(data));
   }
 
   async editTag(tag: Tag): Promise<Tags> {
-    return this.axios
-      .patch<ActionResult<Tags>>(
-        '/tags',
-        { ...tag },
-        {
-          validateStatus: validStatus
-        }
-      )
-      .then(handleResponse);
+    const response = await this.axios.patch<ActionResult<Tags>>(
+      '/tags',
+      axiosSnakeCaseTransformer(tag),
+      {
+        validateStatus: validStatus
+      }
+    );
+
+    const data = handleResponse(response);
+    return Tags.parse(axiosNoRootCamelCaseTransformer(data));
   }
 
   async deleteTag(tagName: string): Promise<Tags> {
-    return this.axios
-      .delete<ActionResult<Tags>>('/tags', {
-        data: {
-          name: tagName
-        },
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
+    const response = await this.axios.delete<ActionResult<Tags>>('/tags', {
+      data: {
+        name: tagName
+      },
+      validateStatus: validStatus
+    });
+
+    const data = handleResponse(response);
+    return Tags.parse(axiosNoRootCamelCaseTransformer(data));
   }
 
   async accounts(

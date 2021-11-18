@@ -65,7 +65,7 @@
               hide-mode-switch
               :value="`#${tag.foreground_color}`"
               @update:color="
-                changed({ foreground_color: $event.hex.replace('#', '') })
+                changed({ foregroundColor: $event.hex.replace('#', '') })
               "
             />
           </v-col>
@@ -88,7 +88,7 @@
               mode="hexa"
               :value="`#${tag.background_color}`"
               @update:color="
-                changed({ background_color: $event.hex.replace('#', '') })
+                changed({ backgroundColor: $event.hex.replace('#', '') })
               "
             />
           </v-col>
@@ -119,7 +119,7 @@
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { TagEvent } from '@/components/tags/types';
-import { Tag } from '@/typing/types';
+import { Tag } from '@/types/user';
 import { invertColor, randomColor } from '@/utils/Color';
 
 @Component({
@@ -146,8 +146,8 @@ export default class TagCreator extends Vue {
   randomize() {
     const backgroundColor = randomColor();
     this.changed({
-      background_color: backgroundColor,
-      foreground_color: invertColor(backgroundColor)
+      backgroundColor: backgroundColor,
+      foregroundColor: invertColor(backgroundColor)
     });
   }
 

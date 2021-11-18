@@ -17,8 +17,8 @@ import {
   EditExchange,
   NonFungibleBalances
 } from '@/store/balances/types';
-import { Exchange } from '@/types/exchanges';
-import { ExchangeData, ExchangeInfo, ExchangeRates } from '@/typing/types';
+import { Exchange, ExchangeData, ExchangeInfo } from '@/types/exchanges';
+import { ExchangeRates } from '@/types/user';
 
 export const mutations: MutationTree<BalanceState> = {
   updateEth(state: BalanceState, payload: BlockchainAssetBalances) {

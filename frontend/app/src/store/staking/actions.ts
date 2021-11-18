@@ -2,8 +2,6 @@ import { AdexBalances, AdexHistory } from '@rotki/common/lib/staking/adex';
 import { Eth2Deposit, Eth2Detail } from '@rotki/common/lib/staking/eth2';
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
-import { createTask, taskCompletion, TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_MODULES } from '@/services/session/consts';
@@ -21,6 +19,8 @@ import { StakingState } from '@/store/staking/types';
 import { RotkehlchenState } from '@/store/types';
 import { isLoading, setStatus } from '@/store/utils';
 import { Module } from '@/types/modules';
+import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 
 export const actions: ActionTree<StakingState, RotkehlchenState> = {
   async fetchStakingDetails(

@@ -71,7 +71,7 @@ import Fragment from '@/components/helper/Fragment';
 import { capitalize } from '@/filters';
 import AssetMixin from '@/mixins/asset-mixin';
 import { BlockchainTotal } from '@/store/balances/types';
-import { L2_LOOPRING, SupportedL2Protocol } from '@/typing/types';
+import { L2_LOOPRING, SupportedL2Protocol } from '@/types/protocols';
 import { Zero } from '@/utils/bignumbers';
 
 @Component({
