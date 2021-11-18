@@ -1,8 +1,8 @@
 import warnings as test_warnings
 from unittest.mock import patch
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import asset_from_iconomi
+from rotkehlchen.assets.asset import WORLD_TO_ICONOMI, Asset
+from rotkehlchen.assets.converters import UNSUPPORTED_ICONOMI_ASSETS, asset_from_iconomi
 from rotkehlchen.constants.assets import A_ETH, A_EUR, A_REP
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.exchanges.iconomi import Iconomi
@@ -96,6 +96,9 @@ def test_iconomi_assets_are_known(
         database,
         inquirer,  # pylint: disable=unused-argument
 ):
+    unsupported_assets = set(UNSUPPORTED_ICONOMI_ASSETS)
+    common_items = unsupported_assets.intersection(set(WORLD_TO_ICONOMI.values()))
+    assert not common_items, f'Iconomi assets {common_items} should not be unsupported'
     # use a real Iconomi instance so that we always get the latest data
     iconomi = Iconomi(
         name='iconomi1',

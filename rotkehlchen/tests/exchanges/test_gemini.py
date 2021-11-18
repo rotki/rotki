@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.assets.asset import WORLD_TO_GEMINI
 from rotkehlchen.assets.converters import UNSUPPORTED_GEMINI_ASSETS
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LINK, A_LTC, A_USD
 from rotkehlchen.constants.misc import ZERO
@@ -63,6 +64,9 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
 
     Use the real gemini API
     """
+    unsupported_assets = set(UNSUPPORTED_GEMINI_ASSETS)
+    common_items = unsupported_assets.intersection(set(WORLD_TO_GEMINI.values()))
+    assert not common_items, f'Gemini assets {common_items} should not be unsupported'
     symbols = sandbox_gemini._public_api_query('symbols')
     for symbol in symbols:
         try:

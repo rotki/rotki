@@ -1,7 +1,7 @@
 import warnings as test_warnings
 from unittest.mock import patch
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import WORLD_TO_BITTREX, Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from_bittrex
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LTC
 from rotkehlchen.constants.misc import ZERO
@@ -34,6 +34,9 @@ def test_name():
 
 
 def test_bittrex_assets_are_known(bittrex):
+    unsupported_assets = set(UNSUPPORTED_BITTREX_ASSETS)
+    common_items = unsupported_assets.intersection(set(WORLD_TO_BITTREX.values()))
+    assert not common_items, f'Bittrex assets {common_items} should not be unsupported'
     currencies = bittrex.get_currencies()
     for bittrex_asset in currencies:
         symbol = bittrex_asset['symbol']
