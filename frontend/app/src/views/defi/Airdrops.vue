@@ -114,6 +114,7 @@ import {
   AIRDROP_FURUCOMBO,
   AIRDROP_GRAIN,
   AIRDROP_LIDO,
+  AIRDROP_PARASWAP,
   AIRDROP_POAP,
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP
@@ -238,6 +239,10 @@ export default class Airdrops extends Mixins(StatusMixin) {
     [AIRDROP_ENS]: {
       icon: require('@/assets/images/airdrops/ens.svg'),
       name: 'ENS'
+    },
+    [AIRDROP_PARASWAP]: {
+      icon: require('@/assets/images/airdrops/ParaSwap-logo.jpg'),
+      name: 'ParaSwap'
     }
   };
 
