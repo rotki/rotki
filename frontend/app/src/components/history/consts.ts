@@ -4,6 +4,7 @@ import FOXIcon from '@/components/icons/FOXIcon.vue';
 import UpholdIcon from '@/components/icons/UpholdIcon.vue';
 import {
   EXCHANGE_BALANCER,
+  EXCHANGE_BISQ,
   EXCHANGE_BLOCKFI,
   EXCHANGE_CRYPTOCOM,
   EXCHANGE_NEXO,
@@ -200,6 +201,13 @@ export const tradeLocations: TradeLocationData[] = [
     icon: '',
     imageIcon: false,
     component: UpholdIcon,
+    exchange: true
+  },
+  {
+    identifier: EXCHANGE_BISQ,
+    name: 'bisq',
+    icon: '',
+    imageIcon: require('@/assets/images/bisq.svg'),
     exchange: true
   },
   {
