@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.22.1 <2021-11-19>`
 * :bug:`3726` Manual liabilities should not count as assets and should be deducted from total net value when taking a snapshot. Also multiple liabilities of same asset should now be properly summed.
 * :bug:`3722` Trades details will now properly expand one at a time.
 * :bug:`3714` Airdrops section will now work again for Windows users.
