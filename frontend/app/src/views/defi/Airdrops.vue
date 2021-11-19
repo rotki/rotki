@@ -241,7 +241,7 @@ export default class Airdrops extends Mixins(StatusMixin) {
       name: 'ENS'
     },
     [AIRDROP_PARASWAP]: {
-      icon: require('@/assets/images/airdrops/ParaSwap-logo.jpg'),
+      icon: require('@/assets/images/airdrops/ParaSwap-logo.svg'),
       name: 'ParaSwap'
     }
   };
