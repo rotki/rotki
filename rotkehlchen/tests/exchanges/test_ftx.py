@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import WORLD_TO_FTX, Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_FTX_ASSETS, asset_from_ftx
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_USD, A_USDC
@@ -28,6 +28,8 @@ def test_ftx_exchange_assets_are_known(mock_ftx: Ftx):
 
     unknown_assets: Set[str] = set()
     unsupported_assets = set(UNSUPPORTED_FTX_ASSETS)
+    common_items = unsupported_assets.intersection(set(WORLD_TO_FTX.values()))
+    assert not common_items, f'FTX assets {common_items} should not be unsupported'
 
     def process_currency(currency: Optional[str]):
         """Check if a currency is known for the FTX exchange"""

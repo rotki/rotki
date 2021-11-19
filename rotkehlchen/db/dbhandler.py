@@ -1,3 +1,4 @@
+
 import json
 import logging
 import os
@@ -2756,12 +2757,20 @@ class DBHandler:
             table_name = table_entry[0]
             columns = table_entry[1:]
             columns_str = ", ".join(columns)
+            bindings: Union[Tuple, Tuple[str]] = ()
+            condition = ''
+            if table_name in ('manually_tracked_balances', 'timed_balances'):
+                bindings = (BalanceType.LIABILITY.serialize_for_db(),)
+                condition = ' WHERE category!=?'
+
             try:
                 query = cursor.execute(
-                    f'SELECT DISTINCT {columns_str} FROM {table_name};',
+                    f'SELECT DISTINCT {columns_str} FROM {table_name} {condition};',
+                    bindings,
                 )
             except sqlcipher.OperationalError as e:    # pylint: disable=no-member
                 log.error(f'Could not fetch assets from table {table_name}. {str(e)}')
+                continue
 
             for result in query:
                 for _, asset_id in enumerate(result):

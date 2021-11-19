@@ -295,14 +295,17 @@ export const getters: Getters<
   liabilities: ({ liabilities, manualLiabilities, prices }) => {
     const noPrice = new BigNumber(-1);
     const liabilitiesMerged: Record<string, Balance> = { ...liabilities };
-    for (const entry of manualLiabilities) {
-      if (liabilitiesMerged[entry.asset]) {
-        liabilitiesMerged[entry.asset].amount.plus(entry.amount);
-        liabilitiesMerged[entry.asset].usdValue.plus(entry.usdValue);
+    for (const { amount, asset, usdValue } of manualLiabilities) {
+      const liability = liabilitiesMerged[asset];
+      if (liability) {
+        liabilitiesMerged[asset] = {
+          amount: liability.amount.plus(amount),
+          usdValue: liability.usdValue.plus(usdValue)
+        };
       } else {
-        liabilitiesMerged[entry.asset] = {
-          amount: entry.amount,
-          usdValue: entry.usdValue
+        liabilitiesMerged[asset] = {
+          amount: amount,
+          usdValue: usdValue
         };
       }
     }

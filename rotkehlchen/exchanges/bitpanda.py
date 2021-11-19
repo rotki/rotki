@@ -173,7 +173,8 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             fiat_asset = self.fiat_map.get(fiat_id)
             if fiat_asset is None:
                 self.msg_aggregator.add_error(
-                    f'Could not find bitpanda fiat with id {fiat_id} in the mapping',
+                    f'While deserializing Bitpanda fiat transaction, could not find '
+                    f'bitpanda fiat with id {fiat_id} in the mapping',
                 )
                 return None
             amount = deserialize_asset_amount(entry['attributes']['amount'])
@@ -234,8 +235,8 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             crypto_asset = self.cryptocoin_map.get(cryptocoin_id)
             if crypto_asset is None:
                 self.msg_aggregator.add_error(
-                    f'Could not find bitpanda cryptocoin with id {cryptocoin_id}'
-                    f' in the mapping',
+                    f'While deserializing a trade, could not find bitpanda cryptocoin '
+                    f'with id {cryptocoin_id} in the mapping. Skipping trade.',
                 )
                 return None
 
@@ -243,7 +244,8 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             fiat_asset = self.fiat_map.get(fiat_id)
             if fiat_asset is None:
                 self.msg_aggregator.add_error(
-                    f'Could not find bitpanda fiat with id {fiat_id} in the mapping',
+                    f'While deserializing a trade, could not find bitpanda fiat '
+                    f'with id {fiat_id} in the mapping. Skipping trade.',
                 )
                 return None
 
@@ -371,6 +373,7 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 f'Invalid JSON {response.text} in Bitpanda response. Expected "data" key',
             )
 
+        log.debug(f'Got Bitpanda response: {decoded_json}')
         return decoded_json['data'], decoded_json.get('meta'), decoded_json.get('links')
 
     @overload

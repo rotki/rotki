@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import WORLD_TO_BINANCE, Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
 from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
@@ -178,6 +178,9 @@ def test_binance_assets_are_known(
         database,
         inquirer,  # pylint: disable=unused-argument
 ):
+    unsupported_assets = set(UNSUPPORTED_BINANCE_ASSETS)
+    common_items = unsupported_assets.intersection(set(WORLD_TO_BINANCE.values()))
+    assert not common_items, f'Binance assets {common_items} should not be unsupported'
     # use a real binance instance so that we always get the latest data
     binance = Binance(
         name='binance1',

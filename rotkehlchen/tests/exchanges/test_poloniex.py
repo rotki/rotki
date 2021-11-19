@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import WORLD_TO_POLONIEX, Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_POLONIEX_ASSETS, asset_from_poloniex
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
@@ -344,6 +344,9 @@ def test_query_trade_history_unexpected_data(function_scope_poloniex):
 
 
 def test_poloniex_assets_are_known(poloniex):
+    unsupported_assets = set(UNSUPPORTED_POLONIEX_ASSETS)
+    common_items = unsupported_assets.intersection(set(WORLD_TO_POLONIEX.values()))
+    assert not common_items, f'Poloniex assets {common_items} should not be unsupported'
     currencies = poloniex.return_currencies()
     for poloniex_asset in currencies.keys():
         try:
