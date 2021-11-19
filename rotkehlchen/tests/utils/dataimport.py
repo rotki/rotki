@@ -32,6 +32,10 @@ from rotkehlchen.typing import (
 )
 
 
+def get_cryptocom_note(desc: str):
+    return f'{desc}\nSource: crypto.com (CSV import)'
+
+
 def assert_cointracking_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from cointracking.info"""
     trades = rotki.data.db.get_trades()
@@ -117,9 +121,6 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
     assert len(errors) == 0
     assert len(warnings) == 0
 
-    def get_trade_note(desc: str):
-        return f'{desc}\nSource: crypto.com (CSV import)'
-
     expected_trades = [Trade(
         timestamp=Timestamp(1595833195),
         location=Location.CRYPTOCOM,
@@ -131,7 +132,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Buy ETH'),
+        notes=get_cryptocom_note('Buy ETH'),
     ), Trade(
         timestamp=Timestamp(1596014214),
         location=Location.CRYPTOCOM,
@@ -143,7 +144,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Buy MCO'),
+        notes=get_cryptocom_note('Buy MCO'),
     ), Trade(
         timestamp=Timestamp(1596014223),
         location=Location.CRYPTOCOM,
@@ -155,7 +156,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Sign-up Bonus Unlocked'),
+        notes=get_cryptocom_note('Sign-up Bonus Unlocked'),
     ), Trade(
         timestamp=Timestamp(1596209827),
         location=Location.CRYPTOCOM,
@@ -167,7 +168,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('MCO -> ETH'),
+        notes=get_cryptocom_note('MCO -> ETH'),
     ), Trade(
         timestamp=Timestamp(1596429934),
         location=Location.CRYPTOCOM,
@@ -179,7 +180,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Crypto Earn'),
+        notes=get_cryptocom_note('Crypto Earn'),
     ), Trade(
         timestamp=Timestamp(1596465565),
         location=Location.CRYPTOCOM,
@@ -191,7 +192,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('MCO/CRO Overall Swap'),
+        notes=get_cryptocom_note('MCO/CRO Overall Swap'),
     ), Trade(
         timestamp=Timestamp(1596730165),
         location=Location.CRYPTOCOM,
@@ -203,7 +204,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('MCO/CRO Overall Swap'),
+        notes=get_cryptocom_note('MCO/CRO Overall Swap'),
     ), Trade(
         timestamp=Timestamp(1599934176),
         location=Location.CRYPTOCOM,
@@ -215,7 +216,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Card Rebate: Deliveries'),
+        notes=get_cryptocom_note('Card Rebate: Deliveries'),
     ), Trade(
         timestamp=Timestamp(1602515376),
         location=Location.CRYPTOCOM,
@@ -227,7 +228,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Card Cashback'),
+        notes=get_cryptocom_note('Card Cashback'),
     ), Trade(
         timestamp=Timestamp(1602526176),
         location=Location.CRYPTOCOM,
@@ -239,7 +240,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Referral Bonus Reward'),
+        notes=get_cryptocom_note('Referral Bonus Reward'),
     ), Trade(
         timestamp=Timestamp(1606833565),
         location=Location.CRYPTOCOM,
@@ -251,7 +252,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Convert Dust'),
+        notes=get_cryptocom_note('Convert Dust'),
     ), Trade(
         timestamp=Timestamp(1608024314),
         location=Location.CRYPTOCOM,
@@ -263,7 +264,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Convert Dust'),
+        notes=get_cryptocom_note('Convert Dust'),
     ), Trade(
         timestamp=Timestamp(1608024314),
         location=Location.CRYPTOCOM,
@@ -275,7 +276,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Convert Dust'),
+        notes=get_cryptocom_note('Convert Dust'),
     ), Trade(
         timestamp=Timestamp(1614989135),
         location=Location.CRYPTOCOM,
@@ -287,7 +288,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('Card Rebate: Netflix'),
+        notes=get_cryptocom_note('Card Rebate: Netflix'),
     ), Trade(
         timestamp=Timestamp(1620192867),
         location=Location.CRYPTOCOM,
@@ -299,7 +300,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes=get_trade_note('DOGE -> EUR'),
+        notes=get_cryptocom_note('DOGE -> EUR'),
     )]
     assert expected_trades == trades
 
@@ -338,7 +339,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         rate=None,
         rate_asset=None,
         link=None,
-        notes=get_trade_note('Card Rebate Reversal: Netflix'),
+        notes=get_cryptocom_note('Card Rebate Reversal: Netflix'),
     ), LedgerAction(
         identifier=5,
         timestamp=Timestamp(1616237351),
@@ -349,7 +350,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         rate=None,
         rate_asset=None,
         link=None,
-        notes=get_trade_note('Pay Rewards'),
+        notes=get_cryptocom_note('Pay Rewards'),
     ), LedgerAction(
         identifier=6,
         timestamp=Timestamp(1616237351),
@@ -360,7 +361,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         rate=None,
         rate_asset=None,
         link=None,
-        notes=get_trade_note('To +49XXXXXXXXXX'),
+        notes=get_cryptocom_note('To +49XXXXXXXXXX'),
     ), LedgerAction(
         identifier=4,
         timestamp=Timestamp(1616266740),
@@ -371,7 +372,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         rate=None,
         rate_asset=None,
         link=None,
-        notes=get_trade_note('From +49XXXXXXXXXX'),
+        notes=get_cryptocom_note('From +49XXXXXXXXXX'),
     ), LedgerAction(
         identifier=3,
         timestamp=Timestamp(1616669547),
@@ -382,7 +383,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         rate=None,
         rate_asset=None,
         link=None,
-        notes=get_trade_note('Merchant XXX'),
+        notes=get_cryptocom_note('Merchant XXX'),
     ), LedgerAction(
         identifier=2,
         timestamp=Timestamp(1616669548),
@@ -393,7 +394,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         rate=None,
         rate_asset=None,
         link=None,
-        notes=get_trade_note('Pay Rewards'),
+        notes=get_cryptocom_note('Pay Rewards'),
     ), LedgerAction(
         identifier=1,
         timestamp=Timestamp(1616670041),
@@ -404,7 +405,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         rate=None,
         rate_asset=None,
         link=None,
-        notes=get_trade_note('Refund from Merchant XXX'),
+        notes=get_cryptocom_note('Refund from Merchant XXX'),
     )]
     assert list(expected_ledger_actions) == ledger_actions
 
@@ -429,7 +430,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         rate=None,
         rate_asset=None,
         link=None,
-        notes=None,
+        notes=get_cryptocom_note('CRO Airdrop to Exchange'),
     ), LedgerAction(
         identifier=4,
         timestamp=Timestamp(1609884000),
@@ -440,7 +441,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         rate=None,
         rate_asset=None,
         link=None,
-        notes=None,
+        notes=get_cryptocom_note('MCO Stake Rewards'),
     ), LedgerAction(
         identifier=3,
         timestamp=Timestamp(1609884000),
@@ -451,7 +452,7 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         rate=None,
         rate_asset=None,
         link=None,
-        notes=None,
+        notes=get_cryptocom_note('CRO Stake Rewards'),
     ), LedgerAction(
         identifier=2,
         timestamp=Timestamp(1609797600),
