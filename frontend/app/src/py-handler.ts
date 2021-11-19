@@ -380,8 +380,8 @@ export default class PyHandler {
     websocketPort: number,
     args: string[]
   ) {
-    const dist_dir = PyHandler.packagedBackendPath();
-    const files = fs.readdirSync(dist_dir);
+    const distDir = PyHandler.packagedBackendPath();
+    const files = fs.readdirSync(distDir);
     if (files.length === 0) {
       this.logAndQuit('ERROR: No files found in the dist directory');
     }
@@ -393,7 +393,7 @@ export default class PyHandler {
     }
 
     this.executable = exe;
-    const executable = path.join(dist_dir, exe);
+    const executable = path.join(distDir, exe);
     if (this._corsURL) {
       args.push('--api-cors', this._corsURL);
     }

@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "node_modules/vuetify",
+    "src/**/*.json"
+  ],
+  "include": [
+    "**/*.js",
+    "**/.eslintrc.js",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "tests/**/*.ts"
+  ]
+}

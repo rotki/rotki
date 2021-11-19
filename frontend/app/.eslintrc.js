@@ -22,6 +22,8 @@ module.exports = {
     'plugin:@intlify/vue-i18n/recommended'
   ],
 
+  parser: 'vue-eslint-parser',
+
   rules: {
     'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
@@ -134,9 +136,47 @@ module.exports = {
   },
 
   parserOptions: {
-    parser: '@typescript-eslint/parser'
+    parser: '@typescript-eslint/parser',
+    project: './tsconfig.eslint.json',
+    extraFileExtensions: ['.vue']
   },
   overrides: [
+    {
+      files: ['*.{ts, vue}'],
+      rules: {
+        '@typescript-eslint/naming-convention': [
+          'error',
+          {
+            selector: 'variable',
+            modifiers: ['destructured'],
+            format: null
+          },
+          {
+            selector: 'parameter',
+            format: ['camelCase'],
+            leadingUnderscore: 'allow'
+          },
+          {
+            selector: 'variable',
+            format: ['camelCase']
+          },
+          {
+            selector: 'variable',
+            modifiers: ['const'],
+            format: ['camelCase', 'UPPER_CASE', 'PascalCase']
+          },
+          {
+            selector: 'memberLike',
+            modifiers: ['private'],
+            format: ['camelCase']
+          },
+          {
+            selector: 'typeLike',
+            format: ['PascalCase']
+          }
+        ]
+      }
+    },
     {
       files: ['*.json', '*.json5'],
       extends: ['plugin:@intlify/vue-i18n/base']
