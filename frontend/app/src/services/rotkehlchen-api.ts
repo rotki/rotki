@@ -347,9 +347,12 @@ export class RotkehlchenApi {
       });
   }
 
-  queryNetvalueData(): Promise<NetValue> {
+  queryNetvalueData(includeNfts: boolean): Promise<NetValue> {
     return this.axios
       .get<ActionResult<NetValue>>('/statistics/netvalue', {
+        params: axiosSnakeCaseTransformer({
+          includeNfts
+        }),
         validateStatus: validStatus
       })
       .then(handleResponse);

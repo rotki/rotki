@@ -722,12 +722,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       xpubs
     });
   },
-  async fetchNetvalueData({ commit, rootState: { session } }) {
+  async fetchNetvalueData({ commit, rootState: { session, settings } }) {
     if (!session?.premium) {
       return;
     }
     try {
-      const netvalueData = await api.queryNetvalueData();
+      const includeNfts = settings?.nftsInNetValue ?? true;
+      const netvalueData = await api.queryNetvalueData(includeNfts);
       commit('netvalueData', netvalueData);
     } catch (e: any) {
       notify(

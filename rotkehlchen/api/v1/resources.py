@@ -80,6 +80,7 @@ from rotkehlchen.api.v1.encoding import (
     SingleAssetIdentifierSchema,
     SingleFileSchema,
     StatisticsAssetBalanceSchema,
+    StatisticsNetValueSchema,
     StatisticsValueDistributionSchema,
     StringIdentifierSchema,
     TagEditSchema,
@@ -882,8 +883,11 @@ class UserPremiumSyncResource(BaseResource):
 
 class StatisticsNetvalueResource(BaseResource):
 
-    def get(self) -> Response:
-        return self.rest_api.query_netvalue_data()
+    get_schema = StatisticsNetValueSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, include_nfts: bool) -> Response:
+        return self.rest_api.query_netvalue_data(include_nfts)
 
 
 class StatisticsAssetBalanceResource(BaseResource):

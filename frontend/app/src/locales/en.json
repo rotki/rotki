@@ -1330,12 +1330,15 @@
       "refresh_enabled": "Enabled",
       "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
       "zero_based": "Use zero as the lowest y-axis value for the graphs",
-      "zero_based_hint": "By default the lowest value is the minimum in the selected period"
+      "zero_based_hint": "By default the lowest value is the minimum in the selected period",
+      "include_nfts": "Include NFTs in the graphs and total networth",
+      "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs"
     },
     "subtitle": {
       "graph_basis": "Graph basis",
       "query": "Periodic status query",
-      "refresh": "Automatic balance refresh"
+      "refresh": "Automatic balance refresh",
+      "include_nfts": "Include NFTs in graphs and total amounts"
     },
     "title": "Frontend-only Settings",
     "validation": {
