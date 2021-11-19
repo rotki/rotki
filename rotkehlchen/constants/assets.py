@@ -2212,7 +2212,7 @@ CONSTANT_ASSETS.append(A_ENS)
 A_PSP = EthereumToken.initialize(
     address=string_to_ethereum_address('0xcAfE001067cDEF266AfB7Eb5A286dCFD277f3dE5'),
     decimals=18,
-    name="ParaSwap",
+    name='ParaSwap',
     symbol='PSP',
     started=Timestamp(1636966698),
     swapped_for=None,
