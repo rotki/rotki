@@ -120,9 +120,9 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { Currency } from '@/model/currency';
 import { ExchangeRateGetter } from '@/store/balances/types';
 import { ProfitLossOverviewData } from '@/store/reports/types';
+import { Currency } from '@/types/currency';
 
 @Component({
   components: {
@@ -140,7 +140,7 @@ export default class ProfitLossOverview extends Vue {
   exchangeRate!: ExchangeRateGetter;
 
   get symbol(): string {
-    return this.currency.ticker_symbol;
+    return this.currency.tickerSymbol;
   }
 }
 </script>

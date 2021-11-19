@@ -16,7 +16,7 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { tradeLocations } from '@/components/history/consts';
 import { TradeLocationData } from '@/components/history/type';
 import { capitalize } from '@/filters';
-import { SupportedExchange } from '@/services/balances/types';
+import { SupportedExchange } from '@/types/exchanges';
 
 @Component({})
 export default class ExchangeDisplay extends Vue {

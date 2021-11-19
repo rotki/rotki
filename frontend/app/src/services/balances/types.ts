@@ -1,12 +1,7 @@
 import { Balance, BigNumber } from '@rotki/common';
-import {
-  SUPPORTED_EXCHANGES,
-  SUPPORTED_TRADE_LOCATIONS,
-  EXTERNAL_EXCHANGES
-} from '@/data/defaults';
+import { EXTERNAL_EXCHANGES, SUPPORTED_TRADE_LOCATIONS } from '@/data/defaults';
 import { TradeLocation } from '@/services/history/types';
 
-export type SupportedExchange = typeof SUPPORTED_EXCHANGES[number];
 export type SupportedTradeLocation = typeof SUPPORTED_TRADE_LOCATIONS[number];
 export type SupportedExternalExchanges = typeof EXTERNAL_EXCHANGES[number];
 

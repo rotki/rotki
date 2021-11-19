@@ -1,5 +1,5 @@
 import { SupportedModule } from '@/components/defi/wizard/types';
-import { Module } from '@/services/session/consts';
+import { Module } from '@/types/modules';
 
 export const SUPPORTED_MODULES: SupportedModule[] = [
   {

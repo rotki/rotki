@@ -49,7 +49,7 @@ import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import { truncateAddress, truncationPoints } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
-import { randomHex } from '@/typing/utils';
+import { randomHex } from '@/utils/data';
 
 @Component({
   computed: { ...mapState('session', ['privacyMode']) }

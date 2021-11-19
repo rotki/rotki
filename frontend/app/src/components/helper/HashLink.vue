@@ -69,8 +69,8 @@ import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 import ThemeMixin from '@/mixins/theme-mixin';
-import { ExplorersSettings } from '@/store/settings/types';
-import { randomHex } from '@/typing/utils';
+import { ExplorersSettings } from '@/types/frontend-settings';
+import { randomHex } from '@/utils/data';
 
 @Component({
   computed: {

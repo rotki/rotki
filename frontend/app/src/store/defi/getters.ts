@@ -79,7 +79,7 @@ import {
   getPoolProfit,
   getPools
 } from '@/store/defi/xswap-utils';
-import { SettingsState } from '@/store/settings/types';
+import { SettingsState } from '@/store/settings/state';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { filterAddresses } from '@/store/utils';

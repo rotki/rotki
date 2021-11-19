@@ -8,5 +8,3 @@ export const chainSection: ChainSections = {
   DOT: Section.BLOCKCHAIN_DOT,
   AVAX: Section.BLOCKCHAIN_AVAX
 };
-
-export const KRAKEN_ACCOUNT_TYPES = ['starter', 'intermediate', 'pro'] as const;

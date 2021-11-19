@@ -31,7 +31,7 @@ import { DataTableHeader } from 'vuetify';
 import { mapState } from 'vuex';
 import { footerProps } from '@/config/datatable.common';
 import SettingsMixin from '@/mixins/settings-mixin';
-import { ITEMS_PER_PAGE } from '@/store/settings/consts';
+import { ITEMS_PER_PAGE } from '@/types/frontend-settings';
 
 @Component({
   computed: {

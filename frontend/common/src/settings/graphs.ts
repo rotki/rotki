@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { TimeUnit } from "./index";
 
 export enum TimeFramePeriod  {
@@ -13,7 +14,15 @@ export enum TimeFramePersist {
   REMEMBER = 'REMEMBER'
 }
 
-export type TimeFrameSetting = TimeFramePeriod | TimeFramePersist;
+export const TimeFramePeriodEnum = z.nativeEnum(TimeFramePeriod)
+
+export type TimeFramePeriodEnum = z.infer<typeof TimeFramePeriodEnum>
+
+const TimeFramePersistEnum = z.nativeEnum(TimeFramePersist)
+
+export const TimeFrameSetting = z.union([TimeFramePeriodEnum, TimeFramePersistEnum])
+
+export type TimeFrameSetting = z.infer<typeof TimeFrameSetting>
 
 export interface Timeframe {
   readonly text: TimeFramePeriod | typeof TIMEFRAME_CUSTOM

@@ -1,4 +1,4 @@
-import { Module } from '@/services/session/consts';
+import { Module } from '@/types/modules';
 
 export class DefiPage {
   visit() {

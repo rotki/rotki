@@ -159,13 +159,12 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import { TaskType } from '@/model/task-type';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { NewTrade, Trade, TradeType } from '@/services/history/types';
@@ -173,6 +172,7 @@ import { HistoricPricePayload } from '@/store/balances/types';
 import { HistoryActions } from '@/store/history/consts';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
+import { TaskType } from '@/types/task-type';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 

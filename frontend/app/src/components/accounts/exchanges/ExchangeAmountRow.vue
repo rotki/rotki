@@ -19,10 +19,10 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { exchangeName } from '@/components/history/consts';
-import { SupportedExchange } from '@/services/balances/types';
+import { SupportedExchange } from '@/types/exchanges';
 
 @Component({
   name: 'ExchangeAmountRow'

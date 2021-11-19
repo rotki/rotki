@@ -11,10 +11,7 @@ import { SupportedAsset } from '@rotki/common/lib/data';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
-import {
-  BlockchainAssetBalances,
-  SupportedExchange
-} from '@/services/balances/types';
+import { BlockchainAssetBalances } from '@/services/balances/types';
 import { GeneralAccountData } from '@/services/types-api';
 import {
   AccountAssetBalances,
@@ -36,7 +33,8 @@ import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { Writeable } from '@/types';
-import { ExchangeInfo, L2_LOOPRING } from '@/typing/types';
+import { ExchangeInfo, SupportedExchange } from '@/types/exchanges';
+import { L2_LOOPRING } from '@/types/protocols';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
@@ -322,8 +320,7 @@ export const getters: Getters<
     { exchangeRate },
     { session }
   ): LocationBalance[] => {
-    const mainCurrency =
-      session?.generalSettings.selectedCurrency.ticker_symbol;
+    const mainCurrency = session?.generalSettings.mainCurrency.tickerSymbol;
 
     assert(mainCurrency, 'main currency was not properly set');
 

@@ -111,7 +111,7 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { PremiumCredentialsPayload } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
-import { SettingsUpdate } from '@/typing/types';
+import { SettingsUpdate } from '@/types/user';
 import { trimOnPaste } from '@/utils/event';
 
 @Component({
@@ -224,7 +224,7 @@ export default class PremiumSettings extends Vue {
   }
 
   async onSyncChange() {
-    await this.updateSettings({ premium_should_sync: this.sync });
+    await this.updateSettings({ premiumShouldSync: this.sync });
   }
 }
 </script>

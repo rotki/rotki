@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { AmountFormatter } from '@/data/amount_formatter';
 import { bigNumberify } from '@/utils/bignumbers';
 

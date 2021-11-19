@@ -8,7 +8,7 @@ import { Component, Mixins } from 'vue-property-decorator';
 import Liabilities from '@/components/defi/Liabilities.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ModuleMixin from '@/mixins/module-mixin';
-import { Module } from '@/services/session/consts';
+import { Module } from '@/types/modules';
 
 @Component({
   components: { ModuleNotActive, Liabilities }

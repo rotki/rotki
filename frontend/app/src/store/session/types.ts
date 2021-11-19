@@ -1,4 +1,4 @@
-import { NumericString, BigNumber } from '@rotki/common';
+import { BigNumber, NumericString } from '@rotki/common';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { z } from 'zod';
 import {
@@ -6,7 +6,7 @@ import {
   Watcher,
   WatcherTypes
 } from '@/services/session/types';
-import { AccountingSettings, GeneralSettings, Tags } from '@/typing/types';
+import { AccountingSettings, GeneralSettings, Tags } from '@/types/user';
 
 export interface SessionState {
   newAccount: boolean;
@@ -30,12 +30,14 @@ export interface SessionState {
   timeframe: TimeFramePeriod;
 }
 
-export interface SyncConflictPayload {
-  readonly localSize: string;
-  readonly remoteSize: string;
-  readonly localLastModified: number;
-  readonly remoteLastModified: number;
-}
+export const SyncConflictPayload = z.object({
+  localSize: z.string(),
+  remoteSize: z.string(),
+  localLastModified: z.number(),
+  remoteLastModified: z.number()
+});
+
+export type SyncConflictPayload = z.infer<typeof SyncConflictPayload>;
 
 export interface SyncConflict {
   readonly message: string;

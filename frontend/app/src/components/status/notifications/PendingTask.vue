@@ -44,8 +44,8 @@ import {
 } from '@vue/composition-api';
 import dayjs from 'dayjs';
 import { setupReports } from '@/composables/reports';
-import { Task, TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
+import { Task, TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 
 export default defineComponent({
   name: 'PendingTask',

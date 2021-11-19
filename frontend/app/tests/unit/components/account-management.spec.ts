@@ -50,7 +50,7 @@ describe('AccountManagement.vue', () => {
       store.dispatch = jest.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
-      await wrapper.vm.login({ username: '1234', password: '1234' });
+      await wrapper.vm.userLogin({ username: '1234', password: '1234' });
       await flushPromises();
       await wrapper.vm.$nextTick();
 
@@ -71,7 +71,7 @@ describe('AccountManagement.vue', () => {
       store.dispatch = jest.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
-      await wrapper.vm.login({ username: '1234', password: '1234' });
+      await wrapper.vm.userLogin({ username: '1234', password: '1234' });
       await flushPromises();
       await wrapper.vm.$nextTick();
 
@@ -89,7 +89,7 @@ describe('AccountManagement.vue', () => {
       store.dispatch = jest.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
-      await wrapper.vm.createAccount({ username: '1234', password: '1234' });
+      await wrapper.vm.createNewAccount({ username: '1234', password: '1234' });
       await wrapper.vm.$nextTick();
 
       expect(wrapper.find('.premium-reminder').exists()).toBe(false);
@@ -105,7 +105,7 @@ describe('AccountManagement.vue', () => {
 
       store.commit('session/premium', true);
       // @ts-ignore
-      await wrapper.vm.createAccount({ username: '1234', password: '1234' });
+      await wrapper.vm.createNewAccount({ username: '1234', password: '1234' });
       await wrapper.vm.$nextTick();
 
       expect(wrapper.find('.premium-reminder').exists()).toBe(false);

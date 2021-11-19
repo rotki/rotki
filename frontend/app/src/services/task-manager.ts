@@ -1,11 +1,11 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import i18n from '@/i18n';
-import { Task, TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
 import { TaskNotFoundError } from '@/services/types-api';
 import store from '@/store/store';
 import { TaskMap } from '@/store/tasks/state';
+import { Task, TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';
 

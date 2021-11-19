@@ -19,16 +19,19 @@
             <v-form ref="form" v-model="valid">
               <v-text-field
                 v-model="username"
+                outlined
                 autofocus
+                single-line
                 class="create-account__fields__username"
                 :label="$t('create_account.select_credentials.label_username')"
-                prepend-icon="mdi-account"
+                prepend-inner-icon="mdi-account"
                 :rules="usernameRules"
                 :disabled="loading"
                 required
               />
               <revealable-input
                 v-model="password"
+                outlined
                 class="create-account__fields__password"
                 :label="$t('create_account.select_credentials.label_password')"
                 prepend-icon="mdi-lock"
@@ -38,6 +41,7 @@
               />
               <revealable-input
                 v-model="passwordConfirm"
+                outlined
                 class="create-account__fields__password-repeat"
                 prepend-icon="mdi-repeat"
                 :error-messages="errorMessages"
@@ -62,9 +66,11 @@
                 :api-secret="apiSecret"
                 :api-key="apiKey"
                 :loading="loading"
-                @api-key-changed="apiKey = $event"
-                @api-secret-changed="apiSecret = $event"
-                @enabled-changed="premiumEnabled = $event"
+                :sync-database="syncDatabase"
+                @update:sync-database="syncDatabase = $event"
+                @update:api-key="apiKey = $event"
+                @update:api-secret="apiSecret = $event"
+                @update:enabled="premiumEnabled = $event"
               />
             </v-form>
           </v-card-text>
@@ -158,7 +164,7 @@
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
-import { Credentials } from '@/typing/types';
+import { CreateAccountPayload } from '@/types/login';
 
 @Component({
   components: { RevealableInput, PremiumCredentials }
@@ -183,6 +189,7 @@ export default class CreateAccount extends Vue {
   submitUsageAnalytics: boolean = true;
   apiKey: string = '';
   apiSecret: string = '';
+  syncDatabase: boolean = false;
 
   valid: boolean = false;
   errorMessages: string[] = [];
@@ -254,22 +261,23 @@ export default class CreateAccount extends Vue {
   }
 
   confirm() {
-    const premiumKeys = {
-      apiKey: this.apiKey,
-      apiSecret: this.apiSecret
+    const payload: CreateAccountPayload = {
+      credentials: {
+        username: this.username,
+        password: this.password
+      }
     };
 
-    const accountCredentials: Credentials = {
-      username: this.username,
-      password: this.password,
-      submitUsageAnalytics: this.submitUsageAnalytics
-    };
+    if (this.premiumEnabled) {
+      payload.premiumSetup = {
+        apiKey: this.apiKey,
+        apiSecret: this.apiSecret,
+        submitUsageAnalytics: this.submitUsageAnalytics,
+        syncDatabase: this.syncDatabase
+      };
+    }
 
-    const credentials: Credentials = {
-      ...accountCredentials,
-      ...(this.premiumEnabled ? premiumKeys : {})
-    };
-    this.$emit('confirm', credentials);
+    this.$emit('confirm', payload);
   }
 
   @Emit()

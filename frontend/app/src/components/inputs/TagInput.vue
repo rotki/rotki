@@ -88,7 +88,7 @@ import { mapActions, mapGetters } from 'vuex';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import TagManager from '@/components/tags/TagManager.vue';
 import { ActionStatus } from '@/store/types';
-import { Tag } from '@/typing/types';
+import { Tag } from '@/types/user';
 import { invertColor, randomColor } from '@/utils/Color';
 
 const valueValidator = (value: any) => {
@@ -134,11 +134,11 @@ export default class TagInput extends Vue {
   }
 
   get newTagBackground(): string {
-    return `#${this.colorScheme.background_color}`;
+    return `#${this.colorScheme.backgroundColor}`;
   }
 
   get newTagForeground(): string {
-    return `#${this.colorScheme.foreground_color}`;
+    return `#${this.colorScheme.foregroundColor}`;
   }
 
   get values(): Tag[] {
@@ -163,8 +163,8 @@ export default class TagInput extends Vue {
   randomScheme() {
     const backgroundColor = randomColor();
     return {
-      background_color: backgroundColor,
-      foreground_color: invertColor(backgroundColor)
+      backgroundColor: backgroundColor,
+      foregroundColor: invertColor(backgroundColor)
     };
   }
 
@@ -173,12 +173,12 @@ export default class TagInput extends Vue {
   }
 
   async createTag(name: string) {
-    const { background_color, foreground_color } = this.colorScheme;
+    const { backgroundColor, foregroundColor } = this.colorScheme;
     const tag: Tag = {
       name,
       description: '',
-      background_color,
-      foreground_color
+      backgroundColor,
+      foregroundColor
     };
     return await this.addTag(tag);
   }
