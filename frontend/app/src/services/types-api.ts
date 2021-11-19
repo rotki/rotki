@@ -1,5 +1,5 @@
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { AxiosInstance, AxiosTransformer } from 'axios';
+import { AxiosInstance, AxiosResponseTransformer } from 'axios';
 
 export const SYNC_UPLOAD = 'upload';
 export const SYNC_DOWNLOAD = 'download';
@@ -106,5 +106,5 @@ export interface TaskStatus {
 
 export interface ApiImplementation {
   readonly axios: AxiosInstance;
-  readonly baseTransformer: AxiosTransformer[];
+  readonly baseTransformer: AxiosResponseTransformer[];
 }

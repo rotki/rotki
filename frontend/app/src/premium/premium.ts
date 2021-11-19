@@ -61,7 +61,7 @@ function load(name: string): Promise<VueConstructor> {
     if (library[name]) {
       resolve(library[name]);
     } else {
-      resolve(PremiumLoadingError);
+      resolve(PremiumLoadingError as VueConstructor);
     }
   });
 }

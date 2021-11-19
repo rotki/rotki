@@ -4,7 +4,11 @@ import {
   GitcoinGrantReport,
   GitcoinReportPayload
 } from '@rotki/common/lib/gitcoin';
-import { AxiosInstance, AxiosTransformer } from 'axios';
+import {
+  AxiosInstance,
+  AxiosRequestTransformer,
+  AxiosResponseTransformer
+} from 'axios';
 import {
   axiosSnakeCaseTransformer,
   getUpdatedKey,
@@ -39,14 +43,14 @@ import { ReportProgress } from '@/store/reports/types';
 
 export class HistoryApi {
   private readonly axios: AxiosInstance;
-  private readonly responseTransformer: AxiosTransformer[] =
+  private readonly responseTransformer: AxiosResponseTransformer[] =
     setupTransformer(tradeNumericKeys);
-  private readonly requestTransformer: AxiosTransformer[];
+  private readonly requestTransformer: AxiosRequestTransformer[];
 
   constructor(axios: AxiosInstance) {
     this.axios = axios;
     this.requestTransformer = [axiosSnakeCaseTransformer].concat(
-      axios.defaults.transformRequest as AxiosTransformer[]
+      axios.defaults.transformRequest as AxiosRequestTransformer[]
     );
   }
 
