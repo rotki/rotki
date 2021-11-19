@@ -13,11 +13,18 @@
     :error-messages="errorMessages"
     :outlined="outlined"
     single-line
-    :append-icon="revealed ? 'mdi-eye' : 'mdi-eye-off'"
     v-on="$listeners"
-    @click:append="revealed = !revealed"
     @input="input"
-  />
+  >
+    <template #append>
+      <v-icon v-if="revealed" tabindex="-1" @click="revealed = !revealed">
+        mdi-eye
+      </v-icon>
+      <v-icon v-else tabindex="-1" @click="revealed = !revealed">
+        mdi-eye-off
+      </v-icon>
+    </template>
+  </v-text-field>
 </template>
 
 <script lang="ts">

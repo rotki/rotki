@@ -37,7 +37,7 @@ const GeneralSettings = z.object({
   displayDateInLocaltime: z.boolean(),
   currentPriceOracles: z.array(PriceOracle),
   historicalPriceOracles: z.array(PriceOracle),
-  ssf0graphMultiplier: z.number()
+  ssf0graphMultiplier: z.number().default(0)
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
