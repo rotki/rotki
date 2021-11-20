@@ -63,7 +63,6 @@
 </template>
 
 <script lang="ts">
-import { VueConstructor } from 'vue';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import GitcoinIcon from '@/components/icons/GitcoinIcon.vue';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
@@ -75,7 +74,7 @@ type NavItemDetails = {
   readonly class?: string;
   readonly icon: string;
   readonly image?: string;
-  readonly component?: VueConstructor;
+  readonly component?: any;
   readonly cryptoIcon?: string;
 };
 

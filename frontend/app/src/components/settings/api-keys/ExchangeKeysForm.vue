@@ -9,6 +9,7 @@
           :label="$t('exchange_keys_form.exchange')"
           data-cy="exchange"
           :disabled="edit"
+          auto-select-first
           @change="onExchangeChange($event)"
         >
           <template #selection="{ item, attrs, on }">

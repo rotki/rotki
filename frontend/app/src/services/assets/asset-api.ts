@@ -1,5 +1,5 @@
 import { ActionResult, SupportedAsset } from '@rotki/common/lib/data';
-import { AxiosInstance, AxiosTransformer } from 'axios';
+import { AxiosInstance, AxiosResponseTransformer } from 'axios';
 import {
   AssetIdResponse,
   AssetPriceArray,
@@ -24,7 +24,7 @@ import {
 
 export class AssetApi {
   private readonly axios: AxiosInstance;
-  private readonly baseTransformer: AxiosTransformer[];
+  private readonly baseTransformer: AxiosResponseTransformer[];
 
   constructor(axios: AxiosInstance) {
     this.axios = axios;
