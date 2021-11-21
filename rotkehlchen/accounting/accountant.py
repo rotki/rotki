@@ -31,7 +31,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import EthereumTransaction, Fee, Timestamp
+from rotkehlchen.typing import EthereumTransaction, Fee, Timestamp, SchemaEventType, NamedJson
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import (
     TaxableAction,
@@ -40,6 +40,7 @@ from rotkehlchen.utils.accounting import (
     action_get_timestamp,
     action_get_type,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -320,6 +321,7 @@ class Accountant():
         self.eth_transactions_gas_costs = FVal(0)
         self.asset_movement_fees = FVal(0)
         self.csvexporter.reset()
+        self.csvexporter.add_report(start_ts, end_ts)
 
         # Ask the DB for the settings once at the start of processing so we got the
         # same settings through the entire task
@@ -443,23 +445,35 @@ class Accountant():
             taxable_trade_profit_loss=self.events.taxable_trade_profit_loss,
             total_taxable_profit_loss=total_taxable_pl,
         )
+        profit_loss_overview = {
+           'ledger_actions_profit_loss': str(self.events.ledger_actions_profit_loss),
+           'defi_profit_loss': str(self.events.defi_profit_loss),
+           'loan_profit': str(self.events.loan_profit),
+           'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
+           'settlement_losses': str(self.events.settlement_losses),
+           'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
+           'asset_movement_fees': str(self.asset_movement_fees),
+           'general_trade_profit_loss': str(self.events.general_trade_profit_loss),
+           'taxable_trade_profit_loss': str(self.events.taxable_trade_profit_loss),
+           'total_taxable_profit_loss': str(total_taxable_pl),
+           'total_profit_loss': str(
+               self.events.general_trade_profit_loss +
+               sum_other_actions,
+               ),
+        }
+        if self.csvexporter.report_id is not None:
+            schema_event_type: SchemaEventType = SchemaEventType.ACCOUNTING_OVERVIEW
+            event: NamedJson = NamedJson(
+                event_type=schema_event_type,
+                data=profit_loss_overview,
+            )
+            self.db.add_report_data(
+                report_id=self.csvexporter.report_id,
+                time=ts_now(),
+                event=event,
+            )
         return {
-            'overview': {
-                'ledger_actions_profit_loss': str(self.events.ledger_actions_profit_loss),
-                'defi_profit_loss': str(self.events.defi_profit_loss),
-                'loan_profit': str(self.events.loan_profit),
-                'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
-                'settlement_losses': str(self.events.settlement_losses),
-                'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
-                'asset_movement_fees': str(self.asset_movement_fees),
-                'general_trade_profit_loss': str(self.events.general_trade_profit_loss),
-                'taxable_trade_profit_loss': str(self.events.taxable_trade_profit_loss),
-                'total_taxable_profit_loss': str(total_taxable_pl),
-                'total_profit_loss': str(
-                    self.events.general_trade_profit_loss +
-                    sum_other_actions,
-                ),
-            },
+            'overview': profit_loss_overview,
             'first_processed_timestamp': self.first_processed_timestamp,
             'events_processed': count,
             'events_limit': events_limit,

@@ -116,7 +116,7 @@ from rotkehlchen.api.v1.resources import (
     YearnVaultsHistoryResource,
     YearnVaultsV2BalancesResource,
     YearnVaultsV2HistoryResource,
-    create_blueprint,
+    create_blueprint, AccountingReportsResource, AccountingReportDataResource,
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -177,6 +177,17 @@ URLS_V1: URLS = [
     ('/history/status', HistoryStatusResource),
     ('/history/export/', HistoryExportingResource),
     ('/history/download/', HistoryDownloadingResource),
+    ('/reports/', AccountingReportsResource),
+    (
+        '/reports/<int:report_id>',
+        AccountingReportsResource,
+        'per_report_resource',
+    ),
+    (
+        '/reports/<int:report_id>/data/<string:event_type>',
+        AccountingReportDataResource,
+        'per_report_data_resource',
+    ),
     ('/queried_addresses', QueriedAddressesResource),
     ('/blockchains/ETH/transactions', EthereumTransactionsResource),
     (

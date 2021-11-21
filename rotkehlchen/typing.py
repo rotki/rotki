@@ -1,9 +1,12 @@
+import json
 from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Union
 
+import jsonschema
 from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
+from rotkehlchen.errors import DeserializationError, EncodingError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
@@ -388,6 +391,208 @@ class ExchangeApiCredentials(NamedTuple):
     api_key: ApiKey
     api_secret: ApiSecret
     passphrase: Optional[str] = None
+
+
+class SchemaEventType(Enum):
+    """Supported schemas"""
+    ACCOUNTING_HISTORY = 1
+    ACCOUNTING_OVERVIEW = 2
+    ACCOUNTING_EVENT = 3
+
+    def serialize_for_db(self) -> str:
+        if self == SchemaEventType.ACCOUNTING_OVERVIEW:
+            return 'accounting_overview'
+        if self == SchemaEventType.ACCOUNTING_EVENT:
+            return 'accounting_event'
+        raise RuntimeError(f'Corrupt value {self} for EventType -- Should never happen')
+
+    @classmethod
+    def deserialize_from_db(
+            cls,
+            value: str,
+    ) -> 'SchemaEventType':
+        """May raise DeserializationError if anything is wrong"""
+        if value == 'accounting_overview':
+            return SchemaEventType.ACCOUNTING_OVERVIEW
+        if value == 'accounting_event':
+            return SchemaEventType.ACCOUNTING_EVENT
+
+        raise DeserializationError(f'Unexpected value {value} at JsonSchema deserialization')
+
+    def __str__(self) -> str:
+        if self == SchemaEventType.ACCOUNTING_OVERVIEW:
+            return 'accounting_overview'
+        if self == SchemaEventType.ACCOUNTING_EVENT:
+            return 'accounting_event'
+        raise RuntimeError(f'Corrupt value {self} for EventType -- Should never happen')
+
+    def serialize(self) -> Dict[str, Any]:
+        """May raise EncodingError if schema is invalid"""
+        try:
+            schema: Dict[str, Any] = {}
+            if self == SchemaEventType.ACCOUNTING_OVERVIEW:
+                schema = {
+                    'type': 'object',
+                    'properties': {
+                        'ledger_actions_profit_loss': {'type': 'string'},
+                        'defi_profit_loss': {'type': 'string'},
+                        'loan_profit': {'type': 'string'},
+                        'margin_positions_profit_loss': {'type': 'string'},
+                        'settlement_losses': {'type': 'string'},
+                        'ethereum_transaction_gas_costs': {'type': 'string'},
+                        'asset_movement_fees': {'type': 'string'},
+                        'general_trade_profit_loss': {'type': 'string'},
+                        'taxable_trade_profit_loss': {'type': 'string'},
+                        'total_taxable_profit_loss': {'type': 'string'},
+                        'total_profit_loss': {'type': 'string'},
+                    },
+                    'required': [
+                        'ledger_actions_profit_loss',
+                        'defi_profit_loss',
+                        'loan_profit',
+                        'margin_positions_profit_loss',
+                        'settlement_losses',
+                        'ethereum_transaction_gas_costs',
+                        'asset_movement_fees',
+                        'general_trade_profit_loss',
+                        'taxable_trade_profit_loss',
+                        'total_taxable_profit_loss',
+                        'total_profit_loss',
+                    ]}
+            if self == SchemaEventType.ACCOUNTING_EVENT:
+                schema = {
+                    'type': 'object',
+                    'properties': {
+                        'event_type': {'type': 'string'},
+                        'location': {'type': 'string'},
+                        'paid_in_profit_currency': {'type': 'string'},
+                        'paid_asset': {'type': 'string'},
+                        'paid_in_asset': {'type': 'string'},
+                        'taxable_amount': {'type': 'string'},
+                        'taxable_bought_cost_in_profit_currency': {'type': 'string'},
+                        'received_asset': {'type': 'string'},
+                        'taxable_received_in_profit_currency': {'type': 'string'},
+                        'received_in_asset': {'type': 'string'},
+                        'net_profit_or_loss': {'type': 'string'},
+                        'time': {'type': 'number'},
+                        'cost_basis': {
+                            'oneOf': [{'type': 'null'}, {'$ref': '#/$defs/cost_basis'}],
+                        },
+                        'is_virtual': {'type': 'boolean'},
+                        'link': {'oneOf': [{'type': 'string'}, {'type': 'null'}]},
+                        'notes': {'oneOf': [{'type': 'string'}, {'type': 'null'}]},
+                    },
+                    '$defs': {
+                        'cost_basis': {
+                            'type': 'object',
+                            'properties': {
+                                'is_complete': {'type': 'boolean'},
+                                'matched_acquisitions': {'type': 'array'},
+                                'taxable_bought_cost': {'type': 'string'},
+                                'taxfree_bought_cost': {'type': 'string'},
+                            },
+                        },
+                    },
+                    'required': [
+                        'location',
+                        'paid_in_profit_currency',
+                        'paid_in_asset',
+                        'taxable_amount',
+                        'taxable_bought_cost_in_profit_currency',
+                        'taxable_received_in_profit_currency',
+                        'received_in_asset',
+                        'net_profit_or_loss',
+                        'time',
+                        'cost_basis',
+                        'is_virtual',
+                        'link',
+                        'notes',
+                    ]}
+
+            jsonschema.Draft4Validator.check_schema(schema)
+            return schema
+
+        except jsonschema.exceptions.SchemaError as e:
+            raise EncodingError(f'Could not serialize the SchemaEventType. Invalid schema: {e}')  # noqa E501
+
+
+NamedJsonDBTuple = (
+    Tuple[
+        str,  # type,
+        str,  # data
+    ]
+)
+
+
+class NamedJson(NamedTuple):
+    event_type: SchemaEventType
+    data: Dict[str, Any]
+
+    @classmethod
+    def deserialize_from_db(
+            cls,
+            json_tuple: NamedJsonDBTuple,
+    ) -> 'NamedJson':
+        """Turns a tuple read from the database into an appropriate JsonSchema.
+        May raise:
+         - a DeserializationError if something is wrong with the DB data or json validation fails.
+        Event_tuple index - Schema columns
+        ----------------------------------
+        0 - event_type
+        1 - data
+        """
+        try:
+            event_type: SchemaEventType = SchemaEventType.deserialize_from_db(json_tuple[0])  # noqa E501
+            schema: Dict[str, Any] = event_type.serialize()
+            data = json.loads(json_tuple[1])
+            jsonschema.validate(data, schema)
+            return NamedJson(
+                event_type=event_type,
+                data=data)
+
+        except jsonschema.exceptions.ValidationError as e:
+            raise DeserializationError(
+                f'Failed jsonschema validation of NamedJson: {json_tuple[0]} data {json_tuple[1]}:'
+                f'Error was {str(e)}')
+        except json.decoder.JSONDecodeError as e:
+            raise DeserializationError(
+                f'Could not decode json for {json_tuple} at NamedJson deserialization: {str(e)}')
+
+    def to_db_tuple(self) -> NamedJsonDBTuple:
+        """May raise:
+        - ValueError if jsonschema validation fails
+        - EncodingError if validation somehow passed and the value still could not be encoded"""
+        try:
+            schema: Dict[str, Any] = self.event_type.serialize()
+            jsonschema.validate(self.data, schema)
+            return (
+                self.event_type.serialize_for_db(),
+                json.dumps(self.data),
+            )
+        except jsonschema.exceptions.ValidationError as e:
+            raise ValueError(
+                f'Failed jsonschema validation of NamedJson: {str(e)}')
+        except TypeError as e:
+            raise EncodingError(
+                f'Could not encode json for NamedJson: {str(e)}')
+
+    def serialize(self) -> Dict[str, Any]:
+        """May raise:
+        - ValueError if jsonschema validation fails
+        - EncodingError if validation somehow passed and the value still could not be encoded"""
+        try:
+            schema: Dict[str, Any] = self.event_type.serialize()
+            jsonschema.validate(self.data, schema)
+            return {
+                'event_type': str(self.event_type),
+                'data': json.dumps(self.data),
+            }
+        except jsonschema.exceptions.ValidationError as e:
+            raise ValueError(
+                f'Failed jsonschema validation of NamedJson: {str(e)}')
+        except TypeError as e:
+            raise EncodingError(
+                f'Could not encode json for NamedJson: {str(e)}')
 
 
 EXTERNAL_EXCHANGES: List = [

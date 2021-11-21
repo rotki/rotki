@@ -53,11 +53,14 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
-from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.db.cache_handler import DBAccountingReportData, DBAccountingReports
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
+from rotkehlchen.db.filtering import ReportDataFilterQuery, ReportsFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
+from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
     DEFAULT_PREMIUM_SHOULD_SYNC,
     ROTKEHLCHEN_DB_VERSION,
@@ -116,6 +119,7 @@ from rotkehlchen.typing import (
     ListOfBlockchainAddresses,
     Location,
     ModuleName,
+    NamedJson,
     SupportedBlockchain,
     Timestamp,
 )
@@ -129,6 +133,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
+MAIN_DB_NAME = 'rotkehlchen.db'
+TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 PASSWORDCHECK_STATEMENT = 'SELECT name FROM sqlite_master WHERE type="table";'
 
 DBTupleType = Literal[
@@ -137,6 +143,7 @@ DBTupleType = Literal[
     'margin_position',
     'ethereum_transaction',
     'amm_swap',
+    'accounting_event',
 ]
 
 # Tuples that contain first the name of a table and then the columns that
@@ -243,6 +250,8 @@ class DBHandler:
         self.user_data_dir = user_data_dir
         self.sqlcipher_version = detect_sqlcipher_version()
         self.last_write_ts: Optional[Timestamp] = None
+        self.conn: sqlcipher = None
+        self.conn_transient: sqlcipher = None
         action = self.read_info_at_start()
         if action == DBStartupAction.UPGRADE_3_4:
             result, msg = self.upgrade_db_sqlcipher_3_to_4(password)
@@ -328,8 +337,13 @@ class DBHandler:
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 ('version', str(ROTKEHLCHEN_DB_VERSION)),
             )
+        # set up transient connection
+        self.connect(password, conn_attribute='conn_transient')
+        # creating tables if necessary
+        if hasattr(self, 'conn_transient') and self.conn_transient:
+            self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
 
-    def get_md5hash(self) -> str:
+    def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
 
         May raise:
@@ -337,7 +351,9 @@ class DBHandler:
         """
         no_active_connection = not hasattr(self, 'conn') or not self.conn
         assert no_active_connection, 'md5hash should be taken only with a closed DB'
-        return file_md5(self.user_data_dir / 'rotkehlchen.db')
+        if transient:
+            return file_md5(self.user_data_dir / TRANSIENT_DB_NAME)
+        return file_md5(self.user_data_dir / MAIN_DB_NAME)
 
     def read_info_at_start(self) -> DBStartupAction:
         """Read some metadata info at initialization
@@ -407,28 +423,34 @@ class DBHandler:
         )
         self.conn.commit()
 
-    def connect(self, password: str) -> None:
+    def connect(self,
+                password: str,
+                conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
         """Connect to the DB using password
 
         May raise:
         - SystemPermissionError if we are unable to open the DB file,
         probably due to permission errors
         """
-        fullpath = self.user_data_dir / 'rotkehlchen.db'
+        if conn_attribute == 'conn':
+            fullpath = self.user_data_dir / MAIN_DB_NAME
+        else:
+            fullpath = self.user_data_dir / TRANSIENT_DB_NAME
         try:
-            self.conn = sqlcipher.connect(str(fullpath))  # pylint: disable=no-member
+            conn: sqlcipher = sqlcipher.connect(str(fullpath))  # pylint: disable=no-member
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             raise SystemPermissionError(
                 f'Could not open database file: {fullpath}. Permission errors?',
             ) from e
 
-        self.conn.text_factory = str
+        conn.text_factory = str
         password_for_sqlcipher = _protect_password_sqlcipher(password)
         script = f'PRAGMA key="{password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
-        self.conn.executescript(script)
-        self.conn.execute('PRAGMA foreign_keys=ON')
+        conn.executescript(script)
+        conn.execute('PRAGMA foreign_keys=ON')
+        setattr(self, conn_attribute, conn)
 
     def change_password(self, new_password: str) -> bool:
         """Changes the password for the currently logged in user
@@ -465,10 +487,11 @@ class DBHandler:
 
         return success, msg
 
-    def disconnect(self) -> None:
-        if hasattr(self, 'conn') and self.conn:
-            self.conn.close()
-            self.conn = None
+    def disconnect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
+        conn = getattr(self, conn_attribute, None)
+        if conn:
+            conn.close()
+            setattr(self, conn_attribute, None)
 
     def export_unencrypted(self, temppath: Path) -> None:
         self.conn.executescript(
@@ -485,7 +508,7 @@ class DBHandler:
         there is a DB upgrade and there is an error.
         """
         self.disconnect()
-        rdbpath = self.user_data_dir / 'rotkehlchen.db'
+        rdbpath = self.user_data_dir / MAIN_DB_NAME
         # Make copy of existing encrypted DB before removing it
         shutil.copy2(
             rdbpath,
@@ -3420,3 +3443,27 @@ class DBHandler:
             new_db_path,
         )
         return new_db_path
+
+    def reports_query(
+            self,
+            filter_query: ReportsFilterQuery,
+            with_limit: bool = False,
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        report_manager = DBAccountingReports(self, msg_aggregator=self.msg_aggregator)
+        return report_manager.query(filter_query, with_limit)
+
+    def report_data_query(
+            self,
+            filter_query: ReportDataFilterQuery,
+            with_limit: bool = False,
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        report_data_manager = DBAccountingReportData(self, msg_aggregator=self.msg_aggregator)
+        return report_data_manager.query(filter_query, with_limit)
+
+    def add_report(self, start_ts: Timestamp, end_ts: Timestamp) -> int:
+        report_manager = DBAccountingReports(self, msg_aggregator=self.msg_aggregator)
+        return report_manager.add_report(start_ts, end_ts)
+
+    def add_report_data(self, report_id: int, time: Timestamp, event: NamedJson) -> None:
+        report_data_manager = DBAccountingReportData(self, msg_aggregator=self.msg_aggregator)
+        return report_data_manager.add_report_data(report_id, time, event)

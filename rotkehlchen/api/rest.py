@@ -52,8 +52,10 @@ from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT, EthTransa
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.cache_handler import FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery, \
+    ReportsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -3771,3 +3773,112 @@ class RestAPI():
 
         filepath.unlink()  # should not raise file not found as marshmallow should check
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def _get_reports(
+            self,
+            filter_query: ReportsFilterQuery,
+    ) -> Dict[str, Any]:
+        reports: Optional[List[Dict[str, Any]]]
+        # TODO: Make an exception to raise here coming from DBTaxableEvents
+        # try:
+        reports, entries_found = self.rotkehlchen.data.db.reports_query(
+            filter_query=filter_query,
+            with_limit=self.rotkehlchen.premium is None,
+        )
+        status_code = HTTPStatus.OK
+        message = ''
+        # except _ as e:
+        #     reports = None
+        #     status_code = HTTPStatus.BAD_GATEWAY
+        #     message = str(e)
+
+        result = {
+            'entries': reports,
+            'entries_found': entries_found,
+            'entries_limit': FREE_REPORTS_LOOKUP_LIMIT if self.rotkehlchen.premium is None else -1,
+        }
+
+        return {'result': result, 'message': message, 'status_code': status_code}
+
+    @require_loggedin_user()
+    def get_reports(
+            self,
+            async_query: bool,
+            filter_query: ReportsFilterQuery,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_reports',
+                filter_query=filter_query,
+            )
+
+        response = self._get_reports(
+            filter_query=filter_query,
+        )
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(process_result(result_dict), status_code=status_code)
+
+    def _get_report_data(
+            self,
+            filter_query: ReportDataFilterQuery,
+    ) -> Dict[str, Any]:
+        report_data: Optional[List[Dict[str, Any]]]
+        try:
+            report_data, entries_found = self.rotkehlchen.data.db.report_data_query(
+                filter_query=filter_query,
+                with_limit=self.rotkehlchen.premium is None,
+            )
+            status_code = HTTPStatus.OK
+            message = ''
+        except sqlcipher.IntegrityError as e:
+            report_data = None
+            entries_found = -1
+            status_code = HTTPStatus.BAD_GATEWAY
+            message = str(e)
+
+        if report_data is not None:
+            entries_result = report_data
+        else:
+            entries_result = []
+
+        result = {
+            'entries': entries_result,
+            'entries_found': entries_found,
+            'entries_limit': FREE_REPORTS_LOOKUP_LIMIT if self.rotkehlchen.premium is None else -1,
+        }
+
+        return {'result': result, 'message': message, 'status_code': status_code}
+
+    @require_loggedin_user()
+    def get_report_data(
+            self,
+            async_query: bool,
+            filter_query: ReportDataFilterQuery,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_report_data',
+                filter_query=filter_query,
+            )
+
+        response = self._get_report_data(
+            filter_query=filter_query,
+        )
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(process_result(result_dict), status_code=status_code)
