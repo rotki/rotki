@@ -8,7 +8,7 @@ from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
+from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response_with_result
 from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
@@ -50,7 +50,7 @@ def test_query_owned_assets(
                 "allbalancesresource",
             ), json={'save_data': True},
         )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
 
     # And now check that the query owned assets endpoint works
     with ExitStack() as stack:
@@ -61,7 +61,7 @@ def test_query_owned_assets(
                 "ownedassetsresource",
             ),
         )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert set(data['result']) == {'ETH', 'BTC', 'EUR', A_RDN.identifier}
@@ -79,7 +79,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
             "ignoredassetsresource",
         ), json={'assets': ignored_assets},
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert set(data['result']) == set(ignored_assets)
@@ -93,7 +93,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
             "ignoredassetsresource",
         ),
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert set(data['result']) == set(ignored_assets)
@@ -106,7 +106,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         ), json={'assets': [A_GNO.identifier, 'XMR']},
     )
     assets_after_deletion = [A_RDN.identifier]
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == assets_after_deletion
@@ -120,7 +120,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
             "ignoredassetsresource",
         ),
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == assets_after_deletion
@@ -139,7 +139,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
             "ignoredassetsresource",
         ), json={'assets': ignored_assets},
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
 
     # Test that omitting the assets argument is an error
     response = getattr(requests, method)(

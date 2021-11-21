@@ -2,7 +2,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.substrate.typing import KusamaNodeName
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES, SUBSTRATE_ACC1_KSM_ADDR
 
 
@@ -29,7 +29,7 @@ def test_set_own_rpc_endpoint(rotkehlchen_api_server):
     )
 
     # Check settings response
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     json_data = response.json()
     result = json_data['result']
     assert result['ksm_rpc_endpoint'] == test_node_endpoint
@@ -69,7 +69,7 @@ def test_unset_own_rpc_endpoint(ksm_rpc_endpoint, rotkehlchen_api_server):
     )
 
     # Check settings response
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     json_data = response.json()
     result = json_data['result']
     assert result['ksm_rpc_endpoint'] == ''

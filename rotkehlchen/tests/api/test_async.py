@@ -10,6 +10,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
+    assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.exchanges import mock_binance_balance_response, try_get_first_exchange
 from rotkehlchen.typing import Location
@@ -34,7 +35,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
 
     # Check querying the async taks resource when no async task is scheduled
     response = requests.get(api_url_for(server, "asynctasksresource"))
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     json_data = response.json()
     assert json_data['message'] == ''
     assert json_data['result'] == {'completed': [], 'pending': []}
@@ -50,7 +51,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
 
         # now check that there is a task
         response = requests.get(api_url_for(server, 'asynctasksresource'))
-        assert_proper_response(response)
+        assert_proper_response_with_result(response)
         json_data = response.json()
         assert json_data['message'] == ''
         assert json_data['result'] == {'completed': [], 'pending': [task_id]}
@@ -125,7 +126,7 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
 
     # now check that there is a task
     response = requests.get(api_url_for(server, 'asynctasksresource'))
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     json_data = response.json()
     assert json_data['message'] == ''
     assert json_data['result'] == {'completed': [task_id], 'pending': []}
@@ -135,7 +136,7 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
         )
-        assert_proper_response(response)
+        assert_proper_response_with_result(response)
         json_data = response.json()
         if json_data['result']['status'] == 'pending':
             # context switch so that the greenlet to query balances can operate

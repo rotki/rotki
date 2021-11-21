@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import Location
 from rotkehlchen.utils.misc import ts_now
@@ -23,12 +23,12 @@ def test_query_periodic(rotkehlchen_api_server_with_exchanges):
                 "allbalancesresource",
             ), json={'save_data': True},
         )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
 
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, "periodicdataresource"),
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert len(data['result']) == 3

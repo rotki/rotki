@@ -3,7 +3,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
+from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response_with_result
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
@@ -14,7 +14,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, "externalservicesresource"),
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == {}
@@ -32,7 +32,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, "externalservicesresource"),
         json=data,
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == expected_result
@@ -41,7 +41,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, "externalservicesresource"),
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == expected_result
@@ -54,7 +54,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, "externalservicesresource"),
         json=data,
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == expected_result
@@ -63,7 +63,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, "externalservicesresource"),
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == expected_result
@@ -84,7 +84,7 @@ def test_delete_external_service(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, "externalservicesresource"),
         json=data,
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == expected_result
@@ -96,7 +96,7 @@ def test_delete_external_service(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, "externalservicesresource"),
         json=data,
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == expected_result
@@ -105,7 +105,7 @@ def test_delete_external_service(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, "externalservicesresource"),
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == expected_result
@@ -117,7 +117,7 @@ def test_delete_external_service(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, "externalservicesresource"),
         json=data,
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == {}
@@ -126,7 +126,7 @@ def test_delete_external_service(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, "externalservicesresource"),
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert data['result'] == {}

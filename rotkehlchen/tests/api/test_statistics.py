@@ -10,7 +10,7 @@ from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
+from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response_with_result
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
 from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
@@ -43,7 +43,7 @@ def test_query_statistics_netvalue(
                 "allbalancesresource",
             ), json={'save_data': True},
         )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
 
     # and now test that statistics work fine
     response = requests.get(
@@ -53,7 +53,7 @@ def test_query_statistics_netvalue(
         ),
     )
 
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
     data = response.json()
     assert data['message'] == ''
     assert len(data['result']) == 2
@@ -87,7 +87,7 @@ def test_query_statistics_asset_balance(
                 'allbalancesresource',
             ), json={'save_data': True},
         )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
 
     # and now test that statistics work fine for ETH, with default time range (0 - now)
     response = requests.get(
@@ -98,7 +98,7 @@ def test_query_statistics_asset_balance(
         ),
     )
     if start_with_valid_premium:
-        assert_proper_response(response)
+        assert_proper_response_with_result(response)
         data = response.json()
         assert data['message'] == ''
         assert len(data['result']) == 1
@@ -124,7 +124,7 @@ def test_query_statistics_asset_balance(
         ), json={'from_timestamp': 0, 'to_timestamp': start_time + 60000},
     )
     if start_with_valid_premium:
-        assert_proper_response(response)
+        assert_proper_response_with_result(response)
         data = response.json()
         assert data['message'] == ''
         assert len(data['result']) == 1
@@ -150,7 +150,7 @@ def test_query_statistics_asset_balance(
         ), json={'from_timestamp': 0, 'to_timestamp': start_time - 1},
     )
     if start_with_valid_premium:
-        assert_proper_response(response)
+        assert_proper_response_with_result(response)
         data = response.json()
         assert data['message'] == ''
         assert len(data['result']) == 0
@@ -257,12 +257,12 @@ def test_query_statistics_value_distribution(
                 "allbalancesresource",
             ), json={'save_data': True},
         )
-    assert_proper_response(response)
+    assert_proper_response_with_result(response)
 
     def assert_okay_by_location(response):
         """Helper function to run next query and its assertion twice"""
         if start_with_valid_premium:
-            assert_proper_response(response)
+            assert_proper_response_with_result(response)
             data = response.json()
             assert data['message'] == ''
             assert len(data['result']) == 5
@@ -306,7 +306,7 @@ def test_query_statistics_value_distribution(
         ), json={'distribution_by': 'asset'},
     )
     if start_with_valid_premium:
-        assert_proper_response(response)
+        assert_proper_response_with_result(response)
         data = response.json()
         assert data['message'] == ''
         assert len(data['result']) == 4
@@ -386,7 +386,7 @@ def test_query_statistics_renderer(rotkehlchen_api_server, start_with_valid_prem
             ),
         )
     if start_with_valid_premium:
-        assert_proper_response(response)
+        assert_proper_response_with_result(response)
         data = response.json()
         assert data['message'] == ''
         assert data['result'] == 'codegoeshere'
