@@ -348,6 +348,10 @@ class FloatingPercentageField(fields.Field):
 
 class BlockchainField(fields.Field):
 
+    def __init__(self, *, exclude_types: Optional[Sequence[SupportedBlockchain]] = None, **kwargs: Any) -> None:  # noqa: E501
+        self.exclude_types = exclude_types
+        super().__init__(**kwargs)
+
     def _deserialize(
             self,
             value: str,
@@ -356,17 +360,23 @@ class BlockchainField(fields.Field):
             **_kwargs: Any,
     ) -> SupportedBlockchain:
         if value in ('btc', 'BTC'):
-            return SupportedBlockchain.BITCOIN
-        if value in ('eth', 'ETH'):
-            return SupportedBlockchain.ETHEREUM
-        if value in ('ksm', 'KSM'):
-            return SupportedBlockchain.KUSAMA
-        if value in ('dot', 'DOT'):
-            return SupportedBlockchain.POLKADOT
-        if value in ('avax', 'AVAX'):
-            return SupportedBlockchain.AVALANCHE
+            chain_type = SupportedBlockchain.BITCOIN
+        elif value in ('eth', 'ETH'):
+            chain_type = SupportedBlockchain.ETHEREUM
+        elif value in ('eth2', 'ETH2'):
+            chain_type = SupportedBlockchain.ETHEREUM_BEACONCHAIN
+        elif value in ('ksm', 'KSM'):
+            chain_type = SupportedBlockchain.KUSAMA
+        elif value in ('dot', 'DOT'):
+            chain_type = SupportedBlockchain.POLKADOT
+        elif value in ('avax', 'AVAX'):
+            chain_type = SupportedBlockchain.AVALANCHE
+        else:
+            raise ValidationError(f'Unrecognized value {value} given for blockchain name')
 
-        raise ValidationError(f'Unrecognized value {value} given for blockchain name')
+        if self.exclude_types and chain_type in self.exclude_types:
+            raise ValidationError(f'Blockchain name {str(value)} is not allowed in this endpoint')
+        return chain_type
 
 
 class BalanceTypeField(fields.Field):
@@ -1426,7 +1436,7 @@ class XpubPatchSchema(Schema):
 
 
 class BlockchainAccountsGetSchema(Schema):
-    blockchain = BlockchainField(required=True)
+    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
 
 
 def _validate_blockchain_account_schemas(
@@ -1671,7 +1681,7 @@ def _transform_substrate_address(
 
 
 class BlockchainAccountsPatchSchema(Schema):
-    blockchain = BlockchainField(required=True)
+    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
 
     def __init__(self, ethereum_manager: EthereumManager):
@@ -1727,7 +1737,7 @@ class BlockchainAccountsPutSchema(BlockchainAccountsPatchSchema):
 
 
 class BlockchainAccountsDeleteSchema(Schema):
-    blockchain = BlockchainField(required=True)
+    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     accounts = fields.List(fields.String(), required=True)
     async_query = fields.Boolean(load_default=False)
 

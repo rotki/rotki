@@ -101,6 +101,7 @@ from rotkehlchen.typing import (
     AssetAmount,
     BlockchainAccountData,
     ChecksumEthAddress,
+    Eth2PubKey,
     EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -2234,7 +2235,7 @@ class RestAPI():
     def _add_eth2_validator(
             self,
             validator_index: Optional[int],
-            public_key: Optional[str],
+            public_key: Optional[Eth2PubKey],
     ) -> Dict[str, Any]:
         try:
             self.rotkehlchen.chain_manager.add_eth2_validator(
@@ -2252,7 +2253,7 @@ class RestAPI():
     def add_eth2_validator(
             self,
             validator_index: Optional[int],
-            public_key: Optional[str],
+            public_key: Optional[Eth2PubKey],
             async_query: bool,
     ) -> Response:
         if async_query:

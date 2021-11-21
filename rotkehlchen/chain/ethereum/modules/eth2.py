@@ -1,32 +1,28 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import gevent
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.eth2_utils import scrape_validator_daily_stats
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
-from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.typing import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
     Eth2Deposit,
     ValidatorDailyStats,
     ValidatorDetails,
+    ValidatorID,
 )
-from rotkehlchen.chain.ethereum.utils import decode_event_data
-from rotkehlchen.constants.assets import A_ETH, A_ETH2
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.errors import InputError, RemoteError
-from rotkehlchen.fval import FVal
-from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import ChecksumEthAddress, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Eth2PubKey, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import from_gwei, ts_now
@@ -224,44 +220,45 @@ class Eth2(EthereumModule):
     def get_balances(
             self,
             addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, Balance]:
-        """May Raise RemoteError from beaconcha.in api"""
-        address_to_validators = {}
-        index_to_address = {}
-        validator_indices = []
+            fetch_validators_for_eth1: bool,
+    ) -> Dict[Eth2PubKey, Balance]:
+        """
+        Returns a mapping of validator public key to eth balance.
+        If fetch_validators_for_eth1 is true then each eth1 address is also checked
+        for the validators it has deposited and the deposits are fetched.
+
+        May Raise:
+        - RemoteError from beaconcha.in api
+        """
         usd_price = Inquirer().find_usd_price(A_ETH)
-        balance_mapping: Dict[ChecksumEthAddress, Balance] = defaultdict(Balance)
-        # Map eth1 addresses to validators
-        for address in addresses:
-            validators = self.beaconchain.get_eth1_address_validators(address)
-            if len(validators) == 0:
-                continue
+        dbeth2 = DBEth2(self.database)
+        balance_mapping: Dict[Eth2PubKey, Balance] = defaultdict(Balance)
+        validators: Union[List[ValidatorID], List[Eth2Validator]]
+        if fetch_validators_for_eth1:
+            validators = self._fetch_eth1_validator_data(addresses)
+        else:
+            validators = dbeth2.get_validators()
+            pubkeys = [x.public_key for x in validators]
 
-            address_to_validators[address] = validators
-            for validator in validators:
-                if validator.validator_index is not None:
-                    validator_indices.append(validator.validator_index)
-                    index_to_address[validator.validator_index] = address
-                else:
-                    # Validator is early in depositing, and no index is known yet.
-                    # Simply count 32 ETH balance for them
-                    balance_mapping[address] += Balance(
-                        amount=FVal('32'), usd_value=FVal('32') * usd_price,
-                    )
+        pubkeys = []
+        index_to_pubkey = {}
+        for validator in validators:
+            # create a mapping of indices to pubkeys since the performance call returns indices
+            if validator.index is not None:
+                index_to_pubkey[validator.index] = validator.public_key
+                pubkeys.append(validator.public_key)
 
-        # Get current balance of all validator indices
-        performance = self.beaconchain.get_performance(validator_indices)
+        # Get current balance of all validators. This may miss some balance if it's
+        # in the deposit queue but it's too much work to get it right and should be
+        # visible as soon as deposit clears the queue
+        performance = self.beaconchain.get_performance(pubkeys)
         for validator_index, entry in performance.items():
+            pubkey = index_to_pubkey.get(validator_index)
+            if pubkey is None:
+                log.error(f'At eth2 get_balances could not find matching pubkey for validator index {validator_index}')  # noqa: E501
+                continue  # should not happen
             amount = from_gwei(entry.balance)
-            balance_mapping[index_to_address[validator_index]] += Balance(amount, amount * usd_price)  # noqa: E501
-
-        # Performance call does not return validators that are not active and are still depositing
-        # So for them let's just count 32 ETH
-        depositing_indices = set(index_to_address.keys()) - set(performance.keys())
-        for index in depositing_indices:
-            balance_mapping[index_to_address[index]] += Balance(
-                amount=FVal('32'), usd_value=FVal('32') * usd_price,
-            )
+            balance_mapping[pubkey] += Balance(amount, amount * usd_price)  # noqa: E501
 
         return balance_mapping
 
@@ -282,7 +279,7 @@ class Eth2(EthereumModule):
         for address in addresses:
             validators = self.beaconchain.get_eth1_address_validators(address)
             for validator in validators:
-                if validator.validator_index is None:
+                if validator.index is None:
                     # for validators that are so early in the depositing queue that no
                     # validator index is confirmed yet let's return only the most basic info
                     result.append(ValidatorDetails(
@@ -294,9 +291,9 @@ class Eth2(EthereumModule):
                     ))
                     continue
 
-                index_to_address[validator.validator_index] = address
-                index_to_pubkey[validator.validator_index] = validator.public_key
-                indices.append(validator.validator_index)
+                index_to_address[validator.index] = address
+                index_to_pubkey[validator.index] = validator.public_key
+                indices.append(validator.index)
 
         # Get current balance of all validator indices
         performance_result = self.beaconchain.get_performance(list(indices))
@@ -387,7 +384,7 @@ class Eth2(EthereumModule):
             to_ts=to_timestamp,
         )
 
-    def add_validator(self, validator_index: Optional[int], public_key: Optional[str]) -> None:
+    def add_validator(self, validator_index: Optional[int], public_key: Optional[Eth2PubKey]) -> None:  # noqa: E501
         """Adds the given validator to the DB. Due to marshmallow here at least one
         of the two arguments is not None.
 
@@ -396,7 +393,7 @@ class Eth2(EthereumModule):
         - InputError if the validator is already in the DB
         """
         valid_index: int
-        valid_pubkey: str
+        valid_pubkey: Eth2PubKey
         dbeth2 = DBEth2(self.database)
         if validator_index is not None and public_key is not None:
             field = 'validator_index'
@@ -442,20 +439,20 @@ class Eth2(EthereumModule):
     def on_startup(self) -> None:
         pass
 
-    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List['AssetBalance']]:
+    def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:  # pylint: disable=useless-return  # noqa: E501
+        """Just query balances and add detected validators to DB. Return nothing"""
         try:
-            result = self.get_balances([address])
+            self.get_balances(
+                addresses=[address],
+                fetch_validators_for_eth1=True,
+            )
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Did not manage to query beaconcha.in api for address {address} due to {str(e)}.'
                 f' If you have Eth2 staked balances the final balance results may not be accurate',
             )
-            return None
-        balance = result.get(address)
-        if balance is None:
-            return None
 
-        return [AssetBalance(asset=A_ETH2, balance=balance)]
+        return None
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:
         pass

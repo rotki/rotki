@@ -2210,7 +2210,7 @@ Querying onchain balances
 
 .. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``KSM``, ``DOT`` and ``AVAX``.
+   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``ETH2``, ``KSM``, ``DOT`` and ``AVAX``.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
@@ -2279,12 +2279,22 @@ Querying onchain balances
                        "liabilities": {
                            "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "20", "usd_value": "20.35"}
                        }
-                  }}
+                  }},
+                   "ETH2": { "0x9675faa8d15665e30d31dc10a332828fa15e2c7490f7d1894d9092901b139801ce476810f8e1e0c7658a9abdb9c4412e": {
+                       "assets": {
+                           "ETH2": {"amount": "33.12", "usd_value": "45243.21"},
+                       },
+		       "0x97bc980f17f42a994827899e0720cee288b538646292ce7c866a5a5c9d1002cd1fb7a80195445be2670b64cf4d1c215e": {
+                       "assets": {
+                           "ETH2": {"amount": "32.45", "usd_value": "40241.55"},
+                       },
+                  }},
               },
               "totals": {
                   "assets": {
                       "BTC": {"amount": "1", "usd_value": "7540.15"},
                       "ETH": {"amount": "10", "usd_value": "1650.53"},
+                      "ETH2": {"amount": "65.57", "usd_value": "85484.76"},
                       "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "15", "usd_value": "15.21"}
                   },
                   "liabilities": {

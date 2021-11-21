@@ -91,6 +91,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.typing import (
     BTCAddress,
     ChecksumEthAddress,
+    Eth2PubKey,
     ListOfBlockchainAddresses,
     ModuleName,
     Price,
@@ -177,6 +178,7 @@ class AccountAction(Enum):
 class BlockchainBalances:
     db: 'DBHandler'  # Need this to serialize BTC accounts with xpub mappings
     eth: DefaultDict[ChecksumEthAddress, BalanceSheet] = field(init=False)
+    eth2: DefaultDict[Eth2PubKey, BalanceSheet] = field(init=False)
     btc: Dict[BTCAddress, Balance] = field(init=False)
     ksm: Dict[KusamaAddress, BalanceSheet] = field(init=False)
     dot: Dict[PolkadotAddress, BalanceSheet] = field(init=False)
@@ -185,6 +187,7 @@ class BlockchainBalances:
     def copy(self) -> 'BlockchainBalances':
         balances = BlockchainBalances(db=self.db)
         balances.eth = self.eth.copy()
+        balances.eth2 = self.eth2.copy()
         balances.btc = self.btc.copy()
         balances.ksm = self.ksm.copy()
         balances.dot = self.dot.copy()
@@ -193,6 +196,7 @@ class BlockchainBalances:
 
     def __post_init__(self) -> None:
         self.eth = defaultdict(BalanceSheet)
+        self.eth2 = defaultdict(BalanceSheet)
         self.btc = defaultdict(Balance)
         self.ksm = defaultdict(BalanceSheet)
         self.dot = defaultdict(BalanceSheet)
@@ -200,6 +204,7 @@ class BlockchainBalances:
 
     def serialize(self) -> Dict[str, Dict]:
         eth_balances = {k: v.serialize() for k, v in self.eth.items()}
+        eth2_balances = {k: v.serialize() for k, v in self.eth2.items()}
         btc_balances: Dict[str, Any] = {}
         ksm_balances = {k: v.serialize() for k, v in self.ksm.items()}
         dot_balances = {k: v.serialize() for k, v in self.dot.items()}
@@ -241,6 +246,8 @@ class BlockchainBalances:
         blockchain_balances: Dict[str, Dict] = {}
         if eth_balances != {}:
             blockchain_balances['ETH'] = eth_balances
+        if eth2_balances != {}:
+            blockchain_balances['ETH2'] = eth2_balances
         if btc_balances != {}:
             blockchain_balances['BTC'] = btc_balances
         if ksm_balances != {}:
@@ -255,6 +262,8 @@ class BlockchainBalances:
     def is_queried(self, blockchain: SupportedBlockchain) -> bool:
         if blockchain == SupportedBlockchain.ETHEREUM:
             return self.eth != {}
+        if blockchain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
+            return self.eth2 != {}
         if blockchain == SupportedBlockchain.BITCOIN:
             return self.btc != {}
         if blockchain == SupportedBlockchain.KUSAMA:
@@ -270,10 +279,18 @@ class BlockchainBalances:
     def account_exists(
             self,
             blockchain: SupportedBlockchain,
-            account: Union[BTCAddress, ChecksumEthAddress, KusamaAddress, PolkadotAddress],
+            account: Union[
+                BTCAddress,
+                ChecksumEthAddress,
+                KusamaAddress,
+                PolkadotAddress,
+                Eth2PubKey,
+            ],
     ) -> bool:
         if blockchain == SupportedBlockchain.ETHEREUM:
             return account in self.eth
+        if blockchain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
+            return account in self.eth2
         if blockchain == SupportedBlockchain.BITCOIN:
             return account in self.btc
         if blockchain == SupportedBlockchain.KUSAMA:
@@ -559,6 +576,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         client and the chain is not synced
         """
         should_query_eth = not blockchain or blockchain == SupportedBlockchain.ETHEREUM
+        should_query_eth2 = not blockchain or blockchain == SupportedBlockchain.ETHEREUM_BEACONCHAIN  # noqa: E501
         should_query_btc = not blockchain or blockchain == SupportedBlockchain.BITCOIN
         should_query_ksm = not blockchain or blockchain == SupportedBlockchain.KUSAMA
         should_query_dot = not blockchain or blockchain == SupportedBlockchain.POLKADOT
@@ -567,6 +585,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if should_query_eth:
             self.query_ethereum_balances(
                 force_token_detection=force_token_detection,
+                ignore_cache=ignore_cache,
+            )
+        if should_query_eth2:
+            self.query_ethereum_beaconchain_balances(
+                fetch_validators_for_eth1=force_token_detection,  # document this better
                 ignore_cache=ignore_cache,
             )
         if should_query_btc:
@@ -1217,6 +1240,39 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
         return self.get_balances_update()
 
+    @protect_with_lock()
+    @cache_response_timewise()
+    def query_ethereum_beaconchain_balances(
+            self,  # pylint: disable=unused-argument
+            fetch_validators_for_eth1: bool,
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
+        """Queries ethereum beacon chain balances
+
+        May raise:
+        - RemoteError if an external service such as beaconchain
+        is queried and there is a problem with its query.
+        """
+        eth2 = self.get_module('eth2')
+        if eth2 is None:
+            return  # no eth2 module active -- do nothing
+
+        # Before querying the new balances, delete the ones in memory if any
+        self.totals.assets.pop(A_ETH2, None)
+        self.balances.eth2.clear()
+        balance_mapping = eth2.get_balances(
+            addresses=self.queried_addresses_for_module('eth2'),
+            fetch_validators_for_eth1=fetch_validators_for_eth1,
+        )
+        total = Balance()
+        for pubkey, balance in balance_mapping.items():
+            self.balances.eth2[pubkey] = BalanceSheet(
+                assets=defaultdict(Balance, {A_ETH2: balance}),
+            )
+            total += balance
+        self.totals.assets[A_ETH2] = total
+
     def _update_balances_after_token_query(
             self,
             action: AccountAction,
@@ -1473,8 +1529,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 eth_balances[address].assets[A_LQTY] += deposited_lqty
                 self.totals.assets[A_LQTY] += deposited_lqty
 
-        # Count ETH staked in Eth2 beacon chain
-        self.account_for_staked_eth2_balances(addresses=self.queried_addresses_for_module('eth2'))
         # Finally count the balances detected in various protocols in defi balances
         self.add_defi_balances_to_token_and_totals()
 
@@ -1546,32 +1600,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 balances=defi_balances,
             )
 
-    def account_for_staked_eth2_balances(
-            self,
-            addresses: List[ChecksumEthAddress],
-    ) -> None:
-        eth2 = self.get_module('eth2')
-        if eth2 is None:
-            return  # no eth2 module active -- do nothing
-
-        # Before querying the new balances, delete the ones in memory if any
-        self.totals.assets.pop(A_ETH2, None)
-        for _, entry in self.balances.eth.items():
-            if A_ETH2 in entry.assets:
-                del entry.assets[A_ETH2]
-
-        try:
-            mapping = eth2.get_balances(addresses)
-        except RemoteError as e:
-            self.msg_aggregator.add_error(
-                f'Did not manage to query beaconcha.in api for addresses due to {str(e)}.'
-                f' If you have Eth2 staked balances the final balance results may not be accurate',
-            )
-            mapping = {}
-        for address, balance in mapping.items():
-            self.balances.eth[address].assets[A_ETH2] = balance
-            self.totals.assets[A_ETH2] += balance
-
     @protect_with_lock()
     @cache_response_timewise()
     def get_eth2_staking_deposits(self) -> List['Eth2Deposit']:
@@ -1580,14 +1608,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             raise ModuleInactive(
                 'Could not query eth2 staking deposits since eth2 module is not active',
             )
-        # Get the details first, to see which of the user's addresses have deposits
-        details = self.get_eth2_staking_details()
-        addresses = {x.eth1_depositor for x in details}
-        # now narrow down the deposits query to save time
         deposits = eth2.get_staking_deposits(
-            addresses=list(addresses),
-            msg_aggregator=self.msg_aggregator,
-            database=self.database,
+            addresses=self.queried_addresses_for_module('eth2'),
         )
         return deposits
 
@@ -1678,7 +1700,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
     def add_eth2_validator(
             self,
             validator_index: Optional[int],
-            public_key: Optional[str],
+            public_key: Optional[Eth2PubKey],
     ) -> None:
         """May raise:
         - ModuleInactive if eth2 module is not activated
