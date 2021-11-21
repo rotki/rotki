@@ -3,7 +3,11 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response_with_result
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_error_response,
+    assert_proper_response_with_result,
+)
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])

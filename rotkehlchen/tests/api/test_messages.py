@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response, assert_proper_response_with_result
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.history import mock_history_processing_and_exchanges
 from rotkehlchen.typing import Location
 
