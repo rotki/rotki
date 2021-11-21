@@ -2220,4 +2220,4 @@ A_PSP = EthereumToken.initialize(
     cryptocompare=None,
     protocol=None,
 )
-CONSTANT_ASSETS.append(A_ENS)
+CONSTANT_ASSETS.append(A_PSP)
