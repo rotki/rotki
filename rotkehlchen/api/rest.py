@@ -2173,7 +2173,7 @@ class RestAPI():
         except ModuleInactive as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
-        return {'result': process_result_list([x._asdict() for x in result]), 'message': ''}
+        return {'result': process_result_list([x.serialize() for x in result]), 'message': ''}
 
     @require_premium_user(active_check=False)
     def get_eth2_stake_deposits(self, async_query: bool) -> Response:

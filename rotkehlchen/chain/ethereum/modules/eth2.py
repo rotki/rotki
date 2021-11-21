@@ -17,7 +17,7 @@ from rotkehlchen.chain.ethereum.typing import (
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.db.eth2 import DBEth2
+from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
 from rotkehlchen.errors import InputError, RemoteError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -65,157 +65,89 @@ class Eth2(EthereumModule):
         self.last_stats_query_ts = 0
         self.validator_stats_queried = 0
 
-    def _get_eth2_staking_deposits_onchain(
-            self,
-            addresses: List[ChecksumEthAddress],
-            msg_aggregator: MessagesAggregator,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-    ) -> List[Eth2Deposit]:
-        from_block = max(
-            ETH2_DEPOSIT.deployed_block,
-            self.ethereum.get_blocknumber_by_time(from_ts),
-        )
-        to_block = self.ethereum.get_blocknumber_by_time(to_ts)
-        events = ETH2_DEPOSIT.get_logs(
-            ethereum=self.ethereum,
-            event_name='DepositEvent',
-            argument_filters={},
-            from_block=from_block,
-            to_block=to_block,
-        )
-
-        filter_query = ETHTransactionsFilterQuery.make(
-            order_ascending=True,  # oldest first
-            limit=None,
-            offset=None,
-            addresses=addresses,
-            from_ts=from_ts,
-            to_ts=to_ts,
-        )
-        tx_module = EthTransactions(ethereum=self.ethereum, database=self.database)
-        transactions, _ = tx_module.query(
-            filter_query=filter_query,
-            with_limit=False,
-            only_cache=False,
-        )
-        deposits: List[Eth2Deposit] = []
-        for transaction in transactions:
-            if transaction.to_address != ETH2_DEPOSIT.address:
-                continue
-
-            tx_hash = '0x' + transaction.tx_hash.hex()
-            for event in events:
-                # Now find the corresponding event. If no event is found the transaction
-                # probably failed or was something other than a deposit
-                if event['transactionHash'] == tx_hash:
-                    decoded_data = decode_event_data(event['data'], EVENT_ABI)
-                    # all pylint ignores below due to https://github.com/PyCQA/pylint/issues/4114
-                    amount = int.from_bytes(decoded_data[2], byteorder='little')  # pylint: disable=unsubscriptable-object  # noqa: E501
-                    usd_price = query_usd_price_zero_if_error(
-                        asset=A_ETH,
-                        time=transaction.timestamp,
-                        location=f'Eth2 staking tx_hash: {tx_hash}',
-                        msg_aggregator=msg_aggregator,
-                    )
-                    normalized_amount = from_gwei(FVal(amount))
-                    deposits.append(Eth2Deposit(
-                        from_address=transaction.from_address,
-                        pubkey='0x' + decoded_data[0].hex(),    # pylint: disable=unsubscriptable-object  # noqa: E501
-                        withdrawal_credentials='0x' + decoded_data[1].hex(),    # pylint: disable=unsubscriptable-object  # noqa: E501
-                        value=Balance(normalized_amount, usd_price * normalized_amount),
-                        deposit_index=int.from_bytes(decoded_data[4], byteorder='little'),    # pylint: disable=unsubscriptable-object  # noqa: E501
-                        tx_hash=tx_hash,
-                        log_index=event['logIndex'],
-                        timestamp=Timestamp(transaction.timestamp),
-                    ))
-                    break
-
-        return deposits
-
     def get_staking_deposits(
             self,
             addresses: List[ChecksumEthAddress],
-            msg_aggregator: MessagesAggregator,
-            database: 'DBHandler',
     ) -> List[Eth2Deposit]:
-        """Get the addresses' ETH2 staking deposits
+        """Get the eth2 deposits for all tracked validators and all validators associated
+        with any given eth1 address.
 
-        For any given new address query on-chain from the ETH2 deposit contract
-        deployment timestamp until now.
-
-        For any existing address query on-chain from the minimum last used query
-        range "end_ts" (among all the existing addresses) until now, as long as the
-        difference between both is gte than REQUEST_DELTA_TS.
-
-        Then write in DB all the new deposits and finally return them all.
+        Also write them all in the DB.
         """
-        new_deposits: List[Eth2Deposit] = []
-        new_addresses: List[ChecksumEthAddress] = []
-        existing_addresses: List[ChecksumEthAddress] = []
-        to_ts = ts_now()
-        min_from_ts = to_ts
-
-        # Get addresses' last used query range for ETH2 deposits
+        relevant_pubkeys = set()
+        relevant_validators = set()
+        now = ts_now()
         for address in addresses:
-            entry_name = f'{ETH2_DEPOSITS_PREFIX}_{address}'
-            deposits_range = database.get_used_query_range(name=entry_name)
+            range_key = f'{ETH2_DEPOSITS_PREFIX}_{address}'
+            query_range = self.database.get_used_query_range(range_key)
+            if query_range is not None and now - query_range[1] <= REQUEST_DELTA_TS:
+                continue  # recently queried, skip
 
-            if not deposits_range:
-                new_addresses.append(address)
-            else:
-                existing_addresses.append(address)
-                min_from_ts = min(min_from_ts, deposits_range[1])
+            result = self.beaconchain.get_eth1_address_validators(address)
+            relevant_validators.update(result)
+            relevant_pubkeys.update([x.public_key for x in result])
+            self.database.update_used_query_range(range_key, Timestamp(0), now)
 
-        # Get deposits for new addresses
-        if new_addresses:
-            deposits_ = self._get_eth2_staking_deposits_onchain(
-                addresses=new_addresses,
-                msg_aggregator=msg_aggregator,
-                from_ts=ETH2_DEPLOYED_TS,
-                to_ts=to_ts,
-            )
-            new_deposits.extend(deposits_)
+        dbeth2 = DBEth2(self.database)
+        saved_deposits = dbeth2.get_eth2_deposits()
+        saved_deposits_pubkeys = {x.pubkey for x in saved_deposits}
 
-            for address in new_addresses:
-                entry_name = f'{ETH2_DEPOSITS_PREFIX}_{address}'
-                database.update_used_query_range(
-                    name=entry_name,
-                    start_ts=ETH2_DEPLOYED_TS,
-                    end_ts=to_ts,
-                )
+        new_validators = []
+        new_pubkeys = []
+        for validator in relevant_validators:
+            if validator.public_key not in saved_deposits_pubkeys and validator.index is not None:
+                new_validators.append(Eth2Validator(
+                    index=validator.index,
+                    public_key=validator.public_key,
+                ))
+                new_pubkeys.append(validator.public_key)
 
-        # Get new deposits for existing addresses
-        if existing_addresses and min_from_ts + REQUEST_DELTA_TS <= to_ts:
-            deposits_ = self._get_eth2_staking_deposits_onchain(
-                addresses=existing_addresses,
-                msg_aggregator=msg_aggregator,
-                from_ts=Timestamp(min_from_ts),
-                to_ts=to_ts,
-            )
-            new_deposits.extend(deposits_)
+        dbeth2.add_validators(new_validators)
+        new_deposits = self.beaconchain.get_validator_deposits(new_pubkeys)
+        dbeth2.add_eth2_deposits(new_deposits)
+        result_deposits = saved_deposits + new_deposits
+        result_deposits.sort(key=lambda deposit: (deposit.timestamp, deposit.tx_index))
+        return result_deposits
 
-            for address in existing_addresses:
-                entry_name = f'{ETH2_DEPOSITS_PREFIX}_{address}'
-                database.update_used_query_range(
-                    name=entry_name,
-                    start_ts=Timestamp(min_from_ts),
-                    end_ts=to_ts,
-                )
+    def _fetch_eth1_validator_data(
+            self,
+            addresses: List[ChecksumEthAddress],
+    ) -> List[ValidatorID]:
+        """Query all eth1 addresses for their validators and get all corresponding deposits.
 
-        dbeth2 = DBEth2(database)
-        # Insert new deposits in DB
-        if new_deposits:
-            dbeth2.add_eth2_deposits(new_deposits)
+        Returns the list of all tracked validators. It's ValidatorID  since
+        for validators that are in the deposit queue we don't get a finalized validator index yet.
+        So index may be missing for some validators.
+        This is the only function that will also return validators in the deposit queue.
 
-        # Fetch all DB deposits for the given addresses
-        deposits: List[Eth2Deposit] = []
+        May raise:
+        - RemoteError
+        """
+        dbeth2 = DBEth2(self.database)
+        all_validators = []
+        pubkeys = set()
         for address in addresses:
-            db_deposits = dbeth2.get_eth2_deposits(address=address)
-            deposits.extend(db_deposits)
+            validators = self.beaconchain.get_eth1_address_validators(address)
+            if len(validators) == 0:
+                continue
 
-        deposits.sort(key=lambda deposit: (deposit.timestamp, deposit.log_index))
-        return deposits
+            pubkeys.update([x.public_key for x in validators])
+            all_validators.extend(validators)
+            # if we already have any of those validators in the DB, no need to query deposits
+            tracked_validators = dbeth2.get_validators()
+            tracked_pubkeys = [x.public_key for x in tracked_validators]
+            new_validators = [
+                Eth2Validator(index=x.index, public_key=x.public_key)
+                for x in validators if x.public_key not in tracked_pubkeys and x.index is not None
+            ]
+            dbeth2.add_validators(new_validators)
+            self.beaconchain.get_validator_deposits([x.public_key for x in new_validators])
+
+        for x in dbeth2.get_validators():
+            if x.public_key not in pubkeys:
+                all_validators.append(ValidatorID(index=x.index, public_key=x.public_key))  # noqa: E501
+
+        return all_validators
 
     def get_balances(
             self,
@@ -275,6 +207,7 @@ class Eth2(EthereumModule):
         index_to_pubkey = {}
         result = []
         assert self.beaconchain.db is not None, 'Beaconchain db should be populated'
+        all_validators = []
 
         for address in addresses:
             validators = self.beaconchain.get_eth1_address_validators(address)
@@ -294,7 +227,11 @@ class Eth2(EthereumModule):
                 index_to_address[validator.index] = address
                 index_to_pubkey[validator.index] = validator.public_key
                 indices.append(validator.index)
+                all_validators.append(Eth2Validator(index=validator.index, public_key=validator.public_key))  # noqa: E501
 
+        # make sure all validators we deal with are saved in the DB
+        dbeth2 = DBEth2(self.database)
+        dbeth2.add_validators(all_validators)
         # Get current balance of all validator indices
         performance_result = self.beaconchain.get_performance(list(indices))
         for validator_index, entry in performance_result.items():
@@ -335,6 +272,9 @@ class Eth2(EthereumModule):
             to_timestamp: Optional[Timestamp] = None,
     ) -> List[ValidatorDailyStats]:
         """Gets the daily stats of an ETH2 validator by index
+
+        The caller of this function has to make sure that the validator index is in
+        the DB.
 
         First queries the DB for the already known stats and then if needed also scrapes
         the beaconcha.in website for more. Saves all new entries to the DB.
@@ -424,7 +364,7 @@ class Eth2(EthereumModule):
 
             try:
                 valid_index = result['validatorindex']
-                valid_pubkey = result['pubkey']
+                valid_pubkey = Eth2PubKey(result['pubkey'])
             except KeyError as e:
                 msg = str(e)
                 if isinstance(e, KeyError):

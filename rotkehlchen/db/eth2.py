@@ -30,16 +30,15 @@ class DBEth2():
             """
             INSERT INTO eth2_deposits (
                 tx_hash,
-                log_index,
+                tx_index,
                 from_address,
                 timestamp,
                 pubkey,
                 withdrawal_credentials,
                 amount,
-                usd_value,
-                deposit_index
+                usd_value
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """
         )
         cursor = self.db.conn.cursor()
@@ -47,10 +46,10 @@ class DBEth2():
             deposit_tuple = deposit.to_db_tuple()
             try:
                 cursor.execute(query, deposit_tuple)
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 self.db.msg_aggregator.add_warning(
-                    f'Tried to add an ETH2 deposit that already exists in the DB. '
-                    f'Deposit data: {deposit_tuple}. Skipping deposit.',
+                    f'Failed to add an ETH2 deposit to the DB. Either a duplicate or  '
+                    f'foreign key error.Deposit data: {deposit_tuple}. Error: {str(e)}',
                 )
                 continue
 
@@ -67,14 +66,13 @@ class DBEth2():
         query = (
             'SELECT '
             'tx_hash, '
-            'log_index, '
+            'tx_index, '
             'from_address, '
             'timestamp, '
             'pubkey, '
             'withdrawal_credentials, '
             'amount, '
-            'usd_value, '
-            'deposit_index '
+            'usd_value '
             'FROM eth2_deposits '
         )
         # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
@@ -116,9 +114,10 @@ class DBEth2():
                     '    amount_deposited) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                     entry.to_db_tuple(),
                 )
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 log.debug(
-                    f'Eth2 staking detail entry {str(entry)} already existed in the DB. Skipping.',
+                    f'Cant insert Eth2 staking detail entry {str(entry)} to the DB '
+                    f'due to {str(e)}. Skipping ...',
                 )
 
         self.db.update_last_write()

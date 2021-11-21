@@ -33,7 +33,7 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
-    """This test uses real data and queries the eth2 deposit contract logs"""
+    """This test uses real data and queries the eth2 deposits"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
@@ -85,11 +85,10 @@ def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
     expected_pubkey = '0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b'  # noqa: E501
     assert deposits[0] == {
         'from_address': '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397',
-        'log_index': 22,
+        'tx_index': 15,
         'pubkey': expected_pubkey,
         'timestamp': 1604506685,
         'tx_hash': '0xd9eca1c2a0c5ff2f25071713432b21cc4d0ff2e8963edc63a48478e395e08db1',
-        'deposit_index': 9,
         'value': {'amount': '32', 'usd_value': '32'},
         'withdrawal_credentials': '0x004c7691c2085648f394ffaef851f3b1d51b95f7263114bc923fc5338f5fc499',  # noqa: E501
     }

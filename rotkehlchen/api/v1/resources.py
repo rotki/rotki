@@ -113,6 +113,7 @@ from rotkehlchen.typing import (
     AssetAmount,
     BlockchainAccountData,
     ChecksumEthAddress,
+    Eth2PubKey,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -1220,7 +1221,7 @@ class Eth2ValidatorsResource(BaseResource):
     def put(
             self,
             validator_index: Optional[int],
-            public_key: Optional[str],
+            public_key: Optional[Eth2PubKey],
             async_query: bool,
     ) -> Response:
         return self.rest_api.add_eth2_validator(
