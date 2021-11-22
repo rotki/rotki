@@ -170,7 +170,6 @@ class Eth2(EthereumModule):
             validators = self._fetch_eth1_validator_data(addresses)
         else:
             validators = dbeth2.get_validators()
-            pubkeys = [x.public_key for x in validators]
 
         pubkeys = []
         index_to_pubkey = {}

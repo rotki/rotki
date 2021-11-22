@@ -114,6 +114,7 @@ TABLES_AT_INIT = [
     'amm_events',
     'eth2_deposits',
     'eth2_daily_staking_details',
+    'eth2_validators',
     'adex_events',
     'ledger_actions',
     'ledger_action_type',
