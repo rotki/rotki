@@ -7468,7 +7468,7 @@ Deleting an Eth2 validator
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/ETH2/validators HTTP/1.1
+      DELETE /api/1/blockchains/ETH2/validators HTTP/1.1
       Host: localhost:5042
 
    :reqjson validator_index int: An optional integer representing the validator index of the validator to delete. If this is not given then the pulic key of the validator has to be given!
@@ -7482,8 +7482,8 @@ Deleting an Eth2 validator
       Content-Type: application/json
 
       {
-        "result": true
-        "message": "",
+        "result": true,
+        "message": ""
       }
 
    :statuscode 200: Eth2 validator succesfully delete.
@@ -7493,9 +7493,9 @@ Deleting an Eth2 validator
 Getting tracked Eth2 validators
 ===============================
 
-.. http:delete:: /api/(version)/blockchains/ETH2/validators
+.. http:get:: /api/(version)/blockchains/ETH2/validators
 
-   Doing a DELETE on the eth2 validators endpoint will delete information and stop tracking an ETH2 validator.
+   Doing a GET on the ETH2 validators endpoint will get information
 
    .. note::
       This endpoint is only available for premium users
@@ -7505,11 +7505,9 @@ Getting tracked Eth2 validators
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/ETH2/validators HTTP/1.1
+      GET /api/1/blockchains/ETH2/validators HTTP/1.1
       Host: localhost:5042
 
-   :reqjson validator_index int: An optional integer representing the validator index of the validator to delete. If this is not given then the pulic key of the validator has to be given!
-   :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to delete. If this is not given the the validator index has to be given!
 
    **Example Response**:
 
@@ -7519,11 +7517,15 @@ Getting tracked Eth2 validators
       Content-Type: application/json
 
       {
-        "result": true
-        "message": "",
+        "result": [{
+	    "index": 1, "public_key": "0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c"}, {
+	    "index": 1532, "public_key": "0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed"}, {
+	    "index": 5421, "public_key": "0xa64722f93f37c7da8da67ee36fd2a763103897efc274e3accb4cd172382f7a170f064b81552ae77cdbe440208a1b897e"
+	}],
+        "message": ""
       }
 
-   :statuscode 200: Eth2 validator succesfully delete.
+   :statuscode 200: Eth2 validator detauls succesfully returned.
    :statuscode 409: User is not logged in. Or eth2 module is not activated.
    :statuscode 500: Internal rotki error.
 
