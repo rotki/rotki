@@ -51,51 +51,44 @@ module.exports = {
         ]
       }
     ],
+    '@typescript-eslint/naming-convention': [
+      'error',
+      {
+        selector: 'variable',
+        modifiers: ['destructured'],
+        format: null
+      },
+      {
+        selector: 'parameter',
+        format: ['camelCase'],
+        leadingUnderscore: 'allow'
+      },
+      {
+        selector: 'variable',
+        format: ['camelCase']
+      },
+      {
+        selector: 'variable',
+        modifiers: ['const'],
+        format: ['camelCase', 'UPPER_CASE', 'PascalCase']
+      },
+      {
+        selector: 'memberLike',
+        modifiers: ['private'],
+        format: ['camelCase'],
+        leadingUnderscore: "allow"
+      },
+      {
+        selector: 'typeLike',
+        format: ['PascalCase']
+      }
+    ]
   },
 
   parserOptions: {
     parser: '@typescript-eslint/parser',
     project: './tsconfig.json'
   },
-  overrides: [
-    {
-      files: ['*.{ts, vue}'],
-      rules: {
-        '@typescript-eslint/naming-convention': [
-          'error',
-          {
-            selector: 'variable',
-            modifiers: ['destructured'],
-            format: null
-          },
-          {
-            selector: 'parameter',
-            format: ['camelCase'],
-            leadingUnderscore: 'allow'
-          },
-          {
-            selector: 'variable',
-            format: ['camelCase']
-          },
-          {
-            selector: 'variable',
-            modifiers: ['const'],
-            format: ['camelCase', 'UPPER_CASE', 'PascalCase']
-          },
-          {
-            selector: 'memberLike',
-            modifiers: ['private'],
-            format: ['camelCase'],
-            leadingUnderscore: "allow"
-          },
-          {
-            selector: 'typeLike',
-            format: ['PascalCase']
-          }
-        ]
-      }
-    }
-  ],
 
   settings: {
     'import/resolver': {

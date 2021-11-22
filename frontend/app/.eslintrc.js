@@ -101,9 +101,16 @@ module.exports = {
   parserOptions: {
     parser: '@typescript-eslint/parser',
     project: './tsconfig.eslint.json',
+    sourceType: 'module',
     extraFileExtensions: ['.vue']
   },
   overrides: [
+    {
+      files: ['*.json'],
+      rules: {
+        '@typescript-eslint/naming-convention': 'off'
+      }
+    },
     {
       files: ['*.json', '*.json5'],
       extends: ['plugin:@intlify/vue-i18n/base']
