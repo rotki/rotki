@@ -137,7 +137,7 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
         elif result['status'] == 'completed':
             break
         else:
-            raise AssertionError(f"Unexpected status: {json_data['result']['status']}")
+            raise AssertionError(f"Unexpected status: {result['status']}")
 
     assert result['status'] == 'completed'
     # assert that the backend task query died and we detect it
