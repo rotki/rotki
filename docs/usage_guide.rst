@@ -768,6 +768,8 @@ The list of currently supported airdrops is:
 - Furocombo
 - Lido
 - Curve
+- ENS
+- ParaSwap
 
 Snapshots
 =========

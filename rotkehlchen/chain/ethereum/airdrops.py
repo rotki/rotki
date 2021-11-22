@@ -18,6 +18,7 @@ from rotkehlchen.constants.assets import (
     A_FOX,
     A_GRAIN,
     A_LDO,
+    A_PSP,
     A_TORN,
     A_UNI,
 )
@@ -94,6 +95,11 @@ AIRDROPS = {
         'https://raw.githubusercontent.com/rotki/data/main/airdrops/ens.csv',
         A_ENS,
         'https://claim.ens.domains/',
+    ),
+    'psp': (
+        'https://raw.githubusercontent.com/rotki/data/main/airdrops/psp.csv',
+        A_PSP,
+        'https://paraswap.io/',
     ),
 }
 

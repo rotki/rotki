@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`3716` Users can now see if any of their addresses have PSP available to claim from the PSP airdrop.
+
 * :release:`1.22.1 <2021-11-19>`
 * :bug:`3726` Manual liabilities should not count as assets and should be deducted from total net value when taking a snapshot. Also multiple liabilities of same asset should now be properly summed.
 * :bug:`3722` Trades details will now properly expand one at a time.
