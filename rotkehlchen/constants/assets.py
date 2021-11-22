@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 18/11/2021 15:06:03.
+# tools/scripts/generate_constant_assets.py at 23/11/2021 09:31:11.
 # Do not edit manually!
 
 from typing import List
@@ -146,8 +146,8 @@ CONSTANT_ASSETS.append(A_DOGE)
 A_BSQ = Asset.initialize(
     identifier='BSQ',
     asset_type=AssetType.OTHER,
-    name="BSQ",
-    symbol='Bisq DAO Token',
+    name="Bisq DAO Token",
+    symbol='BSQ',
     started=Timestamp(1555286400),
     forked=None,
     swapped_for=None,
@@ -1444,11 +1444,11 @@ CONSTANT_ASSETS.append(A_OKB)
 A_KEEP = EthereumToken.initialize(
     address=string_to_ethereum_address('0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC'),
     decimals=18,
-    name="KEEP Token",
+    name="KEEP Token ",
     symbol='KEEP',
-    started=Timestamp(1608747211),
+    started=Timestamp(1588042366),
     swapped_for=None,
-    coingecko='1inch',
+    coingecko='keep-network',
     cryptocompare=None,
     protocol=None,
 )
@@ -2224,7 +2224,7 @@ CONSTANT_ASSETS.append(A_ENS)
 A_PSP = EthereumToken.initialize(
     address=string_to_ethereum_address('0xcAfE001067cDEF266AfB7Eb5A286dCFD277f3dE5'),
     decimals=18,
-    name='ParaSwap',
+    name="ParaSwap",
     symbol='PSP',
     started=Timestamp(1636966698),
     swapped_for=None,

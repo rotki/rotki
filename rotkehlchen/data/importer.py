@@ -1326,8 +1326,7 @@ Activity from uphold with uphold transaction id:
 
     def _consume_bisq_trade(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:
         """
-        Consume the file containing only trades from BlockFi. As per my investigations
-        (@yabirgb) this file can only contain confirmed trades.
+        Consume the file containing only trades from Bisq.
         - UnknownAsset
         - DeserializationError
         """
@@ -1355,7 +1354,6 @@ Activity from uphold with uphold transaction id:
                 buy_amount = deserialize_asset_amount(csv_row['Amount'])
             else:
                 buy_amount = deserialize_asset_amount(csv_row['Amount in BTC'])
-
         else:
             trade_type = TradeType.BUY
             if offer[1] == assets1_symbol:
@@ -1396,8 +1394,8 @@ Activity from uphold with uphold transaction id:
 
     def import_bisq_trades_csv(self, filepath: Path, **kwargs: Any) -> Tuple[bool, str]:
         """
-        Information for the values that the columns can have has been obtained from
-        the issue in github #1674
+        Import trades from bisq. The information and comments about this importer were addressed
+        at the issue https://github.com/rotki/rotki/issues/824
         """
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
@@ -1406,13 +1404,13 @@ Activity from uphold with uphold transaction id:
                     self._consume_bisq_trade(row, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
-                        f'During BlockFi CSV import found action with unknown '
+                        f'During Bisq CSV import found action with unknown '
                         f'asset {e.asset_name}. Ignoring entry',
                     )
                     continue
                 except DeserializationError as e:
                     self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during BlockFi CSV import. '
+                        f'Deserialization error during Bisq CSV import. '
                         f'{str(e)}. Ignoring entry',
                     )
                     continue

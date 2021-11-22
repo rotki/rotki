@@ -11,6 +11,6 @@ def test_market_request():
     """Test that we can query bisq for market prices"""
     price = get_bisq_market_price(A_BSQ)
     assert price != Price(ZERO)
-    # Test that error is correctly rised when there is no market
+    # Test that error is correctly raised when there is no market
     with pytest.raises(RemoteError):
         get_bisq_market_price(A_3CRV)

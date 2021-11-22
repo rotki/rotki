@@ -95,6 +95,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 CURRENT_PRICE_CACHE_SECS = 300  # 5 mins
+SATOSHI_PER_BSQ = FVal('0.00000100')
 
 ASSETS_UNDERLYING_BTC = (
     A_YV1_RENWSBTC,
@@ -460,10 +461,10 @@ class Inquirer():
                 )
                 return usd_price
             except (RemoteError, DeserializationError) as e:
-                msg = f'Could not find price for {asset}. {str(e)}'
+                msg = f'Could not find price for BSQ. {str(e)}'
                 if instance._ethereum is not None:
                     instance._ethereum.msg_aggregator.add_warning(msg)
-                return Price(ZERO)
+                return Price(SATOSHI_PER_BSQ * price_in_btc)
         return instance._query_oracle_instances(from_asset=asset, to_asset=A_USD)
 
     def find_uniswap_v2_lp_price(
