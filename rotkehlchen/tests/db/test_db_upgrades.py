@@ -2338,6 +2338,54 @@ def test_upgrade_db_29_to_30(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.fetchone() == ('A',)
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('db_with_set_version', [True, False])
+def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: disable=unused-argument  # noqa: E501
+    """Test upgrading the DB from version 30 to version 31.
+
+    Also checks that this code upgrade works even if the DB is affected by
+    https://github.com/rotki/rotki/issues/3744 and does not have a version
+    setting set. Checks that the version is detected as at least v30 by missing
+    the eth2_validators table.
+
+    - Upgrades the ETH2 tables
+    """
+    msg_aggregator = MessagesAggregator()
+    # Check we have data in the eth2 tables before the DB upgrade
+    _use_prepared_db(user_data_dir, 'v30_rotkehlchen.db')
+    db_v30 = _init_db_with_target_version(
+        target_version=30,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db_v30.conn.cursor()
+    result = cursor.execute('SELECT COUNT(*) FROM eth2_deposits;')
+    assert result.fetchone()[0] == 1
+    result = cursor.execute('SELECT COUNT(*) FROM eth2_daily_staking_details;')
+    assert result.fetchone()[0] == 356
+
+    if db_with_set_version:
+        db_name = 'v30_rotkehlchen.db'
+    else:
+        db_name = 'v30_rotkehlchen_without_setversion.db'
+    _use_prepared_db(user_data_dir, db_name)
+    db = _init_db_with_target_version(
+        target_version=31,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 31
+    cursor = db.conn.cursor()
+    # Check that the new table is created
+    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="eth2_validators"')  # noqa: E501
+    assert result.fetchone()[0] == 1
+    result = cursor.execute('SELECT COUNT(*) FROM eth2_deposits;')
+    assert result.fetchone()[0] == 0
+    result = cursor.execute('SELECT COUNT(*) FROM eth2_daily_staking_details;')
+    assert result.fetchone()[0] == 0
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the
