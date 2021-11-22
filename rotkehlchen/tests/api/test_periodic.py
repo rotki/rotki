@@ -28,11 +28,9 @@ def test_query_periodic(rotkehlchen_api_server_with_exchanges):
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, "periodicdataresource"),
     )
-    assert_proper_response_with_result(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert len(data['result']) == 3
-    assert data['result']['last_balance_save'] >= start_ts
-    assert data['result']['eth_node_connection'] is False
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 3
+    assert result['last_balance_save'] >= start_ts
+    assert result['eth_node_connection'] is False
     # Non -1 value tests for these exist in test_history.py::test_query_history_timerange
-    assert data['result']['last_data_upload_ts'] == 0
+    assert result['last_data_upload_ts'] == 0

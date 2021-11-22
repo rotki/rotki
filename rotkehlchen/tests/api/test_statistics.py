@@ -57,12 +57,10 @@ def test_query_statistics_netvalue(
         ),
     )
 
-    assert_proper_response_with_result(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert len(data['result']) == 2
-    assert len(data['result']['times']) == 1
-    assert len(data['result']['data']) == 1
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 2
+    assert len(result['times']) == 1
+    assert len(result['data']) == 1
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -102,11 +100,9 @@ def test_query_statistics_asset_balance(
         ),
     )
     if start_with_valid_premium:
-        assert_proper_response_with_result(response)
-        data = response.json()
-        assert data['message'] == ''
-        assert len(data['result']) == 1
-        entry = data['result'][0]
+        result = assert_proper_response_with_result(response)
+        assert len(result) == 1
+        entry = result[0]
         assert len(entry) == 4
         assert FVal(entry['amount']) == get_asset_balance_total(A_ETH, setup)
         assert entry['category'] == 'asset'
@@ -128,11 +124,9 @@ def test_query_statistics_asset_balance(
         ), json={'from_timestamp': 0, 'to_timestamp': start_time + 60000},
     )
     if start_with_valid_premium:
-        assert_proper_response_with_result(response)
-        data = response.json()
-        assert data['message'] == ''
-        assert len(data['result']) == 1
-        entry = data['result'][0]
+        result = assert_proper_response_with_result(response)
+        assert len(result) == 1
+        entry = result[0]
         assert len(entry) == 4
         assert FVal(entry['amount']) == get_asset_balance_total(A_BTC, setup)
         assert entry['time'] >= start_time
@@ -154,10 +148,8 @@ def test_query_statistics_asset_balance(
         ), json={'from_timestamp': 0, 'to_timestamp': start_time - 1},
     )
     if start_with_valid_premium:
-        assert_proper_response_with_result(response)
-        data = response.json()
-        assert data['message'] == ''
-        assert len(data['result']) == 0
+        result = assert_proper_response_with_result(response)
+        assert len(result) == 0
     else:
         assert_error_response(
             response=response,
@@ -266,12 +258,10 @@ def test_query_statistics_value_distribution(
     def assert_okay_by_location(response):
         """Helper function to run next query and its assertion twice"""
         if start_with_valid_premium:
-            assert_proper_response_with_result(response)
-            data = response.json()
-            assert data['message'] == ''
-            assert len(data['result']) == 5
+            result = assert_proper_response_with_result(response)
+            assert len(result) == 5
             locations = {'poloniex', 'binance', 'banks', 'blockchain', 'total'}
-            for entry in data['result']:
+            for entry in result:
                 assert len(entry) == 3
                 assert entry['time'] >= start_time
                 assert entry['usd_value'] is not None
@@ -310,17 +300,15 @@ def test_query_statistics_value_distribution(
         ), json={'distribution_by': 'asset'},
     )
     if start_with_valid_premium:
-        assert_proper_response_with_result(response)
-        data = response.json()
-        assert data['message'] == ''
-        assert len(data['result']) == 4
+        result = assert_proper_response_with_result(response)
+        assert len(result) == 4
         totals = {
             'ETH': get_asset_balance_total(A_ETH, setup),
             'BTC': get_asset_balance_total(A_BTC, setup),
             'EUR': get_asset_balance_total(A_EUR, setup),
             A_RDN.identifier: get_asset_balance_total(A_RDN, setup),
         }
-        for entry in data['result']:
+        for entry in result:
             assert len(entry) == 5
             assert entry['time'] >= start_time
             assert entry['category'] == 'asset'
@@ -390,10 +378,8 @@ def test_query_statistics_renderer(rotkehlchen_api_server, start_with_valid_prem
             ),
         )
     if start_with_valid_premium:
-        assert_proper_response_with_result(response)
-        data = response.json()
-        assert data['message'] == ''
-        assert data['result'] == 'codegoeshere'
+        result = assert_proper_response_with_result(response)
+        assert result == 'codegoeshere'
     else:
         assert_error_response(
             response=response,

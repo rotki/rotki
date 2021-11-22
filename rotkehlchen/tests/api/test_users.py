@@ -11,7 +11,7 @@ from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_proper_response_with_result,
+    assert_proper_response,
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.premium import (
@@ -44,7 +44,7 @@ def check_user_status(api_server) -> Dict[str, str]:
     response = requests.get(
         api_url_for(api_server, "usersresource"),
     )
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     data = response.json()
     assert data['message'] == ''
     return response.json()['result']
@@ -55,7 +55,7 @@ def test_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
     Path(data_dir / 'another_user').mkdir()
     Path(data_dir / 'another_user' / 'rotkehlchen.db').touch()
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     json = response.json()
     assert json['result'][username] == 'loggedin'
     assert json['result']['another_user'] == 'loggedout'
@@ -71,7 +71,7 @@ def test_not_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
     Path(data_dir / username / 'rotkehlchen.db').touch()
 
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     json = response.json()
     assert json['result'][username] == 'loggedout'
     assert json['result']['another_user'] == 'loggedout'
@@ -88,12 +88,12 @@ def test_user_creation(rotkehlchen_api_server, data_dir):
         'password': '1234',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     check_proper_unlock_result(response.json(), {'submit_usage_analytics': True})
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     json = response.json()
     assert json['result'][username] == 'loggedin'
     assert len(json['result']) == 1
@@ -113,12 +113,12 @@ def test_user_creation_with_no_analytics(rotkehlchen_api_server, data_dir):
         'initial_settings': {'submit_usage_analytics': False},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     check_proper_unlock_result(response.json(), {'submit_usage_analytics': False})
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     json = response.json()
     assert json['result'][username] == 'loggedin'
     assert len(json['result']) == 1
@@ -168,12 +168,12 @@ def test_user_creation_with_premium_credentials(rotkehlchen_api_server, data_dir
 
     with patched_premium_at_start:
         response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     check_proper_unlock_result(response.json())
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     json = response.json()
     assert json['result'][username] == 'loggedin'
     assert len(json['result']) == 1
@@ -244,12 +244,12 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
         'password': '1234',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     check_proper_unlock_result(response.json())
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     json = response.json()
     assert json['result'][username] == 'loggedin'
     assert len(json['result']) == 2
@@ -518,7 +518,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
         json=data,
     )
     # And make sure it works
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     check_proper_unlock_result(response.json())
     assert rotki.user_is_logged_in is True
     users_data = check_user_status(rotkehlchen_api_server)  # type: ignore
@@ -578,7 +578,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
         json=data,
     )
     # And make sure it works despite having unauthenticable premium credentials in the DB
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
     check_proper_unlock_result(response.json())
     assert rotki.user_is_logged_in is True
     users_data = check_user_status(rotkehlchen_api_server)
