@@ -64,8 +64,9 @@ function getBackendArguments(options: Partial<BackendOptions>): string[] {
   return args;
 }
 
+const PY_DIST_FOLDER = 'rotkehlchen_py_dist';
+
 export default class PyHandler {
-  private static PY_DIST_FOLDER = 'rotkehlchen_py_dist';
   private rpcFailureNotifier?: any;
   private childProcess?: ChildProcess;
   private _port?: number;
@@ -307,9 +308,9 @@ export default class PyHandler {
   private static packagedBackendPath() {
     const resources = process.resourcesPath ? process.resourcesPath : __dirname;
     if (os.platform() === 'darwin') {
-      return path.join(resources, PyHandler.PY_DIST_FOLDER, 'rotkehlchen');
+      return path.join(resources, PY_DIST_FOLDER, 'rotkehlchen');
     }
-    return path.join(resources, PyHandler.PY_DIST_FOLDER);
+    return path.join(resources, PY_DIST_FOLDER);
   }
 
   private setFailureNotification(
