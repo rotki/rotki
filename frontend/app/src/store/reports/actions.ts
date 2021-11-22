@@ -166,7 +166,6 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
             type: x.eventType
           }
       );
-      console.log(allEvents);
       const eventsLimit = events_result.entriesLimit;
       const eventsProcessed = events_result.entriesFound;
       const firstProcessedTimestamp = events_result.entries[0].time;

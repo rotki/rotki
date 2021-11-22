@@ -48,6 +48,7 @@ export const ProfitLossEvent = z.object({
   type: z.string(),
   paidInProfitCurrency: NumericString,
   paidAsset: z.string(),
+  paidInAsset: NumericString,
   taxableAmount: NumericString,
   taxableBoughtCostInProfitCurrency: NumericString,
   receivedAsset: z.string(),
@@ -66,6 +67,7 @@ export const ProfitLossEventCacheEntry = z.object({
   eventType: z.string(),
   paidInProfitCurrency: NumericString,
   paidAsset: z.string(),
+  paidInAsset: NumericString,
   taxableAmount: NumericString,
   taxableBoughtCostInProfitCurrency: NumericString,
   receivedAsset: z.string(),
@@ -105,36 +107,7 @@ export const TradeHistoryReport = TradeHistory.extend(Report.shape)
 
 export type TradeHistoryReport = z.infer<typeof TradeHistoryReport>
 
-export const PagedReport = PagedResourceParameters.extend(TradeHistoryReport.shape).transform(arg => {
-  const pagedReport: {
-    identifier?: number,
-    name?: string,
-    timestamp?: number | null,
-    startTs?: number,
-    endTs?: number,
-    sizeOnDisk?: typeof NumericString | null,
-    eventsProcessed?: number,
-    eventsLimit?: number,
-    firstProcessedTimestamp?: number,
-    overview: ProfitLossOverviewData,
-    allEvents: ProfitLossEventCacheEntry[],
-    loaded?: boolean
-  } = {
-    identifier: arg.identifier,
-    name: arg.name,
-    timestamp: arg.timestamp,
-    startTs: arg.start_ts,
-    endTs: arg.end_ts,
-    sizeOnDisk: arg.size_on_disk,
-    eventsProcessed: arg.events_processed,
-    eventsLimit: arg.events_limit,
-    firstProcessedTimestamp: arg.first_processed_timestamp,
-    overview: arg.overview,
-    allEvents: arg.all_events,
-    loaded: arg.loaded
-  }
-  return pagedReport
-})
+export const PagedReport = PagedResourceParameters.extend(TradeHistoryReport.shape)
 
 export type PagedReport = z.infer<typeof PagedReport>
 
@@ -180,47 +153,14 @@ export const ReportEventsPayload = ReportsPayload.extend({entries: z.array(Profi
 
 export type ReportEventsPayload = z.infer<typeof ReportEventsPayload>
 
-export const ReportsPayloadData = PagedResourceParameters.extend(ReportsPayload.shape).transform(arg => {
-  const reports: {
-    entries: Report[],
-    entriesFound: number,
-    entriesLimit: number
-  } = {
-    entries: arg.entries,
-    entriesFound: arg.entries_found,
-    entriesLimit: arg.entries_limit,
-  };
-  return reports;
-});
+export const ReportsPayloadData = PagedResourceParameters.extend(ReportsPayload.shape)
 
 export type ReportsPayloadData = z.infer<typeof ReportsPayloadData>
 
-export const ReportOverviewPayloadData = PagedResourceParameters.extend(ReportOverviewPayload.shape).transform(arg => {
-  const reports: {
-    entries: ProfitLossOverviewData[],
-    entriesFound: number,
-    entriesLimit: number
-  } = {
-    entries: arg.entries,
-    entriesFound: arg.entries_found,
-    entriesLimit: arg.entries_limit,
-  };
-  return reports;
-});
+export const ReportOverviewPayloadData = PagedResourceParameters.extend(ReportOverviewPayload.shape)
 
 export type ReportOverviewPayloadData = z.infer<typeof ReportOverviewPayloadData>
 
-export const ReportEventsPayloadData = PagedResourceParameters.extend(ReportEventsPayload.shape).transform(arg => {
-  const reports: {
-    entries: ProfitLossEventCacheEntry[],
-    entriesFound: number,
-    entriesLimit: number
-  } = {
-    entries: arg.entries,
-    entriesFound: arg.entries_found,
-    entriesLimit: arg.entries_limit,
-  };
-  return reports;
-});
+export const ReportEventsPayloadData = PagedResourceParameters.extend(ReportEventsPayload.shape)
 
 export type ReportEventsPayloadData = z.infer<typeof ReportEventsPayloadData>
