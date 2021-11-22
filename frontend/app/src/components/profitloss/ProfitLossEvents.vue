@@ -128,6 +128,7 @@
 </template>
 
 <script lang="ts">
+import { ProfitLossEvent } from '@rotki/common/lib/reports';
 import { Component, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
@@ -140,7 +141,6 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import { ExchangeRateGetter } from '@/store/balances/types';
-import { ProfitLossEvent } from '@/store/reports/types';
 
 type IndexedProfitLossEvent = ProfitLossEvent & { index: number };
 

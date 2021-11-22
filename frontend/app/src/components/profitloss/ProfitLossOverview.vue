@@ -117,11 +117,11 @@
 </template>
 
 <script lang="ts">
+import { ProfitLossOverviewData } from '@rotki/common/lib/reports';
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { ExchangeRateGetter } from '@/store/balances/types';
-import { ProfitLossOverviewData } from '@/store/reports/types';
 import { Currency } from '@/types/currency';
 
 @Component({

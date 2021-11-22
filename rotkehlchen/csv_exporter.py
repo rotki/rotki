@@ -416,7 +416,7 @@ class CSVExporter():
         }
         log.debug('csv event', **entry)
         self.all_events.append(entry)
-        if self.cached != True:
+        if self.cached is not True:
             cache_entry = AccountingEventCacheEntry(**entry)
             schema_event_type: SchemaEventType = SchemaEventType.ACCOUNTING_EVENT
             event: NamedJson = NamedJson(event_type=schema_event_type, data=cache_entry.serialize())  # noqa E501

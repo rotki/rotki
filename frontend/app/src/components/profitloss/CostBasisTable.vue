@@ -40,11 +40,11 @@
 </template>
 
 <script lang="ts">
+import { CostBasis } from '@rotki/common/lib/reports';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
-import { CostBasis } from '@/store/reports/types';
 
 @Component({
   components: { DataTable, Fragment }

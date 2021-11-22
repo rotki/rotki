@@ -57,7 +57,8 @@ export enum Section {
   DEFI_LIQUITY_EVENTS,
   NON_FUNGIBLE_BALANCES,
   DEFI_LIQUITY_STAKING,
-  DEFI_LIQUITY_STAKING_EVENTS
+  DEFI_LIQUITY_STAKING_EVENTS,
+  REPORTS
 }
 
 export const defiSections: Section[] = [

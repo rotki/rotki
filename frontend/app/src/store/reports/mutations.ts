@@ -1,15 +1,13 @@
-import { MutationTree } from 'vuex';
 import {
-  MUTATION_PROGRESS,
-  MUTATION_REPORT_ERROR
-} from '@/store/reports/const';
-import { defaultState, ReportState } from '@/store/reports/state';
-import {
-  ReportData,
   ReportError,
   ReportPeriod,
-  ReportProgress
-} from '@/store/reports/types';
+  ReportProgress,
+  ReportsPayloadData
+} from '@rotki/common/lib/reports';
+import { MutationTree } from 'vuex';
+import { ReportMutations } from '@/store/reports/const';
+import { defaultState, ReportState } from '@/store/reports/state';
+import { ReportData } from '@/store/reports/types';
 
 import { AccountingSettings } from '@/types/user';
 
@@ -25,6 +23,20 @@ export const mutations: MutationTree<ReportState> = {
     state.firstProcessedTimestamp = firstProcessedTimestamp;
   },
 
+  [ReportMutations.SET_REPORTS](
+    state: ReportState,
+    payload: ReportsPayloadData
+  ) {
+    const { entries, entriesFound, entriesLimit } = payload;
+    state.reports = [...entries];
+    state.reportsFound = entriesFound;
+    state.reportsLimit = entriesLimit;
+  },
+
+  [ReportMutations.SET_REPORT_ID](state: ReportState, reportId: number) {
+    state.reportId = reportId;
+  },
+
   currency(state: ReportState, currency: string) {
     state.currency = currency;
   },
@@ -37,11 +49,11 @@ export const mutations: MutationTree<ReportState> = {
     state.accountingSettings = payload;
   },
 
-  [MUTATION_PROGRESS](state: ReportState, payload: ReportProgress) {
+  [ReportMutations.PROGRESS](state: ReportState, payload: ReportProgress) {
     state.progress = payload;
   },
 
-  [MUTATION_REPORT_ERROR](state: ReportState, payload: ReportError) {
+  [ReportMutations.REPORT_ERROR](state: ReportState, payload: ReportError) {
     state.reportError = payload;
   },
   reset(state: ReportState) {

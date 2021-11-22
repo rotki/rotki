@@ -446,20 +446,20 @@ class Accountant():
             total_taxable_profit_loss=total_taxable_pl,
         )
         profit_loss_overview = {
-           'ledger_actions_profit_loss': str(self.events.ledger_actions_profit_loss),
-           'defi_profit_loss': str(self.events.defi_profit_loss),
-           'loan_profit': str(self.events.loan_profit),
-           'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
-           'settlement_losses': str(self.events.settlement_losses),
-           'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
-           'asset_movement_fees': str(self.asset_movement_fees),
-           'general_trade_profit_loss': str(self.events.general_trade_profit_loss),
-           'taxable_trade_profit_loss': str(self.events.taxable_trade_profit_loss),
-           'total_taxable_profit_loss': str(total_taxable_pl),
-           'total_profit_loss': str(
-               self.events.general_trade_profit_loss +
-               sum_other_actions,
-               ),
+            'ledger_actions_profit_loss': str(self.events.ledger_actions_profit_loss),
+            'defi_profit_loss': str(self.events.defi_profit_loss),
+            'loan_profit': str(self.events.loan_profit),
+            'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
+            'settlement_losses': str(self.events.settlement_losses),
+            'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
+            'asset_movement_fees': str(self.asset_movement_fees),
+            'general_trade_profit_loss': str(self.events.general_trade_profit_loss),
+            'taxable_trade_profit_loss': str(self.events.taxable_trade_profit_loss),
+            'total_taxable_profit_loss': str(total_taxable_pl),
+            'total_profit_loss': str(
+                self.events.general_trade_profit_loss +
+                sum_other_actions,
+            ),
         }
         if self.csvexporter.report_id is not None:
             schema_event_type: SchemaEventType = SchemaEventType.ACCOUNTING_OVERVIEW

@@ -1315,6 +1315,21 @@
     },
     "title": "Overview"
   },
+  "profit_loss_reports": {
+    "columns": {
+      "name": "Name",
+      "created": "Creation Date",
+      "start": "Period Start",
+      "end": "Period End",
+      "size": "Size on Disk",
+      "actions": "Actions"
+    },
+    "actions": {
+      "load_report": "Load",
+      "delete_report": "Delete"
+    },
+    "title": "Saved Historical Reports"
+  },
   "timeframe_settings": {
     "default_timeframe": "Dashboard graph default timeframe",
     "default_timeframe_description": "Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection.",
@@ -1885,6 +1900,16 @@
         },
         "task": {
           "title": "Create tax report"
+        }
+      },
+      "fetch": {
+        "error": {
+          "title": "An error has occurred retrieving the processed report(s).",
+          "description": "An unexpected response was received while fetching report history. This might indicate an issue with the reporting mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue."
+        },
+        "task": {
+          "title": "Retrieving saved historical report data",
+          "description": "Locally cached reports are being loaded."
         }
       }
     },
