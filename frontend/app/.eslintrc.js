@@ -199,5 +199,6 @@ module.exports = {
         path.resolve(__dirname, 'src', 'locales') + '/*.{json,json5,yaml,yml}',
       messageSyntaxVersion: '^9.0.0'
     }
-  }
+  },
+  ignorePatterns: ['**/common/lib/**/*.js']
 };
