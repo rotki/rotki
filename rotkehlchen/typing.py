@@ -513,7 +513,9 @@ class SchemaEventType(Enum):
             return schema
 
         except jsonschema.exceptions.SchemaError as e:
-            raise EncodingError(f'Could not serialize the SchemaEventType. Invalid schema: {e}')  # noqa E501
+            raise EncodingError(
+                f'Could not serialize the SchemaEventType. Invalid schema: {e}',
+            ) from BaseException
 
 
 NamedJsonDBTuple = (
@@ -552,11 +554,13 @@ class NamedJson(NamedTuple):
 
         except jsonschema.exceptions.ValidationError as e:
             raise DeserializationError(
-                f'Failed jsonschema validation of NamedJson: {json_tuple[0]} data {json_tuple[1]}:'
-                f'Error was {str(e)}')
+                f'Failed jsonschema validation of NamedJson: {json_tuple[0]} data {json_tuple[1]}:',  # noqa E501
+                f'Error was {str(e)}',
+            ) from BaseException
         except json.decoder.JSONDecodeError as e:
             raise DeserializationError(
-                f'Could not decode json for {json_tuple} at NamedJson deserialization: {str(e)}')
+                f'Could not decode json for {json_tuple} at NamedJson deserialization: {str(e)}',
+            ) from BaseException
 
     def to_db_tuple(self) -> NamedJsonDBTuple:
         """May raise:
@@ -571,10 +575,12 @@ class NamedJson(NamedTuple):
             )
         except jsonschema.exceptions.ValidationError as e:
             raise ValueError(
-                f'Failed jsonschema validation of NamedJson: {str(e)}')
+                f'Failed jsonschema validation of NamedJson: {str(e)}',
+            ) from BaseException
         except TypeError as e:
             raise EncodingError(
-                f'Could not encode json for NamedJson: {str(e)}')
+                f'Could not encode json for NamedJson: {str(e)}',
+            ) from BaseException
 
     def serialize(self) -> Dict[str, Any]:
         """May raise:
@@ -589,10 +595,12 @@ class NamedJson(NamedTuple):
             }
         except jsonschema.exceptions.ValidationError as e:
             raise ValueError(
-                f'Failed jsonschema validation of NamedJson: {str(e)}')
+                f'Failed jsonschema validation of NamedJson: {str(e)}',
+            ) from BaseException
         except TypeError as e:
             raise EncodingError(
-                f'Could not encode json for NamedJson: {str(e)}')
+                f'Could not encode json for NamedJson: {str(e)}',
+            ) from BaseException
 
 
 EXTERNAL_EXCHANGES: List = [
