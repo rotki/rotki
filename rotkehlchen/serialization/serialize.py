@@ -117,6 +117,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             DefiProtocol,
             MakerdaoVault,
             XpubData,
+            Eth2Deposit,
     )):
         return entry.serialize()
     if isinstance(entry, (
@@ -164,7 +165,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             DefiProtocolBalances,
             YearnVaultHistory,
             BlockchainAccountData,
-            Eth2Deposit,
     )):
         return process_result(entry._asdict())
     if isinstance(entry, tuple):

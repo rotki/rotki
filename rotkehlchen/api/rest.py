@@ -101,6 +101,7 @@ from rotkehlchen.typing import (
     AssetAmount,
     BlockchainAccountData,
     ChecksumEthAddress,
+    Eth2PubKey,
     EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -2172,7 +2173,7 @@ class RestAPI():
         except ModuleInactive as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
-        return {'result': process_result_list([x._asdict() for x in result]), 'message': ''}
+        return {'result': process_result_list([x.serialize() for x in result]), 'message': ''}
 
     @require_premium_user(active_check=False)
     def get_eth2_stake_deposits(self, async_query: bool) -> Response:
@@ -2219,6 +2220,78 @@ class RestAPI():
         # success
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
+
+    @require_premium_user(active_check=False)
+    def get_eth2_validators(self) -> Response:
+        try:
+            validators = self.rotkehlchen.chain_manager.get_eth2_validators()
+        except ModuleInactive as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        return api_response(
+            _wrap_in_ok_result([x.serialize() for x in validators]),
+            status_code=HTTPStatus.OK,
+        )
+
+    def _add_eth2_validator(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[Eth2PubKey],
+    ) -> Dict[str, Any]:
+        try:
+            self.rotkehlchen.chain_manager.add_eth2_validator(
+                validator_index=validator_index,
+                public_key=public_key,
+            )
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        except (InputError, ModuleInactive) as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+
+        return {'result': True, 'message': ''}
+
+    @require_premium_user(active_check=False)
+    def add_eth2_validator(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[Eth2PubKey],
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_add_eth2_validator',
+                validator_index=validator_index,
+                public_key=public_key,
+            )
+
+        response = self._add_eth2_validator(validator_index=validator_index, public_key=public_key)
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_premium_user(active_check=False)
+    def delete_eth2_validator(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[str],
+    ) -> Response:
+        try:
+            self.rotkehlchen.chain_manager.delete_eth2_validator(
+                validator_index=validator_index,
+                public_key=public_key,
+            )
+            result = OK_RESULT
+            status_code = HTTPStatus.OK
+        except InputError as e:
+            result = {'result': None, 'message': str(e)}
+            status_code = HTTPStatus.CONFLICT
+        except ModuleInactive as e:
+            result = {'result': None, 'message': str(e)}
+            status_code = HTTPStatus.CONFLICT
+
+        return api_response(result, status_code=status_code)
 
     def _get_defi_balances(self) -> Dict[str, Any]:
         """
