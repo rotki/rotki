@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`3744` Freshly created users who don't open the app again before an upgrade will now be able to update to new DB versions again.
+
 * :release:`1.22.1 <2021-11-19>`
 * :bug:`3726` Manual liabilities should not count as assets and should be deducted from total net value when taking a snapshot. Also multiple liabilities of same asset should now be properly summed.
 * :bug:`3722` Trades details will now properly expand one at a time.
