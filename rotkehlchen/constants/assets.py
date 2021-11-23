@@ -1,13 +1,13 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 10/11/2021 11:07:26.
+# tools/scripts/generate_constant_assets.py at 23/11/2021 09:31:11.
 # Do not edit manually!
 
 from typing import List
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.typing import Timestamp
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 
 CONSTANT_ASSETS: List[Asset] = []
 
@@ -143,6 +143,18 @@ A_DOGE = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_DOGE)
+A_BSQ = Asset.initialize(
+    identifier='BSQ',
+    asset_type=AssetType.OTHER,
+    name="Bisq DAO Token",
+    symbol='BSQ',
+    started=Timestamp(1555286400),
+    forked=None,
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+)
+CONSTANT_ASSETS.append(A_BSQ)
 
 
 A_BAL = EthereumToken.initialize(
@@ -2212,7 +2224,7 @@ CONSTANT_ASSETS.append(A_ENS)
 A_PSP = EthereumToken.initialize(
     address=string_to_ethereum_address('0xcAfE001067cDEF266AfB7Eb5A286dCFD277f3dE5'),
     decimals=18,
-    name='ParaSwap',
+    name="ParaSwap",
     symbol='PSP',
     started=Timestamp(1636966698),
     swapped_for=None,

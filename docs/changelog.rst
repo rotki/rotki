@@ -3,6 +3,8 @@ Changelog
 =========
 
 * :feature:`3716` Users can now see if any of their addresses have PSP available to claim from the PSP airdrop.
+* :feature:`824` Users will now be able to import their trade history from bisq.
+* :feature:`3685` Users will now be able to correctly read more transaction types in CSV files imported from crypto.com.
 
 * :release:`1.22.1 <2021-11-19>`
 * :bug:`3726` Manual liabilities should not count as assets and should be deducted from total net value when taking a snapshot. Also multiple liabilities of same asset should now be properly summed.

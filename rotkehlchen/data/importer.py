@@ -11,7 +11,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.converters import asset_from_nexo, asset_from_uphold
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.constants.assets import A_DAI, A_SAI, A_USD
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_SAI, A_USD, A_BSQ
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -250,6 +250,7 @@ class DataImporter():
             'card_cashback_reverted',
             'reimbursement',
             'viban_purchase',
+            'crypto_viban_exchange',
         ):
             # variable mapping to raw data
             currency = csv_row['Currency']
@@ -261,7 +262,7 @@ class DataImporter():
 
             trade_type = TradeType.BUY if to_currency != native_currency else TradeType.SELL
 
-            if row_type == 'crypto_exchange':
+            if row_type in ('crypto_exchange', 'crypto_viban_exchange'):
                 # trades crypto to crypto
                 base_asset = symbol_to_asset_or_token(to_currency)
                 quote_asset = symbol_to_asset_or_token(currency)
@@ -318,7 +319,17 @@ class DataImporter():
                 link='',
             )
             self.db.add_asset_movements([asset_movement])
-        elif row_type in ('airdrop_to_exchange_transfer', 'mco_stake_reward'):
+        elif row_type in (
+            'airdrop_to_exchange_transfer',
+            'mco_stake_reward',
+            'crypto_payment_refund',
+            'pay_checkout_reward'
+            'transfer_cashback',
+            'rewards_platform_deposit_credited',
+            'reinbursment',
+            'pay_checkout_reward',
+            'transfer_cashback',
+        ):
             asset = symbol_to_asset_or_token(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
             action = LedgerAction(
@@ -331,7 +342,23 @@ class DataImporter():
                 rate=None,
                 rate_asset=None,
                 link=None,
-                notes=None,
+                notes=notes,
+            )
+            self.db_ledger.add_ledger_action(action)
+        elif row_type in ('crypto_payment', 'reimbursement_reverted'):
+            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            amount = abs(deserialize_asset_amount(csv_row['Amount']))
+            action = LedgerAction(
+                identifier=0,  # whatever is not used at insertion
+                timestamp=timestamp,
+                action_type=LedgerActionType.EXPENSE,
+                location=Location.CRYPTOCOM,
+                amount=amount,
+                asset=asset,
+                rate=None,
+                rate_asset=None,
+                link=None,
+                notes=notes,
             )
             self.db_ledger.add_ledger_action(action)
         elif row_type == 'invest_deposit':
@@ -366,6 +393,27 @@ class DataImporter():
                 link='',
             )
             self.db.add_asset_movements([asset_movement])
+        elif row_type == 'crypto_transfer':
+            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            amount = deserialize_asset_amount(csv_row['Amount'])
+            if amount < 0:
+                action_type = LedgerActionType.EXPENSE
+                amount = abs(amount)
+            else:
+                action_type = LedgerActionType.INCOME
+            action = LedgerAction(
+                identifier=0,  # whatever is not used at insertion
+                timestamp=timestamp,
+                action_type=action_type,
+                location=Location.CRYPTOCOM,
+                amount=amount,
+                asset=asset,
+                rate=None,
+                rate_asset=None,
+                link=None,
+                notes=notes,
+            )
+            self.db_ledger.add_ledger_action(action)
         elif row_type in (
             'crypto_earn_program_created',
             'crypto_earn_program_withdrawn',
@@ -1269,6 +1317,100 @@ Activity from uphold with uphold transaction id:
                 except DeserializationError as e:
                     self.db.msg_aggregator.add_warning(
                         f'Deserialization error during uphold CSV import. '
+                        f'{str(e)}. Ignoring entry',
+                    )
+                    continue
+                except KeyError as e:
+                    return False, str(e)
+        return True, ''
+
+    def _consume_bisq_trade(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:
+        """
+        Consume the file containing only trades from Bisq.
+        - UnknownAsset
+        - DeserializationError
+        """
+        if csv_row['Status'] == 'Canceled':
+            return
+        formatstr = kwargs.get('timestamp_format')
+        timestamp = deserialize_timestamp_from_date(
+            date=csv_row['Date/Time'],
+            formatstr=formatstr if formatstr is not None else '%d %b %Y %H:%M:%S',
+            location='Bisq',
+        )
+        # Get assets and amounts sold
+        offer = csv_row['Offer type'].split()
+        assets1_symbol, assets2_symbol = csv_row['Market'].split('/')
+        if offer[0] == 'Sell':
+            trade_type = TradeType.SELL
+            if offer[1] == assets1_symbol:
+                base_asset = symbol_to_asset_or_token(assets1_symbol)
+                quote_asset = symbol_to_asset_or_token(assets2_symbol)
+            else:
+                base_asset = symbol_to_asset_or_token(assets2_symbol)
+                quote_asset = symbol_to_asset_or_token(assets1_symbol)
+
+            if base_asset == A_BTC:
+                buy_amount = deserialize_asset_amount(csv_row['Amount'])
+            else:
+                buy_amount = deserialize_asset_amount(csv_row['Amount in BTC'])
+        else:
+            trade_type = TradeType.BUY
+            if offer[1] == assets1_symbol:
+                base_asset = symbol_to_asset_or_token(assets1_symbol)
+                quote_asset = symbol_to_asset_or_token(assets2_symbol)
+            else:
+                base_asset = symbol_to_asset_or_token(assets2_symbol)
+                quote_asset = symbol_to_asset_or_token(assets1_symbol)
+
+            if base_asset == A_BTC:
+                buy_amount = deserialize_asset_amount(csv_row['Amount in BTC'])
+            else:
+                buy_amount = deserialize_asset_amount(csv_row['Amount'])
+
+        rate = Price(deserialize_asset_amount(csv_row['Price']))
+        # Get trade fee
+        if len(csv_row['Trade Fee BSQ']) != 0:
+            fee_amount = deserialize_fee(csv_row['Trade Fee BSQ'])
+            fee_currency = A_BSQ
+        else:
+            fee_amount = deserialize_fee(csv_row['Trade Fee BTC'])
+            fee_currency = A_BTC
+
+        trade = Trade(
+            timestamp=timestamp,
+            location=Location.BISQ,
+            base_asset=base_asset,
+            quote_asset=quote_asset,
+            trade_type=trade_type,
+            amount=buy_amount,
+            rate=rate,
+            fee=fee_amount,
+            fee_currency=fee_currency,
+            link='',
+            notes=f'ID: {csv_row["Trade ID"]}',
+        )
+        self.db.add_trades([trade])
+
+    def import_bisq_trades_csv(self, filepath: Path, **kwargs: Any) -> Tuple[bool, str]:
+        """
+        Import trades from bisq. The information and comments about this importer were addressed
+        at the issue https://github.com/rotki/rotki/issues/824
+        """
+        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+            data = csv.DictReader(csvfile)
+            for row in data:
+                try:
+                    self._consume_bisq_trade(row, **kwargs)
+                except UnknownAsset as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'During Bisq CSV import found action with unknown '
+                        f'asset {e.asset_name}. Ignoring entry',
+                    )
+                    continue
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_warning(
+                        f'Deserialization error during Bisq CSV import. '
                         f'{str(e)}. Ignoring entry',
                     )
                     continue
