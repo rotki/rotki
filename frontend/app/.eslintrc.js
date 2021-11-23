@@ -1,30 +1,24 @@
 const path = require('path');
 
 module.exports = {
-  root: true,
-
   env: {
     node: true
   },
 
-  plugins: ['vuetify', 'import'],
+  plugins: ['vuetify'],
 
   extends: [
     'plugin:vue/recommended',
     'plugin:vue/essential',
-    'eslint:recommended',
     '@vue/prettier',
     '@vue/prettier/@typescript-eslint',
     '@vue/typescript',
-    'plugin:import/errors',
-    'plugin:import/warnings',
-    'plugin:import/typescript',
     'plugin:@intlify/vue-i18n/recommended'
   ],
 
+  parser: 'vue-eslint-parser',
+
   rules: {
-    'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
     'vuetify/no-deprecated-classes': 'error',
     'vuetify/grid-unknown-attributes': 'error',
     'vuetify/no-legacy-grid': 'error',
@@ -47,41 +41,12 @@ module.exports = {
         named: 'shorthand'
       }
     ],
-    'no-unused-vars': 'off',
-    '@typescript-eslint/no-unused-vars': [
-      'error',
-      {
-        vars: 'all',
-        args: 'after-used',
-        ignoreRestSiblings: true,
-        argsIgnorePattern: '^_'
-      }
-    ],
     'vue/component-name-in-template-casing': [
       'error',
       'kebab-case',
       {
         registeredComponentsOnly: false,
         ignores: []
-      }
-    ],
-    'no-else-return': 'error',
-    eqeqeq: ['error', 'always'],
-    'import/order': [
-      'error',
-      {
-        groups: ['builtin', 'external', 'parent', 'sibling', 'index'],
-        alphabetize: {
-          order: 'asc',
-          caseInsensitive: true
-        },
-        pathGroups: [
-          {
-            pattern: '@/**',
-            group: 'external',
-            position: 'after'
-          }
-        ]
       }
     ],
     'vue/no-static-inline-styles': [
@@ -134,9 +99,18 @@ module.exports = {
   },
 
   parserOptions: {
-    parser: '@typescript-eslint/parser'
+    parser: '@typescript-eslint/parser',
+    project: './tsconfig.eslint.json',
+    sourceType: 'module',
+    extraFileExtensions: ['.vue']
   },
   overrides: [
+    {
+      files: ['*.json'],
+      rules: {
+        '@typescript-eslint/naming-convention': 'off'
+      }
+    },
     {
       files: ['*.json', '*.json5'],
       extends: ['plugin:@intlify/vue-i18n/base']
@@ -148,12 +122,6 @@ module.exports = {
   ],
 
   settings: {
-    'import/resolver': {
-      alias: {
-        map: [['@', path.resolve(__dirname, 'src')]],
-        extensions: ['.vue', '.ts', '.d.ts']
-      }
-    },
     'vue-i18n': {
       localeDir:
         path.resolve(__dirname, 'src', 'locales') + '/*.{json,json5,yaml,yml}',

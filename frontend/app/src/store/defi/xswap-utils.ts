@@ -96,7 +96,7 @@ export function getPoolProfit(
           usdProfitLoss: profit.usdProfitLoss.plus(detail.usdProfitLoss)
         };
       } else {
-        const { events: _, address, ...poolProfit } = detail;
+        const { events, address, ...poolProfit } = detail;
         perPoolProfit[poolAddress] = poolProfit;
       }
     }
