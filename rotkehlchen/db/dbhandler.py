@@ -318,9 +318,15 @@ class DBHandler:
                 ) from e
 
         # Run upgrades if needed
-        DBUpgradeManager(self).run_upgrades()
+        fresh_db = DBUpgradeManager(self).run_upgrades()
         # create tables if needed (first run - or some new tables)
         self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
+        if fresh_db:  # add DB version. https://github.com/rotki/rotki/issues/3744
+            cursor = self.conn.cursor()
+            cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                ('version', str(ROTKEHLCHEN_DB_VERSION)),
+            )
 
     def get_md5hash(self) -> str:
         """Get the md5hash of the DB
