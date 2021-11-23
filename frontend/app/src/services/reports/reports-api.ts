@@ -4,7 +4,11 @@ import {
   ReportOverviewPayloadData,
   ReportsPayloadData
 } from '@rotki/common/lib/reports';
-import { AxiosInstance, AxiosTransformer } from 'axios';
+import {
+  AxiosInstance,
+  AxiosResponseTransformer,
+  AxiosRequestTransformer
+} from 'axios';
 import {
   axiosSnakeCaseTransformer,
   setupTransformer
@@ -14,16 +18,16 @@ import { handleResponse, validStatus } from '@/services/utils';
 
 export class ReportsApi {
   private readonly axios: AxiosInstance;
-  private readonly responseTransformer: AxiosTransformer[] =
+  private readonly responseTransformer: AxiosResponseTransformer[] =
     setupTransformer(reportNumericKeys);
-  private readonly requestTransformer: AxiosTransformer[];
+  private readonly requestTransformer: AxiosRequestTransformer[];
 
   constructor(axios: AxiosInstance) {
     this.axios = axios;
     this.responseTransformer = axios.defaults
-      .transformRequest as AxiosTransformer[];
+      .transformResponse as AxiosResponseTransformer[];
     this.requestTransformer = [axiosSnakeCaseTransformer].concat(
-      axios.defaults.transformRequest as AxiosTransformer[]
+      axios.defaults.transformRequest as AxiosRequestTransformer[]
     );
   }
 
