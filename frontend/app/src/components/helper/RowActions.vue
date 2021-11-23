@@ -7,7 +7,7 @@
           v-bind="attrs"
           icon
           :disabled="disabled"
-          class="mx-1"
+          class="mx-1 account-balances-list__actions__edit"
           data-cy="row-edit"
           v-on="on"
           @click="editClick"
@@ -24,7 +24,7 @@
           v-bind="attrs"
           icon
           :disabled="disabled || deleteDisabled"
-          class="mx-1"
+          class="mx-1 account-balances-list__actions__delete"
           data-cy="row-delete"
           v-on="on"
           @click="deleteClick"

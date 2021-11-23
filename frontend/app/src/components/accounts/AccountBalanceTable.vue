@@ -11,6 +11,7 @@
       :expanded.sync="expanded"
       sort-by="balance.usdValue"
       :custom-group="groupBy"
+      class="account-balances-list"
       :group-by="isBtc ? ['xpub', 'derivationPath'] : undefined"
       v-on="$listeners"
     >
@@ -26,6 +27,7 @@
       <template #item.accountSelection="{ item }">
         <v-simple-checkbox
           :ripple="false"
+          data-cy="account-balances-item-checkbox"
           color="primary"
           :value="selected.includes(item.address)"
           @input="selectionChanged(item.address, $event)"

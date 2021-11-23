@@ -1,10 +1,7 @@
 import { capitalize } from '@/filters';
 import { TradeLocation } from '@/services/history/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
-
-function formatAmount(amount: string) {
-  return bigNumberify(amount).toFormat(2);
-}
+import { AccountBalancesPage } from './index';
 
 export interface FixtureManualBalance {
   readonly asset: string;
@@ -15,27 +12,30 @@ export interface FixtureManualBalance {
   readonly tags: string[];
 }
 
-export class AccountBalancesPage {
+export class ManualBalancesPage extends AccountBalancesPage {
   visit() {
-    cy.get('.v-app-bar__nav-icon').click();
-    cy.get('.navigation__accounts-balances').click();
-    cy.get('[data-cy=accounts-balances]').should('be.visible');
+    cy.get('.accounts-balances__manual-balances')
+      .scrollIntoView()
+      .should('be.visible')
+      .click({
+        force: true
+      });
   }
 
-  addBalance(balances: FixtureManualBalance) {
+  addBalance(balance: FixtureManualBalance) {
     cy.get('.big-dialog').should('be.visible');
     cy.get('.manual-balances-form__asset')
-      .type(balances.keyword)
+      .type(balance.keyword)
       .type('{enter}');
-    cy.get('.manual-balances-form__label').type(balances.label);
-    cy.get('.manual-balances-form__amount').type(balances.amount);
-    for (const tag of balances.tags) {
+    cy.get('.manual-balances-form__label').type(balance.label);
+    cy.get('.manual-balances-form__amount').type(balance.amount);
+    for (const tag of balance.tags) {
       cy.get('.manual-balances-form__tags').type(tag).type('{enter}');
     }
     cy.get('.manual-balances-form__location').click();
     cy.get('.manual-balances-form__location div.v-select__selections input')
       .type(`{selectall}{backspace}`)
-      .type(balances.location)
+      .type(balance.location)
       .type('{enter}');
     cy.get('.big-dialog__buttons__confirm').click();
     cy.get('.big-dialog', { timeout: 45000 }).should('not.be.visible');
@@ -55,7 +55,7 @@ export class AccountBalancesPage {
 
       cy.get('@row')
         .find('.manual-balances-list__amount')
-        .should('contain', formatAmount(balance.amount));
+        .should('contain', this.formatAmount(balance.amount));
 
       i += 1;
     }
@@ -68,7 +68,7 @@ export class AccountBalancesPage {
 
       cy.get('@row')
         .find('.manual-balances-list__amount')
-        .should('not.contain', formatAmount(balance.amount));
+        .should('not.contain', this.formatAmount(balance.amount));
 
       i += 1;
     }
@@ -84,7 +84,7 @@ export class AccountBalancesPage {
 
     cy.get('@row')
       .find('.manual-balances-list__amount')
-      .should('contain', formatAmount(balance.amount));
+      .should('contain', this.formatAmount(balance.amount));
 
     cy.get('[data-cy="manual-balances"] thead').scrollIntoView();
 
@@ -126,12 +126,14 @@ export class AccountBalancesPage {
               .then($amount => {
                 if (balanceLocation.renderedValue === Zero) {
                   balanceLocation.renderedValue = bigNumberify(
-                    $amount.text().replace(',', '')
+                    this.getSanitizedAmountString($amount.text())
                   );
                 } else {
                   balanceLocation.renderedValue =
                     balanceLocation.renderedValue.plus(
-                      bigNumberify($amount.text().replace(',', ''))
+                      bigNumberify(
+                        this.getSanitizedAmountString($amount.text())
+                      )
                     );
                 }
               });
@@ -170,6 +172,8 @@ export class AccountBalancesPage {
       .eq(position)
       .find('.manual-balances-list__actions__delete')
       .click();
+
+    this.confirmDelete();
   }
 
   confirmDelete() {

@@ -25,6 +25,7 @@
             <template #activator="{ on, attrs }">
               <span v-bind="attrs" v-on="on">
                 <v-btn
+                  data-cy="account-balances__delete-button"
                   color="primary"
                   text
                   outlined
@@ -49,6 +50,7 @@
       </v-row>
       <account-balance-table
         ref="balances"
+        data-cy="blockchain-balances"
         :blockchain="blockchain"
         :balances="balances"
         :visible-tags="visibleTags"

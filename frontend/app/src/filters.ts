@@ -51,17 +51,12 @@ export function balanceSum(value: BigNumber[]): BigNumber {
 export function aggregateTotal(
   balances: any[],
   mainCurrency: string,
-  exchangeRate: BigNumber,
-  precision: number
+  exchangeRate: BigNumber
 ): BigNumber {
   return balances.reduce((previousValue, currentValue) => {
     if (currentValue.asset === mainCurrency) {
-      return previousValue
-        .plus(currentValue.amount)
-        .dp(precision, BigNumber.ROUND_DOWN);
+      return previousValue.plus(currentValue.amount);
     }
-    return previousValue
-      .plus(currentValue.usdValue.multipliedBy(exchangeRate))
-      .dp(precision, BigNumber.ROUND_DOWN);
+    return previousValue.plus(currentValue.usdValue.multipliedBy(exchangeRate));
   }, Zero);
 }
