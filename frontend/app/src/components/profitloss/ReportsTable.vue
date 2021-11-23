@@ -22,12 +22,20 @@
           </template>
           <template #item.actions="{ item }">
             <v-btn
-              class="profit_loss_report__load-report"
+              class="profit_loss_report__load-report mr-2"
               depressed
               color="primary"
               @click="loadReport(item.identifier)"
             >
               {{ $t('profit_loss_reports.actions.load_report') }}
+            </v-btn>
+            <v-btn
+              class="profit_loss_report__delete-report"
+              depressed
+              color="primary"
+              @click="deleteReport(item.identifier)"
+            >
+              {{ $t('profit_loss_reports.actions.delete_report') }}
             </v-btn>
           </template>
         </data-table>
@@ -105,6 +113,11 @@ export default defineComponent({
         onlyCache: !refresh
       });
     };
+    const deleteReport = async (reportId: number) => {
+      const state: RotkehlchenState = store.state;
+      state.reports!!.reportId = reportId;
+      await store.dispatch(`reports/${ReportActions.DELETE_REPORT}`, {});
+    };
     const refresh = async () => await fetchReports(true);
     const onPaginationUpdate = ({
       ascending,
@@ -143,6 +156,7 @@ export default defineComponent({
       selected,
       fetchReports,
       loadReport,
+      deleteReport,
       onPaginationUpdate
     };
   },

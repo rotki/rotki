@@ -66,4 +66,13 @@ export class ReportsApi {
       .then(handleResponse)
       .then(result => ReportEventsPayloadData.parse(result));
   }
+
+  deleteReport(reportId: number): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>(`/reports/${reportId}`, {
+        validateStatus: validStatus,
+        transformResponse: setupTransformer(reportNumericKeys)
+      })
+      .then(handleResponse);
+  }
 }

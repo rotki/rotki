@@ -73,6 +73,26 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
         TaskType.TRADE_HISTORY
       );
 
+      if (result) {
+        const notify = async (error?: any) => {
+          logger.error(error);
+          const message = error?.message ?? error ?? '';
+          await userNotify({
+            title: i18n.t('actions.reports.fetch.error.title').toString(),
+            message: i18n
+              .t('actions.reports.fetch.error.description', { message })
+              .toString(),
+            display: true
+          });
+        };
+        try {
+          const result = await api.reports.fetchReports();
+          commit(ReportMutations.SET_REPORTS, result);
+        } catch (e: any) {
+          await notify(e);
+        }
+      }
+
       if (!result || !result.overview || !result.allEvents) {
         commit(ReportMutations.REPORT_ERROR, {
           error: '',
@@ -178,6 +198,29 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
         firstProcessedTimestamp
       };
       commit('set', report);
+    } catch (e: any) {
+      await notify(e);
+    }
+  },
+
+  async [ReportActions.DELETE_REPORT]({ commit, state }) {
+    const notify = async (error?: any) => {
+      logger.error(error);
+      const message = error?.message ?? error ?? '';
+      await userNotify({
+        title: i18n.t('actions.reports.delete.error.title').toString(),
+        message: i18n
+          .t('actions.reports.delete.error.description', { message })
+          .toString(),
+        display: true
+      });
+    };
+    try {
+      await api.reports.deleteReport(state.reportId);
+      const reports = state.reports.filter(
+        x => x.identifier !== state.reportId
+      );
+      commit('setReports', { entries: reports });
     } catch (e: any) {
       await notify(e);
     }

@@ -1317,11 +1317,9 @@
   },
   "profit_loss_reports": {
     "columns": {
-      "name": "Name",
       "created": "Creation Date",
       "start": "Period Start",
       "end": "Period End",
-      "size": "Size on Disk",
       "actions": "Actions"
     },
     "actions": {
@@ -1906,10 +1904,12 @@
         "error": {
           "title": "An error has occurred retrieving the processed report(s).",
           "description": "An unexpected response was received while fetching report history. This might indicate an issue with the reporting mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue."
-        },
-        "task": {
-          "title": "Retrieving saved historical report data",
-          "description": "Locally cached reports are being loaded."
+        }
+      },
+      "delete": {
+        "error": {
+          "title": "An error has occurred deleting the report(s).",
+          "description": "An unexpected response was received while deleting report history. This might indicate an issue with the reporting mechanism. Please check the logs for any error messages (you might have to enable debug logging first) and create an issue."
         }
       }
     },

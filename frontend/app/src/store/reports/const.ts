@@ -8,7 +8,7 @@ import { Zero } from '@/utils/bignumbers';
 export enum ReportActions {
   FETCH_REPORTS = 'fetchReports',
   FETCH_REPORT = 'fetchReport',
-  EDIT_REPORT = 'editReport'
+  DELETE_REPORT = 'deleteReport'
 }
 
 export enum ReportMutations {
