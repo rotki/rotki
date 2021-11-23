@@ -4,7 +4,7 @@ import requests
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response,
-    assert_proper_response_with_result
+    assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import Location
