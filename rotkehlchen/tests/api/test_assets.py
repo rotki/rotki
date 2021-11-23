@@ -11,6 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_proper_response,
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
@@ -54,7 +55,7 @@ def test_query_owned_assets(
                 "allbalancesresource",
             ), json={'save_data': True},
         )
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
 
     # And now check that the query owned assets endpoint works
     with ExitStack() as stack:
@@ -133,7 +134,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
             "ignoredassetsresource",
         ), json={'assets': ignored_assets},
     )
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
 
     # Test that omitting the assets argument is an error
     response = getattr(requests, method)(

@@ -13,6 +13,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_proper_response,
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
@@ -47,7 +48,7 @@ def test_query_statistics_netvalue(
                 "allbalancesresource",
             ), json={'save_data': True},
         )
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
 
     # and now test that statistics work fine
     response = requests.get(
@@ -89,7 +90,7 @@ def test_query_statistics_asset_balance(
                 'allbalancesresource',
             ), json={'save_data': True},
         )
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
 
     # and now test that statistics work fine for ETH, with default time range (0 - now)
     response = requests.get(
@@ -253,7 +254,7 @@ def test_query_statistics_value_distribution(
                 "allbalancesresource",
             ), json={'save_data': True},
         )
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
 
     def assert_okay_by_location(response):
         """Helper function to run next query and its assertion twice"""

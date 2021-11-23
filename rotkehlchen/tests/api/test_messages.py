@@ -1,7 +1,11 @@
 import pytest
 import requests
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_proper_response,
+    assert_proper_response_with_result
+)
 from rotkehlchen.tests.utils.history import mock_history_processing_and_exchanges
 from rotkehlchen.typing import Location
 
@@ -17,7 +21,7 @@ def test_query_messages(rotkehlchen_api_server_with_exchanges):
     with setup.polo_patch:
         response = requests.get(
             api_url_for(rotkehlchen_api_server_with_exchanges, "tradesresource"))
-    assert_proper_response_with_result(response)
+    assert_proper_response(response)
 
     # and now query for the messages
     response = requests.get(
