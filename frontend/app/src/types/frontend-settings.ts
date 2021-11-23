@@ -31,6 +31,7 @@ export const ITEMS_PER_PAGE = 'itemsPerPage' as const;
 export const AMOUNT_ROUNDING_MODE = 'amountRoundingMode' as const;
 export const VALUE_ROUNDING_MODE = 'valueRoundingMode' as const;
 export const GRAPH_ZERO_BASED = 'graphZeroBased' as const;
+export const NFTS_IN_NET_VALUE = 'nftsInNetValue' as const;
 
 export enum Quarter {
   Q1 = 'Q1',
@@ -100,7 +101,8 @@ export const FrontendSettings = z.object({
   [DARK_MODE_ENABLED]: z.boolean().default(false),
   [LIGHT_THEME]: ThemeColors.default(LIGHT_COLORS),
   [DARK_THEME]: ThemeColors.default(DARK_COLORS),
-  [GRAPH_ZERO_BASED]: z.boolean().default(false)
+  [GRAPH_ZERO_BASED]: z.boolean().default(false),
+  [NFTS_IN_NET_VALUE]: z.boolean().default(true)
 });
 
 export type FrontendSettings = z.infer<typeof FrontendSettings>;

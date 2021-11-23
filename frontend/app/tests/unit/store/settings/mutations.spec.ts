@@ -17,6 +17,7 @@ import {
   GRAPH_ZERO_BASED,
   ITEMS_PER_PAGE,
   LAST_KNOWN_TIMEFRAME,
+  NFTS_IN_NET_VALUE,
   PROFIT_LOSS_PERIOD,
   Quarter,
   QUERY_PERIOD,
@@ -60,7 +61,8 @@ describe('settings:mutations', () => {
         accent: '#000000',
         graph: '#555555'
       },
-      [GRAPH_ZERO_BASED]: true
+      [GRAPH_ZERO_BASED]: true,
+      [NFTS_IN_NET_VALUE]: true
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
@@ -96,5 +98,6 @@ describe('settings:mutations', () => {
       graph: '#555555'
     });
     expect(settings[GRAPH_ZERO_BASED]).toBe(true);
+    expect(settings[NFTS_IN_NET_VALUE]).toBe(true);
   });
 });

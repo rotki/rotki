@@ -7,9 +7,10 @@ import { StatisticsState } from '@/store/statistics/types';
 import { RotkehlchenState } from '@/store/types';
 
 export const actions: ActionTree<StatisticsState, RotkehlchenState> = {
-  async fetchNetValue({ commit }) {
+  async fetchNetValue({ commit, rootState }) {
     try {
-      const netValue = await api.queryNetvalueData();
+      const includeNfts = rootState.settings?.nftsInNetValue ?? true;
+      const netValue = await api.queryNetvalueData(includeNfts);
       commit('netValue', netValue);
     } catch (e: any) {
       notify(

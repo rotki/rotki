@@ -86,19 +86,22 @@ export const getters: Getters<
     const totalLiabilities = liabilities as AssetBalance[];
     const nfbs = nfBalances as NonFungibleBalance[];
     const rate = exchangeRate(mainCurrency);
+    let nftTotal = Zero;
 
-    const nfTotal = nfbs.reduce((sum, balance) => {
-      return sum
-        .plus(balance.usdPrice.multipliedBy(rate))
-        .dp(floatingPrecision, BigNumber.ROUND_DOWN);
-    }, Zero);
+    if (_rootState.settings?.nftsInNetValue) {
+      nftTotal = nfbs.reduce((sum, balance) => {
+        return sum
+          .plus(balance.usdPrice.multipliedBy(rate))
+          .dp(floatingPrecision, BigNumber.ROUND_DOWN);
+      }, Zero);
+    }
 
     const assetSum = aggregateTotal(
       balances,
       mainCurrency,
       exchangeRate(mainCurrency),
       floatingPrecision
-    ).plus(nfTotal);
+    ).plus(nftTotal);
     const liabilitySum = aggregateTotal(
       totalLiabilities,
       mainCurrency,

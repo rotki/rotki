@@ -55,7 +55,7 @@ export interface ValueOverTime {
 @Component({
   computed: {
     ...mapGetters('session', ['currency']),
-    ...mapState('settings', ['graphZeroBased'])
+    ...mapState('settings', ['graphZeroBased', 'nftsInNetValue'])
   }
 })
 export default class NetWorthChart extends Vue {
@@ -72,6 +72,7 @@ export default class NetWorthChart extends Vue {
 
   currency!: Currency;
   graphZeroBased!: boolean;
+  nftsInNetValue!: boolean;
 
   get darkModeEnabled(): boolean {
     return this.$vuetify.theme.dark;
@@ -79,6 +80,11 @@ export default class NetWorthChart extends Vue {
 
   @Watch('darkModeEnabled')
   onDarkMode() {
+    this.setup();
+  }
+
+  @Watch('nftsInNetValue')
+  onIncludeNFTS() {
     this.setup();
   }
 
