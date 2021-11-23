@@ -7,13 +7,70 @@ export class DashboardPage {
     cy.get('.navigation__dashboard').click();
   }
 
+  getSanitizedAmountString(amount: string) {
+    // TODO: extract the `replace(/,/g, '')` as to use user settings (when implemented)
+    return amount.replace(/,/g, '');
+  }
+
   getOverallBalance() {
     let overallBalance: BigNumber = Zero;
     const balance = cy
       .get('.overall-balances__net-worth .amount-display__value')
       .then($amount => {
-        overallBalance = bigNumberify($amount.text().replace(',', ''));
+        overallBalance = bigNumberify(
+          this.getSanitizedAmountString($amount.text())
+        );
         return overallBalance;
+      });
+
+    return balance;
+  }
+
+  getBlockchainBalances() {
+    const blockchainBalances = [
+      { blockchain: 'Ethereum', renderedValue: Zero },
+      { blockchain: 'Bitcoin', renderedValue: Zero }
+    ];
+
+    blockchainBalances.forEach(blockchainBalance => {
+      cy.get('[data-cy="blockchain-balance-box__item"]').then($rows => {
+        if ($rows.text().includes(blockchainBalance.blockchain)) {
+          cy.get(
+            `[data-cy="blockchain-balance-box__item"]:contains(${blockchainBalance.blockchain})`
+          ).each($row => {
+            // loops over all blockchain asset balances rows and adds up the total per blockchain type
+            cy.wrap($row)
+              .find('.amount-display__value')
+              .then($amount => {
+                if (blockchainBalance.renderedValue === Zero) {
+                  blockchainBalance.renderedValue = bigNumberify(
+                    this.getSanitizedAmountString($amount.text())
+                  );
+                } else {
+                  blockchainBalance.renderedValue =
+                    blockchainBalance.renderedValue.plus(
+                      this.getSanitizedAmountString($amount.text())
+                    );
+                }
+              });
+          });
+        }
+      });
+    });
+
+    return cy.wrap(blockchainBalances);
+  }
+
+  getNonFungibleBalances() {
+    const balance = cy
+      .get(
+        '[data-cy="nft-balance-table"] tbody tr:last-child td:nth-child(2) > .amount-display > .v-skeleton-loader .amount-display__value'
+      )
+      .then($amount => {
+        if ($amount.length > 0) {
+          return bigNumberify(this.getSanitizedAmountString($amount.text()));
+        }
+        return Zero;
       });
 
     return balance;
@@ -43,12 +100,14 @@ export class DashboardPage {
                 .then($amount => {
                   if (balanceLocation.renderedValue === Zero) {
                     balanceLocation.renderedValue = bigNumberify(
-                      $amount.text().replace(',', '')
+                      this.getSanitizedAmountString($amount.text())
                     );
                   } else {
                     balanceLocation.renderedValue =
                       balanceLocation.renderedValue.plus(
-                        bigNumberify($amount.text().replace(',', ''))
+                        bigNumberify(
+                          this.getSanitizedAmountString($amount.text())
+                        )
                       );
                   }
                 });

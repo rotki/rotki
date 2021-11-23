@@ -7,6 +7,7 @@
       </template>
       <v-btn
         v-blur
+        data-cy="add-blockchain-balance"
         fixed
         fab
         bottom
@@ -34,6 +35,7 @@
         />
       </big-dialog>
       <asset-balances
+        data-cy="blockchain-asset-balances"
         :title="$t('blockchain_balances.per_asset.title')"
         :balances="blockchainAssets"
       />
@@ -51,6 +53,7 @@
       :title="$t('blockchain_balances.balances.eth')"
       blockchain="ETH"
       :balances="ethAccounts"
+      data-cy="blockchain-balances-ETH"
       @edit-account="editAccount($event)"
     />
 
@@ -66,6 +69,7 @@
       :title="$t('blockchain_balances.balances.btc')"
       blockchain="BTC"
       :balances="btcAccounts"
+      data-cy="blockchain-balances-BTC"
       @edit-account="editAccount($event)"
     />
 
@@ -81,6 +85,7 @@
       :title="$t('blockchain_balances.balances.ksm')"
       blockchain="KSM"
       :balances="kusamaBalances"
+      data-cy="blockchain-balances-KSM"
       @edit-account="editAccount($event)"
     />
 
@@ -96,6 +101,7 @@
       :title="$t('blockchain_balances.balances.dot')"
       blockchain="DOT"
       :balances="polkadotBalances"
+      data-cy="blockchain-balances-DOT"
       @edit-account="editAccount($event)"
     />
 
@@ -111,6 +117,7 @@
       :title="$t('blockchain_balances.balances.avax')"
       blockchain="AVAX"
       :balances="avaxAccounts"
+      data-cy="blockchain-balances-AVAX"
       @edit-account="editAccount($event)"
     />
   </div>

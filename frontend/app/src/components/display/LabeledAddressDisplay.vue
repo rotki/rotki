@@ -3,6 +3,7 @@
     <v-tooltip top open-delay="400" :disabled="!truncated">
       <template #activator="{ on }">
         <span
+          data-cy="labeled-address-display"
           class="labeled-address-display__address"
           :class="
             $vuetify.breakpoint.xsOnly
