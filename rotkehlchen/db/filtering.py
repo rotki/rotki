@@ -372,6 +372,43 @@ class ReportsFilterQuery(DBFilterQuery):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class ReportIDFilterQuery(DBFilterQuery):
+
+    @property
+    def report_id_filter(self) -> Optional[DBReportsReportIDFilter]:
+        if len(self.filters) >= 1 and isinstance(self.filters[0], DBReportsReportIDFilter):
+            return self.filters[0]
+        return None
+
+    @property
+    def report_id(self) -> Optional[Union[str, int]]:
+        report_id_filter = self.report_id_filter
+        if report_id_filter is None:
+            return None
+        return report_id_filter.report_id
+
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            report_id: Optional[Union[str, int]] = None,
+    ) -> 'ReportIDFilterQuery':
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+        )
+        filters: List[DBFilter] = []
+        if report_id:  # report_id means single result so make it as single filter
+            filters.append(DBReportsReportIDFilter(and_op=False, report_id=report_id))
+
+        filter_query.filters = filters
+        return cast('ReportIDFilterQuery', filter_query)
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class ReportDataFilterQuery(DBFilterQuery):
 
     @property

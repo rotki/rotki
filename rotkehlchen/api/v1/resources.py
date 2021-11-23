@@ -98,6 +98,7 @@ from rotkehlchen.api.v1.encoding import (
     WatchersEditSchema,
     XpubAddSchema,
     XpubPatchSchema, AccountingReportDataSchema, AccountingReportsSchema,
+    AccountingReportsDeleteSchema,
 )
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -105,7 +106,7 @@ from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery, \
-    ReportsFilterQuery
+    ReportsFilterQuery, ReportIDFilterQuery
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.typing import (
@@ -957,8 +958,8 @@ class HistoryProcessingResource(BaseResource):
 
 
 class AccountingReportsResource(BaseResource):
-
     get_schema = AccountingReportsSchema()
+    delete_schema = AccountingReportsDeleteSchema()
 
     @ignore_kwarg_parser.use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
@@ -967,6 +968,17 @@ class AccountingReportsResource(BaseResource):
             filter_query: ReportsFilterQuery,
     ) -> Response:
         return self.rest_api.get_reports(
+            async_query=async_query,
+            filter_query=filter_query,
+        )
+
+    @ignore_kwarg_parser.use_kwargs(delete_schema, location='json_and_query_and_view_args')
+    def delete(
+            self,
+            async_query: bool,
+            filter_query: ReportIDFilterQuery,
+    ) -> Response:
+        return self.rest_api.purge_report_data(
             async_query=async_query,
             filter_query=filter_query,
         )

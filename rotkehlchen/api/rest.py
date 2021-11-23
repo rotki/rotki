@@ -55,7 +55,7 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.cache_handler import FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery, \
-    ReportsFilterQuery
+    ReportsFilterQuery, ReportIDFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -3772,6 +3772,30 @@ class RestAPI():
             return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
 
         filepath.unlink()  # should not raise file not found as marshmallow should check
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def _purge_report_data(
+            self,
+            filter_query: ReportIDFilterQuery,
+    ) -> None:
+        self.rotkehlchen.data.db.purge_report_data(filter_query)
+
+    @require_loggedin_user()
+    def purge_report_data(
+            self,
+            async_query: bool,
+            filter_query: ReportIDFilterQuery
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_purge_report_data',
+                filter_query=filter_query,
+            )
+
+        self._purge_report_data(
+            filter_query=filter_query,
+        )
+
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def _get_reports(

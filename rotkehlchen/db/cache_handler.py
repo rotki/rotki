@@ -6,7 +6,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.typing import NamedJson
-from rotkehlchen.db.filtering import ReportsFilterQuery, ReportDataFilterQuery
+from rotkehlchen.db.filtering import ReportsFilterQuery, ReportDataFilterQuery, ReportIDFilterQuery
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Timestamp
@@ -134,6 +134,15 @@ class DBAccountingReports(LockableQueryMixIn):
             total_filter_count = len(reports)
 
         return reports, total_filter_count
+
+    def purge_report_data(self, filter_: ReportIDFilterQuery) -> None:
+        """Deletes all report related data from the DB"""
+        cursor = self.db.conn_transient.cursor()
+        query, bindings = filter_.prepare()
+        query = 'DELETE FROM pnl_reports ' + query
+        cursor.execute(query, bindings)
+        self.db.conn.commit()
+        self.db.update_last_write()
 
 
 class DBAccountingReportData(LockableQueryMixIn):

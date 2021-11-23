@@ -46,7 +46,7 @@ from rotkehlchen.chain.substrate.utils import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery, \
-    ReportsFilterQuery
+    ReportsFilterQuery, ReportIDFilterQuery
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
     DeserializationError,
@@ -1435,6 +1435,28 @@ class AccountingReportsSchema(
             report_id=report_id,
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
+        )
+
+        return {
+            'async_query': data['async_query'],
+            'filter_query': filter_query,
+        }
+
+
+class AccountingReportsDeleteSchema(
+    AsyncQueryArgumentSchema,
+):
+    report_id = fields.Integer(load_default=None)
+
+    @post_load
+    def make_reports_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        report_id = data.get('report_id')
+        filter_query = ReportIDFilterQuery.make(
+            report_id=report_id,
         )
 
         return {
