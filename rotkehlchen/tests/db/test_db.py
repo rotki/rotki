@@ -1328,3 +1328,18 @@ def test_binance_pairs(user_data_dir):
     db.set_binance_pairs('binance', [], Location.BINANCE)
     query = db.get_binance_pairs('binance', Location.BINANCE)
     assert query == []
+
+
+def test_fresh_db_adds_version(user_data_dir):
+    """Test that the DB version gets committed to a fresh DB.
+
+    Regression test for https://github.com/rotki/rotki/issues/3744"""
+    msg_aggregator = MessagesAggregator()
+    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
+    cursor = db.conn.cursor()
+    query = cursor.execute(
+        'SELECT value FROM settings WHERE name=?;', ('version',),
+    )
+    query = query.fetchall()
+    assert len(query) != 0
+    assert int(query[0][0]) == ROTKEHLCHEN_DB_VERSION
