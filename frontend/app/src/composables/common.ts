@@ -1,5 +1,6 @@
 import { computed, getCurrentInstance } from '@vue/composition-api';
 import { Section, Status } from '@/store/const';
+import { Message } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { assert } from '@/utils/assertions';
 
@@ -69,4 +70,14 @@ export const isSectionLoading = (section: Section) => {
     const status = store.getters['status'](section);
     return status !== Status.LOADED && status !== Status.PARTIALLY_LOADED;
   });
+};
+
+export const setupMessages = () => {
+  const store = useStore();
+  const setMessage = async (message: Message) => {
+    await store.dispatch('setMessage', message);
+  };
+  return {
+    setMessage
+  };
 };

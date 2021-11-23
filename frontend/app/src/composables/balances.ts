@@ -1,9 +1,12 @@
 import { AssetBalanceWithPrice } from '@rotki/common';
+import { GeneralAccount } from '@rotki/common/lib/account';
 import { computed, Ref } from '@vue/composition-api';
 import { ManualBalance } from '@/services/balances/types';
 import {
+  AddAccountsPayload,
   AssetInfoGetter,
   AssetSymbolGetter,
+  BlockchainAccountPayload,
   BlockchainAccountWithBalance,
   ExchangeRateGetter
 } from '@/store/balances/types';
@@ -108,5 +111,28 @@ export const setupManualBalances = () => {
     manualLabels,
     manualBalances,
     manualLiabilities
+  };
+};
+
+export const setupBlockchainAccounts = () => {
+  const { dispatch, getters } = useStore();
+  const account = (address: string) =>
+    computed<GeneralAccount | undefined>(() =>
+      getters['balances/account'](address)
+    );
+  const addAccount = async (payload: BlockchainAccountPayload) => {
+    return await dispatch('balances/addAccount', payload);
+  };
+  const editAccount = async (payload: BlockchainAccountPayload) => {
+    return await dispatch('balances/editAccount', payload);
+  };
+  const addAccounts = async (payload: AddAccountsPayload) => {
+    return await dispatch('balances/addAccounts', payload);
+  };
+  return {
+    account,
+    addAccount,
+    editAccount,
+    addAccounts
   };
 };

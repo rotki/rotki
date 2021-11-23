@@ -133,7 +133,9 @@ import {
   ref
 } from '@vue/composition-api';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import AccountForm from '@/components/accounts/AccountForm.vue';
+import AccountForm, {
+  AccountFormType
+} from '@/components/accounts/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
@@ -161,7 +163,7 @@ const BlockchainBalances = defineComponent({
     const dialogSubtitle = ref('');
     const valid = ref(false);
     const openDialog = ref(false);
-    const form = ref<AccountForm | null>(null);
+    const form = ref<AccountFormType | null>(null);
 
     const createAccount = () => {
       accountToEdit.value = null;
