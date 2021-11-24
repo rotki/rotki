@@ -370,6 +370,62 @@ def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_trade_with_margin_skipped(function_scope_kraken):
+    """Test that kraken trades with non-zero margin field are skipped"""
+    kraken = function_scope_kraken
+    kraken.random_trade_data = False
+    kraken.random_ledgers_data = False
+    kraken.cache_ttl_secs = 0
+
+    test_trades = """{
+        "trades": {
+            "1": {
+                "ordertxid": "1",
+                "postxid": 1,
+                "pair": "XXBTZEUR",
+                "time": "1458994442.2353",
+                "type": "buy",
+                "ordertype": "market",
+                "price": "100",
+                "vol": "1",
+                "fee": "0.1",
+                "cost": "100",
+                "margin": "0.0",
+                "misc": ""
+            },
+            "2": {
+                "ordertxid": "2",
+                "postxid": 2,
+                "pair": "XXBTZEUR",
+                "time": "1468994442.2353",
+                "type": "buy",
+                "ordertype": "market",
+                "price": "100",
+                "vol": "1",
+                "fee": "0.1",
+                "cost": "100",
+                "margin": "5.0",
+                "misc": ""
+            }
+        },
+        "count": 2
+    }"""
+
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE'
+    with patch(target, new=test_trades):
+        trades, _ = kraken.query_online_trade_history(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+        )
+
+    assert len(trades) == 1
+    errors = kraken.msg_aggregator.consume_errors()
+    warnings = kraken.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_trade_from_kraken_unexpected_data(function_scope_kraken):
     """Test that getting unexpected data from kraken leads to skipping the trade
     and does not lead to a crash"""
