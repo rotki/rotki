@@ -28,7 +28,7 @@ import { mapState } from 'vuex';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { truncateAddress } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
-import { randomHex } from '@/typing/utils';
+import { randomHex } from '@/utils/data';
 
 @Component({
   components: { AssetIcon },

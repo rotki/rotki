@@ -87,8 +87,10 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import ModuleAddressSelector from '@/components/defi/wizard/ModuleAddressSelector.vue';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
-import { DEFI_SETUP_DONE } from '@/store/settings/consts';
-import { FrontendSettingsPayload } from '@/store/settings/types';
+import {
+  DEFI_SETUP_DONE,
+  FrontendSettingsPayload
+} from '@/types/frontend-settings';
 
 @Component({
   components: { ModuleAddressSelector, ModuleSelector },

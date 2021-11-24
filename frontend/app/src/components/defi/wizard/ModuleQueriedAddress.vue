@@ -16,8 +16,8 @@ import { Account, GeneralAccount } from '@rotki/common/lib/account';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import { Module } from '@/services/session/consts';
 import { QueriedAddressPayload } from '@/services/session/types';
+import { Module } from '@/types/modules';
 
 @Component({
   components: { BlockchainAccountSelector },

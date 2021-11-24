@@ -1,5 +1,5 @@
-import { BigNumber } from '@rotki/common/';
-import { AxiosTransformer } from 'axios';
+import { BigNumber } from '@rotki/common';
+import { AxiosRequestTransformer, AxiosResponseTransformer } from 'axios';
 
 const isNumber = /^-?\d+(\.\d+)?((\d(.\d+)?)?[Ee][-+]\d+)?$/;
 
@@ -82,20 +82,24 @@ export const convertKeys = (
   return converted;
 };
 
-export const axiosSnakeCaseTransformer: AxiosTransformer = (data, _headers) =>
-  convertKeys(data, false, false);
+export const axiosSnakeCaseTransformer: AxiosRequestTransformer = (
+  data,
+  _headers
+) => convertKeys(data, false, false);
 
-export const axiosCamelCaseTransformer: AxiosTransformer = (data, _headers) =>
-  convertKeys(data, true, false);
+export const axiosCamelCaseTransformer: AxiosResponseTransformer = (
+  data,
+  _headers
+) => convertKeys(data, true, false);
 
-export const axiosNoRootCamelCaseTransformer: AxiosTransformer = (
+export const axiosNoRootCamelCaseTransformer: AxiosResponseTransformer = (
   data,
   _headers
 ) => convertKeys(data, true, true);
 
 export const setupJsonTransformer: (
   numericKeys: string[] | null
-) => AxiosTransformer = numericKeys => {
+) => AxiosResponseTransformer = numericKeys => {
   const reviver = createReviver(numericKeys);
   return (data, _headers) => {
     let result = data;

@@ -1769,15 +1769,13 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
 
     # Check errors/warnings
     warnings = msg_aggregator.consume_warnings()
-    assert len(warnings) == 13
+    assert len(warnings) == 11
     for idx in (0, 1, 3, 5, 7):
         assert "During v24 -> v25 DB upgrade could not find key '_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94'" in warnings[idx]  # noqa: E501
     for idx in (2, 4, 6):
         assert "During v24 -> v25 DB upgrade could not find key '_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e'" in warnings[idx]  # noqa: E501
-    for idx in (9, 11):
-        assert 'Unknown/unsupported asset _ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94' in warnings[idx]  # noqa: E501
-    for idx in (10, 12):
-        assert 'Unknown/unsupported asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e' in warnings[idx]  # noqa: E501
+    assert 'Unknown/unsupported asset _ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94' in warnings[9]  # noqa: E501
+    assert 'Unknown/unsupported asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e' in warnings[10]  # noqa: E501
     errors = msg_aggregator.consume_errors()
     assert len(errors) == 0
     # Finally also make sure that we have updated to the target version
@@ -2103,10 +2101,9 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
 
     # Check errors/warnings
     warnings = msg_aggregator.consume_warnings()
-    assert len(warnings) == 3
+    assert len(warnings) == 2
     assert 'During v25 -> v26 DB upgrade found timed_balances entry of unknown asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e' in warnings[0]  # noqa: E501
-    for idx in (1, 2):
-        assert 'Unknown/unsupported asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e found in the database' in warnings[idx]  # noqa: E501
+    assert 'Unknown/unsupported asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e found in the database' in warnings[1]  # noqa: E501
     errors = msg_aggregator.consume_errors()
     assert len(errors) == 0
 
@@ -2339,6 +2336,54 @@ def test_upgrade_db_29_to_30(user_data_dir):  # pylint: disable=unused-argument
     # Check that existing balances are not considered as liabilities after migration
     cursor.execute('SELECT category FROM manually_tracked_balances;')
     assert cursor.fetchone() == ('A',)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('db_with_set_version', [True, False])
+def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: disable=unused-argument  # noqa: E501
+    """Test upgrading the DB from version 30 to version 31.
+
+    Also checks that this code upgrade works even if the DB is affected by
+    https://github.com/rotki/rotki/issues/3744 and does not have a version
+    setting set. Checks that the version is detected as at least v30 by missing
+    the eth2_validators table.
+
+    - Upgrades the ETH2 tables
+    """
+    msg_aggregator = MessagesAggregator()
+    # Check we have data in the eth2 tables before the DB upgrade
+    _use_prepared_db(user_data_dir, 'v30_rotkehlchen.db')
+    db_v30 = _init_db_with_target_version(
+        target_version=30,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db_v30.conn.cursor()
+    result = cursor.execute('SELECT COUNT(*) FROM eth2_deposits;')
+    assert result.fetchone()[0] == 1
+    result = cursor.execute('SELECT COUNT(*) FROM eth2_daily_staking_details;')
+    assert result.fetchone()[0] == 356
+
+    if db_with_set_version:
+        db_name = 'v30_rotkehlchen.db'
+    else:
+        db_name = 'v30_rotkehlchen_without_setversion.db'
+    _use_prepared_db(user_data_dir, db_name)
+    db = _init_db_with_target_version(
+        target_version=31,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    # Finally also make sure that we have updated to the target version
+    assert db.get_version() == 31
+    cursor = db.conn.cursor()
+    # Check that the new table is created
+    result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="eth2_validators"')  # noqa: E501
+    assert result.fetchone()[0] == 1
+    result = cursor.execute('SELECT COUNT(*) FROM eth2_deposits;')
+    assert result.fetchone()[0] == 0
+    result = cursor.execute('SELECT COUNT(*) FROM eth2_daily_staking_details;')
+    assert result.fetchone()[0] == 0
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.assets.asset import WORLD_TO_BITFINEX
 from rotkehlchen.assets.converters import (
     BITFINEX_EXCHANGE_TEST_ASSETS,
     UNSUPPORTED_BITFINEX_ASSETS,
@@ -38,6 +39,9 @@ def test_name():
 def test_assets_are_known(mock_bitfinex):
     """This tests only exchange (trades) assets (not margin, nor futures ones).
     """
+    unsupported_assets = set(UNSUPPORTED_BITFINEX_ASSETS)
+    common_items = unsupported_assets.intersection(set(WORLD_TO_BITFINEX.values()))
+    assert not common_items, f'Bitfinex assets {common_items} should not be unsupported'
     currencies_response = mock_bitfinex._query_currencies()
     if currencies_response.success is False:
         response = currencies_response.response

@@ -27,7 +27,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
-import { Currency } from '@/model/currency';
+import { Currency } from '@/types/currency';
 
 export default defineComponent({
   name: 'AmountCurrency',
@@ -66,9 +66,9 @@ export default defineComponent({
       const show = showCurrency.value;
       const value = currency.value;
       if (show === 'ticker') {
-        return value.ticker_symbol;
+        return value.tickerSymbol;
       } else if (show === 'symbol') {
-        return value.unicode_symbol;
+        return value.unicodeSymbol;
       } else if (show === 'name') {
         return value.name;
       }

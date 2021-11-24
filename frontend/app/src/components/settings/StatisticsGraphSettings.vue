@@ -56,7 +56,7 @@ import {
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { RotkehlchenState } from '@/store/types';
 import { useStore } from '@/store/utils';
-import { SettingsUpdate } from '@/typing/types';
+import { SettingsUpdate } from '@/types/user';
 
 export default defineComponent({
   name: 'StatisticsGraphSettings',
@@ -76,7 +76,7 @@ export default defineComponent({
     const store = useStore();
     const updateSetting = async () => {
       await store.dispatch('session/settingsUpdate', {
-        ssf_0graph_multiplier: numericMultiplier.value
+        ssf0graphMultiplier: numericMultiplier.value
       } as SettingsUpdate);
       emit('updated');
       visible.value = false;
@@ -84,8 +84,8 @@ export default defineComponent({
 
     const multiplierSetting = computed(() => {
       const { session }: RotkehlchenState = store.state;
-      const { ssf0GraphMultiplier } = session!!.generalSettings;
-      return ssf0GraphMultiplier.toString();
+      const { ssf0graphMultiplier } = session!!.generalSettings;
+      return ssf0graphMultiplier.toString();
     });
 
     const period = computed(() => {

@@ -272,14 +272,14 @@ export default class Accounting extends Mixins<
   }
 
   mounted() {
-    this.haveCSVSummary = this.accountingSettings.haveCSVSummary;
-    this.exportCSVFormulas = this.accountingSettings.exportCSVFormulas;
-    this.crypto2CryptoTrades = this.accountingSettings.includeCrypto2Crypto;
+    this.haveCSVSummary = this.accountingSettings.pnlCsvHaveSummary;
+    this.exportCSVFormulas = this.accountingSettings.pnlCsvWithFormulas;
+    this.crypto2CryptoTrades = this.accountingSettings.includeCrypto2crypto;
     this.gasCosts = this.accountingSettings.includeGasCosts;
-    if (this.accountingSettings.taxFreeAfterPeriod) {
+    if (this.accountingSettings.taxfreeAfterPeriod) {
       this.taxFreePeriod = true;
       this.taxFreeAfterPeriod =
-        this.accountingSettings.taxFreeAfterPeriod / 86400;
+        this.accountingSettings.taxfreeAfterPeriod / 86400;
     } else {
       this.taxFreePeriod = false;
       this.taxFreeAfterPeriod = null;
@@ -296,7 +296,7 @@ export default class Accounting extends Mixins<
     if (!enabled) {
       taxFreeAfterPeriod = null;
     } else {
-      const period = this.accountingSettings.taxFreeAfterPeriod;
+      const period = this.accountingSettings.taxfreeAfterPeriod;
       if (period) {
         taxFreeAfterPeriod = period / 86400;
       } else {
@@ -312,7 +312,7 @@ export default class Accounting extends Mixins<
       this.taxFreeAfterPeriod = null;
     }
     this.$api
-      .setSettings({ taxfree_after_period: taxFreeAfterPeriod! })
+      .setSettings({ taxfreeAfterPeriod: taxFreeAfterPeriod! })
       .then(settings => {
         this.validateSettingChange(
           'taxFreePeriod',
@@ -324,7 +324,7 @@ export default class Accounting extends Mixins<
 
         commit('session/accountingSettings', {
           ...this.accountingSettings,
-          taxFreeAfterPeriod: settings.taxfree_after_period
+          taxfreeAfterPeriod: settings.accounting.taxfreeAfterPeriod
         });
       })
       .catch((reason: Error) => {
@@ -347,7 +347,7 @@ export default class Accounting extends Mixins<
     const { commit } = this.$store;
 
     this.$api
-      .setSettings({ taxfree_after_period: period })
+      .setSettings({ taxfreeAfterPeriod: period })
       .then(settings => {
         this.validateSettingChange(
           'taxFreePeriodAfter',
@@ -359,7 +359,7 @@ export default class Accounting extends Mixins<
 
         commit('session/accountingSettings', {
           ...this.accountingSettings,
-          taxFreeAfterPeriod: settings.taxfree_after_period
+          taxfreeAfterPeriod: settings.accounting.taxfreeAfterPeriod
         });
       })
       .catch((reason: Error) => {
@@ -376,11 +376,11 @@ export default class Accounting extends Mixins<
     const { commit } = this.$store;
 
     this.$api
-      .setSettings({ include_crypto2crypto: enabled })
+      .setSettings({ includeCrypto2crypto: enabled })
       .then(settings => {
         commit('session/accountingSettings', {
           ...this.accountingSettings,
-          includeCrypto2Crypto: settings.include_crypto2crypto
+          includeCrypto2crypto: settings.accounting.includeCrypto2crypto
         });
         this.validateSettingChange('crypto2crypto', 'success');
       })
@@ -399,11 +399,11 @@ export default class Accounting extends Mixins<
     const { commit } = this.$store;
 
     this.$api
-      .setSettings({ include_gas_costs: enabled })
+      .setSettings({ includeGasCosts: enabled })
       .then(settings => {
         commit('session/accountingSettings', {
           ...this.accountingSettings,
-          includeGasCosts: settings.include_gas_costs
+          includeGasCosts: settings.accounting.includeGasCosts
         });
         this.validateSettingChange('gasCostChange', 'success');
       })
@@ -422,11 +422,12 @@ export default class Accounting extends Mixins<
     const { commit } = this.$store;
 
     this.$api
-      .setSettings({ account_for_assets_movements: enabled })
+      .setSettings({ accountForAssetsMovements: enabled })
       .then(settings => {
         commit('session/accountingSettings', {
           ...this.accountingSettings,
-          accountForAssetsMovements: settings.account_for_assets_movements
+          accountForAssetsMovements:
+            settings.accounting.accountForAssetsMovements
         });
         this.validateSettingChange('accountForAssetsMovements', 'success');
       })
@@ -449,11 +450,11 @@ export default class Accounting extends Mixins<
     const { commit } = this.$store;
 
     this.$api
-      .setSettings({ pnl_csv_have_summary: enabled })
+      .setSettings({ pnlCsvHaveSummary: enabled })
       .then(settings => {
         commit('session/accountingSettings', {
           ...this.accountingSettings,
-          haveCSVSummary: settings.pnl_csv_have_summary
+          pnlCsvHaveSummary: settings.accounting.pnlCsvHaveSummary
         });
         this.validateSettingChange('haveCSVSummary', 'success');
       })
@@ -472,11 +473,11 @@ export default class Accounting extends Mixins<
     const { commit } = this.$store;
 
     this.$api
-      .setSettings({ pnl_csv_with_formulas: enabled })
+      .setSettings({ pnlCsvWithFormulas: enabled })
       .then(settings => {
         commit('session/accountingSettings', {
           ...this.accountingSettings,
-          exportCSVFormulas: settings.pnl_csv_with_formulas
+          pnlCsvWithFormulas: settings.accounting.pnlCsvWithFormulas
         });
         this.validateSettingChange('exportCSVFormulas', 'success');
       })
@@ -493,7 +494,7 @@ export default class Accounting extends Mixins<
 
   async onCalculatePastCostBasisChange(enabled: boolean) {
     const { success, message } = await this.settingsUpdate({
-      calculate_past_cost_basis: enabled
+      calculatePastCostBasis: enabled
     });
     this.validateSettingChange(
       'calculatePastCostBasis',

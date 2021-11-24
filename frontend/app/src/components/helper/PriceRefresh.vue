@@ -15,8 +15,8 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import StatusMixin from '@/mixins/status-mixin';
-import { TaskType } from '@/model/task-type';
 import { Section } from '@/store/const';
+import { TaskType } from '@/types/task-type';
 
 @Component({
   computed: {

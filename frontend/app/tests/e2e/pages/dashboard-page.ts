@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { bigNumberify, Zero } from '../../../src/utils/bignumbers';
 
 export class DashboardPage {

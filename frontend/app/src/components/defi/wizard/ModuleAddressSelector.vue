@@ -75,8 +75,8 @@ import { mapActions, mapGetters, mapState } from 'vuex';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleQueriedAddress from '@/components/defi/wizard/ModuleQueriedAddress.vue';
 import { SupportedModule } from '@/components/defi/wizard/types';
-import { Module } from '@/services/session/consts';
 import { QueriedAddresses } from '@/services/session/types';
+import { Module } from '@/types/modules';
 
 @Component({
   components: { ModuleQueriedAddress },

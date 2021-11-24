@@ -114,6 +114,7 @@ TABLES_AT_INIT = [
     'amm_events',
     'eth2_deposits',
     'eth2_daily_staking_details',
+    'eth2_validators',
     'adex_events',
     'ledger_actions',
     'ledger_action_type',
@@ -698,7 +699,7 @@ def test_query_owned_assets(data_dir, username):
     ])
 
     assets_list = data.db.query_owned_assets()
-    assert set(assets_list) == {A_USD, A_ETH, A_DAI, A_BTC, A_XMR, A_SDC, A_SDT2, A_SUSHI, A_1INCH}  # noqa: E501
+    assert set(assets_list) == {A_USD, A_ETH, A_BTC, A_XMR, A_SDC, A_SDT2, A_SUSHI, A_1INCH}  # noqa: E501
     assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
     assert len(warnings) == 0

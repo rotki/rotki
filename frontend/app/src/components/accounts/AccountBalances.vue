@@ -77,13 +77,13 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { TaskType } from '@/model/task-type';
 import {
   AccountWithBalance,
   BlockchainAccountWithBalance,
   BlockchainBalancePayload,
   XpubPayload
 } from '@/store/balances/types';
+import { TaskType } from '@/types/task-type';
 
 @Component({
   components: {

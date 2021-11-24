@@ -11,7 +11,7 @@ import {
   ReportProgress
 } from '@/store/reports/types';
 
-import { AccountingSettings } from '@/typing/types';
+import { AccountingSettings } from '@/types/user';
 
 export const mutations: MutationTree<ReportState> = {
   set(state: ReportState, payload: ReportData) {

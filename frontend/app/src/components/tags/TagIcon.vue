@@ -12,7 +12,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { Tag } from '@/typing/types';
+import { Tag } from '@/types/user';
 
 @Component({})
 export default class TagIcon extends Vue {

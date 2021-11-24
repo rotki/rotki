@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { Zero } from '@/utils/bignumbers';
 import { Guid } from '../../common/guid';
 import {

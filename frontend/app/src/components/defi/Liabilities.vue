@@ -102,7 +102,6 @@ import DefiProtocolSelector from '@/components/helper/DefiProtocolSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import StatusMixin from '@/mixins/status-mixin';
-import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 import {
   AaveLoan,
@@ -110,6 +109,7 @@ import {
   LoanSummary,
   MakerDAOVaultModel
 } from '@/store/defi/types';
+import { Module } from '@/types/modules';
 
 @Component({
   computed: {

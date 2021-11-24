@@ -1,4 +1,4 @@
-import { Task, TaskMeta } from '@/model/task';
+import { Task, TaskMeta } from '@/types/task';
 
 export interface TaskState {
   tasks: TaskMap<TaskMeta>;

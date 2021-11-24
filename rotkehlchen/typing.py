@@ -126,6 +126,9 @@ ChecksumEthAddress = ChecksumAddress
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 
+T_Eth2PubKey = str
+Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)
+
 BlockchainAddress = Union[
     EthAddress,
     BTCAddress,
@@ -254,6 +257,7 @@ class CovalentTransaction(NamedTuple):
 class SupportedBlockchain(Enum):
     """These are the blockchains for which account tracking is supported """
     ETHEREUM = 'ETH'
+    ETHEREUM_BEACONCHAIN = 'ETH2'
     BITCOIN = 'BTC'
     KUSAMA = 'KSM'
     AVALANCHE = 'AVAX'
@@ -262,6 +266,8 @@ class SupportedBlockchain(Enum):
     def get_address_type(self) -> Callable:
         if self in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
             return ChecksumEthAddress
+        if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
+            return Eth2PubKey
         if self == SupportedBlockchain.BITCOIN:
             return BTCAddress
         if self == SupportedBlockchain.KUSAMA:

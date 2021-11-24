@@ -14,7 +14,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_optional_to_fval,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import ChecksumEthAddress, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Eth2PubKey, Timestamp
 
 AAVE_EVENT_TYPE = Literal['deposit', 'withdrawal', 'interest', 'borrow', 'repay', 'liquidation']
 AAVE_EVENT_DB_TUPLE = Tuple[
@@ -496,3 +496,25 @@ class EthereumTxReceipt:
     status: bool
     type: int
     logs: List[EthereumTxReceiptLog] = dataclasses.field(default_factory=list)
+
+
+Eth2ValidatorDBTuple = Tuple[int, str]
+
+
+@dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class Eth2Validator:
+    index: int
+    public_key: Eth2PubKey
+
+    def serialize_for_db(self) -> Eth2ValidatorDBTuple:
+        return self.index, self.public_key
+
+    @classmethod
+    def deserialize_from_db(cls, result: Eth2ValidatorDBTuple) -> 'Eth2Validator':
+        return cls(
+            index=result[0],
+            public_key=Eth2PubKey(result[1]),
+        )
+
+    def serialize(self) -> Dict[str, Any]:
+        return {'index': self.index, 'public_key': self.public_key}

@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import {
   DARK_MODE_ENABLED,
   DARK_THEME,
@@ -12,25 +12,25 @@ import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
-import {
-  TIMEFRAME_SETTING,
-  DEFI_SETUP_DONE,
-  LAST_KNOWN_TIMEFRAME,
-  QUERY_PERIOD,
-  PROFIT_LOSS_PERIOD,
-  ALL,
-  THOUSAND_SEPARATOR,
-  DECIMAL_SEPARATOR,
-  CURRENCY_LOCATION,
-  REFRESH_PERIOD,
-  EXPLORERS,
-  ITEMS_PER_PAGE,
-  AMOUNT_ROUNDING_MODE,
-  VALUE_ROUNDING_MODE,
-  GRAPH_ZERO_BASED
-} from '@/store/settings/consts';
-import { FrontendSettingsPayload } from '@/store/settings/types';
 import store from '@/store/store';
+import {
+  AMOUNT_ROUNDING_MODE,
+  CURRENCY_LOCATION,
+  DECIMAL_SEPARATOR,
+  DEFI_SETUP_DONE,
+  EXPLORERS,
+  FrontendSettingsPayload,
+  GRAPH_ZERO_BASED,
+  ITEMS_PER_PAGE,
+  LAST_KNOWN_TIMEFRAME,
+  PROFIT_LOSS_PERIOD,
+  Quarter,
+  QUERY_PERIOD,
+  REFRESH_PERIOD,
+  THOUSAND_SEPARATOR,
+  TIMEFRAME_SETTING,
+  VALUE_ROUNDING_MODE
+} from '../../../../src/types/frontend-settings';
 
 jest.mock('@/services/rotkehlchen-api');
 
@@ -46,7 +46,7 @@ describe('settings:actions', () => {
 
     expect(api.setSettings).toHaveBeenCalledWith(
       expect.objectContaining({
-        frontend_settings: JSON.stringify(
+        frontendSettings: JSON.stringify(
           axiosSnakeCaseTransformer({
             [DEFI_SETUP_DONE]: true,
             [TIMEFRAME_SETTING]: TimeFramePersist.REMEMBER,
@@ -54,7 +54,7 @@ describe('settings:actions', () => {
             [QUERY_PERIOD]: 5,
             [PROFIT_LOSS_PERIOD]: {
               year: new Date().getFullYear().toString(),
-              quarter: ALL
+              quarter: Quarter.ALL
             },
             [THOUSAND_SEPARATOR]: Defaults.DEFAULT_THOUSAND_SEPARATOR,
             [DECIMAL_SEPARATOR]: Defaults.DEFAULT_DECIMAL_SEPARATOR,

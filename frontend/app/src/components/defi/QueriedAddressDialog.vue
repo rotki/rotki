@@ -115,13 +115,13 @@ import { mapActions, mapGetters, mapState } from 'vuex';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { Module } from '@/services/session/consts';
 import {
   QueriedAddresses,
   QueriedAddressPayload
 } from '@/services/session/types';
 import { Nullable } from '@/types';
-import { Tags } from '@/typing/types';
+import { Module } from '@/types/modules';
+import { Tags } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
 @Component({

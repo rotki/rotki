@@ -1,7 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import dayjs from 'dayjs';
-import { TaskType } from '@/model/task-type';
 import { taskManager } from '@/services/task-manager';
+import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 
 export interface Task<T extends TaskMeta> {
@@ -71,4 +71,9 @@ export function taskCompletion<R, M extends TaskMeta>(
 interface TaskResult<R, M extends TaskMeta> {
   readonly result: R;
   readonly meta: M;
+}
+
+export interface TaskResultResponse<T> {
+  outcome: T | null;
+  status: 'completed' | 'not-found' | 'pending';
 }

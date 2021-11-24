@@ -3,8 +3,6 @@ import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { ActionContext, ActionTree } from 'vuex';
 import i18n from '@/i18n';
-import { createTask, taskCompletion, TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { balanceKeys } from '@/services/consts';
 import {
   aaveHistoryKeys,
@@ -23,7 +21,7 @@ import {
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { api } from '@/services/rotkehlchen-api';
-import { ALL_MODULES, Module } from '@/services/session/consts';
+import { ALL_MODULES } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import {
   ACTION_PURGE_PROTOCOL,
@@ -47,6 +45,9 @@ import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { RotkehlchenState } from '@/store/types';
 import { fetchAsync, isLoading, setStatus } from '@/store/utils';
+import { Module } from '@/types/modules';
+import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {

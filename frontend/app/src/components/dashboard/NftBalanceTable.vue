@@ -48,7 +48,7 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { computed, defineComponent, Ref } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import { currency } from '@/composables/session';

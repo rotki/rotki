@@ -12,7 +12,7 @@ import {
   AccountingSettingsUpdate,
   GeneralSettings,
   Tags
-} from '@/typing/types';
+} from '@/types/user';
 
 export const mutations: MutationTree<SessionState> = {
   login(

@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { TradeLocation } from '@/services/history/types';
 
 export type ReportPeriod = {

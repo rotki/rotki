@@ -23,8 +23,8 @@
             {{ $t('account_settings_display.crypto2crypto') }}
           </span>
           <span class="ms-2">
-            <v-icon :class="color(accountingSettings.includeCrypto2Crypto)">
-              {{ icon(accountingSettings.includeCrypto2Crypto) }}
+            <v-icon :class="color(accountingSettings.includeCrypto2crypto)">
+              {{ icon(accountingSettings.includeCrypto2crypto) }}
             </v-icon>
           </span>
         </v-col>
@@ -76,7 +76,7 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { AccountingSettings } from '@/typing/types';
+import { AccountingSettings } from '@/types/user';
 
 @Component({})
 export default class AccountingSettingsDisplay extends Vue {

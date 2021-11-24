@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export type DebugSettings = { vuex: boolean };
 
 export interface Themes {
@@ -5,11 +7,13 @@ export interface Themes {
   readonly dark: ThemeColors;
 }
 
-export type ThemeColors = {
-  readonly primary: string;
-  readonly accent: string;
-  readonly graph: string;
-};
+export const ThemeColors = z.object({
+  primary: z.string(),
+  accent: z.string(),
+  graph: z.string()
+})
+
+export type ThemeColors = z.infer<typeof ThemeColors>;
 
 export enum TimeUnit {
   YEAR = 'year',

@@ -2,10 +2,10 @@ import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import { createTask, Task, TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { Section, Status } from '@/store/const';
 import store from '@/store/store';
+import { createTask, Task, TaskMeta } from '../../../../src/types/task';
+import { TaskType } from '../../../../src/types/task-type';
 import '../../i18n';
 
 Vue.use(Vuetify);

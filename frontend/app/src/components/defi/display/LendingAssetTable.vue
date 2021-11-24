@@ -25,7 +25,7 @@
       <template #header.balance.usdValue>
         {{
           $t('lending_asset_table.headers.usd_value', {
-            currency: currency.ticker_symbol
+            currency: currency.tickerSymbol
           })
         }}
       </template>
@@ -41,8 +41,8 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { Currency } from '@/model/currency';
 import { DefiBalance } from '@/store/defi/types';
+import { Currency } from '@/types/currency';
 
 @Component({
   components: { DataTable, PercentageDisplay, AmountDisplay, AssetIcon },

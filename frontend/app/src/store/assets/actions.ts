@@ -1,7 +1,5 @@
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
-import { createTask, taskCompletion, TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { AssetUpdatePayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -15,6 +13,8 @@ import {
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { ActionStatus, RotkehlchenState } from '@/store/types';
+import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 
 export const actions: ActionTree<AssetState, RotkehlchenState> = {
   async checkForUpdate({ commit }): Promise<AssetUpdateCheckResult> {

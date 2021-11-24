@@ -16,7 +16,7 @@
         <span class="text-end">
           <amount-display
             show-currency="symbol"
-            :fiat-currency="currency.ticker_symbol"
+            :fiat-currency="currency.tickerSymbol"
             :value="amount"
           />
         </span>
@@ -26,12 +26,12 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { createNamespacedHelpers } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { capitalize } from '@/filters';
-import { Currency } from '@/model/currency';
+import { Currency } from '@/types/currency';
 
 const { mapGetters } = createNamespacedHelpers('session');
 

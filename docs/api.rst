@@ -106,6 +106,7 @@ Handling user creation, sign-in, log-out and querying
             "password": "supersecurepassword",
             "premium_api_key": "dasdsda",
             "premium_api_secret": "adsadasd",
+            "sync_database": true,
             "initial_settings": {
                 "submit_usage_analytics": false
             }
@@ -115,6 +116,7 @@ Handling user creation, sign-in, log-out and querying
    :reqjson string password: The password with which to encrypt the database for the new user
    :reqjson string[optional] premium_api_key: An optional api key if the user has a rotki premium account.
    :reqjson string[optional] premium_api_secret: An optional api secret if the user has a rotki premium account.
+   :reqjson bool[optional] sync_database: If set to true rotki will try to download a remote database for premium users if there is any.
    :reqjson object[optional] initial_settings: Optionally provide DB settings to set when creating the new user. If not provided, default settings are used.
 
    **Example Response**:
@@ -2208,7 +2210,7 @@ Querying onchain balances
 
 .. http:get:: /api/(version)/balances/blockchains/(blockchain)/
 
-   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``KSM``, ``DOT`` and ``AVAX``.
+   Doing a GET on the blockchains balances endpoint will query on-chain balances for the accounts of the user. Doing a GET on a specific blockchain will query balances only for that chain. Available blockchain names are: ``BTC``, ``ETH``, ``ETH2``, ``KSM``, ``DOT`` and ``AVAX``.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``. Passing it as a query argument here would be given as: ``?async_query=true``.
@@ -2277,12 +2279,22 @@ Querying onchain balances
                        "liabilities": {
                            "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "20", "usd_value": "20.35"}
                        }
-                  }}
+                  }},
+                   "ETH2": { "0x9675faa8d15665e30d31dc10a332828fa15e2c7490f7d1894d9092901b139801ce476810f8e1e0c7658a9abdb9c4412e": {
+                       "assets": {
+                           "ETH2": {"amount": "33.12", "usd_value": "45243.21"},
+                       },
+		       "0x97bc980f17f42a994827899e0720cee288b538646292ce7c866a5a5c9d1002cd1fb7a80195445be2670b64cf4d1c215e": {
+                       "assets": {
+                           "ETH2": {"amount": "32.45", "usd_value": "40241.55"},
+                       },
+                  }},
               },
               "totals": {
                   "assets": {
                       "BTC": {"amount": "1", "usd_value": "7540.15"},
                       "ETH": {"amount": "10", "usd_value": "1650.53"},
+                      "ETH2": {"amount": "65.57", "usd_value": "85484.76"},
                       "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "15", "usd_value": "15.21"}
                   },
                   "liabilities": {
@@ -7399,6 +7411,125 @@ Getting Eth2 Staking deposits
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
+Adding an Eth2 validator
+==========================
+
+.. http:put:: /api/(version)/blockchains/ETH2/validators
+
+   Doing a PUT on the eth2 validators endpoint will input information and track an ETH2 validator. 
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/ETH2/validators HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson validator_index int: An optional integer representing the validator index of the validator to track. If this is not given then the pulic key of the validator has to be given!
+   :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to track. If this is not given the the validator index has to be given!
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true
+        "message": "",
+      }
+
+   :statuscode 200: Eth2 validator succesfully added.
+   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as beaconcha.in could not be reached or returned unexpected response.
+
+
+Deleting an Eth2 validator
+==========================
+
+.. http:delete:: /api/(version)/blockchains/ETH2/validators
+
+   Doing a DELETE on the eth2 validators endpoint will delete information and stop tracking an ETH2 validator.
+
+   .. note::
+      This endpoint is only available for premium users
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/blockchains/ETH2/validators HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson validator_index int: An optional integer representing the validator index of the validator to delete. If this is not given then the pulic key of the validator has to be given!
+   :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to delete. If this is not given the the validator index has to be given!
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+   :statuscode 200: Eth2 validator succesfully delete.
+   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 500: Internal rotki error.
+
+Getting tracked Eth2 validators
+===============================
+
+.. http:get:: /api/(version)/blockchains/ETH2/validators
+
+   Doing a GET on the ETH2 validators endpoint will get information
+
+   .. note::
+      This endpoint is only available for premium users
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH2/validators HTTP/1.1
+      Host: localhost:5042
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": [{
+	    "index": 1, "public_key": "0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c"}, {
+	    "index": 1532, "public_key": "0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed"}, {
+	    "index": 5421, "public_key": "0xa64722f93f37c7da8da67ee36fd2a763103897efc274e3accb4cd172382f7a170f064b81552ae77cdbe440208a1b897e"
+	}],
+        "message": ""
+      }
+
+   :statuscode 200: Eth2 validator detauls succesfully returned.
+   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 500: Internal rotki error.
+
+
 Getting Pickle's DILL balances
 ==============================
 
@@ -7508,6 +7639,7 @@ Querying ethereum airdrops
    :statuscode 409: User is not logged in.
    :statuscode 500: Internal rotki error
    :statuscode 502: Could not query an airdrop file
+   :statuscode 507: Failed to store CSV files for airdrops.
 
 Get addresses to query per protocol
 =======================================
@@ -8984,10 +9116,11 @@ Data imports
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"source": "cointracking.info", "filepath": "/path/to/data/file"}
+      {"source": "cointracking.info", "filepath": "/path/to/data/file", "timestamp_format": "%d/%m/%Y %H:%M:%S"}
 
    :reqjson str source: The source of the data to import. Valid values are ``"cointracking.info"``, ``"cryptocom"``, ``"blockfi-transactions"``, ``"blockfi-trades"``, ``"nexo"``, ``"gitcoin"``, ``"shapeshift-trades"``, ``"uphold"``.
    :reqjson str filepath: The filepath to the data for importing
+   :reqjson str timestamp_format: Optional. Custom format to use for dates in the CSV file. Should follow rules at `Datetime docs <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__.
 
    **Example Response**:
 

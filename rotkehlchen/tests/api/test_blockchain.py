@@ -202,7 +202,7 @@ def test_query_blockchain_balances(
         setup.enter_blockchain_patches(stack)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
-            "blockchainbalancesresource",
+            'blockchainbalancesresource',
         ), json={'async_query': async_query})
         if async_query:
             task_id = assert_ok_async_response(response)

@@ -116,7 +116,7 @@
             outlined
             class="general-settings__fields__currency-selector"
             :label="$t('general_settings.amount.labels.main_currency')"
-            item-text="ticker_symbol"
+            item-text="tickerSymbol"
             return-object
             :items="currencies"
             :success-messages="settingsMessages[SELECTED_CURRENCY].success"
@@ -125,14 +125,14 @@
           >
             <template #item="{ item, attrs, on }">
               <v-list-item
-                :id="`currency__${item.ticker_symbol.toLocaleLowerCase()}`"
+                :id="`currency__${item.tickerSymbol.toLocaleLowerCase()}`"
                 v-bind="attrs"
                 v-on="on"
               >
                 <v-list-item-avatar
                   class="general-settings__currency-list primary--text"
                 >
-                  {{ item.unicode_symbol }}
+                  {{ item.unicodeSymbol }}
                 </v-list-item-avatar>
                 <v-list-item-content>
                   <v-list-item-title>
@@ -273,19 +273,16 @@ import { currencies } from '@/data/currencies';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { Defaults } from '@/data/defaults';
 import SettingsMixin from '@/mixins/settings-mixin';
-import { Currency } from '@/model/currency';
+import { ActionStatus } from '@/store/types';
+import { Currency } from '@/types/currency';
+import { CurrencyLocation } from '@/types/currency-location';
 import {
   CURRENCY_LOCATION,
   DECIMAL_SEPARATOR,
+  FrontendSettingsPayload,
   THOUSAND_SEPARATOR
-} from '@/store/settings/consts';
-import { FrontendSettingsPayload } from '@/store/settings/types';
-import { ActionStatus } from '@/store/types';
-import {
-  CURRENCY_AFTER,
-  CurrencyLocation,
-  SettingsUpdate
-} from '@/typing/types';
+} from '@/types/frontend-settings';
+import { SettingsUpdate } from '@/types/user';
 import { bigNumberify } from '@/utils/bignumbers';
 import DateFormatHelp from '@/views/settings/DateFormatHelp.vue';
 
@@ -349,7 +346,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   dateDisplayFormat: string = '';
   thousandSeparator: string = '';
   decimalSeparator: string = '';
-  currencyLocation: CurrencyLocation = CURRENCY_AFTER;
+  currencyLocation: CurrencyLocation = CurrencyLocation.AFTER;
   selectedCurrency: Currency = currencies[0];
   btcDerivationGapLimit: string = '20';
   displayDateInLocaltime: boolean = true;
@@ -409,7 +406,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     await this.update(
-      { btc_derivation_gap_limit: parseInt(limit) },
+      { btcDerivationGapLimit: parseInt(limit) },
       SETTING_BTC_DERIVATION_GAP_LIMIT,
       message
     );
@@ -431,7 +428,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   }
 
   async onSelectedCurrencyChange(currency: Currency) {
-    const symbol = currency.ticker_symbol;
+    const symbol = currency.tickerSymbol;
     const message = makeMessage(
       `${this.$t('general_settings.validation.currency.error')}`,
       `${this.$t('general_settings.validation.currency.success', {
@@ -439,7 +436,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
       })}`
     );
     await this.update(
-      { main_currency: symbol },
+      { mainCurrency: symbol },
       SETTING_SELECTED_CURRENCY,
       message
     );
@@ -509,7 +506,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   }
 
   async onFloatingPrecisionChange(precision: string) {
-    const previousValue = this.generalSettings.floatingPrecision.toString();
+    const previousValue = this.generalSettings.uiFloatingPrecision.toString();
 
     if (!this.notTheSame(precision, previousValue)) {
       return;
@@ -530,7 +527,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     const success = await this.update(
-      { ui_floating_precision: parseInt(precision) },
+      { uiFloatingPrecision: parseInt(precision) },
       SETTING_FLOATING_PRECISION,
       message
     );
@@ -546,7 +543,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     await this.update(
-      { submit_usage_analytics: enabled },
+      { submitUsageAnalytics: enabled },
       SETTING_ANONYMOUS_USAGE_ANALYTICS,
       message
     );
@@ -560,7 +557,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     await this.update(
-      { display_date_in_localtime: enabled },
+      { displayDateInLocaltime: enabled },
       SETTING_DISPLAY_DATE_IN_LOCALTIME,
       message
     );
@@ -588,7 +585,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     const success = await this.update(
-      { balance_save_frequency: parseInt(frequency) },
+      { balanceSaveFrequency: parseInt(frequency) },
       SETTING_BALANCE_SAVE_FREQUENCY,
       message
     );
@@ -611,7 +608,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     await this.update(
-      { date_display_format: dateFormat },
+      { dateDisplayFormat: dateFormat },
       SETTING_DATE_DISPLAY_FORMAT,
       message
     );
@@ -634,7 +631,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     const success = await this.update(
-      { eth_rpc_endpoint: endpoint },
+      { ethRpcEndpoint: endpoint },
       SETTING_RPC_ENDPOINT,
       message
     );
@@ -663,7 +660,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     const success = await this.update(
-      { ksm_rpc_endpoint: endpoint },
+      { ksmRpcEndpoint: endpoint },
       SETTING_KSM_RPC_ENDPOINT,
       message
     );
@@ -692,7 +689,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     const success = await this.update(
-      { dot_rpc_endpoint: endpoint },
+      { dotRpcEndpoint: endpoint },
       SETTING_DOT_RPC_ENDPOINT,
       message
     );
@@ -736,8 +733,8 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   private loadFromState() {
     this.selectedCurrency = this.currency;
     const settings = this.generalSettings;
-    this.floatingPrecision = settings.floatingPrecision.toString();
-    this.anonymousUsageAnalytics = settings.anonymousUsageAnalytics;
+    this.floatingPrecision = settings.uiFloatingPrecision.toString();
+    this.anonymousUsageAnalytics = settings.submitUsageAnalytics;
     this.rpcEndpoint = settings.ethRpcEndpoint;
     this.ksmRpcEndpoint = settings.ksmRpcEndpoint;
     this.balanceSaveFrequency = settings.balanceSaveFrequency.toString();

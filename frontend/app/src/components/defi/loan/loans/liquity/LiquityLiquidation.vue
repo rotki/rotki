@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { defineComponent, PropType } from '@vue/composition-api';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import StatCard from '@/components/display/StatCard.vue';

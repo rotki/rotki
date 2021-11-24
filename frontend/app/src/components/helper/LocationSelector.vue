@@ -6,6 +6,7 @@
     :items="locations"
     item-value="identifier"
     item-text="name"
+    auto-select-first
     @input="change"
     v-on="$listeners"
   >

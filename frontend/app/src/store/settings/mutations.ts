@@ -1,4 +1,3 @@
-import { BigNumber } from '@rotki/common/';
 import {
   DARK_MODE_ENABLED,
   DARK_THEME,
@@ -9,32 +8,29 @@ import {
   TimeFramePeriod,
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import {
-  TIMEFRAME_SETTING,
-  DEFI_SETUP_DONE,
-  LAST_KNOWN_TIMEFRAME,
-  QUERY_PERIOD,
-  PROFIT_LOSS_PERIOD,
-  THOUSAND_SEPARATOR,
-  DECIMAL_SEPARATOR,
-  CURRENCY_LOCATION,
-  REFRESH_PERIOD,
-  EXPLORERS,
-  ITEMS_PER_PAGE,
-  AMOUNT_ROUNDING_MODE,
-  VALUE_ROUNDING_MODE,
-  GRAPH_ZERO_BASED
-} from '@/store/settings/consts';
-import { defaultState } from '@/store/settings/state';
-import {
-  SettingsState,
-  ProfitLossTimeframe,
-  RefreshPeriod,
-  ExplorersSettings
-} from '@/store/settings/types';
+import { defaultState, SettingsState } from '@/store/settings/state';
 import { Writeable } from '@/types';
-import { CurrencyLocation } from '@/typing/types';
-import RoundingMode = BigNumber.RoundingMode;
+import { CurrencyLocation } from '@/types/currency-location';
+import {
+  AMOUNT_ROUNDING_MODE,
+  CURRENCY_LOCATION,
+  DECIMAL_SEPARATOR,
+  DEFI_SETUP_DONE,
+  EXPLORERS,
+  ExplorersSettings,
+  GRAPH_ZERO_BASED,
+  ITEMS_PER_PAGE,
+  LAST_KNOWN_TIMEFRAME,
+  PROFIT_LOSS_PERIOD,
+  ProfitLossTimeframe,
+  QUERY_PERIOD,
+  REFRESH_PERIOD,
+  RefreshPeriod,
+  RoundingMode,
+  THOUSAND_SEPARATOR,
+  TIMEFRAME_SETTING,
+  VALUE_ROUNDING_MODE
+} from '@/types/frontend-settings';
 
 type Mutations<S = SettingsState> = {
   [DEFI_SETUP_DONE](state: S, done: boolean): void;

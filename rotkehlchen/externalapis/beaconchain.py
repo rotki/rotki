@@ -1,20 +1,25 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import gevent
 import requests
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.eth2_utils import ValidatorBalance
-from rotkehlchen.chain.ethereum.typing import ValidatorID, ValidatorPerformance
+from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorID, ValidatorPerformance
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT, QUERY_RETRY_TIMES
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.fval import FVal
+from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, ExternalService
+from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
+from rotkehlchen.typing import ChecksumEthAddress, Eth2PubKey, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import get_chunks
+from rotkehlchen.utils.misc import from_gwei, get_chunks, hexstring_to_bytes
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -48,17 +53,20 @@ class BeaconChain(ExternalServiceWithApiKey):
     def _query(
             self,
             module: Literal['validator'],
-            endpoint: Literal['balancehistory', 'performance', 'eth1'],
+            endpoint: Optional[Literal['balancehistory', 'performance', 'eth1', 'deposits']],
             encoded_args: str,
     ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        if endpoint == 'eth1':
+        if endpoint is None:  # for now only validator data
+            query_str = f'{self.url}{module}/{encoded_args}'
+        elif endpoint == 'eth1':
             query_str = f'{self.url}{module}/{endpoint}/{encoded_args}'
         else:
             query_str = f'{self.url}{module}/{encoded_args}/{endpoint}'
+
         api_key = self._get_api_key()
         if api_key is not None:
             query_str += f'?apikey={api_key}'
@@ -197,24 +205,10 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         return balances
 
-    @overload
     def get_performance(
             self,
-            indices_or_pubkeys: List[int],
+            indices_or_pubkeys: Union[List[int], List[Eth2PubKey]],
     ) -> Dict[int, ValidatorPerformance]:
-        ...
-
-    @overload
-    def get_performance(
-            self,
-            indices_or_pubkeys: List[str],
-    ) -> Dict[str, ValidatorPerformance]:
-        ...
-
-    def get_performance(
-            self,
-            indices_or_pubkeys: Union[List[int], List[str]],
-    ) -> Union[Dict[int, ValidatorPerformance], Dict[str, ValidatorPerformance]]:
         """Get the performance of all the validators given from the list of indices or pubkeys
 
         Queries in chunks of 100 due to api limitations
@@ -254,7 +248,9 @@ class BeaconChain(ExternalServiceWithApiKey):
         return performance
 
     def get_eth1_address_validators(self, address: ChecksumEthAddress) -> List[ValidatorID]:
-        """Get a list of Validators that are associated with the given eth1 address
+        """Get a list of Validators that are associated with the given eth1 address.
+
+        Each entry is a tuple of (optional) validator index and pubkey
 
         May raise:
         - RemoteError due to problems querying beaconcha.in API
@@ -272,7 +268,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         try:
             validators = [
                 ValidatorID(
-                    validator_index=x['validatorindex'],
+                    index=x['validatorindex'],
                     public_key=x['publickey'],
                 ) for x in data
             ]
@@ -281,3 +277,60 @@ class BeaconChain(ExternalServiceWithApiKey):
                 f'Beaconchai.in eth1 response processing error. Missing key entry {str(e)}',
             ) from e
         return validators
+
+    def get_validator_deposits(
+            self,
+            indices_or_pubkeys: Union[List[int], List[Eth2PubKey]],
+    ) -> List[Eth2Deposit]:
+        """Get the deposits of all the validators given from the list of indices or pubkeys
+
+        Queries in chunks of 100 due to api limitations
+
+        May raise:
+        - RemoteError due to problems querying beaconcha.in API
+        """
+        chunks = list(get_chunks(indices_or_pubkeys, n=100))  # type: ignore
+        data = []
+        for chunk in chunks:
+            result = self._query(
+                module='validator',
+                endpoint='deposits',
+                encoded_args=','.join(str(x) for x in chunk),
+            )
+            if isinstance(result, list):
+                data.extend(result)
+            else:
+                data.append(result)
+
+        deposits = []
+        for entry in data:
+            try:
+                amount = from_gwei(FVal(entry['amount']))
+                timestamp = entry['block_ts']
+                usd_price = query_usd_price_zero_if_error(
+                    asset=A_ETH,
+                    time=timestamp,
+                    location=f'Eth2 staking deposit at time {timestamp}',
+                    msg_aggregator=self.msg_aggregator,
+                )
+                deposits.append(Eth2Deposit(
+                    from_address=deserialize_ethereum_address(entry['from_address']),
+                    pubkey=entry['publickey'],
+                    withdrawal_credentials=entry['withdrawal_credentials'],
+                    value=Balance(
+                        amount=amount,
+                        usd_value=amount * usd_price,
+                    ),
+                    tx_hash=hexstring_to_bytes(entry['tx_hash']),
+                    tx_index=entry['tx_index'],
+                    timestamp=entry['block_ts'],
+                ))
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                raise RemoteError(
+                    f'Beaconchai.in deposits response processing error. {msg}',
+                ) from e
+
+        return deposits

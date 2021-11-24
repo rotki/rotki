@@ -61,8 +61,7 @@ import {
   FETCH_FROM_CACHE,
   FETCH_FROM_SOURCE,
   FETCH_REFRESH,
-  HistoryActions,
-  LedgerActionType
+  HistoryActions
 } from '@/store/history/consts';
 import {
   FetchSource,
@@ -74,6 +73,7 @@ import {
 } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
 import { Writeable } from '@/types';
+import { LedgerActionType } from '@/types/ledger-actions';
 import { Zero } from '@/utils/bignumbers';
 import LedgerActionsContent from '@/views/history/LedgerActionsContent.vue';
 

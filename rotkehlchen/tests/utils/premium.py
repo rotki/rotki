@@ -144,6 +144,7 @@ def setup_starting_environment(
         premium_credentials: PremiumCredentials,
         remote_data: bytes = REMOTE_DATA,
         sync_approval: Literal['yes', 'no', 'unknown'] = 'yes',
+        sync_database: bool = True,
 ):
     """
     Sets up the starting environment for premium testing when the user
@@ -192,6 +193,7 @@ def setup_starting_environment(
             username=username,
             create_new=create_new,
             sync_approval=sync_approval,
+            sync_database=sync_database,
         )
 
 

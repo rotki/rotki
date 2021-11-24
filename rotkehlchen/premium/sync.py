@@ -214,12 +214,34 @@ class PremiumSyncManager():
 
         return self._sync_data_from_server_and_replace_local()
 
+    def _sync_if_allowed(
+        self,
+        sync_approval: Literal['yes', 'no', 'unknown'],
+        result: SyncCheckResult,
+    ) -> None:
+        if result.can_sync == CanSync.ASK_USER:
+            if sync_approval == 'unknown':
+                log.info('Remote DB is possibly newer. Ask user.')
+                raise RotkehlchenPermissionError(result.message, result.payload)
+
+            if sync_approval == 'yes':
+                log.info('User approved data sync from server')
+                # this may raise due to password
+                self._sync_data_from_server_and_replace_local()
+
+            else:
+                log.debug('Could sync data from server but user refused')
+        elif result.can_sync == CanSync.YES:
+            log.info('User approved data sync from server')
+            self._sync_data_from_server_and_replace_local()  # this may raise due to password
+
     def try_premium_at_start(
             self,
             given_premium_credentials: Optional[PremiumCredentials],
             username: str,
             create_new: bool,
             sync_approval: Literal['yes', 'no', 'unknown'],
+            sync_database: bool,
     ) -> Optional[Premium]:
         """
         Check if new user provided api pair or we already got one in the DB
@@ -269,25 +291,14 @@ class PremiumSyncManager():
             return None
 
         result = self._can_sync_data_from_server(new_account=create_new)
-        if result.can_sync == CanSync.ASK_USER:
-            if sync_approval == 'unknown':
-                log.info('Remote DB is possibly newer. Ask user.')
-                raise RotkehlchenPermissionError(result.message, result.payload)
-
-            if sync_approval == 'yes':
-                log.info('User approved data sync from server')
-                self._sync_data_from_server_and_replace_local()  # this may raise due to password
-
-            else:
-                log.debug('Could sync data from server but user refused')
-        elif result.can_sync == CanSync.YES:
-            log.info('User approved data sync from server')
-            self._sync_data_from_server_and_replace_local()  # this may raise due to password
-
         if create_new:
             # if this is a new account, make sure the api keys are properly stored
             # in the DB
+            if sync_database:
+                self._sync_if_allowed(sync_approval, result)
             self.data.db.set_rotkehlchen_premium(self.premium.credentials)
+        else:
+            self._sync_if_allowed(sync_approval, result)
 
         # Success, return premium
         return self.premium

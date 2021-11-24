@@ -24,17 +24,19 @@ export class AccountBalancesPage {
 
   addBalance(balances: FixtureManualBalance) {
     cy.get('.big-dialog').should('be.visible');
-    cy.get('.manual-balances-form__asset').type(balances.keyword);
-    cy.get(`#asset-${balances.asset.toLocaleLowerCase()}`).click();
+    cy.get('.manual-balances-form__asset')
+      .type(balances.keyword)
+      .type('{enter}');
     cy.get('.manual-balances-form__label').type(balances.label);
     cy.get('.manual-balances-form__amount').type(balances.amount);
     for (const tag of balances.tags) {
       cy.get('.manual-balances-form__tags').type(tag).type('{enter}');
     }
     cy.get('.manual-balances-form__location').click();
-    cy.get(
-      '.manual-balances-form__location div.v-select__selections input'
-    ).type(`{selectall}{backspace}${balances.location}{enter}`);
+    cy.get('.manual-balances-form__location div.v-select__selections input')
+      .type(`{selectall}{backspace}`)
+      .type(balances.location)
+      .type('{enter}');
     cy.get('.big-dialog__buttons__confirm').click();
     cy.get('.big-dialog', { timeout: 45000 }).should('not.be.visible');
   }

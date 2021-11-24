@@ -2,6 +2,16 @@
 Changelog
 =========
 
+* :feature:`3716` Users can now see if any of their addresses have PSP available to claim from the PSP airdrop.
+
+* :release:`1.22.1 <2021-11-19>`
+* :bug:`3726` Manual liabilities should not count as assets and should be deducted from total net value when taking a snapshot. Also multiple liabilities of same asset should now be properly summed.
+* :bug:`3722` Trades details will now properly expand one at a time.
+* :bug:`3714` Airdrops section will now work again for Windows users.
+* :bug:`-` Uniswap trades will be queried correctly now.
+* :bug:`3724` Users should see their per asset liabilities properly aggregated on dashboard.
+* :bug:`3702` RMRK for Kucoin and BCH for Bitfinex should now be properly recognized by rotki again.
+
 * :release:`1.22.0 <2021-11-12>`
 * :feature:`1146` Bitpanda exchange is now supported. Bitpanda balances are now shown and rotki can query trades and deposit/withdrawals from the exchange.
 * :feature:`2483` Users will now get properly notified when saving the balance snapshot fails.

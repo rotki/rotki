@@ -179,6 +179,30 @@ def test_try_premium_at_start_new_account_can_pull_data(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_try_premium_at_start_new_account_rejects_data(
+        rotkehlchen_instance,
+        username,
+        db_password,
+        rotki_premium_credentials,
+):
+    # Test that even with can_sync False, at start of new account we attempt data pull
+    setup_starting_environment(
+        rotkehlchen_instance=rotkehlchen_instance,
+        username=username,
+        db_password=db_password,
+        premium_credentials=rotki_premium_credentials,
+        first_time=True,
+        same_hash_with_remote=False,
+        newer_remote_db=True,
+        db_can_sync_setting=False,
+        sync_database=False,
+    )
+    msg = 'Test default main currency should be different from the restored currency'
+    assert DEFAULT_TESTS_MAIN_CURRENCY != A_GBP, msg
+    assert rotkehlchen_instance.data.db.get_main_currency() == DEFAULT_TESTS_MAIN_CURRENCY
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_new_account_pull_old_data(
         rotkehlchen_instance,
         username,

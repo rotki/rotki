@@ -10,7 +10,7 @@ import { defineComponent } from '@vue/composition-api';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import NftGallery from '@/components/nft/NftGallery.vue';
 import { setupModuleEnabled } from '@/composables/session';
-import { Module } from '@/services/session/consts';
+import { Module } from '@/types/modules';
 
 export default defineComponent({
   name: 'Nft',

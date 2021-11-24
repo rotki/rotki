@@ -26,8 +26,8 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ModuleMixin from '@/mixins/module-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { AdexStaking } from '@/premium/premium';
-import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
+import { Module } from '@/types/modules';
 
 @Component({
   components: { ActiveModules, ModuleNotActive, AdexStaking, ProgressScreen },
