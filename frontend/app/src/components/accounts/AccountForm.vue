@@ -5,97 +5,42 @@
     data-cy="blockchain-balance-form"
     @input="input"
   >
-    <v-row no-gutters>
-      <v-col cols="12">
-        <v-select
-          v-model="blockchain"
-          data-cy="account-blockchain-field"
-          outlined
-          class="account-form__chain pt-2"
-          :items="items"
-          :label="$t('account_form.labels.blockchain')"
-          :disabled="accountOperation || loading || !!edit"
-        >
-          <template #selection="{ item }">
-            <asset-details class="pt-2 pb-2" :asset="item" />
-          </template>
-          <template #item="{ item }">
-            <asset-details class="pt-2 pb-2" :asset="item" />
-          </template>
-        </v-select>
-      </v-col>
-    </v-row>
-    <v-row v-if="!edit" no-gutters class="mb-5">
-      <v-col cols="12">
-        <input-mode-select v-model="inputMode" :blockchain="blockchain" />
-      </v-col>
-    </v-row>
-    <v-row v-if="displayXpubInput" align="center" no-gutters class="mt-2">
-      <v-col cols="auto">
-        <v-select
-          v-model="xpubKeyPrefix"
-          outlined
-          class="account-form__xpub-key-type"
-          item-value="value"
-          item-text="label"
-          :disabled="accountOperation || loading || !!edit"
-          :items="keyType"
-        />
-      </v-col>
-      <v-col>
-        <v-text-field
-          v-model="xpub"
-          outlined
-          class="account-form__xpub ml-2"
-          :label="$t('account_form.labels.btc.xpub')"
-          autocomplete="off"
-          :error-messages="errorMessages[fields.XPUB]"
-          :disabled="accountOperation || loading || !!edit"
-          @paste="onPasteXpub"
-        >
-          <template #append-outer>
-            <v-tooltip open-delay="400" top>
-              <template #activator="{ on, attrs }">
-                <div class="account-form__advanced">
-                  <v-btn
-                    icon
-                    v-bind="attrs"
-                    v-on="on"
-                    @click="advanced = !advanced"
-                  >
-                    <v-icon v-if="advanced">mdi-chevron-up</v-icon>
-                    <v-icon v-else>mdi-chevron-down</v-icon>
-                  </v-btn>
-                </div>
-              </template>
-              <span>
-                {{ $tc('account_form.advanced_tooltip', advanced ? 0 : 1) }}
-              </span>
-            </v-tooltip>
-          </template>
-        </v-text-field>
-      </v-col>
-    </v-row>
-    <v-row v-if="isBtc && isXpub && advanced" no-gutters>
-      <v-col>
-        <v-text-field
-          v-model="derivationPath"
-          outlined
-          class="account-form__derivation-path"
-          :label="$t('account_form.labels.btc.derivation_path')"
-          :error-messages="errorMessages[fields.DERIVATION_PATH]"
-          autocomplete="off"
-          :disabled="accountOperation || loading || !!edit"
-          persistent-hint
-          :hint="$t('account_form.labels.btc.derivation_path_hint')"
-        />
-      </v-col>
-    </v-row>
-    <v-row v-if="isEth" no-gutters>
-      <v-col>
-        <module-activator @update:selection="selectedModules = $event" />
-      </v-col>
-    </v-row>
+    <v-select
+      v-model="blockchain"
+      data-cy="account-blockchain-field"
+      outlined
+      class="account-form__chain pt-2"
+      :items="items"
+      :label="$t('account_form.labels.blockchain')"
+      :disabled="accountOperation || loading || !!edit"
+    >
+      <template #selection="{ item }">
+        <asset-details class="pt-2 pb-2" :asset="item" />
+      </template>
+      <template #item="{ item }">
+        <asset-details class="pt-2 pb-2" :asset="item" />
+      </template>
+    </v-select>
+
+    <input-mode-select
+      v-if="!edit"
+      v-model="inputMode"
+      :blockchain="blockchain"
+    />
+
+    <xpub-input
+      v-if="displayXpubInput"
+      :disabled="accountOperation || loading || !!edit"
+      :error-messages="errorMessages"
+      :xpub="xpub"
+      @update:xpub="xpub = $event"
+    />
+
+    <module-activator
+      v-if="isEth"
+      @update:selection="selectedModules = $event"
+    />
+
     <v-row
       v-if="
         (!isBtc || (isBtc && !isXpub) || !!edit) &&
@@ -151,35 +96,23 @@
         </v-row>
       </v-col>
     </v-row>
-    <v-row no-gutters>
-      <v-col cols="12">
-        <v-text-field
-          v-model="label"
-          data-cy="account-label-field"
-          outlined
-          class="account-form__label"
-          :label="$t('account_form.labels.label')"
-          :disabled="accountOperation || loading"
-        />
-      </v-col>
-    </v-row>
-    <v-row no-gutters>
-      <v-col cols="12">
-        <tag-input
-          v-model="tags"
-          data-cy="account-tag-field"
-          outlined
-          :disabled="accountOperation || loading"
-        />
-      </v-col>
-    </v-row>
-    <v-row no-gutters>
-      <v-col cols="12">
-        <div class="account-form--progress">
-          <v-progress-linear v-if="accountOperation" indeterminate />
-        </div>
-      </v-col>
-    </v-row>
+    <v-text-field
+      v-model="label"
+      data-cy="account-label-field"
+      outlined
+      class="account-form__label"
+      :label="$t('account_form.labels.label')"
+      :disabled="accountOperation || loading"
+    />
+    <tag-input
+      v-model="tags"
+      data-cy="account-tag-field"
+      outlined
+      :disabled="accountOperation || loading"
+    />
+    <div class="account-form--progress">
+      <v-progress-linear v-if="accountOperation" indeterminate />
+    </div>
   </v-form>
 </template>
 <script lang="ts">
@@ -192,8 +125,11 @@ import {
   Ref,
   ref,
   toRefs,
+  unref,
   watch
 } from '@vue/composition-api';
+import { xpubToPayload } from '@/components/accounts/blockchain/xpub';
+import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
 import {
   MANUAL_ADD,
   METAMASK_IMPORT,
@@ -223,37 +159,6 @@ import { trimOnPaste } from '@/utils/event';
 import { getMetamaskAddresses } from '@/utils/metamask';
 
 type ValidationRule = (value: string) => boolean | string;
-type XpubType = {
-  readonly label: string;
-  readonly value: string;
-};
-
-const XPUB_LABEL = 'P2PKH';
-const XPUB_VALUE = 'xpub';
-const YPUB_LABEL = 'P2SH-P2WPKH';
-const YPUB_VALUE = 'ypub';
-const ZPUB_LABEL = 'WPKH';
-const ZPUB_VALUE = 'zpub';
-const XPUB_TYPE = 'p2pkh';
-const YPUB_TYPE = 'p2sh_p2wpkh';
-const ZPUB_TYPE = 'wpkh';
-
-const XPUB_KEY_PREFIX = [XPUB_VALUE, YPUB_VALUE, ZPUB_VALUE] as const;
-const XPUB_KEY_TYPE = [XPUB_TYPE, YPUB_TYPE, ZPUB_TYPE] as const;
-
-type XpubPrefix = typeof XPUB_KEY_PREFIX[number];
-type XpubKeyType = typeof XPUB_KEY_TYPE[number];
-
-const getKeyType: (key: XpubPrefix) => XpubKeyType = key => {
-  if (key === XPUB_VALUE) {
-    return XPUB_TYPE;
-  } else if (key === YPUB_VALUE) {
-    return YPUB_TYPE;
-  } else if (key === ZPUB_VALUE) {
-    return ZPUB_TYPE;
-  }
-  throw new Error(`${key} is not acceptable`);
-};
 
 const FIELD_ADDRESS = 'address';
 const FIELD_XPUB = 'xpub';
@@ -291,7 +196,7 @@ const setupValidationRules = (
 
 const AccountForm = defineComponent({
   name: 'AccountForm',
-  components: { ModuleActivator, InputModeSelect, TagInput },
+  components: { XpubInput, ModuleActivator, InputModeSelect, TagInput },
   props: {
     value: { required: true, type: Boolean, default: false },
     edit: {
@@ -306,12 +211,10 @@ const AccountForm = defineComponent({
     const { context, edit } = toRefs(props);
 
     const isEdit = computed(() => !!edit.value);
-    const xpub = ref('');
-    const derivationPath = ref('');
-    const xpubKeyPrefix = ref<XpubPrefix>(XPUB_VALUE);
 
     const address = ref('');
     const addresses = ref('');
+    const xpub = ref<XpubPayload | null>(null);
 
     const entries = computed(() => {
       const allAddresses = addresses.value
@@ -364,19 +267,15 @@ const AccountForm = defineComponent({
 
     const pending = ref(false);
     const multiple = ref(false);
-    const advanced = ref(false);
 
     const selectedModules = ref<Module[]>([]);
+    watch(xpub, () => {
+      clearErrors(FIELD_XPUB);
+      clearErrors(FIELD_DERIVATION_PATH);
+    });
 
     watch(address, () => {
       clearErrors(FIELD_ADDRESS);
-    });
-    watch(xpub, value => {
-      if (!value) {
-        return;
-      }
-      clearErrors(FIELD_XPUB);
-      setXpubKeyType(value);
     });
     watch(multiple, () => {
       addresses.value = '';
@@ -391,9 +290,6 @@ const AccountForm = defineComponent({
       } else {
         inputMode.value = MANUAL_ADD;
       }
-    });
-    watch(derivationPath, () => {
-      clearErrors(FIELD_DERIVATION_PATH);
     });
 
     watch(context, () => {
@@ -421,18 +317,6 @@ const AccountForm = defineComponent({
       );
     });
 
-    const isPrefixed = (value: string) => value.match(/([xzy]pub)(.*)/);
-    const setXpubKeyType = (value: string) => {
-      const match = isPrefixed(value);
-      if (match && match.length === 3) {
-        const prefix = match[1] as XpubPrefix;
-        if (prefix === XPUB_VALUE) {
-          return;
-        }
-        xpubKeyPrefix.value = prefix;
-      }
-    };
-
     const setEditMode = () => {
       const account = edit.value;
       if (!account) {
@@ -444,15 +328,7 @@ const AccountForm = defineComponent({
       label.value = account.label;
       tags.value = account.tags;
       if ('xpub' in account) {
-        const match = isPrefixed(account.xpub);
-        if (match) {
-          xpub.value = match[0];
-          xpubKeyPrefix.value = match[1] as XpubPrefix;
-        } else {
-          xpub.value = account.xpub;
-        }
-
-        derivationPath.value = account.derivationPath;
+        xpub.value = xpubToPayload(account.xpub, account.derivationPath);
       }
     };
 
@@ -468,8 +344,6 @@ const AccountForm = defineComponent({
       addresses.value = '';
       label.value = '';
       tags.value = [];
-      xpub.value = '';
-      derivationPath.value = '';
       form.value?.resetValidation();
       blockchain.value = Blockchain.ETH;
       inputMode.value = MANUAL_ADD;
@@ -477,24 +351,12 @@ const AccountForm = defineComponent({
     };
 
     const payload = computed<BlockchainAccountPayload>(() => {
-      let xpubPayload: XpubPayload | undefined;
-      if (isBtc.value && isXpub.value) {
-        const trimmedKey = xpub.value.trim();
-        xpubPayload = {
-          xpub: trimmedKey,
-          derivationPath: derivationPath.value ?? undefined,
-          xpubType: getKeyType(xpubKeyPrefix.value)
-        };
-      } else {
-        xpubPayload = undefined;
-      }
-
       return {
         blockchain: blockchain.value,
         address: address.value.trim(),
         label: label.value,
         tags: tags.value,
-        xpub: xpubPayload,
+        xpub: unref(xpub) ?? undefined,
         modules: isEth.value ? selectedModules.value : undefined
       };
     });
@@ -632,25 +494,8 @@ const AccountForm = defineComponent({
     };
 
     const fields = {
-      XPUB: FIELD_XPUB,
-      ADDRESS: FIELD_ADDRESS,
-      DERIVATION_PATH: FIELD_DERIVATION_PATH
+      ADDRESS: FIELD_ADDRESS
     };
-
-    const keyType: XpubType[] = [
-      {
-        label: XPUB_LABEL,
-        value: XPUB_VALUE
-      },
-      {
-        label: YPUB_LABEL,
-        value: YPUB_VALUE
-      },
-      {
-        label: ZPUB_LABEL,
-        value: ZPUB_VALUE
-      }
-    ];
 
     const onPasteMulti = (event: ClipboardEvent) => {
       const paste = trimOnPaste(event);
@@ -666,22 +511,12 @@ const AccountForm = defineComponent({
       }
     };
 
-    const onPasteXpub = (event: ClipboardEvent) => {
-      const paste = trimOnPaste(event);
-      if (paste) {
-        setXpubKeyType(paste);
-        xpub.value = paste;
-      }
-    };
-
     return {
       form,
       items: Object.values(Blockchain),
-      xpub,
-      xpubKeyPrefix,
-      derivationPath,
       address,
       addresses,
+      xpub,
       entries,
       label,
       tags,
@@ -689,7 +524,6 @@ const AccountForm = defineComponent({
       inputMode,
       multiple,
       pending,
-      advanced,
       selectedModules,
       errorMessages,
       isEth,
@@ -701,9 +535,7 @@ const AccountForm = defineComponent({
       accountOperation,
       ...setupValidationRules(isEdit, isMetamask),
       fields,
-      keyType,
       onPasteMulti,
-      onPasteXpub,
       onPasteAddress,
       input,
       save,

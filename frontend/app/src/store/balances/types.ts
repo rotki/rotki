@@ -87,10 +87,16 @@ export interface ExchangePayload {
   readonly ftxSubaccount: Nullable<string>;
 }
 
+export enum XpubKeyType {
+  XPUB = 'p2pkh',
+  YPUB = 'p2sh_p2wpkh',
+  ZPUB = 'wpkh'
+}
+
 export interface XpubPayload {
   readonly xpub: string;
   readonly derivationPath: string;
-  readonly xpubType: string;
+  readonly xpubType: XpubKeyType;
 }
 
 export interface BlockchainAccountPayload extends AccountPayload {
