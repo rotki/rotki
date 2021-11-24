@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Kraken margin trades are not yet supported, so they won't show up or be taken into account in kraken trade history.
 * :bug:`3744` Freshly created users who don't open the app again before an upgrade will now be able to update to new DB versions again.
 
 * :release:`1.22.1 <2021-11-19>`

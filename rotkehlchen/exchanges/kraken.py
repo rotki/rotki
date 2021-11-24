@@ -111,15 +111,21 @@ def kraken_to_world_pair(pair: str) -> Tuple[Asset, Asset]:
     return base_asset, quote_asset
 
 
-def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Trade:
+def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Optional[Trade]:
     """Turn a kraken trade returned from kraken trade history to our common trade
-    history format
+    history format.
+
+    If the trade is a margin trade it's skipped until https://github.com/rotki/rotki/issues/1980
 
     - Can raise UnknownAsset due to kraken_to_world_pair
     - Can raise UnprocessableTradePair due to kraken_to_world_pair
     - Can raise DeserializationError due to dict entries not being as expected
     - Can raise KeyError due to dict entries missing an expected entry
     """
+    margin = deserialize_asset_amount(kraken_trade['margin'])
+    if margin != ZERO:
+        return None
+
     base_asset, quote_asset = kraken_to_world_pair(kraken_trade['pair'])
 
     timestamp = deserialize_timestamp_from_kraken(kraken_trade['time'])
@@ -646,7 +652,9 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         for raw_data in result:
             try:
                 new_trade = trade_from_kraken(raw_data)
-                trades.append(new_trade)
+                if new_trade:
+                    trades.append(new_trade)
+                    max_ts = max(new_trade.timestamp, max_ts)
             except UnknownAsset as e:
                 self.msg_aggregator.add_warning(
                     f'Found kraken trade with unknown asset '
@@ -673,8 +681,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     error=msg,
                 )
                 continue
-
-            max_ts = max(new_trade.timestamp, max_ts)
 
         queried_range = (start_ts, Timestamp(max_ts)) if with_errors else (start_ts, end_ts)
         return trades, queried_range
