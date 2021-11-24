@@ -58,6 +58,7 @@ IMPORTABLE_LOCATIONS = Literal[
     'gitcoin',
     'shapeshift-trades',
     'uphold',
+    'bisq',
 ]
 
 UNISWAP_PROTOCOL = 'UNI-V2'
@@ -362,6 +363,7 @@ class Location(DBEnumMixIn):
     SHAPESHIFT = 32
     UPHOLD = 33
     BITPANDA = 34
+    BISQ = 35
 
 
 class AssetMovementCategory(DBEnumMixIn):
@@ -394,5 +396,6 @@ EXTERNAL_EXCHANGES: List = [
     Location.NEXO,
     Location.SHAPESHIFT,
     Location.UPHOLD,
+    Location.BISQ,
 ]
 EXTERNAL_LOCATION = [Location.EXTERNAL] + EXTERNAL_EXCHANGES

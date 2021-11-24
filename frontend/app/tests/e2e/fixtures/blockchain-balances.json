@@ -1,0 +1,14 @@
+[
+  {
+    "blockchain": "ETH",
+    "inputMode": "manual_add",
+    "label": "ETH 1",
+    "tags": ["public"]
+  },
+  {
+    "blockchain": "BTC",
+    "inputMode": "manual_add",
+    "label": "BTC 1",
+    "tags": []
+  }
+]

@@ -1,9 +1,15 @@
 <template>
-  <v-form ref="form" :value="value" @input="input">
+  <v-form
+    ref="form"
+    :value="value"
+    data-cy="blockchain-balance-form"
+    @input="input"
+  >
     <v-row no-gutters>
       <v-col cols="12">
         <v-select
           v-model="blockchain"
+          data-cy="account-blockchain-field"
           outlined
           class="account-form__chain pt-2"
           :items="items"
@@ -112,6 +118,7 @@
         <v-text-field
           v-if="!multiple"
           v-model="address"
+          data-cy="account-address-field"
           outlined
           class="account-form__address"
           :label="$t('account_form.labels.account')"
@@ -148,6 +155,7 @@
       <v-col cols="12">
         <v-text-field
           v-model="label"
+          data-cy="account-label-field"
           outlined
           class="account-form__label"
           :label="$t('account_form.labels.label')"
@@ -159,6 +167,7 @@
       <v-col cols="12">
         <tag-input
           v-model="tags"
+          data-cy="account-tag-field"
           outlined
           :disabled="accountOperation || loading"
         />

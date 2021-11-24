@@ -1,17 +1,15 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     "declaration": true,
     "declarationDir": "./lib",
-    "moduleResolution": "node",
-    "module": "es2020",
-    "noImplicitAny": true,
     "outDir": "./lib",
     "target": "es2020",
-    "strict": true,
-    "baseUrl": "."
   },
   "include": [
-    "src/**/*"
+    "src/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "lib"
+  ]
 }

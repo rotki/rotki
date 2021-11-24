@@ -1531,7 +1531,7 @@ class RestAPI():
             return api_response(_wrap_in_ok_result(OK_RESULT), status_code=HTTPStatus.OK)
         return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
-    def query_netvalue_data(self) -> Response:
+    def query_netvalue_data(self, include_nfts: bool) -> Response:
         from_ts = Timestamp(0)
         premium = self.rotkehlchen.premium
 
@@ -1540,7 +1540,7 @@ class RestAPI():
             start_of_day_today = datetime.datetime(today.year, today.month, today.day)
             from_ts = Timestamp(int((start_of_day_today - datetime.timedelta(days=14)).timestamp()))  # noqa: E501
 
-        data = self.rotkehlchen.data.db.get_netvalue_data(from_ts)
+        data = self.rotkehlchen.data.db.get_netvalue_data(from_ts, include_nfts)
         result = process_result({'times': data[0], 'data': data[1]})
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
@@ -2156,6 +2156,14 @@ class RestAPI():
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
         elif source == 'uphold':
             success, msg = self.rotkehlchen.data_importer.import_uphold_transactions_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+            if not success:
+                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
+                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+        elif source == 'bisq':
+            success, msg = self.rotkehlchen.data_importer.import_bisq_trades_csv(
                 filepath=filepath,
                 timestamp_format=timestamp_format,
             )

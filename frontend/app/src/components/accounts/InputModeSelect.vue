@@ -6,7 +6,7 @@
       mandatory
       @change="input($event)"
     >
-      <v-btn :value="MANUAL_ADD">
+      <v-btn :value="MANUAL_ADD" data-cy="input-mode-manual">
         <v-icon>mdi-pencil-plus</v-icon>
         <span class="hidden-sm-and-down ml-1">
           {{ $t('input_mode_select.manual_add.label') }}

@@ -137,7 +137,7 @@ import {
   setupExchangeRateGetter,
   setupManualBalances
 } from '@/composables/balances';
-import { currency, floatingPrecision, tags } from '@/composables/session';
+import { currency, tags } from '@/composables/session';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { ManualBalance } from '@/services/balances/types';
@@ -233,8 +233,7 @@ const ManualBalanceTable = defineComponent({
       return aggregateTotal(
         visibleBalances.value,
         currency.value,
-        exchangeRate(currency.value) ?? new BigNumber(1),
-        floatingPrecision.value
+        exchangeRate(currency.value) ?? new BigNumber(1)
       );
     });
 

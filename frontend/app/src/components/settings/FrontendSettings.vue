@@ -32,6 +32,20 @@
       @change="onZeroBasedUpdate($event)"
     />
 
+    <div class="text-h6 mt-4">
+      {{ $t('frontend_settings.subtitle.include_nfts') }}
+    </div>
+    <v-switch
+      v-model="includeNfts"
+      class="general-settings__fields__zero-base mb-4"
+      :label="$t('frontend_settings.label.include_nfts')"
+      :hint="$t('frontend_settings.label.include_nfts_hint')"
+      persistent-hint
+      :success-messages="settingsMessages[NFTS_IN_NET_VALUE].success"
+      :error-messages="settingsMessages[NFTS_IN_NET_VALUE].error"
+      @change="onIncludeNftChange($event)"
+    />
+
     <div class="text-h6">
       {{ $t('frontend_settings.subtitle.refresh') }}
     </div>
@@ -97,6 +111,7 @@ import {
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
 import { Component, Mixins } from 'vue-property-decorator';
+import { mapActions } from 'vuex';
 import ThemeManagerLock from '@/components/premium/ThemeManagerLock.vue';
 import Explorers from '@/components/settings/explorers/Explorers.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
@@ -113,6 +128,7 @@ import { monitor } from '@/services/monitoring';
 import {
   FrontendSettingsPayload,
   GRAPH_ZERO_BASED,
+  NFTS_IN_NET_VALUE,
   QUERY_PERIOD,
   REFRESH_PERIOD,
   TIMEFRAME_SETTING
@@ -128,7 +144,8 @@ const SETTINGS = [
   SETTING_TIMEFRAME,
   SETTING_QUERY_PERIOD,
   SETTING_REFRESH_PERIOD,
-  GRAPH_ZERO_BASED
+  GRAPH_ZERO_BASED,
+  NFTS_IN_NET_VALUE
 ] as const;
 
 type SettingsEntries = typeof SETTINGS[number];
@@ -140,6 +157,9 @@ type SettingsEntries = typeof SETTINGS[number];
     Explorers,
     TimeFrameSettings,
     SettingCategory
+  },
+  methods: {
+    ...mapActions('statistics', ['fetchNetValue'])
   }
 })
 export default class FrontendSettings extends Mixins<
@@ -151,12 +171,15 @@ export default class FrontendSettings extends Mixins<
   refreshPeriod: string = '';
   refreshEnabled: boolean = false;
   zeroBased: boolean = false;
+  includeNfts: boolean = true;
+  fetchNetValue!: () => Promise<void>;
 
   readonly SCRAMBLE_DATA = SETTING_SCRAMBLE_DATA;
   readonly TIMEFRAME = SETTING_TIMEFRAME;
   readonly QUERY_PERIOD = SETTING_QUERY_PERIOD;
   readonly REFRESH_PERIOD = SETTING_REFRESH_PERIOD;
   readonly GRAPH_ZERO_BASED = GRAPH_ZERO_BASED;
+  readonly NFTS_IN_NET_VALUE = NFTS_IN_NET_VALUE;
 
   async onZeroBasedUpdate(enabled: boolean) {
     const payload: FrontendSettingsPayload = {
@@ -192,6 +215,20 @@ export default class FrontendSettings extends Mixins<
     if (success) {
       this.defaultGraphTimeframe = timeframe;
     }
+  }
+
+  async onIncludeNftChange(include: boolean) {
+    const payload: FrontendSettingsPayload = {
+      [NFTS_IN_NET_VALUE]: include
+    };
+
+    const messages: BaseMessage = {
+      success: '',
+      error: ''
+    };
+
+    await this.modifyFrontendSetting(payload, NFTS_IN_NET_VALUE, messages);
+    await this.fetchNetValue();
   }
 
   async onQueryPeriodChange(queryPeriod: string) {
@@ -305,6 +342,7 @@ export default class FrontendSettings extends Mixins<
     this.zeroBased = state.settings![GRAPH_ZERO_BASED];
     this.refreshEnabled = period > 0;
     this.refreshPeriod = this.refreshEnabled ? period.toString() : '';
+    this.includeNfts = state.settings![NFTS_IN_NET_VALUE];
   }
 }
 </script>

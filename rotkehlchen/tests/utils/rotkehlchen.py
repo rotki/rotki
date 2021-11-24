@@ -313,3 +313,60 @@ def add_starting_balances(datahandler) -> List[DBAssetBalance]:
     datahandler.db.add_multiple_location_data(location_data)
 
     return balances
+
+
+def add_starting_nfts(datahandler):
+    """Adds a time series for an account owning a NFT"""
+    datahandler.db.add_asset_identifiers(['_nft_pickle'])
+    balances = [
+        DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488326400),
+            asset=Asset('_nft_pickle'),
+            amount='1',
+            usd_value='1000',
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488426400),
+            asset=Asset('_nft_pickle'),
+            amount='1',
+            usd_value='1000',
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488526400),
+            asset=Asset('_nft_pickle'),
+            amount='2',
+            usd_value='2000',
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1488626400),
+            asset=Asset('_nft_pickle'),
+            amount='1',
+            usd_value='1000',
+        ),
+    ]
+    datahandler.db.add_multiple_balances(balances)
+    datahandler.db.conn.commit()
+    location_data = [
+        LocationData(
+            time=Timestamp(1488326400),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            usd_value='3000',
+        ),
+        LocationData(
+            time=Timestamp(1488426400),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            usd_value='4000',
+        ),
+        LocationData(
+            time=Timestamp(1488526400),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            usd_value='5000',
+        ),
+        LocationData(
+            time=Timestamp(1488626400),
+            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
+            usd_value='5500',
+        ),
+    ]
+    datahandler.db.add_multiple_location_data(location_data)

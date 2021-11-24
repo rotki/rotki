@@ -23,6 +23,7 @@ import {
   GRAPH_ZERO_BASED,
   ITEMS_PER_PAGE,
   LAST_KNOWN_TIMEFRAME,
+  NFTS_IN_NET_VALUE,
   PROFIT_LOSS_PERIOD,
   Quarter,
   QUERY_PERIOD,
@@ -67,7 +68,8 @@ describe('settings:actions', () => {
             [DARK_MODE_ENABLED]: false,
             [LIGHT_THEME]: LIGHT_COLORS,
             [DARK_THEME]: DARK_COLORS,
-            [GRAPH_ZERO_BASED]: false
+            [GRAPH_ZERO_BASED]: false,
+            [NFTS_IN_NET_VALUE]: true
           })
         )
       })
