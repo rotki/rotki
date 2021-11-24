@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_ETH, A_EUR
+from rotkehlchen.constants.assets import A_ETH, A_EUR, A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.binance import (
@@ -22,7 +22,7 @@ from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
-from rotkehlchen.exchanges.data_structures import AssetMovement
+from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.exchanges.gemini import Gemini
@@ -40,7 +40,19 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Location
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    AssetMovementCategory,
+    Location,
+    AssetAmount,
+    Fee,
+    Price,
+    Timestamp,
+    TradeType,
+)
+
+
 from rotkehlchen.user_messages import MessagesAggregator
 
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
@@ -556,6 +568,7 @@ def create_test_binance(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
         location: Location = Location.BINANCE,
+        name: str = 'binance',
 ) -> Binance:
     if location == Location.BINANCE:
         uri = BINANCE_BASE_URL
@@ -564,7 +577,7 @@ def create_test_binance(
     else:
         raise AssertionError(f'Tried to create binance exchange with location {location}')
     binance = Binance(
-        name='binance',
+        name=name,
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
@@ -823,3 +836,46 @@ def try_get_first_exchange(
         return None
 
     return exchanges_list[0]
+
+
+def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
+    db = rotki.data.db
+    for exchange_location in exchange_locations:
+        db.add_trades([Trade(
+            timestamp=Timestamp(1),
+            location=exchange_location,
+            base_asset=A_BTC,
+            quote_asset=A_ETH,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal(1)),
+            rate=Price(FVal(1)),
+            fee=Fee(FVal('0.1')),
+            fee_currency=A_ETH,
+            link='foo',
+            notes='boo',
+        )])
+        db.update_used_query_range(name=f'{str(exchange_location)}_trades_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+        db.update_used_query_range(name=f'{str(exchange_location)}_margins_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+        db.update_used_query_range(name=f'{str(exchange_location)}_asset_movements_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
+
+
+def check_saved_events_for_exchange(
+        exchange_location: Location,
+        db: DBHandler,
+        should_exist: bool,
+        query_range_key: str = '{exchange}_{type}_{exchange}',
+) -> None:
+    trades = db.get_trades(location=exchange_location)
+    trades_range = db.get_used_query_range(query_range_key.format(exchange=exchange_location, type='trades'))  # noqa: E501
+    margins_range = db.get_used_query_range(query_range_key.format(exchange=exchange_location, type='margins'))  # noqa: E501
+    movements_range = db.get_used_query_range(query_range_key.format(exchange=exchange_location, type='asset_movements'))  # noqa: E501
+    if should_exist:
+        assert trades_range is not None
+        assert margins_range is not None
+        assert movements_range is not None
+        assert len(trades) != 0
+    else:
+        assert trades_range is None
+        assert margins_range is None
+        assert movements_range is None
+        assert len(trades) == 0

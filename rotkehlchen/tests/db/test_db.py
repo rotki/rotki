@@ -29,6 +29,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_MAIN_CURRENCY,
+    DEFAULT_LAST_APP_UPGRADE,
     DEFAULT_PNL_CSV_HAVE_SUMMARY,
     DEFAULT_PNL_CSV_WITH_FORMULAS,
     DEFAULT_SSF_0GRAPH_MULTIPLIER,
@@ -349,6 +350,7 @@ def test_writing_fetching_data(data_dir, username):
         'pnl_csv_with_formulas': DEFAULT_PNL_CSV_WITH_FORMULAS,
         'pnl_csv_have_summary': DEFAULT_PNL_CSV_HAVE_SUMMARY,
         'ssf_0graph_multiplier': DEFAULT_SSF_0GRAPH_MULTIPLIER,
+        'last_app_upgrade': DEFAULT_LAST_APP_UPGRADE,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

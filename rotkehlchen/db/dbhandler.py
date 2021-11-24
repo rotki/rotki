@@ -1341,10 +1341,10 @@ class DBHandler:
         """Get the last start/end timestamp range that has been queried for name
 
         Currently possible names are:
-        - {exchange_name}_trades
-        - {exchange_name}_margins
-        - {exchange_name}_asset_movements
-        - {exchange_name}_ledger_actions
+        - {exchange_location_name}_trades_{exchange_name}
+        - {exchange_location_name}_margins_{exchange_name}
+        - {exchange_location_name}_asset_movements_{exchange_name}
+        - {exchange_location_name}_ledger_actions_{exchange_name}
         - aave_events_{address}
         - yearn_vaults_events_{address}
         - yearn_vaults_v2_events_{address}
