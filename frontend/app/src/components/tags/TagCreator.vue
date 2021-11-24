@@ -63,7 +63,7 @@
               class="tag-creator__color-picker__foreground"
               mode="hexa"
               hide-mode-switch
-              :value="`#${tag.foreground_color}`"
+              :value="`#${tag.foregroundColor}`"
               @update:color="
                 changed({ foregroundColor: $event.hex.replace('#', '') })
               "
@@ -86,7 +86,7 @@
               flat
               hide-mode-switch
               mode="hexa"
-              :value="`#${tag.background_color}`"
+              :value="`#${tag.backgroundColor}`"
               @update:color="
                 changed({ backgroundColor: $event.hex.replace('#', '') })
               "
