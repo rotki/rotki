@@ -168,27 +168,27 @@ export const actions: ActionTree<ReportState, RotkehlchenState> = {
     };
     try {
       commit('accountingSettings', rootState.session!.accountingSettings);
-      const overview_result = await api.reports.fetchReportOverview(
+      const overviewResult = await api.reports.fetchReportOverview(
         state.reportId
       );
-      const overview = overview_result.entries[0];
-      const events_result = await api.reports.fetchReportEvents(state.reportId);
-      const target_report = state.reports.filter(
+      const overview = overviewResult.entries[0];
+      const eventsResult = await api.reports.fetchReportEvents(state.reportId);
+      const targetReport = state.reports.filter(
         x => x.identifier === state.reportId
       )[0];
-      const startTs = target_report.startTs;
-      const endTs = target_report.endTs;
+      const startTs = targetReport.startTs;
+      const endTs = targetReport.endTs;
       commit('reportPeriod', { start: startTs, end: endTs });
-      const allEvents = events_result.entries.map(
+      const allEvents = eventsResult.entries.map(
         x =>
           <ProfitLossEvent>{
             ...x,
             type: x.eventType
           }
       );
-      const eventsLimit = events_result.entriesLimit;
-      const eventsProcessed = events_result.entriesFound;
-      const firstProcessedTimestamp = events_result.entries[0].time;
+      const eventsLimit = eventsResult.entriesLimit;
+      const eventsProcessed = eventsResult.entriesFound;
+      const firstProcessedTimestamp = eventsResult.entries[0].time;
 
       const report = {
         overview: overview,
