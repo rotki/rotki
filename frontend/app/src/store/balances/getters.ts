@@ -172,7 +172,10 @@ export const getters: Getters<
 
       for (const { address, label, tags } of addresses) {
         const { xpubs } = btc;
-        const index = xpubs?.findIndex(xpub => xpub.addresses[address]) ?? -1;
+        if (!xpubs) {
+          continue;
+        }
+        const index = xpubs.findIndex(xpub => xpub.addresses[address]) ?? -1;
         const balance =
           index >= 0 ? xpubs[index].addresses[address] : zeroBalance();
         accounts.push({

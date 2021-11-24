@@ -1,5 +1,6 @@
 export enum Blockchain  {
   ETH = "ETH",
+  ETH2 = "ETH2",
   BTC = "BTC",
   KSM = "KSM",
   DOT = "DOT",

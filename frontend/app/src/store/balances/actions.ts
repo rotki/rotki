@@ -3,7 +3,6 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
-import { blockchainBalanceKeys } from '@/services/balances/consts';
 import {
   Balances,
   BlockchainBalances,
@@ -298,7 +297,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         chain,
         title: `Query ${chain} Balances`,
         ignoreResult: false,
-        numericKeys: blockchainBalanceKeys
+        numericKeys: []
       } as BlockchainMetadata);
       commit('tasks/add', task, { root: true });
 
@@ -306,15 +305,17 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         BlockchainBalances,
         BlockchainMetadata
       >(taskType, taskId.toString());
+      const balances = BlockchainBalances.parse(result);
       await dispatch('updateBalances', {
-        chain: chain,
-        balances: result
+        chain,
+        balances
       });
       setStatus(Status.LOADED, section, status, commit);
     };
     try {
       await Promise.all(chains.map(fetch));
     } catch (e: any) {
+      logger.error(e);
       const message = i18n.tc(
         'actions.balances.blockchain.error.description',
         0,
@@ -361,6 +362,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const { perAccount, totals } = payload.balances;
     const {
       ETH: ethBalances,
+      ETH2: eth2Balances,
       BTC: btcBalances,
       KSM: ksmBalances,
       DOT: dotBalances,
@@ -388,6 +390,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('updateAvax', avaxBalances ?? {});
     }
 
+    if (!chain || chain === Blockchain.ETH2) {
+      commit('updateEth2', eth2Balances ?? {});
+    }
+
     commit('updateTotals', totals.assets);
     commit('updateLiabilities', totals.liabilities);
     dispatch('accounts').then();
@@ -410,19 +416,22 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
             xpub: payload.xpub
           }
         ),
+        ignoreResult: false,
         blockchain: Blockchain.BTC,
-        numericKeys: blockchainBalanceKeys
+        numericKeys: []
       } as BlockchainMetadata);
       commit('tasks/add', task, { root: true });
       const { result } = await taskCompletion<
         BlockchainBalances,
         BlockchainMetadata
       >(taskType);
+      const balances = BlockchainBalances.parse(result);
       await dispatch('updateBalances', {
         chain: Blockchain.BTC,
-        balances: result
+        balances
       });
     } catch (e: any) {
+      logger.error(e);
       const title = i18n.tc('actions.balances.xpub_removal.error.title');
       const description = i18n.tc(
         'actions.balances.xpub_removal.error.description',
@@ -457,7 +466,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           { count: accounts.length }
         ),
         blockchain,
-        numericKeys: blockchainBalanceKeys
+        ignoreResult: false,
+        numericKeys: []
       } as BlockchainMetadata);
 
       commit('tasks/add', task, { root: true });
@@ -466,10 +476,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         BlockchainMetadata
       >(taskType);
 
-      await dispatch('updateBalances', { chain: blockchain, balances: result });
+      const balances = BlockchainBalances.parse(result);
+
+      await dispatch('updateBalances', { chain: blockchain, balances });
       commit('defi/reset', undefined, { root: true });
       await dispatch('resetDefiStatus', {}, { root: true });
     } catch (e: any) {
+      logger.error(e);
       const title = i18n.tc(
         'actions.balances.blockchain_account_removal.error.title',
         0,
@@ -539,7 +552,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           { address }
         ),
         blockchain,
-        numericKeys: blockchainBalanceKeys
+        ignoreResult: false,
+        numericKeys: []
       } as BlockchainMetadata);
 
       commit('tasks/add', task, { root: true });
@@ -560,7 +574,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         );
       }
 
-      await dispatch('updateBalances', { chain: blockchain, balances: result });
+      const balances = BlockchainBalances.parse(result);
+
+      await dispatch('updateBalances', { chain: blockchain, balances });
     };
 
     const additions = accounts.map(value =>
@@ -575,6 +591,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         await dispatch(BalanceActions.FETCH_NF_BALANCES);
       })
       .catch(e => {
+        logger.error(e);
         const title = i18n.tc(
           'actions.balances.blockchain_accounts_add.error.title',
           0,
@@ -608,48 +625,52 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         { address }
       ),
       blockchain,
-      numericKeys: blockchainBalanceKeys
+      ignoreResult: false,
+      numericKeys: []
     } as BlockchainMetadata);
 
     commit('tasks/add', task, { root: true });
-
-    taskCompletion<BlockchainBalances, BlockchainMetadata>(taskType)
-      .then(async ({ result }) => {
-        await dispatch('updateBalances', {
-          chain: blockchain,
-          balances: result
-        });
-
-        if (blockchain === Blockchain.ETH && payload.modules) {
-          await dispatch(
-            'session/enableModule',
-            {
-              enable: payload.modules,
-              addresses: [address]
-            },
-            { root: true }
-          );
-        }
-        await commit('defi/reset', undefined, { root: true });
-        await dispatch('resetDefiStatus', {}, { root: true });
-        await dispatch('refreshPrices', { ignoreCache: false });
-        await dispatch(BalanceActions.FETCH_NF_BALANCES);
-      })
-      .catch(e => {
-        const title = i18n.tc(
-          'actions.balances.blockchain_account_add.error.title',
-          0,
-          { address, blockchain }
-        );
-        const description = i18n.tc(
-          'actions.balances.blockchain_account_add.error.description',
-          0,
-          {
-            error: e.message
-          }
-        );
-        notify(description, title, Severity.ERROR, true);
+    try {
+      const { result } = await taskCompletion<
+        BlockchainBalances,
+        BlockchainMetadata
+      >(taskType);
+      const balances = BlockchainBalances.parse(result);
+      await dispatch('updateBalances', {
+        chain: blockchain,
+        balances: balances
       });
+
+      if (blockchain === Blockchain.ETH && payload.modules) {
+        await dispatch(
+          'session/enableModule',
+          {
+            enable: payload.modules,
+            addresses: [address]
+          },
+          { root: true }
+        );
+      }
+      await commit('defi/reset', undefined, { root: true });
+      await dispatch('resetDefiStatus', {}, { root: true });
+      await dispatch('refreshPrices', { ignoreCache: false });
+      await dispatch(BalanceActions.FETCH_NF_BALANCES);
+    } catch (e: any) {
+      logger.error(e);
+      const title = i18n.tc(
+        'actions.balances.blockchain_account_add.error.title',
+        0,
+        { address, blockchain }
+      );
+      const description = i18n.tc(
+        'actions.balances.blockchain_account_add.error.description',
+        0,
+        {
+          error: e.message
+        }
+      );
+      notify(description, title, Severity.ERROR, true);
+    }
   },
 
   async editAccount({ commit }, payload: BlockchainAccountPayload) {
@@ -1000,14 +1021,17 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           usdValue: balance.amount.times(btcPrice)
         };
       }
-      for (let i = 0; i < btc.xpubs.length; i++) {
-        const xpub = btc.xpubs[i];
-        for (const address in xpub.addresses) {
-          const balance = xpub.addresses[address];
-          xpub.addresses[address] = {
-            amount: balance.amount,
-            usdValue: balance.amount.times(btcPrice)
-          };
+      const xpubs = btc.xpubs;
+      if (xpubs) {
+        for (let i = 0; i < xpubs.length; i++) {
+          const xpub = xpubs[i];
+          for (const address in xpub.addresses) {
+            const balance = xpub.addresses[address];
+            xpub.addresses[address] = {
+              amount: balance.amount,
+              usdValue: balance.amount.times(btcPrice)
+            };
+          }
         }
       }
     }

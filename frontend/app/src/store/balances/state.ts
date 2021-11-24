@@ -2,6 +2,7 @@ import { BalanceState } from '@/store/balances/types';
 
 export const defaultState = (): BalanceState => ({
   eth: {},
+  eth2: {},
   ksm: {},
   dot: {},
   avax: {},

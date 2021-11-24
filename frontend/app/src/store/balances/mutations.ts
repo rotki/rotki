@@ -24,6 +24,9 @@ export const mutations: MutationTree<BalanceState> = {
   updateEth(state: BalanceState, payload: BlockchainAssetBalances) {
     state.eth = { ...payload };
   },
+  updateEth2(state: BalanceState, payload: BlockchainAssetBalances) {
+    state.eth2 = { ...payload };
+  },
   updateBtc(state: BalanceState, payload: BtcBalances) {
     state.btc = { ...payload };
   },

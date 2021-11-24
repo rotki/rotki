@@ -42,6 +42,7 @@ export interface AccountAssetBalances {
 export interface BalanceState {
   loopringBalances: AccountAssetBalances;
   eth: BlockchainAssetBalances;
+  eth2: BlockchainAssetBalances;
   btc: BtcBalances;
   ksm: BlockchainAssetBalances;
   dot: BlockchainAssetBalances;

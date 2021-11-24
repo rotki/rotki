@@ -212,6 +212,7 @@ const BlockchainBalances = defineComponent({
 
     const intersections = ref<Intersections>({
       [Blockchain.ETH]: false,
+      [Blockchain.ETH2]: false,
       [Blockchain.BTC]: false,
       [Blockchain.KSM]: false,
       [Blockchain.DOT]: false,

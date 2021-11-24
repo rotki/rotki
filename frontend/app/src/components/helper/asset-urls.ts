@@ -16,6 +16,10 @@ export const explorerUrls: AssetExplorerUrls = {
     address: 'https://etherscan.io/address/',
     transaction: 'https://etherscan.io/tx/'
   },
+  ETH2: {
+    address: '',
+    transaction: ''
+  },
   BTC: {
     address: 'https://blockstream.info/address/',
     transaction: 'https://blockstream.info/tx/'
