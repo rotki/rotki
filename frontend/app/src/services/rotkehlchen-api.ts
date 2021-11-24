@@ -347,9 +347,12 @@ export class RotkehlchenApi {
       });
   }
 
-  queryNetvalueData(): Promise<NetValue> {
+  queryNetvalueData(includeNfts: boolean): Promise<NetValue> {
     return this.axios
       .get<ActionResult<NetValue>>('/statistics/netvalue', {
+        params: axiosSnakeCaseTransformer({
+          includeNfts
+        }),
         validateStatus: validStatus
       })
       .then(handleResponse);
@@ -357,14 +360,14 @@ export class RotkehlchenApi {
 
   queryTimedBalancesData(
     asset: string,
-    start_ts: number,
-    end_ts: number
+    startTs: number,
+    endTs: number
   ): Promise<SingleAssetBalance[]> {
     return this.axios
       .get<ActionResult<SingleAssetBalance[]>>(`/statistics/balance/${asset}`, {
         params: {
-          from_timestamp: start_ts,
-          to_timestamp: end_ts
+          from_timestamp: startTs,
+          to_timestamp: endTs
         },
         validateStatus: validStatus
       })

@@ -88,6 +88,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('`', 32);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('a', 33);
 /* Bitpanda */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('b', 34);
+/* Bisq */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('c', 35);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

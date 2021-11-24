@@ -1991,6 +1991,7 @@ class DataImportSchema(Schema):
                 'nexo',
                 'shapeshift-trades',
                 'uphold',
+                'bisq',
             ),
         ),
     )
@@ -2215,3 +2216,7 @@ class Eth2ValidatorSchema(Schema):
 
 class Eth2ValidatorPutSchema(Eth2ValidatorSchema):
     async_query = fields.Boolean(load_default=False)
+
+
+class StatisticsNetValueSchema(Schema):
+    include_nfts = fields.Boolean(load_default=True)

@@ -112,7 +112,7 @@
       :loading="anyIsLoading"
       :balances="liabilities"
     />
-    <nft-balance-table class="mt-8" />
+    <nft-balance-table data-cy="nft-balance-table" class="mt-8" />
   </v-container>
 </template>
 

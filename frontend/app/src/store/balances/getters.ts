@@ -501,11 +501,11 @@ export const getters: Getters<
       return Object.entries(ethAccount.assets)
         .filter(([asset]) => !ignoredAssets.includes(asset))
         .map(
-          ([key, asset_data]) =>
+          ([key, { amount, usdValue }]) =>
             ({
               asset: key,
-              amount: asset_data.amount,
-              usdValue: asset_data.usdValue
+              amount: amount,
+              usdValue: usdValue
             } as AssetBalance)
         );
     },
@@ -522,11 +522,11 @@ export const getters: Getters<
       return Object.entries(ethAccount.liabilities)
         .filter(([asset]) => !ignoredAssets.includes(asset))
         .map(
-          ([key, asset_data]) =>
+          ([key, { amount, usdValue }]) =>
             ({
               asset: key,
-              amount: asset_data.amount,
-              usdValue: asset_data.usdValue
+              amount: amount,
+              usdValue: usdValue
             } as AssetBalance)
         );
     },

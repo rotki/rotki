@@ -382,7 +382,7 @@ def test_set_settings_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # Invalid asset for main currenty
+    # Invalid asset for main currency
     data = {
         'settings': {'main_currency': 'DSDSDSAD'},
     }
