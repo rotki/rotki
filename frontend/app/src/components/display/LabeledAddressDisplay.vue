@@ -3,6 +3,7 @@
     <v-tooltip top open-delay="400" :disabled="!truncated">
       <template #activator="{ on }">
         <span
+          data-cy="labeled-address-display"
           class="labeled-address-display__address"
           :class="
             $vuetify.breakpoint.xsOnly
@@ -49,7 +50,7 @@ import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import { truncateAddress, truncationPoints } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
-import { randomHex } from '@/typing/utils';
+import { randomHex } from '@/utils/data';
 
 @Component({
   computed: { ...mapState('session', ['privacyMode']) }

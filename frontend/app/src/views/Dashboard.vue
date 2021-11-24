@@ -112,7 +112,7 @@
       :loading="anyIsLoading"
       :balances="liabilities"
     />
-    <nft-balance-table class="mt-8" />
+    <nft-balance-table data-cy="nft-balance-table" class="mt-8" />
   </v-container>
 </template>
 
@@ -128,14 +128,14 @@ import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import SummaryCard from '@/components/dashboard/SummaryCard.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { TaskType } from '@/model/task-type';
 import {
   BlockchainBalancePayload,
   BlockchainTotal,
   ExchangeBalancePayload,
   LocationBalance
 } from '@/store/balances/types';
-import { ExchangeInfo } from '@/typing/types';
+import { ExchangeInfo } from '@/types/exchanges';
+import { TaskType } from '@/types/task-type';
 
 @Component({
   components: {

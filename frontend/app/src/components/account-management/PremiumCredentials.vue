@@ -4,35 +4,49 @@
       <v-checkbox
         :value="enabled"
         :label="$t('premium_credentials.label_enable')"
-        @change="enabledChanged"
+        @change="updateEnabled"
       />
-      <v-tooltip bottom max-width="400px">
-        <template #activator="{ on }">
-          <v-icon small class="mb-3 ml-1" v-on="on">mdi-information</v-icon>
-        </template>
-        <span>
-          {{ $t('premium_credentials.tooltip') }}
-        </span>
-      </v-tooltip>
     </v-row>
     <div v-if="enabled">
+      <v-row no-gutters>
+        <v-col>
+          <v-switch
+            label="Restore synced database"
+            :value="syncDatabase"
+            @change="updateSyncDatabase"
+          />
+        </v-col>
+        <v-col cols="auto">
+          <v-tooltip bottom max-width="400px">
+            <template #activator="{ on }">
+              <v-icon small class="mb-3 ml-1" v-on="on">mdi-information</v-icon>
+            </template>
+            <span>
+              {{ $t('premium_credentials.tooltip') }}
+            </span>
+          </v-tooltip>
+        </v-col>
+      </v-row>
+
       <revealable-input
+        outlined
         :value="apiKey"
         :disabled="loading"
         class="premium-settings__fields__api-key"
         :rules="apiKeyRules"
         :label="$t('premium_credentials.label_api_key')"
-        @input="apiKeyChanged"
+        @input="updateApiKey"
         @paste="onApiKeyPaste"
       />
       <revealable-input
+        outlined
         :value="apiSecret"
         :disabled="loading"
         class="premium-settings__fields__api-secret"
         prepend-icon="mdi-lock"
         :label="$t('premium_credentials.label_api_secret')"
         :rules="apiSecretRules"
-        @input="apiSecretChanged"
+        @input="updateApiSecret"
         @paste="onApiSecretPaste"
       />
     </div>
@@ -40,68 +54,96 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { defineComponent, ref, toRefs, watch } from '@vue/composition-api';
+import { IVueI18n } from 'vue-i18n';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import i18n from '@/i18n';
 import { trimOnPaste } from '@/utils/event';
 
-@Component({
-  components: { RevealableInput }
-})
-export default class PremiumCredentials extends Vue {
-  @Prop({ required: true })
-  loading!: boolean;
-  @Prop({ required: true })
-  enabled!: boolean;
-  @Prop({ required: true })
-  apiSecret!: string;
-  @Prop({ required: true })
-  apiKey!: string;
-
-  showKey: boolean = false;
-  showSecret: boolean = false;
-
-  @Watch('enabled')
-  onEnabledChange() {
-    if (!this.enabled) {
-      this.apiKeyChanged('');
-      this.apiSecretChanged('');
-    }
-  }
-
-  readonly apiKeyRules = [
+const setupValidationRules = (i18n: IVueI18n) => {
+  const apiKeyRules = [
     (v: string) =>
-      !!v || this.$t('premium_credentials.validation.non_empty_key')
+      !!v || i18n.t('premium_credentials.validation.non_empty_key').toString()
   ];
-  readonly apiSecretRules = [
+  const apiSecretRules = [
     (v: string) =>
-      !!v || this.$t('premium_credentials.validation.non_empty_secret')
+      !!v ||
+      i18n.t('premium_credentials.validation.non_empty_secret').toString()
   ];
+  return { apiKeyRules, apiSecretRules };
+};
 
-  @Emit()
-  apiKeyChanged(apiKey: string): string {
-    return apiKey ? apiKey.trim() : '';
+const PremiumCredentials = defineComponent({
+  name: 'PremiumCredentials',
+  components: { RevealableInput },
+  props: {
+    loading: { required: true, type: Boolean },
+    enabled: { required: true, type: Boolean },
+    apiSecret: { required: true, type: String },
+    apiKey: { required: true, type: String },
+    syncDatabase: { required: true, type: Boolean }
+  },
+  emits: [
+    'update:api-key',
+    'update:api-secret',
+    'update:enabled',
+    'update:sync-database'
+  ],
+  setup(props, { emit }) {
+    const { enabled } = toRefs(props);
+    const showKey = ref(false);
+    const showSecret = ref(false);
+
+    const updateApiKey = (apiKey: string) => {
+      emit('update:api-key', apiKey?.trim() ?? '');
+    };
+
+    const updateApiSecret = (apiSecret: string) => {
+      emit('update:api-secret', apiSecret?.trim() ?? '');
+    };
+
+    const updateEnabled = (enabled: boolean | null) => {
+      emit('update:enabled', !!enabled);
+    };
+
+    const updateSyncDatabase = (enabled: boolean | null) => {
+      emit('update:sync-database', !!enabled);
+    };
+
+    const onApiKeyPaste = (_event: ClipboardEvent) => {
+      const paste = trimOnPaste(_event);
+      if (paste) {
+        updateApiKey(paste);
+      }
+    };
+
+    const onApiSecretPaste = (_event: ClipboardEvent) => {
+      const paste = trimOnPaste(_event);
+      if (paste) {
+        updateApiSecret(paste);
+      }
+    };
+
+    watch(enabled, enabled => {
+      if (enabled) {
+        return;
+      }
+      updateApiKey('');
+      updateApiSecret('');
+    });
+
+    return {
+      updateApiKey,
+      updateApiSecret,
+      updateEnabled,
+      updateSyncDatabase,
+      onApiKeyPaste,
+      onApiSecretPaste,
+      showKey,
+      showSecret,
+      ...setupValidationRules(i18n)
+    };
   }
-
-  @Emit()
-  apiSecretChanged(apiSecret: string): string {
-    return apiSecret ? apiSecret.trim() : '';
-  }
-
-  @Emit()
-  enabledChanged(_enabled: boolean) {}
-
-  onApiKeyPaste(_event: ClipboardEvent) {
-    const paste = trimOnPaste(_event);
-    if (paste) {
-      this.apiKeyChanged(paste);
-    }
-  }
-
-  onApiSecretPaste(_event: ClipboardEvent) {
-    const paste = trimOnPaste(_event);
-    if (paste) {
-      this.apiSecretChanged(paste);
-    }
-  }
-}
+});
+export default PremiumCredentials;
 </script>

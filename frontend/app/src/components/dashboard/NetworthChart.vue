@@ -18,7 +18,7 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import {
   TimeFramePeriod,
   Timeframe,
@@ -42,8 +42,8 @@ import {
 import dayjs from 'dayjs';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
-import { Currency } from '@/model/currency';
 import { NetValue } from '@/services/types-api';
+import { Currency } from '@/types/currency';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 
@@ -55,7 +55,7 @@ export interface ValueOverTime {
 @Component({
   computed: {
     ...mapGetters('session', ['currency']),
-    ...mapState('settings', ['graphZeroBased'])
+    ...mapState('settings', ['graphZeroBased', 'nftsInNetValue'])
   }
 })
 export default class NetWorthChart extends Vue {
@@ -72,6 +72,7 @@ export default class NetWorthChart extends Vue {
 
   currency!: Currency;
   graphZeroBased!: boolean;
+  nftsInNetValue!: boolean;
 
   get darkModeEnabled(): boolean {
     return this.$vuetify.theme.dark;
@@ -79,6 +80,11 @@ export default class NetWorthChart extends Vue {
 
   @Watch('darkModeEnabled')
   onDarkMode() {
+    this.setup();
+  }
+
+  @Watch('nftsInNetValue')
+  onIncludeNFTS() {
     this.setup();
   }
 
@@ -215,7 +221,7 @@ export default class NetWorthChart extends Vue {
   }
 
   private tooltipOptions(): ChartTooltipOptions {
-    const symbol = () => this.currency.unicode_symbol;
+    const symbol = () => this.currency.unicodeSymbol;
 
     const setCaretPosition = (
       classList: DOMTokenList,

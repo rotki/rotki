@@ -2,14 +2,14 @@ import { inject } from '@vue/composition-api';
 import * as logger from 'loglevel';
 import { ActionContext, Commit, Store } from 'vuex';
 import i18n from '@/i18n';
-import { createTask, taskCompletion, TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
 import { Message, RotkehlchenState, StatusPayload } from '@/store/types';
 import { FetchPayload } from '@/store/typing';
+import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 
 export async function fetchAsync<S, T extends TaskMeta, R>(

@@ -1,4 +1,3 @@
-import { VueConstructor } from 'vue';
 import { TradeLocation } from '@/services/history/types';
 
 export type TradeLocationData = {
@@ -6,6 +5,6 @@ export type TradeLocationData = {
   readonly name: string;
   readonly icon: string;
   readonly imageIcon: boolean;
-  readonly component?: VueConstructor;
+  readonly component?: any;
   readonly exchange: boolean;
 };

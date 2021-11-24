@@ -1,7 +1,5 @@
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
-import { createTask, taskCompletion, TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
 import {
   emptyError,
@@ -16,7 +14,9 @@ import {
 } from '@/store/reports/types';
 
 import { Message, RotkehlchenState } from '@/store/types';
-import { ProfitLossPeriod } from '@/typing/types';
+import { ProfitLossPeriod } from '@/types/pnl';
+import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 
 export const actions: ActionTree<ReportState, RotkehlchenState> = {
   async generate({ commit, rootState }, payload: ProfitLossPeriod) {

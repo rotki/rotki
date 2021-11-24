@@ -1,7 +1,7 @@
 import { taskManager } from '@/services/task-manager';
 import { websocket } from '@/services/websocket/websocket-service';
-import { QUERY_PERIOD, REFRESH_PERIOD } from '@/store/settings/consts';
 import store from '@/store/store';
+import { QUERY_PERIOD, REFRESH_PERIOD } from '@/types/frontend-settings';
 
 const PERIODIC = 'periodic';
 const TASK = 'task';

@@ -18,7 +18,7 @@ import TabNavigation, {
 } from '@/components/helper/TabNavigation.vue';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
-import { DEFI_SETUP_DONE } from '@/store/settings/consts';
+import { DEFI_SETUP_DONE } from '@/types/frontend-settings';
 
 const tabs: TabContent[] = [
   {

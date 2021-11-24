@@ -86,7 +86,7 @@ import DataTable from '@/components/helper/DataTable.vue';
 import TagCreator from '@/components/tags/TagCreator.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { defaultTag } from '@/components/tags/types';
-import { Tag } from '@/typing/types';
+import { Tag } from '@/types/user';
 
 @Component({
   components: { DataTable, TagIcon, ConfirmDialog, TagCreator },

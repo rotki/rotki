@@ -1,17 +1,8 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
-import { Exchange } from '@/model/action-result';
-import {
-  BlockchainMetadata,
-  createTask,
-  ExchangeMeta,
-  taskCompletion,
-  TaskMeta
-} from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { blockchainBalanceKeys } from '@/services/balances/consts';
 import {
   Balances,
@@ -24,7 +15,6 @@ import {
 import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
-import { Module } from '@/services/session/consts';
 import { XpubAccountData } from '@/services/types-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
@@ -55,7 +45,17 @@ import { notify, userNotify } from '@/store/notifications/utils';
 import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
 import { isLoading, setStatus, showError } from '@/store/utils';
 import { Writeable } from '@/types';
-import { ExchangeRates } from '@/typing/types';
+import { Exchange } from '@/types/exchanges';
+import { Module } from '@/types/modules';
+import {
+  BlockchainMetadata,
+  createTask,
+  ExchangeMeta,
+  taskCompletion,
+  TaskMeta
+} from '@/types/task';
+import { TaskType } from '@/types/task-type';
+import { ExchangeRates } from '@/types/user';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
 import { chunkArray } from '@/utils/data';
@@ -227,13 +227,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async fetchExchangeRates({ commit }): Promise<void> {
     try {
       const { taskId } = await api.getFiatExchangeRates(
-        currencies.map(value => value.ticker_symbol)
+        currencies.map(value => value.tickerSymbol)
       );
 
       const meta: TaskMeta = {
         title: i18n.t('actions.balances.exchange_rates.task.title').toString(),
         ignoreResult: false,
-        numericKeys: null
+        numericKeys: []
       };
 
       const type = TaskType.EXCHANGE_RATES;
@@ -245,7 +245,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         type
       );
 
-      commit('usdToFiatExchangeRates', result);
+      commit('usdToFiatExchangeRates', ExchangeRates.parse(result));
     } catch (e: any) {
       notify(
         i18n
@@ -722,12 +722,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       xpubs
     });
   },
-  async fetchNetvalueData({ commit, rootState: { session } }) {
+  async fetchNetvalueData({ commit, rootState: { session, settings } }) {
     if (!session?.premium) {
       return;
     }
     try {
-      const netvalueData = await api.queryNetvalueData();
+      const includeNfts = settings?.nftsInNetValue ?? true;
+      const netvalueData = await api.queryNetvalueData(includeNfts);
       commit('netvalueData', netvalueData);
     } catch (e: any) {
       notify(

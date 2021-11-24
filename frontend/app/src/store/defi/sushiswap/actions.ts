@@ -1,9 +1,6 @@
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
-import { TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { api } from '@/services/rotkehlchen-api';
-import { Module } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import {
   dexTradeNumericKeys,
@@ -14,6 +11,9 @@ import { SushiswapMutations } from '@/store/defi/sushiswap/mutation-types';
 import { SushiswapState } from '@/store/defi/sushiswap/types';
 import { RotkehlchenState } from '@/store/types';
 import { fetchAsync, setStatus } from '@/store/utils';
+import { Module } from '@/types/modules';
+import { TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 
 export const actions: ActionTree<SushiswapState, RotkehlchenState> = {
   async fetchBalances(context, refresh: boolean = false) {

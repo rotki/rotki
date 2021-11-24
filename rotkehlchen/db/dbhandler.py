@@ -1,3 +1,4 @@
+
 import json
 import logging
 import os
@@ -53,6 +54,7 @@ from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -2659,7 +2661,11 @@ class DBHandler:
         # else
         return None
 
-    def get_netvalue_data(self, from_ts: Timestamp) -> Tuple[List[str], List[str]]:
+    def get_netvalue_data(
+        self,
+        from_ts: Timestamp,
+        include_nfts: bool = True,
+    ) -> Tuple[List[str], List[str]]:
         """Get all entries of net value data from the DB"""
         cursor = self.conn.cursor()
         # Get the total location ("H") entries in ascending time
@@ -2667,13 +2673,24 @@ class DBHandler:
             f'SELECT time, usd_value FROM timed_location_data '
             f'WHERE location="H" AND time >= {from_ts} ORDER BY time ASC;',
         )
+        if not include_nfts:
+            nft_cursor = self.conn.cursor()
+            nft_balances = nft_cursor.execute(
+                f'SELECT time, SUM(usd_value) FROM timed_balances WHERE time >= ? '
+                f'AND currency LIKE "{NFT_DIRECTIVE}%" GROUP BY time',
+                (from_ts,),
+            )
+            nft_values = {time: value for time, value in nft_balances}
 
         data = []
         times_int = []
         for entry in query:
             times_int.append(entry[0])
-            data.append(entry[1])
-
+            if include_nfts:
+                total = entry[1]
+            else:
+                total = str(FVal(entry[1]) - FVal(nft_values.get(entry[0], 0)))
+            data.append(total)
         return times_int, data
 
     def query_timed_balances(
@@ -2756,12 +2773,20 @@ class DBHandler:
             table_name = table_entry[0]
             columns = table_entry[1:]
             columns_str = ", ".join(columns)
+            bindings: Union[Tuple, Tuple[str]] = ()
+            condition = ''
+            if table_name in ('manually_tracked_balances', 'timed_balances'):
+                bindings = (BalanceType.LIABILITY.serialize_for_db(),)
+                condition = ' WHERE category!=?'
+
             try:
                 query = cursor.execute(
-                    f'SELECT DISTINCT {columns_str} FROM {table_name};',
+                    f'SELECT DISTINCT {columns_str} FROM {table_name} {condition};',
+                    bindings,
                 )
             except sqlcipher.OperationalError as e:    # pylint: disable=no-member
                 log.error(f'Could not fetch assets from table {table_name}. {str(e)}')
+                continue
 
             for result in query:
                 for _, asset_id in enumerate(result):

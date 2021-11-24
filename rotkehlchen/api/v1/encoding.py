@@ -87,7 +87,7 @@ from rotkehlchen.typing import (
     Timestamp,
     TradeType,
 )
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -348,6 +348,10 @@ class FloatingPercentageField(fields.Field):
 
 class BlockchainField(fields.Field):
 
+    def __init__(self, *, exclude_types: Optional[Sequence[SupportedBlockchain]] = None, **kwargs: Any) -> None:  # noqa: E501
+        self.exclude_types = exclude_types
+        super().__init__(**kwargs)
+
     def _deserialize(
             self,
             value: str,
@@ -356,17 +360,23 @@ class BlockchainField(fields.Field):
             **_kwargs: Any,
     ) -> SupportedBlockchain:
         if value in ('btc', 'BTC'):
-            return SupportedBlockchain.BITCOIN
-        if value in ('eth', 'ETH'):
-            return SupportedBlockchain.ETHEREUM
-        if value in ('ksm', 'KSM'):
-            return SupportedBlockchain.KUSAMA
-        if value in ('dot', 'DOT'):
-            return SupportedBlockchain.POLKADOT
-        if value in ('avax', 'AVAX'):
-            return SupportedBlockchain.AVALANCHE
+            chain_type = SupportedBlockchain.BITCOIN
+        elif value in ('eth', 'ETH'):
+            chain_type = SupportedBlockchain.ETHEREUM
+        elif value in ('eth2', 'ETH2'):
+            chain_type = SupportedBlockchain.ETHEREUM_BEACONCHAIN
+        elif value in ('ksm', 'KSM'):
+            chain_type = SupportedBlockchain.KUSAMA
+        elif value in ('dot', 'DOT'):
+            chain_type = SupportedBlockchain.POLKADOT
+        elif value in ('avax', 'AVAX'):
+            chain_type = SupportedBlockchain.AVALANCHE
+        else:
+            raise ValidationError(f'Unrecognized value {value} given for blockchain name')
 
-        raise ValidationError(f'Unrecognized value {value} given for blockchain name')
+        if self.exclude_types and chain_type in self.exclude_types:
+            raise ValidationError(f'Blockchain name {str(value)} is not allowed in this endpoint')
+        return chain_type
 
 
 class BalanceTypeField(fields.Field):
@@ -1274,6 +1284,7 @@ class UserPremiumSyncSchema(AsyncQueryArgumentSchema):
 class NewUserSchema(BaseUserSchema):
     premium_api_key = fields.String(load_default='')
     premium_api_secret = fields.String(load_default='')
+    sync_database = fields.Boolean(load_default=True)
     initial_settings = fields.Nested(ModifiableSettingsSchema, load_default=None)
 
 
@@ -1425,7 +1436,7 @@ class XpubPatchSchema(Schema):
 
 
 class BlockchainAccountsGetSchema(Schema):
-    blockchain = BlockchainField(required=True)
+    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
 
 
 def _validate_blockchain_account_schemas(
@@ -1670,7 +1681,7 @@ def _transform_substrate_address(
 
 
 class BlockchainAccountsPatchSchema(Schema):
-    blockchain = BlockchainField(required=True)
+    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
 
     def __init__(self, ethereum_manager: EthereumManager):
@@ -1726,7 +1737,7 @@ class BlockchainAccountsPutSchema(BlockchainAccountsPatchSchema):
 
 
 class BlockchainAccountsDeleteSchema(Schema):
-    blockchain = BlockchainField(required=True)
+    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     accounts = fields.List(fields.String(), required=True)
     async_query = fields.Boolean(load_default=False)
 
@@ -1980,10 +1991,12 @@ class DataImportSchema(Schema):
                 'nexo',
                 'shapeshift-trades',
                 'uphold',
+                'bisq',
             ),
         ),
     )
     file = FileField(required=True, allowed_extensions=('.csv',))
+    timestamp_format = fields.String(load_default=None)
 
 
 class AssetIconUploadSchema(Schema):
@@ -2149,3 +2162,61 @@ class LimitsCounterResetSchema(Schema):
 
 class SingleFileSchema(Schema):
     file = FileField(required=True)
+
+
+class Eth2ValidatorSchema(Schema):
+    validator_index = fields.Integer(
+        load_default=None,
+        validate=webargs.validate.Range(
+            min=0,
+            error='Validator index must be an integer >= 0',
+        ),
+    )
+    public_key = fields.String(load_default=None)
+
+    @validates_schema
+    def validate_eth2_validator_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        validator_index = data.get('validator_index')
+        public_key = data.get('public_key')
+        if validator_index is None and public_key is None:
+            raise ValidationError(
+                'Need to provide either a validator index or a public key for an eth2 validator',
+            )
+
+        if public_key is not None:
+            try:
+                pubkey_bytes = hexstring_to_bytes(public_key)
+            except DeserializationError as e:
+                raise ValidationError(f'The given eth2 public key {public_key} is not valid hex') from e  # noqa: E501
+
+            bytes_length = len(pubkey_bytes)
+            if bytes_length != 48:
+                raise ValidationError(
+                    f'The given eth2 public key {public_key} has {bytes_length} '
+                    f'bytes. Expected 48.',
+                )
+
+    @post_load
+    def transform_data(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        public_key = data.get('public_key')
+        if public_key is not None and not public_key.startswith('0x'):
+            # since we started storing eth2 pubkey with '0x' in eth2_deposits let's keep the format
+            data['public_key'] = '0x' + public_key
+
+        return data
+
+
+class Eth2ValidatorPutSchema(Eth2ValidatorSchema):
+    async_query = fields.Boolean(load_default=False)
+
+
+class StatisticsNetValueSchema(Schema):
+    include_nfts = fields.Boolean(load_default=True)

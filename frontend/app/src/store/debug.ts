@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import createPersistedState from 'vuex-persistedstate';
 import { bigNumberify } from '@/utils/bignumbers';
 

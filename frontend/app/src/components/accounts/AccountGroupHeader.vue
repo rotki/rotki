@@ -109,7 +109,7 @@ import { balanceSum, truncateAddress, truncationPoints } from '@/filters';
 import PrivacyMixin from '@/mixins/privacy-mixin';
 import { XpubAccountWithBalance } from '@/store/balances/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
-import { Tags } from '@/typing/types';
+import { Tags } from '@/types/user';
 
 @Component({
   components: { TagIcon, CopyButton, Fragment },

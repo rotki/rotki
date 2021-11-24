@@ -33,6 +33,7 @@ from rotkehlchen.db.upgrades.v26_v27 import upgrade_v26_to_v27
 from rotkehlchen.db.upgrades.v27_v28 import upgrade_v27_to_v28
 from rotkehlchen.db.upgrades.v28_v29 import upgrade_v28_to_v29
 from rotkehlchen.db.upgrades.v29_v30 import upgrade_v29_to_v30
+from rotkehlchen.db.upgrades.v30_v31 import upgrade_v30_to_v31
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -205,6 +206,10 @@ UPGRADES_LIST = [
         from_version=29,
         function=upgrade_v29_to_v30,
     ),
+    UpgradeRecord(
+        from_version=30,
+        function=upgrade_v30_to_v31,
+    ),
 ]
 
 
@@ -232,6 +237,18 @@ class DBUpgradeManager():
                 'executable. Did you perhaps try to revert to an older rotki version? '
                 'Please only use the latest version of the software.',
             )
+
+        cursor = self.db.conn.cursor()
+        version_query = cursor.execute(
+            'SELECT value FROM settings WHERE name=?;', ('version',),
+        )
+        if version_query.fetchone() is None:
+            # temporary due to https://github.com/rotki/rotki/issues/3744.
+            # Figure out if an upgrade needs to actually run.
+            cursor = self.db.conn.cursor()
+            result = cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="eth2_validators"')  # noqa: E501
+            if result.fetchone()[0] == 0:  # it's wrong and at least v30
+                self.db.set_version(30)
 
         for upgrade in UPGRADES_LIST:
             self._perform_single_upgrade(upgrade)

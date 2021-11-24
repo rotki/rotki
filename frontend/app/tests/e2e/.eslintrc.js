@@ -7,5 +7,8 @@ module.exports = {
   },
   rules: {
     strict: 'off'
+  },
+  parserOptions: {
+    project: './tsconfig.eslint.json'
   }
 };

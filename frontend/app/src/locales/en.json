@@ -622,7 +622,7 @@
       "title": "Backend"
     },
     "snapshot_failed": {
-      "message": "Could not save the balance snapshot at {location} {error}",
+      "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
     }
   },
@@ -1330,12 +1330,15 @@
       "refresh_enabled": "Enabled",
       "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
       "zero_based": "Use zero as the lowest y-axis value for the graphs",
-      "zero_based_hint": "By default the lowest value is the minimum in the selected period"
+      "zero_based_hint": "By default the lowest value is the minimum in the selected period",
+      "include_nfts": "Include NFTs in the graphs and total networth",
+      "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs"
     },
     "subtitle": {
       "graph_basis": "Graph basis",
       "query": "Periodic status query",
-      "refresh": "Automatic balance refresh"
+      "refresh": "Automatic balance refresh",
+      "include_nfts": "Include NFTs in graphs and total amounts"
     },
     "title": "Frontend-only Settings",
     "validation": {
@@ -2934,6 +2937,13 @@
       "name": "uphold",
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "Uphold lets you export a transactions file. It can be found under activity at the top right of the activity list.",
+      "note": "Important notes for importing data from {0}'s CSV exports."
+    },
+    "bisq": {
+      "import": "Import {0} from bisq",
+      "import_trade": "trades",
+      "name": "Bisq",
+      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "note": "Important notes for importing data from {0}'s CSV exports."
     },
     "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",

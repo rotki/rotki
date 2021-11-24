@@ -38,6 +38,8 @@ from rotkehlchen.api.v1.encoding import (
     DataImportSchema,
     EditSettingsSchema,
     ERC20InfoSchema,
+    Eth2ValidatorPutSchema,
+    Eth2ValidatorSchema,
     EthereumTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangeRatesSchema,
@@ -78,6 +80,7 @@ from rotkehlchen.api.v1.encoding import (
     SingleAssetIdentifierSchema,
     SingleFileSchema,
     StatisticsAssetBalanceSchema,
+    StatisticsNetValueSchema,
     StatisticsValueDistributionSchema,
     StringIdentifierSchema,
     TagEditSchema,
@@ -111,6 +114,7 @@ from rotkehlchen.typing import (
     AssetAmount,
     BlockchainAccountData,
     ChecksumEthAddress,
+    Eth2PubKey,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -801,6 +805,7 @@ class UsersResource(BaseResource):
             password: str,
             premium_api_key: str,
             premium_api_secret: str,
+            sync_database: bool,
             initial_settings: Optional[ModifiableDBSettings],
     ) -> Response:
         return self.rest_api.create_new_user(
@@ -808,6 +813,7 @@ class UsersResource(BaseResource):
             password=password,
             premium_api_key=premium_api_key,
             premium_api_secret=premium_api_secret,
+            sync_database=sync_database,
             initial_settings=initial_settings,
         )
 
@@ -877,8 +883,11 @@ class UserPremiumSyncResource(BaseResource):
 
 class StatisticsNetvalueResource(BaseResource):
 
-    def get(self) -> Response:
-        return self.rest_api.query_netvalue_data()
+    get_schema = StatisticsNetValueSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, include_nfts: bool) -> Response:
+        return self.rest_api.query_netvalue_data(include_nfts)
 
 
 class StatisticsAssetBalanceResource(BaseResource):
@@ -1176,22 +1185,61 @@ class DataImportResource(BaseResource):
         self,
         source: IMPORTABLE_LOCATIONS,
         file: Path,
+        timestamp_format: Optional[str],
     ) -> Response:
-        return self.rest_api.import_data(source=source, filepath=file)
+        return self.rest_api.import_data(
+            source=source,
+            filepath=file,
+            timestamp_format=timestamp_format,
+        )
 
     @use_kwargs(upload_schema, location='form_and_file')
     def post(
             self,
             source: IMPORTABLE_LOCATIONS,
             file: FileStorage,
+            timestamp_format: Optional[str],
     ) -> Response:
         with TemporaryDirectory() as temp_directory:
             filename = file.filename if file.filename else f'{source}.csv'
             filepath = Path(temp_directory) / filename
             file.save(str(filepath))
-            response = self.rest_api.import_data(source=source, filepath=filepath)
+            response = self.rest_api.import_data(
+                source=source,
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
 
         return response
+
+
+class Eth2ValidatorsResource(BaseResource):
+
+    put_schema = Eth2ValidatorPutSchema()
+    delete_schema = Eth2ValidatorSchema()
+
+    def get(self) -> Response:
+        return self.rest_api.get_eth2_validators()
+
+    @use_kwargs(put_schema, location='json')
+    def put(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[Eth2PubKey],
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.add_eth2_validator(
+            validator_index=validator_index,
+            public_key=public_key,
+            async_query=async_query,
+        )
+
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, validator_index: Optional[int], public_key: Optional[str]) -> Response:
+        return self.rest_api.delete_eth2_validator(
+            validator_index=validator_index,
+            public_key=public_key,
+        )
 
 
 class Eth2StakeDepositsResource(BaseResource):

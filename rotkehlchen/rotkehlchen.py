@@ -14,9 +14,10 @@ from typing_extensions import Literal
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import (
-    account_for_manually_tracked_balances,
+    account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
 )
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
@@ -32,7 +33,6 @@ from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data.importer import DataImporter
@@ -158,6 +158,7 @@ class Rotkehlchen():
             sync_approval: Literal['yes', 'no', 'unknown'],
             premium_credentials: Optional[PremiumCredentials],
             initial_settings: Optional[ModifiableDBSettings] = None,
+            sync_database: bool = True,
     ) -> None:
         """Unlocks an existing user or creates a new one if `create_new` is True
 
@@ -174,6 +175,7 @@ class Rotkehlchen():
             user=user,
             create_new=create_new,
             sync_approval=sync_approval,
+            sync_database=sync_database,
             initial_settings=initial_settings,
         )
 
@@ -194,6 +196,7 @@ class Rotkehlchen():
                 username=user,
                 create_new=create_new,
                 sync_approval=sync_approval,
+                sync_database=sync_database,
             )
         except PremiumAuthenticationError:
             # Reraise it only if this is during the creation of a new account where
@@ -658,13 +661,10 @@ class Rotkehlchen():
             db=self.data.db,
             balance_type=BalanceType.LIABILITY,
         )
-        manual_liabilities_as_dict = {
-            manual_liability.asset: Balance(
-                amount=manual_liability.amount,
-                usd_value=manual_liability.usd_value,
-            )
-            for manual_liability in manually_tracked_liabilities
-        }
+        manual_liabilities_as_dict: DefaultDict[Asset, Balance] = defaultdict(Balance)
+        for manual_liability in manually_tracked_liabilities:
+            manual_liabilities_as_dict[manual_liability.asset] += manual_liability.value
+
         liabilities = combine_dicts(liabilities, manual_liabilities_as_dict)
         # retrieve loopring balances if module is activated
         if self.chain_manager.get_module('loopring'):
@@ -693,7 +693,7 @@ class Rotkehlchen():
                 problem_free = False
                 self.msg_aggregator.add_message(
                     message_type=WSMessageType.BALANCE_SNAPSHOT_ERROR,
-                    data={'location': 'loopring', 'error': str(e)},
+                    data={'location': 'nfts', 'error': str(e)},
                 )
             else:
                 if len(nft_mapping) != 0:
@@ -708,7 +708,7 @@ class Rotkehlchen():
                                 usd_value=balance_entry['usd_price'],
                             )
 
-        balances = account_for_manually_tracked_balances(db=self.data.db, balances=balances)
+        balances = account_for_manually_tracked_asset_balances(db=self.data.db, balances=balances)
 
         # Calculate usd totals
         assets_total_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)

@@ -34,7 +34,7 @@
             :sync-conflict="syncConflict"
             :errors="errors"
             @touched="errors = []"
-            @login="login($event)"
+            @login="userLogin($event)"
             @backend-changed="backendChanged($event)"
             @new-account="accountCreation = true"
           />
@@ -46,7 +46,7 @@
             :error="accountCreationError"
             @error:clear="accountCreationError = ''"
             @cancel="accountCreation = false"
-            @confirm="createAccount($event)"
+            @confirm="createNewAccount($event)"
           />
         </v-slide-y-transition>
       </v-card>
@@ -91,7 +91,6 @@ import PremiumReminder from '@/components/account-management/PremiumReminder.vue
 import {
   deleteBackendUrl,
   getBackendUrl,
-  lastLogin,
   setLastLogin
 } from '@/components/account-management/utils';
 import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue';
@@ -99,7 +98,7 @@ import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import BackendMixin from '@/mixins/backend-mixin';
 import { SyncConflict } from '@/store/session/types';
 import { ActionStatus, Message } from '@/store/types';
-import { Credentials, UnlockPayload } from '@/typing/types';
+import { CreateAccountPayload, LoginCredentials } from '@/types/login';
 
 @Component({
   components: {
@@ -118,7 +117,7 @@ import { Credentials, UnlockPayload } from '@/typing/types';
     ...mapGetters(['updateNeeded', 'message'])
   },
   methods: {
-    ...mapActions('session', ['unlock']),
+    ...mapActions('session', ['login', 'createAccount']),
     ...mapMutations(['setMessage'])
   }
 })
@@ -130,7 +129,8 @@ export default class AccountManagement extends Mixins(BackendMixin) {
   message!: Message;
   connected!: boolean;
   syncConflict!: SyncConflict;
-  unlock!: (payload: UnlockPayload) => Promise<ActionStatus>;
+  login!: (payload: LoginCredentials) => Promise<ActionStatus>;
+  createAccount!: (payload: CreateAccountPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
   errors: string[] = [];
   accountCreationError: string = '';
@@ -173,27 +173,13 @@ export default class AccountManagement extends Mixins(BackendMixin) {
       await this.restartBackend();
     }
 
-    const lastLoggedUser = lastLogin();
-
-    try {
-      this.autolog = true;
-      const isLogged = await this.$api.checkIfLogged(lastLoggedUser);
-      if (isLogged) {
-        await this.unlock({
-          username: lastLoggedUser,
-          restore: true,
-          password: ''
-        });
-        if (this.logged) {
-          this.showPremiumDialog();
-          this.showGetPremiumButton();
-        }
-      }
-      // eslint-disable-next-line no-empty
-    } catch (e: any) {
-    } finally {
-      this.autolog = false;
+    this.autolog = true;
+    await this.login({ username: '', password: '' });
+    if (this.logged) {
+      this.showPremiumDialog();
+      this.showGetPremiumButton();
     }
+    this.autolog = false;
   }
 
   @Emit()
@@ -209,10 +195,10 @@ export default class AccountManagement extends Mixins(BackendMixin) {
     await this.$store.dispatch('connect', url);
   }
 
-  async login(credentials: Credentials) {
+  async userLogin(credentials: LoginCredentials) {
     const { username, password, syncApproval } = credentials;
     this.loading = true;
-    const { message } = await this.unlock({
+    const { message } = await this.login({
       username,
       password,
       syncApproval
@@ -229,20 +215,10 @@ export default class AccountManagement extends Mixins(BackendMixin) {
     }
   }
 
-  async createAccount(credentials: Credentials) {
-    const { username, password, apiKey, apiSecret, submitUsageAnalytics } =
-      credentials;
+  async createNewAccount(payload: CreateAccountPayload) {
     this.loading = true;
     this.accountCreationError = '';
-    const { message, success } = await this.unlock({
-      username,
-      password,
-      create: true,
-      syncApproval: 'unknown',
-      apiKey,
-      apiSecret,
-      submitUsageAnalytics
-    });
+    const { message, success } = await this.createAccount(payload);
     this.loading = false;
 
     if (success) {

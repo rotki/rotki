@@ -15,7 +15,7 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Zero } from '@/utils/bignumbers';

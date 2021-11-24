@@ -141,13 +141,13 @@ import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue'
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import OracleEntry from '@/components/settings/OracleEntry.vue';
-import { PriceOracles } from '@/model/action-result';
-import { TaskType } from '@/model/task-type';
 import { OracleCacheMeta } from '@/services/balances/types';
 import { OracleCachePayload } from '@/store/balances/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { ActionStatus } from '@/store/types';
+import { TaskType } from '@/types/task-type';
+import { PriceOracle } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
 @Component({
@@ -188,7 +188,7 @@ export default class OracleCacheManagement extends Vue {
       value: 'actions'
     }
   ];
-  readonly oracles: PriceOracles[] = ['cryptocompare'];
+  readonly oracles: PriceOracle[] = ['cryptocompare'];
 
   loading: boolean = false;
   confirmClear: boolean = false;
@@ -196,7 +196,7 @@ export default class OracleCacheManagement extends Vue {
   fromAsset: string = '';
   toAsset: string = '';
   search: string = '';
-  selection: PriceOracles = 'cryptocompare';
+  selection: PriceOracle = 'cryptocompare';
   deleteEntry: OracleCacheMeta | null = null;
   createOracleCache!: (payload: OracleCachePayload) => Promise<ActionStatus>;
   isTaskRunning!: (type: TaskType) => boolean;

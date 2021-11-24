@@ -1,12 +1,11 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { mount, Wrapper } from '@vue/test-utils';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { findCurrency } from '@/data/converters';
 import { currencies } from '@/data/currencies';
 import store from '@/store/store';
-import { Zero, bigNumberify } from '@/utils/bignumbers';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
 import '@/filters';
 
 Vue.use(Vuetify);
@@ -42,10 +41,10 @@ describe('AmountDisplay.vue', () => {
 
   beforeEach(async () => {
     store.commit('session/generalSettings', {
-      selectedCurrency: findCurrency(currencies[1].ticker_symbol)
+      mainCurrency: currencies[1]
     });
     store.commit('balances/usdToFiatExchangeRates', { EUR: 1.2 });
-    store.commit('session/generalSettings', { floatingPrecision: 2 });
+    store.commit('session/generalSettings', { uiFloatingPrecision: 2 });
   });
 
   afterEach(() => {

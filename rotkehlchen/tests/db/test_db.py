@@ -60,7 +60,7 @@ from rotkehlchen.tests.utils.constants import (
     DEFAULT_TESTS_MAIN_CURRENCY,
 )
 from rotkehlchen.tests.utils.database import mock_dbhandler_update_owned_assets
-from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances
+from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances, add_starting_nfts
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -114,6 +114,7 @@ TABLES_AT_INIT = [
     'amm_events',
     'eth2_deposits',
     'eth2_daily_staking_details',
+    'eth2_validators',
     'adex_events',
     'ledger_actions',
     'ledger_action_type',
@@ -698,7 +699,7 @@ def test_query_owned_assets(data_dir, username):
     ])
 
     assets_list = data.db.query_owned_assets()
-    assert set(assets_list) == {A_USD, A_ETH, A_DAI, A_BTC, A_XMR, A_SDC, A_SDT2, A_SUSHI, A_1INCH}  # noqa: E501
+    assert set(assets_list) == {A_USD, A_ETH, A_BTC, A_XMR, A_SDC, A_SDT2, A_SUSHI, A_1INCH}  # noqa: E501
     assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
@@ -772,6 +773,34 @@ def test_get_netvalue_data_from_date(data_dir, username):
     assert times[0] == 1491607800
     assert len(values) == 1
     assert values[0] == '10700.5'
+
+
+def test_get_netvalue_without_nfts(data_dir, username):
+    """
+    Test that the netvalue in a range of time is correctly queried with and without NFTs
+    counted in the total.
+    """
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator)
+    data.unlock(username, '123', create_new=True)
+    add_starting_nfts(data)
+    start_ts = Timestamp(1488326400)
+
+    times, values = data.db.get_netvalue_data(start_ts)
+    assert len(times) == 4
+    assert len(values) == 4
+    assert values[0] == '3000'
+    assert values[3] == '5500'
+
+    times, values = data.db.get_netvalue_data(
+        from_ts=start_ts,
+        include_nfts=False,
+    )
+    assert len(times) == 4
+    assert len(values) == 4
+    assert values[0] == '2000'
+    assert values[2] == '3000'
+    assert values[3] == '4500'
 
 
 def test_add_trades(data_dir, username, caplog):

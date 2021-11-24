@@ -98,7 +98,7 @@ import { currency } from '@/composables/session';
 import { setupTaskStatus } from '@/composables/tasks';
 import { balanceSum } from '@/filters';
 import i18n from '@/i18n';
-import { TaskType } from '@/model/task-type';
+import { TaskType } from '@/types/task-type';
 import { getSortItems } from '@/utils/assets';
 
 const tableHeaders = (i18n: IVueI18n) => {

@@ -51,9 +51,9 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleMixin from '@/mixins/module-mixin';
-import { Module } from '@/services/session/consts';
 import { BalanceActions } from '@/store/balances/action-types';
 import { BalanceMutations } from '@/store/balances/mutation-types';
+import { Module } from '@/types/modules';
 
 const wasActivated = (
   active: Module[],

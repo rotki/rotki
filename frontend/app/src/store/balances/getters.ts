@@ -11,10 +11,7 @@ import { SupportedAsset } from '@rotki/common/lib/data';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
-import {
-  BlockchainAssetBalances,
-  SupportedExchange
-} from '@/services/balances/types';
+import { BlockchainAssetBalances } from '@/services/balances/types';
 import { GeneralAccountData } from '@/services/types-api';
 import {
   AccountAssetBalances,
@@ -36,7 +33,8 @@ import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { Writeable } from '@/types';
-import { ExchangeInfo, L2_LOOPRING } from '@/typing/types';
+import { ExchangeInfo, SupportedExchange } from '@/types/exchanges';
+import { L2_LOOPRING } from '@/types/protocols';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
@@ -297,14 +295,17 @@ export const getters: Getters<
   liabilities: ({ liabilities, manualLiabilities, prices }) => {
     const noPrice = new BigNumber(-1);
     const liabilitiesMerged: Record<string, Balance> = { ...liabilities };
-    for (const entry of manualLiabilities) {
-      if (liabilitiesMerged[entry.asset]) {
-        liabilitiesMerged[entry.asset].amount.plus(entry.amount);
-        liabilitiesMerged[entry.asset].usdValue.plus(entry.usdValue);
+    for (const { amount, asset, usdValue } of manualLiabilities) {
+      const liability = liabilitiesMerged[asset];
+      if (liability) {
+        liabilitiesMerged[asset] = {
+          amount: liability.amount.plus(amount),
+          usdValue: liability.usdValue.plus(usdValue)
+        };
       } else {
-        liabilitiesMerged[entry.asset] = {
-          amount: entry.amount,
-          usdValue: entry.usdValue
+        liabilitiesMerged[asset] = {
+          amount: amount,
+          usdValue: usdValue
         };
       }
     }
@@ -322,8 +323,7 @@ export const getters: Getters<
     { exchangeRate },
     { session }
   ): LocationBalance[] => {
-    const mainCurrency =
-      session?.generalSettings.selectedCurrency.ticker_symbol;
+    const mainCurrency = session?.generalSettings.mainCurrency.tickerSymbol;
 
     assert(mainCurrency, 'main currency was not properly set');
 
@@ -501,11 +501,11 @@ export const getters: Getters<
       return Object.entries(ethAccount.assets)
         .filter(([asset]) => !ignoredAssets.includes(asset))
         .map(
-          ([key, asset_data]) =>
+          ([key, { amount, usdValue }]) =>
             ({
               asset: key,
-              amount: asset_data.amount,
-              usdValue: asset_data.usdValue
+              amount: amount,
+              usdValue: usdValue
             } as AssetBalance)
         );
     },
@@ -522,11 +522,11 @@ export const getters: Getters<
       return Object.entries(ethAccount.liabilities)
         .filter(([asset]) => !ignoredAssets.includes(asset))
         .map(
-          ([key, asset_data]) =>
+          ([key, { amount, usdValue }]) =>
             ({
               asset: key,
-              amount: asset_data.amount,
-              usdValue: asset_data.usdValue
+              amount: amount,
+              usdValue: usdValue
             } as AssetBalance)
         );
     },

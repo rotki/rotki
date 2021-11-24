@@ -58,6 +58,7 @@ IMPORTABLE_LOCATIONS = Literal[
     'gitcoin',
     'shapeshift-trades',
     'uphold',
+    'bisq',
 ]
 
 UNISWAP_PROTOCOL = 'UNI-V2'
@@ -125,6 +126,9 @@ ChecksumEthAddress = ChecksumAddress
 
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
+
+T_Eth2PubKey = str
+Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)
 
 BlockchainAddress = Union[
     EthAddress,
@@ -254,6 +258,7 @@ class CovalentTransaction(NamedTuple):
 class SupportedBlockchain(Enum):
     """These are the blockchains for which account tracking is supported """
     ETHEREUM = 'ETH'
+    ETHEREUM_BEACONCHAIN = 'ETH2'
     BITCOIN = 'BTC'
     KUSAMA = 'KSM'
     AVALANCHE = 'AVAX'
@@ -262,6 +267,8 @@ class SupportedBlockchain(Enum):
     def get_address_type(self) -> Callable:
         if self in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE):
             return ChecksumEthAddress
+        if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
+            return Eth2PubKey
         if self == SupportedBlockchain.BITCOIN:
             return BTCAddress
         if self == SupportedBlockchain.KUSAMA:
@@ -356,6 +363,7 @@ class Location(DBEnumMixIn):
     SHAPESHIFT = 32
     UPHOLD = 33
     BITPANDA = 34
+    BISQ = 35
 
 
 class AssetMovementCategory(DBEnumMixIn):
@@ -388,5 +396,6 @@ EXTERNAL_EXCHANGES: List = [
     Location.NEXO,
     Location.SHAPESHIFT,
     Location.UPHOLD,
+    Location.BISQ,
 ]
 EXTERNAL_LOCATION = [Location.EXTERNAL] + EXTERNAL_EXCHANGES

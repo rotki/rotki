@@ -128,7 +128,7 @@ import {
   setupAssetInfoRetrieval,
   setupExchangeRateGetter
 } from '@/composables/balances';
-import { currency, floatingPrecision } from '@/composables/session';
+import { currency } from '@/composables/session';
 import { totalNetWorthUsd } from '@/composables/statistics';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
@@ -194,8 +194,7 @@ const DashboardAssetTable = defineComponent({
       return aggregateTotal(
         balances.value,
         mainCurrency,
-        exchangeRate(mainCurrency) ?? new BigNumber(1),
-        floatingPrecision.value
+        exchangeRate(mainCurrency) ?? new BigNumber(1)
       );
     });
 
@@ -234,7 +233,6 @@ const DashboardAssetTable = defineComponent({
       total,
       tableHeaders: tableHeaders(totalNetWorthUsd),
       currencySymbol,
-      floatingPrecision,
       sortItems: getSortItems(getAssetInfo),
       assetFilter,
       percentage

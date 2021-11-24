@@ -74,7 +74,7 @@ import { Component, Mixins } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import { explorerUrls } from '@/components/helper/asset-urls';
 import SettingsMixin from '@/mixins/settings-mixin';
-import { ExplorersSettings } from '@/store/settings/types';
+import { ExplorersSettings } from '@/types/frontend-settings';
 
 const ETC = 'ETC' as const;
 

@@ -1,28 +1,18 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { ActionTree } from 'vuex';
-import {
-  convertToAccountingSettings,
-  convertToGeneralSettings
-} from '@/data/converters';
-import { EXTERNAL_EXCHANGES, SUPPORTED_EXCHANGES } from '@/data/defaults';
+import { lastLogin } from '@/components/account-management/utils';
+import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
-import { DBSettings, Exchange } from '@/model/action-result';
-import { createTask, taskCompletion, TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
-import {
-  SupportedExchange,
-  SupportedExternalExchanges
-} from '@/services/balances/types';
+import { SupportedExternalExchanges } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import { monitor } from '@/services/monitoring';
 import { api } from '@/services/rotkehlchen-api';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
-  ALL_MODULES,
-  Module
+  ALL_MODULES
 } from '@/services/session/consts';
 import {
   Purgeable,
@@ -31,6 +21,7 @@ import {
   WatcherTypes
 } from '@/services/session/types';
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
+import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { HistoryActions } from '@/store/history/consts';
 import { Severity } from '@/store/notifications/consts';
@@ -45,60 +36,68 @@ import {
   PremiumCredentialsPayload,
   SessionState
 } from '@/store/session/types';
+import { ACTION_PURGE_DATA } from '@/store/staking/consts';
+import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
+import { getStatusUpdater, showError, showMessage } from '@/store/utils';
+import {
+  Exchange,
+  KrakenAccountType,
+  SUPPORTED_EXCHANGES,
+  SupportedExchange
+} from '@/types/exchanges';
 import {
   LAST_KNOWN_TIMEFRAME,
   TIMEFRAME_SETTING
-} from '@/store/settings/consts';
-import { loadFrontendSettings } from '@/store/settings/utils';
-import { ACTION_PURGE_DATA } from '@/store/staking/consts';
-import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
-import { showError, showMessage } from '@/store/utils';
+} from '@/types/frontend-settings';
 import {
-  SettingsUpdate,
+  CreateAccountPayload,
+  LoginCredentials,
   SyncConflictError,
-  Tag,
   UnlockPayload
-} from '@/typing/types';
+} from '@/types/login';
+import { Module } from '@/types/modules';
+import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
+import { SettingsUpdate, Tag, UserSettingsModel } from '@/types/user';
 import { backoff } from '@/utils/backoff';
 import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
 
 const periodic = {
   isRunning: false
 };
 
 export const actions: ActionTree<SessionState, RotkehlchenState> = {
-  start({ commit }, payload: { settings: DBSettings }) {
-    const { settings } = payload;
+  async refreshData({ dispatch }, exchanges: Exchange[]) {
+    logger.info('Refreshing data');
+    const options = {
+      root: true
+    };
+    const async = [
+      dispatch(`history/${HistoryActions.FETCH_IGNORED}`, null, options),
+      dispatch('fetchIgnoredAssets'),
+      dispatch('session/fetchWatchers', null, options),
+      dispatch('balances/fetchManualBalances', null, options),
+      dispatch('statistics/fetchNetValue', null, options),
+      dispatch('balances/fetch', exchanges, options),
+      dispatch('balances/fetchLoopringBalances', false, options)
+    ];
 
-    commit('premium', settings.have_premium);
-    commit('premiumSync', settings.premium_should_sync);
-    commit('updateLastBalanceSave', settings.last_balance_save);
-    commit('updateLastDataUpload', settings.last_data_upload_ts);
-    commit('generalSettings', convertToGeneralSettings(settings));
-    commit('accountingSettings', convertToAccountingSettings(settings));
+    Promise.all(async).then(() =>
+      dispatch('balances/refreshPrices', false, options)
+    );
   },
+
   async unlock(
-    { commit, dispatch, state, rootState },
-    payload: UnlockPayload
+    { commit, dispatch, rootState, rootGetters: { status } },
+    { settings, exchanges, newAccount, sync, username }: UnlockPayload
   ): Promise<ActionStatus> {
-    let settings: DBSettings;
-    let exchanges: Exchange[];
-
     try {
-      const { username, create, restore } = payload;
-      const isLogged = restore || (await api.checkIfLogged(username));
-      if (isLogged && !state.syncConflict.message) {
-        [settings, exchanges] = await Promise.all([
-          api.getSettings(),
-          api.getExchanges()
-        ]);
-      } else {
-        commit('syncConflict', { message: '', payload: null });
-        ({ settings, exchanges } = await api.unlockUser(payload));
-      }
-
-      if (settings.frontend_settings) {
-        loadFrontendSettings(commit, settings.frontend_settings);
+      const other = settings.other;
+      if (other.frontendSettings) {
+        commit('settings/restore', other.frontendSettings, {
+          root: true
+        });
         const timeframeSetting = rootState.settings![TIMEFRAME_SETTING];
         if (timeframeSetting !== TimeFramePersist.REMEMBER) {
           commit('setTimeframe', timeframeSetting);
@@ -107,37 +106,103 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         }
       }
 
-      await dispatch('start', {
-        settings
-      });
+      commit('premium', other.havePremium);
+      commit('premiumSync', other.premiumShouldSync);
+      commit('updateLastBalanceSave', settings.data.lastBalanceSave);
+      commit('updateLastDataUpload', settings.data.lastDataUploadTs);
+      commit('generalSettings', settings.general);
+      commit('accountingSettings', settings.accounting);
 
       monitor.start();
       commit('tags', await api.getTags());
-      commit('login', { username, newAccount: create });
+      commit('login', { username, newAccount });
+      dispatch('balances/fetchSupportedAssets', null, { root: true });
 
-      const options = {
-        root: true
-      };
-      const async = [
-        dispatch(`history/${HistoryActions.FETCH_IGNORED}`, null, options),
-        dispatch('fetchIgnoredAssets'),
-        dispatch('balances/fetchSupportedAssets', null, options),
-        dispatch('session/fetchWatchers', null, options),
-        dispatch('balances/fetchManualBalances', null, options),
-        dispatch('statistics/fetchNetValue', null, options),
-        dispatch('balances/fetch', exchanges, options),
-        dispatch('balances/fetchLoopringBalances', false, options)
-      ];
+      if (!newAccount || sync) {
+        await dispatch('refreshData', exchanges);
+      } else {
+        const ethUpdater = getStatusUpdater(
+          commit,
+          Section.BLOCKCHAIN_ETH,
+          status
+        );
+        const btcUpdater = getStatusUpdater(
+          commit,
+          Section.BLOCKCHAIN_BTC,
+          status
+        );
+        ethUpdater.setStatus(Status.LOADED);
+        btcUpdater.setStatus(Status.LOADED);
+      }
 
-      Promise.all(async).then(() =>
-        dispatch('balances/refreshPrices', false, options)
-      );
       return { success: true };
     } catch (e: any) {
+      logger.error(e);
       if (e instanceof SyncConflictError) {
         commit('syncConflict', { message: e.message, payload: e.payload });
         return { success: false, message: '' };
       }
+      return { success: false, message: e.message };
+    }
+  },
+
+  async login(
+    { state, dispatch, commit },
+    credentials: LoginCredentials
+  ): Promise<ActionStatus> {
+    try {
+      const username = credentials.username
+        ? credentials.username
+        : lastLogin();
+      const isLogged = await api.checkIfLogged(username);
+
+      let settings: UserSettingsModel;
+      let exchanges: Exchange[];
+      if (isLogged && !state.syncConflict.message) {
+        [settings, exchanges] = await Promise.all([
+          api.getSettings(),
+          api.getExchanges()
+        ]);
+        logger.debug(settings);
+      } else {
+        if (!credentials.username) {
+          return { success: false, message: '' };
+        }
+        commit('syncConflict', { message: '', payload: null });
+        ({ settings, exchanges } = await api.login(credentials));
+      }
+
+      return await dispatch('unlock', {
+        settings,
+        exchanges,
+        username
+      });
+    } catch (e: any) {
+      logger.error(e);
+      if (e instanceof SyncConflictError) {
+        commit('syncConflict', { message: e.message, payload: e.payload });
+        return { success: false, message: '' };
+      }
+      return { success: false, message: e.message };
+    }
+  },
+
+  async createAccount(
+    { dispatch },
+    payload: CreateAccountPayload
+  ): Promise<ActionStatus> {
+    try {
+      const { settings, exchanges } = await api.createAccount(payload);
+      const data: UnlockPayload = {
+        settings,
+        exchanges,
+        username: payload.credentials.username,
+        sync: payload.premiumSetup?.syncDatabase,
+        newAccount: true
+      };
+      return await dispatch('unlock', data);
+    } catch (e: any) {
+      logger.error(e);
       return { success: false, message: e.message };
     }
   },
@@ -268,12 +333,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     dispatch('balances/removeTag', tagName, { root: true });
   },
 
-  async setKrakenAccountType({ commit }, account_type: string) {
+  async setKrakenAccountType({ commit }, krakenAccountType: KrakenAccountType) {
     try {
       const settings = await api.setSettings({
-        kraken_account_type: account_type
+        krakenAccountType
       });
-      commit('generalSettings', convertToGeneralSettings(settings));
+      commit('generalSettings', settings.general);
       commit(
         'setMessage',
         {
@@ -315,16 +380,16 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     let message = '';
     try {
       const settings = await api.setSettings(update);
-      if (state.premium !== settings.have_premium) {
-        commit('premium', settings.have_premium);
+      if (state.premium !== settings.other.havePremium) {
+        commit('premium', settings.other.havePremium);
       }
 
-      if (state.premiumSync !== settings.premium_should_sync) {
-        commit('premiumSync', settings.premium_should_sync);
+      if (state.premiumSync !== settings.other.premiumShouldSync) {
+        commit('premiumSync', settings.other.premiumShouldSync);
       }
 
-      commit('generalSettings', convertToGeneralSettings(settings));
-      commit('accountingSettings', convertToAccountingSettings(settings));
+      commit('generalSettings', settings.general);
+      commit('accountingSettings', settings.accounting);
       success = true;
     } catch (e: any) {
       message = e.message;

@@ -27,8 +27,7 @@ import {
   HistoryActions
 } from '@/store/history/consts';
 import { FetchSource, TradeEntry } from '@/store/history/types';
-import { REFRESH_PERIOD } from '@/store/settings/consts';
-import { RefreshPeriod } from '@/store/settings/types';
+import { REFRESH_PERIOD, RefreshPeriod } from '@/types/frontend-settings';
 
 @Component({
   components: {

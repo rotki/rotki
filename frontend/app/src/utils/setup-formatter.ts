@@ -1,4 +1,4 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 
 export function setupFormatter() {
   if (process.env.NODE_ENV !== 'development') {

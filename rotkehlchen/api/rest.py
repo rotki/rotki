@@ -72,6 +72,7 @@ from rotkehlchen.errors import (
     RotkehlchenPermissionError,
     SystemPermissionError,
     TagConstraintError,
+    UnableToDecryptRemoteData,
     UnknownAsset,
     UnsupportedAsset,
 )
@@ -100,6 +101,7 @@ from rotkehlchen.typing import (
     AssetAmount,
     BlockchainAccountData,
     ChecksumEthAddress,
+    Eth2PubKey,
     EthereumTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -1130,6 +1132,7 @@ class RestAPI():
             password: str,
             premium_api_key: str,
             premium_api_secret: str,
+            sync_database: bool,
             initial_settings: Optional[ModifiableDBSettings],
     ) -> Response:
         result_dict: Dict[str, Any] = {'result': None, 'message': ''}
@@ -1170,6 +1173,7 @@ class RestAPI():
                 sync_approval='yes',
                 premium_credentials=premium_credentials,
                 initial_settings=initial_settings,
+                sync_database=sync_database,
             )
         # not catching RotkehlchenPermissionError here as for new account with premium
         # syncing there is no way that permission needs to be asked by the user
@@ -1527,7 +1531,7 @@ class RestAPI():
             return api_response(_wrap_in_ok_result(OK_RESULT), status_code=HTTPStatus.OK)
         return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
-    def query_netvalue_data(self) -> Response:
+    def query_netvalue_data(self, include_nfts: bool) -> Response:
         from_ts = Timestamp(0)
         premium = self.rotkehlchen.premium
 
@@ -1536,7 +1540,7 @@ class RestAPI():
             start_of_day_today = datetime.datetime(today.year, today.month, today.day)
             from_ts = Timestamp(int((start_of_day_today - datetime.timedelta(days=14)).timestamp()))  # noqa: E501
 
-        data = self.rotkehlchen.data.db.get_netvalue_data(from_ts)
+        data = self.rotkehlchen.data.db.get_netvalue_data(from_ts, include_nfts)
         result = process_result({'times': data[0], 'data': data[1]})
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
@@ -2091,29 +2095,45 @@ class RestAPI():
             self,
             source: IMPORTABLE_LOCATIONS,
             filepath: Path,
+            timestamp_format: Optional[str],
     ) -> Response:
         if source == 'cointracking.info':
-            success, msg = self.rotkehlchen.data_importer.import_cointracking_csv(filepath)
+            success, msg = self.rotkehlchen.data_importer.import_cointracking_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
         elif source == 'cryptocom':
-            success, msg = self.rotkehlchen.data_importer.import_cryptocom_csv(filepath)
+            success, msg = self.rotkehlchen.data_importer.import_cryptocom_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
         elif source == 'blockfi-transactions':
-            success, msg = self.rotkehlchen.data_importer.import_blockfi_transactions_csv(filepath)
+            success, msg = self.rotkehlchen.data_importer.import_blockfi_transactions_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
         elif source == 'blockfi-trades':
-            success, msg = self.rotkehlchen.data_importer.import_blockfi_trades_csv(filepath)
+            success, msg = self.rotkehlchen.data_importer.import_blockfi_trades_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
         elif source == 'nexo':
-            success, msg = self.rotkehlchen.data_importer.import_nexo_csv(filepath)
+            success, msg = self.rotkehlchen.data_importer.import_nexo_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
@@ -2127,12 +2147,26 @@ class RestAPI():
             gitcoin_importer = GitcoinDataImporter(db=self.rotkehlchen.data.db)
             gitcoin_importer.import_gitcoin_csv(filepath)
         elif source == 'shapeshift-trades':
-            success, msg = self.rotkehlchen.data_importer.import_shapeshift_trades_csv(filepath)
+            success, msg = self.rotkehlchen.data_importer.import_shapeshift_trades_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
         elif source == 'uphold':
-            success, msg = self.rotkehlchen.data_importer.import_uphold_transactions_csv(filepath)
+            success, msg = self.rotkehlchen.data_importer.import_uphold_transactions_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
+            if not success:
+                result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
+                return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
+        elif source == 'bisq':
+            success, msg = self.rotkehlchen.data_importer.import_bisq_trades_csv(
+                filepath=filepath,
+                timestamp_format=timestamp_format,
+            )
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
@@ -2147,7 +2181,7 @@ class RestAPI():
         except ModuleInactive as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
-        return {'result': process_result_list([x._asdict() for x in result]), 'message': ''}
+        return {'result': process_result_list([x.serialize() for x in result]), 'message': ''}
 
     @require_premium_user(active_check=False)
     def get_eth2_stake_deposits(self, async_query: bool) -> Response:
@@ -2195,6 +2229,78 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
+    @require_premium_user(active_check=False)
+    def get_eth2_validators(self) -> Response:
+        try:
+            validators = self.rotkehlchen.chain_manager.get_eth2_validators()
+        except ModuleInactive as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+        return api_response(
+            _wrap_in_ok_result([x.serialize() for x in validators]),
+            status_code=HTTPStatus.OK,
+        )
+
+    def _add_eth2_validator(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[Eth2PubKey],
+    ) -> Dict[str, Any]:
+        try:
+            self.rotkehlchen.chain_manager.add_eth2_validator(
+                validator_index=validator_index,
+                public_key=public_key,
+            )
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        except (InputError, ModuleInactive) as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+
+        return {'result': True, 'message': ''}
+
+    @require_premium_user(active_check=False)
+    def add_eth2_validator(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[Eth2PubKey],
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_add_eth2_validator',
+                validator_index=validator_index,
+                public_key=public_key,
+            )
+
+        response = self._add_eth2_validator(validator_index=validator_index, public_key=public_key)
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_premium_user(active_check=False)
+    def delete_eth2_validator(
+            self,
+            validator_index: Optional[int],
+            public_key: Optional[str],
+    ) -> Response:
+        try:
+            self.rotkehlchen.chain_manager.delete_eth2_validator(
+                validator_index=validator_index,
+                public_key=public_key,
+            )
+            result = OK_RESULT
+            status_code = HTTPStatus.OK
+        except InputError as e:
+            result = {'result': None, 'message': str(e)}
+            status_code = HTTPStatus.CONFLICT
+        except ModuleInactive as e:
+            result = {'result': None, 'message': str(e)}
+            status_code = HTTPStatus.CONFLICT
+
+        return api_response(result, status_code=status_code)
+
     def _get_defi_balances(self) -> Dict[str, Any]:
         """
         This returns the typical async response dict but with the
@@ -2231,8 +2337,10 @@ class RestAPI():
                 addresses=self.rotkehlchen.chain_manager.accounts.eth,
                 data_dir=self.rotkehlchen.data_dir,
             )
-        except RemoteError as e:
+        except (RemoteError, UnableToDecryptRemoteData) as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
+        except OSError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.INSUFFICIENT_STORAGE)
 
         return _wrap_in_ok_result(process_result(data))
 

@@ -28,6 +28,7 @@
     <nexo-import class="mt-8" />
     <shapeshift-import class="mt-8" />
     <uphold-import class="mt-8" />
+    <bisq-import class="mt-8" />
     <import-source
       v-if="premium"
       class="mt-8"
@@ -42,6 +43,7 @@
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
+import BisqImport from '@/components/import/Bisq.vue';
 import BlockFiImport from '@/components/import/BlockFiImport.vue';
 import CointrackingImport from '@/components/import/CointrackingImport.vue';
 import CryptoComImport from '@/components/import/CryptoComImport.vue';
@@ -59,6 +61,7 @@ export default defineComponent({
     BlockFiImport,
     CryptoComImport,
     CointrackingImport,
+    BisqImport,
     ImportSource,
     ExternalLink
   },

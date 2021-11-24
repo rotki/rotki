@@ -15,6 +15,7 @@ from rotkehlchen.constants.assets import (
     A_3CRV,
     A_ALINK_V1,
     A_BTC,
+    A_BSQ,
     A_CRV_3CRV,
     A_CRV_3CRVSUSD,
     A_CRV_GUSD,
@@ -57,6 +58,7 @@ from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, UNISWAP_V2_LP_ABI, YE
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors import (
     BlockchainQueryError,
+    DeserializationError,
     PriceQueryUnsupportedAsset,
     RemoteError,
     UnableToDecryptRemoteData,
@@ -66,6 +68,7 @@ from rotkehlchen.externalapis.xratescom import (
     get_current_xratescom_exchange_rates,
     get_historical_xratescom_exchange_rates,
 )
+from rotkehlchen.externalapis.bisq_market import get_bisq_market_price
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
@@ -92,6 +95,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 CURRENT_PRICE_CACHE_SECS = 300  # 5 mins
+BTC_PER_BSQ = FVal('0.00000100')
 
 ASSETS_UNDERLYING_BTC = (
     A_YV1_RENWSBTC,
@@ -445,6 +449,22 @@ class Inquirer():
             )
             return usd_price
 
+        # BSQ is a special asset that doesnt have oracle information but its custom API
+        if asset == A_BSQ:
+            try:
+                price_in_btc = get_bisq_market_price(asset)
+                btc_price = Inquirer().find_usd_price(A_BTC)
+                usd_price = Price(price_in_btc * btc_price)
+                Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
+                    price=usd_price,
+                    time=ts_now(),
+                )
+                return usd_price
+            except (RemoteError, DeserializationError) as e:
+                msg = f'Could not find price for BSQ. {str(e)}'
+                if instance._ethereum is not None:
+                    instance._ethereum.msg_aggregator.add_warning(msg)
+                return Price(BTC_PER_BSQ * price_in_btc)
         return instance._query_oracle_instances(from_asset=asset, to_asset=A_USD)
 
     def find_uniswap_v2_lp_price(

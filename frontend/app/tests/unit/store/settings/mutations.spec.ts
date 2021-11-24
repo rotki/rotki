@@ -1,10 +1,13 @@
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import {
   DARK_MODE_ENABLED,
   DARK_THEME,
   LIGHT_THEME
 } from '@rotki/common/lib/settings';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
+import store from '@/store/store';
+import { SettingsState } from '../../../../src/store/settings/state';
+import { CurrencyLocation } from '../../../../src/types/currency-location';
 import {
   AMOUNT_ROUNDING_MODE,
   CURRENCY_LOCATION,
@@ -14,17 +17,15 @@ import {
   GRAPH_ZERO_BASED,
   ITEMS_PER_PAGE,
   LAST_KNOWN_TIMEFRAME,
+  NFTS_IN_NET_VALUE,
   PROFIT_LOSS_PERIOD,
-  Q3,
+  Quarter,
   QUERY_PERIOD,
   REFRESH_PERIOD,
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
   VALUE_ROUNDING_MODE
-} from '@/store/settings/consts';
-import { SettingsState } from '@/store/settings/types';
-import store from '@/store/store';
-import { CURRENCY_BEFORE } from '@/typing/types';
+} from '../../../../src/types/frontend-settings';
 
 describe('settings:mutations', () => {
   test('restore', async () => {
@@ -35,9 +36,9 @@ describe('settings:mutations', () => {
       [QUERY_PERIOD]: 5,
       [PROFIT_LOSS_PERIOD]: {
         year: '2018',
-        quarter: Q3
+        quarter: Quarter.Q3
       },
-      [CURRENCY_LOCATION]: CURRENCY_BEFORE,
+      [CURRENCY_LOCATION]: CurrencyLocation.BEFORE,
       [THOUSAND_SEPARATOR]: '|',
       [DECIMAL_SEPARATOR]: '-',
       [REFRESH_PERIOD]: 120,
@@ -60,7 +61,8 @@ describe('settings:mutations', () => {
         accent: '#000000',
         graph: '#555555'
       },
-      [GRAPH_ZERO_BASED]: true
+      [GRAPH_ZERO_BASED]: true,
+      [NFTS_IN_NET_VALUE]: true
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
@@ -70,11 +72,11 @@ describe('settings:mutations', () => {
     expect(settings[QUERY_PERIOD]).toBe(5);
     expect(settings[PROFIT_LOSS_PERIOD]).toMatchObject({
       year: '2018',
-      quarter: Q3
+      quarter: Quarter.Q3
     });
     expect(settings[THOUSAND_SEPARATOR]).toBe('|');
     expect(settings[DECIMAL_SEPARATOR]).toBe('-');
-    expect(settings[CURRENCY_LOCATION]).toBe(CURRENCY_BEFORE);
+    expect(settings[CURRENCY_LOCATION]).toBe(CurrencyLocation.BEFORE);
     expect(settings[REFRESH_PERIOD]).toBe(120);
     expect(settings[EXPLORERS]).toStrictEqual({
       ETH: {
@@ -96,5 +98,6 @@ describe('settings:mutations', () => {
       graph: '#555555'
     });
     expect(settings[GRAPH_ZERO_BASED]).toBe(true);
+    expect(settings[NFTS_IN_NET_VALUE]).toBe(true);
   });
 });

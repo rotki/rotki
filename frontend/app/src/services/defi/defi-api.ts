@@ -1,4 +1,4 @@
-import { AxiosInstance, AxiosTransformer } from 'axios';
+import { AxiosInstance, AxiosResponseTransformer } from 'axios';
 import { setupTransformer } from '@/services/axios-tranformers';
 import { ProtocolVersion } from '@/services/defi/consts';
 import { ApiImplementation, PendingTask } from '@/services/types-api';
@@ -6,7 +6,7 @@ import { fetchExternalAsync } from '@/services/utils';
 
 export class DefiApi {
   private readonly axios: AxiosInstance;
-  private readonly baseTransformer: AxiosTransformer[];
+  private readonly baseTransformer: AxiosResponseTransformer[];
 
   private get api(): ApiImplementation {
     return {

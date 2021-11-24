@@ -10,6 +10,7 @@ import { SessionState } from '@/store/session/types';
 import store from '@/store/store';
 import { RotkehlchenState } from '@/store/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { SupportedExchange } from '../../../../src/types/exchanges';
 import { stub } from '../../../common/utils';
 
 describe('balances:getters', () => {
@@ -85,7 +86,7 @@ describe('balances:getters', () => {
       },
       connectedExchanges: [
         {
-          location: 'bittrex',
+          location: SupportedExchange.BITTREX,
           name: 'Bitrex Acc'
         }
       ]

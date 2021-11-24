@@ -1,9 +1,15 @@
 <template>
-  <v-form ref="form" :value="value" @input="input">
+  <v-form
+    ref="form"
+    :value="value"
+    data-cy="blockchain-balance-form"
+    @input="input"
+  >
     <v-row no-gutters>
       <v-col cols="12">
         <v-select
           v-model="blockchain"
+          data-cy="account-blockchain-field"
           outlined
           class="account-form__chain pt-2"
           :items="items"
@@ -112,6 +118,7 @@
         <v-text-field
           v-if="!multiple"
           v-model="address"
+          data-cy="account-address-field"
           outlined
           class="account-form__address"
           :label="$t('account_form.labels.account')"
@@ -148,6 +155,7 @@
       <v-col cols="12">
         <v-text-field
           v-model="label"
+          data-cy="account-label-field"
           outlined
           class="account-form__label"
           :label="$t('account_form.labels.label')"
@@ -159,6 +167,7 @@
       <v-col cols="12">
         <tag-input
           v-model="tags"
+          data-cy="account-tag-field"
           outlined
           :disabled="accountOperation || loading"
         />
@@ -187,9 +196,7 @@ import InputModeSelect from '@/components/accounts/InputModeSelect.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import { AccountInput } from '@/components/accounts/types';
 import TagInput from '@/components/inputs/TagInput.vue';
-import { TaskType } from '@/model/task-type';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { Module } from '@/services/session/consts';
 import {
   AddAccountsPayload,
   BlockchainAccount,
@@ -199,6 +206,8 @@ import {
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
 import { Message } from '@/store/types';
+import { Module } from '@/types/modules';
+import { TaskType } from '@/types/task-type';
 import { trimOnPaste } from '@/utils/event';
 import { getMetamaskAddresses } from '@/utils/metamask';
 

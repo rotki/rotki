@@ -2,6 +2,7 @@
   <fragment>
     <v-list-item
       :id="`${name}_box`"
+      data-cy="blockchain-balance-box__item"
       class="blockchain-balance-box__item"
       to="/accounts-balances/blockchain-balances"
     >
@@ -62,7 +63,7 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common/';
+import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -71,7 +72,7 @@ import Fragment from '@/components/helper/Fragment';
 import { capitalize } from '@/filters';
 import AssetMixin from '@/mixins/asset-mixin';
 import { BlockchainTotal } from '@/store/balances/types';
-import { L2_LOOPRING, SupportedL2Protocol } from '@/typing/types';
+import { L2_LOOPRING, SupportedL2Protocol } from '@/types/protocols';
 import { Zero } from '@/utils/bignumbers';
 
 @Component({

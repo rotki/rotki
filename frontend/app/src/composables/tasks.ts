@@ -1,7 +1,7 @@
 import { computed } from '@vue/composition-api';
-import { Task, TaskMeta } from '@/model/task';
-import { TaskType } from '@/model/task-type';
 import { useStore } from '@/store/utils';
+import { Task, TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 
 export const setupTaskStatus = () => {
   const store = useStore();

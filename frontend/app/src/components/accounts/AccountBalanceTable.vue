@@ -11,6 +11,7 @@
       :expanded.sync="expanded"
       sort-by="balance.usdValue"
       :custom-group="groupBy"
+      class="account-balances-list"
       :group-by="isBtc ? ['xpub', 'derivationPath'] : undefined"
       v-on="$listeners"
     >
@@ -26,6 +27,7 @@
       <template #item.accountSelection="{ item }">
         <v-simple-checkbox
           :ripple="false"
+          data-cy="account-balances-item-checkbox"
           color="primary"
           :value="selected.includes(item.address)"
           @input="selectionChanged(item.address, $event)"
@@ -34,14 +36,14 @@
       <template v-if="blockchain === 'ETH'" #header.balance.usdValue>
         {{
           $t('account_balances.headers.usd_value_eth', {
-            symbol: currency.ticker_symbol
+            symbol: currency.tickerSymbol
           })
         }}
       </template>
       <template v-else #header.balance.usdValue>
         {{
           $t('account_balances.headers.usd_value', {
-            symbol: currency.ticker_symbol
+            symbol: currency.tickerSymbol
           })
         }}
       </template>
@@ -187,8 +189,6 @@ import TagIcon from '@/components/tags/TagIcon.vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { balanceSum } from '@/filters';
 import StatusMixin from '@/mixins/status-mixin';
-import { Currency } from '@/model/currency';
-import { TaskType } from '@/model/task-type';
 import { chainSection } from '@/store/balances/const';
 import {
   BlockchainAccountWithBalance,
@@ -196,7 +196,9 @@ import {
   XpubPayload
 } from '@/store/balances/types';
 import { Properties } from '@/types';
-import { Tags } from '@/typing/types';
+import { Currency } from '@/types/currency';
+import { TaskType } from '@/types/task-type';
+import { Tags } from '@/types/user';
 import { Zero } from '@/utils/bignumbers';
 
 @Component({
@@ -386,7 +388,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
       { text: this.blockchain, value: 'balance.amount', align: 'end' },
       {
         text: this.$t('account_balances.headers.usd_value', {
-          symbol: this.currency.ticker_symbol ?? CURRENCY_USD
+          symbol: this.currency.tickerSymbol ?? CURRENCY_USD
         }).toString(),
         value: 'balance.usdValue',
         align: 'end'

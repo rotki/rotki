@@ -7,14 +7,6 @@ import { ActionContext, ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
 import { EXTERNAL_EXCHANGES, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
-import {
-  AddressMeta,
-  createTask,
-  taskCompletion,
-  TaskMeta
-} from '@/model/task';
-import { TaskType } from '@/model/task-type';
-import { SupportedExchange } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
 import {
   IgnoredActions,
@@ -68,6 +60,14 @@ import {
 } from '@/store/types';
 import { getStatusUpdater } from '@/store/utils';
 import { Writeable } from '@/types';
+import { SupportedExchange } from '@/types/exchanges';
+import {
+  AddressMeta,
+  createTask,
+  taskCompletion,
+  TaskMeta
+} from '@/types/task';
+import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 

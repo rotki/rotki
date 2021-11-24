@@ -69,9 +69,9 @@ import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
-import { Module } from '@/services/session/consts';
 import { Nullable } from '@/types';
-import { SettingsUpdate } from '@/typing/types';
+import { Module } from '@/types/modules';
+import { SettingsUpdate } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
 type ModuleWithStatus = {
@@ -135,7 +135,7 @@ export default class ActiveModules extends Vue {
   enableModule() {
     assert(this.confirmEnable !== null);
     this.updateSettings({
-      active_modules: [...this.activeModules, this.confirmEnable]
+      activeModules: [...this.activeModules, this.confirmEnable]
     });
     this.confirmEnable = null;
   }

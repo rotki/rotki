@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "esnext",
+    "strict": true,
+    "jsx": "preserve",
+    "importHelpers": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "allowJs": false,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "types": [
+      "vuetify",
+      "webpack",
+      "webpack-env"
+    ],
+    "paths": {
+      "@/*": [
+        "app/src/*"
+      ],
+      "@rotki/common/*": [
+        "common/src/*"
+      ]
+    },
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "scripthost"
+    ],
+    "typeRoots": [
+      "node_modules/@types"
+    ]
+  },
+  "references": [
+    {
+      "path": "app"
+    },
+    {
+      "path": "common"
+    }
+  ],
+  "exclude": [
+    "node_modules",
+    "common/lib"
+  ]
+}

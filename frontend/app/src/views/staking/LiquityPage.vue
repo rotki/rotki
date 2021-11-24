@@ -29,9 +29,9 @@ import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue'
 import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { getPremium, setupModuleEnabled } from '@/composables/session';
-import { Module } from '@/services/session/consts';
 import { Section } from '@/store/const';
 import { useStore } from '@/store/utils';
+import { Module } from '@/types/modules';
 
 export default defineComponent({
   name: 'LiquityPage',
