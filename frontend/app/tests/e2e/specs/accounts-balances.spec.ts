@@ -62,6 +62,7 @@ describe('Accounts', () => {
     });
 
     it('add an ETH account and view the account balance', () => {
+      cy.disableModules();
       cy.get('[data-cy="add-blockchain-balance"]').should('be.visible');
       cy.get('[data-cy="add-blockchain-balance"]').click();
       tagManager.addTag(
