@@ -41,3 +41,5 @@ export const PagedResourceParameters = z.object({
   ascending: z.union([z.boolean(), z.undefined()]),
 })
 export type PagedResourceParameters = z.infer<typeof PagedResourceParameters>
+
+export const onlyIfTruthy = <T>(value: T) => value ? value : undefined

@@ -42,9 +42,15 @@ import {
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify, userNotify } from '@/store/notifications/utils';
-import { ActionStatus, RotkehlchenState, StatusPayload } from '@/store/types';
+import {
+  ActionStatus,
+  Message,
+  RotkehlchenState,
+  StatusPayload
+} from '@/store/types';
 import { isLoading, setStatus, showError } from '@/store/utils';
 import { Writeable } from '@/types';
+import { Eth2Validator } from '@/types/balances';
 import { Exchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 import {
@@ -1371,6 +1377,50 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         display: true
       });
       setStatus(Status.NONE, section, status, commit);
+    }
+  },
+  async addEth2Validator(
+    { commit, dispatch, rootState: { session } },
+    payload: Eth2Validator
+  ) {
+    assert(session);
+    const { activeModules } = session.generalSettings;
+    if (!activeModules.includes(Module.ETH2)) {
+      return;
+    }
+
+    const id = payload.publicKey || payload.validatorIndex;
+    try {
+      const taskType = TaskType.ADD_ETH2_VALIDATOR;
+      const { taskId } = await api.balances.addEth2Validator(payload);
+      const task = createTask(taskId, taskType, {
+        title: i18n.t('actions.add_eth2_validator.task.title').toString(),
+        description: i18n
+          .t('actions.add_eth2_validator.task.description', { id })
+          .toString(),
+        ignoreResult: false,
+        numericKeys: []
+      });
+      commit('tasks/add', task, { root: true });
+      const { result } = await taskCompletion<Boolean, TaskMeta>(taskType);
+      await dispatch('fetchBlockchainBalances', {
+        blockchain: Blockchain.ETH2
+      });
+      return result;
+    } catch (e: any) {
+      logger.error(e);
+      const message: Message = {
+        description: i18n
+          .t('actions.add_eth2_validator.error.description', {
+            id,
+            message: e.message
+          })
+          .toString(),
+        title: i18n.t('actions.add_eth2_validator.error.title').toString(),
+        success: false
+      };
+      await dispatch('setMessage', message, { root: true });
+      return false;
     }
   }
 };

@@ -12,6 +12,7 @@ import {
 } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
+import { Eth2Validator } from '@/types/balances';
 
 export const setupExchangeRateGetter = () => {
   const store = useStore();
@@ -23,6 +24,7 @@ export type BlockchainData = {
   polkadotBalances: Ref<BlockchainAccountWithBalance[]>;
   blockchainAssets: Ref<AssetBalanceWithPrice[]>;
   ethAccounts: Ref<BlockchainAccountWithBalance[]>;
+  eth2Balances: Ref<BlockchainAccountWithBalance[]>;
   avaxAccounts: Ref<BlockchainAccountWithBalance[]>;
   kusamaBalances: Ref<BlockchainAccountWithBalance[]>;
 };
@@ -32,6 +34,9 @@ export const setupBlockchainData = (): BlockchainData => {
 
   const ethAccounts = computed<BlockchainAccountWithBalance[]>(
     () => store.getters['balances/ethAccounts']
+  );
+  const eth2Balances = computed<BlockchainAccountWithBalance[]>(
+    () => store.getters['balances/eth2Balances']
   );
   const btcAccounts = computed<BlockchainAccountWithBalance[]>(
     () => store.getters['balances/btcAccounts']
@@ -50,6 +55,7 @@ export const setupBlockchainData = (): BlockchainData => {
   );
   return {
     ethAccounts,
+    eth2Balances,
     btcAccounts,
     blockchainAssets,
     kusamaBalances,
@@ -129,10 +135,16 @@ export const setupBlockchainAccounts = () => {
   const addAccounts = async (payload: AddAccountsPayload) => {
     return await dispatch('balances/addAccounts', payload);
   };
+
+  const addEth2Validator = async (payload: Eth2Validator) => {
+    return await dispatch('balances/addEth2Validator', payload);
+  };
+
   return {
     account,
     addAccount,
     editAccount,
-    addAccounts
+    addAccounts,
+    addEth2Validator
   };
 };

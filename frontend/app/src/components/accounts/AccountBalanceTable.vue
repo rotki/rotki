@@ -97,7 +97,7 @@
           :loading="loading"
         />
       </template>
-      <template #item.actions="{ item }">
+      <template v-if="!isEth2" #item.actions="{ item }">
         <row-actions
           class="account-balance-table__actions"
           :no-delete="true"
@@ -256,6 +256,10 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
 
   collapsedXpubs: XpubAccountWithBalance[] = [];
 
+  get isEth2() {
+    return this.blockchain === Blockchain.ETH2;
+  }
+
   get total(): Balance {
     const balances = this.visibleBalances;
     const collapsedAmount = this.collapsedXpubBalances.amount;
@@ -392,15 +396,18 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
         }).toString(),
         value: 'balance.usdValue',
         align: 'end'
-      },
-      {
+      }
+    ];
+
+    if (!this.isEth2) {
+      headers.push({
         text: this.$tc('account_balances.headers.actions'),
         value: 'actions',
         align: 'center',
         sortable: false,
         width: '28'
-      }
-    ];
+      });
+    }
 
     if (this.blockchain !== Blockchain.BTC) {
       headers.push({

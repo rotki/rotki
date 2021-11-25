@@ -20,7 +20,9 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { defineComponent, PropType } from '@vue/composition-api';
+import { defineComponent, PropType, computed } from '@vue/composition-api';
+import { setupModuleEnabled } from '@/composables/session';
+import { Module } from '@/types/modules';
 
 export default defineComponent({
   name: 'ChainSelect',
@@ -40,8 +42,20 @@ export default defineComponent({
       emit('update:blockchain', blockchain);
     };
 
+    const { isModuleEnabled } = setupModuleEnabled();
+
+    const items = computed(() => {
+      const modules: Blockchain[] = Object.values(Blockchain);
+      const isEth2Enabled = isModuleEnabled(Module.ETH2).value;
+
+      if (!isEth2Enabled) {
+        return modules.filter(value => value !== Blockchain.ETH2);
+      }
+      return modules;
+    });
+
     return {
-      items: Object.values(Blockchain),
+      items,
       updateBlockchain
     };
   }

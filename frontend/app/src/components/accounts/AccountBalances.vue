@@ -19,7 +19,7 @@
       </v-row>
     </v-card-title>
     <v-card-text>
-      <v-row align="center">
+      <v-row align="center" class="mb-1">
         <v-col cols="12" sm="6">
           <v-tooltip top>
             <template #activator="{ on, attrs }">
@@ -44,7 +44,7 @@
             <span>{{ $t('account_balances.delete_tooltip') }}</span>
           </v-tooltip>
         </v-col>
-        <v-col cols="12" sm="6">
+        <v-col v-if="!isEth2" cols="12" sm="6">
           <tag-filter v-model="visibleTags" />
         </v-col>
       </v-row>
@@ -118,6 +118,10 @@ export default class AccountBalances extends Vue {
 
   isTaskRunning!: (type: TaskType) => boolean;
   fetchLoopringBalances!: (refresh: true) => Promise<void>;
+
+  get isEth2() {
+    return this.blockchain === Blockchain.ETH2;
+  }
 
   get isLoading(): boolean {
     return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);

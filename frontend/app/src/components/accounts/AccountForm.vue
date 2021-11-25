@@ -31,12 +31,18 @@
     />
 
     <address-input
-      v-if="!isXpub && !isMetamask"
+      v-if="!(isXpub || isMetamask || isEth2)"
       :addresses="addresses"
       :error-messages="errorMessages"
       :disabled="loading || !!edit"
       :multi="!edit && !isXpub"
       @update:addresses="addresses = $event"
+    />
+
+    <eth2-input
+      v-if="isEth2"
+      :validator="validator"
+      @update:validator="validator = $event"
     />
 
     <v-text-field
@@ -74,6 +80,7 @@ import {
 } from '@vue/composition-api';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
 import { xpubToPayload } from '@/components/accounts/blockchain/xpub';
 import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
 import {
@@ -99,8 +106,10 @@ import {
 } from '@/store/balances/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
+import { Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { TaskType } from '@/types/task-type';
+import { assert } from '@/utils/assertions';
 import { getMetamaskAddresses } from '@/utils/metamask';
 
 const FIELD_ADDRESS = 'address';
@@ -120,6 +129,7 @@ const validationErrors: () => ValidationErrors = () => ({
 const AccountForm = defineComponent({
   name: 'AccountForm',
   components: {
+    Eth2Input,
     ChainSelect,
     AddressInput,
     XpubInput,
@@ -143,6 +153,7 @@ const AccountForm = defineComponent({
     const isEdit = computed(() => !!edit.value);
     const xpub = ref<XpubPayload | null>(null);
     const addresses = ref<string[]>([]);
+    const validator = ref<Eth2Validator | null>(null);
     const label = ref('');
     const tags = ref<string[]>([]);
     const blockchain = ref<Blockchain>(Blockchain.ETH);
@@ -198,15 +209,10 @@ const AccountForm = defineComponent({
     });
 
     const isEth = computed(() => blockchain.value === Blockchain.ETH);
+    const isEth2 = computed(() => blockchain.value === Blockchain.ETH2);
     const isBtc = computed(() => blockchain.value === Blockchain.BTC);
-
-    const isXpub = computed(() => {
-      return inputMode.value === XPUB_ADD;
-    });
-
-    const isMetamask = computed(() => {
-      return inputMode.value === METAMASK_IMPORT;
-    });
+    const isXpub = computed(() => inputMode.value === XPUB_ADD);
+    const isMetamask = computed(() => inputMode.value === METAMASK_IMPORT);
 
     const setEditMode = () => {
       const account = unref(edit);
@@ -271,7 +277,8 @@ const AccountForm = defineComponent({
         isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES).value
     );
 
-    const { addAccount, addAccounts, editAccount } = setupBlockchainAccounts();
+    const { addAccount, addAccounts, editAccount, addEth2Validator } =
+      setupBlockchainAccounts();
 
     const metamaskImport = async () => {
       const interop = useInterop();
@@ -375,8 +382,12 @@ const AccountForm = defineComponent({
       let result: boolean;
       pending.value = true;
 
-      if (isMetamask.value) {
+      if (unref(isMetamask)) {
         result = await metamaskImport();
+      } else if (unref(isEth2)) {
+        const payload = unref(validator);
+        assert(payload);
+        result = await addEth2Validator(payload);
       } else {
         result = await manualAdd();
       }
@@ -389,6 +400,7 @@ const AccountForm = defineComponent({
       form,
       addresses,
       xpub,
+      validator,
       label,
       tags,
       blockchain,
@@ -397,6 +409,7 @@ const AccountForm = defineComponent({
       selectedModules,
       errorMessages,
       isEth,
+      isEth2,
       isBtc,
       isXpub,
       isMetamask,

@@ -42,6 +42,7 @@ import { uniqueStrings } from '@/utils/data';
 
 export interface BalanceGetters {
   ethAccounts: BlockchainAccountWithBalance[];
+  eth2Balances: BlockchainAccountWithBalance[];
   ethAddresses: string[];
   btcAccounts: BlockchainAccountWithBalance[];
   kusamaBalances: BlockchainAccountWithBalance[];
@@ -115,6 +116,26 @@ export const getters: Getters<
     ethAccounts
   }: BalanceState): BlockchainAccountWithBalance[] {
     return balances(ethAccounts, eth, Blockchain.ETH);
+  },
+  eth2Balances({ eth2 }: BalanceState): BlockchainAccountWithBalance[] {
+    const balances: BlockchainAccountWithBalance[] = [];
+    for (const publicKey in eth2) {
+      const { assets } = eth2[publicKey];
+      const balance: Balance = assets
+        ? {
+            amount: assets[Blockchain.ETH2].amount,
+            usdValue: assetSum(assets)
+          }
+        : { amount: Zero, usdValue: Zero };
+      balances.push({
+        address: publicKey,
+        chain: Blockchain.ETH2,
+        balance,
+        label: '',
+        tags: []
+      });
+    }
+    return balances;
   },
   ethAddresses: ({ ethAccounts }) => {
     return ethAccounts.map(({ address }) => address);

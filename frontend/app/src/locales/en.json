@@ -1799,6 +1799,16 @@
     }
   },
   "actions": {
+    "add_eth2_validator": {
+      "error": {
+        "description": "There was an error while adding the Eth 2 validator {id}: {message}",
+        "title": "Adding ETH2 validator"
+      },
+      "task": {
+        "description": "Adding ETH2 validator",
+        "title": "Adding validator: {id}"
+      }
+    },
     "assets": {
       "erc20": {
         "error": {
@@ -2701,6 +2711,7 @@
     "balances": {
       "eth": "Ethereum balances",
       "btc": "Bitcoin balances",
+      "eth2": "Eth2 balances",
       "ksm": "Kusama balances",
       "avax": "Avalanche balances",
       "dot": "Polkadot balances"

@@ -23,6 +23,7 @@ import {
   validWithParamsSessionAndExternalService,
   validWithSessionAndExternalService
 } from '@/services/utils';
+import { Eth2Validator } from '@/types/balances';
 import { SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 import { PriceOracle } from '@/types/user';
@@ -248,5 +249,18 @@ export class BalancesApi {
       params = axiosSnakeCaseTransformer(payload);
     }
     return fetchExternalAsync(this.api, url, params);
+  }
+
+  async addEth2Validator(payload: Eth2Validator): Promise<PendingTask> {
+    const response = await this.axios.put<ActionResult<PendingTask>>(
+      '/blockchains/ETH2/validators',
+      axiosSnakeCaseTransformer({ ...payload, asyncQuery: true }),
+      {
+        transformResponse: basicAxiosTransformer,
+        validateStatus: validWithSessionAndExternalService
+      }
+    );
+
+    return handleResponse(response);
   }
 }

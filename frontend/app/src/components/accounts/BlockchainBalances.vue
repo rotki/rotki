@@ -58,6 +58,22 @@
     />
 
     <account-balances
+      v-if="eth2Balances.length > 0"
+      v-intersect="{
+        handler: observers.ETH2,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="$t('blockchain_balances.balances.eth2')"
+      blockchain="ETH2"
+      :balances="eth2Balances"
+      data-cy="blockchain-balances-ETH2"
+      @edit-account="editAccount($event)"
+    />
+
+    <account-balances
       v-if="btcAccounts.length > 0"
       v-intersect="{
         handler: observers.BTC,
@@ -264,6 +280,8 @@ const BlockchainBalances = defineComponent({
     const observers = {
       [Blockchain.ETH]: (entries: IntersectionObserverEntry[]) =>
         updateWhenRatio(entries, Blockchain.ETH),
+      [Blockchain.ETH2]: (entries: IntersectionObserverEntry[]) =>
+        updateWhenRatio(entries, Blockchain.ETH2),
       [Blockchain.BTC]: (entries: IntersectionObserverEntry[]) =>
         updateWhenRatio(entries, Blockchain.BTC),
       [Blockchain.KSM]: (entries: IntersectionObserverEntry[]) =>
