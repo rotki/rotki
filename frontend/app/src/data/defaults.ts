@@ -1,4 +1,5 @@
 import { CurrencyLocation } from '@/types/currency-location';
+import { TableColumn } from '@/types/table-column';
 
 export class Defaults {
   static DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z';
@@ -14,6 +15,9 @@ export class Defaults {
   static DEFAULT_QUERY_PERIOD = 5;
   static BTC_DERIVATION_GAP_LIMIT = 20;
   static DISPLAY_DATE_IN_LOCALTIME = true;
+  static DEFAULT_DASHBOARD_TABLE_SHOWED_COLUMNS = [
+    TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
+  ];
 }
 
 export const EXCHANGE_BISQ = 'bisq';

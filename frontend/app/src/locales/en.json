@@ -2985,9 +2985,11 @@
       "amount": "Amount",
       "percentage_total": "% of total",
       "value": "{symbol} value",
-      "percentage": "% of net Value",
+      "percentage_of_total_net_value": "% of net Value",
+      "percentage_of_total_current_group": "% of total {group}",
       "price": "Price in {symbol}"
-    }
+    },
+    "select_showed_columns": "Select showed columns"
   },
   "api_keys": {
     "tabs": {

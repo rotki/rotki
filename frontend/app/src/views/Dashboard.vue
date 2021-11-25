@@ -102,12 +102,14 @@
     </v-row>
     <dashboard-asset-table
       :title="$t('dashboard.per_asset_balances.title')"
+      table-type="ASSETS"
       :loading="anyIsLoading"
       :balances="aggregatedBalances"
     />
     <dashboard-asset-table
       v-if="liabilities.length > 0"
       class="mt-8"
+      table-type="LIABILITIES"
       :title="$t('dashboard.liabilities.title')"
       :loading="anyIsLoading"
       :balances="liabilities"

@@ -16,6 +16,8 @@ import store from '@/store/store';
 import {
   AMOUNT_ROUNDING_MODE,
   CURRENCY_LOCATION,
+  DASHBOARD_TABLES_SHOWED_COLUMNS,
+  DashboardTableType,
   DECIMAL_SEPARATOR,
   DEFI_SETUP_DONE,
   EXPLORERS,
@@ -69,7 +71,15 @@ describe('settings:actions', () => {
             [LIGHT_THEME]: LIGHT_COLORS,
             [DARK_THEME]: DARK_COLORS,
             [GRAPH_ZERO_BASED]: false,
-            [NFTS_IN_NET_VALUE]: true
+            [NFTS_IN_NET_VALUE]: true,
+            [DASHBOARD_TABLES_SHOWED_COLUMNS]: {
+              [DashboardTableType.ASSETS]:
+                Defaults.DEFAULT_DASHBOARD_TABLE_SHOWED_COLUMNS,
+              [DashboardTableType.LIABILITIES]:
+                Defaults.DEFAULT_DASHBOARD_TABLE_SHOWED_COLUMNS,
+              [DashboardTableType.NFT]:
+                Defaults.DEFAULT_DASHBOARD_TABLE_SHOWED_COLUMNS
+            }
           })
         )
       })

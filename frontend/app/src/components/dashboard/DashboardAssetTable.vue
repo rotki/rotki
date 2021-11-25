@@ -12,6 +12,23 @@
         single-line
         hide-details
       />
+      <v-menu
+        id="dashboard-asset-table__column-filter"
+        transition="slide-y-transition"
+        max-width="250px"
+        offset-y
+      >
+        <template #activator="{ on }">
+          <menu-tooltip-button
+            :tooltip="$t('dashboard_asset_table.select_showed_columns')"
+            class-name="ml-4 dashboard-asset-table__column-filter__button"
+            :on-menu="on"
+          >
+            <v-icon>mdi-dots-vertical</v-icon>
+          </menu-tooltip-button>
+        </template>
+        <showed-columns-selector :group="tableType" :group-label="title" />
+      </v-menu>
     </template>
     <data-table
       class="dashboard-asset-table__balances"
@@ -66,8 +83,11 @@
         />
         <span v-else>-</span>
       </template>
-      <template #item.percentage="{ item }">
-        <percentage-display :value="percentage(item.usdValue)" />
+      <template #item.percentageOfTotalNetValue="{ item }">
+        <percentage-display :value="percentageOfTotalNetValue(item.usdValue)" />
+      </template>
+      <template #item.percentageOfTotalCurrentGroup="{ item }">
+        <percentage-display :value="percentageOfCurrentGroup(item.usdValue)" />
       </template>
       <template #no-results>
         <span class="grey--text text--darken-2">
@@ -124,20 +144,30 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { DataTableHeader } from 'vuetify';
+import ShowedColumnsSelector from '@/components/dashboard/ShowedColumnsSelector.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import {
   setupAssetInfoRetrieval,
   setupExchangeRateGetter
 } from '@/composables/balances';
 import { currency } from '@/composables/session';
+import { setupSettings } from '@/composables/settings';
 import { totalNetWorthUsd } from '@/composables/statistics';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { Nullable } from '@/types';
+import { DashboardTableType } from '@/types/frontend-settings';
+import { TableColumn } from '@/types/table-column';
 import { getSortItems } from '@/utils/assets';
 
-const tableHeaders = (totalNetWorthUsd: Ref<BigNumber>) =>
-  computed(() => {
-    return [
+const tableHeaders = (
+  totalNetWorthUsd: Ref<BigNumber>,
+  title: string,
+  showedColumns: TableColumn[]
+) =>
+  computed<DataTableHeader[]>(() => {
+    const headers: DataTableHeader[] = [
       {
         text: i18n.t('dashboard_asset_table.headers.asset').toString(),
         value: 'asset',
@@ -149,7 +179,7 @@ const tableHeaders = (totalNetWorthUsd: Ref<BigNumber>) =>
         align: 'end'
       },
       {
-        text: i18n.t('dashboard_asset_table.headers.amount'),
+        text: i18n.t('dashboard_asset_table.headers.amount').toString(),
         value: 'amount',
         align: 'end',
         cellClass: 'asset-divider'
@@ -159,32 +189,59 @@ const tableHeaders = (totalNetWorthUsd: Ref<BigNumber>) =>
         value: 'usdValue',
         align: 'end',
         class: 'text-no-wrap'
-      },
-      {
+      }
+    ];
+
+    if (showedColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
+      headers.push({
         text: totalNetWorthUsd.value.gt(0)
-          ? i18n.t('dashboard_asset_table.headers.percentage').toString()
+          ? i18n
+              .t('dashboard_asset_table.headers.percentage_of_total_net_value')
+              .toString()
           : i18n.t('dashboard_asset_table.headers.percentage_total').toString(),
-        value: 'percentage',
+        value: 'percentageOfTotalNetValue',
         align: 'end',
         cellClass: 'asset-percentage',
         class: 'text-no-wrap',
         sortable: false
-      }
-    ];
+      });
+    }
+
+    if (showedColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
+      headers.push({
+        text: i18n
+          .t(
+            'dashboard_asset_table.headers.percentage_of_total_current_group',
+            {
+              group: title
+            }
+          )
+          .toString(),
+        value: 'percentageOfTotalCurrentGroup',
+        align: 'end',
+        cellClass: 'asset-percentage',
+        class: 'text-no-wrap',
+        sortable: false
+      });
+    }
+
+    return headers;
   });
 
 const DashboardAssetTable = defineComponent({
   name: 'DashboardAssetTable',
+  components: { ShowedColumnsSelector, MenuTooltipButton },
   props: {
     loading: { required: false, type: Boolean, default: false },
     title: { required: true, type: String },
     balances: {
       required: true,
       type: Array as PropType<AssetBalanceWithPrice[]>
-    }
+    },
+    tableType: { required: true, type: String as PropType<DashboardTableType> }
   },
   setup(props) {
-    const { balances } = toRefs(props);
+    const { balances, title, tableType } = toRefs(props);
     const search = ref('');
 
     const currencySymbol = currency;
@@ -221,21 +278,35 @@ const DashboardAssetTable = defineComponent({
       );
     });
 
-    const percentage = (value: BigNumber) => {
+    const calculatePercentage = (value: BigNumber, divider: BigNumber) => {
+      return value.div(divider).multipliedBy(100).toFixed(2);
+    };
+
+    const percentageOfTotalNetValue = (value: BigNumber) => {
       const netWorth = totalNetWorthUsd.value;
       const total = netWorth.lt(0) ? totalUsd.value : netWorth;
-      return value.div(total).multipliedBy(100).toFixed(2);
+      return calculatePercentage(value, total);
+    };
+
+    const percentageOfCurrentGroup = (value: BigNumber) => {
+      return calculatePercentage(value, total.value);
     };
 
     const { getAssetInfo } = setupAssetInfoRetrieval();
+
+    const { dashboardTablesShowedColumns } = setupSettings();
+
+    const showedColumns = dashboardTablesShowedColumns.value[tableType.value];
+
     return {
       search,
       total,
-      tableHeaders: tableHeaders(totalNetWorthUsd),
+      tableHeaders: tableHeaders(totalNetWorthUsd, title.value, showedColumns),
       currencySymbol,
       sortItems: getSortItems(getAssetInfo),
       assetFilter,
-      percentage
+      percentageOfTotalNetValue,
+      percentageOfCurrentGroup
     };
   }
 });
