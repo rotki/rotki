@@ -5,22 +5,11 @@
     data-cy="blockchain-balance-form"
     @input="input"
   >
-    <v-select
-      v-model="blockchain"
-      data-cy="account-blockchain-field"
-      outlined
-      class="account-form__chain pt-2"
-      :items="items"
-      :label="$t('account_form.labels.blockchain')"
+    <chain-select
       :disabled="loading || !!edit"
-    >
-      <template #selection="{ item }">
-        <asset-details class="pt-2 pb-2" :asset="item" />
-      </template>
-      <template #item="{ item }">
-        <asset-details class="pt-2 pb-2" :asset="item" />
-      </template>
-    </v-select>
+      :blockchain="blockchain"
+      @update:blockchain="blockchain = $event"
+    />
 
     <input-mode-select
       v-if="!edit"
@@ -84,6 +73,7 @@ import {
   watch
 } from '@vue/composition-api';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import { xpubToPayload } from '@/components/accounts/blockchain/xpub';
 import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
 import {
@@ -130,6 +120,7 @@ const validationErrors: () => ValidationErrors = () => ({
 const AccountForm = defineComponent({
   name: 'AccountForm',
   components: {
+    ChainSelect,
     AddressInput,
     XpubInput,
     ModuleActivator,
@@ -396,7 +387,6 @@ const AccountForm = defineComponent({
 
     return {
       form,
-      items: Object.values(Blockchain),
       addresses,
       xpub,
       label,
