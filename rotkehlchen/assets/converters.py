@@ -20,6 +20,7 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_DAI, A_SAI
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.upgrades.v7_v8 import COINBASE_DAI_UPGRADE_END_TS
 from rotkehlchen.errors import DeserializationError, UnsupportedAsset
 from rotkehlchen.typing import Timestamp
@@ -595,7 +596,6 @@ UNSUPPORTED_FTX_ASSETS = (
     'CGC',  # Trade Canopy Growth Corp Tokenized stock
     'MRNA',  # Moderna Tokenized stock
     'XRPMOON',  # no cryptocompare/coingecko data
-    'SRM_LOCKED',  # no cryptocompare/coingecko data
 )
 
 # https://api.kucoin.com/api/v1/currencies
@@ -927,7 +927,10 @@ def asset_from_ftx(ftx_name: str) -> Asset:
     if ftx_name in UNSUPPORTED_FTX_ASSETS:
         raise UnsupportedAsset(ftx_name)
 
-    name = FTX_TO_WORLD.get(ftx_name, ftx_name)
+    if ftx_name == 'SRM_LOCKED':
+        name = strethaddress_to_identifier('0x476c5E26a75bd202a9683ffD34359C0CC15be0fF')  # SRM
+    else:
+        name = FTX_TO_WORLD.get(ftx_name, ftx_name)
     return symbol_to_asset_or_token(name)
 
 
