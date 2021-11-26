@@ -15,14 +15,14 @@
       >
         <template #activator="{ on }">
           <menu-tooltip-button
-            :tooltip="$t('dashboard_asset_table.select_showed_columns')"
+            :tooltip="$t('dashboard_asset_table.select_visible_columns')"
             class-name="ml-4 nft_balance_table__column-filter__button"
             :on-menu="on"
           >
             <v-icon>mdi-dots-vertical</v-icon>
           </menu-tooltip-button>
         </template>
-        <showed-columns-selector group="NFT" />
+        <visible-columns-selector group="NFT" />
       </v-menu>
     </template>
     <data-table :headers="tableHeaders" :items="balances" sort-by="usdPrice">
@@ -51,18 +51,37 @@
         <percentage-display :value="percentageOfCurrentGroup(item.usdPrice)" />
       </template>
       <template #body.append="{ isMobile }">
-        <tr>
-          <td :colspan="isMobile ? 1 : 2" class="font-weight-medium">
+        <tr v-if="!isMobile" class="font-weight-medium">
+          <td colspan="2">
             {{ $t('nft_balance_table.row.total') }}
           </td>
-          <td class="text-right">
+          <td class="text-end">
             <amount-display
               :value="total"
               show-currency="symbol"
               fiat-currency="USD"
             />
           </td>
-          <td v-if="!isMobile" />
+          <td
+            v-if="tableHeaders.length - 3"
+            :colspan="tableHeaders.length - 3"
+          />
+        </tr>
+        <tr v-else class="font-weight-medium">
+          <td
+            class="d-flex align-center justify-space-between font-weight-medium"
+          >
+            <div>
+              {{ $t('nft_balance_table.row.total') }}
+            </div>
+            <div>
+              <amount-display
+                :value="total"
+                show-currency="symbol"
+                fiat-currency="USD"
+              />
+            </div>
+          </td>
         </tr>
       </template>
     </data-table>
@@ -73,7 +92,7 @@
 import { BigNumber } from '@rotki/common';
 import { computed, defineComponent, Ref } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
-import ShowedColumnsSelector from '@/components/dashboard/ShowedColumnsSelector.vue';
+import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { currency } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
@@ -82,12 +101,21 @@ import { Routes } from '@/router/routes';
 import { BalanceActions } from '@/store/balances/action-types';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { useStore } from '@/store/utils';
-import { DashboardTableType } from '@/types/frontend-settings';
+import {
+  DashboardTablesVisibleColumns,
+  DashboardTableType
+} from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { Zero } from '@/utils/bignumbers';
 
-const tableHeaders = (currency: Ref<string>, showedColumn: TableColumn[]) => {
+const tableHeaders = (
+  currency: Ref<string>,
+  dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>
+) => {
   return computed<DataTableHeader[]>(() => {
+    const visibleColumns =
+      dashboardTablesVisibleColumns.value[DashboardTableType.NFT];
+
     const headers: DataTableHeader[] = [
       {
         text: i18n.t('nft_balance_table.column.name').toString(),
@@ -113,7 +141,7 @@ const tableHeaders = (currency: Ref<string>, showedColumn: TableColumn[]) => {
       }
     ];
 
-    if (showedColumn.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
+    if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
       headers.push({
         text: i18n.t('nft_balance_table.column.percentage').toString(),
         value: 'percentageOfTotalNetValue',
@@ -122,7 +150,9 @@ const tableHeaders = (currency: Ref<string>, showedColumn: TableColumn[]) => {
       });
     }
 
-    if (showedColumn.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
+    if (
+      visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)
+    ) {
       headers.push({
         text: i18n
           .t(
@@ -144,7 +174,7 @@ const tableHeaders = (currency: Ref<string>, showedColumn: TableColumn[]) => {
 
 export default defineComponent({
   name: 'NftBalanceTable',
-  components: { ShowedColumnsSelector, MenuTooltipButton },
+  components: { VisibleColumnsSelector, MenuTooltipButton },
   setup() {
     const store = useStore();
     const balances = computed<NonFungibleBalance[]>(
@@ -181,14 +211,11 @@ export default defineComponent({
       );
     });
 
-    const { dashboardTablesShowedColumns } = setupSettings();
-
-    const showedColumns =
-      dashboardTablesShowedColumns.value[DashboardTableType.NFT];
+    const { dashboardTablesVisibleColumns } = setupSettings();
 
     return {
       balances,
-      tableHeaders: tableHeaders(currency, showedColumns),
+      tableHeaders: tableHeaders(currency, dashboardTablesVisibleColumns),
       currency,
       refresh,
       total,

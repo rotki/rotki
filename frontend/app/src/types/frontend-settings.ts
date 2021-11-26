@@ -33,8 +33,8 @@ export const AMOUNT_ROUNDING_MODE = 'amountRoundingMode' as const;
 export const VALUE_ROUNDING_MODE = 'valueRoundingMode' as const;
 export const GRAPH_ZERO_BASED = 'graphZeroBased' as const;
 export const NFTS_IN_NET_VALUE = 'nftsInNetValue' as const;
-export const DASHBOARD_TABLES_SHOWED_COLUMNS =
-  'dashboardTablesShowedColumns' as const;
+export const DASHBOARD_TABLES_VISIBLE_COLUMNS =
+  'dashboardTablesVisibleColumns' as const;
 
 export enum Quarter {
   Q1 = 'Q1',
@@ -88,20 +88,20 @@ export enum DashboardTableType {
   NFT = 'NFT'
 }
 
-const DashboardTablesShowedColumns = z.object({
+const DashboardTablesVisibleColumns = z.object({
   [DashboardTableType.ASSETS]: TableColumnEnum.default(
-    Defaults.DEFAULT_DASHBOARD_TABLE_SHOWED_COLUMNS
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
   ),
   [DashboardTableType.LIABILITIES]: TableColumnEnum.default(
-    Defaults.DEFAULT_DASHBOARD_TABLE_SHOWED_COLUMNS
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
   ),
   [DashboardTableType.NFT]: TableColumnEnum.default(
-    Defaults.DEFAULT_DASHBOARD_TABLE_SHOWED_COLUMNS
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
   )
 });
 
-export type DashboardTablesShowedColumns = z.infer<
-  typeof DashboardTablesShowedColumns
+export type DashboardTablesVisibleColumns = z.infer<
+  typeof DashboardTablesVisibleColumns
 >;
 
 export const FrontendSettings = z.object({
@@ -128,7 +128,7 @@ export const FrontendSettings = z.object({
   [DARK_THEME]: ThemeColors.default(DARK_COLORS),
   [GRAPH_ZERO_BASED]: z.boolean().default(false),
   [NFTS_IN_NET_VALUE]: z.boolean().default(true),
-  [DASHBOARD_TABLES_SHOWED_COLUMNS]: DashboardTablesShowedColumns.default({})
+  [DASHBOARD_TABLES_VISIBLE_COLUMNS]: DashboardTablesVisibleColumns.default({})
 });
 
 export type FrontendSettings = z.infer<typeof FrontendSettings>;

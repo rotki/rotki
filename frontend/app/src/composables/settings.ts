@@ -1,15 +1,25 @@
 import { computed } from '@vue/composition-api';
 import { useStore } from '@/store/utils';
-import { DashboardTablesShowedColumns } from '@/types/frontend-settings';
+import {
+  DashboardTablesVisibleColumns,
+  FrontendSettingsPayload
+} from '@/types/frontend-settings';
 
 export const setupSettings = () => {
   const store = useStore();
 
-  const dashboardTablesShowedColumns = computed<DashboardTablesShowedColumns>(
-    () => store.getters['settings/dashboardTablesShowedColumns']
+  const dashboardTablesVisibleColumns = computed<DashboardTablesVisibleColumns>(
+    () => store.getters['settings/dashboardTablesVisibleColumns']
   );
 
+  const updateSetting = async (
+    settings: FrontendSettingsPayload
+  ): Promise<void> => {
+    await store.dispatch('settings/updateSetting', settings);
+  };
+
   return {
-    dashboardTablesShowedColumns
+    dashboardTablesVisibleColumns,
+    updateSetting
   };
 };

@@ -12,7 +12,7 @@ import { CurrencyLocation } from '../../../../src/types/currency-location';
 import {
   AMOUNT_ROUNDING_MODE,
   CURRENCY_LOCATION,
-  DASHBOARD_TABLES_SHOWED_COLUMNS,
+  DASHBOARD_TABLES_VISIBLE_COLUMNS,
   DashboardTableType,
   DECIMAL_SEPARATOR,
   DEFI_SETUP_DONE,
@@ -66,7 +66,7 @@ describe('settings:mutations', () => {
       },
       [GRAPH_ZERO_BASED]: true,
       [NFTS_IN_NET_VALUE]: true,
-      [DASHBOARD_TABLES_SHOWED_COLUMNS]: {
+      [DASHBOARD_TABLES_VISIBLE_COLUMNS]: {
         [DashboardTableType.ASSETS]: [
           TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
         ],

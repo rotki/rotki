@@ -2989,7 +2989,7 @@
       "percentage_of_total_current_group": "% of total {group}",
       "price": "Price in {symbol}"
     },
-    "select_showed_columns": "Select showed columns"
+    "select_visible_columns": "Select visible columns"
   },
   "api_keys": {
     "tabs": {
