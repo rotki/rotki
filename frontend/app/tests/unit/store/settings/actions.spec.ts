@@ -13,11 +13,13 @@ import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { axiosSnakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
+import { DateFormat } from '@/types/date-format';
 import {
   AMOUNT_ROUNDING_MODE,
   CURRENCY_LOCATION,
   DASHBOARD_TABLES_VISIBLE_COLUMNS,
   DashboardTableType,
+  DATE_INPUT_FORMAT,
   DECIMAL_SEPARATOR,
   DEFI_SETUP_DONE,
   EXPLORERS,
@@ -79,7 +81,8 @@ describe('settings:actions', () => {
                 Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
               [DashboardTableType.NFT]:
                 Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
-            }
+            },
+            [DATE_INPUT_FORMAT]: DateFormat.DateMonthYearHourMinuteSecond
           })
         )
       })

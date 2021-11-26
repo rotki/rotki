@@ -117,8 +117,8 @@
             <v-spacer v-if="item.location === 'external'" />
             <row-actions
               v-if="item.location === 'external'"
-              edit-tooltip=""
-              delete-tooltip=""
+              :edit-tooltip="$t('closed_trades.edit_tooltip')"
+              :delete-tooltip="$t('closed_trades.delete_tooltip')"
               @edit-click="editTrade(item)"
               @delete-click="promptForDelete(item)"
             />
@@ -209,8 +209,9 @@ import {
   TradeEntry
 } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
+import { DateFormat } from '@/types/date-format';
 import { uniqueStrings } from '@/utils/data';
-import { convertToTimestamp } from '@/utils/date';
+import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 enum TradeFilterKeys {
   BASE = 'base',
@@ -242,7 +243,8 @@ enum TradeFilterKeys {
     BigDialog
   },
   computed: {
-    ...mapGetters('history', ['tradesTotal', 'tradesLimit'])
+    ...mapGetters('history', ['tradesTotal', 'tradesLimit']),
+    ...mapGetters('settings', ['dateInputFormat'])
   },
   methods: {
     ...mapActions('history', [
@@ -322,51 +324,64 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
 
   selected: string[] = [];
   filter: MatchedKeyword<TradeFilterKeys> = {};
+  dateInputFormat!: DateFormat;
 
-  readonly matchers: SearchMatcher<TradeFilterKeys>[] = [
-    {
-      key: TradeFilterKeys.BASE,
-      description: this.$t('closed_trades.filter.base_asset').toString(),
-      suggestions: () => this.baseAssets,
-      validate: (asset: string) => this.baseAssets.includes(asset)
-    },
-    {
-      key: TradeFilterKeys.QUOTE,
-      description: this.$t('closed_trades.filter.quote_asset').toString(),
-      suggestions: () => this.quoteAssets,
-      validate: (asset: string) => this.quoteAssets.includes(asset)
-    },
-    {
-      key: TradeFilterKeys.ACTION,
-      description: this.$t('closed_trades.filter.trade_type').toString(),
-      suggestions: () => ['buy', 'sell'],
-      validate: type => ['buy', 'sell'].includes(type)
-    },
-    {
-      key: TradeFilterKeys.START,
-      description: this.$t('closed_trades.filter.start_date').toString(),
-      suggestions: () => [],
-      hint: this.$t('closed_trades.filter.date_hint').toString(),
-      validate: value => {
-        return value.length > 0 && !isNaN(convertToTimestamp(value));
+  get matchers(): SearchMatcher<TradeFilterKeys>[] {
+    return [
+      {
+        key: TradeFilterKeys.BASE,
+        description: this.$t('closed_trades.filter.base_asset').toString(),
+        suggestions: () => this.baseAssets,
+        validate: (asset: string) => this.baseAssets.includes(asset)
+      },
+      {
+        key: TradeFilterKeys.QUOTE,
+        description: this.$t('closed_trades.filter.quote_asset').toString(),
+        suggestions: () => this.quoteAssets,
+        validate: (asset: string) => this.quoteAssets.includes(asset)
+      },
+      {
+        key: TradeFilterKeys.ACTION,
+        description: this.$t('closed_trades.filter.trade_type').toString(),
+        suggestions: () => ['buy', 'sell'],
+        validate: type => ['buy', 'sell'].includes(type)
+      },
+      {
+        key: TradeFilterKeys.START,
+        description: this.$t('closed_trades.filter.start_date').toString(),
+        suggestions: () => [],
+        hint: this.$t('closed_trades.filter.date_hint', {
+          format: getDateInputISOFormat(this.dateInputFormat)
+        }).toString(),
+        validate: value => {
+          return (
+            value.length > 0 &&
+            !isNaN(convertToTimestamp(value, this.dateInputFormat))
+          );
+        }
+      },
+      {
+        key: TradeFilterKeys.END,
+        description: this.$t('closed_trades.filter.end_date').toString(),
+        suggestions: () => [],
+        hint: this.$t('closed_trades.filter.date_hint', {
+          format: getDateInputISOFormat(this.dateInputFormat)
+        }).toString(),
+        validate: value => {
+          return (
+            value.length > 0 &&
+            !isNaN(convertToTimestamp(value, this.dateInputFormat))
+          );
+        }
+      },
+      {
+        key: TradeFilterKeys.LOCATION,
+        description: this.$t('closed_trades.filter.location').toString(),
+        suggestions: () => this.availableLocations,
+        validate: location => this.availableLocations.includes(location as any)
       }
-    },
-    {
-      key: TradeFilterKeys.END,
-      description: this.$t('closed_trades.filter.end_date').toString(),
-      suggestions: () => [],
-      hint: this.$t('closed_trades.filter.date_hint').toString(),
-      validate: value => {
-        return value.length > 0 && !isNaN(convertToTimestamp(value));
-      }
-    },
-    {
-      key: TradeFilterKeys.LOCATION,
-      description: this.$t('closed_trades.filter.location').toString(),
-      suggestions: () => this.availableLocations,
-      validate: location => this.availableLocations.includes(location as any)
-    }
-  ];
+    ];
+  }
 
   get quoteAssets(): string[] {
     return this.data
@@ -507,8 +522,8 @@ export default class ClosedTrades extends Mixins(StatusMixin, AssetMixin) {
         return (
           quoteMatch &&
           actionMatch &&
-          endMatch(trade.timestamp, endFilter) &&
-          startMatch(trade.timestamp, startFilter) &&
+          endMatch(trade.timestamp, endFilter, this.dateInputFormat) &&
+          startMatch(trade.timestamp, startFilter, this.dateInputFormat) &&
           baseMatch &&
           locationMatch
         );

@@ -1,8 +1,11 @@
 import { CurrencyLocation } from '@/types/currency-location';
+import { DateFormat } from '@/types/date-format';
 import { TableColumn } from '@/types/table-column';
 
 export class Defaults {
-  static DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z';
+  static DEFAULT_DATE_DISPLAY_FORMAT =
+    DateFormat.DateMonthYearHourMinuteSecondTimezone;
+  static DEFAULT_DATE_INPUT_FORMAT = DateFormat.DateMonthYearHourMinuteSecond;
   static DEFAULT_THOUSAND_SEPARATOR = ',';
   static DEFAULT_DECIMAL_SEPARATOR = '.';
   static DEFAULT_CURRENCY_LOCATION = CurrencyLocation.AFTER;

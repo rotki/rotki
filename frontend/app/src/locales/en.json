@@ -415,7 +415,7 @@
     "filter": {
       "action": "filter by the action",
       "asset": "filter by the asset",
-      "date_hint": "format DD/MM/YYYY HH:mm:ss (time/seconds are optional)",
+      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
       "location": "filter by the location",
       "start_date": "filter by the starting date of the period",
       "end_date": "filter by the ending date of the period"
@@ -811,8 +811,8 @@
     "title": "Manage Data"
   },
   "date_time_picker": {
-    "default_format": "Date should be in DD/MM/YYYY or DD/MM/YYYY HH:MM format",
-    "seconds_format": "Date should be in DD/MM/YYYY [[HH:MM]:ss] format"
+    "default_format": "Date should be in {dateFormat} or {dateFormat} HH:MM format",
+    "seconds_format": "Date should be in {dateFormat} [[HH:MM]:ss] format"
   },
   "module_address_selector": {
     "back": "Back",
@@ -1044,7 +1044,7 @@
     },
     "filter": {
       "asset": "filter by the asset of the ledger action",
-      "date_hint": "format DD/MM/YYYY HH:mm:ss (time/seconds are optional)",
+      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
       "end_date": "filter by the end date of the ledger action period",
       "location": "filter by the ledger action location",
       "start_date": "filter by the start date of the ledger action period",
@@ -1386,11 +1386,13 @@
     },
     "date_display_format_hint": "Resulting date: {format}",
     "date_display_tooltip": "Restore the default date display format",
+    "date_input_format_hint": "Input example: {format}",
     "labels": {
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
+      "date_input_format": "Date input format",
       "display_date_in_localtime": "Display date in localtime and not in UTC in CSV export, backend logs and other locations",
       "rpc_endpoint": "Ethereum Node RPC Endpoint",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
@@ -1423,9 +1425,13 @@
         "success": "Currency location set to {currencyLocation}",
         "error": "Error setting currency location"
       },
-      "date_format": {
+      "date_display_format": {
         "error": "Error setting date display format",
         "success": "Date display set to {dateFormat}"
+      },
+      "date_input_format": {
+        "error": "Error setting date input format",
+        "success": "Date input set to {dateFormat}"
       },
       "floating_precision": {
         "error": "Floating precision set to {precision}",
@@ -1531,7 +1537,7 @@
     },
     "filter": {
       "base_asset": "filter by the base asset of the trade",
-      "date_hint": "format DD/MM/YYYY HH:mm:ss (time/seconds are optional)",
+      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
       "end_date": "filter by the end date of the trade period",
       "location": "filter by the trade location",
       "quote_asset": "filter by the quote asset of the trade",
@@ -1577,7 +1583,9 @@
       "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}"
     },
     "label": "trades",
-    "refresh_tooltip": "Refresh trades"
+    "refresh_tooltip": "Refresh trades",
+    "edit_tooltip": "Edit trade",
+    "delete_tooltip": "Delete trade"
   },
   "summary_card": {
     "refresh_tooltip": "Refresh {name} balances",

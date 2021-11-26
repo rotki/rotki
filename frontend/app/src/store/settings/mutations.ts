@@ -11,6 +11,7 @@ import {
 import { defaultState, SettingsState } from '@/store/settings/state';
 import { Writeable } from '@/types';
 import { CurrencyLocation } from '@/types/currency-location';
+import { DateFormat } from '@/types/date-format';
 import {
   AMOUNT_ROUNDING_MODE,
   CURRENCY_LOCATION,
@@ -32,7 +33,8 @@ import {
   VALUE_ROUNDING_MODE,
   NFTS_IN_NET_VALUE,
   DASHBOARD_TABLES_VISIBLE_COLUMNS,
-  DashboardTablesVisibleColumns
+  DashboardTablesVisibleColumns,
+  DATE_INPUT_FORMAT
 } from '@/types/frontend-settings';
 
 type Mutations<S = SettingsState> = {
@@ -58,6 +60,7 @@ type Mutations<S = SettingsState> = {
     state: Writeable<SettingsState>,
     tablesVisibleColumns: DashboardTablesVisibleColumns
   ): void;
+  [DATE_INPUT_FORMAT](state: S, format: DateFormat): void;
   restore(state: S, persisted: S): void;
   reset(state: S): void;
 };
@@ -140,6 +143,9 @@ export const mutations: Mutations = {
     tablesVisibleColumns: DashboardTablesVisibleColumns
   ) {
     state[DASHBOARD_TABLES_VISIBLE_COLUMNS] = tablesVisibleColumns;
+  },
+  [DATE_INPUT_FORMAT](state: Writeable<SettingsState>, format: DateFormat) {
+    state[DATE_INPUT_FORMAT] = format;
   },
   restore(state: SettingsState, persisted: SettingsState) {
     Object.assign(state, persisted);

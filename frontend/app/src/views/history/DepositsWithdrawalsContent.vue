@@ -120,12 +120,13 @@ import {
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import { AssetSymbolGetter } from '@/store/balances/types';
 import { AssetMovementEntry, IgnoreActionType } from '@/store/history/types';
 import { useStore } from '@/store/utils';
 import { uniqueStrings } from '@/utils/data';
-import { convertToTimestamp } from '@/utils/date';
+import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 import { setupIgnore } from '@/views/history/composables/ignore';
 import { setupSelectionMode } from '@/views/history/composables/selection';
 import DepositWithdrawalDetails from '@/views/history/DepositWithdrawalDetails.vue';
@@ -183,44 +184,61 @@ const setupFilter = (
   getSymbol: AssetSymbolGetter
 ) => {
   const filter = ref<MatchedKeyword<DepositWithdrawalFilters>>({});
-  const matchers: SearchMatcher<DepositWithdrawalFilters>[] = [
-    {
-      key: DepositWithdrawalFilters.ASSET,
-      description: i18n.t('deposit_withdrawals.filter.asset').toString(),
-      suggestions: () => assets.value,
-      validate: (asset: string) => assets.value.includes(asset)
-    },
-    {
-      key: DepositWithdrawalFilters.ACTION,
-      description: i18n.t('deposit_withdrawals.filter.action').toString(),
-      suggestions: () => ['deposit', 'withdrawal'],
-      validate: type => ['deposit', 'withdrawal'].includes(type)
-    },
-    {
-      key: DepositWithdrawalFilters.START,
-      description: i18n.t('deposit_withdrawals.filter.start_date').toString(),
-      suggestions: () => [],
-      hint: i18n.t('deposit_withdrawals.filter.date_hint').toString(),
-      validate: value => {
-        return value.length > 0 && !isNaN(convertToTimestamp(value));
+  const { dateInputFormat } = setupSettings();
+  const matchers: Ref<SearchMatcher<DepositWithdrawalFilters>[]> = computed(
+    () => [
+      {
+        key: DepositWithdrawalFilters.ASSET,
+        description: i18n.t('deposit_withdrawals.filter.asset').toString(),
+        suggestions: () => assets.value,
+        validate: (asset: string) => assets.value.includes(asset)
+      },
+      {
+        key: DepositWithdrawalFilters.ACTION,
+        description: i18n.t('deposit_withdrawals.filter.action').toString(),
+        suggestions: () => ['deposit', 'withdrawal'],
+        validate: type => ['deposit', 'withdrawal'].includes(type)
+      },
+      {
+        key: DepositWithdrawalFilters.START,
+        description: i18n.t('deposit_withdrawals.filter.start_date').toString(),
+        suggestions: () => [],
+        hint: i18n
+          .t('deposit_withdrawals.filter.date_hint', {
+            format: getDateInputISOFormat(dateInputFormat.value)
+          })
+          .toString(),
+        validate: value => {
+          return (
+            value.length > 0 &&
+            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+          );
+        }
+      },
+      {
+        key: DepositWithdrawalFilters.END,
+        description: i18n.t('deposit_withdrawals.filter.end_date').toString(),
+        suggestions: () => [],
+        hint: i18n
+          .t('deposit_withdrawals.filter.date_hint', {
+            format: getDateInputISOFormat(dateInputFormat.value)
+          })
+          .toString(),
+        validate: value => {
+          return (
+            value.length > 0 &&
+            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+          );
+        }
+      },
+      {
+        key: DepositWithdrawalFilters.LOCATION,
+        description: i18n.t('deposit_withdrawals.filter.location').toString(),
+        suggestions: () => locations.value,
+        validate: location => locations.value.includes(location as any)
       }
-    },
-    {
-      key: DepositWithdrawalFilters.END,
-      description: i18n.t('deposit_withdrawals.filter.end_date').toString(),
-      suggestions: () => [],
-      hint: i18n.t('deposit_withdrawals.filter.date_hint').toString(),
-      validate: value => {
-        return value.length > 0 && !isNaN(convertToTimestamp(value));
-      }
-    },
-    {
-      key: DepositWithdrawalFilters.LOCATION,
-      description: i18n.t('deposit_withdrawals.filter.location').toString(),
-      suggestions: () => locations.value,
-      validate: location => locations.value.includes(location as any)
-    }
-  ];
+    ]
+  );
 
   const applyFilter = () => {
     const assetFilter = filter.value[DepositWithdrawalFilters.ASSET];
@@ -234,8 +252,16 @@ const setupFilter = (
       const assetMatch = checkIfMatch(asset, assetFilter);
       const locationMatch = checkIfMatch(value.location, locationFilter);
       const actionMatch = checkIfMatch(value.category, actionFilter);
-      const isStartMatch = startMatch(value.timestamp, startFilter);
-      const isEndMatch = endMatch(value.timestamp, endFilter);
+      const isStartMatch = startMatch(
+        value.timestamp,
+        startFilter,
+        dateInputFormat.value
+      );
+      const isEndMatch = endMatch(
+        value.timestamp,
+        endFilter,
+        dateInputFormat.value
+      );
       return (
         assetMatch && locationMatch && actionMatch && isStartMatch && isEndMatch
       );

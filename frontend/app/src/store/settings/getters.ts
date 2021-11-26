@@ -3,9 +3,11 @@ import { SettingsState } from '@/store/settings/state';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { CurrencyLocation } from '@/types/currency-location';
+import { DateFormat } from '@/types/date-format';
 import {
   DASHBOARD_TABLES_VISIBLE_COLUMNS,
   CURRENCY_LOCATION,
+  DATE_INPUT_FORMAT,
   DECIMAL_SEPARATOR,
   PROFIT_LOSS_PERIOD,
   ProfitLossTimeframe,
@@ -20,6 +22,7 @@ type SettingsGetters = {
   [CURRENCY_LOCATION]: CurrencyLocation;
   [DARK_MODE_ENABLED]: boolean;
   [DASHBOARD_TABLES_VISIBLE_COLUMNS]: DashboardTablesVisibleColumns;
+  [DATE_INPUT_FORMAT]: DateFormat;
 };
 
 export const getters: Getters<
@@ -34,5 +37,6 @@ export const getters: Getters<
   [CURRENCY_LOCATION]: state => state[CURRENCY_LOCATION],
   [DARK_MODE_ENABLED]: state => state[DARK_MODE_ENABLED],
   [DASHBOARD_TABLES_VISIBLE_COLUMNS]: state =>
-    state[DASHBOARD_TABLES_VISIBLE_COLUMNS]
+    state[DASHBOARD_TABLES_VISIBLE_COLUMNS],
+  [DATE_INPUT_FORMAT]: state => state[DATE_INPUT_FORMAT]
 };
