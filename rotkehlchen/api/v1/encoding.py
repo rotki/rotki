@@ -2295,5 +2295,9 @@ class Eth2ValidatorPutSchema(Eth2ValidatorSchema):
     async_query = fields.Boolean(load_default=False)
 
 
+class Eth2ValidatorDeleteSchema(Schema):
+    validators = fields.List(fields.Nested(Eth2ValidatorSchema), required=True)
+
+
 class StatisticsNetValueSchema(Schema):
     include_nfts = fields.Boolean(load_default=True)

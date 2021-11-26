@@ -201,21 +201,21 @@ def test_add_get_delete_eth2_validators(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'public_key': validators[0].public_key},
+        ), json={'validators': [{'public_key': validators[0].public_key}]},
     )
     assert_simple_ok_response(response)
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validator_index': validators[2].index},
+        ), json={'validators': [{'validator_index': validators[2].index}]},
     )
     assert_simple_ok_response(response)
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validator_index': validators[3].index, 'public_key': validators[3].public_key},
+        ), json={'validators': [{'validator_index': validators[3].index, 'public_key': validators[3].public_key}]},  # noqa: E501
     )
     assert_simple_ok_response(response)
 
@@ -241,29 +241,40 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
             'eth2validatorsresource',
         ), json={},
     )
+    if method == 'PUT':
+        msg = 'Need to provide either a validator index or a public key for an eth2 validator'  # noqa: E501
+    else:
+        msg = 'Missing data for required field.'
+
     assert_error_response(
         response=response,
-        contained_in_msg='Need to provide either a validator index or a public key for an eth2 validator',  # noqa: E501
+        contained_in_msg=msg,
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    invalid_index = {'validator_index': -1}
+    if method == 'DELETE':
+        invalid_index = {'validators': [invalid_index]}
     response = requests.request(
         method=method,
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validator_index': -1},
+        ), json=invalid_index,
     )
     assert_error_response(
         response=response,
         contained_in_msg='Validator index must be an integer >= 0',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    unknown_index = {'validator_index': 999957426}
+    if method == 'DELETE':
+        unknown_index = {'validators': [unknown_index]}
     response = requests.request(
         method=method,
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validator_index': 999957426},
+        ), json=unknown_index,
     )
     if method == 'PUT':
         msg = 'Validator data for 999957426 could not be found. Likely invalid validator'  # noqa: E501
@@ -276,24 +287,30 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
         contained_in_msg=msg,
         status_code=status_code,
     )
+    unknown_public_key = {'public_key': 'fooboosoozloklkl'}
+    if method == 'DELETE':
+        unknown_public_key = {'validators': [unknown_public_key]}
     response = requests.request(
         method=method,
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'public_key': 'fooboosoozloklkl'},  # noqa: E501
+        ), json=unknown_public_key,  # noqa: E501
     )
     assert_error_response(
         response=response,
         contained_in_msg='The given eth2 public key fooboosoozloklkl is not valid hex',  # noqa: E501
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    invalid_hex = {'public_key': '0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fbcd'}  # noqa: E501
+    if method == 'DELETE':
+        invalid_hex = {'validators': [invalid_hex]}
     response = requests.request(
         method=method,
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'public_key': '0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fbcd'},  # noqa: E501
+        ), json=invalid_hex,
     )
     assert_error_response(
         response=response,

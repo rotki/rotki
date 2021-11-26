@@ -2284,14 +2284,14 @@ class RestAPI():
     @require_premium_user(active_check=False)
     def delete_eth2_validator(
             self,
-            validator_index: Optional[int],
-            public_key: Optional[str],
+            validators: List[Dict],
     ) -> Response:
         try:
-            self.rotkehlchen.chain_manager.delete_eth2_validator(
-                validator_index=validator_index,
-                public_key=public_key,
-            )
+            for validator in validators:
+                self.rotkehlchen.chain_manager.delete_eth2_validator(
+                    validator_index=validator.get('validator_index'),
+                    public_key=validator.get('public_key'),
+                )
             result = OK_RESULT
             status_code = HTTPStatus.OK
         except InputError as e:
