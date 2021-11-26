@@ -1,6 +1,8 @@
+import jsonschema
 import pytest
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
+from rotkehlchen.accounting.typing import ACCOUNTING_EVENT_SCHEMA
 from rotkehlchen.chain.ethereum.structures import AaveInterestEvent
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH, A_WBTC
@@ -915,3 +917,8 @@ def test_fees_count_in_cost_basis(accountant):
     assert len(warnings) == 0
     errors = accountant.msg_aggregator.consume_errors()
     assert errors == [error]
+
+
+def test_accounting_event_schemas():
+    """Test that the accounting event json schemas we use are valid"""
+    jsonschema.Draft4Validator.check_schema(ACCOUNTING_EVENT_SCHEMA)

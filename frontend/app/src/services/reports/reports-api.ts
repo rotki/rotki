@@ -56,8 +56,8 @@ export class ReportsApi {
 
   fetchReportEvents(reportId: number): Promise<ReportEventsPayloadData> {
     return this.axios
-      .get<ActionResult<ReportEventsPayloadData>>(
-        `/reports/${reportId}/data/accounting_event`,
+      .post<ActionResult<ReportEventsPayloadData>>(
+        `/reports/${reportId}/data/`,
         {
           validateStatus: validStatus,
           transformResponse: setupTransformer(reportNumericKeys)

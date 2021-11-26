@@ -23,6 +23,7 @@ from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import ActionType, BalanceType
+from rotkehlchen.accounting.typing import SchemaEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -45,8 +46,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_polkadot_address,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery, \
-    ReportsFilterQuery, ReportIDFilterQuery
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
     DeserializationError,
@@ -86,7 +86,7 @@ from rotkehlchen.typing import (
     Price,
     SupportedBlockchain,
     Timestamp,
-    TradeType, SchemaEventType,
+    TradeType,
 )
 from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
 
@@ -1411,65 +1411,24 @@ class HistoryProcessingSchema(Schema):
     async_query = fields.Boolean(load_default=False)
 
 
-class AccountingReportsSchema(
-    AsyncQueryArgumentSchema,
-    DBPaginationSchema,
-    DBOrderBySchema,
-):
+class AccountingReportsSchema(Schema):
     report_id = fields.Integer(load_default=None)
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
 
-    @post_load
-    def make_reports_query(  # pylint: disable=no-self-use
+    def __init__(self, required_report_id: bool):
+        super().__init__()
+        self.required_report_id = required_report_id
+
+    @validates_schema
+    def validate_accounting_reports_schema(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
-    ) -> Dict[str, Any]:
-        report_id = data.get('report_id')
-        filter_query = ReportsFilterQuery.make(
-            order_by_attribute='timestamp',  # hard coding order by timestamp for API for now
-            order_ascending=False,  # most recent first
-            limit=data['limit'],
-            offset=data['offset'],
-            report_id=report_id,
-            from_ts=data['from_timestamp'],
-            to_ts=data['to_timestamp'],
-        )
-
-        return {
-            'async_query': data['async_query'],
-            'filter_query': filter_query,
-        }
+    ) -> None:
+        if self.required_report_id and data['report_id'] is None:
+            raise ValidationError('A report id should be given')
 
 
-class AccountingReportsDeleteSchema(
-    AsyncQueryArgumentSchema,
-):
-    report_id = fields.Integer(load_default=None)
-
-    @post_load
-    def make_reports_query(  # pylint: disable=no-self-use
-            self,
-            data: Dict[str, Any],
-            **_kwargs: Any,
-    ) -> Dict[str, Any]:
-        report_id = data.get('report_id')
-        filter_query = ReportIDFilterQuery.make(
-            report_id=report_id,
-        )
-
-        return {
-            'async_query': data['async_query'],
-            'filter_query': filter_query,
-        }
-
-
-class AccountingReportDataSchema(
-    AsyncQueryArgumentSchema,
-    DBPaginationSchema,
-    DBOrderBySchema,
-):
+class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
     report_id = fields.Integer(load_default=None)
     event_type = SchemaEventTypeField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
@@ -1493,9 +1452,7 @@ class AccountingReportDataSchema(
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
         )
-
         return {
-            'async_query': data['async_query'],
             'filter_query': filter_query,
         }
 

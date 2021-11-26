@@ -1,142 +1,153 @@
 import json
-from typing import Dict, Any, Optional, NamedTuple, Tuple
+from typing import Any, Dict, NamedTuple, Tuple
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_timestamp, deserialize_asset_amount
-from rotkehlchen.typing import NamedJson, EventType, Location, Timestamp, SchemaEventType
+import jsonschema
 
-AccountingEventCacheEntryDBTuple = (
+from rotkehlchen.errors import DeserializationError
+from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
+from rotkehlchen.utils.serialization import rlk_jsondumps
+
+ACCOUNTING_EVENT_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'event_type': {'type': 'string'},
+        'location': {'type': 'string'},
+        'paid_in_profit_currency': {'type': 'string'},
+        'paid_asset': {'type': 'string'},
+        'paid_in_asset': {'type': 'string'},
+        'taxable_amount': {'type': 'string'},
+        'taxable_bought_cost_in_profit_currency': {'type': 'string'},
+        'received_asset': {'type': 'string'},
+        'taxable_received_in_profit_currency': {'type': 'string'},
+        'received_in_asset': {'type': 'string'},
+        'net_profit_or_loss': {'type': 'string'},
+        'time': {'type': 'number'},
+        'cost_basis': {
+            'oneOf': [{'type': 'null'}, {'$ref': '#/$defs/cost_basis'}],
+        },
+        'is_virtual': {'type': 'boolean'},
+        'link': {'oneOf': [{'type': 'string'}, {'type': 'null'}]},
+        'notes': {'oneOf': [{'type': 'string'}, {'type': 'null'}]},
+    },
+    '$defs': {
+        'cost_basis': {
+            'type': 'object',
+            'properties': {
+                'is_complete': {'type': 'boolean'},
+                'matched_acquisitions': {'type': 'array'},
+                'taxable_bought_cost': {'type': 'string'},
+                'taxfree_bought_cost': {'type': 'string'},
+            },
+        },
+    },
+    'required': [
+        'location',
+        'paid_in_profit_currency',
+        'paid_in_asset',
+        'taxable_amount',
+        'taxable_bought_cost_in_profit_currency',
+        'taxable_received_in_profit_currency',
+        'received_in_asset',
+        'net_profit_or_loss',
+        'time',
+        'cost_basis',
+        'is_virtual',
+        'link',
+        'notes',
+    ],
+}
+
+
+class SchemaEventType(DBEnumMixIn):
+    """Supported Event Type schemas
+
+    Keeping it as this for now since we may experiment with a different schemas
+    per accounting event type.
+    """
+    ACCOUNTING_EVENT = 1
+
+    def get_schema(self) -> Dict[str, Any]:
+        """May raise EncodingError if schema is invalid"""
+        schema: Dict[str, Any] = {}
+        if self == SchemaEventType.ACCOUNTING_EVENT:
+            return schema
+
+        raise AssertionError('Should never happen')
+
+
+NamedJsonDBTuple = (
     Tuple[
-        str,  # type
-        str,  # location
-        str,  # paid_in_profit_currency
-        str,  # paid_asset
-        str,  # paid_in_asset
-        str,  # taxable_amount
-        str,  # taxable_bought_cost_in_profit_currency
-        str,  # received_asset
-        str,  # taxable_received_in_profit_currency
-        str,  # received_in_asset
-        str,  # net_profit_or_loss
-        int,  # time
-        str,  # cost_basis
-        bool,  # is_virtual
-        str,  # link
-        str,  # notes
+        str,  # type,
+        str,  # data
     ]
 )
 
 
-class AccountingEventCacheEntry(NamedTuple):
-    type: EventType
-    location: Location
-    paid_in_profit_currency: FVal
-    paid_asset: Optional[Asset]
-    paid_in_asset: FVal
-    taxable_amount: FVal
-    taxable_bought_cost_in_profit_currency: FVal
-    received_asset: Optional[Asset]
-    taxable_received_in_profit_currency: FVal
-    received_in_asset: FVal
-    net_profit_or_loss: FVal
-    time: Timestamp
-    cost_basis: Optional[Dict[str, Any]]
-    is_virtual: bool
-    link: Optional[str]
-    notes: Optional[str]
+class NamedJson(NamedTuple):
+    event_type: SchemaEventType
+    data: Dict[str, Any]
+
+    @classmethod
+    def deserialize(
+            cls,
+            event_type: SchemaEventType,
+            data: Dict[str, Any],
+    ) -> 'NamedJson':
+        """Turns an event type and a data dict to a NamedJson object
+
+        May raise:
+         - a DeserializationError if something is wrong with given data or json validation fails.
+        """
+        schema = event_type.get_schema()
+        try:
+            jsonschema.validate(data, schema)
+        except (jsonschema.exceptions.ValidationError, jsonschema.exceptions.SchemaError) as e:
+            raise DeserializationError(
+                f'Failed jsonschema validation of {str(event_type)} data {data}. '
+                f'Error was {str(e)}',
+            ) from e
+
+        return NamedJson(
+            event_type=event_type,
+            data=data,
+        )
 
     @classmethod
     def deserialize_from_db(
             cls,
-            event_tuple: AccountingEventCacheEntryDBTuple,
-    ) -> 'AccountingEventCacheEntry':
-        """Turns a tuple read from the database into an appropriate AccountingEvent.
-        May raise a DeserializationError if something is wrong with the DB data
+            json_tuple: NamedJsonDBTuple,
+    ) -> 'NamedJson':
+        """Turns a tuple read from the database into an appropriate JsonSchema.
+
+        May raise:
+         - a DeserializationError if something is wrong with the DB data or json validation fails.
+
         Event_tuple index - Schema columns
         ----------------------------------
-        0 - type
-        1 - location
-        2 - aid_in_profit_currency
-        3 - paid_asset
-        4 - paid_in_asset
-        5 - taxable_amount
-        6 - taxable_bought_cost_in_profit_currency
-        7 - received_asset
-        8 - taxable_received_in_profit_currency
-        9 - received_in_asset
-        10 - net_profit_or_loss
-        11 - time
-        12 - cost_basis
-        13 - is_virtual
-        14 - link
-        15 - notes
+        0 - event_type
+        1 - data
         """
-        return cls(
-            type=EventType(event_tuple[0]),
-            location=Location.deserialize_from_db(event_tuple[1]),
-            paid_in_profit_currency=deserialize_asset_amount(event_tuple[2]),
-            paid_asset=Asset(event_tuple[3]),
-            paid_in_asset=deserialize_asset_amount(event_tuple[4]),
-            taxable_amount=deserialize_asset_amount(event_tuple[5]),
-            taxable_bought_cost_in_profit_currency=deserialize_asset_amount(event_tuple[6]),
-            received_asset=Asset(event_tuple[7]),
-            taxable_received_in_profit_currency=deserialize_asset_amount(event_tuple[8]),
-            received_in_asset=deserialize_asset_amount(event_tuple[9]),
-            net_profit_or_loss=deserialize_asset_amount(event_tuple[10]),
-            time=deserialize_timestamp(event_tuple[11]),
-            cost_basis=json.loads(event_tuple[12]),
-            is_virtual=bool(event_tuple[13]),
-            link=json.loads(event_tuple[14]),
-            notes=json.loads(event_tuple[15]),
-        )
+        event_type = SchemaEventType.deserialize_from_db(json_tuple[0])
+        try:
+            data = json.loads(json_tuple[1])
+        except json.decoder.JSONDecodeError as e:
+            raise DeserializationError(
+                f'Could not decode json for {json_tuple} at NamedJson deserialization: {str(e)}',
+            ) from e
 
-    def to_db_tuple(self) -> AccountingEventCacheEntryDBTuple:
-        return (
-            str(self.type),
-            str(self.location),
-            str(self.paid_in_profit_currency),
-            str(self.paid_asset),
-            str(self.paid_in_asset),
-            str(self.taxable_amount),
-            str(self.taxable_bought_cost_in_profit_currency),
-            str(self.received_asset),
-            str(self.taxable_received_in_profit_currency),
-            str(self.received_in_asset),
-            str(self.net_profit_or_loss),
-            int(self.time),
-            json.dumps(self.cost_basis),
-            bool(self.is_virtual),
-            json.dumps(self.link),
-            json.dumps(self.notes),
-        )
+        return cls.deserialize(event_type=event_type, data=data)
 
-    def serialize(self) -> Dict[str, Any]:
-        """Returns a dict with python primitive types compatible with the NamedJson schema"""
-        exported_paid_asset = (
-            self.paid_asset if isinstance(self.paid_asset, str) else str(self.paid_asset)
-        )
-        exported_received_asset = (
-            self.received_asset if isinstance(self.received_asset, str) else str(self.received_asset)  # noqa E501
-        )
-        result_dict = {
-            'event_type': str(self.type),
-            'location': str(self.location),
-            'paid_in_profit_currency': str(self.paid_in_profit_currency),
-            'paid_asset': exported_paid_asset,
-            'paid_in_asset': str(self.paid_in_asset),
-            'taxable_amount': str(self.taxable_amount),
-            'taxable_bought_cost_in_profit_currency': str(
-                self.taxable_bought_cost_in_profit_currency),  # noqa E501
-            'received_asset': exported_received_asset,
-            'taxable_received_in_profit_currency': str(self.taxable_received_in_profit_currency),
-            'received_in_asset': str(self.received_in_asset),
-            'net_profit_or_loss': str(self.net_profit_or_loss),
-            'time': int(self.time),
-            'cost_basis': self.cost_basis,
-            'is_virtual': self.is_virtual,
-            'link': self.link,
-            'notes': self.notes,
-        }
-        named_json: NamedJson = NamedJson(SchemaEventType.ACCOUNTING_EVENT, result_dict)
-        return named_json.data
+    def to_db_tuple(self) -> NamedJsonDBTuple:
+        """May raise:
+
+        - DeserializationError if something fails during conversion to the DB tuple
+        """
+        event_type = self.event_type.serialize_for_db()
+        try:
+            string_data = rlk_jsondumps(self.data)
+        except (OverflowError, ValueError, TypeError) as e:
+            raise DeserializationError(
+                f'Could not dump json to string for NamedJson. Error was {str(e)}',
+            ) from e
+
+        return event_type, string_data

@@ -19,6 +19,8 @@ from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.resources import (
     AaveBalancesResource,
     AaveHistoryResource,
+    AccountingReportDataResource,
+    AccountingReportsResource,
     AdexBalancesResource,
     AdexHistoryResource,
     AllAssetsResource,
@@ -116,7 +118,7 @@ from rotkehlchen.api.v1.resources import (
     YearnVaultsHistoryResource,
     YearnVaultsV2BalancesResource,
     YearnVaultsV2HistoryResource,
-    create_blueprint, AccountingReportsResource, AccountingReportDataResource,
+    create_blueprint,
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -184,7 +186,7 @@ URLS_V1: URLS = [
         'per_report_resource',
     ),
     (
-        '/reports/<int:report_id>/data/<string:event_type>',
+        '/reports/<int:report_id>/data',
         AccountingReportDataResource,
         'per_report_data_resource',
     ),

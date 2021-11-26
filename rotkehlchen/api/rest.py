@@ -29,6 +29,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
+from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType
 from rotkehlchen.api.v1.encoding import TradeSchema
@@ -52,10 +53,9 @@ from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT, EthTransa
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.db.cache_handler import FREE_REPORTS_LOOKUP_LIMIT
+from rotkehlchen.db.cache_handler import DBAccountingReports
 from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery, \
-    ReportsFilterQuery, ReportIDFilterQuery
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -3774,135 +3774,61 @@ class RestAPI():
         filepath.unlink()  # should not raise file not found as marshmallow should check
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def _purge_report_data(
-            self,
-            filter_query: ReportIDFilterQuery,
-    ) -> None:
-        self.rotkehlchen.data.db.purge_report_data(filter_query)
-
     @require_loggedin_user()
-    def purge_report_data(
-            self,
-            async_query: bool,
-            filter_query: ReportIDFilterQuery
-    ) -> Response:
-        if async_query:
-            return self._query_async(
-                command='_purge_report_data',
-                filter_query=filter_query,
-            )
-
-        self._purge_report_data(
-            filter_query=filter_query,
-        )
+    def purge_pnl_report_data(self, report_id: int) -> Response:
+        dbreports = DBAccountingReports(self.rotkehlchen.data.db)
+        try:
+            dbreports.purge_report_data(report_id=report_id)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def _get_reports(
+    @require_loggedin_user()
+    def get_pnl_reports(
             self,
-            filter_query: ReportsFilterQuery,
-    ) -> Dict[str, Any]:
-        reports: Optional[List[Dict[str, Any]]]
-        # TODO: Make an exception to raise here coming from DBTaxableEvents
-        # try:
-        reports, entries_found = self.rotkehlchen.data.db.reports_query(
-            filter_query=filter_query,
-            with_limit=self.rotkehlchen.premium is None,
-        )
-        status_code = HTTPStatus.OK
-        message = ''
-        # except _ as e:
-        #     reports = None
-        #     status_code = HTTPStatus.BAD_GATEWAY
-        #     message = str(e)
+            report_id: Optional[int],
+    ) -> Response:
+        with_limit = False
+        entries_limit = -1
+        if self.rotkehlchen.premium is None:
+            with_limit = True
+            entries_limit = FREE_REPORTS_LOOKUP_LIMIT
 
-        result = {
+        dbreports = DBAccountingReports(self.rotkehlchen.data.db)
+        reports, entries_found = dbreports.get_reports(
+            report_id=report_id,
+            with_limit=with_limit,
+        )
+
+        # success
+        result_dict = _wrap_in_ok_result({
             'entries': reports,
             'entries_found': entries_found,
-            'entries_limit': FREE_REPORTS_LOOKUP_LIMIT if self.rotkehlchen.premium is None else -1,
-        }
-
-        return {'result': result, 'message': message, 'status_code': status_code}
+            'entries_limit': entries_limit,
+        })
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
-    def get_reports(
-            self,
-            async_query: bool,
-            filter_query: ReportsFilterQuery,
-    ) -> Response:
-        if async_query:
-            return self._query_async(
-                command='_get_reports',
-                filter_query=filter_query,
-            )
-
-        response = self._get_reports(
-            filter_query=filter_query,
-        )
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=status_code)
-
-    def _get_report_data(
-            self,
-            filter_query: ReportDataFilterQuery,
-    ) -> Dict[str, Any]:
-        report_data: Optional[List[Dict[str, Any]]]
+    def get_report_data(self, filter_query: ReportDataFilterQuery) -> Response:
+        with_limit = False
+        entries_limit = -1
+        if self.rotkehlchen.premium is None:
+            with_limit = True
+            entries_limit = FREE_PNL_EVENTS_LIMIT
+        dbreports = DBAccountingReports(self.rotkehlchen.data.db)
         try:
-            report_data, entries_found = self.rotkehlchen.data.db.report_data_query(
-                filter_query=filter_query,
-                with_limit=self.rotkehlchen.premium is None,
+            report_data, entries_found = dbreports.get_report_data(
+                filter_=filter_query,
+                with_limit=with_limit,
             )
-            status_code = HTTPStatus.OK
-            message = ''
-        except sqlcipher.IntegrityError as e:
-            report_data = None
-            entries_found = -1
-            status_code = HTTPStatus.BAD_GATEWAY
-            message = str(e)
-
-        if report_data is not None:
-            entries_result = report_data
-        else:
-            entries_result = []
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
         result = {
-            'entries': entries_result,
+            'entries': report_data,
             'entries_found': entries_found,
-            'entries_limit': FREE_REPORTS_LOOKUP_LIMIT if self.rotkehlchen.premium is None else -1,
+            'entries_limit': entries_limit,
         }
-
-        return {'result': result, 'message': message, 'status_code': status_code}
-
-    @require_loggedin_user()
-    def get_report_data(
-            self,
-            async_query: bool,
-            filter_query: ReportDataFilterQuery,
-    ) -> Response:
-        if async_query:
-            return self._query_async(
-                command='_get_report_data',
-                filter_query=filter_query,
-            )
-
-        response = self._get_report_data(
-            filter_query=filter_query,
-        )
-        result = response['result']
-        msg = response['message']
-        status_code = _get_status_code_from_async_response(response)
-
-        if result is None:
-            return api_response(wrap_in_fail_result(msg), status_code=status_code)
-
-        # success
-        result_dict = _wrap_in_result(result, msg)
-        return api_response(process_result(result_dict), status_code=status_code)
+        result_dict = _wrap_in_result(result, '')
+        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)

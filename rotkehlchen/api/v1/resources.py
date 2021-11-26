@@ -15,6 +15,8 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
+    AccountingReportDataSchema,
+    AccountingReportsSchema,
     AllBalancesQuerySchema,
     AssetIconUploadSchema,
     AssetResetRequestSchema,
@@ -97,16 +99,14 @@ from rotkehlchen.api.v1.encoding import (
     WatchersDeleteSchema,
     WatchersEditSchema,
     XpubAddSchema,
-    XpubPatchSchema, AccountingReportDataSchema, AccountingReportsSchema,
-    AccountingReportsDeleteSchema,
+    XpubPatchSchema,
 )
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery, \
-    ReportsFilterQuery, ReportIDFilterQuery
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.typing import (
@@ -958,46 +958,26 @@ class HistoryProcessingResource(BaseResource):
 
 
 class AccountingReportsResource(BaseResource):
-    get_schema = AccountingReportsSchema()
-    delete_schema = AccountingReportsDeleteSchema()
 
-    @ignore_kwarg_parser.use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(
-            self,
-            async_query: bool,
-            filter_query: ReportsFilterQuery,
-    ) -> Response:
-        return self.rest_api.get_reports(
-            async_query=async_query,
-            filter_query=filter_query,
-        )
+    get_schema = AccountingReportsSchema(required_report_id=False)
+    delete_schema = AccountingReportsSchema(required_report_id=True)
 
-    @ignore_kwarg_parser.use_kwargs(delete_schema, location='json_and_query_and_view_args')
-    def delete(
-            self,
-            async_query: bool,
-            filter_query: ReportIDFilterQuery,
-    ) -> Response:
-        return self.rest_api.purge_report_data(
-            async_query=async_query,
-            filter_query=filter_query,
-        )
+    @use_kwargs(get_schema, location='view_args')
+    def get(self, report_id: Optional[int]) -> Response:
+        return self.rest_api.get_pnl_reports(report_id=report_id)
+
+    @use_kwargs(delete_schema, location='view_args')
+    def delete(self, report_id: int) -> Response:
+        return self.rest_api.purge_pnl_report_data(report_id=report_id)
 
 
 class AccountingReportDataResource(BaseResource):
 
-    get_schema = AccountingReportDataSchema()
+    post_schema = AccountingReportDataSchema()
 
-    @ignore_kwarg_parser.use_kwargs(get_schema, location='json_and_query_and_view_args')
-    def get(
-            self,
-            async_query: bool,
-            filter_query: ReportDataFilterQuery,
-    ) -> Response:
-        return self.rest_api.get_report_data(
-            async_query=async_query,
-            filter_query=filter_query,
-        )
+    @ignore_kwarg_parser.use_kwargs(post_schema, location='json_and_query_and_view_args')
+    def post(self, filter_query: ReportDataFilterQuery) -> Response:
+        return self.rest_api.get_report_data(filter_query=filter_query)
 
 
 class HistoryExportingResource(BaseResource):

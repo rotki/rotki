@@ -1,4 +1,3 @@
-
 import json
 import logging
 import os
@@ -55,9 +54,7 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
-from rotkehlchen.db.cache_handler import DBAccountingReportData, DBAccountingReports
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
-from rotkehlchen.db.filtering import ReportDataFilterQuery, ReportsFilterQuery, ReportIDFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
@@ -119,7 +116,6 @@ from rotkehlchen.typing import (
     ListOfBlockchainAddresses,
     Location,
     ModuleName,
-    NamedJson,
     SupportedBlockchain,
     Timestamp,
 )
@@ -3443,34 +3439,3 @@ class DBHandler:
             new_db_path,
         )
         return new_db_path
-
-    def reports_query(
-            self,
-            filter_query: ReportsFilterQuery,
-            with_limit: bool = False,
-    ) -> Tuple[List[Dict[str, Any]], int]:
-        report_manager = DBAccountingReports(self, msg_aggregator=self.msg_aggregator)
-        return report_manager.query(filter_query, with_limit)
-
-    def report_data_query(
-            self,
-            filter_query: ReportDataFilterQuery,
-            with_limit: bool = False,
-    ) -> Tuple[List[Dict[str, Any]], int]:
-        report_data_manager = DBAccountingReportData(self, msg_aggregator=self.msg_aggregator)
-        return report_data_manager.query(filter_query, with_limit)
-
-    def add_report(self, start_ts: Timestamp, end_ts: Timestamp) -> int:
-        report_manager = DBAccountingReports(self, msg_aggregator=self.msg_aggregator)
-        return report_manager.add_report(start_ts, end_ts)
-
-    def add_report_data(self, report_id: int, time: Timestamp, event: NamedJson) -> None:
-        report_data_manager = DBAccountingReportData(self, msg_aggregator=self.msg_aggregator)
-        return report_data_manager.add_report_data(report_id, time, event)
-
-    def purge_report_data(
-            self,
-            filter_query: ReportIDFilterQuery,
-    ) -> None:
-        report_manager = DBAccountingReports(self, msg_aggregator=self.msg_aggregator)
-        return report_manager.purge_report_data(filter_query)
