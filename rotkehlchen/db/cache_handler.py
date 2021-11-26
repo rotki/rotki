@@ -55,7 +55,7 @@ class DBAccountingReports():
         INSERT INTO pnl_reports(
             timestamp, start_ts, end_ts, first_processed_timestamp
         )
-        VALUES (?, ?, ?, ?, ?)"""
+        VALUES (?, ?, ?, ?)"""
         cursor.execute(
             query,
             (timestamp, start_ts, end_ts, first_processed_timestamp),
@@ -166,7 +166,6 @@ class DBAccountingReports():
             })
 
         if report_id is not None:
-            query = 'SELECT COUNT(*) FROM pnl_reports'
             results = cursor.execute('SELECT COUNT(*) FROM pnl_reports').fetchone()
             total_filter_count = results[0]
         else:
