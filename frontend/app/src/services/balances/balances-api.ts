@@ -276,4 +276,18 @@ export class BalancesApi {
     const result = handleResponse(response);
     return Eth2Validators.parse(result);
   }
+
+  async deleteEth2Validators(validators: Eth2Validators): Promise<boolean> {
+    const response = await this.axios.delete<ActionResult<boolean>>(
+      '/blockchains/ETH2/validators',
+      {
+        data: axiosSnakeCaseTransformer({
+          validators
+        }),
+        transformResponse: basicAxiosTransformer,
+        validateStatus: validWithSessionStatus
+      }
+    );
+    return handleResponse(response);
+  }
 }

@@ -160,10 +160,18 @@ export default class AccountBalances extends Vue {
       const blockchain = this.blockchain;
       this.confirmDelete = false;
 
-      await this.$store.dispatch('balances/removeAccount', {
-        accounts: this.selectedAddresses,
-        blockchain
-      });
+      if (blockchain === Blockchain.ETH2) {
+        await this.$store.dispatch(
+          'balances/deleteEth2Validators',
+          this.selectedAddresses
+        );
+      } else {
+        await this.$store.dispatch('balances/removeAccount', {
+          accounts: this.selectedAddresses,
+          blockchain
+        });
+      }
+
       this.selectedAddresses = [];
     } else if (this.xpubToDelete) {
       const payload = { ...this.xpubToDelete };

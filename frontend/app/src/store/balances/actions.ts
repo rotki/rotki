@@ -1411,11 +1411,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       });
       commit('tasks/add', task, { root: true });
       const { result } = await taskCompletion<Boolean, TaskMeta>(taskType);
-      await dispatch('fetchBlockchainBalances', {
-        blockchain: Blockchain.ETH2
-      });
-      const validators = await api.balances.getEth2Validators();
-      commit('eth2Validators', validators);
+      if (result) {
+        await dispatch('fetchBlockchainBalances', {
+          blockchain: Blockchain.ETH2
+        });
+      }
+
       return result;
     } catch (e: any) {
       logger.error(e);
@@ -1427,6 +1428,39 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           })
           .toString(),
         title: i18n.t('actions.add_eth2_validator.error.title').toString(),
+        success: false
+      };
+      await dispatch('setMessage', message, { root: true });
+      return false;
+    }
+  },
+  async deleteEth2Validators({ dispatch, state, commit }, validators: string) {
+    try {
+      const eth2Validators = state.eth2Validators.filter(({ publicKey }) =>
+        validators.includes(publicKey)
+      );
+      const success = await api.balances.deleteEth2Validators(eth2Validators);
+      if (success) {
+        const remainingValidators = [...state.eth2Validators].filter(
+          ({ publicKey }) => !validators.includes(publicKey)
+        );
+        commit('eth2Validators', remainingValidators);
+        const balances = { ...state.eth2 };
+        for (const validator of validators) {
+          delete balances[validator];
+        }
+        commit('updateEth2', balances);
+      }
+      return success;
+    } catch (e: any) {
+      logger.error(e);
+      const message: Message = {
+        description: i18n
+          .t('actions.delete_eth2_validator.error.description', {
+            message: e.message
+          })
+          .toString(),
+        title: i18n.t('actions.delete_eth2_validator.error.title').toString(),
         success: false
       };
       await dispatch('setMessage', message, { root: true });

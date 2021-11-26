@@ -6,7 +6,7 @@ export type Eth2Validator = {
 };
 
 const Validator = z.object({
-  index: z.number(),
+  validatorIndex: z.number(),
   publicKey: z.string()
 });
 

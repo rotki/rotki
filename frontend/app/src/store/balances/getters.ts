@@ -137,7 +137,7 @@ export const getters: Getters<
         address: publicKey,
         chain: Blockchain.ETH2,
         balance,
-        label: validator?.index.toString() ?? '',
+        label: validator?.validatorIndex.toString() ?? '',
         tags: []
       });
     }

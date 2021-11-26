@@ -1836,6 +1836,12 @@
         }
       }
     },
+    "delete_eth2_validator": {
+      "error": {
+        "description": "Deleting the Eth2 validators failed: {message}",
+        "title": "Deleting Eth2 validators"
+      }
+    },
     "history": {
       "fetch_ignored": {
         "error": {
