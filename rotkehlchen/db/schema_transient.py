@@ -4,7 +4,6 @@
 DB_CREATE_PNL_REPORT = """
 CREATE TABLE IF NOT EXISTS pnl_reports (
     identifier INTEGER NOT NULL PRIMARY KEY,
-    name TEXT,
     timestamp INTEGER,
     start_ts INTEGER,
     end_ts INTEGER,

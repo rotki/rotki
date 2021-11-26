@@ -53,17 +53,12 @@ class DBAccountingReports():
         timestamp = ts_now()
         query = """
         INSERT INTO pnl_reports(
-            name, timestamp, start_ts, end_ts, first_processed_timestamp
+            timestamp, start_ts, end_ts, first_processed_timestamp
         )
         VALUES (?, ?, ?, ?, ?)"""
         cursor.execute(
             query,
-            (f'Report from {start_ts} to {end_ts}',
-             timestamp,
-             start_ts,
-             end_ts,
-             first_processed_timestamp,
-             ),
+            (timestamp, start_ts, end_ts, first_processed_timestamp),
         )
         identifier = cursor.lastrowid
         self.db.conn_transient.commit()
@@ -152,23 +147,22 @@ class DBAccountingReports():
             size_result = self._get_report_size(this_report_id)
             reports.append({
                 'identifier': this_report_id,
-                'name': report[1],
-                'timestamp': report[2],
-                'start_ts': report[3],
-                'end_ts': report[4],
-                'first_processed_timestamp': report[5],
+                'timestamp': report[1],
+                'start_ts': report[2],
+                'end_ts': report[3],
+                'first_processed_timestamp': report[4],
                 'size_on_disk': size_result,
-                'ledger_actions_profit_loss': report[6],
-                'defi_profit_loss': report[7],
-                'loan_profit': report[8],
-                'margin_positions_profit_loss': report[9],
-                'settlement_losses': report[10],
-                'ethereum_transaction_gas_costs': report[11],
-                'asset_movement_fees': report[12],
-                'general_trade_profit_loss': report[13],
-                'taxable_trade_profit_loss': report[14],
-                'total_taxable_profit_loss': report[15],
-                'total_profit_loss': report[16],
+                'ledger_actions_profit_loss': report[5],
+                'defi_profit_loss': report[6],
+                'loan_profit': report[7],
+                'margin_positions_profit_loss': report[8],
+                'settlement_losses': report[9],
+                'ethereum_transaction_gas_costs': report[10],
+                'asset_movement_fees': report[11],
+                'general_trade_profit_loss': report[12],
+                'taxable_trade_profit_loss': report[13],
+                'total_taxable_profit_loss': report[14],
+                'total_profit_loss': report[15],
             })
 
         if report_id is not None:
