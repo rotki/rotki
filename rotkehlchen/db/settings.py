@@ -16,6 +16,7 @@ from rotkehlchen.typing import AVAILABLE_MODULES_MAP, ModuleName, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 ROTKEHLCHEN_DB_VERSION = 30
+LAST_DATA_MIGRATION = 1
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
 DEFAULT_INCLUDE_GAS_COSTS = True
@@ -43,7 +44,7 @@ DEFAULT_TAXABLE_LEDGER_ACTIONS = [
 DEFAULT_PNL_CSV_WITH_FORMULAS = True
 DEFAULT_PNL_CSV_HAVE_SUMMARY = False
 DEFAULT_SSF_0GRAPH_MULTIPLIER = 0
-DEFAULT_LAST_APP_UPGRADE = 0
+DEFAULT_LAST_DATA_MIGRATION = 0
 
 JSON_KEYS = ('current_price_oracles', 'historical_price_oracles', 'taxable_ledger_actions')
 BOOLEAN_KEYS = (
@@ -64,7 +65,7 @@ INTEGER_KEYS = (
     'balance_save_frequency',
     'btc_derivation_gap_limit',
     'ssf_0graph_multiplier',
-    'last_app_upgrade',
+    'last_data_migration',
 )
 STRING_KEYS = (
     'eth_rpc_endpoint',
@@ -106,7 +107,7 @@ class DBSettings(NamedTuple):
     pnl_csv_with_formulas: bool = DEFAULT_PNL_CSV_WITH_FORMULAS
     pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
     ssf_0graph_multiplier: int = DEFAULT_SSF_0GRAPH_MULTIPLIER
-    last_app_upgrade: int = DEFAULT_LAST_APP_UPGRADE
+    last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
 
 
 class ModifiableDBSettings(NamedTuple):

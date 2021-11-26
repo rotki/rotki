@@ -6,7 +6,7 @@ import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.args import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_MAX_LOG_SIZE_IN_MB
-from rotkehlchen.db.settings import DBSettings
+from rotkehlchen.db.settings import DBSettings, LAST_DATA_MIGRATION
 from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
@@ -19,6 +19,7 @@ from rotkehlchen.tests.utils.database import (
     add_tags_to_test_db,
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
+    _use_prepared_db,
 )
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
@@ -63,6 +64,11 @@ def fixture_rotki_premium_credentials() -> PremiumCredentials:
         given_api_key=base64.b64encode(make_random_b64bytes(128)).decode(),
         given_api_secret=base64.b64encode(make_random_b64bytes(128)).decode(),
     )
+
+
+@pytest.fixture(name='data_migration_version', scope='session')
+def fixture_data_migration_version() -> int:
+    return LAST_DATA_MIGRATION
 
 
 @pytest.fixture(name='cli_args')
@@ -114,6 +120,9 @@ def initialize_mock_rotkehlchen_instance(
         aave_use_graph,
         max_tasks_num,
         legacy_messages_via_websockets,
+        data_migration_version,
+        use_custom_database,
+        user_data_dir,
 ):
     if not start_with_logged_in_user:
         return
@@ -147,11 +156,17 @@ def initialize_mock_rotkehlchen_instance(
     # does not run during tests
     size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
     sleep_patch = patch('rotkehlchen.rotkehlchen.ICONS_QUERY_SLEEP', new=999999)
+
+    create_new = True
+    if use_custom_database is not None:
+        _use_prepared_db(user_data_dir, use_custom_database)
+        create_new = False
+
     with settings_patch, eth_rpcconnect_patch, ksm_rpcconnect_patch, ksm_connect_on_startup_patch, size_patch, sleep_patch:  # noqa: E501
         rotki.unlock_user(
             user=username,
             password=db_password,
-            create_new=True,
+            create_new=create_new,
             sync_approval='no',
             premium_credentials=None,
         )
@@ -174,7 +189,7 @@ def initialize_mock_rotkehlchen_instance(
     # After unlocking when all objects are created we need to also include
     # customized fixtures that may have been set by the tests
     rotki.chain_manager.accounts = blockchain_accounts
-    add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets)
+    add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets, data_migration_version)
     maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
     maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
     add_blockchain_accounts_to_db(rotki.data.db, blockchain_accounts)
@@ -244,6 +259,9 @@ def fixture_rotkehlchen_api_server(
         aave_use_graph,
         max_tasks_num,
         legacy_messages_via_websockets,
+        data_migration_version,
+        use_custom_database,
+        user_data_dir,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -278,6 +296,9 @@ def fixture_rotkehlchen_api_server(
         aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
         legacy_messages_via_websockets=legacy_messages_via_websockets,
+        data_migration_version=data_migration_version,
+        use_custom_database=use_custom_database,
+        user_data_dir=user_data_dir,
     )
     yield api_server
     api_server.stop()
@@ -309,6 +330,9 @@ def rotkehlchen_instance(
         aave_use_graph,
         max_tasks_num,
         legacy_messages_via_websockets,
+        data_migration_version,
+        use_custom_database,
+        user_data_dir,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -337,6 +361,9 @@ def rotkehlchen_instance(
         aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
         legacy_messages_via_websockets=legacy_messages_via_websockets,
+        data_migration_version=data_migration_version,
+        use_custom_database=use_custom_database,
+        user_data_dir=user_data_dir,
     )
     return uninitialized_rotkehlchen
 

@@ -863,12 +863,12 @@ def check_saved_events_for_exchange(
         exchange_location: Location,
         db: DBHandler,
         should_exist: bool,
-        query_range_key: str = '{exchange}_{type}_{exchange}',
+        queryrange_formatstr: str = '{exchange}_{type}_{exchange}',
 ) -> None:
     trades = db.get_trades(location=exchange_location)
-    trades_range = db.get_used_query_range(query_range_key.format(exchange=exchange_location, type='trades'))  # noqa: E501
-    margins_range = db.get_used_query_range(query_range_key.format(exchange=exchange_location, type='margins'))  # noqa: E501
-    movements_range = db.get_used_query_range(query_range_key.format(exchange=exchange_location, type='asset_movements'))  # noqa: E501
+    trades_range = db.get_used_query_range(queryrange_formatstr.format(exchange=exchange_location, type='trades'))  # noqa: E501
+    margins_range = db.get_used_query_range(queryrange_formatstr.format(exchange=exchange_location, type='margins'))  # noqa: E501
+    movements_range = db.get_used_query_range(queryrange_formatstr.format(exchange=exchange_location, type='asset_movements'))  # noqa: E501
     if should_exist:
         assert trades_range is not None
         assert margins_range is not None

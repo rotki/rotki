@@ -3,7 +3,7 @@ Changelog
 =========
 
 * :bug:`3744` Freshly created users who don't open the app again before an upgrade will now be able to update to new DB versions again.
-* :bug:`3749` Users using multiple instances of the same exchange should see now correctly all their trades.
+* :bug:`3749` Users using multiple instances of the same exchange should now correctly see all their trades.
 
 * :release:`1.22.1 <2021-11-19>`
 * :bug:`3726` Manual liabilities should not count as assets and should be deducted from total net value when taking a snapshot. Also multiple liabilities of same asset should now be properly summed.
