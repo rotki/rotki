@@ -21,9 +21,10 @@ import {
   handleResponse,
   validStatus,
   validWithParamsSessionAndExternalService,
-  validWithSessionAndExternalService
+  validWithSessionAndExternalService,
+  validWithSessionStatus
 } from '@/services/utils';
-import { Eth2Validator } from '@/types/balances';
+import { Eth2Validator, Eth2Validators } from '@/types/balances';
 import { SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 import { PriceOracle } from '@/types/user';
@@ -262,5 +263,17 @@ export class BalancesApi {
     );
 
     return handleResponse(response);
+  }
+
+  async getEth2Validators(): Promise<Eth2Validators> {
+    const response = await this.axios.get<ActionResult<Eth2Validators>>(
+      '/blockchains/ETH2/validators',
+      {
+        transformResponse: basicAxiosTransformer,
+        validateStatus: validWithSessionStatus
+      }
+    );
+    const result = handleResponse(response);
+    return Eth2Validators.parse(result);
   }
 }

@@ -17,7 +17,7 @@ export const explorerUrls: AssetExplorerUrls = {
     transaction: 'https://etherscan.io/tx/'
   },
   ETH2: {
-    address: '',
+    address: 'https://beaconcha.in/validator/',
     transaction: ''
   },
   BTC: {

@@ -17,6 +17,7 @@ import {
   EditExchange,
   NonFungibleBalances
 } from '@/store/balances/types';
+import { Eth2Validators } from '@/types/balances';
 import { Exchange, ExchangeData, ExchangeInfo } from '@/types/exchanges';
 import { ExchangeRates } from '@/types/user';
 
@@ -112,6 +113,9 @@ export const mutations: MutationTree<BalanceState> = {
   },
   avaxAccounts(state: BalanceState, accounts: GeneralAccountData[]) {
     state.avaxAccounts = accounts;
+  },
+  eth2Validators(state: BalanceState, eth2Validators: Eth2Validators) {
+    state.eth2Validators = eth2Validators;
   },
   supportedAssets(state: BalanceState, supportedAssets: SupportedAsset[]) {
     state.supportedAssets = supportedAssets;

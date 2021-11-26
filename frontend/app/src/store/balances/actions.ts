@@ -702,20 +702,28 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async accounts({ commit }) {
     try {
-      const [ethAccounts, btcAccounts, ksmAccounts, dotAccounts, avaxAccounts] =
-        await Promise.all([
-          api.accounts(Blockchain.ETH),
-          api.btcAccounts(),
-          api.accounts(Blockchain.KSM),
-          api.accounts(Blockchain.DOT),
-          api.accounts(Blockchain.AVAX)
-        ]);
+      const [
+        ethAccounts,
+        btcAccounts,
+        ksmAccounts,
+        dotAccounts,
+        avaxAccounts,
+        eth2Validators
+      ] = await Promise.all([
+        api.accounts(Blockchain.ETH),
+        api.btcAccounts(),
+        api.accounts(Blockchain.KSM),
+        api.accounts(Blockchain.DOT),
+        api.accounts(Blockchain.AVAX),
+        api.balances.getEth2Validators()
+      ]);
 
       commit('ethAccounts', ethAccounts);
       commit('btcAccounts', btcAccounts);
       commit('ksmAccounts', ksmAccounts);
       commit('dotAccounts', dotAccounts);
       commit('avaxAccounts', avaxAccounts);
+      commit('eth2Validators', eth2Validators);
     } catch (e: any) {
       notify(
         `Failed to accounts: ${e}`,
@@ -1406,6 +1414,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       await dispatch('fetchBlockchainBalances', {
         blockchain: Blockchain.ETH2
       });
+      const validators = await api.balances.getEth2Validators();
+      commit('eth2Validators', validators);
       return result;
     } catch (e: any) {
       logger.error(e);

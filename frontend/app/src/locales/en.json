@@ -3124,6 +3124,7 @@
   "blockchains": {
     "eth": "Ethereum",
     "btc": "Bitcoin",
+    "eth2": "Eth2",
     "ksm": "Kusama",
     "avax": "Avalanche",
     "dot": "Polkadot"

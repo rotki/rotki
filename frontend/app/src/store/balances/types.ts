@@ -12,6 +12,7 @@ import {
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { Section } from '@/store/const';
 import { Nullable } from '@/types';
+import { Eth2Validators } from '@/types/balances';
 import {
   Exchange,
   ExchangeData,
@@ -40,6 +41,7 @@ export interface AccountAssetBalances {
 }
 
 export interface BalanceState {
+  eth2Validators: Eth2Validators;
   loopringBalances: AccountAssetBalances;
   eth: BlockchainAssetBalances;
   eth2: BlockchainAssetBalances;

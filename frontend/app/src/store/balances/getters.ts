@@ -117,7 +117,10 @@ export const getters: Getters<
   }: BalanceState): BlockchainAccountWithBalance[] {
     return balances(ethAccounts, eth, Blockchain.ETH);
   },
-  eth2Balances({ eth2 }: BalanceState): BlockchainAccountWithBalance[] {
+  eth2Balances({
+    eth2,
+    eth2Validators
+  }: BalanceState): BlockchainAccountWithBalance[] {
     const balances: BlockchainAccountWithBalance[] = [];
     for (const publicKey in eth2) {
       const { assets } = eth2[publicKey];
@@ -127,11 +130,14 @@ export const getters: Getters<
             usdValue: assetSum(assets)
           }
         : { amount: Zero, usdValue: Zero };
+      const validator = eth2Validators.find(
+        validator => validator.publicKey === publicKey
+      );
       balances.push({
         address: publicKey,
         chain: Blockchain.ETH2,
         balance,
-        label: '',
+        label: validator?.index.toString() ?? '',
         tags: []
       });
     }
@@ -429,7 +435,7 @@ export const getters: Getters<
     const polkadotBalances: BlockchainAccountWithBalance[] =
       getters.polkadotBalances;
     const avaxAccounts: BlockchainAccountWithBalance[] = getters.avaxAccounts;
-
+    const eth2Balances: BlockchainAccountWithBalance[] = getters.eth2Balances;
     const loopring: AccountAssetBalances = state.loopringBalances;
 
     if (ethAccounts.length > 0) {
@@ -507,6 +513,16 @@ export const getters: Getters<
         l2: [],
         usdValue: sum(polkadotBalances),
         loading: dotStatus === Status.NONE || dotStatus === Status.LOADING
+      });
+    }
+
+    if (eth2Balances.length > 0) {
+      const eth2Status = status(Section.BLOCKCHAIN_ETH2);
+      totals.push({
+        chain: Blockchain.ETH2,
+        l2: [],
+        usdValue: sum(eth2Balances),
+        loading: eth2Status === Status.NONE || eth2Status === Status.LOADING
       });
     }
 
