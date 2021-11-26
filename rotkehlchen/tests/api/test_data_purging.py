@@ -1,65 +1,16 @@
 import pytest
 import requests
 
-from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_simple_ok_response
-from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import (
-    AssetAmount,
-    EthereumTransaction,
-    Fee,
-    Location,
-    Price,
-    Timestamp,
-    TradeType,
+from rotkehlchen.tests.utils.exchanges import (
+    mock_exchange_data_in_db,
+    check_saved_events_for_exchange,
 )
-
-
-def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
-    db = rotki.data.db
-    for exchange_location in exchange_locations:
-        db.add_trades([Trade(
-            timestamp=Timestamp(1),
-            location=exchange_location,
-            base_asset=A_BTC,
-            quote_asset=A_ETH,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(1)),
-            rate=Price(FVal(1)),
-            fee=Fee(FVal('0.1')),
-            fee_currency=A_ETH,
-            link='foo',
-            notes='boo',
-        )])
-        db.update_used_query_range(name=f'{str(exchange_location)}_trades', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(name=f'{str(exchange_location)}_margins', start_ts=0, end_ts=9999)  # noqa: E501
-        db.update_used_query_range(name=f'{str(exchange_location)}_asset_movements', start_ts=0, end_ts=9999)  # noqa: E501
-
-
-def check_saved_events_for_exchange(
-        exchange_location: Location,
-        db: DBHandler,
-        should_exist: bool,
-) -> None:
-    trades = db.get_trades(location=exchange_location)
-    trades_range = db.get_used_query_range(f'{str(exchange_location)}_trades')
-    margins_range = db.get_used_query_range(f'{str(exchange_location)}_margins')
-    movements_range = db.get_used_query_range(f'{str(exchange_location)}_asset_movements')
-    if should_exist:
-        assert trades_range is not None
-        assert margins_range is not None
-        assert movements_range is not None
-        assert len(trades) != 0
-    else:
-        assert trades_range is None
-        assert margins_range is None
-        assert movements_range is None
-        assert len(trades) == 0
+from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.typing import EthereumTransaction, Location
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])

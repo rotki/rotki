@@ -254,8 +254,9 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             return trades
 
         ranges = DBQueryRanges(self.db)
+        location_string = f'{str(self.location)}_trades_{self.name}'
         ranges_to_query = ranges.get_location_query_ranges(
-            location_string=f'{str(self.location)}_trades',
+            location_string=location_string,
             start_ts=start_ts,
             end_ts=end_ts,
         )
@@ -278,7 +279,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
 
             # and also set the used queried timestamp range for the exchange
             ranges.update_used_query_range(
-                location_string=f'{str(self.location)}_trades',
+                location_string=location_string,
                 start_ts=queried_range[0],
                 end_ts=queried_range[1],
                 ranges_to_query=[queried_range],
@@ -302,8 +303,9 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             location=self.location,
         )
         ranges = DBQueryRanges(self.db)
+        location_string = f'{str(self.location)}_margins_{self.name}'
         ranges_to_query = ranges.get_location_query_ranges(
-            location_string=f'{str(self.location)}_margins',
+            location_string=location_string,
             start_ts=start_ts,
             end_ts=end_ts,
         )
@@ -323,7 +325,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self.db.add_margin_positions(new_positions)
         # and also set the last queried timestamp for the exchange
         ranges.update_used_query_range(
-            location_string=f'{str(self.location)}_margins',
+            location_string=location_string,
             start_ts=start_ts,
             end_ts=end_ts,
             ranges_to_query=ranges_to_query,
@@ -355,8 +357,9 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             return asset_movements
 
         ranges = DBQueryRanges(self.db)
+        location_string = f'{str(self.location)}_asset_movements_{self.name}'
         ranges_to_query = ranges.get_location_query_ranges(
-            location_string=f'{str(self.location)}_asset_movements',
+            location_string=location_string,
             start_ts=start_ts,
             end_ts=end_ts,
         )
@@ -374,7 +377,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         if new_movements != []:
             self.db.add_asset_movements(new_movements)
         ranges.update_used_query_range(
-            location_string=f'{str(self.location)}_asset_movements',
+            location_string=location_string,
             start_ts=start_ts,
             end_ts=end_ts,
             ranges_to_query=ranges_to_query,
@@ -405,8 +408,9 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             return ledger_actions
 
         ranges = DBQueryRanges(self.db)
+        location_string = f'{str(self.location)}_ledger_actions_{self.name}'
         ranges_to_query = ranges.get_location_query_ranges(
-            location_string=f'{str(self.location)}_ledger_actions',
+            location_string=location_string,
             start_ts=start_ts,
             end_ts=end_ts,
         )
@@ -420,7 +424,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         if new_ledger_actions != []:
             db.add_ledger_actions(new_ledger_actions)
         ranges.update_used_query_range(
-            location_string=f'{str(self.location)}_ledger_actions',
+            location_string=location_string,
             start_ts=start_ts,
             end_ts=end_ts,
             ranges_to_query=ranges_to_query,

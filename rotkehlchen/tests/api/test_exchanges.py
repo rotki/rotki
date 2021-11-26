@@ -736,7 +736,7 @@ def test_query_asset_movements_over_limit(
     rotki = server.rest_api.rotkehlchen
     # Make sure online kraken is not queried by setting query ranges
     rotki.data.db.update_used_query_range(
-        name='kraken_asset_movements',
+        name='kraken_asset_movements_mockkraken',
         start_ts=start_ts,
         end_ts=end_ts,
     )

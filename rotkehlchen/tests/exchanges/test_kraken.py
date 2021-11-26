@@ -155,7 +155,7 @@ def test_querying_rate_limit_exhaustion(function_scope_kraken, database):
         trades = kraken.query_trade_history(start_ts=0, end_ts=1638529919, only_cache=False)
 
     assert len(trades) == 1
-    from_ts, to_ts = database.get_used_query_range('kraken_trades')
+    from_ts, to_ts = database.get_used_query_range('kraken_trades_mockkraken')
     assert from_ts == 0
     assert to_ts == 1629490727, 'should have saved only until the last trades timestamp'
 
