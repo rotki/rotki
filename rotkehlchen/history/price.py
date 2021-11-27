@@ -192,14 +192,7 @@ class PriceHistorian():
                     to_asset=to_asset,
                     timestamp=timestamp,
                 )
-            except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError) as e:
-                log.warning(
-                    f'Historical price oracle {oracle} failed to request '
-                    f'due to: {str(e)}.',
-                    from_asset=from_asset,
-                    to_asset=to_asset,
-                    timestamp=timestamp,
-                )
+            except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
                 continue
             if price != Price(ZERO):
                 log.debug(
