@@ -19,12 +19,14 @@
             v-if="anyLoading"
             class="overall-balances__net-worth__loading text-start ms-2"
           />
-          <amount-display
-            class="ps-4"
-            show-currency="symbol"
-            :fiat-currency="currencySymbol"
-            :value="totalNetWorth"
-          />
+          <div :style="`font-size: ${adjustedTotalNetWorthFontSize}em`">
+            <amount-display
+              class="ps-4"
+              show-currency="symbol"
+              :fiat-currency="currencySymbol"
+              :value="totalNetWorth"
+            />
+          </div>
         </div>
         <div class="overall-balances__net-worth-change py-2">
           <span
@@ -115,7 +117,7 @@ import { bigNumberify } from '@/utils/bignumbers';
 @Component({
   components: { TimeframeSelector, Loading, AmountDisplay, NetWorthChart },
   computed: {
-    ...mapGetters('session', ['currencySymbol']),
+    ...mapGetters('session', ['currencySymbol', 'floatingPrecision']),
     ...mapGetters('statistics', ['netValue', 'totalNetWorth']),
     ...mapState('session', ['timeframe'])
   },
@@ -133,6 +135,7 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   timeframe!: TimeFramePeriod;
   setTimeframe!: (timeframe: TimeFramePeriod) => void;
   updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
+  floatingPrecision!: number;
 
   get activeTimeframe(): TimeFramePeriod {
     return this.timeframe;
@@ -184,6 +187,17 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
       }
     }
     return bigNumberify(start);
+  }
+
+  get adjustedTotalNetWorthFontSize(): number {
+    const digits = this.totalNetWorth
+      .toFormat(this.floatingPrecision)
+      .replace(/\./g, '')
+      .replace(/,/g, '').length;
+
+    // this number adjusted visually
+    // when we use max floating precision (8), it won't overlap
+    return Math.min(1, 12 / digits);
   }
 
   get balanceDelta(): BigNumber {
