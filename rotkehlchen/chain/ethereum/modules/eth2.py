@@ -93,17 +93,22 @@ class Eth2(EthereumModule):
         saved_deposits_pubkeys = {x.pubkey for x in saved_deposits}
 
         new_validators = []
-        new_pubkeys = []
+        pubkeys_query_deposits = []
         for validator in relevant_validators:
             if validator.public_key not in saved_deposits_pubkeys and validator.index is not None:
                 new_validators.append(Eth2Validator(
                     index=validator.index,
                     public_key=validator.public_key,
                 ))
-                new_pubkeys.append(validator.public_key)
+                pubkeys_query_deposits.append(validator.public_key)
 
         dbeth2.add_validators(new_validators)
-        new_deposits = self.beaconchain.get_validator_deposits(new_pubkeys)
+        saved_validators = dbeth2.get_validators()
+        for saved_validator in saved_validators:
+            if saved_validator.public_key not in saved_deposits_pubkeys:
+                pubkeys_query_deposits.append(saved_validator.public_key)
+
+        new_deposits = self.beaconchain.get_validator_deposits(pubkeys_query_deposits)
         dbeth2.add_eth2_deposits(new_deposits)
         result_deposits = saved_deposits + new_deposits
         result_deposits.sort(key=lambda deposit: (deposit.timestamp, deposit.tx_index))

@@ -28,7 +28,9 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
     amount TEXT NOT NULL,
     usd_value TEXT NOT NULL,
     FOREIGN KEY(pubkey) REFERENCES eth2_validators(public_key) ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY (tx_hash, tx_index));""")
+    PRIMARY KEY(tx_hash, pubkey, amount) /* multiple deposits can exist for same pubkey */
+);
+    );""")
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
     validator_index INTEGER NOT NULL,
