@@ -7,12 +7,12 @@ import gevent
 import pytest
 import requests
 
-from rotkehlchen.errors import RemoteError
 from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
@@ -24,6 +24,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
     wait_for_async_task_with_result,
 )
+from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
 from rotkehlchen.tests.utils.blockchain import (
     assert_btc_balances_result,
@@ -40,10 +41,6 @@ from rotkehlchen.tests.utils.substrate import (
     KUSAMA_TEST_NODES,
     SUBSTRATE_ACC1_KSM_ADDR,
     SUBSTRATE_ACC2_KSM_ADDR,
-)
-from rotkehlchen.tests.utils.avalanche import (
-    AVALANCHE_ACC1_AVAX_ADDR,
-    AVALANCHE_ACC2_AVAX_ADDR,
 )
 from rotkehlchen.typing import Location, SupportedBlockchain, Timestamp
 
