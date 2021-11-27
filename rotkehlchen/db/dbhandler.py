@@ -246,8 +246,8 @@ class DBHandler:
         self.user_data_dir = user_data_dir
         self.sqlcipher_version = detect_sqlcipher_version()
         self.last_write_ts: Optional[Timestamp] = None
-        self.conn: sqlcipher = None
-        self.conn_transient: sqlcipher = None
+        self.conn: sqlcipher.Connection = None  # pylint: disable=no-member
+        self.conn_transient: sqlcipher.Connection = None  # pylint: disable=no-member
         action = self.read_info_at_start()
         if action == DBStartupAction.UPGRADE_3_4:
             result, msg = self.upgrade_db_sqlcipher_3_to_4(password)
@@ -419,9 +419,11 @@ class DBHandler:
         )
         self.conn.commit()
 
-    def connect(self,
-                password: str,
-                conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
+    def connect(
+            self,
+            password: str,
+            conn_attribute: Literal['conn', 'conn_transient'] = 'conn',
+    ) -> None:
         """Connect to the DB using password
 
         May raise:
@@ -433,7 +435,7 @@ class DBHandler:
         else:
             fullpath = self.user_data_dir / TRANSIENT_DB_NAME
         try:
-            conn: sqlcipher = sqlcipher.connect(str(fullpath))  # pylint: disable=no-member
+            conn: sqlcipher.Connection = sqlcipher.connect(str(fullpath))  # pylint: disable=no-member  # noqa: E501
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             raise SystemPermissionError(
                 f'Could not open database file: {fullpath}. Permission errors?',

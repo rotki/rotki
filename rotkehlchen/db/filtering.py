@@ -94,26 +94,6 @@ class DBETHTransactionHashFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBReportsReportIDFilter(DBFilter):
-    report_id: Optional[Union[str, int]] = None
-
-    def prepare(self) -> Tuple[List[str], List[Any]]:
-        if self.report_id is None:
-            return [], []
-
-        if isinstance(self.report_id, str):
-            try:
-                value = int(self.report_id)
-            except DeserializationError as e:
-                log.error(f'Failed to filter a DB transaction query by report_id: {str(e)}')
-                return [], []
-        else:
-            value = self.report_id
-
-        return ['identifier=?'], [value]
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBReportDataReportIDFilter(DBFilter):
     report_id: Optional[Union[str, int]] = None
 
