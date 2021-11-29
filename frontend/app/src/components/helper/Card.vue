@@ -51,7 +51,7 @@
         <slot name="options" />
       </div>
     </v-card-text>
-    <v-card-actions v-if="$slots.buttons" ref="actions">
+    <v-card-actions v-if="$slots.buttons" ref="actions" :class="$style.actions">
       <slot name="buttons" />
     </v-card-actions>
   </v-card>
@@ -136,5 +136,9 @@ export default Card;
 .no-radius-bottom {
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
+}
+
+.actions {
+  padding: 16px !important;
 }
 </style>

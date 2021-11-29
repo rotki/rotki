@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { CurrencyLocationEnum } from '@/types/currency-location';
+import { DateFormatEnum } from '@/types/date-format';
 import { TableColumnEnum } from '@/types/table-column';
 
 export const DEFI_SETUP_DONE = 'defiSetupDone' as const;
@@ -35,6 +36,7 @@ export const GRAPH_ZERO_BASED = 'graphZeroBased' as const;
 export const NFTS_IN_NET_VALUE = 'nftsInNetValue' as const;
 export const DASHBOARD_TABLES_VISIBLE_COLUMNS =
   'dashboardTablesVisibleColumns' as const;
+export const DATE_INPUT_FORMAT = 'dateInputFormat' as const;
 
 export enum Quarter {
   Q1 = 'Q1',
@@ -128,7 +130,10 @@ export const FrontendSettings = z.object({
   [DARK_THEME]: ThemeColors.default(DARK_COLORS),
   [GRAPH_ZERO_BASED]: z.boolean().default(false),
   [NFTS_IN_NET_VALUE]: z.boolean().default(true),
-  [DASHBOARD_TABLES_VISIBLE_COLUMNS]: DashboardTablesVisibleColumns.default({})
+  [DASHBOARD_TABLES_VISIBLE_COLUMNS]: DashboardTablesVisibleColumns.default({}),
+  [DATE_INPUT_FORMAT]: DateFormatEnum.default(
+    Defaults.DEFAULT_DATE_INPUT_FORMAT
+  )
 });
 
 export type FrontendSettings = z.infer<typeof FrontendSettings>;

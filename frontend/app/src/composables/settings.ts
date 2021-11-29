@@ -1,5 +1,6 @@
 import { computed } from '@vue/composition-api';
 import { useStore } from '@/store/utils';
+import { DateFormat } from '@/types/date-format';
 import {
   DashboardTablesVisibleColumns,
   FrontendSettingsPayload
@@ -12,6 +13,10 @@ export const setupSettings = () => {
     () => store.getters['settings/dashboardTablesVisibleColumns']
   );
 
+  const dateInputFormat = computed<DateFormat>(
+    () => store.getters['settings/dateInputFormat']
+  );
+
   const updateSetting = async (
     settings: FrontendSettingsPayload
   ): Promise<void> => {
@@ -19,6 +24,7 @@ export const setupSettings = () => {
   };
 
   return {
+    dateInputFormat,
     dashboardTablesVisibleColumns,
     updateSetting
   };

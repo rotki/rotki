@@ -12,7 +12,7 @@
       <template #activator="{ on }">
         <v-text-field
           ref="input"
-          :value="value"
+          :value="inputtedDate"
           :label="label"
           :hint="hint"
           :disabled="disabled"
@@ -49,8 +49,19 @@
 <script lang="ts">
 import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { mapGetters } from 'vuex';
+import { DateFormat } from '@/types/date-format';
+import {
+  changeDateFormat,
+  getDateInputISOFormat,
+  isValidDate
+} from '@/utils/date';
 
-@Component({})
+@Component({
+  computed: {
+    ...mapGetters('settings', ['dateInputFormat'])
+  }
+})
 export default class DateTimePicker extends Vue {
   private static dateFormat = 'YYYY-MM-DD';
 
@@ -75,21 +86,25 @@ export default class DateTimePicker extends Vue {
   @Prop({ required: false, default: () => [], type: Array })
   errorMessages!: string[];
 
-  private date =
-    /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d))?$/;
-  private withSeconds =
-    /^([0-2]\d|[3][0-1])\/([0]\d|[1][0-2])\/([2][01]|[1][6-9])\d{2}(\s([0-1]\d|[2][0-3])(:[0-5]\d)(:[0-5]\d)?)?$/;
+  dateInputFormat!: DateFormat;
+  inputtedDate: string = '';
 
-  private dateFormatRule(v: string) {
+  private dateFormatRule(date: string) {
+    let dateFormat: string = getDateInputISOFormat(this.dateInputFormat);
+
     if (this.seconds) {
       return (
-        (v && this.withSeconds.test(v)) ||
-        this.$t('date_time_picker.seconds_format').toString()
+        this.isValid(date) ||
+        this.$t('date_time_picker.seconds_format', {
+          dateFormat
+        }).toString()
       );
     }
     return (
-      (v && this.date.test(v)) ||
-      this.$t('date_time_picker.default_format').toString()
+      this.isValid(date) ||
+      this.$t('date_time_picker.default_format', {
+        dateFormat
+      }).toString()
     );
   }
 
@@ -129,17 +144,39 @@ export default class DateTimePicker extends Vue {
     if (this.timeModel) {
       value += ` ${this.timeModel}`;
     }
-    this.emitIfValid(value);
+    this.emitIfValid(value, DateFormat.DateMonthYearHourMinuteSecond);
   }
 
-  private emitIfValid(value: string) {
-    if (this.isValid(value)) {
-      this.input(value);
+  private emitIfValid(
+    value: string,
+    format: DateFormat = this.dateInputFormat
+  ) {
+    if (this.isValid(value, format)) {
+      this.input(
+        changeDateFormat(
+          value,
+          format,
+          DateFormat.DateMonthYearHourMinuteSecond
+        )
+      );
     }
   }
 
-  private isValid(date: string): boolean {
-    return this.seconds ? this.withSeconds.test(date) : this.date.test(date);
+  private isValid(
+    date: string,
+    format: DateFormat = this.dateInputFormat
+  ): boolean {
+    let dateFormat = getDateInputISOFormat(format);
+
+    if (this.seconds) {
+      return (
+        isValidDate(date, dateFormat) ||
+        isValidDate(date, dateFormat + ' HH:mm:ss')
+      );
+    }
+    return (
+      isValidDate(date, dateFormat) || isValidDate(date, dateFormat + ' HH:mm')
+    );
   }
 
   mounted() {
@@ -157,11 +194,17 @@ export default class DateTimePicker extends Vue {
   }
 
   @Watch('value')
-  onValueChange(value?: string) {
+  onValueChange(value: string) {
+    this.inputtedDate = changeDateFormat(
+      value,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      this.dateInputFormat
+    );
+
     if (!value) {
       this.dateModel = '';
       this.timeModel = '';
-    } else if (this.isValid(value)) {
+    } else if (this.isValid(value, DateFormat.DateMonthYearHourMinuteSecond)) {
       const [date, time] = value.split(' ');
       const [day, month, year] = date.split('/');
       const formattedDate = `${year}-${month}-${day}`;

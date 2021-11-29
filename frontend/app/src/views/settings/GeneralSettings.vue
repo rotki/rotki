@@ -36,12 +36,12 @@
             class="general-settings__fields__date-display-format"
             :label="$t('general_settings.labels.date_display_format')"
             type="text"
-            :rules="dateDisplayFormatRules"
+            :rules="dateFormatRules"
             :success-messages="settingsMessages[DATE_DISPLAY_FORMAT].success"
             :error-messages="settingsMessages[DATE_DISPLAY_FORMAT].error"
             :hint="
               $t('general_settings.date_display_format_hint', {
-                format: dateFormat
+                format: dateDisplayFormatExample
               })
             "
             persistent-hint
@@ -70,9 +70,19 @@
             </template>
           </v-text-field>
 
+          <date-input-format-selector
+            v-model="dateInputFormat"
+            :label="$t('general_settings.labels.date_input_format')"
+            class="pt-4 general-settings__fields__date-input-format"
+            :rules="dateFormatRules"
+            :success-messages="settingsMessages[DATE_INPUT_FORMAT].success"
+            :error-messages="settingsMessages[DATE_INPUT_FORMAT].error"
+            @change="onDateInputFormatChange($event)"
+          />
+
           <v-switch
             v-model="displayDateInLocaltime"
-            class="general-settings__fields__display-date-in-localtime"
+            class="mt-0 general-settings__fields__display-date-in-localtime"
             color="primary"
             :label="$t('general_settings.labels.display_date_in_localtime')"
             :success-messages="
@@ -261,6 +271,7 @@ import { mapGetters } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import RoundingSettings from '@/components/settings/explorers/RoundingSettings.vue';
 import FrontendSettings from '@/components/settings/FrontendSettings.vue';
+import DateInputFormatSelector from '@/components/settings/general/DateInputFormatSelector.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
 import PriceOracleSettings from '@/components/settings/PriceOracleSettings.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
@@ -276,8 +287,10 @@ import SettingsMixin from '@/mixins/settings-mixin';
 import { ActionStatus } from '@/store/types';
 import { Currency } from '@/types/currency';
 import { CurrencyLocation } from '@/types/currency-location';
+import { DateFormat } from '@/types/date-format';
 import {
   CURRENCY_LOCATION,
+  DATE_INPUT_FORMAT,
   DECIMAL_SEPARATOR,
   FrontendSettingsPayload,
   THOUSAND_SEPARATOR
@@ -293,6 +306,7 @@ const SETTING_KSM_RPC_ENDPOINT = 'ksmRpcEndpoint';
 const SETTING_DOT_RPC_ENDPOINT = 'dotRpcEndpoint';
 const SETTING_BALANCE_SAVE_FREQUENCY = 'balanceSaveFrequency';
 const SETTING_DATE_DISPLAY_FORMAT = 'dateDisplayFormat';
+const SETTING_DATE_INPUT_FORMAT = 'dateInputFormat';
 const SETTING_THOUSAND_SEPARATOR = 'thousandSeparator';
 const SETTING_DECIMAL_SEPARATOR = 'decimalSeparator';
 const SETTING_CURRENCY_LOCATION = 'currencyLocation';
@@ -308,6 +322,7 @@ const SETTINGS = [
   SETTING_DOT_RPC_ENDPOINT,
   SETTING_BALANCE_SAVE_FREQUENCY,
   SETTING_DATE_DISPLAY_FORMAT,
+  SETTING_DATE_INPUT_FORMAT,
   SETTING_THOUSAND_SEPARATOR,
   SETTING_DECIMAL_SEPARATOR,
   SETTING_CURRENCY_LOCATION,
@@ -320,6 +335,7 @@ type SettingsEntries = typeof SETTINGS[number];
 
 @Component({
   components: {
+    DateInputFormatSelector,
     DateFormatHelp,
     RoundingSettings,
     FrontendSettings,
@@ -344,6 +360,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   dotRpcEndpoint: string = Defaults.DOT_RPC_ENDPOINT;
   balanceSaveFrequency: string = '0';
   dateDisplayFormat: string = '';
+  dateInputFormat: string = '';
   thousandSeparator: string = '';
   decimalSeparator: string = '';
   currencyLocation: CurrencyLocation = CurrencyLocation.AFTER;
@@ -361,6 +378,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   readonly DOT_RPC_ENDPOINT = SETTING_DOT_RPC_ENDPOINT;
   readonly BALANCE_SAVE_FREQUENCY = SETTING_BALANCE_SAVE_FREQUENCY;
   readonly DATE_DISPLAY_FORMAT = SETTING_DATE_DISPLAY_FORMAT;
+  readonly DATE_INPUT_FORMAT = SETTING_DATE_INPUT_FORMAT;
   readonly THOUSAND_SEPARATOR = SETTING_THOUSAND_SEPARATOR;
   readonly DECIMAL_SEPARATOR = SETTING_DECIMAL_SEPARATOR;
   readonly CURRENCY_LOCATION = SETTING_CURRENCY_LOCATION;
@@ -372,7 +390,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   date: string = '';
   amountExample = bigNumberify(123456.789);
 
-  get dateFormat(): string {
+  get dateDisplayFormatExample(): string {
     return displayDateFormatter.format(this.now, this.dateDisplayFormat);
   }
 
@@ -381,7 +399,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     this.onDateDisplayFormatChange(this.dateDisplayFormat);
   }
 
-  readonly dateDisplayFormatRules = [
+  readonly dateFormatRules = [
     (v: string) => {
       if (!v) {
         return this.$t('general_settings.date_display.validation.empty');
@@ -601,8 +619,8 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     }
 
     const message = makeMessage(
-      `${this.$t('general_settings.validation.date_format.error')}`,
-      `${this.$t('general_settings.validation.date_format.success', {
+      `${this.$t('general_settings.validation.date_display_format.error')}`,
+      `${this.$t('general_settings.validation.date_display_format.success', {
         dateFormat
       })}`
     );
@@ -611,6 +629,25 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
       { dateDisplayFormat: dateFormat },
       SETTING_DATE_DISPLAY_FORMAT,
       message
+    );
+  }
+
+  async onDateInputFormatChange(dateFormat: DateFormat) {
+    if (!displayDateFormatter.containsValidDirectives(dateFormat)) {
+      return;
+    }
+
+    const messages = makeMessage(
+      this.$t('general_settings.validation.date_input_format.error').toString(),
+      this.$t('general_settings.validation.date_input_format.success', {
+        dateFormat
+      }).toString()
+    );
+
+    await this.modifyFrontendSetting(
+      { [DATE_INPUT_FORMAT]: dateFormat },
+      SETTING_DATE_INPUT_FORMAT,
+      messages
     );
   }
 
@@ -744,6 +781,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     this.thousandSeparator = state.settings![THOUSAND_SEPARATOR];
     this.decimalSeparator = state.settings![DECIMAL_SEPARATOR];
     this.currencyLocation = state.settings![CURRENCY_LOCATION];
+    this.dateInputFormat = state.settings![DATE_INPUT_FORMAT];
   }
 
   notTheSame<T>(value: T, oldValue: T): T | undefined {

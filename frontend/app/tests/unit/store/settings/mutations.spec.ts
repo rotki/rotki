@@ -6,6 +6,7 @@ import {
 } from '@rotki/common/lib/settings';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import store from '@/store/store';
+import { DateFormat } from '@/types/date-format';
 import { TableColumn } from '@/types/table-column';
 import { SettingsState } from '../../../../src/store/settings/state';
 import { CurrencyLocation } from '../../../../src/types/currency-location';
@@ -14,6 +15,7 @@ import {
   CURRENCY_LOCATION,
   DASHBOARD_TABLES_VISIBLE_COLUMNS,
   DashboardTableType,
+  DATE_INPUT_FORMAT,
   DECIMAL_SEPARATOR,
   DEFI_SETUP_DONE,
   EXPLORERS,
@@ -74,7 +76,8 @@ describe('settings:mutations', () => {
           TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
         ],
         [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE]
-      }
+      },
+      [DATE_INPUT_FORMAT]: DateFormat.DateMonthYearHourMinuteSecond
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;

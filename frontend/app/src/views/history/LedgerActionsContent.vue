@@ -139,6 +139,7 @@ import {
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import { AssetSymbolGetter } from '@/store/balances/types';
 import { HistoryActions } from '@/store/history/consts';
@@ -151,7 +152,7 @@ import store from '@/store/store';
 import { ActionStatus, Message } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { uniqueStrings } from '@/utils/data';
-import { convertToTimestamp } from '@/utils/date';
+import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 import LedgerActionDetails from '@/views/history/LedgerActionDetails.vue';
 
 type GetId<T> = (item: T) => number | undefined;
@@ -208,7 +209,8 @@ const setupFilter = (
   getSymbol: AssetSymbolGetter
 ) => {
   const filter = ref<MatchedKeyword<ActionFilterKeys>>({});
-  const matchers: SearchMatcher<ActionFilterKeys>[] = [
+  const { dateInputFormat } = setupSettings();
+  const matchers: Ref<SearchMatcher<ActionFilterKeys>[]> = computed(() => [
     {
       key: ActionFilterKeys.ASSET,
       description: i18n.t('ledger_actions.filter.asset').toString(),
@@ -244,18 +246,32 @@ const setupFilter = (
       key: ActionFilterKeys.START,
       description: i18n.t('ledger_actions.filter.start_date').toString(),
       suggestions: () => [],
-      hint: i18n.t('ledger_actions.filter.date_hint').toString(),
+      hint: i18n
+        .t('ledger_actions.filter.date_hint', {
+          format: getDateInputISOFormat(dateInputFormat.value)
+        })
+        .toString(),
       validate: value => {
-        return value.length > 0 && !isNaN(convertToTimestamp(value));
+        return (
+          value.length > 0 &&
+          !isNaN(convertToTimestamp(value, dateInputFormat.value))
+        );
       }
     },
     {
       key: ActionFilterKeys.END,
       description: i18n.t('ledger_actions.filter.end_date').toString(),
       suggestions: () => [],
-      hint: i18n.t('ledger_actions.filter.date_hint').toString(),
+      hint: i18n
+        .t('ledger_actions.filter.date_hint', {
+          format: getDateInputISOFormat(dateInputFormat.value)
+        })
+        .toString(),
       validate: value => {
-        return value.length > 0 && !isNaN(convertToTimestamp(value));
+        return (
+          value.length > 0 &&
+          !isNaN(convertToTimestamp(value, dateInputFormat.value))
+        );
       }
     },
     {
@@ -264,7 +280,7 @@ const setupFilter = (
       suggestions: () => locations.value,
       validate: location => locations.value.includes(location as any)
     }
-  ];
+  ]);
 
   const applyFilter = () => {
     const assetFilter = filter.value[ActionFilterKeys.ASSET];
@@ -278,8 +294,16 @@ const setupFilter = (
       const assetMatch = checkIfMatch(asset, assetFilter);
       const locationMatch = checkIfMatch(value.location, locationFilter);
       const actionMatch = checkIfMatch(value.actionType, actionFilter);
-      const isStartMatch = startMatch(value.timestamp, startFilter);
-      const isEndMatch = endMatch(value.timestamp, endFilter);
+      const isStartMatch = startMatch(
+        value.timestamp,
+        startFilter,
+        dateInputFormat.value
+      );
+      const isEndMatch = endMatch(
+        value.timestamp,
+        endFilter,
+        dateInputFormat.value
+      );
       return (
         assetMatch && locationMatch && actionMatch && isStartMatch && isEndMatch
       );
