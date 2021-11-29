@@ -6,6 +6,8 @@ BACKEND_DIST_DIR="rotkehlchen_py_dist"
 # cleanup before starting to package stuff
 make clean
 
+source tools/scripts/check_unmerged.sh noforce
+
 if [[ -n "${CI-}" ]]; then
   echo "::group::Pip install"
 fi
