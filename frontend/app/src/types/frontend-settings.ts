@@ -13,6 +13,7 @@ import {
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
 import { z } from 'zod';
+import { Constraints } from '@/data/constraints';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { CurrencyLocationEnum } from '@/types/currency-location';
@@ -38,6 +39,8 @@ export const NFTS_IN_NET_VALUE = 'nftsInNetValue' as const;
 export const DASHBOARD_TABLES_VISIBLE_COLUMNS =
   'dashboardTablesVisibleColumns' as const;
 export const DATE_INPUT_FORMAT = 'dateInputFormat' as const;
+export const VERSION_UPDATE_CHECK_FREQUENCY =
+  'versionUpdateCheckFrequency' as const;
 
 export enum Quarter {
   Q1 = 'Q1',
@@ -81,9 +84,21 @@ const RoundingMode = z
 
 export type RoundingMode = z.infer<typeof RoundingMode>;
 
-const RefreshPeriod = z.number().min(-1).int();
+const RefreshPeriod = z
+  .number()
+  .min(-1)
+  .max(Constraints.MAX_MINUTES_DELAY)
+  .int();
 
 export type RefreshPeriod = z.infer<typeof RefreshPeriod>;
+
+const QueryPeriod = z
+  .number()
+  .int()
+  .max(Constraints.MAX_SECONDS_DELAY)
+  .nonnegative();
+
+export type QueryPeriod = z.infer<typeof RefreshPeriod>;
 
 export enum DashboardTableType {
   ASSETS = 'ASSETS',
@@ -107,6 +122,16 @@ export type DashboardTablesVisibleColumns = z.infer<
   typeof DashboardTablesVisibleColumns
 >;
 
+const VersionUpdateCheckFrequency = z
+  .number()
+  .min(-1)
+  .max(Constraints.MAX_HOURS_DELAY)
+  .int();
+
+export type VersionUpdateCheckFrequency = z.infer<
+  typeof VersionUpdateCheckFrequency
+>;
+
 export const FrontendSettings = z.object({
   [DEFI_SETUP_DONE]: z.boolean().default(false),
   [TIMEFRAME_SETTING]: TimeFrameSetting.default(TimeFramePersist.REMEMBER),
@@ -114,7 +139,14 @@ export const FrontendSettings = z.object({
     .array(TimeFrameSetting)
     .default(Defaults.DEFAULT_VISIBLE_TIMEFRAMES),
   [LAST_KNOWN_TIMEFRAME]: TimeFramePeriodEnum.default(TimeFramePeriod.ALL),
-  [QUERY_PERIOD]: z.number().int().nonnegative().default(5),
+  [QUERY_PERIOD]: z.preprocess(
+    queryPeriod =>
+      Math.min(
+        parseInt(queryPeriod as string) || Defaults.DEFAULT_QUERY_PERIOD,
+        Constraints.MAX_SECONDS_DELAY
+      ),
+    QueryPeriod.default(Defaults.DEFAULT_QUERY_PERIOD)
+  ),
   [PROFIT_LOSS_PERIOD]: ProfitLossTimeframe.default({
     year: new Date().getFullYear().toString(),
     quarter: Quarter.ALL
@@ -124,7 +156,14 @@ export const FrontendSettings = z.object({
   [CURRENCY_LOCATION]: CurrencyLocationEnum.default(
     Defaults.DEFAULT_CURRENCY_LOCATION
   ),
-  [REFRESH_PERIOD]: RefreshPeriod.default(-1),
+  [REFRESH_PERIOD]: z.preprocess(
+    refreshPeriod =>
+      Math.min(
+        parseInt(refreshPeriod as string) || -1,
+        Constraints.MAX_MINUTES_DELAY
+      ),
+    RefreshPeriod.default(-1)
+  ),
   [EXPLORERS]: ExplorersSettings.default({}),
   [ITEMS_PER_PAGE]: z.number().positive().int().default(10),
   [AMOUNT_ROUNDING_MODE]: RoundingMode.default(BigNumber.ROUND_UP),
@@ -137,6 +176,17 @@ export const FrontendSettings = z.object({
   [DASHBOARD_TABLES_VISIBLE_COLUMNS]: DashboardTablesVisibleColumns.default({}),
   [DATE_INPUT_FORMAT]: DateFormatEnum.default(
     Defaults.DEFAULT_DATE_INPUT_FORMAT
+  ),
+  [VERSION_UPDATE_CHECK_FREQUENCY]: z.preprocess(
+    versionUpdateCheckFrequency =>
+      Math.min(
+        parseInt(versionUpdateCheckFrequency as string) ||
+          Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
+        Constraints.MAX_HOURS_DELAY
+      ),
+    VersionUpdateCheckFrequency.default(
+      Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY
+    )
   )
 });
 

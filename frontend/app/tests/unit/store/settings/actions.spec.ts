@@ -28,6 +28,7 @@ import {
   ITEMS_PER_PAGE,
   LAST_KNOWN_TIMEFRAME,
   NFTS_IN_NET_VALUE,
+  VERSION_UPDATE_CHECK_FREQUENCY,
   PROFIT_LOSS_PERIOD,
   Quarter,
   QUERY_PERIOD,
@@ -84,7 +85,9 @@ describe('settings:actions', () => {
               [DashboardTableType.NFT]:
                 Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS
             },
-            [DATE_INPUT_FORMAT]: DateFormat.DateMonthYearHourMinuteSecond
+            [DATE_INPUT_FORMAT]: DateFormat.DateMonthYearHourMinuteSecond,
+            [VERSION_UPDATE_CHECK_FREQUENCY]:
+              Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY
           })
         )
       })

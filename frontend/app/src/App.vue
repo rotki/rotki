@@ -76,7 +76,7 @@
         @visible:update="help = $event"
         @about="showAbout = true"
       />
-      <v-main v-if="logged">
+      <v-main>
         <router-view />
       </v-main>
     </div>

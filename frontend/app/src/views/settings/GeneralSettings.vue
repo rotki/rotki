@@ -19,10 +19,46 @@
             @change="onAnonymousUsageAnalyticsChange($event)"
           />
 
+          <v-row>
+            <v-col class="grow">
+              <v-text-field
+                v-model="versionUpdateCheckFrequency"
+                outlined
+                :disabled="!versionUpdateCheckEnabled"
+                type="number"
+                min="30"
+                max="35000"
+                :label="$t('general_settings.labels.version_update_check')"
+                item-value="id"
+                item-text="label"
+                persistent-hint
+                :hint="$t('general_settings.version_update_check_hint')"
+                :success-messages="
+                  settingsMessages[VERSION_UPDATE_CHECK_FREQUENCY].success
+                "
+                :error-messages="
+                  settingsMessages[VERSION_UPDATE_CHECK_FREQUENCY].error
+                "
+                @change="onVersionUpdateCheckFrequencyChange($event)"
+              />
+            </v-col>
+            <v-col class="shrink">
+              <v-switch
+                v-model="versionUpdateCheckEnabled"
+                :label="
+                  $t('general_settings.labels.version_update_check_enabled')
+                "
+                @change="
+                  onVersionUpdateCheckFrequencyChange($event ? '24' : '-1')
+                "
+              />
+            </v-col>
+          </v-row>
+
           <v-text-field
             v-model="balanceSaveFrequency"
             outlined
-            class="general-settings__fields__balance-save-frequency"
+            class="mt-2 general-settings__fields__balance-save-frequency"
             :label="$t('general_settings.labels.balance_saving_frequency')"
             type="number"
             :success-messages="settingsMessages[BALANCE_SAVE_FREQUENCY].success"
@@ -104,6 +140,7 @@
             :error-messages="settingsMessages[BTC_DERIVATION_GAP_LIMIT].error"
             @change="onBtcDerivationGapLimitChanged($event)"
           />
+
           <date-format-help v-model="formatHelp" />
         </card>
         <card class="mt-8">
@@ -280,10 +317,12 @@ import {
   makeMessage,
   settingsMessages
 } from '@/components/settings/utils';
+import { Constraints } from '@/data/constraints';
 import { currencies } from '@/data/currencies';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { Defaults } from '@/data/defaults';
 import SettingsMixin from '@/mixins/settings-mixin';
+import { monitor } from '@/services/monitoring';
 import { ActionStatus } from '@/store/types';
 import { Currency } from '@/types/currency';
 import { CurrencyLocation } from '@/types/currency-location';
@@ -293,7 +332,8 @@ import {
   DATE_INPUT_FORMAT,
   DECIMAL_SEPARATOR,
   FrontendSettingsPayload,
-  THOUSAND_SEPARATOR
+  THOUSAND_SEPARATOR,
+  VERSION_UPDATE_CHECK_FREQUENCY
 } from '@/types/frontend-settings';
 import { SettingsUpdate } from '@/types/user';
 import { bigNumberify } from '@/utils/bignumbers';
@@ -313,6 +353,7 @@ const SETTING_CURRENCY_LOCATION = 'currencyLocation';
 const SETTING_SELECTED_CURRENCY = 'selectedCurrency';
 const SETTING_BTC_DERIVATION_GAP_LIMIT = 'btcDerivationGapLimit';
 const SETTING_DISPLAY_DATE_IN_LOCALTIME = 'displayDateInLocaltime';
+const SETTING_VERSION_UPDATE_CHECK_FREQUENCY = 'versionUpdateCheckFrequency';
 
 const SETTINGS = [
   SETTING_FLOATING_PRECISION,
@@ -328,8 +369,12 @@ const SETTINGS = [
   SETTING_CURRENCY_LOCATION,
   SETTING_SELECTED_CURRENCY,
   SETTING_BTC_DERIVATION_GAP_LIMIT,
-  SETTING_DISPLAY_DATE_IN_LOCALTIME
+  SETTING_DISPLAY_DATE_IN_LOCALTIME,
+  SETTING_VERSION_UPDATE_CHECK_FREQUENCY
 ] as const;
+
+const MAX_BALANCE_SAVE_FREQUENCY = Constraints.MAX_HOURS_DELAY;
+const MAX_VERSION_UPDATE_CHECK_FREQUENCY = Constraints.MAX_HOURS_DELAY;
 
 type SettingsEntries = typeof SETTINGS[number];
 
@@ -367,6 +412,8 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   selectedCurrency: Currency = currencies[0];
   btcDerivationGapLimit: string = '20';
   displayDateInLocaltime: boolean = true;
+  versionUpdateCheckFrequency: string = '';
+  versionUpdateCheckEnabled: boolean = false;
 
   formatHelp: boolean = false;
   readonly now = new Date();
@@ -385,6 +432,8 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   readonly SELECTED_CURRENCY = SETTING_SELECTED_CURRENCY;
   readonly BTC_DERIVATION_GAP_LIMIT = SETTING_BTC_DERIVATION_GAP_LIMIT;
   readonly DISPLAY_DATE_IN_LOCALTIME = SETTING_DISPLAY_DATE_IN_LOCALTIME;
+  readonly VERSION_UPDATE_CHECK_FREQUENCY =
+    SETTING_VERSION_UPDATE_CHECK_FREQUENCY;
 
   historicDateMenu: boolean = false;
   date: string = '';
@@ -428,6 +477,60 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
       SETTING_BTC_DERIVATION_GAP_LIMIT,
       message
     );
+  }
+
+  async onVersionUpdateCheckFrequencyChange(frequency: string) {
+    const versionUpdateCheckFrequency = parseInt(frequency);
+    if (versionUpdateCheckFrequency > MAX_VERSION_UPDATE_CHECK_FREQUENCY) {
+      const message = `${this.$t(
+        'general_settings.validation.version_update_check_frequency.invalid_frequency',
+        {
+          start: 1,
+          end: MAX_VERSION_UPDATE_CHECK_FREQUENCY
+        }
+      )}`;
+
+      this.validateSettingChange(
+        SETTING_VERSION_UPDATE_CHECK_FREQUENCY,
+        'error',
+        message
+      );
+      this.versionUpdateCheckFrequency =
+        this.$store.state.settings![VERSION_UPDATE_CHECK_FREQUENCY].toString();
+      return;
+    }
+    const payload: FrontendSettingsPayload = {
+      [VERSION_UPDATE_CHECK_FREQUENCY]: versionUpdateCheckFrequency
+    };
+
+    const messages: BaseMessage = {
+      success:
+        versionUpdateCheckFrequency > 0
+          ? this.$t(
+              'general_settings.validation.version_update_check_frequency.success',
+              {
+                frequency
+              }
+            ).toString()
+          : this.$t(
+              'general_settings.validation.version_update_check_frequency.success_disabled'
+            ).toString(),
+      error: this.$t(
+        'general_settings.validation.version_update_check_frequency.error'
+      ).toString()
+    };
+
+    const { success } = await this.modifyFrontendSetting(
+      payload,
+      SETTING_VERSION_UPDATE_CHECK_FREQUENCY,
+      messages
+    );
+    if (success) {
+      this.versionUpdateCheckFrequency =
+        versionUpdateCheckFrequency > 0 ? frequency : '';
+      this.versionUpdateCheckEnabled = !!this.versionUpdateCheckFrequency;
+      monitor.restart();
+    }
   }
 
   async update(
@@ -581,16 +684,36 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
   }
 
-  async onBalanceSaveFrequencyChange(frequency: string) {
-    const previousValue = this.generalSettings.balanceSaveFrequency;
+  async onBalanceSaveFrequencyChange(queryFrequency: string) {
+    const previousValue = this.generalSettings.balanceSaveFrequency.toString();
+    const frequency = parseInt(queryFrequency);
 
-    if (!this.notTheSame(frequency, previousValue.toString())) {
+    if (frequency < 1 || frequency > MAX_BALANCE_SAVE_FREQUENCY) {
+      const message = `${this.$t(
+        'general_settings.validation.balance_frequency.invalid_frequency',
+        {
+          start: 1,
+          end: MAX_BALANCE_SAVE_FREQUENCY
+        }
+      )}`;
+
+      this.validateSettingChange(
+        SETTING_BALANCE_SAVE_FREQUENCY,
+        'error',
+        message
+      );
+      this.balanceSaveFrequency = previousValue;
+      return;
+    }
+
+    if (!this.notTheSame(queryFrequency, previousValue)) {
       return;
     }
 
     const params = {
       frequency
     };
+
     const message = makeMessage(
       `${this.$t(
         'general_settings.validation.balance_frequency.error',
@@ -603,13 +726,13 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
 
     const success = await this.update(
-      { balanceSaveFrequency: parseInt(frequency) },
+      { balanceSaveFrequency: frequency },
       SETTING_BALANCE_SAVE_FREQUENCY,
       message
     );
 
     if (!success) {
-      this.balanceSaveFrequency = previousValue.toString();
+      this.balanceSaveFrequency = previousValue;
     }
   }
 
@@ -782,6 +905,12 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     this.decimalSeparator = state.settings![DECIMAL_SEPARATOR];
     this.currencyLocation = state.settings![CURRENCY_LOCATION];
     this.dateInputFormat = state.settings![DATE_INPUT_FORMAT];
+    const versionUpdateCheckFrequency =
+      state.settings![VERSION_UPDATE_CHECK_FREQUENCY];
+    this.versionUpdateCheckEnabled = versionUpdateCheckFrequency > 0;
+    this.versionUpdateCheckFrequency = this.versionUpdateCheckEnabled
+      ? versionUpdateCheckFrequency.toString()
+      : '';
   }
 
   notTheSame<T>(value: T, oldValue: T): T | undefined {

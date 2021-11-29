@@ -124,6 +124,7 @@ import {
   makeMessage,
   settingsMessages
 } from '@/components/settings/utils';
+import { Constraints } from '@/data/constraints';
 import PremiumMixin from '@/mixins/premium-mixin';
 import SettingsMixin from '@/mixins/settings-mixin';
 import { ThemeManager } from '@/premium/premium';
@@ -153,6 +154,8 @@ const SETTINGS = [
   GRAPH_ZERO_BASED,
   NFTS_IN_NET_VALUE
 ] as const;
+
+const MAX_REFRESH_PERIOD = Constraints.MAX_MINUTES_DELAY;
 
 type SettingsEntries = typeof SETTINGS[number];
 
@@ -270,13 +273,7 @@ export default class FrontendSettings extends Mixins<
           end: 3600
         }
       )}`;
-      this.validateSettingChange(
-        SETTING_QUERY_PERIOD,
-        'error',
-        `${this.$t('frontend_settings.validation.periodic_query.error', {
-          message
-        })}`
-      );
+      this.validateSettingChange(SETTING_QUERY_PERIOD, 'error', message);
       this.queryPeriod = this.$store.state.settings![QUERY_PERIOD].toString();
       return;
     }
@@ -329,6 +326,21 @@ export default class FrontendSettings extends Mixins<
 
   async onRefreshPeriodChange(period: string) {
     const refreshPeriod = parseInt(period);
+    if (refreshPeriod > MAX_REFRESH_PERIOD) {
+      const message = `${this.$t(
+        'frontend_settings.validation.refresh_period.invalid_period',
+        {
+          start: 1,
+          end: MAX_REFRESH_PERIOD
+        }
+      )}`;
+
+      this.validateSettingChange(SETTING_REFRESH_PERIOD, 'error', message);
+      this.refreshPeriod =
+        this.$store.state.settings![REFRESH_PERIOD].toString();
+      return;
+    }
+
     const payload: FrontendSettingsPayload = {
       [REFRESH_PERIOD]: refreshPeriod
     };
@@ -353,7 +365,8 @@ export default class FrontendSettings extends Mixins<
       messages
     );
     if (success) {
-      this.refreshPeriod = refreshPeriod < 0 ? '' : period;
+      this.refreshPeriod = refreshPeriod > 0 ? period : '';
+      this.refreshEnabled = !!this.refreshPeriod;
       monitor.restart();
     }
   }
