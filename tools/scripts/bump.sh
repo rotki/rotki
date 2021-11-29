@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source tools/scripts/check_unmerged.sh force
+
 vercomp () {
     if [[ $1 == $2 ]]
     then
