@@ -1,8 +1,8 @@
 import * as core from '@actions/core'
 import {
   changeDetected,
+  checkForChanges,
   getInputAsArray,
-  getPullRequestFiles,
   shouldRun,
   shouldSkip
 } from './action'
@@ -22,38 +22,58 @@ async function run(): Promise<void> {
     const frontendPaths = getInputAsArray(FRONTEND_PATHS, options)
     const documentationPaths = getInputAsArray(DOCUMENTATION_PATHS, options)
 
-    if (await shouldRun()) {
-      core.setOutput(FRONTEND_TASKS, true)
-      core.setOutput(BACKEND_TASKS, true)
-      core.setOutput(DOCUMENTATION_TASKS, true)
-      return
+    const needsToRun = {
+      frontend: false,
+      backend: false,
+      docs: false
     }
 
-    const skip = await shouldSkip()
-    if (skip) {
+    if (await shouldRun()) {
+      needsToRun.frontend = true
+      needsToRun.backend = true
+      needsToRun.docs = true
+      // eslint-disable-next-line no-console
+      console.info(`[run all] detected, running all tasks`)
+    } else if (await shouldSkip()) {
       // eslint-disable-next-line no-console
       console.info(`[skip ci] or [ci skip] detected, skipping all tasks`)
-      return
+    } else {
+      await checkForChanges(files => {
+        if (files === null) {
+          needsToRun.frontend = true
+          needsToRun.backend = true
+          needsToRun.docs = true
+        } else {
+          // eslint-disable-next-line no-console
+          console.info(`Checking ${files.length} files of the PR for changes`)
+          if (changeDetected(frontendPaths, files)) {
+            needsToRun.frontend = true
+          }
+          if (changeDetected(backendPaths, files)) {
+            needsToRun.backend = true
+          }
+          if (changeDetected(documentationPaths, files)) {
+            needsToRun.docs = true
+          }
+        }
+      })
     }
 
-    const changes = await getPullRequestFiles()
-
-    if (changes === null) {
+    if (needsToRun.frontend) {
+      // eslint-disable-next-line no-console
+      console.info(`will run frontend job`)
       core.setOutput(FRONTEND_TASKS, true)
-      core.setOutput(BACKEND_TASKS, true)
-      core.setOutput(DOCUMENTATION_TASKS, true)
-      return
     }
 
-    if (changeDetected(frontendPaths, changes)) {
-      core.setOutput(FRONTEND_TASKS, true)
-    }
-
-    if (changeDetected(backendPaths, changes)) {
+    if (needsToRun.backend) {
+      // eslint-disable-next-line no-console
+      console.info(`will run backend job`)
       core.setOutput(BACKEND_TASKS, true)
     }
 
-    if (changeDetected(documentationPaths, changes)) {
+    if (needsToRun.docs) {
+      // eslint-disable-next-line no-console
+      console.info(`will run docs job`)
       core.setOutput(DOCUMENTATION_TASKS, true)
     }
   } catch (error) {
