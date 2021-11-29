@@ -464,6 +464,19 @@ CREATE TABLE IF NOT EXISTS ethereum_transactions (
 );
 """
 
+DB_CREATE_BITCOIN_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS bitcoin_transactions (
+    tx_hash TEXT NOT NULL PRIMARY KEY,
+    timestamp INTEGER NOT NULL,
+    block_number INTEGER NOT NULL,
+    inputs TEXT NOT NULL,
+    outputs TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    address TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+);
+"""
+
 DB_CREATE_ETHTX_RECEIPTS = """
 CREATE TABLE IF NOT EXISTS ethtx_receipts (
     tx_hash BLOB NOT NULL PRIMARY KEY,

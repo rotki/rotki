@@ -43,6 +43,11 @@ from rotkehlchen.balances.manual import (
     remove_manually_tracked_balances,
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.chain.bitcoin.transactions import (
+    FREE_BTC_TX_LIMIT,
+    BtcTransaction,
+    BtcTransactions,
+)
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.gitcoin.api import GitcoinAPI
 from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter
@@ -53,7 +58,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.db.filtering import BTCTransactionsFilterQuery, ETHTransactionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -2975,7 +2980,7 @@ class RestAPI():
                 'entries_total': self.rotkehlchen.data.db.get_entries_count(
                     entries_table='ethereum_transactions',
                 ),
-                'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
+                'entries_limit': FREE_BTC_TX_LIMIT if self.rotkehlchen.premium is None else -1,
             }
 
         return {'result': result, 'message': message, 'status_code': status_code}
@@ -3614,6 +3619,84 @@ class RestAPI():
 
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(process_result(result_dict), status_code=status_code)
+
+    def _get_btc_transactions(
+            self,
+            only_cache: bool,
+            filter_query: BTCTransactionsFilterQuery,
+    ) -> Dict[str, Any]:
+        tx_module = BtcTransactions(self.rotkehlchen.data.db)
+        transactions: Optional[List[BtcTransaction]]
+        try:
+            transactions, total_filter_count = tx_module.query(
+                only_cache=only_cache,
+                filter_query=filter_query,
+                with_limit=self.rotkehlchen.premium is None,
+            )
+            status_code = HTTPStatus.OK
+            message = ''
+        except RemoteError as e:
+            transactions = None
+            status_code = HTTPStatus.BAD_GATEWAY
+            message = str(e)
+        except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+            transactions = None
+            status_code = HTTPStatus.BAD_REQUEST
+            message = str(e)
+
+        if transactions is not None:
+            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ETHEREUM_TRANSACTION)  # noqa: E501
+            ignored_ids = mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
+            entries_result = []
+            for entry in transactions:
+                entries_result.append({
+                    'entry': entry.serialize(),
+                    'ignored_in_accounting': entry.tx_hash in ignored_ids,
+                })
+        else:
+            entries_result = []
+
+        result: Optional[Dict[str, Any]] = None
+        if status_code == HTTPStatus.OK:
+            result = {
+                'entries': entries_result,
+                'entries_found': total_filter_count,
+                'entries_total': self.rotkehlchen.data.db.get_entries_count(
+                    entries_table='ethereum_transactions',
+                ),
+                'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
+            }
+
+        return {'result': result, 'message': message, 'status_code': status_code}
+
+    @require_loggedin_user()
+    def get_btc_transactions(
+            self,
+            async_query: bool,
+            only_cache: bool,
+            filter_query: BTCTransactionsFilterQuery,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='get_btc_transactions',
+                only_cache=only_cache,
+                filter_query=filter_query,
+            )
+
+        response = self.get_btc_transactions(
+            only_cache=only_cache,
+            filter_query=filter_query,
+        )
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
 
         # success
         result_dict = _wrap_in_result(result, msg)

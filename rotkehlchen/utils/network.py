@@ -62,7 +62,8 @@ def request_get_dict(
     - Remote error if the get request fails
     """
     response = request_get(url, timeout, handle_429, backoff_in_seconds)
-    assert isinstance(response, Dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+    if not isinstance(response, dict):
+        raise RemoteError(f'Response from {url} didnt return a valid dict. {response}')
     return response
 
 

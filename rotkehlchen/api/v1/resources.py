@@ -29,6 +29,7 @@ from rotkehlchen.api.v1.encoding import (
     AvalancheTransactionQuerySchema,
     BaseXpubSchema,
     BinanceMarketsUserSchema,
+    BitcoinTransactionQuerySchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
     BlockchainAccountsPatchSchema,
@@ -2017,3 +2018,20 @@ class LimitsCounterResetResource(BaseResource):
     @use_kwargs(post_schema, location='view_args')
     def post(self, location: str) -> Response:
         return self.rest_api.reset_limits_counter(location)
+
+
+class BitcoinTransactionsResource(BaseResource):
+    get_schema = BitcoinTransactionQuerySchema()
+
+    @ignore_kwarg_parser.use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(
+            self,
+            async_query: bool,
+            only_cache: bool,
+            filter_query: ETHTransactionsFilterQuery,
+    ) -> Response:
+        return self.rest_api.get_btc_transactions(
+            async_query=async_query,
+            only_cache=only_cache,
+            filter_query=filter_query,
+        )

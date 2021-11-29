@@ -132,11 +132,12 @@ DBINFO_FILENAME = 'dbinfo.json'
 PASSWORDCHECK_STATEMENT = 'SELECT name FROM sqlite_master WHERE type="table";'
 
 DBTupleType = Literal[
-    'trade',
-    'asset_movement',
-    'margin_position',
-    'ethereum_transaction',
     'amm_swap',
+    'asset_movement',
+    'bitcoin_transaction',
+    'ethereum_transaction',
+    'margin_position',
+    'trade',
 ]
 
 # Tuples that contain first the name of a table and then the columns that
@@ -212,6 +213,8 @@ def db_tuple_to_str(
         )
     if tuple_type == 'ethereum_transaction':
         return f'Ethereum transaction with hash "{data[0].hex()}"'
+    if tuple_type == 'bitcoin_transaction':
+        return f'Bitcoin transaction with hash "{data[0]}"'
     if tuple_type == 'amm_swap':
         return (
             f'AMM swap with id {data[0]}-{data[1]} '
@@ -2144,7 +2147,7 @@ class DBHandler:
             self,
             tuple_type: DBTupleType,
             query: str,
-            tuples: List[Tuple[Any, ...]],
+            tuples: Sequence[Tuple[Any, ...]],
     ) -> None:
         cursor = self.conn.cursor()
         try:

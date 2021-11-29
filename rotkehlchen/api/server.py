@@ -37,6 +37,7 @@ from rotkehlchen.api.v1.resources import (
     BinanceUserMarkets,
     BlockchainBalancesResource,
     BlockchainsAccountsResource,
+    BitcoinTransactionsResource,
     BTCXpubResource,
     CompoundBalancesResource,
     CompoundHistoryResource,
@@ -223,6 +224,7 @@ URLS_V1: URLS = [
     ('/blockchains/ETH/modules/pickle/dill', PickleDillResource),
     ('/blockchains/ETH/modules/loopring/balances', LoopringBalancesResource),
     ('/blockchains/<string:blockchain>', BlockchainsAccountsResource),
+    ('/blockchains/BTC/transactions', BitcoinTransactionsResource),
     ('/blockchains/BTC/xpub', BTCXpubResource),
     ('/blockchains/AVAX/transactions', AvalancheTransactionsResource),
     (

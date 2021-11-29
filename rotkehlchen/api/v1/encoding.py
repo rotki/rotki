@@ -45,7 +45,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_polkadot_address,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.db.filtering import BTCTransactionsFilterQuery, ETHTransactionsFilterQuery
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
     DeserializationError,
@@ -487,6 +487,27 @@ class EthereumAddressField(fields.Field):
             ) from e
 
         return address
+
+
+class BTCAddressField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: ChecksumEthAddress,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> BTCAddress:
+        return BTCAddress(value)
 
 
 class TradeTypeField(fields.Field):
@@ -2220,3 +2241,37 @@ class Eth2ValidatorPutSchema(Eth2ValidatorSchema):
 
 class StatisticsNetValueSchema(Schema):
     include_nfts = fields.Boolean(load_default=True)
+
+
+class BitcoinTransactionQuerySchema(
+        AsyncQueryArgumentSchema,
+        OnlyCacheQuerySchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
+):
+    address = BTCAddressField(load_default=None)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+
+    @post_load
+    def make_ethereum_transaction_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        address = data.get('address')
+        filter_query = BTCTransactionsFilterQuery.make(
+            order_by_attribute=data['order_by_attribute'],
+            order_ascending=data['ascending'],
+            limit=data['limit'],
+            offset=data['offset'],
+            addresses=[address] if address is not None else None,
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+        )
+
+        return {
+            'async_query': data['async_query'],
+            'only_cache': data['only_cache'],
+            'filter_query': filter_query,
+        }
