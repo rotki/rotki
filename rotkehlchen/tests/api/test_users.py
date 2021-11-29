@@ -11,7 +11,7 @@ from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_proper_response,
+    assert_proper_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.premium import (
@@ -25,18 +25,15 @@ def check_proper_unlock_result(
         response_data: Dict[str, Any],
         settings_to_check: Optional[Dict[str, Any]] = None,
 ) -> None:
-    assert response_data['result'] is not None
-    assert response_data['message'] == ''
-    result = response_data['result']
 
-    assert isinstance(result['exchanges'], list)
-    assert result['settings']['version'] == ROTKEHLCHEN_DB_VERSION
+    assert isinstance(response_data['exchanges'], list)
+    assert response_data['settings']['version'] == ROTKEHLCHEN_DB_VERSION
     for setting in DBSettings._fields:
-        assert setting in result['settings']
+        assert setting in response_data['settings']
 
     if settings_to_check is not None:
         for setting, value in settings_to_check.items():
-            assert result['settings'][setting] == value
+            assert response_data['settings'][setting] == value
 
 
 def check_user_status(api_server) -> Dict[str, str]:
@@ -44,10 +41,8 @@ def check_user_status(api_server) -> Dict[str, str]:
     response = requests.get(
         api_url_for(api_server, "usersresource"),
     )
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    return response.json()['result']
+    result = assert_proper_response_with_result(response)
+    return result
 
 
 def test_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
@@ -55,11 +50,10 @@ def test_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
     Path(data_dir / 'another_user').mkdir()
     Path(data_dir / 'another_user' / 'rotkehlchen.db').touch()
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response(response)
-    json = response.json()
-    assert json['result'][username] == 'loggedin'
-    assert json['result']['another_user'] == 'loggedout'
-    assert len(json['result']) == 2
+    result = assert_proper_response_with_result(response)
+    assert result[username] == 'loggedin'
+    assert result['another_user'] == 'loggedout'
+    assert len(result) == 2
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
@@ -71,11 +65,10 @@ def test_not_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
     Path(data_dir / username / 'rotkehlchen.db').touch()
 
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response(response)
-    json = response.json()
-    assert json['result'][username] == 'loggedout'
-    assert json['result']['another_user'] == 'loggedout'
-    assert len(json['result']) == 2
+    result = assert_proper_response_with_result(response)
+    assert result[username] == 'loggedout'
+    assert result['another_user'] == 'loggedout'
+    assert len(result) == 2
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
@@ -88,15 +81,14 @@ def test_user_creation(rotkehlchen_api_server, data_dir):
         'password': '1234',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
-    assert_proper_response(response)
-    check_proper_unlock_result(response.json(), {'submit_usage_analytics': True})
+    result = assert_proper_response_with_result(response)
+    check_proper_unlock_result(result, {'submit_usage_analytics': True})
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response(response)
-    json = response.json()
-    assert json['result'][username] == 'loggedin'
-    assert len(json['result']) == 1
+    result = assert_proper_response_with_result(response)
+    assert result[username] == 'loggedin'
+    assert len(result) == 1
 
     # Check that the directory was created
     assert Path(data_dir / username / 'rotkehlchen.db').exists()
@@ -113,15 +105,14 @@ def test_user_creation_with_no_analytics(rotkehlchen_api_server, data_dir):
         'initial_settings': {'submit_usage_analytics': False},
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
-    assert_proper_response(response)
-    check_proper_unlock_result(response.json(), {'submit_usage_analytics': False})
+    result = assert_proper_response_with_result(response)
+    check_proper_unlock_result(result, {'submit_usage_analytics': False})
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response(response)
-    json = response.json()
-    assert json['result'][username] == 'loggedin'
-    assert len(json['result']) == 1
+    result = assert_proper_response_with_result(response)
+    assert result[username] == 'loggedin'
+    assert len(result) == 1
 
     # Check that the directory was created
     assert Path(data_dir / username / 'rotkehlchen.db').exists()
@@ -168,15 +159,14 @@ def test_user_creation_with_premium_credentials(rotkehlchen_api_server, data_dir
 
     with patched_premium_at_start:
         response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
-    assert_proper_response(response)
-    check_proper_unlock_result(response.json())
+    result = assert_proper_response_with_result(response)
+    check_proper_unlock_result(result)
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response(response)
-    json = response.json()
-    assert json['result'][username] == 'loggedin'
-    assert len(json['result']) == 1
+    result = assert_proper_response_with_result(response)
+    assert result[username] == 'loggedin'
+    assert len(result) == 1
 
     # Check that the directory was created
     assert Path(data_dir / username / 'rotkehlchen.db').exists()
@@ -244,15 +234,14 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
         'password': '1234',
     }
     response = requests.put(api_url_for(rotkehlchen_api_server, "usersresource"), json=data)
-    assert_proper_response(response)
-    check_proper_unlock_result(response.json())
+    result = assert_proper_response_with_result(response)
+    check_proper_unlock_result(result)
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, "usersresource"))
-    assert_proper_response(response)
-    json = response.json()
-    assert json['result'][username] == 'loggedin'
-    assert len(json['result']) == 2
+    result = assert_proper_response_with_result(response)
+    assert result[username] == 'loggedin'
+    assert len(result) == 2
 
     # Check that the directory was created
     assert Path(data_dir / username / 'rotkehlchen.db').exists()
@@ -518,8 +507,8 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
         json=data,
     )
     # And make sure it works
-    assert_proper_response(response)
-    check_proper_unlock_result(response.json())
+    result = assert_proper_response_with_result(response)
+    check_proper_unlock_result(result)
     assert rotki.user_is_logged_in is True
     users_data = check_user_status(rotkehlchen_api_server)  # type: ignore
     assert len(users_data) == 2
@@ -578,8 +567,8 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
         json=data,
     )
     # And make sure it works despite having unauthenticable premium credentials in the DB
-    assert_proper_response(response)
-    check_proper_unlock_result(response.json())
+    result = assert_proper_response_with_result(response)
+    check_proper_unlock_result(result)
     assert rotki.user_is_logged_in is True
     users_data = check_user_status(rotkehlchen_api_server)
     assert len(users_data) == 2
