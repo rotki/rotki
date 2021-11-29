@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 23/11/2021 09:31:11.
+# tools/scripts/generate_constant_assets.py at 01/12/2021 21:00:50.
 # Do not edit manually!
 
 from typing import List
@@ -2233,3 +2233,15 @@ A_PSP = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_PSP)
+A_SDL = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xf1Dc500FdE233A4055e25e5BbF516372BC4F6871'),
+    decimals=18,
+    name="Saddle DAO",
+    symbol='SDL',
+    started=Timestamp(1637043563),
+    swapped_for=None,
+    coingecko='saddle-finance',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_SDL)

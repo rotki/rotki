@@ -19,6 +19,7 @@ from rotkehlchen.constants.assets import (
     A_GRAIN,
     A_LDO,
     A_PSP,
+    A_SDL,
     A_TORN,
     A_UNI,
 )
@@ -100,6 +101,11 @@ AIRDROPS = {
         'https://raw.githubusercontent.com/rotki/data/main/airdrops/psp.csv',
         A_PSP,
         'https://paraswap.io/',
+    ),
+    'sdl': (
+        'https://raw.githubusercontent.com/rotki/data/main/airdrops/saddle_finance.csv',
+        A_SDL,
+        'https://saddle.exchange/#/',
     ),
 }
 
@@ -278,7 +284,7 @@ def check_airdrops(
             addr, amount, *_ = row
             # not doing to_checksum_address() here since the file addresses are checksummed
             # and doing to_checksum_address() so many times hits performance
-            if protocol_name in ('cornichon', 'tornado', 'grain', 'lido'):
+            if protocol_name in ('cornichon', 'tornado', 'grain', 'lido', 'sdl'):
                 amount = token_normalized_value_decimals(int(amount), 18)
             if addr in addresses:
                 found_data[addr][protocol_name] = {
