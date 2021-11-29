@@ -2725,7 +2725,7 @@ class RestAPI():
             module_name='liquity',
             method='get_positions',
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
+            addresses_list=self.rotkehlchen.chain_manager.queried_addresses_for_module('liquity'),
         )
 
     @require_premium_user(active_check=False)
