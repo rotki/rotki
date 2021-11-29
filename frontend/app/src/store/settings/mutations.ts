@@ -30,7 +30,9 @@ import {
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
   VALUE_ROUNDING_MODE,
-  NFTS_IN_NET_VALUE
+  NFTS_IN_NET_VALUE,
+  DASHBOARD_TABLES_VISIBLE_COLUMNS,
+  DashboardTablesVisibleColumns
 } from '@/types/frontend-settings';
 
 type Mutations<S = SettingsState> = {
@@ -52,6 +54,10 @@ type Mutations<S = SettingsState> = {
   [DARK_THEME](state: S, theme: ThemeColors): void;
   [GRAPH_ZERO_BASED](state: S, enabled: Boolean): void;
   [NFTS_IN_NET_VALUE](state: S, enabled: Boolean): void;
+  [DASHBOARD_TABLES_VISIBLE_COLUMNS](
+    state: Writeable<SettingsState>,
+    tablesVisibleColumns: DashboardTablesVisibleColumns
+  ): void;
   restore(state: S, persisted: S): void;
   reset(state: S): void;
 };
@@ -128,6 +134,12 @@ export const mutations: Mutations = {
   },
   [NFTS_IN_NET_VALUE](state: Writeable<SettingsState>, enabled: boolean) {
     state[NFTS_IN_NET_VALUE] = enabled;
+  },
+  [DASHBOARD_TABLES_VISIBLE_COLUMNS](
+    state: Writeable<SettingsState>,
+    tablesVisibleColumns: DashboardTablesVisibleColumns
+  ) {
+    state[DASHBOARD_TABLES_VISIBLE_COLUMNS] = tablesVisibleColumns;
   },
   restore(state: SettingsState, persisted: SettingsState) {
     Object.assign(state, persisted);

@@ -42,7 +42,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
   }
 
   isEntryVisible(position: number, balance: FixtureBlockchainBalance) {
-    // account balances card section for particular blockchain type should be showed
+    // account balances card section for particular blockchain type should be visible
     // sometime the table need long time to be loaded
     cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"]`, {
       timeout: 300000

@@ -6,11 +6,14 @@ import {
 } from '@rotki/common/lib/settings';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import store from '@/store/store';
+import { TableColumn } from '@/types/table-column';
 import { SettingsState } from '../../../../src/store/settings/state';
 import { CurrencyLocation } from '../../../../src/types/currency-location';
 import {
   AMOUNT_ROUNDING_MODE,
   CURRENCY_LOCATION,
+  DASHBOARD_TABLES_VISIBLE_COLUMNS,
+  DashboardTableType,
   DECIMAL_SEPARATOR,
   DEFI_SETUP_DONE,
   EXPLORERS,
@@ -62,7 +65,16 @@ describe('settings:mutations', () => {
         graph: '#555555'
       },
       [GRAPH_ZERO_BASED]: true,
-      [NFTS_IN_NET_VALUE]: true
+      [NFTS_IN_NET_VALUE]: true,
+      [DASHBOARD_TABLES_VISIBLE_COLUMNS]: {
+        [DashboardTableType.ASSETS]: [
+          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
+        ],
+        [DashboardTableType.LIABILITIES]: [
+          TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
+        ],
+        [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE]
+      }
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
