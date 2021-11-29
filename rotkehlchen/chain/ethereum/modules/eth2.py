@@ -176,6 +176,9 @@ class Eth2(EthereumModule):
         else:
             validators = dbeth2.get_validators()
 
+        if validators == []:
+            return {}  # nothing detected
+
         pubkeys = []
         index_to_pubkey = {}
         for validator in validators:
