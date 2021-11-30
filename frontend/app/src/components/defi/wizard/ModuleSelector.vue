@@ -1,5 +1,6 @@
 <template>
   <v-autocomplete
+    ref="autocomplete"
     :value="selectedModules"
     :search-input.sync="search"
     :items="supportedModules"
@@ -85,14 +86,23 @@ export default class ModuleSelector extends Mixins(ModuleMixin) {
       return;
     }
     this.selectedModules.splice(selectionIndex, 1);
-    this.update(this.selectedModules);
+    this.update(this.selectedModules, false);
 
     if (wasDeactivated(this.selectedModules, previouslyActive, Module.NFTS)) {
       this.clearNfBalances();
     }
   }
 
-  async update(activeModules: Module[]) {
+  async update(activeModules: Module[], clearSearch: boolean = true) {
+    if (clearSearch) {
+      this.search = '';
+      setTimeout(() => {
+        const autocomplete = this.$refs.autocomplete as any;
+        if (autocomplete) {
+          autocomplete.focus();
+        }
+      }, 10);
+    }
     this.loading = true;
     await this.activateModules(activeModules);
     this.onModuleActivation(activeModules);
