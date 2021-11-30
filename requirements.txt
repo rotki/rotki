@@ -6,8 +6,8 @@ web3==5.25.0
 pysqlcipher3==1.0.4
 requests==2.26.0
 urllib3==1.26.7
-pycryptodome==3.6.6
-pycryptodomex==3.6.6
+pycryptodome==3.11.0
+pycryptodomex==3.11.0
 coincurve==13.0.0
 typing-extensions==3.10.0.2
 base58check==1.0.2
@@ -17,7 +17,8 @@ gql==2.0.0
 py-sr25519-bindings==0.1.2
 py-ed25519-bindings==0.1.2
 py-bip39-bindings==0.1.6
-substrate-interface==1.0.6
+substrate-interface==1.1.1
+scalecodec==1.0.19
 beautifulsoup4==4.10.0
 
 # For the rest api
