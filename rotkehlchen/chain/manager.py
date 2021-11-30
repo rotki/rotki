@@ -1706,6 +1706,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         """May raise:
         - ModuleInactive if eth2 module is not activated
         - RemoteError if there is a problem querying beaconcha.in
+        - PremiumPermissionError if adding the validator would go over free limit
         """
         eth2 = self.get_module('eth2')
         if eth2 is None:

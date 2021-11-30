@@ -7640,8 +7640,6 @@ Adding an Eth2 validator
 
    Doing a PUT on the eth2 validators endpoint will input information and track an ETH2 validator.
 
-   .. note::
-      This endpoint is only available for premium users
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -7670,6 +7668,7 @@ Adding an Eth2 validator
       }
 
    :statuscode 200: Eth2 validator succesfully added.
+   :statuscode 401: Can't add the validator since user is not premium and would go over the limit.
    :statuscode 409: User is not logged in. Or eth2 module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as beaconcha.in could not be reached or returned unexpected response.
@@ -7681,9 +7680,6 @@ Deleting an Eth2 validator
 .. http:delete:: /api/(version)/blockchains/ETH2/validators
 
    Doing a DELETE on the eth2 validators endpoint will delete information and stop tracking an ETH2 validator.
-
-   .. note::
-      This endpoint is only available for premium users
 
 
    **Example Request**:
@@ -7717,10 +7713,7 @@ Getting tracked Eth2 validators
 
 .. http:get:: /api/(version)/blockchains/ETH2/validators
 
-   Doing a GET on the ETH2 validators endpoint will get information
-
-   .. note::
-      This endpoint is only available for premium users
+   Doing a GET on the ETH2 validators endpoint will get information on the tracked ETH2 validators. If the user is not premium they will see up to a certain limit of validators.
 
 
    **Example Request**:
@@ -7739,11 +7732,15 @@ Getting tracked Eth2 validators
       Content-Type: application/json
 
       {
-        "result": [{
-	    "index": 1, "public_key": "0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c"}, {
-	    "index": 1532, "public_key": "0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed"}, {
-	    "index": 5421, "public_key": "0xa64722f93f37c7da8da67ee36fd2a763103897efc274e3accb4cd172382f7a170f064b81552ae77cdbe440208a1b897e"
-	}],
+        "result": {
+	    entries: [{
+		"index": 1, "public_key": "0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c"}, {
+		"index": 1532, "public_key": "0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed"}, {
+		"index": 5421, "public_key": "0xa64722f93f37c7da8da67ee36fd2a763103897efc274e3accb4cd172382f7a170f064b81552ae77cdbe440208a1b897e"
+	    }],
+	    "entries_found": 3,
+	    "entries_limit": 4
+	},
         "message": ""
       }
 

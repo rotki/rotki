@@ -6,6 +6,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
+from rotkehlchen.chain.ethereum.modules.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -135,16 +136,17 @@ def test_query_eth2_inactive(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_add_get_delete_eth2_validators(rotkehlchen_api_server):
+@pytest.mark.parametrize('start_with_valid_premium', [True, False])
+def test_add_get_delete_eth2_validators(rotkehlchen_api_server, start_with_valid_premium):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
         ),
     )
+    expected_limit = -1 if start_with_valid_premium else FREE_VALIDATORS_LIMIT
     result = assert_proper_response_with_result(response)
-    assert result == []
+    assert result == {'entries': [], 'entries_limit': expected_limit, 'entries_found': 0}
 
     validators = [Eth2Validator(
         index=4235,
@@ -195,7 +197,20 @@ def test_add_get_delete_eth2_validators(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == [x.serialize() for x in validators]
+    assert result == {'entries': [x.serialize() for x in validators], 'entries_limit': expected_limit, 'entries_found': 4}  # noqa: E501
+
+    if start_with_valid_premium is False:
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'eth2validatorsresource',
+            ), json={'validator_index': 545},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='Adding validator 545 None would take you over the free',
+            status_code=HTTPStatus.UNAUTHORIZED,
+        )
 
     response = requests.delete(
         api_url_for(
@@ -226,7 +241,7 @@ def test_add_get_delete_eth2_validators(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == [validators[1].serialize()]
+    assert result == {'entries': [validators[1].serialize()], 'entries_limit': expected_limit, 'entries_found': 1}  # noqa: E501
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
@@ -373,7 +388,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == []
+    assert result == {'entries': [], 'entries_limit': -1, 'entries_found': 0}
 
     validators = [Eth2Validator(
         index=4235,
@@ -404,7 +419,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == [x.serialize() for x in validators]
+    assert result == {'entries': [x.serialize() for x in validators], 'entries_limit': -1, 'entries_found': 2}  # noqa: E501
 
     async_query = random.choice([False, True])
     if query_all_balances:

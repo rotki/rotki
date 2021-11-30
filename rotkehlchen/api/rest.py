@@ -48,6 +48,7 @@ from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.gitcoin.api import GitcoinAPI
 from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter
 from rotkehlchen.chain.ethereum.gitcoin.processor import GitcoinProcessor
+from rotkehlchen.chain.ethereum.modules.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT, EthTransactions
 from rotkehlchen.constants.assets import A_ETH
@@ -70,6 +71,7 @@ from rotkehlchen.errors import (
     NoPriceForGivenTimestamp,
     PremiumApiError,
     PremiumAuthenticationError,
+    PremiumPermissionError,
     RemoteError,
     RotkehlchenPermissionError,
     SystemPermissionError,
@@ -2231,14 +2233,26 @@ class RestAPI():
         result_dict = _wrap_in_result(result, msg)
         return api_response(result_dict, status_code=status_code)
 
-    @require_premium_user(active_check=False)
+    @require_loggedin_user()
     def get_eth2_validators(self) -> Response:
         try:
             validators = self.rotkehlchen.chain_manager.get_eth2_validators()
         except ModuleInactive as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        limit = -1
+        entries_found = len(validators)
+        if self.rotkehlchen.premium is None:
+            limit = FREE_VALIDATORS_LIMIT
+            validators = validators[:4]
+
+        result = _wrap_in_ok_result({
+            'entries': [x.serialize() for x in validators],
+            'entries_found': entries_found,
+            'entries_limit': limit,
+        })
         return api_response(
-            _wrap_in_ok_result([x.serialize() for x in validators]),
+            result=result,
             status_code=HTTPStatus.OK,
         )
 
@@ -2254,12 +2268,14 @@ class RestAPI():
             )
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        except PremiumPermissionError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.UNAUTHORIZED}  # noqa: E501
         except (InputError, ModuleInactive) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
         return {'result': True, 'message': ''}
 
-    @require_premium_user(active_check=False)
+    @require_loggedin_user()
     def add_eth2_validator(
             self,
             validator_index: Optional[int],
@@ -2281,7 +2297,7 @@ class RestAPI():
             return api_response(wrap_in_fail_result(msg), status_code=status_code)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @require_premium_user(active_check=False)
+    @require_loggedin_user()
     def delete_eth2_validator(
             self,
             validators: List[Dict],
