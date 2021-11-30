@@ -1,9 +1,9 @@
 import os
+import random
 from pathlib import Path
 from shutil import copyfile
 from typing import Any, Dict, List, Optional
 from unittest.mock import _patch, patch
-import random
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
