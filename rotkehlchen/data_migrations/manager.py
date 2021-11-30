@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Callable, Dict, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
 
 from rotkehlchen.data_migrations.migrations.migration_1 import data_migration_1
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -47,4 +47,4 @@ class DataMigrationManager:
             migration.function(rotki=self.rotki, **kwargs)
         except BaseException as e:  # lgtm[py/catch-base-exception]
             error = f'Failed to run soft migration from version {migration.version} : {str(e)}'
-            log.error(error)
+            self.rotki.msg_aggregator.add_error(error)
