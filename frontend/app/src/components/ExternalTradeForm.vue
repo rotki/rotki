@@ -86,18 +86,61 @@
               :error-messages="errorMessages['amount']"
               @focus="delete errorMessages['amount']"
             />
-            <v-text-field
-              v-model="rate"
-              :rules="rateRules"
-              outlined
-              data-cy="rate"
-              :loading="fetching"
-              :label="$t('external_trade_form.rate.label')"
-              persistent-hint
-              :hint="$t('external_trade_form.rate.hint')"
-              :error-messages="errorMessages['rate']"
-              @focus="delete errorMessages['rate']"
-            />
+            <div
+              :class="`external-trade-form__grouped-amount-input d-flex ${
+                selectedCalculationInput === 'quoteAmount'
+                  ? 'flex-column-reverse'
+                  : 'flex-column'
+              }`"
+            >
+              <v-text-field
+                ref="rateInput"
+                v-model="rate"
+                :disabled="selectedCalculationInput !== 'rate'"
+                :label="$t('external_trade_form.rate.label')"
+                :loading="fetching"
+                :rules="rateRules"
+                data-cy="rate"
+                :hide-details="selectedCalculationInput !== 'rate'"
+                :class="`${
+                  selectedCalculationInput === 'rate'
+                    ? 'v-input--is-enabled'
+                    : ''
+                }`"
+                filled
+                persistent-hint
+                :error-messages="errorMessages['rate']"
+                @focus="delete errorMessages['rate']"
+              />
+              <v-text-field
+                ref="quoteAmountInput"
+                v-model="quoteAmount"
+                :disabled="selectedCalculationInput !== 'quoteAmount'"
+                :rules="quoteAmountRules"
+                data-cy="quote-amount"
+                :hide-details="selectedCalculationInput !== 'quoteAmount'"
+                :class="`${
+                  selectedCalculationInput === 'quoteAmount'
+                    ? 'v-input--is-enabled'
+                    : ''
+                }`"
+                :label="$t('external_trade_form.quote_amount.label')"
+                filled
+                :error-messages="errorMessages['quote_amount']"
+                @focus="delete errorMessages['quote_amount']"
+              />
+              <v-btn
+                class="external-trade-form__grouped-amount-input__swap-button"
+                fab
+                small
+                dark
+                color="primary"
+                data-cy="grouped-amount-input__swap-button"
+                @click="swapAmountInput"
+              >
+                <v-icon>mdi-swap-vertical</v-icon>
+              </v-btn>
+            </div>
           </v-col>
         </v-row>
 
@@ -225,6 +268,10 @@ export default class ExternalTradeForm extends Vue {
     (v: string) =>
       !!v || this.$t('external_trade_form.validation.non_empty_rate')
   ];
+  readonly quoteAmountRules = [
+    (v: string) =>
+      !!v || this.$t('external_trade_form.validation.non_empty_quote_amount')
+  ];
 
   base: string = '';
   quote: string = '';
@@ -247,6 +294,8 @@ export default class ExternalTradeForm extends Vue {
   datetime: string = '';
   amount: string = '';
   rate: string = '';
+  quoteAmount: string = '';
+  selectedCalculationInput: 'rate' | 'quoteAmount' = 'rate';
   fee: string = '';
   feeCurrency: string = '';
   link: string = '';
@@ -281,6 +330,42 @@ export default class ExternalTradeForm extends Vue {
     await this.fetchPrice();
   }
 
+  @Watch('amount')
+  async onAmountChange() {
+    this.onRateChange();
+    this.onQuoteAmountChange();
+  }
+
+  @Watch('rate')
+  onRateChange() {
+    this.updateRate();
+  }
+
+  updateRate(forceUpdate: boolean = false) {
+    if (
+      this.amount &&
+      this.rate &&
+      (this.selectedCalculationInput === 'rate' || forceUpdate)
+    ) {
+      this.quoteAmount = new BigNumber(this.amount)
+        .multipliedBy(new BigNumber(this.rate))
+        .toString();
+    }
+  }
+
+  @Watch('quoteAmount')
+  onQuoteAmountChange() {
+    if (
+      this.amount &&
+      this.quoteAmount &&
+      this.selectedCalculationInput === 'quoteAmount'
+    ) {
+      this.rate = new BigNumber(this.quoteAmount)
+        .div(new BigNumber(this.amount))
+        .toString();
+    }
+  }
+
   async fetchPrice() {
     if (
       (this.rate && this.edit) ||
@@ -302,6 +387,7 @@ export default class ExternalTradeForm extends Vue {
     });
     if (rate.gt(0)) {
       this.rate = rate.toString();
+      this.updateRate(true);
     } else {
       this.errorMessages = {
         rate: [this.$t('external_trade_form.rate_not_found').toString()]
@@ -383,29 +469,132 @@ export default class ExternalTradeForm extends Vue {
 
     return false;
   }
+
+  swapAmountInput() {
+    if (this.selectedCalculationInput === 'rate') {
+      this.selectedCalculationInput = 'quoteAmount';
+      this.$nextTick(() => {
+        const quoteAmountInput = this.$refs.quoteAmountInput as any;
+        if (quoteAmountInput) quoteAmountInput.focus();
+      });
+    } else {
+      this.selectedCalculationInput = 'rate';
+      this.$nextTick(() => {
+        const rateInput = this.$refs.rateInput as any;
+        if (rateInput) rateInput.focus();
+      });
+    }
+  }
 }
 </script>
 
 <style scoped lang="scss">
+/* stylelint-disable */
 .external-trade-form {
   &__action-hint {
     width: 60px;
     margin-top: -24px;
   }
 
+  &__grouped-amount-input {
+    position: relative;
+    margin-bottom: 40px;
+
+    ::v-deep {
+      .v-input {
+        position: static;
+
+        &__slot {
+          margin-bottom: 0;
+          background: transparent !important;
+        }
+
+        &--is-disabled {
+          .v-input__control {
+            .v-input__slot {
+              &::before {
+                content: none;
+              }
+            }
+          }
+        }
+
+        .v-text-field__details {
+          position: absolute;
+          bottom: -30px;
+          width: 100%;
+        }
+
+        &--is-enabled {
+          &::before {
+            content: '';
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: 1px solid rgba(0, 0, 0, 0.42);
+            border-radius: 4px;
+          }
+
+          &.v-input--is-focused {
+            &::before {
+              border: 2px solid var(--v-primary-base) !important;
+            }
+          }
+
+          &.error--text {
+            &::before {
+              border: 2px solid var(--v-error-base) !important;
+            }
+          }
+        }
+      }
+    }
+
+    &__swap-button {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  }
+
   ::v-deep {
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators,rule-empty-line-before */
     .v-select.v-text-field--outlined:not(.v-text-field--single-line) {
       .v-select__selections {
         padding: 0 !important;
       }
     }
-
-    /* stylelint-enable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators,rule-empty-line-before */
   }
 
   &__fee {
     height: 60px;
   }
 }
+
+.theme {
+  &--dark {
+    .external-trade-form {
+      &__grouped-amount-input {
+        ::v-deep {
+          .v-input {
+            &__slot {
+              &::before {
+                border-color: hsla(0, 0%, 100%, 0.24) !important;
+              }
+            }
+
+            &--is-enabled {
+              &::before {
+                border-color: hsla(0, 0%, 100%, 0.24);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+/* stylelint-enable */
 </style>

@@ -7,6 +7,7 @@ export type ExternalTrade = {
   readonly trade_type: 'buy' | 'sell';
   readonly amount: string;
   readonly rate: string;
+  readonly quote_amount: string;
   readonly fee: string;
   readonly fee_currency: string;
   readonly fee_id: string;

@@ -26,7 +26,9 @@ describe('history', () => {
 
   it('add two external trades', () => {
     page.visit();
+    // add trade by input rate
     page.addTrade(externalTrades[0]);
+    // add trade by input quote amount
     page.addTrade(externalTrades[1]);
   });
 
