@@ -3,7 +3,9 @@ import { TimeUnit } from "./index";
 
 export enum TimeFramePeriod  {
   ALL = 'All',
+  TWO_YEARS = '2Y',
   YEAR = '1Y',
+  SIX_MONTHS = '6M',
   THREE_MONTHS = '3M',
   MONTH = '1M',
   TWO_WEEKS = '2W',
@@ -77,9 +79,9 @@ function createTimeframe(
     start = () => 0;
   } else {
     let startUnit: TimeUnit;
-    if (frame === TimeFramePeriod.YEAR) {
+    if ([TimeFramePeriod.TWO_YEARS, TimeFramePeriod.YEAR].includes(frame)) {
       startUnit = TimeUnit.YEAR;
-    } else if ([TimeFramePeriod.MONTH, TimeFramePeriod.THREE_MONTHS].includes(frame)) {
+    } else if ([TimeFramePeriod.MONTH, TimeFramePeriod.THREE_MONTHS, TimeFramePeriod.SIX_MONTHS].includes(frame)) {
       startUnit = TimeUnit.MONTH;
     } else if ([TimeFramePeriod.WEEK, TimeFramePeriod.TWO_WEEKS].includes(frame)) {
       startUnit = TimeUnit.WEEK;
@@ -101,7 +103,9 @@ type StartingDateCalculator = (unit: TimeUnit, amount: number) => number
 export const timeframes: (startingDate: StartingDateCalculator) => Timeframes = (startingDate) => {
   return {
     [TimeFramePeriod.ALL]: createTimeframe(startingDate, TimeFramePeriod.ALL, TimeUnit.MONTH),
+    [TimeFramePeriod.TWO_YEARS]: createTimeframe(startingDate, TimeFramePeriod.TWO_YEARS, TimeUnit.MONTH, 2),
     [TimeFramePeriod.YEAR]: createTimeframe(startingDate, TimeFramePeriod.YEAR, TimeUnit.MONTH),
+    [TimeFramePeriod.SIX_MONTHS]: createTimeframe(startingDate, TimeFramePeriod.SIX_MONTHS, TimeUnit.MONTH, 6),
     [TimeFramePeriod.THREE_MONTHS]: createTimeframe(
       startingDate,
       TimeFramePeriod.THREE_MONTHS,

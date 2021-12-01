@@ -14,7 +14,10 @@
     <time-frame-settings
       :message="settingsMessages[TIMEFRAME]"
       :value="defaultGraphTimeframe"
+      :visible-timeframes="visibleTimeframes"
+      :current-session-timeframe="currentSessionTimeframe"
       @timeframe-change="onTimeframeChange"
+      @visible-timeframes-change="onVisibleTimeframesChange"
     />
 
     <div class="text-h6 mt-4">
@@ -131,17 +134,20 @@ import {
   NFTS_IN_NET_VALUE,
   QUERY_PERIOD,
   REFRESH_PERIOD,
-  TIMEFRAME_SETTING
+  TIMEFRAME_SETTING,
+  VISIBLE_TIMEFRAMES
 } from '@/types/frontend-settings';
 
 const SETTING_SCRAMBLE_DATA = 'scrambleData';
 const SETTING_TIMEFRAME = 'timeframe';
+const SETTING_VISIBLE_TIMEFRAMES = 'visibleTimeframes';
 const SETTING_QUERY_PERIOD = 'queryPeriod';
 const SETTING_REFRESH_PERIOD = 'refreshPeriod';
 
 const SETTINGS = [
   SETTING_SCRAMBLE_DATA,
   SETTING_TIMEFRAME,
+  SETTING_VISIBLE_TIMEFRAMES,
   SETTING_QUERY_PERIOD,
   SETTING_REFRESH_PERIOD,
   GRAPH_ZERO_BASED,
@@ -168,6 +174,8 @@ export default class FrontendSettings extends Mixins<
   queryPeriod: string = '5';
   scrambleData: boolean = false;
   defaultGraphTimeframe: TimeFrameSetting = TimeFramePeriod.ALL;
+  visibleTimeframes: TimeFrameSetting[] = [];
+  currentSessionTimeframe: TimeFramePeriod = TimeFramePeriod.ALL;
   refreshPeriod: string = '';
   refreshEnabled: boolean = false;
   zeroBased: boolean = false;
@@ -214,6 +222,27 @@ export default class FrontendSettings extends Mixins<
 
     if (success) {
       this.defaultGraphTimeframe = timeframe;
+    }
+  }
+
+  async onVisibleTimeframesChange(timeframes: TimeFrameSetting[]) {
+    const payload: FrontendSettingsPayload = {
+      [VISIBLE_TIMEFRAMES]: timeframes
+    };
+
+    const messages: BaseMessage = {
+      success: '',
+      error: ''
+    };
+
+    const { success } = await this.modifyFrontendSetting(
+      payload,
+      SETTING_VISIBLE_TIMEFRAMES,
+      messages
+    );
+
+    if (success) {
+      this.visibleTimeframes = timeframes;
     }
   }
 
@@ -336,7 +365,9 @@ export default class FrontendSettings extends Mixins<
   mounted() {
     const state = this.$store.state;
     this.scrambleData = state.session.scrambleData;
+    this.currentSessionTimeframe = state.session.timeframe;
     this.defaultGraphTimeframe = state.settings![TIMEFRAME_SETTING];
+    this.visibleTimeframes = state.settings![VISIBLE_TIMEFRAMES];
     this.queryPeriod = state.settings![QUERY_PERIOD].toString();
     const period = state.settings![REFRESH_PERIOD];
     this.zeroBased = state.settings![GRAPH_ZERO_BASED];

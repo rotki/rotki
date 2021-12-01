@@ -1,4 +1,5 @@
 import { DARK_MODE_ENABLED } from '@rotki/common/lib/settings';
+import { TimeFrameSetting } from '@rotki/common/lib/settings/graphs';
 import { SettingsState } from '@/store/settings/state';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
@@ -12,7 +13,8 @@ import {
   PROFIT_LOSS_PERIOD,
   ProfitLossTimeframe,
   THOUSAND_SEPARATOR,
-  DashboardTablesVisibleColumns
+  DashboardTablesVisibleColumns,
+  VISIBLE_TIMEFRAMES
 } from '@/types/frontend-settings';
 
 type SettingsGetters = {
@@ -23,6 +25,7 @@ type SettingsGetters = {
   [DARK_MODE_ENABLED]: boolean;
   [DASHBOARD_TABLES_VISIBLE_COLUMNS]: DashboardTablesVisibleColumns;
   [DATE_INPUT_FORMAT]: DateFormat;
+  [VISIBLE_TIMEFRAMES]: TimeFrameSetting[];
 };
 
 export const getters: Getters<
@@ -38,5 +41,6 @@ export const getters: Getters<
   [DARK_MODE_ENABLED]: state => state[DARK_MODE_ENABLED],
   [DASHBOARD_TABLES_VISIBLE_COLUMNS]: state =>
     state[DASHBOARD_TABLES_VISIBLE_COLUMNS],
-  [DATE_INPUT_FORMAT]: state => state[DATE_INPUT_FORMAT]
+  [DATE_INPUT_FORMAT]: state => state[DATE_INPUT_FORMAT],
+  [VISIBLE_TIMEFRAMES]: state => state[VISIBLE_TIMEFRAMES]
 };

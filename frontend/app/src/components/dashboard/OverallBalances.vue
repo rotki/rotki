@@ -53,7 +53,10 @@
             />
           </span>
         </div>
-        <timeframe-selector v-model="activeTimeframe" />
+        <timeframe-selector
+          v-model="activeTimeframe"
+          :visible-timeframes="visibleTimeframes"
+        />
       </v-col>
       <v-col cols="12" md="6" lg="7" class="d-flex">
         <div
@@ -119,7 +122,8 @@ import { bigNumberify } from '@/utils/bignumbers';
   computed: {
     ...mapGetters('session', ['currencySymbol', 'floatingPrecision']),
     ...mapGetters('statistics', ['netValue', 'totalNetWorth']),
-    ...mapState('session', ['timeframe'])
+    ...mapState('session', ['timeframe']),
+    ...mapGetters('settings', ['visibleTimeframes'])
   },
   methods: {
     ...mapActions('statistics', ['fetchNetValue']),
@@ -133,6 +137,7 @@ export default class OverallBox extends Mixins(PremiumMixin, StatusMixin) {
   totalNetWorth!: BigNumber;
   fetchNetValue!: () => Promise<void>;
   timeframe!: TimeFramePeriod;
+  visibleTimeframes!: TimeFramePeriod[];
   setTimeframe!: (timeframe: TimeFramePeriod) => void;
   updateSetting!: (payload: FrontendSettingsPayload) => Promise<ActionStatus>;
   floatingPrecision!: number;
