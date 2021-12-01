@@ -2021,6 +2021,25 @@ class DBHandler:
                 self.conn.rollback()
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
 
+        if new_name is not None:
+            exchange_re = re.compile(r'(.*?)_(trades|margins|asset_movements|ledger_actions).*')
+            used_ranges_query = f'SELECT * from used_query_ranges WHERE name LIKE "{str(location)}_%_{name}"'  # noqa: E501
+            used_ranges = cursor.execute(used_ranges_query)
+            entry_types = set()
+            for used_range in used_ranges:
+                range_name = used_range[0]
+                match = exchange_re.search(range_name)
+                if match is None:
+                    continue
+                entry_types.add(match.group(2))
+            cursor.executemany(
+                'UPDATE used_query_ranges SET name=? WHERE name=?',
+                [
+                    (f'{str(location)}_{entry_type}_{new_name}', f'{str(location)}_{entry_type}_{name}')  # noqa: E501
+                    for entry_type in entry_types
+                ],
+            )
+
         if should_commit is True:
             self.update_last_write()
 
