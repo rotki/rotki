@@ -1,5 +1,5 @@
-const fs = require("fs");
 const { spawn } = require("child_process");
+const fs = require("fs");
 
 const PROXY = 'proxy';
 const COMMON = '@rotki/common'
@@ -80,7 +80,24 @@ commonProcesses.stderr.on('data', buffer => {
 pids[commonProcesses.pid] = COMMON
 
 logger.info("Starting rotki dev mode");
-const devRotkiProcess = spawn("sleep 20 && npm run electron:serve -w rotki", {
+const getDebuggerPort = () => {
+  try {
+    const debuggerPort = process.env.DEBUGGER_PORT;
+    if (debuggerPort) {
+      const portNum = parseInt(debuggerPort);
+      return isFinite(portNum) && (portNum > 0 || portNum < 65535) ? portNum : null;
+    }
+    return null
+  } catch (e) {
+    return null
+  }
+};
+const debuggerPort = getDebuggerPort()
+const args = debuggerPort? ` -- --remote-debugging-port=${debuggerPort}` : ''
+if (args) {
+  logger.info(`starting rotki with args: ${args}`)
+}
+const devRotkiProcess = spawn(`sleep 20 && npm run electron:serve -w rotki${args}`, {
   shell: true,
   stdio: [process.stdin]
 });
