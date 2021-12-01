@@ -34,12 +34,14 @@ import {
   NFTS_IN_NET_VALUE,
   DASHBOARD_TABLES_VISIBLE_COLUMNS,
   DashboardTablesVisibleColumns,
-  DATE_INPUT_FORMAT
+  DATE_INPUT_FORMAT,
+  VISIBLE_TIMEFRAMES
 } from '@/types/frontend-settings';
 
 type Mutations<S = SettingsState> = {
   [DEFI_SETUP_DONE](state: S, done: boolean): void;
   [TIMEFRAME_SETTING](state: S, timeframe: TimeFrameSetting): void;
+  [VISIBLE_TIMEFRAMES](state: S, timeframes: TimeFrameSetting[]): void;
   [LAST_KNOWN_TIMEFRAME](state: S, timeframe: TimeFramePeriod): void;
   [QUERY_PERIOD](state: S, period: number): void;
   [PROFIT_LOSS_PERIOD](state: S, period: ProfitLossTimeframe): void;
@@ -74,6 +76,12 @@ export const mutations: Mutations = {
     timeframe: TimeFrameSetting
   ) {
     state[TIMEFRAME_SETTING] = timeframe;
+  },
+  [VISIBLE_TIMEFRAMES](
+    state: Writeable<SettingsState>,
+    timeframes: TimeFrameSetting[]
+  ) {
+    state[VISIBLE_TIMEFRAMES] = timeframes;
   },
   [LAST_KNOWN_TIMEFRAME](
     state: Writeable<SettingsState>,

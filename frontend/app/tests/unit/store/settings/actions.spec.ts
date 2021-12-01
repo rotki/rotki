@@ -34,7 +34,8 @@ import {
   REFRESH_PERIOD,
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
-  VALUE_ROUNDING_MODE
+  VALUE_ROUNDING_MODE,
+  VISIBLE_TIMEFRAMES
 } from '../../../../src/types/frontend-settings';
 
 jest.mock('@/services/rotkehlchen-api');
@@ -55,6 +56,7 @@ describe('settings:actions', () => {
           axiosSnakeCaseTransformer({
             [DEFI_SETUP_DONE]: true,
             [TIMEFRAME_SETTING]: TimeFramePersist.REMEMBER,
+            [VISIBLE_TIMEFRAMES]: Defaults.DEFAULT_VISIBLE_TIMEFRAMES,
             [LAST_KNOWN_TIMEFRAME]: TimeFramePeriod.ALL,
             [QUERY_PERIOD]: 5,
             [PROFIT_LOSS_PERIOD]: {

@@ -14,7 +14,7 @@
       <span v-text="$t('overall_balances.premium_hint')" />
     </v-tooltip>
     <v-chip
-      v-for="(timeframe, i) in timeframes"
+      v-for="(timeframe, i) in visibleTimeframes"
       :key="i"
       :class="activeClass(timeframe)"
       class="ma-2"
@@ -29,7 +29,6 @@
 
 <script lang="ts">
 import {
-  TimeFramePeriod,
   TimeFramePersist,
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
@@ -44,8 +43,8 @@ export default class TimeframeSelector extends Mixins(PremiumMixin) {
   value!: TimeFrameSetting;
   @Prop({ required: false, type: Boolean, default: false })
   disabled!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  setting!: boolean;
+  @Prop({ required: true, type: Array })
+  visibleTimeframes!: TimeFrameSetting[];
 
   @Emit()
   input(_value: TimeFrameSetting) {}
@@ -56,14 +55,6 @@ export default class TimeframeSelector extends Mixins(PremiumMixin) {
 
   activeClass(timeframePeriod: TimeFrameSetting): string {
     return timeframePeriod === this.value ? 'timeframe-selector--active' : '';
-  }
-
-  get timeframes() {
-    const period = Object.values(TimeFramePeriod);
-    if (this.setting) {
-      return [TimeFramePersist.REMEMBER, ...period] as const;
-    }
-    return period;
   }
 }
 </script>

@@ -29,7 +29,8 @@ import {
   REFRESH_PERIOD,
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
-  VALUE_ROUNDING_MODE
+  VALUE_ROUNDING_MODE,
+  VISIBLE_TIMEFRAMES
 } from '../../../../src/types/frontend-settings';
 
 describe('settings:mutations', () => {
@@ -38,6 +39,14 @@ describe('settings:mutations', () => {
       [DEFI_SETUP_DONE]: true,
       [TIMEFRAME_SETTING]: TimeFramePeriod.YEAR,
       [LAST_KNOWN_TIMEFRAME]: TimeFramePeriod.TWO_WEEKS,
+      [VISIBLE_TIMEFRAMES]: [
+        TimeFramePeriod.ALL,
+        TimeFramePeriod.YEAR,
+        TimeFramePeriod.THREE_MONTHS,
+        TimeFramePeriod.MONTH,
+        TimeFramePeriod.TWO_WEEKS,
+        TimeFramePeriod.WEEK
+      ],
       [QUERY_PERIOD]: 5,
       [PROFIT_LOSS_PERIOD]: {
         year: '2018',
@@ -84,6 +93,14 @@ describe('settings:mutations', () => {
     expect(settings[DEFI_SETUP_DONE]).toBe(true);
     expect(settings[TIMEFRAME_SETTING]).toBe(TimeFramePeriod.YEAR);
     expect(settings[LAST_KNOWN_TIMEFRAME]).toBe(TimeFramePeriod.TWO_WEEKS);
+    expect(settings[VISIBLE_TIMEFRAMES]).toStrictEqual([
+      TimeFramePeriod.ALL,
+      TimeFramePeriod.YEAR,
+      TimeFramePeriod.THREE_MONTHS,
+      TimeFramePeriod.MONTH,
+      TimeFramePeriod.TWO_WEEKS,
+      TimeFramePeriod.WEEK
+    ]);
     expect(settings[QUERY_PERIOD]).toBe(5);
     expect(settings[PROFIT_LOSS_PERIOD]).toMatchObject({
       year: '2018',

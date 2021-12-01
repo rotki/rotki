@@ -1,3 +1,4 @@
+import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import { TableColumn } from '@/types/table-column';
@@ -6,6 +7,14 @@ export class Defaults {
   static DEFAULT_DATE_DISPLAY_FORMAT =
     DateFormat.DateMonthYearHourMinuteSecondTimezone;
   static DEFAULT_DATE_INPUT_FORMAT = DateFormat.DateMonthYearHourMinuteSecond;
+  static DEFAULT_VISIBLE_TIMEFRAMES = [
+    TimeFramePeriod.ALL,
+    TimeFramePeriod.YEAR,
+    TimeFramePeriod.THREE_MONTHS,
+    TimeFramePeriod.MONTH,
+    TimeFramePeriod.TWO_WEEKS,
+    TimeFramePeriod.WEEK
+  ];
   static DEFAULT_THOUSAND_SEPARATOR = ',';
   static DEFAULT_DECIMAL_SEPARATOR = '.';
   static DEFAULT_CURRENCY_LOCATION = CurrencyLocation.AFTER;

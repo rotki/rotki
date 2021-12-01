@@ -21,6 +21,7 @@ import { TableColumnEnum } from '@/types/table-column';
 
 export const DEFI_SETUP_DONE = 'defiSetupDone' as const;
 export const TIMEFRAME_SETTING = 'timeframeSetting' as const;
+export const VISIBLE_TIMEFRAMES = 'visibleTimeframes' as const;
 export const LAST_KNOWN_TIMEFRAME = 'lastKnownTimeframe' as const;
 export const QUERY_PERIOD = 'queryPeriod' as const;
 export const PROFIT_LOSS_PERIOD = 'profitLossReportPeriod' as const;
@@ -109,6 +110,9 @@ export type DashboardTablesVisibleColumns = z.infer<
 export const FrontendSettings = z.object({
   [DEFI_SETUP_DONE]: z.boolean().default(false),
   [TIMEFRAME_SETTING]: TimeFrameSetting.default(TimeFramePersist.REMEMBER),
+  [VISIBLE_TIMEFRAMES]: z
+    .array(TimeFrameSetting)
+    .default(Defaults.DEFAULT_VISIBLE_TIMEFRAMES),
   [LAST_KNOWN_TIMEFRAME]: TimeFramePeriodEnum.default(TimeFramePeriod.ALL),
   [QUERY_PERIOD]: z.number().int().nonnegative().default(5),
   [PROFIT_LOSS_PERIOD]: ProfitLossTimeframe.default({
