@@ -26,7 +26,15 @@ export class HistoryPage {
       .parent()
       .find('.v-progress-linear')
       .should('not.exist');
-    cy.get('[data-cy=rate]').type(`{selectall}{backspace}${trade.rate}`);
+    if (trade.quote_amount) {
+      cy.get('[data-cy=grouped-amount-input__swap-button]').click();
+      cy.get('[data-cy=quote-amount]').type(
+        `{selectall}{backspace}${trade.quote_amount}`
+      );
+      cy.get('[data-cy=rate]').should('have.value', trade.rate);
+    } else {
+      cy.get('[data-cy=rate]').type(`{selectall}{backspace}${trade.rate}`);
+    }
     cy.get('[data-cy=fee]').type(trade.fee);
     selectAsset('[data-cy=fee-currency]', trade.fee_currency, trade.fee_id);
     cy.get('[data-cy=link]').type(trade.link);

@@ -1729,8 +1729,10 @@
       "hint": "Amount bought/sold"
     },
     "rate": {
-      "label": "Rate",
-      "hint": "Rate of the trade"
+      "label": "Rate of the trade"
+    },
+    "quote_amount": {
+      "label": "Quote amount bought/sold"
     },
     "fee": {
       "label": "Fee",
@@ -1752,7 +1754,8 @@
       "non_empty_amount": "The amount cannot be empty",
       "non_empty_base": "The base asset cannot be empty",
       "non_empty_quote": "The quote asset cannot be empty",
-      "non_empty_rate": "The rate cannot be empty"
+      "non_empty_rate": "The rate cannot be empty",
+      "non_empty_quote_amount": "The quote amount cannot be empty"
     }
   },
   "user_dropdown": {
