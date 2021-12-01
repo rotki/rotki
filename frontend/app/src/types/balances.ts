@@ -10,6 +10,12 @@ const Validator = z.object({
   publicKey: z.string()
 });
 
-export const Eth2Validators = z.array(Validator);
+export type Eth2ValidatorEntry = z.infer<typeof Validator>;
+
+export const Eth2Validators = z.object({
+  entries: z.array(Validator),
+  entriesFound: z.number().nonnegative(),
+  entriesLimit: z.number().min(-1)
+});
 
 export type Eth2Validators = z.infer<typeof Eth2Validators>;

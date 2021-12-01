@@ -24,7 +24,11 @@ import {
   validWithSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
-import { Eth2Validator, Eth2Validators } from '@/types/balances';
+import {
+  Eth2Validator,
+  Eth2ValidatorEntry,
+  Eth2Validators
+} from '@/types/balances';
 import { SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 import { PriceOracle } from '@/types/user';
@@ -277,7 +281,9 @@ export class BalancesApi {
     return Eth2Validators.parse(result);
   }
 
-  async deleteEth2Validators(validators: Eth2Validators): Promise<boolean> {
+  async deleteEth2Validators(
+    validators: Eth2ValidatorEntry[]
+  ): Promise<boolean> {
     const response = await this.axios.delete<ActionResult<boolean>>(
       '/blockchains/ETH2/validators',
       {

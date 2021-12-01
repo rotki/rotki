@@ -23,7 +23,11 @@ export const defaultState = (): BalanceState => ({
     standalone: [],
     xpubs: []
   },
-  eth2Validators: [],
+  eth2Validators: {
+    entries: [],
+    entriesLimit: 0,
+    entriesFound: 0
+  },
   supportedAssets: [],
   manualBalances: [],
   manualLiabilities: [],

@@ -130,7 +130,7 @@ export const getters: Getters<
             usdValue: assetSum(assets)
           }
         : { amount: Zero, usdValue: Zero };
-      const validator = eth2Validators.find(
+      const validator = eth2Validators.entries.find(
         validator => validator.publicKey === publicKey
       );
       balances.push({

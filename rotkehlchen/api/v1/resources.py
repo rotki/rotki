@@ -1260,7 +1260,7 @@ class Eth2ValidatorsResource(BaseResource):
         )
 
     @use_kwargs(delete_schema, location='json')
-    def delete(self, validators: List[Dict]) -> Response:
+    def delete(self, validators: List[Dict[str, Any]]) -> Response:
         return self.rest_api.delete_eth2_validator(validators)
 
 

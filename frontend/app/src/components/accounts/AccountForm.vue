@@ -44,22 +44,23 @@
       :validator="validator"
       @update:validator="validator = $event"
     />
+    <div v-else>
+      <v-text-field
+        v-model="label"
+        data-cy="account-label-field"
+        outlined
+        class="account-form__label"
+        :label="$t('account_form.labels.label')"
+        :disabled="loading"
+      />
 
-    <v-text-field
-      v-model="label"
-      data-cy="account-label-field"
-      outlined
-      class="account-form__label"
-      :label="$t('account_form.labels.label')"
-      :disabled="loading"
-    />
-
-    <tag-input
-      v-model="tags"
-      data-cy="account-tag-field"
-      outlined
-      :disabled="loading"
-    />
+      <tag-input
+        v-model="tags"
+        data-cy="account-tag-field"
+        outlined
+        :disabled="loading"
+      />
+    </div>
 
     <div class="account-form--progress">
       <v-progress-linear v-if="accountOperation" indeterminate />

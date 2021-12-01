@@ -421,6 +421,9 @@
       "end_date": "filter by the ending date of the period"
     }
   },
+  "eth2_validator_limit_row": {
+    "label": "Beacon chain validators"
+  },
   "exchange_keys_form": {
     "api_key": {
       "non_empty": "The api key field cannot be empty."

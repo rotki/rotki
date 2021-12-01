@@ -165,6 +165,9 @@
           @edit-clicked="editClick($event)"
         />
       </template>
+      <template v-if="isEth2" #body.prepend="{ headers }">
+        <eth2-validator-limit-row :colspan="headers.length" />
+      </template>
     </data-table>
   </v-sheet>
 </template>
@@ -179,6 +182,7 @@ import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
 
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
+import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
@@ -203,6 +207,7 @@ import { Zero } from '@/utils/bignumbers';
 
 @Component({
   components: {
+    Eth2ValidatorLimitRow,
     DataTable,
     TableExpandContainer,
     LabeledAddressDisplay,

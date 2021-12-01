@@ -50,7 +50,7 @@ import {
 } from '@/store/types';
 import { isLoading, setStatus, showError } from '@/store/utils';
 import { Writeable } from '@/types';
-import { Eth2Validator } from '@/types/balances';
+import { Eth2Validator, Eth2Validators } from '@/types/balances';
 import { Exchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 import {
@@ -1436,15 +1436,21 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
   async deleteEth2Validators({ dispatch, state, commit }, validators: string) {
     try {
-      const eth2Validators = state.eth2Validators.filter(({ publicKey }) =>
+      const entries = [...state.eth2Validators.entries];
+      const eth2Validators = entries.filter(({ publicKey }) =>
         validators.includes(publicKey)
       );
       const success = await api.balances.deleteEth2Validators(eth2Validators);
       if (success) {
-        const remainingValidators = [...state.eth2Validators].filter(
+        const remainingValidators = entries.filter(
           ({ publicKey }) => !validators.includes(publicKey)
         );
-        commit('eth2Validators', remainingValidators);
+        const data: Eth2Validators = {
+          entriesLimit: state.eth2Validators.entriesLimit,
+          entriesFound: remainingValidators.length,
+          entries: remainingValidators
+        };
+        commit('eth2Validators', data);
         const balances = { ...state.eth2 };
         for (const validator of validators) {
           delete balances[validator];
