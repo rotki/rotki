@@ -30,6 +30,11 @@ def test_migration_1(rotkehlchen_api_server):
             should_exist=True,
             queryrange_formatstr='{exchange}_{type}',
         )
+        cursor = db.conn.cursor()
+        result = cursor.execute(
+            'SELECT COUNT(*) from used_query_ranges WHERE name="bittrex_trades"',
+        )
+        assert result.fetchone()[0] == 1
 
     DataMigrationManager(rotki).maybe_migrate_data()
     errors = rotki.msg_aggregator.consume_errors()
@@ -39,6 +44,11 @@ def test_migration_1(rotkehlchen_api_server):
     check_saved_events_for_exchange(Location.BINANCE, rotki.data.db, should_exist=False)
     check_saved_events_for_exchange(Location.POLONIEX, rotki.data.db, should_exist=True)
     check_saved_events_for_exchange(Location.KRAKEN, rotki.data.db, should_exist=False)
+    cursor = db.conn.cursor()
+    result = cursor.execute(
+        'SELECT COUNT(*) from used_query_ranges WHERE name="bittrex_trades"',
+    )
+    assert result.fetchone()[0] == 0
 
     assert rotki.data.db.get_settings().last_data_migration == 1
 

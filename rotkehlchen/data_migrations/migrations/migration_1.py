@@ -3,6 +3,7 @@ import re
 from typing import TYPE_CHECKING
 
 from rotkehlchen.errors import DeserializationError
+from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Location
 
@@ -59,7 +60,11 @@ def data_migration_1(rotki: 'Rotkehlchen') -> None:
             continue
 
         if location not in location_to_name:
-            continue  # a non CEX location such as uniswap/balancer
+            if location in SUPPORTED_EXCHANGES:
+                # Can happen if there is a stray used_query_range from a non-connected exchange
+                cursor.execute('DELETE FROM used_query_ranges WHERE name=?', (range_name,))
+            # in any case continue. Can also be non CEX location such as uniswap/balancer
+            continue
 
         if location in multiple_locations or location == Location.KRAKEN:
             db.purge_exchange_data(location)
