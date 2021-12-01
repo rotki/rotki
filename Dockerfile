@@ -27,16 +27,16 @@ RUN git clone https://github.com/sqlcipher/sqlcipher && \
     make install && \
     ldconfig
 
-RUN python3 -m pip install --upgrade pip
-COPY ./requirements.txt /app/requirements.txt
-
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 RUN rustup default nightly-2021-03-24 
 
+RUN python3 -m pip install --upgrade pip setuptools wheel
+COPY ./requirements.txt /app/requirements.txt
+
 WORKDIR /app
 
-RUN pip install maturin==0.11.2 py-sr25519-bindings==0.1.2 wheel
+RUN pip install maturin==0.12.3 py-sr25519-bindings==0.1.3 py-ed25519-bindings==0.1.3 py-bip39-bindings==0.1.7 wheel
 RUN pip install -r requirements.txt
 
 COPY . /app
