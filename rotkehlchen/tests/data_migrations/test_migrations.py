@@ -1,7 +1,9 @@
+from unittest.mock import patch
+
 import pytest
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.data_migrations.manager import DataMigrationManager
+from rotkehlchen.data_migrations.manager import DataMigrationManager, MigrationRecord
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
@@ -68,3 +70,32 @@ def test_migration_1(rotkehlchen_api_server):
     check_saved_events_for_exchange(Location.POLONIEX, rotki.data.db, should_exist=True)
     check_saved_events_for_exchange(Location.KRAKEN, rotki.data.db, should_exist=True)
     assert rotki.data.db.get_settings().last_data_migration == 1
+
+
+@pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
+@pytest.mark.parametrize('data_migration_version', [None])
+@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+def test_failed_migration(rotkehlchen_api_server):
+    """Test that a failed migration does not update DB setting and logs error"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+
+    def botched_migration(rotki) -> None:
+        raise ValueError('ngmi')
+
+    botched_list = [MigrationRecord(version=1, function=botched_migration)]
+
+    migrate_mock = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=botched_list,
+    )
+    with migrate_mock:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    settings = db.get_settings()
+    assert settings.last_data_migration == 0, 'no upgrade should have happened'
+    errors = rotki.msg_aggregator.consume_errors()
+    warnings = rotki.msg_aggregator.consume_warnings()
+    assert len(warnings) == 0
+    assert len(errors) == 1
+    assert errors[0] == 'Failed to run soft data migration to version 1 due to ngmi'
