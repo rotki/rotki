@@ -10,6 +10,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
+    assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.exchanges import mock_binance_balance_response, try_get_first_exchange
 from rotkehlchen.typing import Location
@@ -34,10 +35,8 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
 
     # Check querying the async taks resource when no async task is scheduled
     response = requests.get(api_url_for(server, "asynctasksresource"))
-    assert_proper_response(response)
-    json_data = response.json()
-    assert json_data['message'] == ''
-    assert json_data['result'] == {'completed': [], 'pending': []}
+    result = assert_proper_response_with_result(response)
+    assert result == {'completed': [], 'pending': []}
 
     # Create an async task
     with binance_patch:
@@ -50,10 +49,8 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
 
         # now check that there is a task
         response = requests.get(api_url_for(server, 'asynctasksresource'))
-        assert_proper_response(response)
-        json_data = response.json()
-        assert json_data['message'] == ''
-        assert json_data['result'] == {'completed': [], 'pending': [task_id]}
+        result = assert_proper_response_with_result(response)
+        assert result == {'completed': [], 'pending': [task_id]}
         # assert json_data['result'] == {'completed': [], 'pending': []}
 
         # now query for the task result and see it's still pending (test for task lists)
@@ -125,30 +122,26 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
 
     # now check that there is a task
     response = requests.get(api_url_for(server, 'asynctasksresource'))
-    assert_proper_response(response)
-    json_data = response.json()
-    assert json_data['message'] == ''
-    assert json_data['result'] == {'completed': [task_id], 'pending': []}
+    result = assert_proper_response_with_result(response)
+    assert result == {'completed': [task_id], 'pending': []}
 
     while True:
         # and now query for the task result and assert on it
         response = requests.get(
             api_url_for(server, "specific_async_tasks_resource", task_id=task_id),
         )
-        assert_proper_response(response)
-        json_data = response.json()
-        if json_data['result']['status'] == 'pending':
+        result = assert_proper_response_with_result(response)
+        if result['status'] == 'pending':
             # context switch so that the greenlet to query balances can operate
             gevent.sleep(1)
-        elif json_data['result']['status'] == 'completed':
+        elif result['status'] == 'completed':
             break
         else:
-            raise AssertionError(f"Unexpected status: {json_data['result']['status']}")
+            raise AssertionError(f"Unexpected status: {result['status']}")
 
-    assert json_data['message'] == ''
-    assert json_data['result']['status'] == 'completed'
+    assert result['status'] == 'completed'
     # assert that the backend task query died and we detect it
-    assert json_data['result']['outcome'] is not None
-    assert json_data['result']['outcome']['result'] is None
+    assert result['outcome'] is not None
+    assert result['outcome']['result'] is None
     msg = 'The backend query task died unexpectedly: BOOM!'
-    assert json_data['result']['outcome']['message'] == msg
+    assert result['outcome']['message'] == msg
