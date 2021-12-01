@@ -7,25 +7,60 @@
     :items="items"
     :label="$t('account_form.labels.blockchain')"
     :disabled="disabled"
+    item-value="symbol"
     @change="updateBlockchain"
   >
     <template #selection="{ item }">
-      <asset-details class="pt-2 pb-2" :asset="item" />
+      <chain-display :item="item" />
     </template>
     <template #item="{ item }">
-      <asset-details class="pt-2 pb-2" :asset="item" />
+      <chain-display :item="item" />
     </template>
   </v-select>
 </template>
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { defineComponent, PropType, computed } from '@vue/composition-api';
+import { computed, defineComponent, PropType } from '@vue/composition-api';
+import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import { setupModuleEnabled } from '@/composables/session';
 import { Module } from '@/types/modules';
 
+type SupportedChain = {
+  symbol: Blockchain;
+  name: string;
+};
+
+const chains: SupportedChain[] = [
+  {
+    symbol: Blockchain.ETH,
+    name: 'Ethereum'
+  },
+  {
+    symbol: Blockchain.ETH2,
+    name: 'Beacon chain validator'
+  },
+  {
+    symbol: Blockchain.BTC,
+    name: 'Bitcoin'
+  },
+  {
+    symbol: Blockchain.KSM,
+    name: 'Kusama'
+  },
+  {
+    symbol: Blockchain.DOT,
+    name: 'Polkadot'
+  },
+  {
+    symbol: Blockchain.AVAX,
+    name: 'Avalanche'
+  }
+];
+
 export default defineComponent({
   name: 'ChainSelect',
+  components: { ChainDisplay },
   props: {
     blockchain: {
       required: true,
@@ -45,13 +80,12 @@ export default defineComponent({
     const { isModuleEnabled } = setupModuleEnabled();
 
     const items = computed(() => {
-      const modules: Blockchain[] = Object.values(Blockchain);
       const isEth2Enabled = isModuleEnabled(Module.ETH2).value;
 
       if (!isEth2Enabled) {
-        return modules.filter(value => value !== Blockchain.ETH2);
+        return chains.filter(({ symbol }) => symbol !== Blockchain.ETH2);
       }
-      return modules;
+      return chains;
     });
 
     return {

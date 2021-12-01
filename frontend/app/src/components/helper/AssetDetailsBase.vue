@@ -1,151 +1,84 @@
 <template>
-  <span
+  <list-item
     v-bind="$attrs"
-    class="asset-details-base pt-3 pb-3"
     :class="opensDetails ? 'asset-details-base--link' : null"
+    :title="symbol"
+    :subtitle="name"
     @click="navigate"
   >
-    <asset-icon
-      :changeable="changeable"
-      size="26px"
-      class="asset-details-base__icon"
-      :identifier="identifier"
-      :symbol="symbol"
-    />
-    <span class="asset-details-base__details ms-2">
-      <span
-        class="asset-details-base__details__symbol"
-        data-cy="details-symbol"
-      >
-        {{ symbol }}
-      </span>
-      <span
-        v-if="!hideName"
-        class="grey--text asset-details-base__details__subtitle"
-      >
-        <v-tooltip open-delay="400" top :disabled="$vuetify.breakpoint.lgAndUp">
-          <template #activator="{ on, attrs }">
-            <span v-bind="attrs" class="text-truncate" v-on="on">
-              {{ name }}
-            </span>
-          </template>
-          <span> {{ fullName }}</span>
-        </v-tooltip>
-      </span>
-    </span>
-  </span>
+    <template #icon>
+      <asset-icon
+        :changeable="changeable"
+        size="26px"
+        :identifier="identifier"
+        :symbol="symbol"
+      />
+    </template>
+  </list-item>
 </template>
 
 <script lang="ts">
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import ListItem from '@/components/helper/ListItem.vue';
+import { useRouter } from '@/composables/common';
 import { Routes } from '@/router/routes';
 
-@Component({
-  components: { AssetIcon }
-})
-export default class AssetDetailsBase extends Vue {
-  @Prop({ required: true })
-  asset!: SupportedAsset;
-  @Prop({ required: false, type: Boolean, default: false })
-  opensDetails!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  changeable!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  hideName!: boolean;
-
-  get identifier(): string {
-    if ('ethereumAddress' in this.asset) {
-      return `_ceth_${this.asset.ethereumAddress}`;
-    }
-    return this.asset.identifier;
-  }
-
-  get symbol(): string {
-    return this.asset.symbol;
-  }
-
-  get fullName(): string {
-    return this.asset.name ?? '';
-  }
-
-  get name(): string {
-    const name = this.fullName;
-    const truncLength = 7;
-    const xsOnly = this.$vuetify.breakpoint.mdAndDown;
-    const length = name.length;
-
-    if (!xsOnly || (length <= truncLength * 2 && xsOnly)) {
-      return name;
-    }
-
-    return (
-      name.slice(0, truncLength) +
-      '...' +
-      name.slice(length - truncLength, length)
-    );
-  }
-
-  navigate() {
-    if (!this.opensDetails) {
-      return;
-    }
-    this.$router.push({
-      path: Routes.ASSETS.replace(':identifier', this.identifier ?? this.symbol)
+const AssetDetailsBase = defineComponent({
+  name: 'AssetDetailsBase',
+  components: { ListItem, AssetIcon },
+  props: {
+    asset: {
+      required: true,
+      type: Object as PropType<SupportedAsset>
+    },
+    opensDetails: { required: false, type: Boolean, default: false },
+    changeable: { required: false, type: Boolean, default: false },
+    hideName: { required: false, type: Boolean, default: false }
+  },
+  setup(props) {
+    const { asset, opensDetails } = toRefs(props);
+    const identifier = computed(() => {
+      const supportedAsset = asset.value;
+      if ('ethereumAddress' in supportedAsset) {
+        return `_ceth_${supportedAsset.ethereumAddress}`;
+      }
+      return supportedAsset.identifier;
     });
+    const symbol = computed(() => asset.value.symbol);
+    const name = computed(() => asset.value.name);
+    const router = useRouter();
+    const navigate = () => {
+      if (!opensDetails.value) {
+        return;
+      }
+      const id = identifier.value ?? symbol.value;
+      router.push({
+        path: Routes.ASSETS.replace(':identifier', id)
+      });
+    };
+
+    return {
+      symbol,
+      name,
+      identifier,
+      navigate
+    };
   }
-}
+});
+export default AssetDetailsBase;
 </script>
 
 <style scoped lang="scss">
 .asset-details-base {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  width: 100%;
-
   &--link {
     cursor: pointer;
-  }
-
-  &__icon {
-    margin-right: 8px;
-  }
-
-  &__details {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-
-    &__symbol {
-      text-overflow: ellipsis;
-      overflow: hidden;
-      white-space: nowrap;
-
-      @media (min-width: 700px) and (max-width: 1500px) {
-        width: 100px;
-      }
-    }
-
-    &__subtitle {
-      font-size: 0.8rem;
-      text-overflow: ellipsis;
-      overflow: hidden;
-      white-space: nowrap;
-
-      @media (min-width: 700px) and (max-width: 1500px) {
-        width: 100px;
-      }
-    }
-
-    @media (min-width: 700px) and (max-width: 1500px) {
-      width: 100px;
-    }
-  }
-
-  @media (min-width: 700px) and (max-width: 1500px) {
-    width: 100px;
   }
 }
 </style>
