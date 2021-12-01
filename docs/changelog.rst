@@ -10,7 +10,7 @@ Changelog
 * :bug:`3749` Users using multiple instances of the same exchange should now correctly see all their trades.
 * :bug:`-` Liquity users won't make extra balances queries when using DSProxies.
 * :bug:`3767` At module selection clicking on the module chip won't keep the text in the selection field.
-
+* :bug:`-` Users will now be able to edit exchanges names for Kucoin and Coinbase Pro.
 
 * :release:`1.22.1 <2021-11-19>`
 * :bug:`3726` Manual liabilities should not count as assets and should be deducted from total net value when taking a snapshot. Also multiple liabilities of same asset should now be properly summed.
