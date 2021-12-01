@@ -54,7 +54,7 @@ jobs:
           key: ${{ runner.os }}-testdir
       - name: Install dependencies
         run: |
-          pip install --upgrade "pip<19.0.0" wheel
+          pip install --upgrade pip==21.3.1 wheel
           pip install codecov pytest-cov
           pip install -r requirements_dev.txt
           pip install -e .
@@ -125,6 +125,7 @@ jobs:
           sudo ldconfig
       - name: Setup backend
         run: |
+          pip install --upgrade pip==21.3.1 wheel
           pip install -r requirements.txt
           pip install -e .
       - name: Run integration tests
