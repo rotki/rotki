@@ -29,6 +29,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_MAIN_CURRENCY,
+    DEFAULT_LAST_DATA_MIGRATION,
     DEFAULT_PNL_CSV_HAVE_SUMMARY,
     DEFAULT_PNL_CSV_WITH_FORMULAS,
     DEFAULT_SSF_0GRAPH_MULTIPLIER,
@@ -350,6 +351,7 @@ def test_writing_fetching_data(data_dir, username):
         'pnl_csv_with_formulas': DEFAULT_PNL_CSV_WITH_FORMULAS,
         'pnl_csv_have_summary': DEFAULT_PNL_CSV_HAVE_SUMMARY,
         'ssf_0graph_multiplier': DEFAULT_SSF_0GRAPH_MULTIPLIER,
+        'last_data_migration': DEFAULT_LAST_DATA_MIGRATION,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 
@@ -1357,3 +1359,18 @@ def test_binance_pairs(user_data_dir):
     db.set_binance_pairs('binance', [], Location.BINANCE)
     query = db.get_binance_pairs('binance', Location.BINANCE)
     assert query == []
+
+
+def test_fresh_db_adds_version(user_data_dir):
+    """Test that the DB version gets committed to a fresh DB.
+
+    Regression test for https://github.com/rotki/rotki/issues/3744"""
+    msg_aggregator = MessagesAggregator()
+    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
+    cursor = db.conn.cursor()
+    query = cursor.execute(
+        'SELECT value FROM settings WHERE name=?;', ('version',),
+    )
+    query = query.fetchall()
+    assert len(query) != 0
+    assert int(query[0][0]) == ROTKEHLCHEN_DB_VERSION

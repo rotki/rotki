@@ -319,9 +319,15 @@ class DBHandler:
                 ) from e
 
         # Run upgrades if needed
-        DBUpgradeManager(self).run_upgrades()
+        fresh_db = DBUpgradeManager(self).run_upgrades()
         # create tables if needed (first run - or some new tables)
         self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
+        if fresh_db:  # add DB version. https://github.com/rotki/rotki/issues/3744
+            cursor = self.conn.cursor()
+            cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                ('version', str(ROTKEHLCHEN_DB_VERSION)),
+            )
 
     def get_md5hash(self) -> str:
         """Get the md5hash of the DB
@@ -1336,10 +1342,10 @@ class DBHandler:
         """Get the last start/end timestamp range that has been queried for name
 
         Currently possible names are:
-        - {exchange_name}_trades
-        - {exchange_name}_margins
-        - {exchange_name}_asset_movements
-        - {exchange_name}_ledger_actions
+        - {exchange_location_name}_trades_{exchange_name}
+        - {exchange_location_name}_margins_{exchange_name}
+        - {exchange_location_name}_asset_movements_{exchange_name}
+        - {exchange_location_name}_ledger_actions_{exchange_name}
         - aave_events_{address}
         - yearn_vaults_events_{address}
         - yearn_vaults_v2_events_{address}
@@ -2015,6 +2021,25 @@ class DBHandler:
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 self.conn.rollback()
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
+
+        if new_name is not None:
+            exchange_re = re.compile(r'(.*?)_(trades|margins|asset_movements|ledger_actions).*')
+            used_ranges_query = f'SELECT * from used_query_ranges WHERE name LIKE "{str(location)}_%_{name}"'  # noqa: E501
+            used_ranges = cursor.execute(used_ranges_query)
+            entry_types = set()
+            for used_range in used_ranges:
+                range_name = used_range[0]
+                match = exchange_re.search(range_name)
+                if match is None:
+                    continue
+                entry_types.add(match.group(2))
+            cursor.executemany(
+                'UPDATE used_query_ranges SET name=? WHERE name=?',
+                [
+                    (f'{str(location)}_{entry_type}_{new_name}', f'{str(location)}_{entry_type}_{name}')  # noqa: E501
+                    for entry_type in entry_types
+                ],
+            )
 
         if should_commit is True:
             self.update_last_write()

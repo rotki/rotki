@@ -7,7 +7,6 @@ from shutil import copyfile
 from unittest.mock import patch
 
 import pytest
-from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -35,6 +34,7 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_update_owned_assets,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.tests.utils.database import _init_prepared_db, _use_prepared_db
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -93,23 +93,6 @@ def _init_db_with_target_version(
             initial_settings=None,
         )
     return db
-
-
-def _use_prepared_db(user_data_dir: Path, filename: str) -> None:
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    copyfile(
-        os.path.join(os.path.dirname(dir_path), 'data', filename),
-        user_data_dir / 'rotkehlchen.db',
-    )
-
-
-def _init_prepared_db(user_data_dir: Path, filename: str):
-    _use_prepared_db(user_data_dir, filename)
-    password = '123'
-    conn = sqlcipher.connect(str(user_data_dir / 'rotkehlchen.db'))  # pylint: disable=no-member
-    conn.executescript(f'PRAGMA key={password};')
-    conn.execute('PRAGMA foreign_keys=ON;')
-    return conn
 
 
 def populate_db_and_check_for_asset_renaming(

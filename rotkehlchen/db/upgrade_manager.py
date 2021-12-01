@@ -219,8 +219,10 @@ class DBUpgradeManager():
     def __init__(self, db: 'DBHandler'):
         self.db = db
 
-    def run_upgrades(self) -> None:
+    def run_upgrades(self) -> bool:
         """Run all required database upgrades
+
+        Returns true for fresh database and false otherwise.
 
         May raise:
         - DBUpgradeError if the user uses a newer version than the one we
@@ -229,7 +231,7 @@ class DBUpgradeManager():
         try:
             our_version = self.db.get_version()
         except sqlcipher.OperationalError:  # pylint: disable=no-member
-            return  # fresh database. Nothing to upgrade.
+            return True  # fresh database. Nothing to upgrade.
 
         if our_version > ROTKEHLCHEN_DB_VERSION:
             raise DBUpgradeError(
@@ -260,6 +262,7 @@ class DBUpgradeManager():
             ('version', str(ROTKEHLCHEN_DB_VERSION)),
         )
         self.db.conn.commit()
+        return False
 
     def _perform_single_upgrade(self, upgrade: UpgradeRecord) -> None:
         """
@@ -290,7 +293,7 @@ class DBUpgradeManager():
             try:
                 kwargs = upgrade.kwargs if upgrade.kwargs is not None else {}
                 upgrade.function(db=self.db, **kwargs)
-            except BaseException as e:
+            except BaseException as e:  # lgtm[py/catch-base-exception]
                 # Problem .. restore DB backup and bail out
                 error_message = (
                     f'Failed at database upgrade from version {upgrade.from_version} to '

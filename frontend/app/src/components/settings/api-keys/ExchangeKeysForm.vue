@@ -111,7 +111,7 @@
         :disabled="edit && !editKeys"
         outlined
         :value="exchange.passphrase"
-        :rules="passphraseRules"
+        :rules="!edit || editKeys ? passphraseRules : []"
         prepend-icon="mdi-key-plus"
         data-cy="passphrase"
         :label="$t('exchange_settings.inputs.passphrase')"

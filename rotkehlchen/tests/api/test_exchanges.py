@@ -43,7 +43,7 @@ from rotkehlchen.tests.utils.history import (
     prepare_rotki_for_history_processing_test,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
+from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp, TradeType
 
 
 def mock_validate_api_key():
@@ -736,7 +736,7 @@ def test_query_asset_movements_over_limit(
     rotki = server.rest_api.rotkehlchen
     # Make sure online kraken is not queried by setting query ranges
     rotki.data.db.update_used_query_range(
-        name='kraken_asset_movements',
+        name='kraken_asset_movements_mockkraken',
         start_ts=start_ts,
         end_ts=end_ts,
     )
@@ -841,6 +841,18 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
 def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges):
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    db = rotki.data.db
+    # add some exchanges ranges
+    db.update_used_query_range(name=f'{str(Location.KRAKEN)}_trades_mockkraken', start_ts=0, end_ts=9999)  # noqa: E501
+    db.update_used_query_range(name=f'{str(Location.KRAKEN)}_margins_mockkraken', start_ts=0, end_ts=9999)  # noqa: E501
+    db.update_used_query_range(name=f'{str(Location.KRAKEN)}_asset_movements_mockkraken', start_ts=0, end_ts=9999)  # noqa: E501
+    db.update_used_query_range(name=f'{str(Location.KRAKEN)}_margins_kraken_boi', start_ts=0, end_ts=9999)  # noqa: E501
+    db.update_used_query_range(name=f'{str(Location.KRAKEN)}_asset_movements_kraken_boi', start_ts=0, end_ts=9999)  # noqa: E501
+    db.update_used_query_range(name=f'{str(Location.POLONIEX)}_trades_poloniex', start_ts=0, end_ts=9999)  # noqa: E501
+    db.update_used_query_range(name=f'{str(Location.POLONIEX)}_margins_poloniex', start_ts=0, end_ts=9999)  # noqa: E501
+    db.update_used_query_range(name=f'{str(Location.POLONIEX)}_asset_movements_poloniex', start_ts=0, end_ts=9999)  # noqa: E501
+    db.update_used_query_range(name='uniswap_trades', start_ts=0, end_ts=9999)
+
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
     poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
     assert kraken.name == 'mockkraken'
@@ -855,12 +867,29 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges):
     assert kraken.name == 'my_kraken'
     assert kraken.account_type == DEFAULT_KRAKEN_ACCOUNT_TYPE
 
+    # check that queryranges were succesfuly updated and the others were unmodified
+    expected_ranges_tuple = (Timestamp(0), Timestamp(9999))
+    assert db.get_used_query_range('kraken_trades_mockkraken') is None
+    assert db.get_used_query_range('kraken_margins_mockkraken') is None
+    assert db.get_used_query_range('kraken_asset_movements_mockkraken') is None
+    assert db.get_used_query_range('kraken_trades_my_kraken') == expected_ranges_tuple
+    assert db.get_used_query_range('kraken_margins_my_kraken') == expected_ranges_tuple
+    assert db.get_used_query_range('kraken_asset_movements_my_kraken') == expected_ranges_tuple
+    assert db.get_used_query_range('poloniex_trades_poloniex') == expected_ranges_tuple
+    assert db.get_used_query_range('poloniex_margins_poloniex') == expected_ranges_tuple
+    assert db.get_used_query_range('poloniex_asset_movements_poloniex') == expected_ranges_tuple
+
     data = {'name': 'poloniex', 'location': 'poloniex', 'new_name': 'my_poloniex'}
     response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
     result = assert_proper_response_with_result(response)
     assert result is True
     poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
     assert poloniex.name == 'my_poloniex'
+    assert db.get_used_query_range('poloniex_trades_my_poloniex') == expected_ranges_tuple
+    assert db.get_used_query_range('poloniex_margins_my_poloniex') == expected_ranges_tuple
+    assert db.get_used_query_range('poloniex_asset_movements_my_poloniex') == expected_ranges_tuple
+    assert db.get_used_query_range('poloniex_asset_movements_poloniex') is None
+    assert db.get_used_query_range('uniswap_trades') == expected_ranges_tuple
 
     # Make sure that existing location exchange but wrong name returns error
     data = {'name': 'some_poloniex', 'location': 'poloniex', 'new_name': 'other_poloniex'}

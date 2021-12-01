@@ -207,14 +207,15 @@ class Liquity(HasDSProxy):
 
     def get_positions(
         self,
-        addresses: List[ChecksumEthAddress],
+        addresses_list: List[ChecksumEthAddress],
     ) -> Dict[ChecksumEthAddress, Trove]:
         contract = EthereumContract(
             address=LIQUITY_TROVE_MANAGER.address,
             abi=LIQUITY_TROVE_MANAGER.abi,
             deployed_block=LIQUITY_TROVE_MANAGER.deployed_block,
         )
-
+        # make a copy of the list to avoid modifications in the list that is passed as argument
+        addresses = list(addresses_list)
         proxied_addresses = self._get_accounts_having_proxy()
         proxies_to_address = {v: k for k, v in proxied_addresses.items()}
         addresses += proxied_addresses.values()

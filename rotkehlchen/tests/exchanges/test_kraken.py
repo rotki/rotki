@@ -155,7 +155,7 @@ def test_querying_rate_limit_exhaustion(function_scope_kraken, database):
         trades = kraken.query_trade_history(start_ts=0, end_ts=1638529919, only_cache=False)
 
     assert len(trades) == 1
-    from_ts, to_ts = database.get_used_query_range('kraken_trades')
+    from_ts, to_ts = database.get_used_query_range('kraken_trades_mockkraken')
     assert from_ts == 0
     assert to_ts == 1629490727, 'should have saved only until the last trades timestamp'
 
@@ -367,6 +367,62 @@ def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken)
     input_ledger = test_deposits
     input_ledger = input_ledger.replace('"asset": "BTC",', '')
     query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_trade_with_margin_skipped(function_scope_kraken):
+    """Test that kraken trades with non-zero margin field are skipped"""
+    kraken = function_scope_kraken
+    kraken.random_trade_data = False
+    kraken.random_ledgers_data = False
+    kraken.cache_ttl_secs = 0
+
+    test_trades = """{
+        "trades": {
+            "1": {
+                "ordertxid": "1",
+                "postxid": 1,
+                "pair": "XXBTZEUR",
+                "time": "1458994442.2353",
+                "type": "buy",
+                "ordertype": "market",
+                "price": "100",
+                "vol": "1",
+                "fee": "0.1",
+                "cost": "100",
+                "margin": "0.0",
+                "misc": ""
+            },
+            "2": {
+                "ordertxid": "2",
+                "postxid": 2,
+                "pair": "XXBTZEUR",
+                "time": "1468994442.2353",
+                "type": "buy",
+                "ordertype": "market",
+                "price": "100",
+                "vol": "1",
+                "fee": "0.1",
+                "cost": "100",
+                "margin": "5.0",
+                "misc": ""
+            }
+        },
+        "count": 2
+    }"""
+
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE'
+    with patch(target, new=test_trades):
+        trades, _ = kraken.query_online_trade_history(
+            start_ts=0,
+            end_ts=TEST_END_TS,
+        )
+
+    assert len(trades) == 1
+    errors = kraken.msg_aggregator.consume_errors()
+    warnings = kraken.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

@@ -210,3 +210,6 @@ def test_account_with_proxy(rotkehlchen_api_server, inquirer):  # pylint: disabl
     assert LQTY_PROXY in result
     assert ADDR_WITHOUT_TROVE not in result
     assert LQTY_ADDR in result
+    # test that the list of addresses was not mutated
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert len(rotki.chain_manager.accounts.eth) == 3

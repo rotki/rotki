@@ -1514,7 +1514,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if liquity_module is not None:
             # Get trove information
             liquity_balances = liquity_module.get_positions(
-                addresses=self.queried_addresses_for_module('liquity'),
+                addresses_list=self.queried_addresses_for_module('liquity'),
             )
             for address, deposits in liquity_balances.items():
                 collateral = deposits.collateral.balance

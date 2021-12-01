@@ -59,7 +59,7 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
             assert entry['image_url'] == 'https://lh3.googleusercontent.com/C5ceArerHdGigmSt9tCsUD67Nbxr-P05fSsP_Pye34zN78lr2519P66kANkb55nfWW-ZMWFM4oCawLF4fW2jfRPxWButdqIX0QM95DM'  # noqa: E501
             assert FVal(entry['price_eth']) > ZERO
             assert FVal(entry['price_usd']) > ZERO
-            assert entry['collection']['name'] == 'Official Wrapped MoonCats (Acclimated)'
+            assert entry['collection']['name'] == 'MoonCats'
             assert entry['collection']['banner_image'].startswith('https://')
             assert isinstance(entry['collection']['description'], str)
             assert entry['collection']['large_image'].startswith('https://')

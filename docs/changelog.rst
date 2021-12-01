@@ -7,6 +7,15 @@ Changelog
 * :feature:`3685` Users will now be able to correctly read more transaction types in CSV files imported from crypto.com.
 * :feature:`3725` Users can now see if any of their addresses have SDL available to claim from the SDL airdrop.
 
+* :release:`1.22.2 <2021-11-30>`
+* :feature:`-` rotki will now detect locked SRM balances in FTX.
+* :bug:`-` Kraken margin trades are not yet supported, so they won't show up or be taken into account in kraken trade history.
+* :bug:`3744` Freshly created users who don't open the app again before an upgrade will now be able to update to new DB versions again.
+* :bug:`3749` Users using multiple instances of the same exchange should now correctly see all their trades.
+* :bug:`-` Liquity users won't make extra balances queries when using DSProxies.
+* :bug:`3767` At module selection clicking on the module chip won't keep the text in the selection field.
+* :bug:`-` Users will now be able to edit exchanges names for Kucoin and Coinbase Pro.
+
 * :release:`1.22.1 <2021-11-19>`
 * :bug:`3726` Manual liabilities should not count as assets and should be deducted from total net value when taking a snapshot. Also multiple liabilities of same asset should now be properly summed.
 * :bug:`3722` Trades details will now properly expand one at a time.
