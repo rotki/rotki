@@ -116,6 +116,7 @@ import {
   AIRDROP_LIDO,
   AIRDROP_PARASWAP,
   AIRDROP_POAP,
+  AIRDROP_SADDLE,
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP
 } from '@/store/defi/const';
@@ -243,6 +244,10 @@ export default class Airdrops extends Mixins(StatusMixin) {
     [AIRDROP_PARASWAP]: {
       icon: require('@/assets/images/airdrops/ParaSwap-logo.svg'),
       name: 'ParaSwap'
+    },
+    [AIRDROP_SADDLE]: {
+      icon: require('@/assets/images/airdrops/Saddle-Finance-logo.svg'),
+      name: 'SaddleFinance'
     }
   };
 
