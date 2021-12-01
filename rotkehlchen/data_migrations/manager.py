@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Callable, Dict, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
 
 from rotkehlchen.data_migrations.migrations.migration_1 import data_migration_1
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -32,7 +32,9 @@ class DataMigrationManager:
         current_migration = settings.last_data_migration
         for migration in MIGRATION_LIST:
             if current_migration < migration.version:
-                self._perform_migration(migration)
+                if self._perform_migration(migration) is False:
+                    break  # a migration failed -- no point continuing
+
                 current_migration += 1
                 log.debug(f'Successfuly applied migration {current_migration}')
                 self.rotki.data.db.conn.cursor().execute(
@@ -41,10 +43,14 @@ class DataMigrationManager:
                 )
                 self.rotki.data.db.conn.commit()
 
-    def _perform_migration(self, migration: MigrationRecord) -> None:
+    def _perform_migration(self, migration: MigrationRecord) -> bool:
+        """Performs a single data migration and returns boolean for success/failure"""
         try:
             kwargs = migration.kwargs if migration.kwargs is not None else {}
             migration.function(rotki=self.rotki, **kwargs)
         except BaseException as e:  # lgtm[py/catch-base-exception]
-            error = f'Failed to run soft migration from version {migration.version} : {str(e)}'
-            log.error(error)
+            error = f'Failed to run soft data migration to version {migration.version} due to {str(e)}'  # noqa: E501
+            self.rotki.msg_aggregator.add_error(error)
+            return False
+
+        return True
