@@ -812,7 +812,10 @@
   },
   "date_time_picker": {
     "default_format": "Date should be in {dateFormat} or {dateFormat} HH:MM format",
-    "seconds_format": "Date should be in {dateFormat} [[HH:MM]:ss] format"
+    "seconds_format": "Date should be in {dateFormat} [[HH:MM]:ss] format",
+    "timezone_field": {
+      "non_empty": "Timezone should be specified"
+    }
   },
   "module_address_selector": {
     "back": "Back",

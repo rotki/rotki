@@ -13,7 +13,7 @@ export class HistoryPage {
     cy.get('[data-cy=trade-form]').should('be.visible');
     cy.get('[data-cy=date]')
       .type(`{selectall}{backspace}${trade.time}`)
-      .click(); // Click is needed to hide the popup
+      .click({ force: true }); // Click is needed to hide the popup
 
     selectAsset('[data-cy=base_asset]', trade.base, trade.base_id);
     selectAsset('[data-cy=quote_asset]', trade.quote, trade.quote_id);
@@ -84,7 +84,7 @@ export class HistoryPage {
     cy.get('.closed-trades tbody > tr')
       .eq(position)
       .find('[data-cy=row-edit]')
-      .click();
+      .click({ force: true });
 
     cy.get('[data-cy=trade-form]').should('be.visible');
     cy.get('[data-cy=amount]').clear();
