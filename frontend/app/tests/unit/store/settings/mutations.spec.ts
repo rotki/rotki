@@ -23,6 +23,7 @@ import {
   ITEMS_PER_PAGE,
   LAST_KNOWN_TIMEFRAME,
   NFTS_IN_NET_VALUE,
+  VERSION_UPDATE_CHECK_FREQUENCY,
   PROFIT_LOSS_PERIOD,
   Quarter,
   QUERY_PERIOD,
@@ -86,7 +87,8 @@ describe('settings:mutations', () => {
         ],
         [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE]
       },
-      [DATE_INPUT_FORMAT]: DateFormat.DateMonthYearHourMinuteSecond
+      [DATE_INPUT_FORMAT]: DateFormat.DateMonthYearHourMinuteSecond,
+      [VERSION_UPDATE_CHECK_FREQUENCY]: 24
     };
     store.commit('settings/restore', state);
     const settings = store.state.settings!;
@@ -131,5 +133,16 @@ describe('settings:mutations', () => {
     });
     expect(settings[GRAPH_ZERO_BASED]).toBe(true);
     expect(settings[NFTS_IN_NET_VALUE]).toBe(true);
+    expect(settings[DASHBOARD_TABLES_VISIBLE_COLUMNS]).toStrictEqual({
+      [DashboardTableType.ASSETS]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
+      [DashboardTableType.LIABILITIES]: [
+        TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
+      ],
+      [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE]
+    });
+    expect(settings[DATE_INPUT_FORMAT]).toBe(
+      DateFormat.DateMonthYearHourMinuteSecond
+    );
+    expect(settings[VERSION_UPDATE_CHECK_FREQUENCY]).toBe(24);
   });
 });

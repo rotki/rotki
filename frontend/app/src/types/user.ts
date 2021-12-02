@@ -1,5 +1,6 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
+import { Constraints } from '@/data/constraints';
 import { currencies } from '@/data/currencies';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
 import { Currency } from '@/types/currency';
@@ -29,7 +30,14 @@ const GeneralSettings = z.object({
   ethRpcEndpoint: z.string(),
   ksmRpcEndpoint: z.string(),
   dotRpcEndpoint: z.string(),
-  balanceSaveFrequency: z.number(),
+  balanceSaveFrequency: z.preprocess(
+    balanceSaveFrequency =>
+      Math.min(
+        parseInt(balanceSaveFrequency as string),
+        Constraints.MAX_HOURS_DELAY
+      ),
+    z.number().int().max(Constraints.MAX_HOURS_DELAY)
+  ),
   dateDisplayFormat: z.string(),
   mainCurrency: z.string().transform(currency => findCurrency(currency)),
   activeModules: z.array(ModuleEnum),

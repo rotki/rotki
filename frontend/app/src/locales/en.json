@@ -1359,7 +1359,8 @@
       "refresh_period": {
         "error": "Failed to set the refresh period",
         "success": "Automatic refresh was successfully changed to every {period} min",
-        "success_disabled": "Automatic refresh was successfully deactivated"
+        "success_disabled": "Automatic refresh was successfully deactivated",
+        "invalid_period": "Period must be between {start} and {end} min"
       }
     }
   },
@@ -1389,6 +1390,7 @@
     "date_display_format_hint": "Resulting date: {format}",
     "date_display_tooltip": "Restore the default date display format",
     "date_input_format_hint": "Input example: {format}",
+    "version_update_check_hint": "How often (in hours) your app version will be checked for update",
     "labels": {
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
@@ -1398,7 +1400,9 @@
       "display_date_in_localtime": "Display date in localtime and not in UTC in CSV export, backend logs and other locations",
       "rpc_endpoint": "Ethereum Node RPC Endpoint",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
-      "dot_rpc_endpoint": "Polkadot Node RPC Endpoint"
+      "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
+      "version_update_check": "Set the version update check period while in app",
+      "version_update_check_enabled": "Enabled"
     },
     "local_nodes": {
       "title": "Local Nodes"
@@ -1417,7 +1421,8 @@
       },
       "balance_frequency": {
         "error": "Error setting balance save frequency to {frequency}",
-        "success": "Data save frequency set to {frequency} hours"
+        "success": "Data save frequency set to {frequency} hours",
+        "invalid_frequency": "Frequency must be between {start} and {end} hours"
       },
       "currency": {
         "error": "Error setting the main currency",
@@ -1461,6 +1466,12 @@
       "decimal_separator": {
         "error": "Error setting decimal separator",
         "success": "Decimal separator set to {decimalSeparator}"
+      },
+      "version_update_check_frequency": {
+        "error": "Error setting version update check frequency",
+        "success": "Version update check was successfully changed to every {frequency} hours",
+        "success_disabled": "Version update check was successfully deactivated",
+        "invalid_frequency": "Period must be between {start} and {end} hours"
       }
     }
   },

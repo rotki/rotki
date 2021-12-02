@@ -30,6 +30,7 @@ export class Defaults {
   static DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS = [
     TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
   ];
+  static DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY = 24;
 }
 
 export const EXCHANGE_BISQ = 'bisq';

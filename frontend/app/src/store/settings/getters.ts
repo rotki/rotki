@@ -10,6 +10,7 @@ import {
   CURRENCY_LOCATION,
   DATE_INPUT_FORMAT,
   DECIMAL_SEPARATOR,
+  VERSION_UPDATE_CHECK_FREQUENCY,
   PROFIT_LOSS_PERIOD,
   ProfitLossTimeframe,
   THOUSAND_SEPARATOR,
@@ -26,6 +27,7 @@ type SettingsGetters = {
   [DASHBOARD_TABLES_VISIBLE_COLUMNS]: DashboardTablesVisibleColumns;
   [DATE_INPUT_FORMAT]: DateFormat;
   [VISIBLE_TIMEFRAMES]: TimeFrameSetting[];
+  [VERSION_UPDATE_CHECK_FREQUENCY]: number;
 };
 
 export const getters: Getters<
@@ -42,5 +44,7 @@ export const getters: Getters<
   [DASHBOARD_TABLES_VISIBLE_COLUMNS]: state =>
     state[DASHBOARD_TABLES_VISIBLE_COLUMNS],
   [DATE_INPUT_FORMAT]: state => state[DATE_INPUT_FORMAT],
-  [VISIBLE_TIMEFRAMES]: state => state[VISIBLE_TIMEFRAMES]
+  [VISIBLE_TIMEFRAMES]: state => state[VISIBLE_TIMEFRAMES],
+  [VERSION_UPDATE_CHECK_FREQUENCY]: state =>
+    state[VERSION_UPDATE_CHECK_FREQUENCY]
 };
