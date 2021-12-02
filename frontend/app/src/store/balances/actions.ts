@@ -37,6 +37,7 @@ import {
   HistoricPrices,
   NonFungibleBalances,
   OracleCachePayload,
+  FetchPricePayload,
   XpubPayload
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
@@ -570,7 +571,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         const options = { root: true };
         commit('defi/reset', undefined, options);
         await dispatch('resetDefiStatus', {}, options);
-        await dispatch('refreshPrices', false);
+        await dispatch('refreshPrices', { ignoreCache: false });
         await dispatch(BalanceActions.FETCH_NF_BALANCES);
       })
       .catch(e => {
@@ -631,7 +632,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         }
         await commit('defi/reset', undefined, { root: true });
         await dispatch('resetDefiStatus', {}, { root: true });
-        await dispatch('refreshPrices', false);
+        await dispatch('refreshPrices', { ignoreCache: false });
         await dispatch(BalanceActions.FETCH_NF_BALANCES);
       })
       .catch(e => {
@@ -808,7 +809,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     try {
       const { balances } = await api.balances.addManualBalances([balance]);
       commit('manualBalances', balances);
-      dispatch('refreshPrices', false);
+      dispatch('refreshPrices', {
+        ignoreCache: false,
+        selectedAsset: balance.asset
+      });
       return {
         success: true
       };
@@ -827,7 +831,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     try {
       const { balances } = await api.balances.editManualBalances([balance]);
       commit('manualBalances', balances);
-      dispatch('refreshPrices', false);
+      dispatch('refreshPrices', { ignoreCache: false });
       return {
         success: true
       };
@@ -876,7 +880,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       dispatch('fetchExchangeBalances', {
         location: exchange.location,
         ignoreCache: false
-      } as ExchangeBalancePayload).then(() => dispatch('refreshPrices', false));
+      } as ExchangeBalancePayload).then(() =>
+        dispatch('refreshPrices', { ignoreCache: false })
+      );
 
       return success;
     } catch (e: any) {
@@ -1054,7 +1060,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         'balances/aggregatedAssets': assets
       }
     },
-    ignoreCache: boolean
+    payload: FetchPricePayload
   ): Promise<void> {
     const taskType = TaskType.UPDATE_PRICES;
     if (isTaskRunning(taskType)) {
@@ -1062,9 +1068,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
     const fetchPrices: (assets: string[]) => Promise<void> = async assets => {
       const { taskId } = await api.balances.prices(
-        assets,
+        payload.selectedAsset ? [payload.selectedAsset] : assets,
         CURRENCY_USD,
-        ignoreCache
+        payload.ignoreCache
       );
       const task = createTask(taskId, taskType, {
         title: i18n.t('actions.session.fetch_prices.task.title').toString(),
@@ -1101,7 +1107,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async refreshPrices(
     { commit, dispatch, state },
-    ignoreCache: boolean
+    payload: FetchPricePayload
   ): Promise<void> {
     commit(
       'setStatus',
@@ -1112,7 +1118,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       { root: true }
     );
     await dispatch('fetchExchangeRates');
-    await dispatch('fetchPrices', ignoreCache);
+    await dispatch('fetchPrices', payload);
     await dispatch('updatePrices', state.prices);
     commit(
       'setStatus',

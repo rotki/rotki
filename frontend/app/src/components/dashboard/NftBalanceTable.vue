@@ -186,6 +186,7 @@ export default defineComponent({
     );
 
     const calculatePercentage = (value: BigNumber, divider: BigNumber) => {
+      if (divider.isZero()) return '0';
       return value.div(divider).multipliedBy(100).toFixed(2);
     };
 

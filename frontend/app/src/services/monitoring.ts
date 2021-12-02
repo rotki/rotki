@@ -28,7 +28,7 @@ class Monitoring {
     await dispatch('balances/fetchBlockchainBalances', { ignoreCache: true });
     await dispatch('balances/fetchLoopringBalances', true);
     await dispatch('balances/fetchConnectedExchangeBalances');
-    await dispatch('balances/refreshPrices', true);
+    await dispatch('balances/refreshPrices', { ignoreCache: true });
   }
 
   /**
