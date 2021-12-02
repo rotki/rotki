@@ -1,6 +1,10 @@
 import { Nullable } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionResult } from '@rotki/common/lib/data';
+import {
+  Eth2ValidatorEntry,
+  Eth2Validators
+} from '@rotki/common/lib/staking/eth2';
 import { AxiosInstance } from 'axios';
 import {
   axiosSnakeCaseTransformer,
@@ -24,11 +28,7 @@ import {
   validWithSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
-import {
-  Eth2Validator,
-  Eth2ValidatorEntry,
-  Eth2Validators
-} from '@/types/balances';
+import { Eth2Validator } from '@/types/balances';
 import { SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 import { PriceOracle } from '@/types/user';

@@ -1,4 +1,5 @@
 import { SupportedAsset } from '@rotki/common/lib/data';
+import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { MutationTree } from 'vuex';
 import {
   Balances,
@@ -17,7 +18,6 @@ import {
   EditExchange,
   NonFungibleBalances
 } from '@/store/balances/types';
-import { Eth2Validators } from '@/types/balances';
 import { Exchange, ExchangeData, ExchangeInfo } from '@/types/exchanges';
 import { ExchangeRates } from '@/types/user';
 

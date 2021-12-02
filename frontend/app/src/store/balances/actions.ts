@@ -1,5 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
@@ -50,7 +51,7 @@ import {
 } from '@/store/types';
 import { isLoading, setStatus, showError } from '@/store/utils';
 import { Writeable } from '@/types';
-import { Eth2Validator, Eth2Validators } from '@/types/balances';
+import { Eth2Validator } from '@/types/balances';
 import { Exchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 import {

@@ -1,7 +1,8 @@
 <template>
   <v-card v-bind="$attrs">
-    <div :class="noPadding ? null : 'mx-4 pt-2'">
+    <div :id="id" :class="noPadding ? null : 'mx-4 pt-2'">
       <v-autocomplete
+        :attach="`#${id}`"
         :value="value"
         :items="displayedAccounts"
         :filter="filter"
@@ -91,93 +92,129 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
-import { mapGetters, mapState } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs
+} from '@vue/composition-api';
+import { uniqueId } from 'lodash';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 
-import ThemeMixin from '@/mixins/theme-mixin';
-import { Tags } from '@/types/user';
+import { setupBlockchainAccounts } from '@/composables/balances';
+import { setupThemeCheck } from '@/composables/common';
+import i18n from '@/i18n';
+import { useStore } from '@/store/utils';
+import { assert } from '@/utils/assertions';
 
-@Component({
+export default defineComponent({
   components: { AccountDisplay, TagIcon },
-  computed: {
-    ...mapState('session', ['tags']),
-    ...mapGetters('balances', ['accounts'])
-  }
-})
-export default class BlockchainAccountSelector extends Mixins(ThemeMixin) {
-  @Prop({ required: false, type: String })
-  label!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  hint!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  loading!: boolean;
-  @Prop({ required: false, type: Array, default: () => [] })
-  usableAddresses!: string[];
-  @Prop({ required: false, type: Boolean, default: false })
-  multiple!: boolean;
-  @Prop({ required: true })
-  value!: GeneralAccount[] | GeneralAccount | null;
-  @Prop({ required: false, type: Array, default: () => [] })
-  chains!: Blockchain[];
-  @Prop({ required: false, type: Boolean, default: false })
-  outlined!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  dense!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  noPadding!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  hideOnEmptyUsable!: boolean;
-
-  accounts!: GeneralAccount[];
-  tags!: Tags;
-  search: string = '';
-
-  get selectableAccounts(): GeneralAccount[] {
-    if (this.chains.length === 0) {
-      return this.accounts;
-    }
-    return this.accounts.filter(({ chain }) => this.chains.includes(chain));
-  }
-
-  get hintText(): string {
-    const all = this.$t('blockchain_account_selector.all').toString();
-    if (Array.isArray(this.value)) {
-      return this.value.length > 0 ? this.value.length.toString() : all;
-    }
-    return this.value ? '1' : all;
-  }
-
-  @Emit()
-  input(_value: string) {}
-
-  get displayedAccounts(): GeneralAccount[] {
-    if (this.usableAddresses.length > 0) {
-      return this.selectableAccounts.filter(({ address }) =>
-        this.usableAddresses.includes(address)
+  props: {
+    label: { required: false, type: String, default: '' },
+    hint: { required: false, type: Boolean, default: false },
+    loading: { required: false, type: Boolean, default: false },
+    usableAddresses: {
+      required: false,
+      type: Array as PropType<string[]>,
+      default: () => []
+    },
+    multiple: { required: false, type: Boolean, default: false },
+    value: {
+      required: false,
+      type: [Object, Array] as PropType<
+        GeneralAccount[] | GeneralAccount | null
+      >,
+      default: null
+    },
+    chains: {
+      required: false,
+      type: Array as PropType<Blockchain[]>,
+      default: () => []
+    },
+    outlined: { required: false, type: Boolean, default: false },
+    dense: { required: false, type: Boolean, default: false },
+    noPadding: { required: false, type: Boolean, default: false },
+    hideOnEmptyUsable: { required: false, type: Boolean, default: false }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { chains, value, usableAddresses, hideOnEmptyUsable } = toRefs(props);
+    const search = ref('');
+    const { accounts } = setupBlockchainAccounts();
+    const selectableAccounts = computed(() => {
+      const filteredChains = chains.value;
+      const blockchainAccounts = accounts.value;
+      if (filteredChains.length === 0) {
+        return blockchainAccounts;
+      }
+      return blockchainAccounts.filter(({ chain }) =>
+        filteredChains.includes(chain)
       );
-    }
-    return this.hideOnEmptyUsable ? [] : this.selectableAccounts;
+    });
+
+    const hintText = computed(() => {
+      const all = i18n.t('blockchain_account_selector.all').toString();
+      const selection = value.value;
+      if (Array.isArray(selection)) {
+        return selection.length > 0 ? selection.length.toString() : all;
+      }
+      return selection ? '1' : all;
+    });
+
+    const displayedAccounts = computed(() => {
+      const addresses = usableAddresses.value;
+      const accounts = selectableAccounts.value;
+      if (addresses.length > 0) {
+        return accounts.filter(({ address }) => addresses.includes(address));
+      }
+      return hideOnEmptyUsable.value ? [] : accounts;
+    });
+
+    const filter = (item: GeneralAccount, queryText: string) => {
+      const text = item.label.toLocaleLowerCase();
+      const query = queryText.toLocaleLowerCase();
+      const address = item.address.toLocaleLowerCase();
+
+      const labelMatches = text.indexOf(query) > -1;
+      const addressMatches = address.indexOf(query) > -1;
+
+      const tagMatches =
+        item.tags
+          .map(tag => tag.toLocaleLowerCase())
+          .join(' ')
+          .indexOf(query) > -1;
+
+      return labelMatches || tagMatches || addressMatches;
+    };
+
+    const input = (value: string | null) => emit('input', value);
+
+    const store = useStore();
+    const tags = computed(() => {
+      const session = store.state.session;
+      assert(session);
+      return session.tags;
+    });
+
+    const { dark } = setupThemeCheck();
+
+    const id = uniqueId('rcmp-');
+
+    return {
+      id,
+      search,
+      input,
+      filter,
+      tags,
+      hintText,
+      displayedAccounts,
+      selectableAccounts,
+      dark
+    };
   }
-
-  filter(item: GeneralAccount, queryText: string) {
-    const text = item.label.toLocaleLowerCase();
-    const query = queryText.toLocaleLowerCase();
-    const address = item.address.toLocaleLowerCase();
-
-    const labelMatches = text.indexOf(query) > -1;
-    const addressMatches = address.indexOf(query) > -1;
-
-    const tagMatches =
-      item.tags
-        .map(tag => tag.toLocaleLowerCase())
-        .join(' ')
-        .indexOf(query) > -1;
-
-    return labelMatches || tagMatches || addressMatches;
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

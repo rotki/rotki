@@ -421,6 +421,16 @@
       "end_date": "filter by the ending date of the period"
     }
   },
+  "eth2_page": {
+    "toggle": {
+      "depositor": "Depositor",
+      "hint": "Switch the filtering and display mode between ETH2 validators and ETH1 Addresses",
+      "key": "Validator"
+    }
+  },
+  "eth2_validator_filter": {
+    "label": "Select Depositor address"
+  },
   "eth2_validator_limit_row": {
     "label": "Beacon chain validators"
   },
@@ -2747,6 +2757,12 @@
   "decentralized_overview": {
     "loading": "Please wait while your defi balances are getting loaded...",
     "title": "Defi Overview"
+  },
+  "validator_display": {
+    "validator_index": "Validator Index:"
+  },
+  "validator_filter_input": {
+    "label": "Select validator"
   },
   "watcher_dialog": {
     "add_error": "Error adding the watcher: {message}",

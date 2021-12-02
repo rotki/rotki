@@ -121,11 +121,14 @@ export const setupManualBalances = () => {
 };
 
 export const setupBlockchainAccounts = () => {
-  const { dispatch, getters } = useStore();
+  const { dispatch, getters, state } = useStore();
   const account = (address: string) =>
     computed<GeneralAccount | undefined>(() =>
       getters['balances/account'](address)
     );
+  const accounts = computed<GeneralAccount[]>(
+    () => getters['balances/accounts']
+  );
   const addAccount = async (payload: BlockchainAccountPayload) => {
     return await dispatch('balances/addAccount', payload);
   };
@@ -140,11 +143,15 @@ export const setupBlockchainAccounts = () => {
     return await dispatch('balances/addEth2Validator', payload);
   };
 
+  const eth2Validators = computed(() => state.balances?.eth2Validators.entries);
+
   return {
     account,
+    accounts,
     addAccount,
     editAccount,
     addAccounts,
-    addEth2Validator
+    addEth2Validator,
+    eth2Validators
   };
 };

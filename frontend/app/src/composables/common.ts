@@ -20,6 +20,7 @@ export const setupThemeCheck = () => {
   const isMobile = computed(() => $vuetify.breakpoint.mobile);
   const dark = computed(() => $vuetify.theme.dark);
   const breakpoint = computed(() => $vuetify.breakpoint.name);
+  const currentBreakpoint = computed(() => $vuetify.breakpoint);
   const width = computed(() => $vuetify.breakpoint.width);
   const fontStyle = computed(() => {
     return {
@@ -30,6 +31,7 @@ export const setupThemeCheck = () => {
     isMobile,
     dark,
     breakpoint,
+    currentBreakpoint,
     width,
     fontStyle
   };

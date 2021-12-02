@@ -2,6 +2,7 @@ import { Balance, BigNumber, HasBalance } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
+import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { z } from 'zod';
 import { PriceInformation } from '@/services/assets/types';
 import {
@@ -12,7 +13,6 @@ import {
 import { BtcAccountData, GeneralAccountData } from '@/services/types-api';
 import { Section } from '@/store/const';
 import { Nullable } from '@/types';
-import { Eth2Validators } from '@/types/balances';
 import {
   Exchange,
   ExchangeData,
