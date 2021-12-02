@@ -5,11 +5,12 @@ from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
 from rotkehlchen.errors import DeserializationError  # lgtm [py/unsafe-cyclic-import]  # noqa: E501
+# from rotkehlchen.accounting.structures import AssetBalance
+from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
-from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 
 ModuleName = Literal[
     'makerdao_dsr',
@@ -368,6 +369,17 @@ class Location(DBEnumMixIn):
     BISQ = 35
 
 
+class DetailedLocation(NamedTuple):
+    location: Location
+    chain: Optional[str]  # In the globaldb upgrade we introduce a valid chainID here
+
+    def serialize_for_db(self) -> str:
+        elements = [str(self.location)]
+        if self.chain is not None:
+            elements.append(self.chain)
+        return "|".join(elements)
+
+
 class AssetMovementCategory(DBEnumMixIn):
     """Supported Asset Movement Types so far only deposit and withdrawals"""
     DEPOSIT = 1
@@ -401,3 +413,43 @@ EXTERNAL_EXCHANGES: List = [
     Location.BISQ,
 ]
 EXTERNAL_LOCATION = [Location.EXTERNAL] + EXTERNAL_EXCHANGES
+
+
+LEDGER_ENTRY_DB_TUPLE = Tuple[
+    str,  # identifier
+    str,  # event_identifier
+    int,  # sequence_index
+    int,  # timestamp
+    str,  # location
+    str,  # asset
+    str,  # amount
+    str,  # usd value
+    str,  # origin_label
+    str,  # target_label
+    str,  # notes
+]
+
+
+class LedgerEntry(NamedTuple):
+    identifier: str
+    event_identifier: str
+    sequence_index: int
+    timestamp: Timestamp
+    location: DetailedLocation
+    amount: FVal
+    origin_label: str
+    target_label: str
+    notes: str
+
+    def serialize_for_db(self) -> LEDGER_ENTRY_DB_TUPLE:
+        return (
+            self.identifier,
+            self.event_identifier,
+            self.sequence_index,
+            self.timestamp,
+            self.location.serialize_for_db(),
+            *self.amount.serialize_for_db(),
+            self.origin_label,
+            self.target_label,
+            self.notes,
+        )

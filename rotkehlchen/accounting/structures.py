@@ -2,12 +2,12 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Dict, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
@@ -112,6 +112,9 @@ class AssetBalance:
 
     def __neg__(self) -> 'AssetBalance':
         return AssetBalance(asset=self.asset, balance=-self.balance)
+
+    def serialize_for_db(self) -> [str, str, str]:
+        return (self.asset, str(self.amount), str(self.usd_value))
 
 
 class DefiEventType(Enum):
@@ -270,3 +273,33 @@ class ActionType(DBEnumMixIn):
     ASSET_MOVEMENT = 2
     ETHEREUM_TRANSACTION = 3
     LEDGER_ACTION = 4
+
+
+LEDGER_EVENT_DB_TUPLE = Tuple[
+    str,
+    str,
+]
+
+class LedgerEvent(NamedTuple):
+    identifer: str
+    event_identifier: str
+    sequence_index: int
+    timestamp: Timestamp
+    location: Location
+    amount: AssetBalance
+    origin_label: str
+    target_label: str
+    notes: str
+
+    def serialize_for_db(self):
+        return (
+            self.identifer,
+            self.event_identifier,
+            self.sequence_index,
+            self.timestamp,
+            self.location.serialize_for_db(),
+            *self.amount.serialize_for_db(),
+            self.origin_label,
+            self.target_label,
+            self.notes,
+        )

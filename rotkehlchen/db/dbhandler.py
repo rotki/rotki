@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union,
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import ActionType, BalanceType
+from rotkehlchen.accounting.structures import ActionType, BalanceType, LedgerEvent
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -90,7 +90,7 @@ from rotkehlchen.errors import (
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.binance import BINANCE_MARKETS_KEY
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement,  MarginPosition, Trade
 from rotkehlchen.exchanges.ftx import FTX_SUBACCOUNT_DB_SETTING
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
@@ -3420,3 +3420,32 @@ class DBHandler:
         if cursor.fetchone()[0] >= 1:
             locations.add(Location.BALANCER)
         return locations
+
+    def get_kraken_staking_events(
+        self,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> List[LedgerEvent]:
+        query_str = 'SELECT * from ledger_events WHERE timestamp > ? AND timestamp < ? and notes LIKE "staking event%" and location = "B"'
+        cursor = self.conn.cursor()
+        query = cursor.execute(query_str, (start_ts, end_ts))
+        output = []
+        for result in query:
+            try:
+                output.append(LedgerEvent.deserialize_from_db(result))
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to read kraken staking information from database. {result}. {str(e)}',
+                )
+        return output
+
+    def add_kraken_staking_event(self, events: List[LedgerEvent]) -> bool:
+        query_str = 'INSERT INTO ledger_events VALUES (?, ?, ?, ?, ?, ?, ?, ?);'
+        cursor = self.conn.cursor()
+        try:
+            cursor.executemany(query_str, [event.serialize_for_db() for event in events])
+        except sqlcipher.IntegrityError as e:
+            log.error(f'Failed to insert kraken statking events in database. {str(e)}')
+            return False
+        self.update_last_write()
+        return True

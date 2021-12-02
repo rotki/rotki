@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
+from rotkehlchen.accounting.structures import AssetBalance, LedgerEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.crypto import sha3
@@ -429,4 +430,25 @@ class BinancePair(NamedTuple):
             base_asset=asset_from_binance(entry[1]),
             quote_asset=asset_from_binance(entry[2]),
             location=Location.deserialize_from_db(entry[3]),
+        )
+
+
+class KrakenStakingEvent(NamedTuple):
+    refid: str
+    amount: AssetBalance
+    fee: Fee
+    timestamp: Timestamp
+    eventy_type: str
+
+    def as_ledger_event(self) -> LedgerEvent:
+        return LedgerEvent(
+            identifier=self.refid,
+            event_identifier=self.refid,
+            sequence_index=0,
+            timestamp=self.timestamp,
+            location=Location.KRAKEN,
+            amount=self.amount,
+            origin_label='kraken',
+            target_label='kraken',
+            notes=f'staking event: {self.eventy_type}'
         )

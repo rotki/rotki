@@ -15,20 +15,26 @@ import requests
 from requests import Response
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures import Balance, LedgerEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
     UnknownAsset,
     UnprocessableTradePair,
 )
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import (
+    AssetMovement,
+    KrakenStakingEvent,
+    MarginPosition,
+    Trade,
+)
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
@@ -259,6 +265,9 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.set_account_type(kraken_account_type)
         self.call_counter = 0
         self.last_query_ts = 0
+        self.pairs = None
+        self.query_pairs()
+
 
     def set_account_type(self, account_type: Optional[KrakenAccountType]) -> None:
         if account_type is None:
@@ -639,50 +648,45 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts: Timestamp,
     ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         result, with_errors = self.query_until_finished(
-            endpoint='TradesHistory',
-            keyname='trades',
+            endpoint='Ledgers',
+            keyname='ledger',
             start_ts=start_ts,
             end_ts=end_ts,
+            extra_dict={'type': 'trade'},
         )
 
+        spend_receive = self.query_spend_receive_events(start_ts, end_ts)
+
+        result.extend(spend_receive)
+
         # And now turn it from kraken trade to our own trade format
+        trades_id_to_raw = defaultdict(list)
+        trades_as_ledger = []
         trades = []
         max_ts = 0
         for raw_data in result:
-            try:
-                new_trade = trade_from_kraken(raw_data)
-                if new_trade:
-                    trades.append(new_trade)
-                    max_ts = max(new_trade.timestamp, max_ts)
-            except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found kraken trade with unknown asset '
-                    f'{e.asset_name}. Ignoring it.',
-                )
-                continue
-            except UnprocessableTradePair as e:
-                self.msg_aggregator.add_error(
-                    f'Found kraken trade with unprocessable pair '
-                    f'{e.pair}. Ignoring it.',
-                )
-                continue
-            except (DeserializationError, KeyError) as e:
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Missing key entry for {msg}.'
-                self.msg_aggregator.add_error(
-                    'Error processing a kraken trade. Check logs '
-                    'for details. Ignoring it.',
-                )
-                log.error(
-                    'Error processing a kraken trade',
-                    trade=raw_data,
-                    error=msg,
-                )
-                continue
+            trades_id_to_raw[raw_data['refid']].append(raw_data)
 
+        new_trades, trades_as_ledger = self.process_kraken_trades(trades_id_to_raw)
+        max_ts = max(max(new_trade.timestamp for new_trade in new_trades), max_ts)
         queried_range = (start_ts, Timestamp(max_ts)) if with_errors else (start_ts, end_ts)
         return trades, queried_range
+
+
+    def query_spend_receive_events(
+        self,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> List[Dict[str, Any]]:
+        result_1, with_errors = self.query_until_finished(
+            endpoint='Ledgers',
+            keyname='ledger',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            extra_dict={},
+        )
+
+        return [x for x in result_1 if x['type'] in ('spend', 'receive')]
 
     def _query_endpoint_for_period(
             self,
@@ -701,6 +705,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             request.update(extra_dict)
         result = self.api_query(endpoint, request)
         return result
+
 
     def query_online_deposits_withdrawals(
             self,
@@ -781,3 +786,175 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[LedgerAction]:
         return []  # noop for kraken
+
+    def query_online_staking_history(
+        self,
+        ranges: List[Tuple[Timestamp, Timestamp]],
+    ) -> List[KrakenStakingEvent]:
+        response = self.query_until_finished(
+            endpoint='Ledgers',
+            keyname='ledger',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            extra_dict={'type': 'staking'},
+        )
+        log.debug('Kraken staking events', num_results=len(response))
+        events = []
+        for raw_event in response:
+            try:
+                timestamp = deserialize_timestamp_from_kraken(raw_event['time'])
+                if any([start_ts <= timestamp <= end_ts for start_ts, end_ts in ranges]):
+                    asset = asset_from_kraken(raw_event['asset'])
+                    amount = deserialize_asset_amount(raw_event['amount'])
+                    asset_price = Inquirer().find_usd_price(asset)
+                    balance = AssetBalance(
+                        asset=asset,
+                        balance=Balance(
+                            amount=amount,
+                            usd_value=asset_price * amount,
+                        ),
+                    )
+                    event = KrakenStakingEvent(
+                        refid=raw_event['refid'],
+                        amount=balance,
+                        fee=deserialize_fee(raw_event['fee']),
+                        timestamp=timestamp,
+                        event_type=raw_event['type'],
+                    )
+            except (DeserializationError, KeyError, UnknownAsset) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Keyrror {msg}'
+                self.msg_aggregator.add_error(
+                    f'Failed to read staking event from kraken {raw_event} due to {msg}',
+                )
+                continue
+            events.append(event)
+        return events
+
+    def query_exchange_specific_history(
+        self,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> List[Union[KrakenStakingEvent]]:
+        # Query for staking events
+        staking_events = self.db.get_kraken_staking_events(start_ts, end_ts)
+        ranges = DBQueryRanges(self.db)
+        location_string = f'{str(self.location)}_staking_{self.name}'
+        ranges_to_query = ranges.get_location_query_ranges(
+            location_string=location_string,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+        if len(ranges_to_query):
+            new_events = self.query_online_staking_history(ranges_to_query)
+            successful_insert = True
+            if len(new_events) != 0:
+                successful_insert = self.db.add_kraken_staking_event(events=new_events)
+            if successful_insert:
+                ranges.update_used_query_range(
+                    location_string=location_string,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    ranges_to_query=ranges_to_query,
+                )
+                staking_events.extend(new_events)
+            else:
+                self.msg_aggregator.add_error(
+                    f'Failed to insert result of kraken staking query to database for range'
+                    f' ({start_ts}, {end_ts}). Check logs to read the affected entries.',
+                )
+                return []
+        return staking_events
+
+    def query_pairs(self) -> None:
+        self.pairs = set(self.api_query('AssetPairs').keys())
+
+    def process_kraken_trades(self, raw_data: Dict[str, Any]) -> Tuple[List[Trade], List[LedgerEvent]]:
+        try:
+            if len(self.pairs) == 0:
+                self.query_pairs()
+        except RemoteError as e:
+            self.msg_aggregator.add_error(f'Failed to query kraken pairs due to {str(e)}')
+            raise RemoteError from e
+
+        trades, ledger_events = [], []
+
+        for trade_id, trade_parts in raw_data.items():
+            assets_symbols = [
+                trade['asset'].replace('.HOLD', '')
+                for trade in trade_parts
+                if deserialize_asset_amount(trade['amount']) != ZERO
+            ]
+            pair = "".join(assets_symbols)
+            if pair not in self.pairs:
+                pair = "".join(assets_symbols[::-1])
+            if pair not in self.pairs:
+                self.msg_aggregator.add_error(f'Failed to read pair from kraken ledger trades. {pair}')
+                continue
+                #raise DeserializationError('Failed to read pair from kraken ledger trades')
+
+            base_asset, quote_asset = kraken_to_world_pair(pair)
+            timestamp = deserialize_timestamp_from_kraken = trade_parts[0]['time']
+            base_trade, quote_trade, fee_part = None, None, None
+            for trade_part in trade_parts:
+                part_asset = asset_from_kraken(trade_part['asset'])
+                if part_asset == base_asset:
+                    base_trade = trade_part
+                elif part_asset == quote_asset:
+                    quote_trade = trade_part
+                elif trade_part['asset'] == 'KFEE':
+                    fee_part = trade_part
+
+            if None in (base_trade, quote_trade):
+                raise DeserializationError(f'Failed to read trades')
+                continue
+
+            base_amount = deserialize_asset_amount(base_trade['amount'])
+            quote_amount = deserialize_asset_amount(quote_trade['amount'])
+            
+            if quote_amount < 0:
+                trade_type = TradeType.BUY
+                amount = base_amount
+            else:
+                trade_type = TradeType.SELL
+                amount = quote_amount
+            
+            if base_amount != ZERO:
+                rate = quote_amount / base_amount
+            else:
+                raise ZeroDivisionError(
+                    f'Rate for trade couldnt be calculated. Base amount is ZERO '
+                    f'for {base_trade["refid"]}',
+                )
+
+            exchange_uuid = (
+                str(base_trade['refid']) +
+                #str(kraken_trade.get('postxid', '')) +  # postxid is optional
+                str(timestamp)
+            )
+            fee = ZERO
+            fee_asset = base_asset
+            trade = Trade(
+                timestamp=timestamp,
+                location=Location.KRAKEN,
+                base_asset=base_asset,
+                quote_asset=quote_asset,
+                trade_type=trade_type,
+                amount=amount,
+                rate=rate,
+                fee=fee,
+                fee_currency=fee_asset,
+                link=exchange_uuid,
+            )
+            trades.append(trade)
+        return trades, ledger_events
+
+    def query_kraken_ledger_actions(self):
+        response = self.query_until_finished(
+            endpoint='Ledgers',
+            keyname='ledger',
+            start_ts=start_ts,
+            end_ts=end_ts,
+            extra_dict={'type': 'staking'},
+        )
