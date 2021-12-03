@@ -279,7 +279,9 @@ class DBHandler:
 
     def __del__(self) -> None:
         if hasattr(self, 'conn') and self.conn:
-            self.disconnect()
+            self.disconnect(conn_attribute='conn')
+        if hasattr(self, 'conn_transient') and self.conn_transient:
+            self.disconnect(conn_attribute='conn_transient')
         try:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
         except (SystemPermissionError, FileNotFoundError) as e:
