@@ -4,7 +4,7 @@
     color="primary"
     :loading="refreshing"
     :disabled="refreshing || loadingData"
-    @click="refreshPrices(true)"
+    @click="refreshPrices({ ignoreCache: true })"
   >
     <v-icon left>mdi-refresh</v-icon>
     {{ $t('price_refresh.button') }}
@@ -15,6 +15,7 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import StatusMixin from '@/mixins/status-mixin';
+import { FetchPricePayload } from '@/store/balances/types';
 import { Section } from '@/store/const';
 import { TaskType } from '@/types/task-type';
 
@@ -29,7 +30,7 @@ import { TaskType } from '@/types/task-type';
 export default class PriceRefresh extends Mixins(StatusMixin) {
   readonly section = Section.PRICES;
   isTaskRunning!: (type: TaskType) => boolean;
-  refreshPrices!: (ignoreCache: boolean) => Promise<void>;
+  refreshPrices!: (payload: FetchPricePayload) => Promise<void>;
 
   get loadingData(): boolean {
     return (

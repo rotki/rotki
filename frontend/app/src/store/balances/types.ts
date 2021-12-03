@@ -121,6 +121,11 @@ export interface AllBalancePayload {
   readonly ignoreErrors: boolean;
 }
 
+export interface FetchPricePayload {
+  readonly ignoreCache: boolean;
+  readonly selectedAsset?: string;
+}
+
 export interface AccountWithBalance extends GeneralAccount, HasBalance {}
 
 interface XpubAccount extends GeneralAccount, XpubPayload {}
