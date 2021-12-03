@@ -1271,7 +1271,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 assets=defaultdict(Balance, {A_ETH2: balance}),
             )
             total += balance
-        self.totals.assets[A_ETH2] = total
+        if total.amount != ZERO:
+            self.totals.assets[A_ETH2] = total
 
     def _update_balances_after_token_query(
             self,
