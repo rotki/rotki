@@ -141,6 +141,56 @@
                 <v-icon>mdi-swap-vertical</v-icon>
               </v-btn>
             </div>
+            <div
+              v-if="shouldRenderSummary"
+              class="text-caption green--text mt-n5"
+            >
+              <v-icon small class="mr-2 green--text">
+                mdi-comment-quote
+              </v-icon>
+              <i18n
+                v-if="type === 'buy'"
+                tag="span"
+                path="external_trade_form.summary.buy"
+              >
+                <template #label>
+                  <strong>{{ $t('external_trade_form.summary.label') }}</strong>
+                </template>
+                <template #amount>
+                  <strong>{{ amount }}</strong>
+                </template>
+                <template #base>
+                  <strong>{{ getAssetText(base) }}</strong>
+                </template>
+                <template #quote>
+                  <strong>{{ getAssetText(quote) }}</strong>
+                </template>
+                <template #rate>
+                  <strong>{{ rate }}</strong>
+                </template>
+              </i18n>
+              <i18n
+                v-if="type === 'sell'"
+                tag="span"
+                path="external_trade_form.summary.sell"
+              >
+                <template #label>
+                  <strong>{{ $t('external_trade_form.summary.label') }}</strong>
+                </template>
+                <template #amount>
+                  <strong>{{ amount }}</strong>
+                </template>
+                <template #base>
+                  <strong>{{ getAssetText(base) }}</strong>
+                </template>
+                <template #quote>
+                  <strong>{{ getAssetText(quote) }}</strong>
+                </template>
+                <template #rate>
+                  <strong>{{ rate }}</strong>
+                </template>
+              </i18n>
+            </div>
           </v-col>
         </v-row>
 
@@ -203,9 +253,10 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
+import { SupportedAsset } from '@rotki/common/lib/data';
 import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { convertKeys } from '@/services/axios-tranformers';
@@ -222,7 +273,8 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 @Component({
   components: { AssetSelect, DateTimePicker },
   computed: {
-    ...mapGetters('tasks', ['isTaskRunning'])
+    ...mapGetters('tasks', ['isTaskRunning']),
+    ...mapState('balances', ['supportedAssets'])
   },
   methods: {
     ...mapActions('history', [
@@ -238,6 +290,8 @@ export default class ExternalTradeForm extends Vue {
 
   @Prop({ required: false, default: null })
   edit!: Trade | null;
+
+  supportedAssets!: SupportedAsset[];
 
   @Emit()
   input(_valid: boolean) {}
@@ -286,6 +340,10 @@ export default class ExternalTradeForm extends Vue {
     return this.type === 'buy'
       ? this.$t('external_trade_form.buy_quote').toString()
       : this.$t('external_trade_form.sell_quote').toString();
+  }
+
+  get shouldRenderSummary(): boolean {
+    return !!(this.type && this.base && this.quote && this.amount && this.rate);
   }
 
   rateMessages: string[] = [];
@@ -366,6 +424,13 @@ export default class ExternalTradeForm extends Vue {
     }
   }
 
+  getAssetText(asset: string): string {
+    return (
+      this.supportedAssets.find(item => item.identifier === asset)?.symbol ||
+      asset
+    );
+  }
+
   async fetchPrice() {
     if (
       (this.rate && this.edit) ||
@@ -388,7 +453,7 @@ export default class ExternalTradeForm extends Vue {
     if (rate.gt(0)) {
       this.rate = rate.toString();
       this.updateRate(true);
-    } else {
+    } else if (!this.rate) {
       this.errorMessages = {
         rate: [this.$t('external_trade_form.rate_not_found').toString()]
       };
@@ -498,7 +563,7 @@ export default class ExternalTradeForm extends Vue {
 
   &__grouped-amount-input {
     position: relative;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
 
     ::v-deep {
       .v-input {
