@@ -4,7 +4,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors import RemoteError, DeserializationError
+from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.typing import Price
 

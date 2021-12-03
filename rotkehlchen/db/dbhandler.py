@@ -53,8 +53,8 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
-from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES

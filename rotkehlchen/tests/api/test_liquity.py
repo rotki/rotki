@@ -1,10 +1,10 @@
-import pytest
 import random
 
+import pytest
 import requests
 
-from rotkehlchen.constants.assets import A_LUSD, A_ETH, A_LQTY
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,

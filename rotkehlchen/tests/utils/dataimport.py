@@ -1,19 +1,19 @@
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import (
+    A_BAT,
     A_BTC,
     A_DAI,
     A_DOGE,
-    A_SAI,
-    A_USDC,
     A_DOT,
     A_ETH,
-    A_LTC,
     A_EUR,
+    A_LTC,
+    A_SAI,
     A_UNI,
     A_USD,
+    A_USDC,
     A_XRP,
-    A_BAT,
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions

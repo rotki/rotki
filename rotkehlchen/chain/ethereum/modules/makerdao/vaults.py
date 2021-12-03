@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures import (
     DefiEventType,
 )
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
@@ -70,7 +71,6 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.errors import DeserializationError, RemoteError
-from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer

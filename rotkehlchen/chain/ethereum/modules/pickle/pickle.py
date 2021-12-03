@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Dict, List, NamedTuple, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
@@ -8,11 +8,11 @@ from rotkehlchen.constants.assets import A_PICKLE
 from rotkehlchen.constants.ethereum import PICKLE_DILL, PICKLE_DILL_REWARDS
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.interfaces import EthereumModule
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager

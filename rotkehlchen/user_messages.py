@@ -1,7 +1,7 @@
-import logging
 import json
+import logging
 from collections import deque
-from typing import TYPE_CHECKING, Deque, List, Optional, Dict, Any
+from typing import TYPE_CHECKING, Any, Deque, Dict, List, Optional
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.logging import RotkehlchenLogsAdapter

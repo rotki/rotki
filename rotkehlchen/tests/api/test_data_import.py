@@ -13,16 +13,16 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.dataimport import (
+    assert_bisq_trades_import_results,
+    assert_blockfi_trades_import_results,
+    assert_blockfi_transactions_import_results,
     assert_cointracking_import_results,
-    assert_custom_cointracking,
     assert_cryptocom_import_results,
     assert_cryptocom_special_events_import_results,
-    assert_blockfi_transactions_import_results,
-    assert_blockfi_trades_import_results,
+    assert_custom_cointracking,
     assert_nexo_results,
     assert_shapeshift_trades_import_results,
     assert_uphold_transactions_import_results,
-    assert_bisq_trades_import_results,
 )
 
 

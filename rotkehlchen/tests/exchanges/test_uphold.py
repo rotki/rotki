@@ -1,4 +1,4 @@
-from rotkehlchen.assets.converters import asset_from_uphold, UPHOLD_TO_WORLD
+from rotkehlchen.assets.converters import UPHOLD_TO_WORLD, asset_from_uphold
 
 
 def test_uphold_all_symbols_are_known():

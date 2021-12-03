@@ -1,7 +1,7 @@
 import random
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any, Dict, NamedTuple, List
+from typing import Any, Dict, List, NamedTuple
 from unittest.mock import _patch, patch
 
 import pytest
@@ -12,10 +12,10 @@ from web3._utils.abi import get_abi_output_types
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import _dsrdai_to_dai
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.ethereum import (
+    DS_PROXY_REGISTRY,
     ETH_MULTICALL,
     MAKERDAO_DAI_JOIN,
     MAKERDAO_POT,
-    DS_PROXY_REGISTRY,
     MAKERDAO_VAT,
 )
 from rotkehlchen.constants.misc import ZERO

@@ -5,8 +5,8 @@ from typing import Optional
 
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen.fval import FVal
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ApiKey, ApiSecret, ChecksumEthAddress, Timestamp
 from rotkehlchen.utils.misc import ts_now
 

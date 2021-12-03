@@ -6,6 +6,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.chain.ethereum.graph import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.modules.yearn.graph import YearnVaultsV2Graph
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultBalance,
@@ -18,7 +19,6 @@ from rotkehlchen.constants.ethereum import (
     YEARN_VAULT_V2_ABI,
     YEARN_VAULTS_V2_PREFIX,
 )
-from rotkehlchen.chain.ethereum.graph import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal

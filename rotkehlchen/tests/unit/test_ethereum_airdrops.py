@@ -1,8 +1,9 @@
 from unittest.mock import patch
 
 import pytest
-from rotkehlchen.chain.ethereum.airdrops import check_airdrops, AIRDROPS
-from rotkehlchen.constants.assets import A_UNI, A_1INCH, A_GRAIN
+
+from rotkehlchen.chain.ethereum.airdrops import AIRDROPS, check_airdrops
+from rotkehlchen.constants.assets import A_1INCH, A_GRAIN, A_UNI
 from rotkehlchen.errors import UnableToDecryptRemoteData
 
 TEST_ADDR1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'

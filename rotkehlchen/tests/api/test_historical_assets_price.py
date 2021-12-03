@@ -1,6 +1,6 @@
 import random
-
 from http import HTTPStatus
+
 import pytest
 import requests
 
@@ -9,11 +9,11 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
-    wait_for_async_task_with_result,
-    assert_error_response,
     assert_simple_ok_response,
+    wait_for_async_task_with_result,
 )
 
 

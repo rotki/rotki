@@ -1,7 +1,7 @@
 import csv
+import logging
 from collections import defaultdict
 from json.decoder import JSONDecodeError
-import logging
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, TextIO, Tuple
 
