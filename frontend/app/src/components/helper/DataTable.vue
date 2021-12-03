@@ -11,6 +11,7 @@
     :items-per-page="itemsPerPage"
     @update:items-per-page="onSelectionChange($event)"
     v-on="$listeners"
+    @update:page="scrollToTop"
   >
     <!-- Pass on all named slots -->
     <slot v-for="slot in Object.keys($slots)" :slot="slot" :name="slot" />
@@ -21,6 +22,16 @@
       slot-scope="scope"
     >
       <slot :name="slot" v-bind="scope" />
+    </template>
+
+    <template #top="{ pagination, options, updateOptions }">
+      <v-data-footer
+        v-bind="footerProps"
+        :pagination="pagination"
+        :options="options"
+        @update:options="updateOptions"
+      />
+      <v-divider />
     </template>
   </v-data-table>
 </template>
@@ -54,6 +65,13 @@ export default class DataTable extends Mixins(SettingsMixin) {
   async onSelectionChange(itemsPerPage: number) {
     await this.updateSetting({
       [ITEMS_PER_PAGE]: itemsPerPage
+    });
+  }
+
+  scrollToTop() {
+    const table = this.$refs.table as any;
+    this.$vuetify.goTo(table, {
+      container: document.querySelector('.app-main') as HTMLElement
     });
   }
 }
