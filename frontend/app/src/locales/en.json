@@ -962,11 +962,19 @@
     "title": "External Services"
   },
   "file_upload": {
-    "drop_area": "Drop the file or {0}",
+    "drop_area": "Drop the file or",
+    "inputted_file": "Inputted file: {name}",
     "import_complete": "Import was completed successfully.",
     "select_file": "Select file",
+    "change_file": "Change file",
     "many_files_selected": "One one file must be selected",
-    "only_files": "Only {fileFilter} files are allowed"
+    "only_files": "Only {fileFilter} files are allowed",
+    "import": "Import",
+    "date_input_format": {
+      "placeholder": "Input custom date format",
+      "hint": "Used this if date format in your file is: {format}",
+      "switch_label": "Use custom date format to parsing your file"
+    }
   },
   "generate": {
     "custom_selection": "Custom",
@@ -2913,9 +2921,10 @@
       "line_two": "All trades imported from Cointracking will always be considered as buys due to the way the data are represented.",
       "line_three": "ETH/BTC Transactions are treated as deposits/withdrawals so they are not imported in rotki. To import ETH transactions simply input your accounts in {0} and they will be imported automatically for you.",
       "link": "Blockchain Accounts/Balances",
-      "name": "cointracking",
+      "name": "CoinTracking",
       "note": " Important notes for importing data from {0}'s CSV exports.",
-      "preferred": "For the above reasons it's preferred to directly connect your exchanges in order to import data from there. If you do not do that a lot of accuracy is lost."
+      "preferred": "For the above reasons it's preferred to directly connect your exchanges in order to import data from there. If you do not do that a lot of accuracy is lost.",
+      "source_name": "cointracking"
     },
     "cryptocom": {
       "line_one": "[Early stage] This import script may miss some transactions types, like withdrawals. Since we can't have an exhaustive list of every type, we develop it using what we know at the time. If you think that import script can be improved and you can help providing more data types, {0}.",
@@ -2925,8 +2934,9 @@
       "line_three": "Trades/deposits/withdrawals from crypto.com do not include fees details. They are waived at the moment (August 2020) or they are handled in the traded amount.",
       "line_four": "Only transactions are imported here (for tax report), if you want the assets be displayed in your rotki balances, you have to add them manually as manual balances: {0}",
       "line_four_link": "Manual Accounts/Balances",
-      "name": "crypto.com mobile app",
-      "note": "Important notes for importing data from {0}'s CSV exports."
+      "name": "Crypto.com",
+      "note": "Important notes for importing data from {0}'s CSV exports.",
+      "source_name": "crypto.com mobile app"
     },
     "blockfi": {
       "import": "Import {0} from BlockFi",
@@ -2935,9 +2945,11 @@
       "name": "BlockFi",
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "BlockFi lets you export two different files. Trades will be imported from the file that only contains trades.",
-      "note": "Important notes for importing data from {0}'s CSV exports."
+      "note": "Important notes for importing data from {0}'s CSV exports.",
+      "source_name": "BlockFi"
     },
     "gitcoin": {
+      "name": "Gitcoin",
       "description": "Import the Gitcoin Grant events from a CSV file"
     },
     "nexo": {
@@ -2945,7 +2957,8 @@
       "import_transactions": "transactions",
       "name": "Nexo",
       "line_one": "[Experimental] If you find an issue with the imported data let us know so we can adapt the code accordingly.",
-      "note": "Important notes for importing data from {0}'s CSV exports."
+      "note": "Important notes for importing data from {0}'s CSV exports.",
+      "source_name": "Nexo"
     },
     "shapeshift": {
       "import": "Import {0} from ShapeShift",
@@ -2953,24 +2966,30 @@
       "name": "ShapeShift",
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "ShapeShift lets you export a trades file. Trades will be imported from the file that only contains trades.",
-      "note": "Important notes for importing data from {0}'s CSV exports."
+      "note": "Important notes for importing data from {0}'s CSV exports.",
+      "source_name": "ShapeShift"
     },
     "uphold": {
       "import": "Import {0} from uphold",
       "import_trade": "trades",
-      "name": "uphold",
+      "name": "Uphold",
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "Uphold lets you export a transactions file. It can be found under activity at the top right of the activity list.",
-      "note": "Important notes for importing data from {0}'s CSV exports."
+      "note": "Important notes for importing data from {0}'s CSV exports.",
+      "source_name": "uphold"
     },
     "bisq": {
       "import": "Import {0} from bisq",
       "import_trade": "trades",
       "name": "Bisq",
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
-      "note": "Important notes for importing data from {0}'s CSV exports."
+      "note": "Important notes for importing data from {0}'s CSV exports.",
+      "source_name": "Bisq"
     },
     "description": "You can manually import data from the services below by dragging the file on the respective area or clicking the select button.",
+    "select_source": {
+      "title": "Select source"
+    },
     "title": "Import Data",
     "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
     "notice_warning": "⚠️Important notice ⚠️:",

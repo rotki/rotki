@@ -31,25 +31,27 @@
                 :class="`navigation__${navItem.class}`"
               />
             </template>
-            <v-list-item
-              v-for="(subNavItem, si) in navItem.items"
-              :key="si"
-              :class="`navigation__${subNavItem.class}`"
-              active-class="navigation-menu__item--active"
-              :to="subNavItem.route"
-            >
-              <template #default="{ active }">
-                <navigation-menu-item
-                  :show-tooltips="showTooltips"
-                  :text="subNavItem.text"
-                  :icon="subNavItem.icon"
-                  :image="subNavItem.image"
-                  :icon-component="subNavItem.component"
-                  :crypto-icon="subNavItem.cryptoIcon"
-                  :active="active"
-                />
-              </template>
-            </v-list-item>
+            <div class="pl-3">
+              <v-list-item
+                v-for="(subNavItem, si) in navItem.items"
+                :key="si"
+                :class="`navigation__${subNavItem.class} pl-4`"
+                active-class="navigation-menu__item--active"
+                :to="subNavItem.route"
+              >
+                <template #default="{ active }">
+                  <navigation-menu-item
+                    :show-tooltips="showTooltips"
+                    :text="subNavItem.text"
+                    :icon="subNavItem.icon"
+                    :image="subNavItem.image"
+                    :icon-component="subNavItem.component"
+                    :crypto-icon="subNavItem.cryptoIcon"
+                    :active="active"
+                  />
+                </template>
+              </v-list-item>
+            </div>
           </v-list-group>
           <v-divider
             v-else-if="navItem.type === 'divider'"
