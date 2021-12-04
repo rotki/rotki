@@ -452,20 +452,34 @@ class DBHandler:
         conn.execute('PRAGMA foreign_keys=ON')
         setattr(self, conn_attribute, conn)
 
-    def change_password(self, new_password: str) -> bool:
-        """Changes the password for the currently logged in user
-        """
-        self.conn.text_factory = str
+    def _change_password(
+            self,
+            new_password: str,
+            conn_attribute: Literal['conn', 'conn_transient'],
+    ) -> bool:
+        conn = getattr(self, conn_attribute, None)
+        conn.text_factory = str
         new_password_for_sqlcipher = _protect_password_sqlcipher(new_password)
         script = f'PRAGMA rekey="{new_password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
-            self.conn.executescript(script)
+            conn.executescript(script)
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-            log.error(f'At change password could not re-key the open database: {str(e)}')
+            log.error(
+                f'At change password could not re-key the open {conn_attribute} '
+                f'database: {str(e)}',
+            )
             return False
         return True
+
+    def change_password(self, new_password: str) -> bool:
+        """Changes the password for the currently logged in user"""
+        result = (
+            self._change_password(new_password, 'conn') and
+            self._change_password(new_password, 'conn_transient')
+        )
+        return result
 
     def upgrade_db_sqlcipher_3_to_4(self, password: str) -> Tuple[bool, str]:
         if hasattr(self, 'conn') and self.conn:
