@@ -30,6 +30,7 @@ from rotkehlchen.api.v1.resources import (
     AssetsReplaceResource,
     AssetsTypesResource,
     AssetUpdatesResource,
+    AssociatedLocations,
     AsyncTasksResource,
     AvalancheTransactionsResource,
     BalancerBalancesResource,
@@ -264,6 +265,7 @@ URLS_V1: URLS = [
     ('/limits/reset/<string:location>', LimitsCounterResetResource),
     ('/database/info', DatabaseInfoResource),
     ('/database/backups', DatabaseBackupsResource),
+    ('/locations/associated', AssociatedLocations),
 ]
 
 logger = logging.getLogger(__name__)
