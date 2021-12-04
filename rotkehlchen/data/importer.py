@@ -670,8 +670,8 @@ class DataImporter():
                 #  Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,
                 # `crypto_wallet_swap_*`, ...) into one entry named `dynamic_coin_swap_*`.
                 self._import_cryptocom_associated_entries(
-                    data,
-                    'dynamic_coin_swap',
+                    data=data,
+                    tx_kind='dynamic_coin_swap',
                     **kwargs,
                 )
                 # reset the iterator
@@ -680,8 +680,8 @@ class DataImporter():
                 next(data)
 
                 self._import_cryptocom_associated_entries(
-                    data,
-                    'dust_conversion',
+                    data=data,
+                    tx_kind='dust_conversion',
                     **kwargs,
                 )
                 csvfile.seek(0)
