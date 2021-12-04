@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Users connected to Alchemy as a node will be able to properly retrieve old ethereum transactions.
+
 
 * :release:`1.22.2 <2021-11-30>`
 * :feature:`-` rotki will now detect locked SRM balances in FTX.
