@@ -8,6 +8,7 @@ from zipfile import ZipFile
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.accounting.typing import NamedJson, SchemaEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,
@@ -22,6 +23,8 @@ from rotkehlchen.constants import (
     ZERO,
 )
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.cache_handler import DBAccountingReports
+from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
@@ -101,6 +104,8 @@ class CSVExporter():
         self.database = database
         self.create_csv = create_csv
         self.all_events: List[Dict[str, Any]] = []
+        self.report_id: Optional[int] = None
+        self.cached: bool = False
         self.reset()
 
         # get setting for prefered eth explorer
@@ -138,6 +143,18 @@ class CSVExporter():
             self.ledger_actions_csv: List[Dict[str, Any]] = []
             self.all_events_csv: List[Dict[str, Any]] = []
             self.all_events = []
+            self.report_id = None
+            self.cached = False
+
+    def create_pnlreport_in_db(self, first_processed_timestamp: Timestamp, start_ts: Timestamp, end_ts: Timestamp) -> int:  # noqa: E501
+        """Creates a new report in the DB and sets it as current for the csv exporter"""
+        dbreports = DBAccountingReports(self.database)
+        self.report_id = dbreports.add_report(
+            first_processed_timestamp=first_processed_timestamp,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+        return self.report_id
 
     def timestamp_to_date(self, timestamp: Timestamp) -> str:
         return timestamp_to_date(
@@ -406,6 +423,19 @@ class CSVExporter():
         }
         log.debug('csv event', **entry)
         self.all_events.append(entry)
+        if self.cached is not True:
+            dbpnl = DBAccountingReports(self.database)
+            schema_event_type = SchemaEventType.ACCOUNTING_EVENT
+            event = NamedJson.deserialize(
+                event_type=schema_event_type,
+                data=entry,
+            )
+            assert self.report_id is not None, 'got into add_to_all_events() with a null report_id'
+            try:
+                dbpnl.add_report_data(self.report_id, timestamp, event)
+            except (DeserializationError, InputError) as e:
+                log.error(str(e))
+
         new_entry = entry.copy()
         # deleting and read link and notes for them to be at the end
         del new_entry['link']

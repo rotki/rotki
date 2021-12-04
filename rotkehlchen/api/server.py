@@ -19,6 +19,8 @@ from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.resources import (
     AaveBalancesResource,
     AaveHistoryResource,
+    AccountingReportDataResource,
+    AccountingReportsResource,
     AdexBalancesResource,
     AdexHistoryResource,
     AllAssetsResource,
@@ -177,6 +179,17 @@ URLS_V1: URLS = [
     ('/history/status', HistoryStatusResource),
     ('/history/export/', HistoryExportingResource),
     ('/history/download/', HistoryDownloadingResource),
+    ('/reports/', AccountingReportsResource),
+    (
+        '/reports/<int:report_id>',
+        AccountingReportsResource,
+        'per_report_resource',
+    ),
+    (
+        '/reports/<int:report_id>/data',
+        AccountingReportDataResource,
+        'per_report_data_resource',
+    ),
     ('/queried_addresses', QueriedAddressesResource),
     ('/blockchains/ETH/transactions', EthereumTransactionsResource),
     (

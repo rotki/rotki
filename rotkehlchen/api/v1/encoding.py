@@ -23,6 +23,7 @@ from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import ActionType, BalanceType
+from rotkehlchen.accounting.typing import SchemaEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -45,7 +46,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_polkadot_address,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
     DeserializationError,
@@ -487,6 +488,36 @@ class EthereumAddressField(fields.Field):
             ) from e
 
         return address
+
+
+class SchemaEventTypeField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: SchemaEventType,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> SchemaEventType:
+        # Make sure that given value is an AccountingEvent
+        try:
+            event_type = SchemaEventType.deserialize_from_db(value)
+        except DeserializationError as e:
+            raise ValidationError(
+                f'Given value {value} is not an SchemaEventType',
+                field_name='event_type',
+            ) from e
+
+        return event_type
 
 
 class TradeTypeField(fields.Field):
@@ -1378,6 +1409,52 @@ class HistoryProcessingSchema(Schema):
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
     async_query = fields.Boolean(load_default=False)
+
+
+class AccountingReportsSchema(Schema):
+    report_id = fields.Integer(load_default=None)
+
+    def __init__(self, required_report_id: bool):
+        super().__init__()
+        self.required_report_id = required_report_id
+
+    @validates_schema
+    def validate_accounting_reports_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if self.required_report_id and data['report_id'] is None:
+            raise ValidationError('A report id should be given')
+
+
+class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
+    report_id = fields.Integer(load_default=None)
+    event_type = SchemaEventTypeField(load_default=None)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+
+    @post_load
+    def make_report_data_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        report_id = data.get('report_id')
+        event_type = data.get('event_type')
+        filter_query = ReportDataFilterQuery.make(
+            order_by_attribute='timestamp',  # hard coding order by timestamp for API for now
+            order_ascending=False,  # most recent first
+            limit=data['limit'],
+            offset=data['offset'],
+            report_id=report_id,
+            event_type=event_type,
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+        )
+        return {
+            'filter_query': filter_query,
+        }
 
 
 class HistoryExportingSchema(Schema):

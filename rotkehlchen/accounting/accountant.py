@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 import gevent
 
+from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import ActionType, DefiEvent
@@ -11,6 +12,7 @@ from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.csv_exporter import CSVExporter
+from rotkehlchen.db.cache_handler import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import (
     NoPriceForGivenTimestamp,
@@ -47,9 +49,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-FREE_PNL_EVENTS_LIMIT = 1000
 
 
 class Accountant():
@@ -348,6 +347,12 @@ class Accountant():
         first_ts = Timestamp(0) if len(actions) == 0 else action_get_timestamp(actions[0])
         self.currently_processing_timestamp = first_ts
         self.first_processed_timestamp = first_ts
+        # Create a new pnl report in the DB to be used to save each event generated
+        self.csvexporter.create_pnlreport_in_db(
+            first_processed_timestamp=self.first_processed_timestamp,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
 
         prev_time = Timestamp(0)
         count = 0
@@ -443,23 +448,30 @@ class Accountant():
             taxable_trade_profit_loss=self.events.taxable_trade_profit_loss,
             total_taxable_profit_loss=total_taxable_pl,
         )
+        profit_loss_overview = {
+            'ledger_actions_profit_loss': str(self.events.ledger_actions_profit_loss),
+            'defi_profit_loss': str(self.events.defi_profit_loss),
+            'loan_profit': str(self.events.loan_profit),
+            'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
+            'settlement_losses': str(self.events.settlement_losses),
+            'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
+            'asset_movement_fees': str(self.asset_movement_fees),
+            'general_trade_profit_loss': str(self.events.general_trade_profit_loss),
+            'taxable_trade_profit_loss': str(self.events.taxable_trade_profit_loss),
+            'total_taxable_profit_loss': str(total_taxable_pl),
+            'total_profit_loss': str(
+                self.events.general_trade_profit_loss +
+                sum_other_actions,
+            ),
+        }
+        if self.csvexporter.report_id is not None:
+            dbpnl = DBAccountingReports(self.csvexporter.database)
+            dbpnl.add_report_overview(
+                report_id=self.csvexporter.report_id,
+                **profit_loss_overview,
+            )
         return {
-            'overview': {
-                'ledger_actions_profit_loss': str(self.events.ledger_actions_profit_loss),
-                'defi_profit_loss': str(self.events.defi_profit_loss),
-                'loan_profit': str(self.events.loan_profit),
-                'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
-                'settlement_losses': str(self.events.settlement_losses),
-                'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
-                'asset_movement_fees': str(self.asset_movement_fees),
-                'general_trade_profit_loss': str(self.events.general_trade_profit_loss),
-                'taxable_trade_profit_loss': str(self.events.taxable_trade_profit_loss),
-                'total_taxable_profit_loss': str(total_taxable_pl),
-                'total_profit_loss': str(
-                    self.events.general_trade_profit_loss +
-                    sum_other_actions,
-                ),
-            },
+            'overview': profit_loss_overview,
             'first_processed_timestamp': self.first_processed_timestamp,
             'events_processed': count,
             'events_limit': events_limit,

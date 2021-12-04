@@ -1,16 +1,17 @@
+import {
+  Report,
+  ProfitLossEvent,
+  ProfitLossOverviewData,
+  ReportError,
+  ReportPeriod,
+  ReportProgress
+} from '@rotki/common/lib/reports';
 import { currencies } from '@/data/currencies';
 import {
   emptyError,
   emptyPeriod,
   tradeHistoryPlaceholder
 } from '@/store/reports/const';
-import {
-  ProfitLossEvent,
-  ProfitLossOverviewData,
-  ReportError,
-  ReportPeriod,
-  ReportProgress
-} from '@/store/reports/types';
 
 import { AccountingSettings } from '@/types/user';
 
@@ -20,6 +21,10 @@ export interface ReportState {
   limit: number;
   overview: ProfitLossOverviewData;
   events: ProfitLossEvent[];
+  reportId: number;
+  reports: Report[];
+  reportsFound: number;
+  reportsLimit: number;
   accountingSettings: AccountingSettings | null;
   reportPeriod: ReportPeriod;
   currency: string;
@@ -33,6 +38,10 @@ export const defaultState = (): ReportState => ({
   events: [],
   processed: -1,
   limit: -1,
+  reportId: -1,
+  reports: [],
+  reportsFound: -1,
+  reportsLimit: -1,
   firstProcessedTimestamp: -1,
   accountingSettings: null,
   reportPeriod: emptyPeriod(),

@@ -14,6 +14,7 @@ import { basicAxiosTransformer } from '@/services/consts';
 import { DefiApi } from '@/services/defi/defi-api';
 import { IgnoredActions } from '@/services/history/const';
 import { HistoryApi } from '@/services/history/history-api';
+import { ReportsApi } from '@/services/reports/reports-api';
 import { SessionApi } from '@/services/session/session-api';
 import {
   AsyncQuery,
@@ -79,6 +80,7 @@ export class RotkehlchenApi {
   private _session: SessionApi;
   private _balances: BalancesApi;
   private _history: HistoryApi;
+  private _reports: ReportsApi;
   private _assets: AssetApi;
   private _backups: BackupApi;
   private _serverUrl: string;
@@ -97,6 +99,7 @@ export class RotkehlchenApi {
     session: new SessionApi(axios),
     balances: new BalancesApi(axios),
     history: new HistoryApi(axios),
+    reports: new ReportsApi(axios),
     assets: new AssetApi(axios),
     backups: new BackupApi(axios)
   });
@@ -113,6 +116,7 @@ export class RotkehlchenApi {
       session: this._session,
       balances: this._balances,
       history: this._history,
+      reports: this._reports,
       assets: this._assets,
       backups: this._backups
     } = this.setupApis(this.axios));
@@ -134,6 +138,10 @@ export class RotkehlchenApi {
     return this._history;
   }
 
+  get reports(): ReportsApi {
+    return this._reports;
+  }
+
   get assets(): AssetApi {
     return this._assets;
   }
@@ -153,6 +161,7 @@ export class RotkehlchenApi {
       session: this._session,
       balances: this._balances,
       history: this._history,
+      reports: this._reports,
       assets: this._assets,
       backups: this._backups
     } = this.setupApis(this.axios));

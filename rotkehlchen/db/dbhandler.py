@@ -1,4 +1,3 @@
-
 import json
 import logging
 import os
@@ -53,11 +52,12 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
-from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
+from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
     DEFAULT_PREMIUM_SHOULD_SYNC,
     ROTKEHLCHEN_DB_VERSION,
@@ -129,6 +129,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
+MAIN_DB_NAME = 'rotkehlchen.db'
+TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 PASSWORDCHECK_STATEMENT = 'SELECT name FROM sqlite_master WHERE type="table";'
 
 DBTupleType = Literal[
@@ -137,6 +139,7 @@ DBTupleType = Literal[
     'margin_position',
     'ethereum_transaction',
     'amm_swap',
+    'accounting_event',
 ]
 
 # Tuples that contain first the name of a table and then the columns that
@@ -243,6 +246,8 @@ class DBHandler:
         self.user_data_dir = user_data_dir
         self.sqlcipher_version = detect_sqlcipher_version()
         self.last_write_ts: Optional[Timestamp] = None
+        self.conn: sqlcipher.Connection = None  # pylint: disable=no-member
+        self.conn_transient: sqlcipher.Connection = None  # pylint: disable=no-member
         action = self.read_info_at_start()
         if action == DBStartupAction.UPGRADE_3_4:
             result, msg = self.upgrade_db_sqlcipher_3_to_4(password)
@@ -274,7 +279,9 @@ class DBHandler:
 
     def __del__(self) -> None:
         if hasattr(self, 'conn') and self.conn:
-            self.disconnect()
+            self.disconnect(conn_attribute='conn')
+        if hasattr(self, 'conn_transient') and self.conn_transient:
+            self.disconnect(conn_attribute='conn_transient')
         try:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
         except (SystemPermissionError, FileNotFoundError) as e:
@@ -328,8 +335,13 @@ class DBHandler:
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 ('version', str(ROTKEHLCHEN_DB_VERSION)),
             )
+        # set up transient connection
+        self.connect(password, conn_attribute='conn_transient')
+        # creating tables if necessary
+        if hasattr(self, 'conn_transient') and self.conn_transient:
+            self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
 
-    def get_md5hash(self) -> str:
+    def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
 
         May raise:
@@ -337,7 +349,9 @@ class DBHandler:
         """
         no_active_connection = not hasattr(self, 'conn') or not self.conn
         assert no_active_connection, 'md5hash should be taken only with a closed DB'
-        return file_md5(self.user_data_dir / 'rotkehlchen.db')
+        if transient:
+            return file_md5(self.user_data_dir / TRANSIENT_DB_NAME)
+        return file_md5(self.user_data_dir / MAIN_DB_NAME)
 
     def read_info_at_start(self) -> DBStartupAction:
         """Read some metadata info at initialization
@@ -407,43 +421,65 @@ class DBHandler:
         )
         self.conn.commit()
 
-    def connect(self, password: str) -> None:
+    def connect(
+            self,
+            password: str,
+            conn_attribute: Literal['conn', 'conn_transient'] = 'conn',
+    ) -> None:
         """Connect to the DB using password
 
         May raise:
         - SystemPermissionError if we are unable to open the DB file,
         probably due to permission errors
         """
-        fullpath = self.user_data_dir / 'rotkehlchen.db'
+        if conn_attribute == 'conn':
+            fullpath = self.user_data_dir / MAIN_DB_NAME
+        else:
+            fullpath = self.user_data_dir / TRANSIENT_DB_NAME
         try:
-            self.conn = sqlcipher.connect(str(fullpath))  # pylint: disable=no-member
+            conn: sqlcipher.Connection = sqlcipher.connect(str(fullpath))  # pylint: disable=no-member  # noqa: E501
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             raise SystemPermissionError(
                 f'Could not open database file: {fullpath}. Permission errors?',
             ) from e
 
-        self.conn.text_factory = str
+        conn.text_factory = str
         password_for_sqlcipher = _protect_password_sqlcipher(password)
         script = f'PRAGMA key="{password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
-        self.conn.executescript(script)
-        self.conn.execute('PRAGMA foreign_keys=ON')
+        conn.executescript(script)
+        conn.execute('PRAGMA foreign_keys=ON')
+        setattr(self, conn_attribute, conn)
 
-    def change_password(self, new_password: str) -> bool:
-        """Changes the password for the currently logged in user
-        """
-        self.conn.text_factory = str
+    def _change_password(
+            self,
+            new_password: str,
+            conn_attribute: Literal['conn', 'conn_transient'],
+    ) -> bool:
+        conn = getattr(self, conn_attribute, None)
+        conn.text_factory = str
         new_password_for_sqlcipher = _protect_password_sqlcipher(new_password)
         script = f'PRAGMA rekey="{new_password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
-            self.conn.executescript(script)
+            conn.executescript(script)
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-            log.error(f'At change password could not re-key the open database: {str(e)}')
+            log.error(
+                f'At change password could not re-key the open {conn_attribute} '
+                f'database: {str(e)}',
+            )
             return False
         return True
+
+    def change_password(self, new_password: str) -> bool:
+        """Changes the password for the currently logged in user"""
+        result = (
+            self._change_password(new_password, 'conn') and
+            self._change_password(new_password, 'conn_transient')
+        )
+        return result
 
     def upgrade_db_sqlcipher_3_to_4(self, password: str) -> Tuple[bool, str]:
         if hasattr(self, 'conn') and self.conn:
@@ -465,10 +501,11 @@ class DBHandler:
 
         return success, msg
 
-    def disconnect(self) -> None:
-        if hasattr(self, 'conn') and self.conn:
-            self.conn.close()
-            self.conn = None
+    def disconnect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
+        conn = getattr(self, conn_attribute, None)
+        if conn:
+            conn.close()
+            setattr(self, conn_attribute, None)
 
     def export_unencrypted(self, temppath: Path) -> None:
         self.conn.executescript(
@@ -485,7 +522,7 @@ class DBHandler:
         there is a DB upgrade and there is an error.
         """
         self.disconnect()
-        rdbpath = self.user_data_dir / 'rotkehlchen.db'
+        rdbpath = self.user_data_dir / MAIN_DB_NAME
         # Make copy of existing encrypted DB before removing it
         shutil.copy2(
             rdbpath,

@@ -378,20 +378,23 @@ def test_user_creation_with_already_loggedin_user(rotkehlchen_api_server, userna
 def test_user_password_change(rotkehlchen_api_server, username, db_password):
     """
     Test that changing a logged-in user's users password works successfully and that
-    common errors are handled.
+    common errors are handled. Also make sure logging in again with the new password works.
     """
-
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    new_password = 'asdf'
     # wrong username
     data_wrong_user = {
         'name': 'billybob',
         'current_password': 'asdf',
         'new_password': 'asdf',
     }
-    response = requests.patch(api_url_for(rotkehlchen_api_server, "userpasswordchangeresource",
-                              name=username), json=data_wrong_user)
-    msg = (
-        f'Provided user "{data_wrong_user["name"]}" is not the logged in user'
-    )
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'userpasswordchangeresource',
+            name=username,
+        ), json=data_wrong_user)
+    msg = f'Provided user "{data_wrong_user["name"]}" is not the logged in user'
     assert_error_response(
         response=response,
         contained_in_msg=msg,
@@ -404,34 +407,54 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
         'current_password': 'asdf',
         'new_password': 'asdf',
     }
-    response = requests.patch(api_url_for(rotkehlchen_api_server, "userpasswordchangeresource",
-                              name=username), json=data_wrong_pass)
-    msg = ('Provided current password is not correct')
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'userpasswordchangeresource',
+            name=username,
+        ), json=data_wrong_pass)
+    msg = 'Provided current password is not correct'
     assert_error_response(
         response=response,
         contained_in_msg=msg,
         status_code=HTTPStatus.UNAUTHORIZED,
     )
 
-    # success
+    # now do change password
     data_success = {
         'name': username,
         'current_password': db_password,
-        'new_password': 'asdf',
+        'new_password': new_password,
     }
-    response = requests.patch(api_url_for(rotkehlchen_api_server, "userpasswordchangeresource",
-                              name=username), json=data_success)
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'userpasswordchangeresource',
+            name=username,
+        ), json=data_success)
     assert_simple_ok_response(response)
 
-    # revert password
-    data_revert = {
-        'name': username,
-        'current_password': data_success['new_password'],
-        'new_password': db_password,
-    }
-    response = requests.patch(api_url_for(rotkehlchen_api_server, "userpasswordchangeresource",
-                              name=username), json=data_revert)
+    # Logout
+    data = {'action': 'logout'}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+        json=data,
+    )
     assert_simple_ok_response(response)
+    assert rotki.user_is_logged_in is False
+
+    # And login with the new password to make sure it works
+    data = {'action': 'login', 'password': new_password, 'sync_approval': 'unknown'}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+        json=data,
+    )
+    result = assert_proper_response_with_result(response)
+    check_proper_unlock_result(result)
+    assert rotki.user_is_logged_in is True
+    users_data = check_user_status(rotkehlchen_api_server)  # type: ignore
+    assert len(users_data) == 1
+    assert users_data[username] == 'loggedin'
 
 
 def test_user_logout(rotkehlchen_api_server, username):

@@ -4,6 +4,7 @@ import {
   GitcoinGrantReport,
   GitcoinReportPayload
 } from '@rotki/common/lib/gitcoin';
+import { ReportProgress } from '@rotki/common/lib/reports';
 import {
   AxiosInstance,
   AxiosRequestTransformer,
@@ -39,7 +40,6 @@ import {
   validWithSessionStatus
 } from '@/services/utils';
 import { LedgerAction } from '@/store/history/types';
-import { ReportProgress } from '@/store/reports/types';
 
 export class HistoryApi {
   private readonly axios: AxiosInstance;

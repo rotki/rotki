@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 import requests
 
-from rotkehlchen.accounting.accountant import FREE_PNL_EVENTS_LIMIT
+from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,
     EV_BUY,
