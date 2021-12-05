@@ -236,6 +236,12 @@ Graph basis
 
 Configure whether the graph y-axis will start at 0 or the minimum amount for the period.
 
+Include NFTs in graphs and total amounts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Configure whether to include NFTs in the calculation for the total net worth and the graphs displayed in the dashboard and statistic section.
+
+
 Automatic balance refresh
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
