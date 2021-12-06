@@ -835,7 +835,7 @@ export class RotkehlchenApi {
   }
 
   async accounts(
-    blockchain: Exclude<Blockchain, 'BTC'>
+    blockchain: Exclude<Blockchain, Blockchain.BTC | Blockchain.ETH2>
   ): Promise<GeneralAccountData[]> {
     return this.axios
       .get<ActionResult<GeneralAccountData[]>>(`/blockchains/${blockchain}`, {

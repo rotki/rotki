@@ -122,22 +122,21 @@ export const getters: Getters<
     eth2Validators
   }: BalanceState): BlockchainAccountWithBalance[] {
     const balances: BlockchainAccountWithBalance[] = [];
-    for (const publicKey in eth2) {
-      const { assets } = eth2[publicKey];
-      const balance: Balance = assets
-        ? {
-            amount: assets[Blockchain.ETH2].amount,
-            usdValue: assetSum(assets)
-          }
-        : { amount: Zero, usdValue: Zero };
-      const validator = eth2Validators.entries.find(
-        validator => validator.publicKey === publicKey
-      );
+    for (const { publicKey, validatorIndex } of eth2Validators.entries) {
+      const validatorBalances = eth2[publicKey];
+      let balance: Balance = { amount: Zero, usdValue: Zero };
+      if (validatorBalances && validatorBalances.assets) {
+        const assets = validatorBalances.assets;
+        balance = {
+          amount: assets[Blockchain.ETH2].amount,
+          usdValue: assetSum(assets)
+        };
+      }
       balances.push({
         address: publicKey,
         chain: Blockchain.ETH2,
         balance,
-        label: validator?.validatorIndex.toString() ?? '',
+        label: validatorIndex.toString() ?? '',
         tags: []
       });
     }

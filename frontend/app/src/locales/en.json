@@ -1855,6 +1855,12 @@
         "title": "Deleting Eth2 validators"
       }
     },
+    "get_accounts": {
+      "error": {
+        "description": "Failed to query accounts for {blockchain}: {message}",
+        "title": "Querying of accounts"
+      }
+    },
     "history": {
       "fetch_ignored": {
         "error": {
