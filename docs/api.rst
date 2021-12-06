@@ -7674,8 +7674,8 @@ Adding an Eth2 validator
    :statuscode 502: An external service used in the query such as beaconcha.in could not be reached or returned unexpected response.
 
 
-Deleting an Eth2 validator
-==========================
+Deleting Eth2 validators
+===========================
 
 .. http:delete:: /api/(version)/blockchains/ETH2/validators
 
@@ -7688,9 +7688,20 @@ Deleting an Eth2 validator
 
       DELETE /api/1/blockchains/ETH2/validators HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json
 
-   :reqjson validator_index int: An optional integer representing the validator index of the validator to delete. If this is not given then the pulic key of the validator has to be given!
-   :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to delete. If this is not given the the validator index has to be given!
+      {
+        "validators": [
+          {
+            "validator_index": 1,
+            "public_key": "abcd"
+          }
+        ]
+      }
+
+   :reqjson list[object] validators: A list of eth2 validators to delete.
+   :reqjsonarr int[optional] validator_index: An optional integer representing the validator index of the validator to track. If this is not given then the pulic key of the validator has to be given!
+   :reqjsonarr string[optional] public_key: An optional string representing the hexadecimal string of the public key of the validator to track. If this is not given the the validator index has to be given!
 
    **Example Response**:
 
