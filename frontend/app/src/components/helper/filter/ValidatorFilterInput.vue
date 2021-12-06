@@ -4,7 +4,7 @@
       :class="$style.filter"
       attach="#validator-filter-input"
       :filter="filter"
-      :value="selection"
+      :value="value"
       :items="items"
       :search-input.sync="search"
       :loading="loading"
@@ -14,10 +14,11 @@
       hide-no-data
       return-object
       chips
-      single-line
       clearable
+      multiple
       dense
       outlined
+      item-value="publicKey"
       :label="$t('validator_filter_input.label')"
       :open-on-clear="false"
       item-text="publicKey"
@@ -27,7 +28,17 @@
         <validator-display :validator="item" />
       </template>
       <template #selection="{ item }">
-        <validator-display :validator="item" horizontal />
+        <v-chip
+          small
+          :color="dark ? null : 'grey lighten-3'"
+          filter
+          class="text-truncate"
+          :class="$style.chip"
+          close
+          @click:close="removeValidator(item.publicKey)"
+        >
+          <validator-display :validator="item" horizontal />
+        </v-chip>
       </template>
     </v-autocomplete>
   </v-card>
@@ -35,14 +46,9 @@
 
 <script lang="ts">
 import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  toRefs
-} from '@vue/composition-api';
+import { defineComponent, PropType, ref, toRefs } from '@vue/composition-api';
 import ValidatorDisplay from '@/components/helper/display/icons/ValidatorDisplay.vue';
+import { setupThemeCheck } from '@/composables/common';
 
 export default defineComponent({
   name: 'ValidatorFilterInput',
@@ -66,13 +72,12 @@ export default defineComponent({
   setup(props, { emit }) {
     const search = ref('');
     const { value } = toRefs(props);
-    const input = (value: Eth2ValidatorEntry | null) => {
-      emit('input', !value ? [] : [value.publicKey]);
+    const input = (value: (Eth2ValidatorEntry | string)[]) => {
+      const selection = value.map(v =>
+        typeof v === 'string' ? v : v.publicKey
+      );
+      emit('input', selection);
     };
-    const selection = computed(() => {
-      const currentFilter = value.value;
-      return currentFilter.length === 0 ? '' : currentFilter[0];
-    });
 
     const filter = (
       { publicKey, validatorIndex }: Eth2ValidatorEntry,
@@ -83,11 +88,24 @@ export default defineComponent({
         validatorIndex.toString().indexOf(queryText) >= 0
       );
     };
+
+    const removeValidator = (publicKey: string) => {
+      const selection = [...value.value];
+      const index = selection.indexOf(publicKey);
+      if (index >= 0) {
+        selection.splice(index, 1);
+      }
+      input(selection);
+    };
+
+    const { dark } = setupThemeCheck();
+
     return {
       input,
       filter,
-      selection,
-      search
+      removeValidator,
+      search,
+      dark
     };
   }
 });
@@ -96,5 +114,9 @@ export default defineComponent({
 <style module lang="scss">
 .filter {
   border-radius: 4px !important;
+}
+
+.chip {
+  margin: 2px;
 }
 </style>

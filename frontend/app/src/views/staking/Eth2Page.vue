@@ -49,7 +49,7 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { defineComponent, onMounted, ref } from '@vue/composition-api';
+import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
@@ -94,6 +94,7 @@ const Eth2Page = defineComponent({
     );
 
     const { eth2Validators } = setupBlockchainAccounts();
+    watch(filterType, () => (selection.value = []));
 
     return {
       selection,

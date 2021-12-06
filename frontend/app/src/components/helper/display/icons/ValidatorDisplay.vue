@@ -6,7 +6,7 @@
     }"
   >
     <div class="font-weight-medium text-truncate">
-      {{ truncateAddress(validator.publicKey, 10) }}
+      {{ truncateAddress(validator.publicKey, length) }}
     </div>
     <div>
       <span v-if="horizontal" :class="$style.divider"> - </span>
@@ -20,7 +20,12 @@
 
 <script lang="ts">
 import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
-import { defineComponent, PropType } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import { truncateAddress } from '@/filters';
 
 export default defineComponent({
@@ -36,8 +41,11 @@ export default defineComponent({
       default: false
     }
   },
-  setup() {
+  setup(props) {
+    const { horizontal } = toRefs(props);
+    const length = computed(() => (horizontal.value ? 4 : 10));
     return {
+      length,
       truncateAddress
     };
   }
