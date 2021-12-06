@@ -71,7 +71,8 @@ In order to build the bundle you need to go to the premium components directory 
 run the following.
 
 ```bash
-yarn build:bundle
+npm ci
+npm run build
 ```
 
 ## Mocking async queries
