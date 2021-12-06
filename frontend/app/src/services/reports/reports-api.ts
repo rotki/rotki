@@ -1,25 +1,24 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import {
-  ReportEventsPayloadData,
-  ReportOverviewPayloadData,
-  ReportsPayloadData
-} from '@rotki/common/lib/reports';
-import {
   AxiosInstance,
-  AxiosResponseTransformer,
-  AxiosRequestTransformer
+  AxiosRequestTransformer,
+  AxiosResponseTransformer
 } from 'axios';
 import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import { reportNumericKeys } from '@/services/reports/const';
 import { handleResponse, validStatus } from '@/services/utils';
+import {
+  ReportEventsPayloadData,
+  ReportOverviewPayloadData,
+  ReportsPayloadData
+} from '@/types/reports';
 
 export class ReportsApi {
   private readonly axios: AxiosInstance;
   private readonly responseTransformer: AxiosResponseTransformer[] =
-    setupTransformer(reportNumericKeys);
+    setupTransformer([]);
   private readonly requestTransformer: AxiosRequestTransformer[];
 
   constructor(axios: AxiosInstance) {
@@ -35,7 +34,7 @@ export class ReportsApi {
     return this.axios
       .get<ActionResult<ReportsPayloadData>>('/reports', {
         validateStatus: validStatus,
-        transformResponse: setupTransformer(reportNumericKeys)
+        transformResponse: setupTransformer([])
       })
       .then(handleResponse)
       .then(result => ReportsPayloadData.parse(result));
@@ -47,7 +46,7 @@ export class ReportsApi {
         `/reports/${reportId}/data/accounting_overview`,
         {
           validateStatus: validStatus,
-          transformResponse: setupTransformer(reportNumericKeys)
+          transformResponse: setupTransformer([])
         }
       )
       .then(handleResponse)
@@ -60,7 +59,7 @@ export class ReportsApi {
         `/reports/${reportId}/data/`,
         {
           validateStatus: validStatus,
-          transformResponse: setupTransformer(reportNumericKeys)
+          transformResponse: setupTransformer([])
         }
       )
       .then(handleResponse)
@@ -71,7 +70,7 @@ export class ReportsApi {
     return this.axios
       .delete<ActionResult<boolean>>(`/reports/${reportId}`, {
         validateStatus: validStatus,
-        transformResponse: setupTransformer(reportNumericKeys)
+        transformResponse: setupTransformer([])
       })
       .then(handleResponse);
   }

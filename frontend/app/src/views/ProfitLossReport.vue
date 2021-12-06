@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <generate v-show="!isRunning" @generate="generate($event)" />
+    <generate v-show="!isRunning" @generate="generateReport($event)" />
     <error-screen
       v-if="!isRunning && reportError.message"
       class="mt-12"
@@ -34,7 +34,7 @@
           </i18n>
         </v-col>
       </v-row>
-      <v-card v-if="(limit > 0) & (processed > limit)" class="mt-4 mb-8">
+      <v-card v-if="showUpgradeMessage" class="mt-4 mb-8">
         <v-card-text class="text-subtitle-1">
           <i18n tag="div" path="profit_loss_report.upgrade">
             <template #processed>
@@ -91,9 +91,8 @@
 </template>
 
 <script lang="ts">
-import { ReportError, ReportPeriod } from '@rotki/common/lib/reports';
-import { Component, Vue } from 'vue-property-decorator';
-import { mapGetters, mapState } from 'vuex';
+import { computed, defineComponent } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -102,13 +101,17 @@ import Generate from '@/components/profitloss/Generate.vue';
 import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
+import { setupTaskStatus } from '@/composables/tasks';
+import { interop } from '@/electron-interop';
+import i18n from '@/i18n';
+import { api } from '@/services/rotkehlchen-api';
+import { useReports } from '@/store/reports';
 import { Message } from '@/store/types';
-import { Currency } from '@/types/currency';
-import { ProfitLossPeriod } from '@/types/pnl';
+import { useStore } from '@/store/utils';
 import { TaskType } from '@/types/task-type';
-import { AccountingSettings } from '@/types/user';
 
-@Component({
+export default defineComponent({
+  name: 'ProfitLossReport',
   components: {
     BaseExternalLink,
     ErrorScreen,
@@ -119,73 +122,64 @@ import { AccountingSettings } from '@/types/user';
     ProgressScreen,
     Generate
   },
-  computed: {
-    ...mapGetters('tasks', ['isTaskRunning']),
-    ...mapGetters('reports', ['progress', 'processingState']),
-    ...mapState('reports', [
-      'loaded',
-      'accountingSettings',
-      'reportPeriod',
-      'reportError',
-      'processed',
-      'limit',
-      'firstProcessedTimestamp'
-    ]),
-    ...mapGetters('session', ['currency'])
-  }
-})
-export default class ProfitLossReport extends Vue {
-  isTaskRunning!: (type: TaskType) => boolean;
-  loaded!: boolean;
-  currency!: Currency;
-  progress!: string;
-  limit!: string;
-  processingState!: string;
-  accountingSettings!: AccountingSettings;
-  reportPeriod!: ReportPeriod;
-  reportError!: ReportError;
+  setup() {
+    const { isTaskRunning } = setupTaskStatus();
+    const reportsStore = useReports();
+    const {
+      processingState,
+      processed,
+      progress,
+      reportError,
+      reportPeriod,
+      loaded,
+      showUpgradeMessage
+    } = storeToRefs(reportsStore);
+    const { generateReport, createCsv } = reportsStore;
+    const isRunning = computed(() => isTaskRunning(TaskType.TRADE_HISTORY));
+    const store = useStore();
 
-  firstProcessedTimestamp!: number;
-  processed!: number;
+    const showMessage = (description: string) => {
+      store.commit('setMessage', {
+        title: i18n.t('profit_loss_report.csv_export_error').toString(),
+        description: description
+      } as Message);
+    };
 
-  get isRunning(): boolean {
-    return this.isTaskRunning(TaskType.TRADE_HISTORY);
-  }
-
-  generate(event: ProfitLossPeriod) {
-    this.$store.commit('reports/currency', this.currency.tickerSymbol);
-    this.$store.dispatch('reports/generate', event);
-  }
-
-  async exportCSV() {
-    try {
-      if (this.$interop.isPackaged && this.$api.defaultBackend) {
-        const directory = await this.$interop.openDirectory(
-          this.$t('profit_loss_report.select_directory').toString()
-        );
-        if (!directory) {
-          return;
-        }
-        await this.$store.dispatch('reports/createCSV', directory);
-      } else {
-        const { success, message } = await this.$api.downloadCSV();
-        if (!success) {
-          this.showMessage(
-            message ?? this.$t('profit_loss_report.download_failed').toString()
+    const exportCSV = async () => {
+      try {
+        if (interop.isPackaged && api.defaultBackend) {
+          const directory = await interop.openDirectory(
+            i18n.t('profit_loss_report.select_directory').toString()
           );
+          if (!directory) {
+            return;
+          }
+          await createCsv(directory);
+        } else {
+          const { success, message } = await api.downloadCSV();
+          if (!success) {
+            showMessage(
+              message ?? i18n.t('profit_loss_report.download_failed').toString()
+            );
+          }
         }
+      } catch (e: any) {
+        const description = e.message;
+        showMessage(description);
       }
-    } catch (e: any) {
-      const description = e.message;
-      this.showMessage(description);
-    }
+    };
+    return {
+      processingState,
+      progress,
+      reportError,
+      reportPeriod,
+      loaded,
+      processed,
+      showUpgradeMessage,
+      generateReport,
+      exportCSV,
+      isRunning
+    };
   }
-
-  private showMessage(description: string) {
-    this.$store.commit('setMessage', {
-      title: this.$t('profit_loss_report.csv_export_error').toString(),
-      description: description
-    } as Message);
-  }
-}
+});
 </script>

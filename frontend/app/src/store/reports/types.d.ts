@@ -1,7 +1,4 @@
-import {
-  ProfitLossEvent,
-  ProfitLossOverviewData
-} from '@rotki/common/lib/reports';
+import { ProfitLossEvent, ProfitLossOverviewData } from '@/types/reports';
 
 export type ReportData = {
   readonly overview: ProfitLossOverviewData;

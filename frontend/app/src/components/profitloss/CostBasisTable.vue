@@ -11,7 +11,7 @@
       </span>
     </template>
     <data-table
-      class="cost-basis-table__table"
+      :class="$style.table"
       :items="costBasis.matchedAcquisitions"
       :headers="headers"
       item-key="id"
@@ -40,67 +40,73 @@
 </template>
 
 <script lang="ts">
-import { CostBasis } from '@rotki/common/lib/reports';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
-import Fragment from '@/components/helper/Fragment';
+import i18n from '@/i18n';
+import { CostBasis } from '@/types/reports';
 
-@Component({
-  components: { DataTable, Fragment }
-})
-export default class CostBasisTable extends Vue {
-  readonly headers: DataTableHeader[] = [
-    {
-      text: this.$t('cost_basis_table.headers.location').toString(),
-      value: 'location',
-      width: '120px',
-      align: 'center'
-    },
-    {
-      text: this.$t('cost_basis_table.headers.description').toString(),
-      value: 'description'
-    },
-    {
-      text: this.$t('cost_basis_table.headers.used_amount').toString(),
-      value: 'usedAmount',
-      align: 'end'
-    },
-    {
-      text: this.$t('cost_basis_table.headers.amount').toString(),
-      value: 'amount',
-      align: 'end'
-    },
-    {
-      text: this.$t('cost_basis_table.headers.rate').toString(),
-      value: 'rate',
-      align: 'end'
-    },
-    {
-      text: this.$t('cost_basis_table.headers.fee_rate').toString(),
-      value: 'feeRate',
-      align: 'end'
-    },
-    {
-      text: this.$t('cost_basis_table.headers.time').toString(),
-      value: 'time'
-    }
-  ];
-  @Prop({ required: true, type: Object })
-  costBasis!: CostBasis;
-  @Prop({ required: true, type: Boolean })
-  visible!: boolean;
-  @Prop({ required: true, type: Number })
-  colspan!: number;
-}
+const getHeaders: () => DataTableHeader[] = () => [
+  {
+    text: i18n.t('cost_basis_table.headers.location').toString(),
+    value: 'location',
+    width: '120px',
+    align: 'center'
+  },
+  {
+    text: i18n.t('cost_basis_table.headers.description').toString(),
+    value: 'description'
+  },
+  {
+    text: i18n.t('cost_basis_table.headers.used_amount').toString(),
+    value: 'usedAmount',
+    align: 'end'
+  },
+  {
+    text: i18n.t('cost_basis_table.headers.amount').toString(),
+    value: 'amount',
+    align: 'end'
+  },
+  {
+    text: i18n.t('cost_basis_table.headers.rate').toString(),
+    value: 'rate',
+    align: 'end'
+  },
+  {
+    text: i18n.t('cost_basis_table.headers.fee_rate').toString(),
+    value: 'feeRate',
+    align: 'end'
+  },
+  {
+    text: i18n.t('cost_basis_table.headers.time').toString(),
+    value: 'time'
+  }
+];
+
+export default defineComponent({
+  name: 'CostBasicTable',
+  components: { DataTable },
+  props: {
+    costBasis: { required: true, type: Object as PropType<CostBasis> },
+    visible: { required: true, type: Boolean },
+    colspan: { required: true, type: Number }
+  },
+  setup() {
+    return {
+      headers: getHeaders()
+    };
+  }
+});
 </script>
 
-<style scoped lang="scss">
-::v-deep {
-  th {
-    &:first-child {
-      span {
-        padding-left: 16px;
+<style module lang="scss">
+.table {
+  :global {
+    th {
+      &:first-child {
+        span {
+          padding-left: 16px;
+        }
       }
     }
   }

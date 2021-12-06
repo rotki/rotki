@@ -9,7 +9,6 @@ import { storePlugins } from '@/store/debug';
 import { defi } from '@/store/defi';
 import { history } from '@/store/history';
 import { notifications } from '@/store/notifications';
-import { reports } from '@/store/reports';
 import { session } from '@/store/session';
 import { settings } from '@/store/settings';
 import { staking } from '@/store/staking';
@@ -185,7 +184,6 @@ const store: StoreOptions<RotkehlchenState> = {
     tasks,
     history,
     session,
-    reports,
     settings,
     statistics,
     staking,

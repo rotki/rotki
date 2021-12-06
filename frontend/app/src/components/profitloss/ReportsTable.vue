@@ -25,7 +25,7 @@
               class="profit_loss_report__load-report mr-2"
               depressed
               color="primary"
-              @click="loadReport(item.identifier)"
+              @click="fetchReport(item.identifier)"
             >
               {{ $t('profit_loss_reports.actions.load_report') }}
             </v-btn>
@@ -46,7 +46,6 @@
 
 <script lang="ts">
 import { PagedResourceParameters } from '@rotki/common';
-import { PagedReport } from '@rotki/common/lib/reports';
 import {
   computed,
   defineComponent,
@@ -54,6 +53,7 @@ import {
   Ref,
   ref
 } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -61,9 +61,29 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import { setupStatusChecking } from '@/composables/common';
 import i18n from '@/i18n';
 import { Section } from '@/store/const';
-import { ReportActions } from '@/store/reports/const';
+import { useReports } from '@/store/reports';
 import { RotkehlchenState } from '@/store/types';
 import { useStore } from '@/store/utils';
+import { PagedReport } from '@/types/reports';
+
+const getHeaders: () => DataTableHeader[] = () => [
+  {
+    text: i18n.t('profit_loss_reports.columns.created').toString(),
+    value: 'timestamp'
+  },
+  {
+    text: i18n.t('profit_loss_reports.columns.start').toString(),
+    value: 'startTs'
+  },
+  {
+    text: i18n.t('profit_loss_reports.columns.end').toString(),
+    value: 'endTs'
+  },
+  {
+    text: i18n.t('profit_loss_reports.columns.actions').toString(),
+    value: 'actions'
+  }
+];
 
 export default defineComponent({
   name: 'ReportsTable',
@@ -79,6 +99,10 @@ export default defineComponent({
     const state: RotkehlchenState = store.state;
     const itemsPerPage = state.settings!!.itemsPerPage;
 
+    const reportStore = useReports();
+    const { fetchReports, fetchReport, deleteReport } = reportStore;
+    const { reports } = storeToRefs(reportStore);
+
     const payload = ref<PagedResourceParameters>({
       limit: itemsPerPage,
       offset: 0,
@@ -86,39 +110,11 @@ export default defineComponent({
       ascending: false
     });
 
-    const entries = computed(() => {
-      const state: RotkehlchenState = store.state;
-      return state.reports!!.reports;
-    });
-    const limit = computed(() => {
-      const state: RotkehlchenState = store.state;
-      return state.reports!!.reportsLimit;
-    });
-    const found = computed(() => {
-      const state: RotkehlchenState = store.state;
-      return state.reports!!.reportsFound;
-    });
+    const entries = computed(() => reports.value.entries);
+    const limit = computed(() => reports.value.entriesLimit);
+    const found = computed(() => reports.value.entriesFound);
 
-    const fetchReports = async (refresh: boolean = false) => {
-      await store.dispatch(`reports/${ReportActions.FETCH_REPORTS}`, {
-        ...payload.value,
-        onlyCache: !refresh
-      });
-    };
-    const loadReport = async (reportId: number, refresh: boolean = false) => {
-      const state: RotkehlchenState = store.state;
-      state.reports!!.reportId = reportId;
-      await store.dispatch(`reports/${ReportActions.FETCH_REPORT}`, {
-        ...payload.value,
-        onlyCache: !refresh
-      });
-    };
-    const deleteReport = async (reportId: number) => {
-      const state: RotkehlchenState = store.state;
-      state.reports!!.reportId = reportId;
-      await store.dispatch(`reports/${ReportActions.DELETE_REPORT}`, {});
-    };
-    const refresh = async () => await fetchReports(true);
+    const refresh = async () => await fetchReports();
     const onPaginationUpdate = ({
       ascending,
       page,
@@ -150,39 +146,15 @@ export default defineComponent({
       entries,
       limit,
       found,
+      headers: getHeaders(),
       loading: shouldShowLoadingScreen(Section.REPORTS),
       refreshing: isSectionRefreshing(Section.REPORTS),
       refresh,
       selected,
       fetchReports,
-      loadReport,
+      fetchReport,
       deleteReport,
       onPaginationUpdate
-    };
-  },
-  data: function () {
-    return {
-      headers: (() => {
-        const headers: DataTableHeader[] = [
-          {
-            text: i18n.t('profit_loss_reports.columns.created').toString(),
-            value: 'timestamp'
-          },
-          {
-            text: i18n.t('profit_loss_reports.columns.start').toString(),
-            value: 'startTs'
-          },
-          {
-            text: i18n.t('profit_loss_reports.columns.end').toString(),
-            value: 'endTs'
-          },
-          {
-            text: i18n.t('profit_loss_reports.columns.actions').toString(),
-            value: 'actions'
-          }
-        ];
-        return headers;
-      })()
     };
   }
 });
