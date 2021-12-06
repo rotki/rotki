@@ -1776,6 +1776,11 @@
       "label": "Additional notes",
       "hint": "[Optional] Additional notes to store for the trade"
     },
+    "summary": {
+      "label": "Summary",
+      "buy": "{label}: Buy {amount} {base} with {quote} for {rate} {quote} per {base}",
+      "sell": "{label}: Sell {amount} {base} with {quote} for {rate} {quote} per {base}"
+    },
     "validation": {
       "non_empty_amount": "The amount cannot be empty",
       "non_empty_base": "The base asset cannot be empty",
