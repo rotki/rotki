@@ -296,35 +296,11 @@ class SupportedBlockchain(Enum):
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
 
-class TradeType(Enum):
+class TradeType(DBEnumMixIn):
     BUY = 1
     SELL = 2
     SETTLEMENT_BUY = 3
     SETTLEMENT_SELL = 4
-
-    def __str__(self) -> str:
-        if self == TradeType.BUY:
-            return 'buy'
-        if self == TradeType.SELL:
-            return 'sell'
-        if self == TradeType.SETTLEMENT_BUY:
-            return 'settlement_buy'
-        if self == TradeType.SETTLEMENT_SELL:
-            return 'settlement_sell'
-        # else
-        raise RuntimeError(f'Corrupt value {self} for TradeType -- Should never happen')
-
-    def serialize_for_db(self) -> str:
-        if self == TradeType.BUY:
-            return 'A'
-        if self == TradeType.SELL:
-            return 'B'
-        if self == TradeType.SETTLEMENT_BUY:
-            return 'C'
-        if self == TradeType.SETTLEMENT_SELL:
-            return 'D'
-        # else
-        raise RuntimeError(f'Corrupt value {self} for TradeType -- Should never happen')
 
 
 class Location(DBEnumMixIn):
