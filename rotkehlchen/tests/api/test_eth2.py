@@ -456,3 +456,34 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
     assert FVal(totals['assets']['ETH2']['amount']) >= amount1 + amount2
+
+    # now add 1 more validator and query ETH2 balances again to see it's included
+    # the reason for this is to see the cache is properly invalidated at addition
+    v0_pubkey = '0x933ad9491b62059dd065b560d256d8957a8c402cc6e8d8ee7290ae11e8f7329267a8811c397529dac52ae1342ba58c95'  # noqa: E501
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={'validator_index': 0, 'public_key': v0_pubkey},
+    )
+    assert_simple_ok_response(response)
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'named_blockchain_balances_resource',
+        blockchain='ETH2',
+    ), json={'async_query': False, 'ignore_cache': True})
+    outcome = assert_proper_response_with_result(response)
+
+    assert len(outcome['per_account']) == 1  # only ETH2
+    per_acc = outcome['per_account']['ETH2']
+    assert len(per_acc) == 3
+    amount1 = FVal('34.596290288')
+    amount2 = FVal('34.547410412')
+    amount3 = FVal('34.600348623')
+    assert FVal(per_acc[v0_pubkey]['assets']['ETH2']['amount']) >= amount1
+    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= amount2
+    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount3
+    totals = outcome['totals']
+    assert len(totals['assets']) == 1
+    assert len(totals['liabilities']) == 0
+    assert FVal(totals['assets']['ETH2']['amount']) >= amount1 + amount2 + amount3
