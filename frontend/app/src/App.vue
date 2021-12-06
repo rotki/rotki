@@ -76,9 +76,11 @@
         @visible:update="help = $event"
         @about="showAbout = true"
       />
-      <v-main>
-        <router-view />
-      </v-main>
+      <div class="app-main">
+        <v-main>
+          <router-view />
+        </v-main>
+      </div>
     </div>
     <message-dialog
       :title="message.title"
@@ -351,6 +353,18 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
   }
 }
 
+.app-main {
+  top: 64px;
+  position: fixed;
+  width: 100%;
+  height: calc(100vh - 64px);
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+
+  @extend .themed-scrollbar;
+}
+
 ::v-deep {
   .v-navigation-drawer {
     box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
@@ -361,16 +375,7 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
   }
 
   .v-main {
-    height: 100vh;
-
-    &__wrap {
-      overflow-y: scroll;
-      overflow-x: hidden;
-
-      @extend .themed-scrollbar;
-    }
-
-    @extend .themed-scrollbar;
+    padding: 0 !important;
   }
 
   .v-app-bar {
