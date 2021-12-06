@@ -621,7 +621,12 @@ export const getters: Getters<
   breakdown:
     ({
       btc: { standalone, xpubs },
+      btcAccounts,
+      ksmAccounts,
+      dotAccounts,
+      avaxAccounts,
       eth,
+      ethAccounts,
       exchangeBalances,
       ksm,
       dot,
@@ -641,7 +646,8 @@ export const getters: Getters<
         breakdown.push({
           address: '',
           location: exchange,
-          balance: exchangeData[asset]
+          balance: exchangeData[asset],
+          tags: []
         });
       }
 
@@ -650,13 +656,15 @@ export const getters: Getters<
         if (manualBalance.asset !== asset) {
           continue;
         }
+
         breakdown.push({
           address: '',
           location: manualBalance.location,
           balance: {
             amount: manualBalance.amount,
             usdValue: manualBalance.usdValue
-          }
+          },
+          tags: manualBalance.tags
         });
       }
 
@@ -666,10 +674,16 @@ export const getters: Getters<
         if (!assetBalance) {
           continue;
         }
+
+        const tags =
+          ethAccounts.find(ethAccount => ethAccount.address === address)
+            ?.tags || [];
+
         breakdown.push({
           address,
           location: Blockchain.ETH,
-          balance: assetBalance
+          balance: assetBalance,
+          tags
         });
       }
 
@@ -687,7 +701,8 @@ export const getters: Getters<
           breakdown.push({
             address,
             location: Blockchain.ETH,
-            balance: loopringBalances[address][asset]
+            balance: loopringBalances[address][asset],
+            tags: []
           });
         }
       }
@@ -696,10 +711,16 @@ export const getters: Getters<
         if (standalone) {
           for (const address in standalone) {
             const btcBalance = standalone[address];
+            const tags =
+              btcAccounts?.standalone.find(
+                btcAccount => btcAccount.address === address
+              )?.tags || [];
+
             breakdown.push({
               address,
               location: Blockchain.BTC,
-              balance: btcBalance
+              balance: btcBalance,
+              tags
             });
           }
         }
@@ -708,12 +729,15 @@ export const getters: Getters<
           for (let i = 0; i < xpubs.length; i++) {
             const xpub = xpubs[i];
             const addresses = xpub.addresses;
+            const tags = btcAccounts?.xpubs[i].tags;
             for (const address in addresses) {
               const btcBalance = addresses[address];
+
               breakdown.push({
                 address,
                 location: Blockchain.BTC,
-                balance: btcBalance
+                balance: btcBalance,
+                tags
               });
             }
           }
@@ -726,10 +750,15 @@ export const getters: Getters<
         if (!assetBalance) {
           continue;
         }
+        const tags =
+          ksmAccounts.find(ksmAccount => ksmAccount.address === address)
+            ?.tags || [];
+
         breakdown.push({
           address,
           location: Blockchain.KSM,
-          balance: assetBalance
+          balance: assetBalance,
+          tags
         });
       }
 
@@ -739,10 +768,16 @@ export const getters: Getters<
         if (!assetBalance) {
           continue;
         }
+
+        const tags =
+          dotAccounts.find(dotAccount => dotAccount.address === address)
+            ?.tags || [];
+
         breakdown.push({
           address,
           location: Blockchain.DOT,
-          balance: assetBalance
+          balance: assetBalance,
+          tags
         });
       }
 
@@ -752,10 +787,16 @@ export const getters: Getters<
         if (!assetBalance) {
           continue;
         }
+
+        const tags =
+          avaxAccounts.find(avaxAccount => avaxAccount.address === address)
+            ?.tags || [];
+
         breakdown.push({
           address,
           location: Blockchain.AVAX,
-          balance: assetBalance
+          balance: assetBalance,
+          tags
         });
       }
 

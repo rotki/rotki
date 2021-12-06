@@ -281,8 +281,10 @@ const DashboardAssetTable = defineComponent({
     };
 
     const calculatePercentage = (value: BigNumber, divider: BigNumber) => {
-      if (divider.isZero()) return '0';
-      return value.div(divider).multipliedBy(100).toFixed(2);
+      const percentage = divider.isZero()
+        ? 0
+        : value.div(divider).multipliedBy(100);
+      return percentage.toFixed(2);
     };
 
     const percentageOfTotalNetValue = (value: BigNumber) => {
