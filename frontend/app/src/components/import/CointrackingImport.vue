@@ -1,13 +1,10 @@
 <template>
-  <import-source
-    source="cointracking.info"
-    :icon="require('@/assets/images/import/cointracking_info.png')"
-  >
+  <import-source source="cointracking.info">
     <template #hint>
       {{ $t('import_data.cointracking.preferred') }}
     </template>
     <i18n tag="span" path="import_data.cointracking.note">
-      <strong>{{ $t('import_data.cointracking.name') }}</strong>
+      <strong>{{ $t('import_data.cointracking.source_name') }}</strong>
     </i18n>
     <ul>
       <li>{{ $t('import_data.cointracking.line_one') }}</li>

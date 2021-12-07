@@ -31,27 +31,48 @@
             hidden
             @change="onSelect"
           />
-          <i18n
-            path="file_upload.drop_area"
-            class="
-              mt-2
-              text-caption text--secondary
-              d-flex
-              flex-column
-              text-center
-            "
-            tag="div"
-          >
-            <v-btn
-              class="mt-2"
-              color="primary"
-              small
-              text
-              outlined
-              @click="$refs.select.click()"
-              v-text="$t('file_upload.select_file')"
-            />
-          </i18n>
+          <div class="mt-2 text-center">
+            <div v-if="file">
+              <i18n
+                path="file_upload.inputted_file"
+                class="text-caption text--secondary"
+                tag="div"
+              >
+                <template #name>
+                  <div class="font-weight-bold text-truncate">
+                    {{ file.name }}
+                  </div>
+                </template>
+              </i18n>
+              <div>
+                <v-btn
+                  class="mt-2"
+                  color="primary"
+                  small
+                  text
+                  outlined
+                  @click="$refs.select.click()"
+                  v-text="$t('file_upload.change_file')"
+                />
+              </div>
+            </div>
+            <div v-else>
+              <div class="text-caption text--secondary">
+                {{ $t('file_upload.drop_area') }}
+              </div>
+              <div>
+                <v-btn
+                  class="mt-2"
+                  color="primary"
+                  small
+                  text
+                  outlined
+                  @click="$refs.select.click()"
+                  v-text="$t('file_upload.select_file')"
+                />
+              </div>
+            </div>
+          </div>
         </div>
         <div v-else class="d-flex flex-column align-center justify-center">
           <v-icon x-large color="primary">mdi-check-circle</v-icon>
@@ -63,7 +84,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 
 const SOURCES = [
   'cointracking.info',
@@ -95,7 +116,9 @@ export default class FileUpload extends Vue {
   error: string = '';
   active: boolean = false;
   count: number = 0;
-  uploaded = false;
+  uploaded: boolean = false;
+
+  file: File | null = null;
 
   done() {
     this.uploaded = true;
@@ -112,7 +135,7 @@ export default class FileUpload extends Vue {
     }
 
     if (this.source !== 'icon') {
-      this.upload(event.dataTransfer.files);
+      this.check(event.dataTransfer.files);
     } else {
       this.selected(event.dataTransfer.files[0]);
     }
@@ -139,7 +162,7 @@ export default class FileUpload extends Vue {
       return;
     }
     if (this.source !== 'icon') {
-      this.upload(target.files);
+      this.check(target.files);
     } else {
       this.selected(target.files[0]);
     }
@@ -149,18 +172,23 @@ export default class FileUpload extends Vue {
     this.error = message;
     this.count = 0;
     this.active = false;
+    this.removeFile();
   }
 
-  async uploadPackaged(file: string) {
-    try {
-      await this.$api.importDataFrom(this.source, file);
-      this.done();
-    } catch (e: any) {
-      this.onError(e.message);
+  removeFile() {
+    const inputFile = this.$refs.select as any;
+    if (inputFile) {
+      inputFile.value = null;
     }
+    this.file = null;
   }
 
-  upload(files: FileList) {
+  @Watch('file')
+  onFileChange(file: File) {
+    this.selected(file);
+  }
+
+  check(files: FileList) {
     if (this.error || this.uploaded) {
       return;
     }
@@ -179,17 +207,7 @@ export default class FileUpload extends Vue {
       return;
     }
 
-    if (this.$interop.isPackaged && this.$api.defaultBackend) {
-      this.uploadPackaged(files[0].path);
-    } else {
-      const formData = new FormData();
-      formData.append('source', this.source);
-      formData.append('file', files[0]);
-      this.$api
-        .importFile(formData)
-        .catch(({ message }) => this.onError(message))
-        .then(this.done);
-    }
+    this.file = files[0];
   }
 }
 </script>

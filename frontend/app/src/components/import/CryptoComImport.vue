@@ -1,10 +1,7 @@
 <template>
-  <import-source
-    source="cryptocom"
-    :icon="require('@/assets/images/import/crypto_com.png')"
-  >
+  <import-source source="cryptocom">
     <i18n tag="span" path="import_data.cryptocom.note">
-      <strong>{{ $t('import_data.cryptocom.name') }}</strong>
+      <strong>{{ $t('import_data.cryptocom.source_name') }}</strong>
     </i18n>
     <ul>
       <li>

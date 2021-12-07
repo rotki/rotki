@@ -499,14 +499,19 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  importDataFrom(source: string, file: string): Promise<boolean> {
+  importDataFrom(
+    source: string,
+    file: string,
+    timestampFormat: string | null
+  ): Promise<boolean> {
     return this.axios
       .put<ActionResult<boolean>>(
         '/import',
-        {
+        axiosSnakeCaseTransformer({
           source,
-          file
-        },
+          file,
+          timestampFormat
+        }),
         {
           validateStatus: validStatus
         }
