@@ -33,20 +33,6 @@
           @input="selectionChanged(item.address, $event)"
         />
       </template>
-      <template v-if="blockchain === 'ETH'" #header.balance.usdValue>
-        {{
-          $t('account_balances.headers.usd_value_eth', {
-            symbol: currency.tickerSymbol
-          })
-        }}
-      </template>
-      <template v-else #header.balance.usdValue>
-        {{
-          $t('account_balances.headers.usd_value', {
-            symbol: currency.tickerSymbol
-          })
-        }}
-      </template>
       <template #item.label="{ item }">
         <v-row class="pt-3 pb-2">
           <v-col cols="12" class="account-balance-table__account">
@@ -97,7 +83,7 @@
           :loading="loading"
         />
       </template>
-      <template #item.actions="{ item }">
+      <template v-if="!isEth2" #item.actions="{ item }">
         <row-actions
           class="account-balance-table__actions"
           :no-delete="true"
@@ -165,6 +151,9 @@
           @edit-clicked="editClick($event)"
         />
       </template>
+      <template v-if="isEth2" #body.prepend="{ headers }">
+        <eth2-validator-limit-row :colspan="headers.length" />
+      </template>
     </data-table>
   </v-sheet>
 </template>
@@ -179,6 +168,7 @@ import { DataTableHeader } from 'vuetify';
 import { mapGetters, mapState } from 'vuex';
 
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
+import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
@@ -186,7 +176,6 @@ import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { CURRENCY_USD } from '@/data/currencies';
 import { balanceSum } from '@/filters';
 import StatusMixin from '@/mixins/status-mixin';
 import { chainSection } from '@/store/balances/const';
@@ -203,6 +192,7 @@ import { Zero } from '@/utils/bignumbers';
 
 @Component({
   components: {
+    Eth2ValidatorLimitRow,
     DataTable,
     TableExpandContainer,
     LabeledAddressDisplay,
@@ -255,6 +245,10 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   expanded = [];
 
   collapsedXpubs: XpubAccountWithBalance[] = [];
+
+  get isEth2() {
+    return this.blockchain === Blockchain.ETH2;
+  }
 
   get total(): Balance {
     const balances = this.visibleBalances;
@@ -382,25 +376,37 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   }
 
   get headers(): DataTableHeader[] {
+    const currency = { symbol: this.currency.tickerSymbol };
+    const currencyHeader =
+      this.blockchain === 'ETH'
+        ? this.$t('account_balances.headers.usd_value_eth', currency)
+        : this.$t('account_balances.headers.usd_value', currency);
+
+    const accountHeader =
+      this.blockchain === 'ETH2'
+        ? this.$t('account_balances.headers.validator')
+        : this.$t('account_balances.headers.account');
+
     const headers: DataTableHeader[] = [
       { text: '', value: 'accountSelection', width: '34px', sortable: false },
-      { text: this.$tc('account_balances.headers.account'), value: 'label' },
+      { text: accountHeader.toString(), value: 'label' },
       { text: this.blockchain, value: 'balance.amount', align: 'end' },
       {
-        text: this.$t('account_balances.headers.usd_value', {
-          symbol: this.currency.tickerSymbol ?? CURRENCY_USD
-        }).toString(),
+        text: currencyHeader.toString(),
         value: 'balance.usdValue',
         align: 'end'
-      },
-      {
+      }
+    ];
+
+    if (!this.isEth2) {
+      headers.push({
         text: this.$tc('account_balances.headers.actions'),
         value: 'actions',
         align: 'center',
         sortable: false,
         width: '28'
-      }
-    ];
+      });
+    }
 
     if (this.blockchain !== Blockchain.BTC) {
       headers.push({

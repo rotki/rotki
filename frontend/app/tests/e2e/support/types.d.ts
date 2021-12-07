@@ -20,6 +20,7 @@ declare global {
     interface Chainable {
       logout: () => void;
       updateAssets: () => void;
+      disableModules: () => void;
     }
   }
 }

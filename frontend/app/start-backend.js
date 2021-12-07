@@ -24,6 +24,12 @@ if (!fs.existsSync(tempPath)) {
   }
 }
 
+const logDir = path.join(os.homedir(), 'rotki-e2e-logs');
+
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir);
+}
+
 const args = [
   '-m',
   'rotkehlchen',
@@ -36,7 +42,7 @@ const args = [
   '--data-dir',
   tempPath,
   '--logfile',
-  `${path.join(os.homedir(), 'rotkehlchen-e2e.log')}`
+  `${path.join(logDir, 'rotkehlchen-e2e.log')}`
 ];
 
 spawn('python', args, {

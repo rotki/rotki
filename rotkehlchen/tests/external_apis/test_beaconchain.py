@@ -2,7 +2,7 @@ import warnings as test_warnings
 
 import pytest
 
-from rotkehlchen.externalapis.beaconchain import BeaconChain
+from rotkehlchen.externalapis.beaconchain import BeaconChain, _calculate_query_chunks
 
 
 @pytest.fixture(scope='session', name='session_beaconchain')
@@ -22,6 +22,11 @@ def _assert_valid_performance_entry(entry):
 def test_get_performance_single(session_beaconchain):
     performance_map = session_beaconchain.get_performance([9])
     _assert_valid_performance_entry(performance_map[9])
+
+
+def test_query_chunks_empty_list():
+    """Test that one of the endpoints works with empty list"""
+    assert _calculate_query_chunks([]) == []
 
 
 def test_get_performance_more_than_100(session_beaconchain):

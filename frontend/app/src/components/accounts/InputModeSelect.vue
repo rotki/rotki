@@ -1,5 +1,5 @@
 <template>
-  <fragment>
+  <div class="mb-5">
     <v-btn-toggle
       :value="value"
       class="input-mode-select"
@@ -43,7 +43,7 @@
       class="mt-3 warning--text text-caption"
       v-text="$t('input_mode_select.metamask_import.missing')"
     />
-  </fragment>
+  </div>
 </template>
 
 <script lang="ts">

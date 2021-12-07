@@ -1706,10 +1706,14 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         """May raise:
         - ModuleInactive if eth2 module is not activated
         - RemoteError if there is a problem querying beaconcha.in
+        - PremiumPermissionError if adding the validator would go over free limit
         """
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant add eth2 validator since eth2 module is not active')
+        self.flush_cache('query_ethereum_beaconchain_balances')
+        self.flush_cache('query_balances')
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
         return eth2.add_validator(validator_index=validator_index, public_key=public_key)
 
     def delete_eth2_validator(

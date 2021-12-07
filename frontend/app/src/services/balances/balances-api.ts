@@ -1,6 +1,10 @@
 import { Nullable } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionResult } from '@rotki/common/lib/data';
+import {
+  Eth2ValidatorEntry,
+  Eth2Validators
+} from '@rotki/common/lib/staking/eth2';
 import { AxiosInstance } from 'axios';
 import {
   axiosSnakeCaseTransformer,
@@ -21,8 +25,10 @@ import {
   handleResponse,
   validStatus,
   validWithParamsSessionAndExternalService,
-  validWithSessionAndExternalService
+  validWithSessionAndExternalService,
+  validWithSessionStatus
 } from '@/services/utils';
+import { Eth2Validator } from '@/types/balances';
 import { SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 import { PriceOracle } from '@/types/user';
@@ -248,5 +254,46 @@ export class BalancesApi {
       params = axiosSnakeCaseTransformer(payload);
     }
     return fetchExternalAsync(this.api, url, params);
+  }
+
+  async addEth2Validator(payload: Eth2Validator): Promise<PendingTask> {
+    const response = await this.axios.put<ActionResult<PendingTask>>(
+      '/blockchains/ETH2/validators',
+      axiosSnakeCaseTransformer({ ...payload, asyncQuery: true }),
+      {
+        transformResponse: basicAxiosTransformer,
+        validateStatus: validWithSessionAndExternalService
+      }
+    );
+
+    return handleResponse(response);
+  }
+
+  async getEth2Validators(): Promise<Eth2Validators> {
+    const response = await this.axios.get<ActionResult<Eth2Validators>>(
+      '/blockchains/ETH2/validators',
+      {
+        transformResponse: basicAxiosTransformer,
+        validateStatus: validWithSessionStatus
+      }
+    );
+    const result = handleResponse(response);
+    return Eth2Validators.parse(result);
+  }
+
+  async deleteEth2Validators(
+    validators: Eth2ValidatorEntry[]
+  ): Promise<boolean> {
+    const response = await this.axios.delete<ActionResult<boolean>>(
+      '/blockchains/ETH2/validators',
+      {
+        data: axiosSnakeCaseTransformer({
+          validators
+        }),
+        transformResponse: basicAxiosTransformer,
+        validateStatus: validWithSessionStatus
+      }
+    );
+    return handleResponse(response);
   }
 }

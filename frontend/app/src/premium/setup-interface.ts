@@ -104,7 +104,7 @@ export const setupPremium = () => {
   window['@vue/composition-api'] = CompositionAPI;
   window.rotki = {
     useHostComponents: true,
-    version: 15,
+    version: 16,
     utils: {
       date,
       data,

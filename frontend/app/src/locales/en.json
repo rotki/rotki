@@ -421,6 +421,19 @@
       "end_date": "filter by the ending date of the period"
     }
   },
+  "eth2_page": {
+    "toggle": {
+      "depositor": "Depositor",
+      "hint": "Switch the filtering and display mode between ETH2 validators and ETH1 Addresses",
+      "key": "Validator"
+    }
+  },
+  "eth2_validator_filter": {
+    "label": "Select Depositor address"
+  },
+  "eth2_validator_limit_row": {
+    "label": "Beacon chain validators"
+  },
   "exchange_keys_form": {
     "api_key": {
       "non_empty": "The api key field cannot be empty."
@@ -1810,6 +1823,16 @@
     }
   },
   "actions": {
+    "add_eth2_validator": {
+      "error": {
+        "description": "There was an error while adding the Eth 2 validator {id}: {message}",
+        "title": "Adding ETH2 validator"
+      },
+      "task": {
+        "description": "Adding ETH2 validator",
+        "title": "Adding validator: {id}"
+      }
+    },
     "assets": {
       "erc20": {
         "error": {
@@ -1835,6 +1858,18 @@
         "task": {
           "title": "Checking for asset database updates"
         }
+      }
+    },
+    "delete_eth2_validator": {
+      "error": {
+        "description": "Deleting the Eth2 validators failed: {message}",
+        "title": "Deleting Eth2 validators"
+      }
+    },
+    "get_accounts": {
+      "error": {
+        "description": "Failed to query accounts for {blockchain}: {message}",
+        "title": "Querying of accounts"
       }
     },
     "history": {
@@ -2598,7 +2633,8 @@
       "account": "Account",
       "actions": "Actions",
       "usd_value_eth": "Total {symbol} value of account's assets",
-      "usd_value": "{symbol} value"
+      "usd_value": "{symbol} value",
+      "validator": "Validator Index | Public Key"
     },
     "tabs": {
       "nonfungible": "Non Fungible Balances"
@@ -2689,8 +2725,7 @@
       "multiple": "Add multiple addresses"
     },
     "validation": {
-      "address_non_empty": "The address cannot be empty",
-      "address_exists": "The address is already tracked"
+      "address_non_empty": "The address cannot be empty"
     },
     "error": {
       "title": "Adding Account",
@@ -2713,6 +2748,7 @@
     "balances": {
       "eth": "Ethereum balances",
       "btc": "Bitcoin balances",
+      "eth2": "Eth2 balances",
       "ksm": "Kusama balances",
       "avax": "Avalanche balances",
       "dot": "Polkadot balances"
@@ -2739,6 +2775,12 @@
   "decentralized_overview": {
     "loading": "Please wait while your defi balances are getting loaded...",
     "title": "Defi Overview"
+  },
+  "validator_display": {
+    "validator_index": "Validator Index:"
+  },
+  "validator_filter_input": {
+    "label": "Select validator"
   },
   "watcher_dialog": {
     "add_error": "Error adding the watcher: {message}",
@@ -3136,6 +3178,7 @@
   "blockchains": {
     "eth": "Ethereum",
     "btc": "Bitcoin",
+    "eth2": "Eth2",
     "ksm": "Kusama",
     "avax": "Avalanche",
     "dot": "Polkadot"

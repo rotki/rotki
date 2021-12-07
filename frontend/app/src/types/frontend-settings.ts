@@ -67,6 +67,7 @@ const ExplorerEndpoints = z.object({
 const ExplorersSettings = z.object({
   ETC: ExplorerEndpoints.optional(),
   [Blockchain.ETH]: ExplorerEndpoints.optional(),
+  [Blockchain.ETH2]: ExplorerEndpoints.optional(),
   [Blockchain.BTC]: ExplorerEndpoints.optional(),
   [Blockchain.KSM]: ExplorerEndpoints.optional(),
   [Blockchain.DOT]: ExplorerEndpoints.optional(),

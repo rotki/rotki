@@ -3,8 +3,8 @@
     class="tag font-weight-medium"
     label
     :small="small"
-    :color="`#${tag.background_color}`"
-    :text-color="`#${tag.foreground_color}`"
+    :color="`#${tag.backgroundColor}`"
+    :text-color="`#${tag.foregroundColor}`"
   >
     {{ tag.name }}
   </v-chip>

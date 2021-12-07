@@ -42,6 +42,7 @@ import { uniqueStrings } from '@/utils/data';
 
 export interface BalanceGetters {
   ethAccounts: BlockchainAccountWithBalance[];
+  eth2Balances: BlockchainAccountWithBalance[];
   ethAddresses: string[];
   btcAccounts: BlockchainAccountWithBalance[];
   kusamaBalances: BlockchainAccountWithBalance[];
@@ -116,6 +117,31 @@ export const getters: Getters<
   }: BalanceState): BlockchainAccountWithBalance[] {
     return balances(ethAccounts, eth, Blockchain.ETH);
   },
+  eth2Balances({
+    eth2,
+    eth2Validators
+  }: BalanceState): BlockchainAccountWithBalance[] {
+    const balances: BlockchainAccountWithBalance[] = [];
+    for (const { publicKey, validatorIndex } of eth2Validators.entries) {
+      const validatorBalances = eth2[publicKey];
+      let balance: Balance = { amount: Zero, usdValue: Zero };
+      if (validatorBalances && validatorBalances.assets) {
+        const assets = validatorBalances.assets;
+        balance = {
+          amount: assets[Blockchain.ETH2].amount,
+          usdValue: assetSum(assets)
+        };
+      }
+      balances.push({
+        address: publicKey,
+        chain: Blockchain.ETH2,
+        balance,
+        label: validatorIndex.toString() ?? '',
+        tags: []
+      });
+    }
+    return balances;
+  },
   ethAddresses: ({ ethAccounts }) => {
     return ethAccounts.map(({ address }) => address);
   },
@@ -172,7 +198,10 @@ export const getters: Getters<
 
       for (const { address, label, tags } of addresses) {
         const { xpubs } = btc;
-        const index = xpubs?.findIndex(xpub => xpub.addresses[address]) ?? -1;
+        if (!xpubs) {
+          continue;
+        }
+        const index = xpubs.findIndex(xpub => xpub.addresses[address]) ?? -1;
         const balance =
           index >= 0 ? xpubs[index].addresses[address] : zeroBalance();
         accounts.push({
@@ -405,7 +434,7 @@ export const getters: Getters<
     const polkadotBalances: BlockchainAccountWithBalance[] =
       getters.polkadotBalances;
     const avaxAccounts: BlockchainAccountWithBalance[] = getters.avaxAccounts;
-
+    const eth2Balances: BlockchainAccountWithBalance[] = getters.eth2Balances;
     const loopring: AccountAssetBalances = state.loopringBalances;
 
     if (ethAccounts.length > 0) {
@@ -483,6 +512,16 @@ export const getters: Getters<
         l2: [],
         usdValue: sum(polkadotBalances),
         loading: dotStatus === Status.NONE || dotStatus === Status.LOADING
+      });
+    }
+
+    if (eth2Balances.length > 0) {
+      const eth2Status = status(Section.BLOCKCHAIN_ETH2);
+      totals.push({
+        chain: Blockchain.ETH2,
+        l2: [],
+        usdValue: sum(eth2Balances),
+        loading: eth2Status === Status.NONE || eth2Status === Status.LOADING
       });
     }
 

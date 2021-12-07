@@ -2,6 +2,7 @@ import { Balance, BigNumber, HasBalance } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
+import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { z } from 'zod';
 import { PriceInformation } from '@/services/assets/types';
 import {
@@ -40,8 +41,10 @@ export interface AccountAssetBalances {
 }
 
 export interface BalanceState {
+  eth2Validators: Eth2Validators;
   loopringBalances: AccountAssetBalances;
   eth: BlockchainAssetBalances;
+  eth2: BlockchainAssetBalances;
   btc: BtcBalances;
   ksm: BlockchainAssetBalances;
   dot: BlockchainAssetBalances;
@@ -86,10 +89,16 @@ export interface ExchangePayload {
   readonly ftxSubaccount: Nullable<string>;
 }
 
+export enum XpubKeyType {
+  XPUB = 'p2pkh',
+  YPUB = 'p2sh_p2wpkh',
+  ZPUB = 'wpkh'
+}
+
 export interface XpubPayload {
   readonly xpub: string;
   readonly derivationPath: string;
-  readonly xpubType: string;
+  readonly xpubType: XpubKeyType;
 }
 
 export interface BlockchainAccountPayload extends AccountPayload {

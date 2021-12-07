@@ -103,3 +103,5 @@ export class ElectronInterop {
 }
 
 export const interop = new ElectronInterop();
+
+export const useInterop = () => interop;

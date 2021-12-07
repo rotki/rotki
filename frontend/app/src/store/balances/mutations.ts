@@ -1,4 +1,5 @@
 import { SupportedAsset } from '@rotki/common/lib/data';
+import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { MutationTree } from 'vuex';
 import {
   Balances,
@@ -23,6 +24,9 @@ import { ExchangeRates } from '@/types/user';
 export const mutations: MutationTree<BalanceState> = {
   updateEth(state: BalanceState, payload: BlockchainAssetBalances) {
     state.eth = { ...payload };
+  },
+  updateEth2(state: BalanceState, payload: BlockchainAssetBalances) {
+    state.eth2 = { ...payload };
   },
   updateBtc(state: BalanceState, payload: BtcBalances) {
     state.btc = { ...payload };
@@ -109,6 +113,9 @@ export const mutations: MutationTree<BalanceState> = {
   },
   avaxAccounts(state: BalanceState, accounts: GeneralAccountData[]) {
     state.avaxAccounts = accounts;
+  },
+  eth2Validators(state: BalanceState, eth2Validators: Eth2Validators) {
+    state.eth2Validators = eth2Validators;
   },
   supportedAssets(state: BalanceState, supportedAssets: SupportedAsset[]) {
     state.supportedAssets = supportedAssets;

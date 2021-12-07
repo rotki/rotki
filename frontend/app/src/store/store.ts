@@ -144,6 +144,9 @@ const store: StoreOptions<RotkehlchenState> = {
           section
         });
       });
+    },
+    async setMessage({ commit }, message: Message) {
+      commit('setMessage', message);
     }
   },
   getters: {

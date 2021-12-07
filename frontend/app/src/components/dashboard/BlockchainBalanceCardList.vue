@@ -96,6 +96,8 @@ export default class BlockchainBalanceCardList extends Mixins(AssetMixin) {
       return this.$t('blockchains.dot').toString();
     } else if (chain === Blockchain.AVAX) {
       return this.$t('blockchains.avax').toString();
+    } else if (chain === Blockchain.ETH2) {
+      return this.$t('blockchains.eth2').toString();
     }
     return '';
   }

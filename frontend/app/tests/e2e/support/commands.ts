@@ -67,5 +67,23 @@ const updateAssets = () => {
     });
 };
 
+const disableModules = () => {
+  cy.request({
+    url: 'http://localhost:22221/api/1//settings',
+    method: 'PUT',
+    body: {
+      active_modules: []
+    }
+  })
+    .its('body')
+    .then(body => {
+      const result = body.result;
+      if (result) {
+        cy.log(`settings updated: ${JSON.stringify(result)}`);
+      }
+    });
+};
+
 Cypress.Commands.add('logout', logout);
 Cypress.Commands.add('updateAssets', updateAssets);
+Cypress.Commands.add('disableModules', disableModules);

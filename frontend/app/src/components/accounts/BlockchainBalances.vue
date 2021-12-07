@@ -58,6 +58,22 @@
     />
 
     <account-balances
+      v-if="eth2Balances.length > 0"
+      v-intersect="{
+        handler: observers.ETH2,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="$t('blockchain_balances.balances.eth2')"
+      blockchain="ETH2"
+      :balances="eth2Balances"
+      data-cy="blockchain-balances-ETH2"
+      @edit-account="editAccount($event)"
+    />
+
+    <account-balances
       v-if="btcAccounts.length > 0"
       v-intersect="{
         handler: observers.BTC,
@@ -133,7 +149,9 @@ import {
   ref
 } from '@vue/composition-api';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import AccountForm from '@/components/accounts/AccountForm.vue';
+import AccountForm, {
+  AccountFormType
+} from '@/components/accounts/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
@@ -161,7 +179,7 @@ const BlockchainBalances = defineComponent({
     const dialogSubtitle = ref('');
     const valid = ref(false);
     const openDialog = ref(false);
-    const form = ref<AccountForm | null>(null);
+    const form = ref<AccountFormType | null>(null);
 
     const createAccount = () => {
       accountToEdit.value = null;
@@ -210,6 +228,7 @@ const BlockchainBalances = defineComponent({
 
     const intersections = ref<Intersections>({
       [Blockchain.ETH]: false,
+      [Blockchain.ETH2]: false,
       [Blockchain.BTC]: false,
       [Blockchain.KSM]: false,
       [Blockchain.DOT]: false,
@@ -261,6 +280,8 @@ const BlockchainBalances = defineComponent({
     const observers = {
       [Blockchain.ETH]: (entries: IntersectionObserverEntry[]) =>
         updateWhenRatio(entries, Blockchain.ETH),
+      [Blockchain.ETH2]: (entries: IntersectionObserverEntry[]) =>
+        updateWhenRatio(entries, Blockchain.ETH2),
       [Blockchain.BTC]: (entries: IntersectionObserverEntry[]) =>
         updateWhenRatio(entries, Blockchain.BTC),
       [Blockchain.KSM]: (entries: IntersectionObserverEntry[]) =>

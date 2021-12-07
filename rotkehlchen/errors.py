@@ -24,6 +24,10 @@ class PremiumApiError(Exception):
     pass
 
 
+class PremiumPermissionError(Exception):
+    pass
+
+
 class IncorrectApiKeyFormat(Exception):
     pass
 

@@ -6,6 +6,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
+from rotkehlchen.chain.ethereum.modules.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -135,16 +136,17 @@ def test_query_eth2_inactive(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_add_get_delete_eth2_validators(rotkehlchen_api_server):
+@pytest.mark.parametrize('start_with_valid_premium', [True, False])
+def test_add_get_delete_eth2_validators(rotkehlchen_api_server, start_with_valid_premium):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
         ),
     )
+    expected_limit = -1 if start_with_valid_premium else FREE_VALIDATORS_LIMIT
     result = assert_proper_response_with_result(response)
-    assert result == []
+    assert result == {'entries': [], 'entries_limit': expected_limit, 'entries_found': 0}
 
     validators = [Eth2Validator(
         index=4235,
@@ -195,27 +197,40 @@ def test_add_get_delete_eth2_validators(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == [x.serialize() for x in validators]
+    assert result == {'entries': [x.serialize() for x in validators], 'entries_limit': expected_limit, 'entries_found': 4}  # noqa: E501
+
+    if start_with_valid_premium is False:
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'eth2validatorsresource',
+            ), json={'validator_index': 545},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='Adding validator 545 None would take you over the free',
+            status_code=HTTPStatus.UNAUTHORIZED,
+        )
 
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'public_key': validators[0].public_key},
+        ), json={'validators': [{'public_key': validators[0].public_key}]},
     )
     assert_simple_ok_response(response)
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validator_index': validators[2].index},
+        ), json={'validators': [{'validator_index': validators[2].index}]},
     )
     assert_simple_ok_response(response)
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validator_index': validators[3].index, 'public_key': validators[3].public_key},
+        ), json={'validators': [{'validator_index': validators[3].index, 'public_key': validators[3].public_key}]},  # noqa: E501
     )
     assert_simple_ok_response(response)
 
@@ -226,7 +241,7 @@ def test_add_get_delete_eth2_validators(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == [validators[1].serialize()]
+    assert result == {'entries': [validators[1].serialize()], 'entries_limit': expected_limit, 'entries_found': 1}  # noqa: E501
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
@@ -241,29 +256,40 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
             'eth2validatorsresource',
         ), json={},
     )
+    if method == 'PUT':
+        msg = 'Need to provide either a validator index or a public key for an eth2 validator'  # noqa: E501
+    else:
+        msg = 'Missing data for required field.'
+
     assert_error_response(
         response=response,
-        contained_in_msg='Need to provide either a validator index or a public key for an eth2 validator',  # noqa: E501
+        contained_in_msg=msg,
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    invalid_index = {'validator_index': -1}
+    if method == 'DELETE':
+        invalid_index = {'validators': [invalid_index]}
     response = requests.request(
         method=method,
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validator_index': -1},
+        ), json=invalid_index,
     )
     assert_error_response(
         response=response,
         contained_in_msg='Validator index must be an integer >= 0',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    unknown_index = {'validator_index': 999957426}
+    if method == 'DELETE':
+        unknown_index = {'validators': [unknown_index]}
     response = requests.request(
         method=method,
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validator_index': 999957426},
+        ), json=unknown_index,
     )
     if method == 'PUT':
         msg = 'Validator data for 999957426 could not be found. Likely invalid validator'  # noqa: E501
@@ -276,24 +302,30 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
         contained_in_msg=msg,
         status_code=status_code,
     )
+    unknown_public_key = {'public_key': 'fooboosoozloklkl'}
+    if method == 'DELETE':
+        unknown_public_key = {'validators': [unknown_public_key]}
     response = requests.request(
         method=method,
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'public_key': 'fooboosoozloklkl'},  # noqa: E501
+        ), json=unknown_public_key,  # noqa: E501
     )
     assert_error_response(
         response=response,
         contained_in_msg='The given eth2 public key fooboosoozloklkl is not valid hex',  # noqa: E501
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    invalid_hex = {'public_key': '0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fbcd'}  # noqa: E501
+    if method == 'DELETE':
+        invalid_hex = {'validators': [invalid_hex]}
     response = requests.request(
         method=method,
         url=api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'public_key': '0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fbcd'},  # noqa: E501
+        ), json=invalid_hex,
     )
     assert_error_response(
         response=response,
@@ -356,7 +388,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == []
+    assert result == {'entries': [], 'entries_limit': -1, 'entries_found': 0}
 
     validators = [Eth2Validator(
         index=4235,
@@ -387,7 +419,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == [x.serialize() for x in validators]
+    assert result == {'entries': [x.serialize() for x in validators], 'entries_limit': -1, 'entries_found': 2}  # noqa: E501
 
     async_query = random.choice([False, True])
     if query_all_balances:
@@ -424,3 +456,34 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
     assert FVal(totals['assets']['ETH2']['amount']) >= amount1 + amount2
+
+    # now add 1 more validator and query ETH2 balances again to see it's included
+    # the reason for this is to see the cache is properly invalidated at addition
+    v0_pubkey = '0x933ad9491b62059dd065b560d256d8957a8c402cc6e8d8ee7290ae11e8f7329267a8811c397529dac52ae1342ba58c95'  # noqa: E501
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={'validator_index': 0, 'public_key': v0_pubkey},
+    )
+    assert_simple_ok_response(response)
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'named_blockchain_balances_resource',
+        blockchain='ETH2',
+    ), json={'async_query': False, 'ignore_cache': True})
+    outcome = assert_proper_response_with_result(response)
+
+    assert len(outcome['per_account']) == 1  # only ETH2
+    per_acc = outcome['per_account']['ETH2']
+    assert len(per_acc) == 3
+    amount1 = FVal('34.596290288')
+    amount2 = FVal('34.547410412')
+    amount3 = FVal('34.600348623')
+    assert FVal(per_acc[v0_pubkey]['assets']['ETH2']['amount']) >= amount1
+    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= amount2
+    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount3
+    totals = outcome['totals']
+    assert len(totals['assets']) == 1
+    assert len(totals['liabilities']) == 0
+    assert FVal(totals['assets']['ETH2']['amount']) >= amount1 + amount2 + amount3

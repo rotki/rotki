@@ -1,4 +1,6 @@
 import { Balance, BigNumber } from '@rotki/common';
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import { z } from 'zod';
 import { EXTERNAL_EXCHANGES, SUPPORTED_TRADE_LOCATIONS } from '@/data/defaults';
 import { TradeLocation } from '@/services/history/types';
 
@@ -23,50 +25,59 @@ export interface ManualBalanceWithValue extends ManualBalance {
   readonly usdValue: BigNumber;
 }
 
+export const Balances = z.record(Balance);
+
+export type Balances = z.infer<typeof Balances>;
+
 export interface ManualBalances {
   readonly balances: ManualBalanceWithValue[];
   readonly liabilities: Balances[];
 }
 
-interface BlockchainTotals {
-  readonly assets: Balances;
-  readonly liabilities: Balances;
-}
+const BlockchainTotals = z.object({
+  assets: Balances,
+  liabilities: Balances
+});
 
-export interface BlockchainBalances {
-  readonly perAccount: {
-    ETH: BlockchainAssetBalances;
-    BTC: BtcBalances;
-    KSM: BlockchainAssetBalances;
-    DOT: BlockchainAssetBalances;
-    AVAX: BlockchainAssetBalances;
-  };
-  readonly totals: BlockchainTotals;
-}
+const XpubBalance = z.object({
+  xpub: z.string(),
+  derivationPath: z.string().nullable(),
+  addresses: z.record(Balance)
+});
 
-interface XpubBalance {
-  readonly xpub: string;
-  readonly derivationPath: string;
-  readonly addresses: Balances;
-}
+const BtcBalances = z.object({
+  standalone: Balances.optional(),
+  xpubs: z.array(XpubBalance).optional()
+});
 
-export interface BtcBalances {
-  readonly standalone: Balances;
-  readonly xpubs: XpubBalance[];
-}
+export type BtcBalances = z.infer<typeof BtcBalances>;
 
-export interface EthBalance {
-  readonly assets: Balances;
-  readonly liabilities: Balances;
-}
+const EthBalance = z.object({
+  assets: Balances,
+  liabilities: Balances
+});
 
-export interface BlockchainAssetBalances {
-  [account: string]: EthBalance;
-}
+export type EthBalance = z.infer<typeof EthBalance>;
 
-export interface Balances {
-  [account: string]: Balance;
-}
+const BlockchainAssetBalances = z.record(EthBalance);
+
+export type BlockchainAssetBalances = z.infer<typeof BlockchainAssetBalances>;
+
+const PerAccountBalances = z.object({
+  [Blockchain.ETH]: BlockchainAssetBalances.optional(),
+  [Blockchain.ETH2]: BlockchainAssetBalances.optional(),
+  [Blockchain.BTC]: BtcBalances.optional(),
+  [Blockchain.KSM]: BlockchainAssetBalances.optional(),
+  [Blockchain.DOT]: BlockchainAssetBalances.optional(),
+  [Blockchain.AVAX]: BlockchainAssetBalances.optional()
+});
+
+export const BlockchainBalances = z.object({
+  perAccount: PerAccountBalances,
+  totals: BlockchainTotals
+});
+
+export type BlockchainBalances = z.infer<typeof BlockchainBalances>;
 
 export type OracleCacheMeta = {
   readonly fromAsset: string;

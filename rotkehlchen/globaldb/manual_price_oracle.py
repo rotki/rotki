@@ -43,10 +43,6 @@ class ManualPriceOracle:
             log.debug('Got historical manual price', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp)  # noqa: E501
             return price_entry.price
 
-        log.debug(
-            f'Could not find manual historical price from {from_asset} to '
-            f'{to_asset} at timestamp {timestamp} .',
-        )
         raise NoPriceForGivenTimestamp(
             from_asset=from_asset,
             to_asset=to_asset,

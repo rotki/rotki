@@ -1,5 +1,6 @@
 import { computed, getCurrentInstance } from '@vue/composition-api';
 import { Section, Status } from '@/store/const';
+import { Message } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { assert } from '@/utils/assertions';
 
@@ -19,6 +20,7 @@ export const setupThemeCheck = () => {
   const isMobile = computed(() => $vuetify.breakpoint.mobile);
   const dark = computed(() => $vuetify.theme.dark);
   const breakpoint = computed(() => $vuetify.breakpoint.name);
+  const currentBreakpoint = computed(() => $vuetify.breakpoint);
   const width = computed(() => $vuetify.breakpoint.width);
   const fontStyle = computed(() => {
     return {
@@ -29,6 +31,7 @@ export const setupThemeCheck = () => {
     isMobile,
     dark,
     breakpoint,
+    currentBreakpoint,
     width,
     fontStyle
   };
@@ -69,4 +72,14 @@ export const isSectionLoading = (section: Section) => {
     const status = store.getters['status'](section);
     return status !== Status.LOADED && status !== Status.PARTIALLY_LOADED;
   });
+};
+
+export const setupMessages = () => {
+  const store = useStore();
+  const setMessage = async (message: Message) => {
+    await store.dispatch('setMessage', message);
+  };
+  return {
+    setMessage
+  };
 };

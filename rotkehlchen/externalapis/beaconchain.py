@@ -34,6 +34,23 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def _calculate_query_chunks(
+        indices_or_pubkeys: Union[List[int], List[Eth2PubKey]],
+) -> Union[List[List[int]], List[List[Eth2PubKey]]]:
+    """Create chunks of queries.
+
+    Beaconcha.in allows up to 100 validator or public keys in one query for most calls.
+    Also has a URI length limit of ~8190, so seems no more than 80 public keys can be per call.
+    """
+    if len(indices_or_pubkeys) == 0:
+        return []  # type: ignore
+
+    n = 100
+    if isinstance(indices_or_pubkeys[0], str):
+        n = 80
+    return list(get_chunks(indices_or_pubkeys, n=n))  # type: ignore
+
+
 class BeaconChain(ExternalServiceWithApiKey):
     """Even though the beaconchain allows for API keys we don't implement it yet.
     We do extend ExternalServiceWithApiKey though so that it becomes easier to add
@@ -171,7 +188,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        chunks = list(get_chunks(validator_indices, n=100))
+        chunks = _calculate_query_chunks(validator_indices)
         data = []
         for chunk in chunks:
             result = self._query(
@@ -216,7 +233,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        chunks = list(get_chunks(indices_or_pubkeys, n=100))  # type: ignore
+        chunks = _calculate_query_chunks(indices_or_pubkeys)
         data = []
         for chunk in chunks:
             result = self._query(
@@ -289,7 +306,7 @@ class BeaconChain(ExternalServiceWithApiKey):
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        chunks = list(get_chunks(indices_or_pubkeys, n=100))  # type: ignore
+        chunks = _calculate_query_chunks(indices_or_pubkeys)
         data = []
         for chunk in chunks:
             result = self._query(

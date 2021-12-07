@@ -5,188 +5,85 @@
     data-cy="blockchain-balance-form"
     @input="input"
   >
-    <v-row no-gutters>
-      <v-col cols="12">
-        <v-select
-          v-model="blockchain"
-          data-cy="account-blockchain-field"
-          outlined
-          class="account-form__chain pt-2"
-          :items="items"
-          :label="$t('account_form.labels.blockchain')"
-          :disabled="accountOperation || loading || !!edit"
-        >
-          <template #selection="{ item }">
-            <asset-details class="pt-2 pb-2" :asset="item" />
-          </template>
-          <template #item="{ item }">
-            <asset-details class="pt-2 pb-2" :asset="item" />
-          </template>
-        </v-select>
-      </v-col>
-    </v-row>
-    <v-row v-if="!edit" no-gutters class="mb-5">
-      <v-col cols="12">
-        <input-mode-select v-model="inputMode" :blockchain="blockchain" />
-      </v-col>
-    </v-row>
-    <v-row v-if="displayXpubInput" align="center" no-gutters class="mt-2">
-      <v-col cols="auto">
-        <v-select
-          v-model="xpubKeyPrefix"
-          outlined
-          class="account-form__xpub-key-type"
-          item-value="value"
-          item-text="label"
-          :disabled="accountOperation || loading || !!edit"
-          :items="keyType"
-        />
-      </v-col>
-      <v-col>
-        <v-text-field
-          v-model="xpub"
-          outlined
-          class="account-form__xpub ml-2"
-          :label="$t('account_form.labels.btc.xpub')"
-          autocomplete="off"
-          :error-messages="errorMessages[FIELD_XPUB]"
-          :disabled="accountOperation || loading || !!edit"
-          @paste="onPasteXpub"
-        >
-          <template #append-outer>
-            <v-tooltip open-delay="400" top>
-              <template #activator="{ on, attrs }">
-                <div class="account-form__advanced">
-                  <v-btn
-                    icon
-                    v-bind="attrs"
-                    v-on="on"
-                    @click="advanced = !advanced"
-                  >
-                    <v-icon v-if="advanced">mdi-chevron-up</v-icon>
-                    <v-icon v-else>mdi-chevron-down</v-icon>
-                  </v-btn>
-                </div>
-              </template>
-              <span>
-                {{ $tc('account_form.advanced_tooltip', advanced ? 0 : 1) }}
-              </span>
-            </v-tooltip>
-          </template>
-        </v-text-field>
-      </v-col>
-    </v-row>
-    <v-row v-if="isBtc && isXpub && advanced" no-gutters>
-      <v-col>
-        <v-text-field
-          v-model="derivationPath"
-          outlined
-          class="account-form__derivation-path"
-          :label="$t('account_form.labels.btc.derivation_path')"
-          :error-messages="errorMessages[FIELD_DERIVATION_PATH]"
-          autocomplete="off"
-          :disabled="accountOperation || loading || !!edit"
-          persistent-hint
-          :hint="$t('account_form.labels.btc.derivation_path_hint')"
-        />
-      </v-col>
-    </v-row>
-    <v-row v-if="isEth" no-gutters>
-      <v-col>
-        <module-activator @update:selection="selectedModules = $event" />
-      </v-col>
-    </v-row>
-    <v-row
-      v-if="
-        (!isBtc || (isBtc && !isXpub) || !!edit) &&
-        !isMetaMask &&
-        !(isXpub && !!edit)
-      "
-      no-gutters
-      class="mt-2"
-    >
-      <v-col>
-        <v-row v-if="!edit && !isXpub" no-gutters align="center">
-          <v-col cols="auto">
-            <v-checkbox
-              v-model="multiple"
-              :disabled="accountOperation || loading || !!edit"
-              :label="$t('account_form.labels.multiple')"
-            />
-          </v-col>
-        </v-row>
-        <v-text-field
-          v-if="!multiple"
-          v-model="address"
-          data-cy="account-address-field"
-          outlined
-          class="account-form__address"
-          :label="$t('account_form.labels.account')"
-          :rules="rules"
-          :error-messages="errorMessages[FIELD_ADDRESS]"
-          autocomplete="off"
-          :disabled="accountOperation || loading || !!edit"
-          @paste="onPasteAddress"
-        />
-        <v-textarea
-          v-else
-          v-model="addresses"
-          outlined
-          :disabled="accountOperation || loading || !!edit"
-          :hint="$t('account_form.labels.addresses_hint')"
-          :label="$t('account_form.labels.addresses')"
-          @paste="onPasteMulti"
-        />
-        <v-row v-if="multiple" no-gutters>
-          <v-col>
-            <div
-              class="text-caption"
-              v-text="
-                $tc('account_form.labels.addresses_entries', entries.length, {
-                  count: entries.length
-                })
-              "
-            />
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
-    <v-row no-gutters>
-      <v-col cols="12">
-        <v-text-field
-          v-model="label"
-          data-cy="account-label-field"
-          outlined
-          class="account-form__label"
-          :label="$t('account_form.labels.label')"
-          :disabled="accountOperation || loading"
-        />
-      </v-col>
-    </v-row>
-    <v-row no-gutters>
-      <v-col cols="12">
-        <tag-input
-          v-model="tags"
-          data-cy="account-tag-field"
-          outlined
-          :disabled="accountOperation || loading"
-        />
-      </v-col>
-    </v-row>
-    <v-row no-gutters>
-      <v-col cols="12">
-        <div class="account-form--progress">
-          <v-progress-linear v-if="accountOperation" indeterminate />
-        </div>
-      </v-col>
-    </v-row>
+    <chain-select
+      :disabled="loading || !!edit"
+      :blockchain="blockchain"
+      @update:blockchain="blockchain = $event"
+    />
+
+    <input-mode-select
+      v-if="!edit"
+      v-model="inputMode"
+      :blockchain="blockchain"
+    />
+
+    <xpub-input
+      v-if="isXpub"
+      :disabled="loading || !!edit"
+      :error-messages="errorMessages"
+      :xpub="xpub"
+      @update:xpub="xpub = $event"
+    />
+
+    <module-activator
+      v-if="isEth"
+      @update:selection="selectedModules = $event"
+    />
+
+    <address-input
+      v-if="!(isXpub || isMetamask || isEth2)"
+      :addresses="addresses"
+      :error-messages="errorMessages"
+      :disabled="loading || !!edit"
+      :multi="!edit && !isXpub"
+      @update:addresses="addresses = $event"
+    />
+
+    <eth2-input
+      v-if="isEth2"
+      :validator="validator"
+      @update:validator="validator = $event"
+    />
+    <div v-else>
+      <v-text-field
+        v-model="label"
+        data-cy="account-label-field"
+        outlined
+        class="account-form__label"
+        :label="$t('account_form.labels.label')"
+        :disabled="loading"
+      />
+
+      <tag-input
+        v-model="tags"
+        data-cy="account-tag-field"
+        outlined
+        :disabled="loading"
+      />
+    </div>
+
+    <div class="account-form--progress">
+      <v-progress-linear v-if="accountOperation" indeterminate />
+    </div>
   </v-form>
 </template>
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { PropType } from 'vue';
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  PropType,
+  ref,
+  toRefs,
+  unref,
+  watch
+} from '@vue/composition-api';
+import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
+import { xpubToPayload } from '@/components/accounts/blockchain/xpub';
+import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
 import {
   MANUAL_ADD,
   METAMASK_IMPORT,
@@ -196,53 +93,25 @@ import InputModeSelect from '@/components/accounts/InputModeSelect.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import { AccountInput } from '@/components/accounts/types';
 import TagInput from '@/components/inputs/TagInput.vue';
+import { setupBlockchainAccounts } from '@/composables/balances';
+import { setupMessages } from '@/composables/common';
+import { setupTaskStatus } from '@/composables/tasks';
+import { useInterop } from '@/electron-interop';
+import i18n from '@/i18n';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import {
-  AddAccountsPayload,
+  AccountPayload,
   BlockchainAccount,
   BlockchainAccountPayload,
   XpubPayload
 } from '@/store/balances/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
-import { Message } from '@/store/types';
+import { Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { TaskType } from '@/types/task-type';
-import { trimOnPaste } from '@/utils/event';
+import { assert } from '@/utils/assertions';
 import { getMetamaskAddresses } from '@/utils/metamask';
-
-type ValidationRule = (value: string) => boolean | string;
-type XpubType = {
-  readonly label: string;
-  readonly value: string;
-};
-
-const XPUB_LABEL = 'P2PKH';
-const XPUB_VALUE = 'xpub';
-const YPUB_LABEL = 'P2SH-P2WPKH';
-const YPUB_VALUE = 'ypub';
-const ZPUB_LABEL = 'WPKH';
-const ZPUB_VALUE = 'zpub';
-const XPUB_TYPE = 'p2pkh';
-const YPUB_TYPE = 'p2sh_p2wpkh';
-const ZPUB_TYPE = 'wpkh';
-
-const XPUB_KEY_PREFIX = [XPUB_VALUE, YPUB_VALUE, ZPUB_VALUE] as const;
-const XPUB_KEY_TYPE = [XPUB_TYPE, YPUB_TYPE, ZPUB_TYPE] as const;
-
-type XpubPrefix = typeof XPUB_KEY_PREFIX[number];
-type XpubKeyType = typeof XPUB_KEY_TYPE[number];
-
-const getKeyType: (key: XpubPrefix) => XpubKeyType = key => {
-  if (key === XPUB_VALUE) {
-    return XPUB_TYPE;
-  } else if (key === YPUB_VALUE) {
-    return YPUB_TYPE;
-  } else if (key === ZPUB_VALUE) {
-    return ZPUB_TYPE;
-  }
-  throw new Error(`${key} is not acceptable`);
-};
 
 const FIELD_ADDRESS = 'address';
 const FIELD_XPUB = 'xpub';
@@ -258,417 +127,304 @@ const validationErrors: () => ValidationErrors = () => ({
   [FIELD_DERIVATION_PATH]: []
 });
 
-@Component({
-  components: { ModuleActivator, InputModeSelect, TagInput },
-  computed: {
-    ...mapGetters('tasks', ['isTaskRunning']),
-    ...mapGetters('balances', ['account'])
+const AccountForm = defineComponent({
+  name: 'AccountForm',
+  components: {
+    Eth2Input,
+    ChainSelect,
+    AddressInput,
+    XpubInput,
+    ModuleActivator,
+    InputModeSelect,
+    TagInput
   },
-  methods: {
-    ...mapActions('balances', ['addAccounts', 'editAccount', 'addAccount'])
-  }
-})
-export default class AccountForm extends Vue {
-  readonly items = Object.values(Blockchain);
-  isTaskRunning!: (type: TaskType) => boolean;
-  blockchain: Blockchain = Blockchain.ETH;
-  pending: boolean = false;
-  xpub: string = '';
-  derivationPath: string = '';
-  address: string = '';
-  addresses: string = '';
-  label: string = '';
-  tags: string[] = [];
-  multiple: boolean = false;
-  readonly errorMessages: ValidationErrors = validationErrors();
-  xpubKeyPrefix: XpubPrefix = XPUB_VALUE;
-  addAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
-  addAccounts!: (payload: AddAccountsPayload) => Promise<void>;
-  editAccount!: (payload: BlockchainAccountPayload) => Promise<void>;
-  advanced: boolean = false;
-  inputMode: AccountInput = MANUAL_ADD;
-  selectedModules: Module[] = [];
+  props: {
+    value: { required: true, type: Boolean, default: false },
+    edit: {
+      required: false,
+      default: null,
+      type: Object as PropType<BlockchainAccount | null>
+    },
+    context: { required: true, type: String as PropType<Blockchain> }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { context, edit } = toRefs(props);
 
-  readonly FIELD_XPUB = FIELD_XPUB;
-  readonly FIELD_ADDRESS = FIELD_ADDRESS;
-  readonly FIELD_DERIVATION_PATH = FIELD_DERIVATION_PATH;
+    const isEdit = computed(() => !!edit.value);
+    const xpub = ref<XpubPayload | null>(null);
+    const addresses = ref<string[]>([]);
+    const validator = ref<Eth2Validator | null>(null);
+    const label = ref('');
+    const tags = ref<string[]>([]);
+    const blockchain = ref<Blockchain>(Blockchain.ETH);
+    const inputMode = ref<AccountInput>(MANUAL_ADD);
+    const form = ref<any>(null);
+    const errorMessages = ref(validationErrors());
+    const pending = ref(false);
+    const selectedModules = ref<Module[]>([]);
 
-  @Watch('blockchain')
-  onSelectionChange() {
-    (this.$refs.form as any).resetValidation();
-    this.clearErrors('address');
-  }
+    const setErrors = (field: keyof ValidationErrors, messages: string[]) => {
+      const errors = { ...errorMessages.value };
+      errors[field].push(...messages);
+      errorMessages.value = errors;
+      input(false);
+    };
 
-  get entries(): string[] {
-    const addresses = this.addresses
-      .split(',')
-      .map(value => value.trim())
-      .filter(entry => entry.length > 0);
-
-    const entries: { [address: string]: string } = {};
-    for (const address of addresses) {
-      const lowerCase = address.toLocaleLowerCase();
-      if (entries[lowerCase]) {
-        continue;
-      }
-      entries[lowerCase] = address;
-    }
-    return Object.values(entries);
-  }
-
-  get isEth(): boolean {
-    return this.blockchain === Blockchain.ETH;
-  }
-
-  get isBtc(): boolean {
-    return this.blockchain === Blockchain.BTC;
-  }
-
-  get isXpub(): boolean {
-    return this.inputMode === XPUB_ADD;
-  }
-
-  get isMetaMask(): boolean {
-    return this.inputMode === METAMASK_IMPORT;
-  }
-
-  get displayXpubInput(): boolean {
-    const edit = !!this.edit;
-    return (!edit && this.isBtc && this.isXpub) || (edit && !!this.xpub);
-  }
-
-  get keyType(): XpubType[] {
-    return [
-      {
-        label: XPUB_LABEL,
-        value: XPUB_VALUE
-      },
-      {
-        label: YPUB_LABEL,
-        value: YPUB_VALUE
-      },
-      {
-        label: ZPUB_LABEL,
-        value: ZPUB_VALUE
-      }
-    ];
-  }
-
-  get rules(): ValidationRule[] {
-    const rules: ValidationRule[] = [];
-    if (this.isMetaMask) {
-      return rules;
-    }
-    rules.push(this.nonEmptyRule);
-    if (!this.edit) {
-      rules.push(this.checkIfExists);
-    }
-    return rules;
-  }
-
-  private nonEmptyRule(value: string): boolean | string {
-    return !!value || this.$tc('account_form.validation.address_non_empty');
-  }
-
-  private checkIfExists(value: string): boolean | string {
-    return !!value || this.$tc('account_form.validation.address_exists');
-  }
-
-  @Prop({ required: false, default: null })
-  edit!: BlockchainAccount | null;
-  @Prop({ required: true, type: Boolean, default: false })
-  value!: boolean;
-  @Prop({ required: true, type: String as PropType<Blockchain> })
-  context!: Blockchain;
-
-  @Watch('context')
-  onContextChange() {
-    if (!this.edit) {
-      return;
-    }
-    this.blockchain = this.context;
-  }
-
-  private setEditMode() {
-    if (!this.edit) {
-      return;
-    }
-
-    this.address = this.edit.address;
-    this.blockchain = this.edit.chain;
-    this.label = this.edit.label;
-    this.tags = this.edit.tags;
-    if ('xpub' in this.edit) {
-      const match = this.edit.xpub.match(/([xzy]pub)(.*)/);
-      if (match) {
-        this.xpub = match[0];
-        this.xpubKeyPrefix = match[1] as XpubPrefix;
-      } else {
-        this.xpub = this.edit.xpub;
-      }
-
-      this.derivationPath = this.edit.derivationPath;
-    }
-  }
-
-  mounted() {
-    this.setEditMode();
-    if (!this.edit) {
-      this.blockchain = this.context;
-    }
-  }
-
-  @Watch('address')
-  onAddressChanged() {
-    this.clearErrors(FIELD_ADDRESS);
-  }
-
-  @Watch('multiple')
-  onMultiple() {
-    this.addresses = '';
-    this.address = '';
-  }
-
-  @Watch('edit')
-  onEdit() {
-    this.setEditMode();
-  }
-
-  @Watch('blockchain')
-  onBlockchainChanged() {
-    if (this.isBtc) {
-      this.inputMode = XPUB_ADD;
-    } else {
-      this.inputMode = MANUAL_ADD;
-    }
-  }
-
-  @Watch('xpub')
-  onXpubChange(value: string) {
-    if (!value) {
-      return;
-    }
-    this.clearErrors(FIELD_XPUB);
-    this.setXpubKeyType(value);
-  }
-
-  @Watch('derivationPath')
-  onDerivationPathChange() {
-    this.clearErrors(FIELD_DERIVATION_PATH);
-  }
-
-  private setXpubKeyType(value: string) {
-    const match = AccountForm.isPrefixed(value);
-    if (match && match.length === 3) {
-      const prefix = match[1] as XpubPrefix;
-      if (prefix === XPUB_VALUE) {
+    const clearErrors = (field: keyof ValidationErrors) => {
+      const messages = errorMessages.value[field];
+      if (messages.length === 0) {
         return;
       }
-      this.xpubKeyPrefix = prefix;
-    }
-  }
 
-  private static isPrefixed(value: string) {
-    return value.match(/([xzy]pub)(.*)/);
-  }
-
-  onPasteMulti(event: ClipboardEvent) {
-    const paste = trimOnPaste(event);
-    if (paste) {
-      this.addresses += paste.replace(/,(0x)/g, ',\n0x');
-    }
-  }
-
-  onPasteAddress(event: ClipboardEvent) {
-    const paste = trimOnPaste(event);
-    if (paste) {
-      this.address = paste;
-    }
-  }
-
-  onPasteXpub(event: ClipboardEvent) {
-    const paste = trimOnPaste(event);
-    if (paste) {
-      this.setXpubKeyType(paste);
-      this.xpub = paste;
-    }
-  }
-
-  reset() {
-    this.address = '';
-    this.addresses = '';
-    this.label = '';
-    this.tags = [];
-    this.xpub = '';
-    this.derivationPath = '';
-    (this.$refs.form as any).resetValidation();
-    this.blockchain = Blockchain.ETH;
-    this.inputMode = MANUAL_ADD;
-    this.multiple = false;
-  }
-
-  @Emit()
-  input(_valid: boolean) {}
-
-  get accountOperation(): boolean {
-    return (
-      this.isTaskRunning(TaskType.ADD_ACCOUNT) ||
-      this.isTaskRunning(TaskType.REMOVE_ACCOUNT) ||
-      this.pending
-    );
-  }
-
-  get loading(): boolean {
-    return (
-      this.isTaskRunning(TaskType.QUERY_BALANCES) ||
-      this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)
-    );
-  }
-
-  async metamaskImport(): Promise<boolean> {
-    try {
-      let addresses: string[];
-      if (this.$interop.isPackaged) {
-        addresses = await this.$interop.metamaskImport();
-      } else {
-        addresses = await getMetamaskAddresses();
+      for (let i = 0; i < messages.length; i++) {
+        messages.pop();
       }
-
-      const payload = addresses.map(value => ({
-        address: value,
-        label: this.label,
-        tags: this.tags
-      }));
-
-      await this.addAccounts({
-        blockchain: Blockchain.ETH,
-        payload: payload,
-        modules: this.selectedModules
-      });
-      return true;
-    } catch (e: any) {
-      const title = this.$tc('blockchain_balances.metamask_import.error.title');
-      const description = this.$tc(
-        'blockchain_balances.metamask_import.error.description',
-        0,
-        {
-          error: e.message
-        }
-      );
-      notify(description, title, Severity.ERROR, true);
-      return false;
-    }
-  }
-
-  payload(): BlockchainAccountPayload {
-    let xpubPayload: XpubPayload | undefined;
-    if (this.isBtc && this.isXpub) {
-      const trimmedKey = this.xpub.trim();
-      xpubPayload = {
-        xpub: trimmedKey,
-        derivationPath: this.derivationPath ?? undefined,
-        xpubType: getKeyType(this.xpubKeyPrefix)
-      };
-    } else {
-      xpubPayload = undefined;
-    }
-
-    return {
-      blockchain: this.blockchain,
-      address: this.address.trim(),
-      label: this.label,
-      tags: this.tags,
-      xpub: xpubPayload,
-      modules: this.isEth ? this.selectedModules : undefined
+      input(true);
     };
-  }
-
-  async manualAdd() {
-    try {
-      if (this.edit) {
-        await this.editAccount(this.payload());
+    watch(blockchain, () => {
+      form.value?.resetValidation();
+      clearErrors('address');
+    });
+    watch(xpub, () => {
+      clearErrors(FIELD_XPUB);
+      clearErrors(FIELD_DERIVATION_PATH);
+    });
+    watch(addresses, () => clearErrors(FIELD_ADDRESS));
+    watch(edit, () => setEditMode());
+    watch(blockchain, value => {
+      if (unref(edit)) {
+        return;
+      }
+      if (value === Blockchain.BTC) {
+        inputMode.value = XPUB_ADD;
       } else {
-        if (this.entries.length > 0) {
-          await this.addAccounts({
-            blockchain: this.blockchain,
-            payload: this.entries.map(address => ({
-              address: address,
-              label: this.label,
-              tags: this.tags
-            })),
-            modules: this.isEth ? this.selectedModules : undefined
-          } as AddAccountsPayload);
-        } else {
-          await this.addAccount(this.payload());
-        }
+        inputMode.value = MANUAL_ADD;
+      }
+    });
+    watch(context, () => {
+      if (!edit.value) {
+        return;
+      }
+      blockchain.value = context.value;
+    });
+
+    const isEth = computed(() => blockchain.value === Blockchain.ETH);
+    const isEth2 = computed(() => blockchain.value === Blockchain.ETH2);
+    const isBtc = computed(() => blockchain.value === Blockchain.BTC);
+    const isXpub = computed(() => inputMode.value === XPUB_ADD);
+    const isMetamask = computed(() => inputMode.value === METAMASK_IMPORT);
+
+    const setEditMode = () => {
+      const account = unref(edit);
+      if (!account) {
+        return;
       }
 
-      this.reset();
-    } catch (e: any) {
-      const apiErrorMessage = deserializeApiErrorMessage(e.message);
-      if (apiErrorMessage && Object.keys(apiErrorMessage).length > 0) {
-        const errors: ValidationErrors = validationErrors();
-        this.clearErrors(FIELD_ADDRESS);
-        this.clearErrors(FIELD_XPUB);
-        this.clearErrors(FIELD_DERIVATION_PATH);
+      addresses.value = [account.address];
+      blockchain.value = account.chain;
+      label.value = account.label;
+      tags.value = account.tags;
+      if ('xpub' in account) {
+        xpub.value = xpubToPayload(account.xpub, account.derivationPath);
+        inputMode.value = account.address ? MANUAL_ADD : XPUB_ADD;
+      }
+    };
 
-        for (const field of FIELDS) {
-          if (!(field in apiErrorMessage)) {
-            continue;
-          }
+    onMounted(() => {
+      setEditMode();
+      if (!isEdit.value) {
+        blockchain.value = context.value;
+      }
+    });
 
-          errors[field] = errors[field].concat(apiErrorMessage[field]);
+    const reset = () => {
+      addresses.value = [];
+      label.value = '';
+      tags.value = [];
+      form.value?.resetValidation();
+      blockchain.value = Blockchain.ETH;
+      inputMode.value = MANUAL_ADD;
+    };
+
+    const payload = computed<BlockchainAccountPayload>(() => {
+      return {
+        blockchain: unref(blockchain),
+        address: unref(addresses)[0],
+        label: label.value,
+        tags: tags.value,
+        xpub: unref(xpub) ?? undefined,
+        modules: isEth.value ? selectedModules.value : undefined
+      };
+    });
+
+    const input = (isValid: boolean) => {
+      emit('input', isValid);
+    };
+
+    const { isTaskRunning } = setupTaskStatus();
+
+    const accountOperation = computed(
+      () =>
+        isTaskRunning(TaskType.ADD_ACCOUNT).value ||
+        isTaskRunning(TaskType.REMOVE_ACCOUNT).value ||
+        pending.value
+    );
+
+    const loading = computed(
+      () =>
+        accountOperation.value ||
+        isTaskRunning(TaskType.QUERY_BALANCES).value ||
+        isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES).value
+    );
+
+    const { addAccount, addAccounts, editAccount, addEth2Validator } =
+      setupBlockchainAccounts();
+
+    const metamaskImport = async () => {
+      const interop = useInterop();
+      try {
+        let addresses: string[];
+        if (interop.isPackaged) {
+          addresses = await interop.metamaskImport();
+        } else {
+          addresses = await getMetamaskAddresses();
         }
 
-        this.setErrors(FIELD_ADDRESS, errors[FIELD_ADDRESS]);
-        this.setErrors(FIELD_XPUB, errors[FIELD_XPUB]);
-        this.setErrors(FIELD_DERIVATION_PATH, errors[FIELD_DERIVATION_PATH]);
-        this.pending = false;
+        const payload: AccountPayload[] = addresses.map(value => ({
+          address: value,
+          label: label.value,
+          tags: tags.value
+        }));
+
+        await addAccounts({
+          blockchain: Blockchain.ETH,
+          payload: payload,
+          modules: selectedModules.value
+        });
+        return true;
+      } catch (e: any) {
+        const title = i18n
+          .t('blockchain_balances.metamask_import.error.title')
+          .toString();
+        const description = i18n
+          .t('blockchain_balances.metamask_import.error.description', {
+            error: e.message
+          })
+          .toString();
+        notify(description, title, Severity.ERROR, true);
         return false;
       }
-      this.$store.commit('setMessage', {
-        description: this.$tc('account_form.error.description', 0, {
-          error: e.message
-        }),
-        title: this.$tc('account_form.error.title'),
-        success: false
-      } as Message);
-      return false;
-    }
-    return true;
+    };
+
+    const { setMessage } = setupMessages();
+
+    const manualAdd = async () => {
+      const blockchainAccount = unref(payload);
+      try {
+        if (unref(isEdit)) {
+          await editAccount(blockchainAccount);
+        } else {
+          const entries = unref(addresses);
+          if (entries.length > 0) {
+            const payload = entries.map(address => ({
+              address: address,
+              label: unref(label),
+              tags: unref(tags)
+            }));
+            await addAccounts({
+              blockchain: unref(blockchain),
+              payload,
+              modules: unref(isEth) ? unref(selectedModules) : undefined
+            });
+          } else {
+            await addAccount(blockchainAccount);
+          }
+        }
+
+        reset();
+      } catch (e: any) {
+        const apiErrorMessage = deserializeApiErrorMessage(e.message);
+        if (apiErrorMessage && Object.keys(apiErrorMessage).length > 0) {
+          const errors: ValidationErrors = validationErrors();
+          clearErrors(FIELD_ADDRESS);
+          clearErrors(FIELD_XPUB);
+          clearErrors(FIELD_DERIVATION_PATH);
+
+          for (const field of FIELDS) {
+            if (!(field in apiErrorMessage)) {
+              continue;
+            }
+
+            errors[field] = errors[field].concat(apiErrorMessage[field]);
+          }
+
+          setErrors(FIELD_ADDRESS, errors[FIELD_ADDRESS]);
+          setErrors(FIELD_XPUB, errors[FIELD_XPUB]);
+          setErrors(FIELD_DERIVATION_PATH, errors[FIELD_DERIVATION_PATH]);
+          pending.value = false;
+          return false;
+        }
+        await setMessage({
+          description: i18n
+            .t('account_form.error.description', {
+              error: e.message
+            })
+            .toString(),
+          title: i18n.t('account_form.error.title').toString(),
+          success: false
+        });
+        return false;
+      }
+      return true;
+    };
+
+    const save = async () => {
+      let result: boolean;
+      pending.value = true;
+
+      if (unref(isMetamask)) {
+        result = await metamaskImport();
+      } else if (unref(isEth2)) {
+        const payload = unref(validator);
+        assert(payload);
+        result = await addEth2Validator(payload);
+      } else {
+        result = await manualAdd();
+      }
+
+      pending.value = false;
+      return result;
+    };
+
+    return {
+      form,
+      addresses,
+      xpub,
+      validator,
+      label,
+      tags,
+      blockchain,
+      inputMode,
+      pending,
+      selectedModules,
+      errorMessages,
+      isEth,
+      isEth2,
+      isBtc,
+      isXpub,
+      isMetamask,
+      loading,
+      accountOperation,
+      input,
+      save,
+      reset
+    };
   }
+});
 
-  async save(): Promise<boolean> {
-    let result: boolean;
-    this.pending = true;
-
-    if (this.isMetaMask) {
-      result = await this.metamaskImport();
-    } else {
-      result = await this.manualAdd();
-    }
-
-    this.pending = false;
-    return result;
-  }
-
-  private setErrors(field: ValidationFields, errors: string[]) {
-    this.errorMessages[field].push(...errors);
-    this.input(false);
-  }
-
-  private clearErrors(field: ValidationFields) {
-    const errorMessages = this.errorMessages[field];
-    if (errorMessages.length === 0) {
-      return;
-    }
-
-    for (let i = 0; i < errorMessages.length; i++) {
-      errorMessages.pop();
-    }
-    this.input(true);
-  }
-}
+export default AccountForm;
+export type AccountFormType = InstanceType<typeof AccountForm>;
 </script>
 <style scoped lang="scss">
 .account-form {

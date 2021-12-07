@@ -36,8 +36,8 @@
           label
           class="font-weight-medium"
           :input-value="selected"
-          :color="`#${item.background_color}`"
-          :text-color="`#${item.foreground_color}`"
+          :color="`#${item.backgroundColor}`"
+          :text-color="`#${item.foregroundColor}`"
           close
           @click:close="remove(item.name)"
           @click="select"

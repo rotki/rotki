@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { Balance } from "../../index";
 
 export interface Eth2Deposit {
@@ -42,3 +43,18 @@ export interface Eth2Detail {
 export interface Eth2DailyStatWithIndex extends Eth2DailyStat {
   readonly index: number;
 }
+
+const Validator = z.object({
+  validatorIndex: z.number(),
+  publicKey: z.string()
+});
+
+export type Eth2ValidatorEntry = z.infer<typeof Validator>;
+
+export const Eth2Validators = z.object({
+  entries: z.array(Validator),
+  entriesFound: z.number().nonnegative(),
+  entriesLimit: z.number().min(-1)
+});
+
+export type Eth2Validators = z.infer<typeof Eth2Validators>;

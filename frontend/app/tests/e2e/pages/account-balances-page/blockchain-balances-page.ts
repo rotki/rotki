@@ -38,7 +38,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     }
 
     cy.get('.big-dialog__buttons__confirm').click();
-    cy.get('.big-dialog', { timeout: 45000 }).should('not.be.visible');
+    cy.get('.big-dialog', { timeout: 120000 }).should('not.be.visible');
   }
 
   isEntryVisible(position: number, balance: FixtureBlockchainBalance) {
