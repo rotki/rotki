@@ -3468,10 +3468,9 @@ class DBHandler:
             'SELECT location FROM user_credentials UNION '
             'SELECT location FROM amm_swaps',
         )
-        locations_raw = cursor.fetchall()
-        locations = {Location.deserialize_from_db(loc[0]) for loc in locations_raw}
+        locations = {Location.deserialize_from_db(loc[0]) for loc in cursor}
         cursor.execute('SELECT DISTINCT type FROM amm_events')
-        for event_type in cursor.fetchall():
+        for event_type in cursor:
             if EventType.deserialize_from_db(event_type[0]) in (EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP):  # noqa: E501
                 locations.add(Location.SUSHISWAP)
             else:
