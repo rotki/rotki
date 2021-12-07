@@ -33,20 +33,6 @@
           @input="selectionChanged(item.address, $event)"
         />
       </template>
-      <template v-if="blockchain === 'ETH'" #header.balance.usdValue>
-        {{
-          $t('account_balances.headers.usd_value_eth', {
-            symbol: currency.tickerSymbol
-          })
-        }}
-      </template>
-      <template v-else #header.balance.usdValue>
-        {{
-          $t('account_balances.headers.usd_value', {
-            symbol: currency.tickerSymbol
-          })
-        }}
-      </template>
       <template #item.label="{ item }">
         <v-row class="pt-3 pb-2">
           <v-col cols="12" class="account-balance-table__account">
@@ -190,7 +176,6 @@ import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { CURRENCY_USD } from '@/data/currencies';
 import { balanceSum } from '@/filters';
 import StatusMixin from '@/mixins/status-mixin';
 import { chainSection } from '@/store/balances/const';
@@ -391,14 +376,23 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   }
 
   get headers(): DataTableHeader[] {
+    const currency = { symbol: this.currency.tickerSymbol };
+    const currencyHeader =
+      this.blockchain === 'ETH'
+        ? this.$t('account_balances.headers.usd_value_eth', currency)
+        : this.$t('account_balances.headers.usd_value', currency);
+
+    const accountHeader =
+      this.blockchain === 'ETH2'
+        ? this.$t('account_balances.headers.validator')
+        : this.$t('account_balances.headers.account');
+
     const headers: DataTableHeader[] = [
       { text: '', value: 'accountSelection', width: '34px', sortable: false },
-      { text: this.$tc('account_balances.headers.account'), value: 'label' },
+      { text: accountHeader.toString(), value: 'label' },
       { text: this.blockchain, value: 'balance.amount', align: 'end' },
       {
-        text: this.$t('account_balances.headers.usd_value', {
-          symbol: this.currency.tickerSymbol ?? CURRENCY_USD
-        }).toString(),
+        text: currencyHeader.toString(),
         value: 'balance.usdValue',
         align: 'end'
       }

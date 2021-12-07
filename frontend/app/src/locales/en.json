@@ -2622,7 +2622,8 @@
       "account": "Account",
       "actions": "Actions",
       "usd_value_eth": "Total {symbol} value of account's assets",
-      "usd_value": "{symbol} value"
+      "usd_value": "{symbol} value",
+      "validator": "Validator Index | Public Key"
     },
     "tabs": {
       "nonfungible": "Non Fungible Balances"

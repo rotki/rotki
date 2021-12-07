@@ -76,7 +76,13 @@
         @visible:update="help = $event"
         @about="showAbout = true"
       />
-      <div class="app-main">
+      <div
+        class="app-main"
+        :class="{
+          small: drawer && mini,
+          expanded: drawer && !mini && !xsOnly
+        }"
+      >
         <v-main>
           <router-view />
         </v-main>
@@ -361,6 +367,16 @@ export default class App extends Mixins(PremiumMixin, ThemeMixin) {
   overflow-y: scroll;
   overflow-x: hidden;
   scroll-behavior: smooth;
+
+  &.small {
+    left: 56px;
+    width: calc(100vw - 56px);
+  }
+
+  &.expanded {
+    left: 300px;
+    width: calc(100vw - 300px);
+  }
 
   @extend .themed-scrollbar;
 }
