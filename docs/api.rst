@@ -4277,67 +4277,71 @@ Query saved PnL Reports
       Content-Type: application/json
 
       {
-	"result": {
-	    "entries": [{
-                "asset_movement_fees": null,
-                "defi_profit_loss": null,
-                "end_ts": 1637928988,
-                "ethereum_transaction_gas_costs": null,
-                "first_processed_timestamp": null,
-                "general_trade_profit_loss": null,
-                "identifier": 2,
-                "ledger_actions_profit_loss": null,
-                "loan_profit": null,
-                "margin_positions_profit_loss": null,
-                "settlement_losses": null,
-                "size_on_disk": 6793,
-                "start_ts": 0,
-                "taxable_trade_profit_loss": null,
-                "timestamp": 1637931185,
-                "total_profit_loss": null,
-                "total_taxable_profit_loss": null
-            }, {
-                "asset_movement_fees": "0",
-                "defi_profit_loss": "0",
-                "end_ts": 1637928988,
-                "ethereum_transaction_gas_costs": "0",
-                "first_processed_timestamp": null,
-                "general_trade_profit_loss": "9.450326",
-                "identifier": 3,
-                "ledger_actions_profit_loss": "15.85728944",
-                "loan_profit": "0",
-                "margin_positions_profit_loss": "0",
-                "settlement_losses": "0",
-                "size_on_disk": 6793,
-                "start_ts": 0,
-                "taxable_trade_profit_loss": "9.450326",
-                "timestamp": 1637931305,
-                "total_profit_loss": "25.30761544",
-                "total_taxable_profit_loss": "25.30761544"
-            }, {
-                "asset_movement_fees": "0",
-                "defi_profit_loss": "0",
-                "end_ts": 1637928988,
-                "ethereum_transaction_gas_costs": "0",
-                "first_processed_timestamp": 1598911200,
-                "general_trade_profit_loss": "0",
-                "identifier": 4,
-                "ledger_actions_profit_loss": "3.80586544",
-                "loan_profit": "0",
-                "margin_positions_profit_loss": "0",
-                "settlement_losses": "0",
-                "size_on_disk": 4498,
-                "start_ts": 1630928988,
-                "taxable_trade_profit_loss": "0",
-                "timestamp": 1637934538,
-                "total_profit_loss": "3.80586544",
-                "total_taxable_profit_loss": "3.80586544"
-            }],
-            "entries_found": 3,
-            "entries_limit": 20
-	},
-	"message": ""
-     }
+        "result":{
+          "entries":[
+            {
+              "asset_movement_fees":null,
+              "defi_profit_loss":null,
+              "end_ts":1637928988,
+              "ethereum_transaction_gas_costs":null,
+              "first_processed_timestamp":null,
+              "general_trade_profit_loss":null,
+              "identifier":2,
+              "ledger_actions_profit_loss":null,
+              "loan_profit":null,
+              "margin_positions_profit_loss":null,
+              "settlement_losses":null,
+              "size_on_disk":6793,
+              "start_ts":0,
+              "taxable_trade_profit_loss":null,
+              "timestamp":1637931185,
+              "total_profit_loss":null,
+              "total_taxable_profit_loss":null
+            },
+            {
+              "asset_movement_fees":"0",
+              "defi_profit_loss":"0",
+              "end_ts":1637928988,
+              "ethereum_transaction_gas_costs":"0",
+              "first_processed_timestamp":null,
+              "general_trade_profit_loss":"9.450326",
+              "identifier":3,
+              "ledger_actions_profit_loss":"15.85728944",
+              "loan_profit":"0",
+              "margin_positions_profit_loss":"0",
+              "settlement_losses":"0",
+              "size_on_disk":6793,
+              "start_ts":0,
+              "taxable_trade_profit_loss":"9.450326",
+              "timestamp":1637931305,
+              "total_profit_loss":"25.30761544",
+              "total_taxable_profit_loss":"25.30761544"
+            },
+            {
+              "asset_movement_fees":"0",
+              "defi_profit_loss":"0",
+              "end_ts":1637928988,
+              "ethereum_transaction_gas_costs":"0",
+              "first_processed_timestamp":1598911200,
+              "general_trade_profit_loss":"0",
+              "identifier":4,
+              "ledger_actions_profit_loss":"3.80586544",
+              "loan_profit":"0",
+              "margin_positions_profit_loss":"0",
+              "settlement_losses":"0",
+              "size_on_disk":4498,
+              "start_ts":1630928988,
+              "taxable_trade_profit_loss":"0",
+              "timestamp":1637934538,
+              "total_profit_loss":"3.80586544",
+              "total_taxable_profit_loss":"3.80586544"
+            }
+          ],
+          "entries_found":3,
+          "entries_limit":20
+        },
+        "message":""
+      }
 
    :resjson int identifier: The identifier of the PnL report
    :resjson int start_ts: The end unix timestamp of the PnL report
@@ -7743,19 +7747,28 @@ Getting tracked Eth2 validators
       Content-Type: application/json
 
       {
-        "result": {
-	    entries: [{
-		"index": 1, "public_key": "0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c"}, {
-		"index": 1532, "public_key": "0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed"}, {
-		"index": 5421, "public_key": "0xa64722f93f37c7da8da67ee36fd2a763103897efc274e3accb4cd172382f7a170f064b81552ae77cdbe440208a1b897e"
-	    }],
-	    "entries_found": 3,
-	    "entries_limit": 4
-	},
-        "message": ""
+        "result":{
+          "entries":[
+            {
+              "index":1,
+              "public_key":"0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c"
+            },
+            {
+              "index":1532,
+              "public_key":"0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed"
+            },
+            {
+              "index":5421,
+              "public_key":"0xa64722f93f37c7da8da67ee36fd2a763103897efc274e3accb4cd172382f7a170f064b81552ae77cdbe440208a1b897e"
+            }
+          ],
+          "entries_found":3,
+          "entries_limit":4
+        },
+        "message":""
       }
 
-   :statuscode 200: Eth2 validator detauls succesfully returned.
+   :statuscode 200: Eth2 validator defaults successfully returned.
    :statuscode 409: User is not logged in. Or eth2 module is not activated.
    :statuscode 500: Internal rotki error.
 

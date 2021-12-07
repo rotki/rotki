@@ -727,6 +727,21 @@ If a price cannot be found for an NFT asset or if you want to change the calcula
 ETH2 Staking
 =====================
 
+There are two ways to track ETH2 Staking. The first is by adding tracking the account of an ETH account that deposited
+the ETH for the validator. This will auto-detect any associated validators with the ETH1 address and it will start
+tracking them. The second way is by adding a validator using the add ``(+)`` button in the ``Blockchain Balances`` tab
+under ``Accounts & Balances``.
+
+.. image:: images/rotki_eth2_add_validator.png
+   :alt: Track an ETH2 validator
+   :align: center
+
+After adding a new validator you should be able to see the list of balances for each these validators.
+
+.. image:: images/rotki_eth2_balances.png
+   :alt: ETH2 validator balances
+   :align: center
+
 If you are an ETH2 staker you can see the total value earned both in the current ETH price (2) but also counting the price of the daily payouts of ETH2 staking (3).
 
 .. image:: images/rotki_eth2_staking.png
