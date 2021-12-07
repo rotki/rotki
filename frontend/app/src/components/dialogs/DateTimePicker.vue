@@ -6,7 +6,7 @@
       :close-on-content-click="false"
       transition="scale-transition"
       offset-y
-      max-width="580px"
+      max-width="600px"
       class="date-time-picker"
     >
       <template #activator="{ on }">
@@ -30,16 +30,28 @@
 
       <div class="menu-body">
         <v-date-picker
+          class="rounded-0"
           :value="dateModel"
           :max="maxDate"
           @change="onDateChange($event)"
         />
         <v-time-picker
+          class="rounded-0"
           :value="timeModel"
           :max="maxTime"
           format="24hr"
           :use-seconds="seconds"
           @change="onTimeChange($event)"
+        />
+      </div>
+      <div class="pa-4 pb-0">
+        <v-autocomplete
+          v-model="selectedTimezone"
+          :items="timezones"
+          outlined
+          :rules="timezoneRule"
+          persistent-hint
+          menu-pros="auto"
         />
       </div>
     </v-menu>
@@ -50,9 +62,11 @@
 import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
+import { timezones } from '@/data/timezones';
 import { DateFormat } from '@/types/date-format';
 import {
   changeDateFormat,
+  convertDateByTimezone,
   getDateInputISOFormat,
   isValidDate
 } from '@/utils/date';
@@ -88,6 +102,15 @@ export default class DateTimePicker extends Vue {
 
   dateInputFormat!: DateFormat;
   inputtedDate: string = '';
+  selectedTimezone: string = '';
+
+  get timezones(): string[] {
+    return timezones;
+  }
+
+  readonly timezoneRule = [
+    (v: string) => !!v || this.$t('date_time_picker.timezone_field.non_empty')
+  ];
 
   private dateFormatRule(date: string) {
     let dateFormat: string = getDateInputISOFormat(this.dateInputFormat);
@@ -144,6 +167,7 @@ export default class DateTimePicker extends Vue {
     if (this.timeModel) {
       value += ` ${this.timeModel}`;
     }
+
     this.emitIfValid(value, DateFormat.DateMonthYearHourMinuteSecond);
   }
 
@@ -152,11 +176,17 @@ export default class DateTimePicker extends Vue {
     format: DateFormat = this.dateInputFormat
   ) {
     if (this.isValid(value, format)) {
+      const formattedDate = changeDateFormat(
+        value,
+        format,
+        DateFormat.DateMonthYearHourMinuteSecond
+      );
       this.input(
-        changeDateFormat(
-          value,
-          format,
-          DateFormat.DateMonthYearHourMinuteSecond
+        convertDateByTimezone(
+          formattedDate,
+          DateFormat.DateMonthYearHourMinuteSecond,
+          this.selectedTimezone,
+          dayjs.tz.guess()
         )
       );
     }
@@ -179,7 +209,38 @@ export default class DateTimePicker extends Vue {
     );
   }
 
+  created() {
+    this.setCurrentTimezone();
+  }
+
   mounted() {
+    this.onValueChange(this.value);
+  }
+
+  getDefaultTimezoneName(offset: number) {
+    let hour = offset / 60;
+    if (!Number.isInteger(offset)) hour = 0;
+
+    const isPositive = hour > 0;
+    return `Etc/GMT${isPositive ? '+' : ''}hour`;
+  }
+
+  setCurrentTimezone() {
+    const guessedTimezone = dayjs.tz.guess();
+    const offset = dayjs().utcOffset() / 60;
+
+    // check if guessed timezones exist in our timezones list
+    const isTimezoneExist = this.timezones.filter(
+      timezone => timezone === guessedTimezone
+    );
+
+    this.selectedTimezone = isTimezoneExist
+      ? guessedTimezone
+      : this.getDefaultTimezoneName(offset);
+  }
+
+  @Watch('selectedTimezone')
+  onTimezoneChange() {
     this.onValueChange(this.value);
   }
 
@@ -195,8 +256,14 @@ export default class DateTimePicker extends Vue {
 
   @Watch('value')
   onValueChange(value: string) {
-    this.inputtedDate = changeDateFormat(
+    const changedDateTimezone = convertDateByTimezone(
       value,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      dayjs.tz.guess(),
+      this.selectedTimezone
+    );
+    this.inputtedDate = changeDateFormat(
+      changedDateTimezone,
       DateFormat.DateMonthYearHourMinuteSecond,
       this.dateInputFormat
     );
@@ -205,7 +272,7 @@ export default class DateTimePicker extends Vue {
       this.dateModel = '';
       this.timeModel = '';
     } else if (this.isValid(value, DateFormat.DateMonthYearHourMinuteSecond)) {
-      const [date, time] = value.split(' ');
+      const [date, time] = changedDateTimezone.split(' ');
       const [day, month, year] = date.split('/');
       const formattedDate = `${year}-${month}-${day}`;
       if (formattedDate !== this.dateModel) {

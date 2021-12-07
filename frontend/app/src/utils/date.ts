@@ -60,6 +60,28 @@ export function convertFromTimestamp(
   return time.format(format);
 }
 
+export function convertDateByTimezone(
+  date: string,
+  dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond,
+  fromTimezone: string,
+  toTimezone: string
+): string {
+  if (!date) return date;
+
+  fromTimezone = fromTimezone || dayjs.tz.guess();
+  toTimezone = toTimezone || dayjs.tz.guess();
+
+  let format: string = getDateInputISOFormat(dateFormat);
+  if (date.indexOf(' ') > -1) {
+    format += ' HH:mm';
+    if (date.charAt(date.length - 6) === ':') {
+      format += ':ss';
+    }
+  }
+
+  return dayjs.tz(date, format, fromTimezone).tz(toTimezone).format(format);
+}
+
 export function isValidDate(date: string, dateFormat: string): boolean {
   if (!date) return false;
   return dayjs(date, dateFormat, true).isValid();
