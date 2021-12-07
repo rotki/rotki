@@ -200,6 +200,7 @@ export interface AssetBreakdown {
   readonly location: string;
   readonly balance: Balance;
   readonly address: string;
+  readonly tags: string[] | null;
 }
 
 export interface ERC20Token {

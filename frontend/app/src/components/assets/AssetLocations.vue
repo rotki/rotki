@@ -1,43 +1,56 @@
 <template>
-  <v-card>
-    <v-card-title>
-      <card-title> {{ $t('asset_locations.title') }}</card-title>
-    </v-card-title>
-    <v-card-text>
-      <v-sheet outlined rounded>
-        <data-table
-          :headers="headers"
-          :items="assetLocations"
-          sort-by="balance.amount"
-          :loading="detailsLoading"
-        >
-          <template #item.location="{ item }">
-            <location-display :identifier="item.location" />
-          </template>
-          <template #item.label="{ item }">
-            <labeled-address-display
-              v-if="item.address"
-              :account="account(item.address)"
+  <card>
+    <template #title>
+      {{ $t('asset_locations.title') }}
+    </template>
+    <template #actions>
+      <v-row no-gutters justify="end">
+        <v-col cols="12" md="6" lg="4">
+          <tag-filter v-model="onlyTags" />
+        </v-col>
+      </v-row>
+    </template>
+    <data-table
+      :headers="headers"
+      :items="visibleAssetLocations"
+      sort-by="balance.amount"
+      :loading="detailsLoading"
+    >
+      <template #item.location="{ item }">
+        <location-display :identifier="item.location" />
+      </template>
+      <template #item.label="{ item }">
+        <labeled-address-display
+          v-if="item.address"
+          :account="account(item.address)"
+        />
+        <span v-if="item.tags" class="mt-2 flex-row d-flex align-center">
+          <span v-if="item.tags.length > 0">
+            <tag-icon
+              v-for="tag in item.tags"
+              :key="tag"
+              class="asset-locations-table__tag"
+              :tag="tags[tag]"
             />
-          </template>
-          <template #item.balance.amount="{ item }">
-            <amount-display :value="item.balance.amount" />
-          </template>
-          <template #item.balance.usdValue="{ item }">
-            <amount-display
-              :fiat-currency="identifier"
-              :amount="item.balance.amount"
-              :value="item.balance.usdValue"
-              show-currency="symbol"
-            />
-          </template>
-          <template #item.percentage="{ item }">
-            <percentage-display :value="getPercentage(item.balance.usdValue)" />
-          </template>
-        </data-table>
-      </v-sheet>
-    </v-card-text>
-  </v-card>
+          </span>
+        </span>
+      </template>
+      <template #item.balance.amount="{ item }">
+        <amount-display :value="item.balance.amount" />
+      </template>
+      <template #item.balance.usdValue="{ item }">
+        <amount-display
+          :fiat-currency="identifier"
+          :amount="item.balance.amount"
+          :value="item.balance.usdValue"
+          show-currency="symbol"
+        />
+      </template>
+      <template #item.percentage="{ item }">
+        <percentage-display :value="getPercentage(item.balance.usdValue)" />
+      </template>
+    </data-table>
+  </card>
 </template>
 
 <script lang="ts">
@@ -45,19 +58,29 @@ import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
+import TagFilter from '@/components/inputs/TagFilter.vue';
+import TagIcon from '@/components/tags/TagIcon.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { AssetBreakdown, AssetPriceInfo } from '@/store/balances/types';
+import { Tags } from '@/types/user';
 
 @Component({
-  components: { DataTable, LabeledAddressDisplay, CardTitle },
+  components: {
+    DataTable,
+    LabeledAddressDisplay,
+    CardTitle,
+    TagIcon,
+    TagFilter
+  },
   computed: {
     ...mapGetters('balances', ['breakdown', 'account', 'assetPriceInfo']),
     ...mapGetters('session', ['currencySymbol']),
-    ...mapGetters(['detailsLoading'])
+    ...mapGetters(['detailsLoading']),
+    ...mapState('session', ['tags'])
   }
 })
 export default class AssetLocations extends Vue {
@@ -102,6 +125,8 @@ export default class AssetLocations extends Vue {
   currencySymbol!: string;
   detailsLoading!: boolean;
   assetPriceInfo!: (asset: string) => AssetPriceInfo;
+  tags!: Tags;
+  onlyTags: string[] = [];
 
   get totalUsdValue(): BigNumber {
     return this.assetPriceInfo(this.identifier).usdValue;
@@ -114,8 +139,22 @@ export default class AssetLocations extends Vue {
     }));
   }
 
+  get visibleAssetLocations(): (AssetBreakdown & { readonly label: string })[] {
+    if (this.onlyTags.length === 0) {
+      return this.assetLocations;
+    }
+    return this.assetLocations.filter(assetLocation => {
+      if (assetLocation.tags) {
+        return this.onlyTags.every(tag => assetLocation.tags?.includes(tag));
+      }
+    });
+  }
+
   getPercentage(usdValue: BigNumber): string {
-    return usdValue.div(this.totalUsdValue).multipliedBy(100).toFixed(2);
+    const percentage = this.totalUsdValue.isZero()
+      ? 0
+      : usdValue.div(this.totalUsdValue).multipliedBy(100);
+    return percentage.toFixed(2);
   }
 }
 </script>
@@ -128,6 +167,13 @@ export default class AssetLocations extends Vue {
         padding-left: 16px;
       }
     }
+  }
+}
+
+.asset-locations-table {
+  &__tag {
+    margin-right: 8px;
+    margin-bottom: 2px;
   }
 }
 </style>
