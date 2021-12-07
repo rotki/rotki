@@ -5,20 +5,15 @@ from web3 import HTTPProvider, Web3
 from web3.datastructures import MutableAttributeDict
 from web3.exceptions import BadFunctionCallOutput
 
+from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.errors import (
-    BlockchainQueryError,
-    DeserializationError,
-    RemoteError,
-)
+from rotkehlchen.errors import BlockchainQueryError, DeserializationError, RemoteError
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

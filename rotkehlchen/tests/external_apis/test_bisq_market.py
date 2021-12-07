@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.constants.assets import A_BSQ, A_3CRV
+from rotkehlchen.constants.assets import A_3CRV, A_BSQ
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.bisq_market import get_bisq_market_price

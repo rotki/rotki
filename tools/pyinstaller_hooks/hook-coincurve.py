@@ -1,5 +1,6 @@
 import os
-from PyInstaller.utils.hooks import get_module_file_attribute, collect_dynamic_libs
+
+from PyInstaller.utils.hooks import collect_dynamic_libs, get_module_file_attribute
 
 binaries = []
 if os.name == 'nt':

@@ -14,8 +14,8 @@ from rotkehlchen.constants import CURRENCYCONVERTER_API_KEY, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
     A_ALINK_V1,
-    A_BTC,
     A_BSQ,
+    A_BTC,
     A_CRV_3CRV,
     A_CRV_3CRVSUSD,
     A_CRV_GUSD,
@@ -64,11 +64,11 @@ from rotkehlchen.errors import (
     UnableToDecryptRemoteData,
     UnknownAsset,
 )
+from rotkehlchen.externalapis.bisq_market import get_bisq_market_price
 from rotkehlchen.externalapis.xratescom import (
     get_current_xratescom_exchange_rates,
     get_historical_xratescom_exchange_rates,
 )
-from rotkehlchen.externalapis.bisq_market import get_bisq_market_price
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle

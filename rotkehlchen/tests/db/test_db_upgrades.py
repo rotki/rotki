@@ -29,12 +29,13 @@ from rotkehlchen.db.upgrades.v7_v8 import (
 from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.tests.utils.database import (
+    _init_prepared_db,
+    _use_prepared_db,
     mock_dbhandler_add_globaldb_assetids,
     mock_dbhandler_ensura_data_integrity,
     mock_dbhandler_update_owned_assets,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.tests.utils.database import _init_prepared_db, _use_prepared_db
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 

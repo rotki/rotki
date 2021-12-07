@@ -11,9 +11,9 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
 from rotkehlchen.assets.utils import add_ethereum_token_to_db
 from rotkehlchen.chain.ethereum.graph import (
-    SUBGRAPH_REMOTE_ERROR_MSG,
     GRAPH_QUERY_LIMIT,
     GRAPH_QUERY_SKIP_LIMIT,
+    SUBGRAPH_REMOTE_ERROR_MSG,
     Graph,
     format_query_indentation,
 )

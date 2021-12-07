@@ -6,8 +6,8 @@ from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_simple_ok_response
 from rotkehlchen.tests.utils.exchanges import (
-    mock_exchange_data_in_db,
     check_saved_events_for_exchange,
+    mock_exchange_data_in_db,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.typing import EthereumTransaction, Location

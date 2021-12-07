@@ -57,6 +57,15 @@ For an exhaustive guide read `this <http://chris.beams.io/posts/git-commit/>`_ g
 
 When pushing on a PR the tags ``[skip ci]`` or ``[ci skip]`` can be used a part of the commit message to skip the run of all the CI jobs (lint, test etc).
 
+Linting / Formatting
+=======================
+
+Make sure to run ``make lint`` before pushing your commit. This runs isort, flake8, mypy and pylint on the code to make sure that formatting rules and common mistakes are not committed in the code.
+
+Set your editor up to use isort as seen in the Makefile (format command) before saving each file.
+
+You can also bulk apply formatting changes to all files by running ``make format``
+
 Where to make changes
 ============================
 

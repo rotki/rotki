@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_ETH, A_EUR, A_BTC
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.exchanges.binance import (
@@ -43,16 +43,14 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
-    AssetMovementCategory,
-    Location,
     AssetAmount,
+    AssetMovementCategory,
     Fee,
+    Location,
     Price,
     Timestamp,
     TradeType,
 )
-
-
 from rotkehlchen.user_messages import MessagesAggregator
 
 POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{

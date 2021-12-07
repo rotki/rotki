@@ -5,8 +5,8 @@ from typing import Any, Dict, List
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.accounting.structures import BalanceType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.resolver import strethaddress_to_identifier

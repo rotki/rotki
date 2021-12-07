@@ -1,5 +1,5 @@
-import os
 import glob
+import os
 
 from PyInstaller.compat import EXTENSION_SUFFIXES
 from PyInstaller.utils.hooks import get_module_file_attribute
