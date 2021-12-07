@@ -1791,7 +1791,21 @@
   },
   "user_dropdown": {
     "settings": "Settings",
-    "toggle_privacy": "Toggle Privacy Mode",
+    "change_privacy_mode": {
+      "label": "Change Privacy Mode",
+      "normal_mode": {
+        "label": "Normal",
+        "description": "Show both amount and percentage"
+      },
+      "semi_private_mode": {
+        "label": "Semi Private",
+        "description": "Hide amount and show percentage"
+      },
+      "private_mode": {
+        "label": "Private",
+        "description": "Hide amount and percentage"
+      }
+    },
     "logout": "Logout",
     "confirmation": {
       "message": "Are you sure you want to log out of your current rotki session?",

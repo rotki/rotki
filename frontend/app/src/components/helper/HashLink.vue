@@ -1,13 +1,16 @@
 ﻿<template>
   <div class="d-flex flex-row shrink align-center">
     <span v-if="!linkOnly & !buttons">
-      <span v-if="fullAddress" :class="privacyMode ? 'blur-content' : null">
+      <span
+        v-if="fullAddress"
+        :class="!shouldShowAmount ? 'blur-content' : null"
+      >
         {{ displayText }}
       </span>
       <v-tooltip v-else top open-delay="400">
         <template #activator="{ on, attrs }">
           <span
-            :class="privacyMode ? 'blur-content' : null"
+            :class="!shouldShowAmount ? 'blur-content' : null"
             v-bind="attrs"
             v-on="on"
           >
@@ -64,7 +67,7 @@
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import { mapGetters, mapState } from 'vuex';
 import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
@@ -74,7 +77,7 @@ import { randomHex } from '@/utils/data';
 
 @Component({
   computed: {
-    ...mapState('session', ['privacyMode']),
+    ...mapGetters('session', ['shouldShowAmount']),
     ...mapState('settings', ['explorers'])
   }
 })
@@ -108,7 +111,7 @@ export default class HashLink extends Mixins(ScrambleMixin, ThemeMixin) {
     return randomHex(length);
   }
 
-  privacyMode!: boolean;
+  shouldShowAmount!: boolean;
   explorers!: ExplorersSettings;
 
   get base(): string {

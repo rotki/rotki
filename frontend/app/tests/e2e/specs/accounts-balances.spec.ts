@@ -199,22 +199,29 @@ describe('Accounts', () => {
           );
         });
       });
-      page.visit();
     });
 
     it('test privacy mode is off', () => {
-      manualBalancesPage.visit();
-      manualBalancesPage.amountDisplayIsNotBlurred();
+      dashboardPage.amountDisplayIsNotBlurred();
+      dashboardPage.percentageDisplayIsNotBlurred();
     });
 
-    it('test privacy mode is on', () => {
-      manualBalancesPage.visit();
-      app.togglePrivacyMode();
-      manualBalancesPage.amountDisplayIsBlurred();
-      app.togglePrivacyMode();
+    it('test privacy mode is semi private', () => {
+      app.changePrivacyMode(1);
+      dashboardPage.amountDisplayIsBlurred();
+      dashboardPage.percentageDisplayIsNotBlurred();
+      app.changePrivacyMode(0);
+    });
+
+    it('test privacy mode is private', () => {
+      app.changePrivacyMode(2);
+      dashboardPage.amountDisplayIsBlurred();
+      dashboardPage.percentageDisplayIsBlurred();
+      app.changePrivacyMode(0);
     });
 
     it('test scramble mode', () => {
+      page.visit();
       manualBalancesPage.visit();
       manualBalancesPage.balanceShouldMatch(manualBalances);
 

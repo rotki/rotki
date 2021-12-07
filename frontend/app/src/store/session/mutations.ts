@@ -30,7 +30,7 @@ export const mutations: MutationTree<SessionState> = {
   generalSettings(state: SessionState, settings: GeneralSettings) {
     state.generalSettings = Object.assign(state.generalSettings, settings);
   },
-  privacyMode(state: SessionState, privacyMode: boolean) {
+  privacyMode(state: SessionState, privacyMode: number) {
     state.privacyMode = privacyMode;
   },
   scrambleData(state: SessionState, scrambleData: boolean) {

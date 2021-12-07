@@ -2,7 +2,7 @@
   <div
     class="amount-display"
     :class="{
-      'blur-content': privacyMode,
+      'blur-content': !shouldShowAmount,
       'amount-display--profit': pnl && value.gt(0),
       'amount-display--loss': pnl && value.lt(0)
     }"
@@ -90,7 +90,8 @@ type ShownCurrency = 'none' | 'ticker' | 'symbol' | 'name';
       'currencyLocation'
     ]),
     ...mapState('settings', [AMOUNT_ROUNDING_MODE, VALUE_ROUNDING_MODE]),
-    ...mapState('session', ['privacyMode', 'scrambleData']),
+    ...mapState('session', ['scrambleData']),
+    ...mapGetters('session', ['shouldShowAmount']),
     ...mapGetters('balances', ['exchangeRate'])
   }
 })
@@ -130,7 +131,7 @@ export default class AmountDisplay extends Mixins(AssetMixin) {
   tooltip!: boolean;
 
   currency!: Currency;
-  privacyMode!: boolean;
+  shouldShowAmount!: boolean;
   scrambleData!: boolean;
   floatingPrecision!: number;
   thousandSeparator!: string;

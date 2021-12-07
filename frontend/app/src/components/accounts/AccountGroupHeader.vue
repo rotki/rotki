@@ -27,7 +27,7 @@
         <span class="font-weight-medium">
           {{ $t('account_group_header.xpub') }}
         </span>
-        <span :style="privacyStyle">
+        <span :style="amountPrivacyStyle">
           <v-tooltip top open-delay="400">
             <template #activator="{ on }">
               <span v-on="on">{{ displayXpub }}</span>
@@ -39,7 +39,7 @@
           :value="xpub.xpub"
           :tooltip="$t('account_group_header.copy_tooltip')"
         />
-        <span v-if="xpub.derivationPath" :style="privacyStyle">
+        <span v-if="xpub.derivationPath" :style="amountPrivacyStyle">
           <span class="font-weight-medium">
             {{ $t('account_group_header.derivation_path') }}
           </span>
