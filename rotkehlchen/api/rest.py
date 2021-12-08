@@ -3848,3 +3848,11 @@ class RestAPI():
         }
         result_dict = _wrap_in_result(result, '')
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def get_associated_locations(self) -> Response:
+        locations = self.rotkehlchen.data.db.get_associated_locations()
+        return api_response(
+            result=_wrap_in_ok_result([str(location) for location in locations]),
+            status_code=HTTPStatus.OK,
+        )

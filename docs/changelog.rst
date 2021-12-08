@@ -8,6 +8,7 @@ Changelog
 * :feature:`3497` Users will now be able to add ETH2 validators via index or public key.
 * :feature:`3725` Users can now see if any of their addresses have SDL available to claim from the SDL airdrop.
 * :feature:`3549` Users will now be able to select whether to include or not NFT total value in total net worth and graphs.
+* :bug:`-` Deposits and withdrawals in files from cointracking will now be correctly registered.
 
 * :release:`1.22.2 <2021-11-30>`
 * :feature:`-` rotki will now detect locked SRM balances in FTX.

@@ -10005,3 +10005,29 @@ Downloading a database backup
    :statuscode 400: The given filepath does not exist
    :statuscode 409: No user is currently logged in or failure to download the backup or the requested file to download is not in the user's data directory.
    :statuscode 500: Internal rotki error.
+
+Get associated locations
+========================
+
+.. http:get:: /api/(version)/locations/associated
+   Doing a GET on this endpoint will return a list of locations where the user has information. It contains locations imported in CSV, exchanges and DeFi locations.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+      GET /api/1/locations/associated HTTP/1.1
+      Host: localhost:5042
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {'result': ['nexo', 'kraken', 'uniswap'], 'message': ''}
+
+   :statuscode 200: Locations succesfully queried.
+   :statuscode 409: User is not logged in. Check error message for details.
+   :statuscode 500: Internal Rotki error

@@ -60,8 +60,7 @@ def exchange_row_to_location(entry: str) -> Location:
         return Location.BITMEX
     if entry == 'Coinbase':
         return Location.COINBASE
-    # TODO: Check if this is the correct string for CoinbasePro from cointracking
-    if entry == 'CoinbasePro':
+    if entry in ('CoinbasePro', 'GDAX'):
         return Location.COINBASEPRO
     # TODO: Check if this is the correct string for Gemini from cointracking
     if entry == 'Gemini':
@@ -84,10 +83,7 @@ def exchange_row_to_location(entry: str) -> Location:
             'export enough data for them. Simply enter your BTC accounts and all '
             'your transactions will be auto imported directly from the chain',
         )
-
-    raise UnsupportedCSVEntry(
-        f'Unknown Exchange "{entry}" encountered during a cointracking import. Ignoring it',
-    )
+    return Location.EXTERNAL
 
 
 class DataImporter():
@@ -112,8 +108,10 @@ class DataImporter():
             formatstr=formatstr if formatstr is not None else '%d.%m.%Y %H:%M:%S',
             location='cointracking.info',
         )
-        notes = csv_row['Comment']
         location = exchange_row_to_location(csv_row['Exchange'])
+        notes = csv_row['Comment']
+        if location == Location.EXTERNAL:
+            notes += f'. Data from -{csv_row["Exchange"]}- not known by rotki.'
 
         fee = Fee(ZERO)
         fee_currency = A_USD  # whatever (used only if there is no fee)
@@ -213,7 +211,6 @@ class DataImporter():
                     continue
                 except KeyError as e:
                     return False, str(e)
-
         return True, ''
 
     def _consume_cryptocom_entry(self, csv_row: Dict[str, Any], **kwargs: Any) -> None:

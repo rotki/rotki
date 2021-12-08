@@ -3457,3 +3457,25 @@ class DBHandler:
             new_db_path,
         )
         return new_db_path
+
+    def get_associated_locations(self) -> Set[Location]:
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'SELECT location FROM trades UNION '
+            'SELECT location FROM asset_movements UNION '
+            'SELECT location FROM ledger_actions UNION '
+            'SELECT location FROM margin_positions UNION '
+            'SELECT location FROM user_credentials UNION '
+            'SELECT location FROM amm_swaps',
+        )
+        locations = {Location.deserialize_from_db(loc[0]) for loc in cursor}
+        cursor.execute('SELECT DISTINCT type FROM amm_events')
+        for event_type in cursor:
+            if EventType.deserialize_from_db(event_type[0]) in (EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP):  # noqa: E501
+                locations.add(Location.SUSHISWAP)
+            else:
+                locations.add(Location.UNISWAP)
+        cursor.execute('SELECT COUNT(*) FROM balancer_events')
+        if cursor.fetchone()[0] >= 1:
+            locations.add(Location.BALANCER)
+        return locations

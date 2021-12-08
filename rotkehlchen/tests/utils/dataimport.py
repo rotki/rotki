@@ -68,7 +68,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes='Just a small gift from someone',
+        notes='Just a small gift from someone. Data from -no exchange- not known by rotki.',
     ), Trade(
         timestamp=Timestamp(1567504805),
         location=Location.EXTERNAL,
@@ -80,7 +80,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         fee_currency=A_USD,
         link='',
-        notes='Sign up bonus',
+        notes='Sign up bonus. Data from -no exchange- not known by rotki.',
     )]
     assert expected_trades == trades
 
