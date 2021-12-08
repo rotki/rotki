@@ -1,5 +1,5 @@
 <template>
-  <card outlined-body>
+  <card outlined-body :flat="flat">
     <template #title>
       {{ $t('profit_loss_overview.title') }}
     </template>
@@ -108,23 +108,25 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
-import { storeToRefs } from 'pinia';
+import { defineComponent, PropType } from '@vue/composition-api';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { useReports } from '@/store/reports';
+import { ProfitLossOverview } from '@/types/reports';
 
 export default defineComponent({
   name: 'ProfitLossOverview',
   components: {
     AmountDisplay
   },
-  setup() {
-    const reportsStore = useReports();
-    const { report } = storeToRefs(reportsStore);
-    const overview = computed(() => report.value.overview);
-    return {
-      overview
-    };
+  props: {
+    overview: {
+      required: true,
+      type: Object as PropType<ProfitLossOverview>
+    },
+    flat: {
+      required: false,
+      type: Boolean,
+      default: false
+    }
   }
 });
 </script>

@@ -3,11 +3,12 @@
     <template #title>{{ $t('profit_loss_events.title') }}</template>
     <data-table
       :headers="tableHeaders"
-      :items="indexedEvents"
+      :items="items"
       single-expand
       class="profit-loss-events__table"
       :expanded.sync="expanded"
-      item-key="index"
+      :server-items-length="itemLength"
+      :options.sync="options"
       sort-by="time"
     >
       <template #item.type="{ item }">
@@ -87,8 +88,8 @@
       <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
         <upgrade-row
           events
-          :total="processed"
-          :limit="limit"
+          :total="report.entriesFound"
+          :limit="report.entriesLimit"
           :colspan="headers.length"
           :label="$t('profit_loss_events.title')"
         />
@@ -105,7 +106,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from '@vue/composition-api';
+import { computed, defineComponent, ref, watch } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -192,6 +193,13 @@ const getHeaders: () => DataTableHeader[] = () => [
   }
 ];
 
+type PaginationOptions = {
+  page: number;
+  itemsPerPage: number;
+  sortBy: any[];
+  sortDesc: boolean[];
+};
+
 export default defineComponent({
   components: {
     DataTable,
@@ -204,23 +212,47 @@ export default defineComponent({
   },
   setup() {
     const reportsStore = useReports();
-    const { report, showUpgradeMessage, processed, limit } =
-      storeToRefs(reportsStore);
+    const { report } = storeToRefs(reportsStore);
+    const options = ref<PaginationOptions | null>(null);
     const expanded = ref([]);
 
-    const indexedEvents = computed(() => {
-      return report.value.events.map((value, index) => ({
+    const items = computed(() => {
+      return report.value.entries.map((value, index) => ({
         ...value,
         id: index
       }));
     });
+
+    const itemLength = computed(() => {
+      const { entriesFound, entriesLimit } = report.value;
+      if (entriesLimit > 0 && entriesLimit <= entriesFound) {
+        return entriesLimit;
+      }
+      return entriesFound;
+    });
+
+    const showUpgradeMessage = computed(
+      () =>
+        report.value.entriesLimit > 0 &&
+        report.value.entriesLimit < report.value.entriesFound
+    );
+
+    const updatePagination = (options: PaginationOptions | null) => {
+      if (!options) {
+        return;
+      }
+      console.log(options);
+    };
+
+    watch(options, updatePagination);
     return {
       currency: 'USD',
-      processed,
-      limit,
-      indexedEvents,
-      showUpgradeMessage,
+      report,
+      items,
+      itemLength,
+      options,
       expanded,
+      showUpgradeMessage,
       tableHeaders: getHeaders()
     };
   }

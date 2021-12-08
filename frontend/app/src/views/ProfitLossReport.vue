@@ -9,6 +9,7 @@
       :title="$t('profit_loss_report.error.title')"
       :subtitle="$t('profit_loss_report.error.subtitle')"
     />
+    <reports-table v-show="!isRunning" class="mt-8" />
     <div v-if="loaded && !isRunning && !reportError.message">
       <v-row>
         <v-col>
@@ -20,44 +21,46 @@
             <template #start>
               <date-display
                 no-timezone
-                :timestamp="reportPeriod.start"
+                :timestamp="report.start"
                 class="font-weight-medium"
               />
             </template>
             <template #end>
               <date-display
                 no-timezone
-                :timestamp="reportPeriod.end"
+                :timestamp="report.end"
                 class="font-weight-medium"
               />
             </template>
           </i18n>
         </v-col>
       </v-row>
-      <v-card v-if="showUpgradeMessage" class="mt-4 mb-8">
-        <v-card-text class="text-subtitle-1">
-          <i18n tag="div" path="profit_loss_report.upgrade">
-            <template #processed>
-              <span class="font-weight-medium">{{ processed }}</span>
-            </template>
-            <template #start>
-              <date-display
-                :timestamp="firstProcessedTimestamp"
-                class="font-weight-medium"
-                no-timezone
-              />
-            </template>
-          </i18n>
-          <i18n tag="div" path="profit_loss_report.upgrade2">
-            <template #link>
-              <base-external-link
-                :text="$t('upgrade_row.rotki_premium')"
-                :href="$interop.premiumURL"
-              />
-            </template>
-          </i18n>
-        </v-card-text>
-      </v-card>
+      <card v-if="showUpgradeMessage" class="mt-4 mb-8">
+        <i18n
+          tag="div"
+          path="profit_loss_report.upgrade"
+          class="text-subtitle-1"
+        >
+          <template #processed>
+            <span class="font-weight-medium">{{ report.entriesFound }}</span>
+          </template>
+          <template #start>
+            <date-display
+              :timestamp="report.firstProcessedTimestamp"
+              class="font-weight-medium"
+              no-timezone
+            />
+          </template>
+        </i18n>
+        <i18n tag="div" path="profit_loss_report.upgrade2">
+          <template #link>
+            <base-external-link
+              :text="$t('upgrade_row.rotki_premium')"
+              :href="$interop.premiumURL"
+            />
+          </template>
+        </i18n>
+      </card>
       <accounting-settings-display
         :accounting-settings="accountingSettings"
         class="mt-4"
@@ -74,10 +77,9 @@
             : $t('profit_loss_report.download_csv')
         }}
       </v-btn>
-      <profit-loss-overview class="mt-8" />
+      <profit-loss-overview class="mt-8" :overview="report.overview" />
       <profit-loss-events class="mt-8" />
     </div>
-    <reports-table v-show="!isRunning" class="mt-8" />
     <progress-screen v-if="isRunning" :progress="progress">
       <template #message>
         <div v-if="processingState" class="medium text-h6 mb-4">
@@ -125,17 +127,9 @@ export default defineComponent({
   setup() {
     const { isTaskRunning } = setupTaskStatus();
     const reportsStore = useReports();
-    const {
-      processingState,
-      processed,
-      progress,
-      reportError,
-      reportPeriod,
-      loaded,
-      showUpgradeMessage
-    } = storeToRefs(reportsStore);
+    const { reportError, report } = storeToRefs(reportsStore);
     const { generateReport, createCsv } = reportsStore;
-    const isRunning = computed(() => isTaskRunning(TaskType.TRADE_HISTORY));
+    const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
     const store = useStore();
 
     const showMessage = (description: string) => {
@@ -164,21 +158,26 @@ export default defineComponent({
           }
         }
       } catch (e: any) {
-        const description = e.message;
-        showMessage(description);
+        showMessage(e.message);
       }
     };
+
+    const showUpgradeMessage = computed(
+      () =>
+        report.value.entriesLimit > 0 &&
+        report.value.entriesLimit < report.value.entriesFound
+    );
+
     return {
-      processingState,
-      progress,
-      reportError,
-      reportPeriod,
-      loaded,
-      processed,
+      processingState: computed(() => reportsStore.processingState),
+      progress: computed(() => reportsStore.progress),
+      loaded: computed(() => reportsStore.loaded),
+      isRunning,
+      report,
       showUpgradeMessage,
+      reportError,
       generateReport,
-      exportCSV,
-      isRunning
+      exportCSV
     };
   }
 });

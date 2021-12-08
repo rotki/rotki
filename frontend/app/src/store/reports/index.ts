@@ -3,44 +3,56 @@ import { defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { userNotify } from '@/store/notifications/utils';
-import {
-  emptyError,
-  emptyPeriod,
-  tradeHistoryPlaceholder
-} from '@/store/reports/const';
-import { ReportData } from '@/store/reports/types';
+import { emptyError, pnlOverview } from '@/store/reports/const';
 import store from '@/store/store';
 import { Message } from '@/store/types';
-import { ProfitLossPeriod } from '@/types/pnl';
-import { ReportsPayloadData, TradeHistory } from '@/types/reports';
+import {
+  ProfitLossEvents,
+  ProfitLossReportPeriod,
+  Reports,
+  SelectedReport
+} from '@/types/reports';
 import { createTask, taskCompletion, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { AccountingSettings } from '@/types/user';
+import { assert } from '@/utils/assertions';
 import { logger } from '@/utils/logging';
 
-export const useReports = defineStore('reports', () => {
-  const report: Ref<ReportData> = ref({
-    overview: tradeHistoryPlaceholder(),
-    events: [],
-    limit: -1,
-    processed: -1,
-    firstProcessedTimestamp: -1
+const notify = async (info: {
+  title: string;
+  message: (value: { message: string }) => string;
+  error?: any;
+}) => {
+  logger.error(info.error);
+  const message = info.error?.message ?? info.error ?? '';
+  await userNotify({
+    title: info.title,
+    message: info.message({ message }),
+    display: true
   });
+};
 
-  const reports = ref<ReportsPayloadData>({
+export const useReports = defineStore('reports', () => {
+  const report = ref({
+    overview: pnlOverview(),
+    entries: [] as ProfitLossEvents,
+    entriesLimit: 0,
+    entriesFound: 0,
+    start: 0,
+    end: 0,
+    firstProcessedTimestamp: 0
+  }) as Ref<SelectedReport>;
+
+  const reports = ref<Reports>({
     entries: [],
     entriesLimit: 0,
     entriesFound: 0
-  });
+  }) as Ref<Reports>;
 
   const accountingSettings = ref<AccountingSettings | null>(null);
-  const reportPeriod = ref(emptyPeriod());
   const loaded = ref(false);
   const reportProgress = ref({ processingState: '', totalProgress: '' });
   const reportError = ref(emptyError());
-  const showUpgradeMessage = computed(
-    () => report.value.limit > 0 && report.value.limit < report.value.processed
-  );
 
   const createCsv = async (path: string) => {
     let message: Message;
@@ -64,17 +76,6 @@ export const useReports = defineStore('reports', () => {
   };
 
   const deleteReport = async (reportId: number) => {
-    const notify = async (error?: any) => {
-      logger.error(error);
-      const message = error?.message ?? error ?? '';
-      await userNotify({
-        title: i18n.t('actions.reports.delete.error.title').toString(),
-        message: i18n
-          .t('actions.reports.delete.error.description', { message })
-          .toString(),
-        display: true
-      });
-    };
     try {
       await api.reports.deleteReport(reportId);
       const remainingReports = reports.value.entries.filter(
@@ -86,66 +87,73 @@ export const useReports = defineStore('reports', () => {
         entriesLimit: reports.value.entriesLimit
       };
     } catch (e: any) {
-      await notify(e);
+      await notify({
+        title: i18n.t('actions.reports.delete.error.title').toString(),
+        message: values =>
+          i18n.t('actions.reports.delete.error.description', values).toString(),
+        error: e
+      });
     }
   };
 
-  const fetchReport = async (reportId: number) => {
-    const notify = async (error?: any) => {
-      logger.error(error);
-      const message = error?.message ?? error ?? '';
-      await userNotify({
-        title: i18n.t('actions.reports.fetch.error.title').toString(),
-        message: i18n
-          .t('actions.reports.fetch.error.description', { message })
-          .toString(),
-        display: true
-      });
-    };
-    try {
-      const overviewResult = await api.reports.fetchReportOverview(reportId);
-      const overview = overviewResult.entries[0];
-      const eventsResult = await api.reports.fetchReportEvents(reportId);
-      const targetReport = reports.value.entries.filter(
-        x => x.identifier === reportId
-      )[0];
-      const startTs = targetReport.startTs;
-      const endTs = targetReport.endTs;
-      reportPeriod.value = { start: startTs, end: endTs };
-      const firstProcessedTimestamp = eventsResult.entries[0].time;
+  const fetchReport = async (
+    reportId: number,
+    page?: { limit: number; offset: number }
+  ) => {
+    const itemsPerPage = store.state.settings!.itemsPerPage;
+    const currentPage = page ?? { limit: itemsPerPage, offset: 0 };
 
+    try {
+      const selectedReport = reports.value.entries.find(
+        value => value.identifier === reportId
+      );
+
+      assert(selectedReport);
+      const {
+        sizeOnDisk,
+        startTs,
+        endTs,
+        identifier,
+        timestamp,
+        firstProcessedTimestamp,
+        ...overview
+      } = selectedReport;
+
+      const reportEntries = await api.reports.fetchReportEvents(
+        reportId,
+        currentPage
+      );
       report.value = {
-        overview: overview,
-        events: eventsResult.entries,
-        limit: eventsResult.entriesLimit,
-        processed: eventsResult.entriesFound,
+        overview,
+        ...reportEntries,
+        start: startTs,
+        end: endTs,
         firstProcessedTimestamp
       };
     } catch (e: any) {
-      await notify(e);
+      await notify({
+        title: i18n.t('actions.reports.fetch.error.title').toString(),
+        message: value =>
+          i18n.t('actions.reports.fetch.error.description', value).toString(),
+        error: e
+      });
     }
   };
 
   const fetchReports = async () => {
-    const notify = async (error?: any) => {
-      logger.error(error);
-      const message = error?.message ?? error ?? '';
-      await userNotify({
-        title: i18n.t('actions.reports.fetch.error.title').toString(),
-        message: i18n
-          .t('actions.reports.fetch.error.description', { message })
-          .toString(),
-        display: true
-      });
-    };
     try {
       reports.value = await api.reports.fetchReports();
     } catch (e: any) {
-      await notify(e);
+      await notify({
+        title: i18n.t('actions.reports.fetch.error.title').toString(),
+        message: value =>
+          i18n.t('actions.reports.fetch.error.description', value).toString(),
+        error: e
+      });
     }
   };
 
-  const generateReport = async (period: ProfitLossPeriod) => {
+  const generateReport = async (period: ProfitLossReportPeriod) => {
     reportProgress.value = {
       processingState: '',
       totalProgress: '0'
@@ -157,9 +165,7 @@ export const useReports = defineStore('reports', () => {
     }, 2000);
 
     try {
-      const { start, end } = period;
-      const { taskId } = await api.processTradeHistoryAsync(start, end);
-      reportPeriod.value = period;
+      const { taskId } = await api.reports.generateReport(period);
       const task = createTask(taskId, TaskType.TRADE_HISTORY, {
         title: i18n.t('actions.reports.generate.task.title').toString(),
         numericKeys: [],
@@ -167,54 +173,20 @@ export const useReports = defineStore('reports', () => {
       });
       store.commit('tasks/add', task, { root: true });
 
-      const { result } = await taskCompletion<TradeHistory, TaskMeta>(
+      const { result } = await taskCompletion<boolean, TaskMeta>(
         TaskType.TRADE_HISTORY
       );
 
       if (result) {
-        const notify = async (error?: any) => {
-          logger.error(error);
-          const message = error?.message ?? error ?? '';
-          await userNotify({
-            title: i18n.t('actions.reports.fetch.error.title').toString(),
-            message: i18n
-              .t('actions.reports.fetch.error.description', { message })
-              .toString(),
-            display: true
-          });
-        };
-        try {
-          reports.value = await api.reports.fetchReports();
-        } catch (e: any) {
-          await notify(e);
-        }
-      }
-
-      if (!result || !result.overview || !result.allEvents) {
+        await fetchReports();
+      } else {
         reportError.value = {
           error: '',
           message: i18n
             .t('actions.reports.generate.error.description', { error: '' })
             .toString()
         };
-        return;
       }
-
-      const {
-        overview,
-        allEvents,
-        eventsLimit,
-        eventsProcessed,
-        firstProcessedTimestamp
-      } = result;
-
-      report.value = {
-        overview: overview,
-        events: allEvents,
-        limit: eventsLimit,
-        processed: eventsProcessed,
-        firstProcessedTimestamp
-      };
     } catch (e: any) {
       reportError.value = {
         error: e.message,
@@ -232,21 +204,15 @@ export const useReports = defineStore('reports', () => {
 
   const progress = computed(() => reportProgress.value.totalProgress);
   const processingState = computed(() => reportProgress.value.processingState);
-  const processed = computed(() => report.value.processed);
-  const limit = computed(() => report.value.limit);
 
   return {
     reports,
     report,
     accountingSettings,
-    reportPeriod,
     loaded,
     progress,
     processingState,
     reportError,
-    showUpgradeMessage,
-    processed,
-    limit,
     createCsv,
     generateReport,
     deleteReport,

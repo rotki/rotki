@@ -54,13 +54,7 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  inject,
-  reactive,
-  Ref,
-  ref
-} from '@vue/composition-api';
+import { defineComponent, reactive, Ref, ref } from '@vue/composition-api';
 import { Store } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceForm from '@/components/price-manager/PriceFrom.vue';
@@ -69,8 +63,8 @@ import i18n from '@/i18n';
 import { HistoricalPrice } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
 import { Message, RotkehlchenState } from '@/store/types';
+import { useStore } from '@/store/utils';
 import { Nullable } from '@/types';
-import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 
 const emptyPrice: () => HistoricalPrice = () => ({
@@ -123,8 +117,7 @@ export default defineComponent({
   name: 'PriceManagement',
   components: { PriceTable, PriceForm, BigDialog },
   setup() {
-    const store = inject<Store<RotkehlchenState>>('vuex-store');
-    assert(store);
+    const store = useStore();
     const refresh = ref(false);
     const price = ref(emptyPrice());
     const showForm = ref(false);

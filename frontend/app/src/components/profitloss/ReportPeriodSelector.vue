@@ -137,8 +137,8 @@ export default defineComponent({
       emit('update:period', period);
     };
 
-    const changed = (change: SelectionChangedEvent) => {
-      emit('change', change);
+    const updateSelection = (change: SelectionChangedEvent) => {
+      emit('update:selection', change);
     };
 
     const startDateTime = (selection: Quarter): string => {
@@ -152,7 +152,7 @@ export default defineComponent({
     };
 
     const onChange = (change: { year?: string; quarter?: Quarter }) => {
-      changed({
+      updateSelection({
         year: change?.year ?? year.value,
         quarter: change?.quarter ?? quarter.value
       });

@@ -62,17 +62,15 @@
 import {
   computed,
   defineComponent,
-  inject,
   onMounted,
   PropType,
   ref,
   watch
 } from '@vue/composition-api';
-import { Store } from 'vuex';
 import AssetMixin from '@/mixins/asset-mixin';
 import { HistoricalPrice } from '@/services/assets/types';
 import { AssetSymbolGetter } from '@/store/balances/types';
-import { RotkehlchenState } from '@/store/types';
+import { useStore } from '@/store/utils';
 import { bigNumberify } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
@@ -90,7 +88,7 @@ export default defineComponent({
     }
   },
   setup(props, { emit }) {
-    const store = inject<Store<RotkehlchenState>>('vuex-store');
+    const store = useStore();
     const getSymbol = store!.getters[
       'balances/assetSymbol'
     ] as AssetSymbolGetter;

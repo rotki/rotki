@@ -1,76 +1,109 @@
 <template>
-  <v-card>
-    <v-card-title>
-      <card-title> {{ $t('profit_loss_reports.title') }}</card-title>
-    </v-card-title>
-    <v-card-text>
-      <v-sheet outlined rounded>
-        <data-table
-          :headers="headers"
-          :items="entries"
-          sort-by="timestamp"
-          item-key="index"
-        >
-          <template #item.timestamp="{ item }">
-            <date-display :timestamp="item.timestamp" />
-          </template>
-          <template #item.startTs="{ item }">
-            <date-display no-time :timestamp="item.startTs" />
-          </template>
-          <template #item.endTs="{ item }">
-            <date-display no-time :timestamp="item.endTs" />
-          </template>
-          <template #item.actions="{ item }">
+  <card outlined-body>
+    <template #title>
+      {{ $t('profit_loss_reports.title') }}
+    </template>
+    <data-table
+      :headers="headers"
+      :items="items"
+      sort-by="timestamp"
+      single-expand
+      :expanded.sync="expanded"
+    >
+      <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
+        <upgrade-row
+          events
+          :total="limits.total"
+          :limit="limits.limit"
+          :colspan="headers.length"
+          :label="$t('profit_loss_reports.title')"
+        />
+      </template>
+      <template #item.timestamp="{ item }">
+        <date-display :timestamp="item.timestamp" />
+      </template>
+      <template #item.startTs="{ item }">
+        <date-display no-time :timestamp="item.startTs" />
+      </template>
+      <template #item.endTs="{ item }">
+        <date-display no-time :timestamp="item.endTs" />
+      </template>
+      <template #item.totalProfitLoss="{ item }">
+        <amount-display :value="item.totalProfitLoss" />
+      </template>
+      <template #item.totalTaxableProfitLoss="{ item }">
+        <amount-display :value="item.totalTaxableProfitLoss" />
+      </template>
+      <template #item.sizeOnDisk="{ item }">
+        {{ size(item.sizeOnDisk) }}
+      </template>
+      <template #item.actions="{ item }">
+        <v-tooltip top open-delay="400">
+          <template #activator="{ on, attrs }">
             <v-btn
-              class="profit_loss_report__load-report mr-2"
-              depressed
+              icon
               color="primary"
+              v-bind="attrs"
               @click="fetchReport(item.identifier)"
+              v-on="on"
             >
-              {{ $t('profit_loss_reports.actions.load_report') }}
-            </v-btn>
-            <v-btn
-              class="profit_loss_report__delete-report"
-              depressed
-              color="primary"
-              @click="deleteReport(item.identifier)"
-            >
-              {{ $t('profit_loss_reports.actions.delete_report') }}
+              <v-icon small>mdi-open-in-app</v-icon>
             </v-btn>
           </template>
-        </data-table>
-      </v-sheet>
-    </v-card-text>
-  </v-card>
+          <span>{{ $t('reports_table.load.tooltip') }}</span>
+        </v-tooltip>
+
+        <v-tooltip top open-delay="400">
+          <template #activator="{ on, attrs }">
+            <v-btn
+              icon
+              color="primary"
+              v-bind="attrs"
+              @click="deleteReport(item.identifier)"
+              v-on="on"
+            >
+              <v-icon small>mdi-delete</v-icon>
+            </v-btn>
+          </template>
+          <span>{{ $t('reports_table.delete.tooltip') }}</span>
+        </v-tooltip>
+      </template>
+      <template #expanded-item="{ headers, item }">
+        <table-expand-container visible :colspan="headers.length">
+          <profit-loss-overview :overview="item" flat />
+        </table-expand-container>
+      </template>
+      <template #item.expand="{ item }">
+        <row-expander
+          :expanded="expanded.includes(item)"
+          @click="expanded = expanded.includes(item) ? [] : [item]"
+        />
+      </template>
+    </data-table>
+  </card>
 </template>
 
 <script lang="ts">
-import { PagedResourceParameters } from '@rotki/common';
 import {
   computed,
   defineComponent,
   onBeforeMount,
-  Ref,
   ref
 } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
+import RowExpander from '@/components/helper/RowExpander.vue';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import { setupStatusChecking } from '@/composables/common';
 import i18n from '@/i18n';
 import { Section } from '@/store/const';
 import { useReports } from '@/store/reports';
-import { RotkehlchenState } from '@/store/types';
-import { useStore } from '@/store/utils';
-import { PagedReport } from '@/types/reports';
+import { size } from '@/utils/data';
 
 const getHeaders: () => DataTableHeader[] = () => [
-  {
-    text: i18n.t('profit_loss_reports.columns.created').toString(),
-    value: 'timestamp'
-  },
   {
     text: i18n.t('profit_loss_reports.columns.start').toString(),
     value: 'startTs'
@@ -80,81 +113,90 @@ const getHeaders: () => DataTableHeader[] = () => [
     value: 'endTs'
   },
   {
+    text: i18n.t('profit_loss_reports.columns.total_profit_loss').toString(),
+    value: 'totalProfitLoss',
+    align: 'end'
+  },
+  {
+    text: i18n
+      .t('profit_loss_reports.columns.total_taxable_profit_loss')
+      .toString(),
+    value: 'totalTaxableProfitLoss',
+    align: 'end'
+  },
+  {
+    text: i18n.t('profit_loss_reports.columns.size').toString(),
+    value: 'sizeOnDisk',
+    align: 'end'
+  },
+  {
+    text: i18n.t('profit_loss_reports.columns.created').toString(),
+    value: 'timestamp',
+    align: 'end'
+  },
+  {
     text: i18n.t('profit_loss_reports.columns.actions').toString(),
-    value: 'actions'
-  }
+    value: 'actions',
+    align: 'end',
+    width: 115
+  },
+  { text: '', value: 'expand', align: 'end', width: 48 }
 ];
 
 export default defineComponent({
   name: 'ReportsTable',
   components: {
+    UpgradeRow,
+    RowExpander,
+    ProfitLossOverview,
     DataTable,
-    CardTitle,
     DateDisplay
   },
   setup() {
-    const selected: Ref<string[]> = ref([]);
-    const store = useStore();
-
-    const state: RotkehlchenState = store.state;
-    const itemsPerPage = state.settings!!.itemsPerPage;
-
+    const selected = ref<string[]>([]);
+    const expanded = ref([]);
     const reportStore = useReports();
     const { fetchReports, fetchReport, deleteReport } = reportStore;
     const { reports } = storeToRefs(reportStore);
+    const items = computed(() =>
+      reports.value.entries.map((value, index) => ({
+        ...value,
+        id: index
+      }))
+    );
 
-    const payload = ref<PagedResourceParameters>({
-      limit: itemsPerPage,
-      offset: 0,
-      orderByAttribute: 'timestamp',
-      ascending: false
-    });
-
-    const entries = computed(() => reports.value.entries);
-    const limit = computed(() => reports.value.entriesLimit);
-    const found = computed(() => reports.value.entriesFound);
+    const limits = computed(() => ({
+      total: reports.value.entriesFound,
+      limit: reports.value.entriesLimit
+    }));
 
     const refresh = async () => await fetchReports();
-    const onPaginationUpdate = ({
-      ascending,
-      page,
-      sortBy,
-      itemsPerPage
-    }: {
-      page: number;
-      itemsPerPage: number;
-      sortBy: keyof PagedReport;
-      ascending: boolean;
-    }) => {
-      const offset = (page - 1) * itemsPerPage;
-      payload.value = {
-        ...payload.value,
-        orderByAttribute: sortBy,
-        offset,
-        limit: itemsPerPage,
-        ascending
-      };
-      fetchReports().then();
-    };
 
     onBeforeMount(async () => await fetchReports());
 
     const { isSectionRefreshing, shouldShowLoadingScreen } =
       setupStatusChecking();
 
+    const showUpgradeMessage = computed(
+      () =>
+        reports.value.entriesLimit > 0 &&
+        reports.value.entriesLimit < reports.value.entriesFound
+    );
+
     return {
-      entries,
-      limit,
-      found,
+      items,
+      expanded,
+      limits,
       headers: getHeaders(),
       loading: shouldShowLoadingScreen(Section.REPORTS),
       refreshing: isSectionRefreshing(Section.REPORTS),
+      showUpgradeMessage,
+      size,
       refresh,
       selected,
       fetchReports,
       fetchReport,
-      deleteReport,
-      onPaginationUpdate
+      deleteReport
     };
   }
 });

@@ -717,6 +717,14 @@
     "subtitle": "Manage the addresses that will be queried for {module}",
     "title": "Queried Addresses"
   },
+  "reports_table": {
+    "delete": {
+      "tooltip": "Delete the report"
+    },
+    "load": {
+      "tooltip": "Load the report"
+    }
+  },
   "rounding_settings": {
     "amount_rounding": "Amount Rounding",
     "round": {
@@ -1342,9 +1350,12 @@
   "profit_loss_reports": {
     "columns": {
       "created": "Creation Date",
+      "size": "Size",
       "start": "Period Start",
       "end": "Period End",
-      "actions": "Actions"
+      "actions": "Actions",
+      "total_profit_loss": "Total P/L",
+      "total_taxable_profit_loss": "Total Taxable P/L"
     },
     "actions": {
       "load_report": "Load",
