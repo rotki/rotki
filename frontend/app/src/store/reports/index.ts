@@ -100,6 +100,7 @@ export const useReports = defineStore('reports', () => {
     reportId: number,
     page?: { limit: number; offset: number }
   ) => {
+    loaded.value = false;
     const itemsPerPage = store.state.settings!.itemsPerPage;
     const currentPage = page ?? { limit: itemsPerPage, offset: 0 };
 
@@ -130,6 +131,7 @@ export const useReports = defineStore('reports', () => {
         end: endTs,
         firstProcessedTimestamp
       };
+      loaded.value = true;
     } catch (e: any) {
       await notify({
         title: i18n.t('actions.reports.fetch.error.title').toString(),

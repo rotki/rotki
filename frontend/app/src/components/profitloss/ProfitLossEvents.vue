@@ -5,7 +5,7 @@
       :headers="tableHeaders"
       :items="items"
       single-expand
-      class="profit-loss-events__table"
+      :loading="loading || refreshing"
       :expanded.sync="expanded"
       :server-items-length="itemLength"
       :options.sync="options"
@@ -116,6 +116,7 @@ import RowExpander from '@/components/helper/RowExpander.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
+import { useRoute } from '@/composables/common';
 import i18n from '@/i18n';
 import { useReports } from '@/store/reports';
 
@@ -125,14 +126,14 @@ const getHeaders: () => DataTableHeader[] = () => [
     align: 'center',
     value: 'type',
     width: 110,
-    class: 'profit-loss-events__table__header__type'
+    sortable: false
   },
   {
     text: i18n.t('profit_loss_events.headers.location').toString(),
     value: 'location',
     width: '120px',
     align: 'center',
-    class: 'profit-loss-events__table__header__location'
+    sortable: false
   },
   {
     text: i18n
@@ -140,16 +141,19 @@ const getHeaders: () => DataTableHeader[] = () => [
         currency: 'USD'
       })
       .toString(),
+    sortable: false,
     value: 'paidInProfitCurrency',
     align: 'end'
   },
   {
     text: i18n.t('profit_loss_events.headers.paid_in_asset').toString(),
+    sortable: false,
     value: 'paidInAsset',
     align: 'end'
   },
   {
     text: i18n.t('profit_loss_events.headers.taxable_amount').toString(),
+    sortable: false,
     value: 'taxableAmount',
     align: 'end'
   },
@@ -159,11 +163,13 @@ const getHeaders: () => DataTableHeader[] = () => [
         currency: 'USD'
       })
       .toString(),
+    sortable: false,
     value: 'taxableBoughtCostInProfitCurrency',
     align: 'end'
   },
   {
     text: i18n.t('profit_loss_events.headers.received_in_asset').toString(),
+    sortable: false,
     value: 'receivedInAsset',
     align: 'end'
   },
@@ -173,6 +179,7 @@ const getHeaders: () => DataTableHeader[] = () => [
         currency: 'USD'
       })
       .toString(),
+    sortable: false,
     value: 'taxableReceivedInProfitCurrency',
     align: 'end'
   },
@@ -182,6 +189,7 @@ const getHeaders: () => DataTableHeader[] = () => [
   },
   {
     text: i18n.t('profit_loss_events.headers.virtual').toString(),
+    sortable: false,
     value: 'isVirtual',
     align: 'center'
   },
@@ -210,11 +218,20 @@ export default defineComponent({
     DateDisplay,
     AmountDisplay
   },
+  props: {
+    loading: {
+      required: false,
+      type: Boolean,
+      default: false
+    }
+  },
   setup() {
+    const route = useRoute();
     const reportsStore = useReports();
     const { report } = storeToRefs(reportsStore);
     const options = ref<PaginationOptions | null>(null);
     const expanded = ref([]);
+    const refreshing = ref(false);
 
     const items = computed(() => {
       return report.value.entries.map((value, index) => ({
@@ -237,16 +254,26 @@ export default defineComponent({
         report.value.entriesLimit < report.value.entriesFound
     );
 
-    const updatePagination = (options: PaginationOptions | null) => {
+    const updatePagination = async (options: PaginationOptions | null) => {
       if (!options) {
         return;
       }
-      console.log(options);
+      const { itemsPerPage, page } = options;
+
+      const reportId = parseInt(route.value.params.id);
+
+      refreshing.value = true;
+      await reportsStore.fetchReport(reportId, {
+        limit: itemsPerPage,
+        offset: itemsPerPage * page
+      });
+      refreshing.value = false;
     };
 
     watch(options, updatePagination);
     return {
       currency: 'USD',
+      refreshing,
       report,
       items,
       itemLength,
@@ -258,25 +285,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style lang="scss" scoped>
-::v-deep {
-  .profit-loss-events {
-    &__table {
-      &__header {
-        &__type {
-          span {
-            padding-left: 16px;
-          }
-        }
-
-        &__location {
-          span {
-            padding-left: 16px;
-          }
-        }
-      }
-    }
-  }
-}
-</style>

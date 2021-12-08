@@ -1357,10 +1357,6 @@
       "total_profit_loss": "Total P/L",
       "total_taxable_profit_loss": "Total Taxable P/L"
     },
-    "actions": {
-      "load_report": "Load",
-      "delete_report": "Delete"
-    },
     "title": "Saved Historical Reports"
   },
   "timeframe_settings": {

@@ -31,9 +31,12 @@ export default new Router({
       component: () => import('../views/Statistics.vue')
     },
     {
+      path: Routes.PROFIT_LOSS_REPORTS,
+      component: () => import('../views/reports/ProfitLossReports.vue')
+    },
+    {
       path: Routes.PROFIT_LOSS_REPORT,
-      name: 'profit-loss-report',
-      component: () => import('../views/ProfitLossReport.vue')
+      component: () => import('../views/reports/ProfitLossReport.vue')
     },
     {
       path: '/history',

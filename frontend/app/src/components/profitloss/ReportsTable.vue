@@ -4,7 +4,7 @@
       {{ $t('profit_loss_reports.title') }}
     </template>
     <data-table
-      :headers="headers"
+      :headers="tableHeaders"
       :items="items"
       sort-by="timestamp"
       single-expand
@@ -44,7 +44,7 @@
               icon
               color="primary"
               v-bind="attrs"
-              @click="fetchReport(item.identifier)"
+              :to="getReportUrl(item.identifier)"
               v-on="on"
             >
               <v-icon small>mdi-open-in-app</v-icon>
@@ -99,6 +99,7 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import { setupStatusChecking } from '@/composables/common';
 import i18n from '@/i18n';
+import { Routes } from '@/router/routes';
 import { Section } from '@/store/const';
 import { useReports } from '@/store/reports';
 import { size } from '@/utils/data';
@@ -183,17 +184,23 @@ export default defineComponent({
         reports.value.entriesLimit < reports.value.entriesFound
     );
 
+    const getReportUrl = (identifier: number) => {
+      const url = Routes.PROFIT_LOSS_REPORT;
+      return url.replace(':id', identifier.toString());
+    };
+
     return {
       items,
       expanded,
       limits,
-      headers: getHeaders(),
+      tableHeaders: getHeaders(),
       loading: shouldShowLoadingScreen(Section.REPORTS),
       refreshing: isSectionRefreshing(Section.REPORTS),
       showUpgradeMessage,
       size,
       refresh,
       selected,
+      getReportUrl,
       fetchReports,
       fetchReport,
       deleteReport
