@@ -352,6 +352,8 @@ class Accountant():
             first_processed_timestamp=self.first_processed_timestamp,
             start_ts=start_ts,
             end_ts=end_ts,
+            profit_currency=self.profit_currency,
+            settings=db_settings,
         )
 
         prev_time = Timestamp(0)

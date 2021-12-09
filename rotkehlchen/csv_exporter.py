@@ -146,13 +146,22 @@ class CSVExporter():
             self.report_id = None
             self.cached = False
 
-    def create_pnlreport_in_db(self, first_processed_timestamp: Timestamp, start_ts: Timestamp, end_ts: Timestamp) -> int:  # noqa: E501
+    def create_pnlreport_in_db(
+            self,
+            first_processed_timestamp: Timestamp,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            profit_currency: Asset,
+            settings: DBSettings,
+    ) -> int:
         """Creates a new report in the DB and sets it as current for the csv exporter"""
         dbreports = DBAccountingReports(self.database)
         self.report_id = dbreports.add_report(
             first_processed_timestamp=first_processed_timestamp,
             start_ts=start_ts,
             end_ts=end_ts,
+            profit_currency=profit_currency,
+            settings=settings,
         )
         return self.report_id
 

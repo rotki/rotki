@@ -4296,7 +4296,13 @@ Query saved PnL Reports
               "taxable_trade_profit_loss":null,
               "timestamp":1637931185,
               "total_profit_loss":null,
-              "total_taxable_profit_loss":null
+              "total_taxable_profit_loss":null,
+              "profit_currency": "EUR",
+              "taxfree_after_period": null,
+              "include_crypto2crypto": false,
+              "calculate_past_cost_basis": true,
+              "include_gas_costs": false,
+              "account_for_assets_movements": true
             },
             {
               "asset_movement_fees":"0",
@@ -4315,7 +4321,13 @@ Query saved PnL Reports
               "taxable_trade_profit_loss":"9.450326",
               "timestamp":1637931305,
               "total_profit_loss":"25.30761544",
-              "total_taxable_profit_loss":"25.30761544"
+              "total_taxable_profit_loss":"25.30761544",
+              "profit_currency": "USD",
+              "taxfree_after_period": 365,
+              "include_crypto2crypto": true,
+              "calculate_past_cost_basis": true,
+              "include_gas_costs": true,
+              "account_for_assets_movements": true
             },
             {
               "asset_movement_fees":"0",
@@ -4334,7 +4346,13 @@ Query saved PnL Reports
               "taxable_trade_profit_loss":"0",
               "timestamp":1637934538,
               "total_profit_loss":"3.80586544",
-              "total_taxable_profit_loss":"3.80586544"
+              "total_taxable_profit_loss":"3.80586544",
+              "profit_currency": "EUR",
+              "taxfree_after_period": 1,
+              "include_crypto2crypto": true,
+              "calculate_past_cost_basis": true,
+              "include_gas_costs": false,
+              "account_for_assets_movements": true
             }
           ],
           "entries_found":3,
@@ -4359,6 +4377,12 @@ Query saved PnL Reports
    :resjson str taxable_trade_profit_loss: An optional stringified amount of the taxable trade PnL gerated by the PnL report. Can be missing if the report did not finish.
    :resjson str total_profit_loss: An optional stringified amount of the total PnL gerated by the PnL report. Can be missing if the report did not finish.
    :resjson str total_taxable_profit_loss: An optional stringified amount of the total taxable PnL gerated by the PnL report. Can be missing if the report did not finish.
+   :resjson str profit_currency: The identifier of the asset used as profit currency in the PnL report.
+   :resjson integer taxfree_after_period: An optional integer for the value of taxfree_after_period setting. Can be either null or an integer.
+   :resjson bool include_crypto2crypto: The value of the setting used in the PnL report.
+   :resjson bool calculate_past_cost_basis: The value of the setting used in the PnL report.
+   :resjson bool include_gas_costs: The value of the setting used in the PnL report.
+   :resjson bool account_for_assets_movements: The value of the setting used in the PnL report.
    :resjson int entries_found: The number of reports found if called without a specific report id.
    :resjson int entries_limit: -1 if there is no limit (premium). Otherwise the limit of saved reports to inspect is 20.
    :statuscode 200: Data were queried succesfully.
