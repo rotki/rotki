@@ -64,7 +64,7 @@ def accounting_history_process(
     if ledger_actions_list:
         ledger_actions = ledger_actions_list
 
-    accountant.process_history(
+    report_id = accountant.process_history(
         start_ts=start_ts,
         end_ts=end_ts,
         trade_history=trade_history,
@@ -75,7 +75,7 @@ def accounting_history_process(
         ledger_actions=ledger_actions,
     )
     dbpnl = DBAccountingReports(accountant.csvexporter.database)
-    report = dbpnl.get_reports(report_id=1, with_limit=False)[0][0]
+    report = dbpnl.get_reports(report_id=report_id, with_limit=False)[0][0]
     events = dbpnl.get_report_data(
         filter_=ReportDataFilterQuery.make(report_id=1),
         with_limit=False,

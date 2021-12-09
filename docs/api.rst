@@ -4037,7 +4037,7 @@ Querying complete action history
    .. note::
       This endpoint also accepts parameters as query arguments.
 
-   Doing a GET on the history endpoint will trigger a query and processing of the history of all actions (trades, deposits, withdrawals, loans, eth transactions) within a specific time range. Passing them as a query arguments here would be given as: ``?async_query=true&from_timestamp=1514764800&to_timestamp=1572080165``.
+   Doing a GET on the history endpoint will trigger a query and processing of the history of all actions (trades, deposits, withdrawals, loans, eth transactions) within a specific time range. Passing them as a query arguments here would be given as: ``?async_query=true&from_timestamp=1514764800&to_timestamp=1572080165``. Will return the id of the generated report to query.
 
 
    **Example Request**:
@@ -4066,107 +4066,11 @@ Querying complete action history
       Content-Type: application/json
 
       {
-          "result": {
-              "overview": {
-                  "loan_profit": "1500",
-                  "defi_profit_loss": "140",
-                  "ledger_actions_profit_loss": "1500",
-                  "margin_positions_profit_loss": "500",
-                  "settlement_losses": "200",
-                  "ethereum_transaction_gas_costs": "2.5",
-                  "asset_movement_fees": "3.45",
-                  "general_trade_profit_loss": "5002",
-                  "taxable_trade_profit_loss": "5002",
-                  "total_taxable_profit_loss": "6936.05",
-                  "total_profit_loss": "6936.05"
-              },
-              "events_processed": 1000,
-              "events_limit": 1000,
-              "first_processed_timestamp": 1428994442,
-              "all_events": [{
-                  "type": "buy",
-                  "paid_in_profit_currency": "4000",
-                  "paid_asset": "BTC",
-                  "paid_in_asset": "0.5",
-                  "taxable_amount": "not applicable",
-                  "taxable_bought_cost_in_profit_currency": "not applicable",
-                  "received_asset": "ETH",
-                  "taxable_received_in_profit_currency": "0",
-                  "received_in_asset": "24",
-                  "net_profit_or_loss": "0",
-                  "time": 1514765800,
-                  "cost_basis": null,
-                  "is_virtual": false
-              }, {
-                  "type": "sell",
-                  "paid_in_profit_currency": "0",
-                  "paid_asset": "BTC",
-                  "paid_in_asset": "0.2",
-                  "taxable_amount": "0.1",
-                  "taxable_bought_cost_in_profit_currency": "600",
-                  "received_asset": "EUR",
-                  "taxable_received_in_profit_currency": "800",
-                  "received_in_asset": "1600",
-                  "net_profit_or_loss": "200",
-                  "time": 1524865800,
-                  "cost_basis": {
-                      "is_complete": true,
-                      "matched_acquisitions": [{
-                          "time": 15653231,
-                          "description": "trade",
-                          "location": "kraken",
-                          "used_amount": "0.1",
-                          "amount": "1",
-                          "rate": "500",
-                          "fee_rate": "0.1",
-                      }, {
-                          "time": 15654231,
-                          "description": "trade",
-                          "location": "bittrex",
-                          "used_amount": "0.1",
-                          "amount": "1",
-                          "rate": "550",
-                          "fee_rate": "0",
-                      }]
-                  },
-                  "is_virtual": false
-              }],
-          },
+          "result": 15,
           "message": ""
       }
 
-   The overview part of the result is a dictionary with the following keys:
-
-   :resjson str loan_profit: The profit from loans inside the given time period denominated in the user's profit currency.
-   :resjson str defi_profit_loss: The profit/loss from Decentralized finance events inside the given time period denominated in the user's profit currency.
-   :resjson str ledger_actions_profit_loss: The profit/loss from all the manually input ledger actions. Income, loss, expense and more.
-   :resjson str margin_positions_profit_loss: The profit/loss from margin positions inside the given time period denominated in the user's profit currency.
-   :resjson str settlement_losses: The losses from margin settlements inside the given time period denominated in the user's profit currency.
-   :resjson str ethereum_transactions_gas_costs: The losses from ethereum gas fees inside the given time period denominated in the user's profit currency.
-   :resjson str asset_movement_fees: The losses from exchange deposit/withdral fees inside the given time period denominated in the user's profit currency.
-   :resjson str general_trade_profit_loss: The profit/loss from all trades inside the given time period denominated in the user's profit currency.
-   :resjson str taxable_trade_profit_loss: The portion of the profit/loss from all trades that is taxable and is inside the given time period denominated in the user's profit currency.
-   :resjson str total_taxable_profit_loss: The portion of all profit/loss that is taxable and is inside the given time period denominated in the user's profit currency.
-   :resjson str total_profit_loss: The total profit loss inside the given time period denominated in the user's profit currency.
-   :resjson int events_processed: The total number of events processed. This also includes events in the past which are not exported due to the requested PnL range.
-   :resjson int events_limit: The limit of the events for the user's tier. -1 stands for unlimited. If the limit is hit then the event processing stops and only all events and PnL calculation up to the limit is returned.
-   :resjson int first_processed_timestamp: The timestamp of the very first event processed. This can be before the query period since we always query from the beginning of history to have a full cost basis.
-
-   The all_events part of the result is a list of events with the following keys:
-
-   :resjson str type: The type of event. Can be one of ``"buy"``, ``"sell"``, ``"tx_gas_cost"``, ``"asset_movement"``, ``"loan_settlement"``, ``"interest_rate_payment"``, ``"margin_position_close"``
-   :resjson str paid_in_profit_currency: The total amount paid for this action in the user's profit currency. This will always be zero for sells and other actions that only give profit.
-   :resjson str paid_asset: The asset that was paid for in this action.
-   :resjson str paid_in_asset: The amount of ``paid_asset`` that was used in this action.
-   :resjson str taxable_amount: For sells and other similar actions this is the part of the ``paid_in_asset`` that is considered taxable. Can differ for jurisdictions like Germany where after a year of holding trades are not taxable. For buys this will have the string ``"not applicable"``.
-   :resjson str taxable_bought_cost_in_profit_currency: For sells and other similar actions this is the part of the ``paid_in_asset`` that is considered taxable. Can differ for jurisdictions like Germany where after a year of holding trades are not taxable. For buys this will have the string ``"not applicable"``.
-   :resjson str received_asset: The asset that we received from this action. For buys this is the asset that we bought and for sells the asset that we got by selling.
-   :resjson str taxable_received_in_profit_currency: The taxable portion of the asset that we received from this action in profit currency. Can be different than the price of ``received_in_asset`` in profit currency if not the entire amount that was exchanged was taxable. For buys this would be 0.
-   :resjson str received_in_asset: The amount of ``received_asset`` that we received from this action.
-   :resjson str net_profit_or_loss: The net profit/loss from this action denoted in profit currency.
-   :resjson int time: The timestamp this action took place in.
-   :resjson bool is_virtual: A boolean denoting whether this is a virtual action. Virtual actions are special actions that are created to make accounting for crypto to crypto trades possible. For example, if you sell BTC for ETH a virtual trade to sell BTC for EUR and then a virtual buy to buy BTC with EUR will be created.
-   :resjson object cost_basis: An object describing the cost basis of the event if it's a spend event. Contains a boolean attribute ``"is_complete"`` to denoting if we have complete cost basis information for the spent asset or not. If not then this means that rotki does not know enough to properly calculate cost basis. The other attribute is ``"matched_acquisitions"`` a list of matched acquisition events from which the cost basis is calculated. Each event has ``"time"``, ``"description"``, ``"location"`` attributes which are self-explanatory. Then it also has the ``"amount"`` which is the amount that was acquired in that event and the ``"used_amount"`` which is how much of that is used in this spend action. Then there is the ``"rate"`` key which shows the rate in the profit currency with which 1 unit of the asset was acquired at the event. And finally the ``"fee_rate"`` denoting how much of the profit currency was paid for each unit of the asset bought.
+   :resjson int result: The id of the generated report to later query
 
    :statuscode 200: History processed and returned succesfully
    :statuscode 400: Provided JSON is in some way malformed.
@@ -4460,6 +4364,20 @@ Get saved events of a PnL Report
        },
        "message": ""
       }
+
+   :resjson str type: The type of event. Can be one of ``"buy"``, ``"sell"``, ``"tx_gas_cost"``, ``"asset_movement"``, ``"loan_settlement"``, ``"interest_rate_payment"``, ``"margin_position_close"``
+   :resjson str paid_in_profit_currency: The total amount paid for this action in the user's profit currency. This will always be zero for sells and other actions that only give profit.
+   :resjson str paid_asset: The asset that was paid for in this action.
+   :resjson str paid_in_asset: The amount of ``paid_asset`` that was used in this action.
+   :resjson str taxable_amount: For sells and other similar actions this is the part of the ``paid_in_asset`` that is considered taxable. Can differ for jurisdictions like Germany where after a year of holding trades are not taxable. For buys this will have the string ``"not applicable"``.
+   :resjson str taxable_bought_cost_in_profit_currency: For sells and other similar actions this is the part of the ``paid_in_asset`` that is considered taxable. Can differ for jurisdictions like Germany where after a year of holding trades are not taxable. For buys this will have the string ``"not applicable"``.
+   :resjson str received_asset: The asset that we received from this action. For buys this is the asset that we bought and for sells the asset that we got by selling.
+   :resjson str taxable_received_in_profit_currency: The taxable portion of the asset that we received from this action in profit currency. Can be different than the price of ``received_in_asset`` in profit currency if not the entire amount that was exchanged was taxable. For buys this would be 0.
+   :resjson str received_in_asset: The amount of ``received_asset`` that we received from this action.
+   :resjson str net_profit_or_loss: The net profit/loss from this action denoted in profit currency.
+   :resjson int time: The timestamp this action took place in.
+   :resjson bool is_virtual: A boolean denoting whether this is a virtual action. Virtual actions are special actions that are created to make accounting for crypto to crypto trades possible. For example, if you sell BTC for ETH a virtual trade to sell BTC for EUR and then a virtual buy to buy BTC with EUR will be created.
+   :resjson object cost_basis: An object describing the cost basis of the event if it's a spend event. Contains a boolean attribute ``"is_complete"`` to denoting if we have complete cost basis information for the spent asset or not. If not then this means that rotki does not know enough to properly calculate cost basis. The other attribute is ``"matched_acquisitions"`` a list of matched acquisition events from which the cost basis is calculated. Each event has ``"time"``, ``"description"``, ``"location"`` attributes which are self-explanatory. Then it also has the ``"amount"`` which is the amount that was acquired in that event and the ``"used_amount"`` which is how much of that is used in this spend action. Then there is the ``"rate"`` key which shows the rate in the profit currency with which 1 unit of the asset was acquired at the event. And finally the ``"fee_rate"`` denoting how much of the profit currency was paid for each unit of the asset bought.
 
    :statuscode 200: Report event data was succesfully queried.
    :statuscode 400: Report id does not exist.

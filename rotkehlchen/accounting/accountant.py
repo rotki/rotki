@@ -295,7 +295,7 @@ class Accountant():
             eth_transactions: List[EthereumTransaction],
             defi_events: List[DefiEvent],
             ledger_actions: List[LedgerAction],
-    ) -> None:
+    ) -> int:
         """Processes the entire history of cryptoworld actions in order to determine
         the price and time at which every asset was obtained and also
         the general and taxable profit/loss.
@@ -303,6 +303,8 @@ class Accountant():
         start_ts here is the timestamp at which to start taking trades and other
         taxable events into account. Not where processing starts from. Processing
         always starts from the very first event we find in the history.
+
+        Returns the id of the generated report
         """
         active_premium = self.premium and self.premium.is_active()
         log.info(
@@ -348,7 +350,7 @@ class Accountant():
         self.currently_processing_timestamp = first_ts
         self.first_processed_timestamp = first_ts
         # Create a new pnl report in the DB to be used to save each event generated
-        self.csvexporter.create_pnlreport_in_db(
+        report_id = self.csvexporter.create_pnlreport_in_db(
             first_processed_timestamp=self.first_processed_timestamp,
             start_ts=start_ts,
             end_ts=end_ts,
@@ -466,12 +468,10 @@ class Accountant():
                 sum_other_actions,
             ),
         }
-        if self.csvexporter.report_id is not None:
-            dbpnl = DBAccountingReports(self.csvexporter.database)
-            dbpnl.add_report_overview(
-                report_id=self.csvexporter.report_id,
-                **profit_loss_overview,
-            )
+        dbpnl = DBAccountingReports(self.csvexporter.database)
+        dbpnl.add_report_overview(report_id=report_id, **profit_loss_overview)
+
+        return report_id
 
     @staticmethod
     def _should_ignore_action(

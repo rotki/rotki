@@ -1607,11 +1607,11 @@ class RestAPI():
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Dict[str, Any]:
-        error_or_empty = self.rotkehlchen.process_history(
+        report_id, error_or_empty = self.rotkehlchen.process_history(
             start_ts=from_timestamp,
             end_ts=to_timestamp,
         )
-        return {'result': True, 'message': error_or_empty}
+        return {'result': report_id, 'message': error_or_empty}
 
     @require_loggedin_user()
     def process_history(
