@@ -530,7 +530,7 @@ class Asset():
     name: str = field(init=False)
     symbol: str = field(init=False)
     asset_type: AssetType = field(init=False)
-    started: Timestamp = field(init=False)
+    started: Optional[Timestamp] = field(init=False)
     forked: Optional['Asset'] = field(init=False)
     swapped_for: Optional['Asset'] = field(init=False)
     # None means no special mapping. '' means not supported
