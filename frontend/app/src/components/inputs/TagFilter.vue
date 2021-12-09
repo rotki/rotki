@@ -2,7 +2,7 @@
   <v-autocomplete
     :value="value"
     :disabled="disabled"
-    :items="tags"
+    :items="availableTagsArray"
     class="tag-filter"
     small-chips
     :label="$t('tag_filter.label')"
@@ -32,7 +32,7 @@
     </template>
     <template #item="{ item }">
       <tag-icon :tag="item" />
-      <span class="tag-input__tag__description">
+      <span class="tag-input__tag__description ml-4">
         {{ item.description }}
       </span>
     </template>
@@ -57,7 +57,7 @@ const { mapGetters } = createNamespacedHelpers('session');
     TagIcon
   },
   computed: {
-    ...mapGetters(['tags'])
+    ...mapGetters(['availableTagsArray'])
   }
 })
 export default class TagFilter extends Vue {
@@ -65,7 +65,7 @@ export default class TagFilter extends Vue {
   value!: string[];
   @Prop({ required: false, default: false, type: Boolean })
   disabled!: boolean;
-  tags!: Tag[];
+  availableTagsArray!: Tag[];
 
   filter(tag: Tag, queryText: string): boolean {
     const { name, description } = tag;

@@ -51,7 +51,7 @@
           <tag-icon :tag="item" />
         </template>
         <template #item.action="{ item }">
-          <v-row no-gutters>
+          <v-row v-if="!item.readOnly" no-gutters>
             <v-col>
               <v-icon small class="mr-2" @click="editItem(item)">
                 mdi-pencil

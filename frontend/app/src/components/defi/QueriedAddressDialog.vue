@@ -60,15 +60,7 @@
               :account="getAccount(address)"
               class="queried-address-dialog__account"
             />
-            <div v-if="getAccount(address).tags.length > 0" class="mt-1">
-              <tag-icon
-                v-for="tag in getAccount(address).tags"
-                :key="tag"
-                small
-                class="mr-1"
-                :tag="tags[tag]"
-              />
-            </div>
+            <tag-display :tags="getAccount(address).tags" :small="true" />
           </v-col>
           <v-col cols="auto">
             <v-tooltip open-delay="400" top>
@@ -114,21 +106,20 @@ import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
-import TagIcon from '@/components/tags/TagIcon.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
 import {
   QueriedAddresses,
   QueriedAddressPayload
 } from '@/services/session/types';
 import { Nullable } from '@/types';
 import { Module } from '@/types/modules';
-import { Tags } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
 @Component({
   name: 'QueriedAddressDialog',
-  components: { TagIcon, LabeledAddressDisplay },
+  components: { TagDisplay, LabeledAddressDisplay },
   computed: {
-    ...mapState('session', ['queriedAddresses', 'tags']),
+    ...mapState('session', ['queriedAddresses']),
     ...mapGetters('balances', ['accounts'])
   },
   methods: {
@@ -142,7 +133,6 @@ export default class QueriedAddressDialog extends Vue {
   addQueriedAddress!: (payload: QueriedAddressPayload) => Promise<void>;
   deleteQueriedAddress!: (payload: QueriedAddressPayload) => Promise<void>;
   accounts!: GeneralAccount[];
-  tags!: Tags;
 
   account: Nullable<GeneralAccount> = null;
 

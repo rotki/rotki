@@ -46,14 +46,7 @@
           {{ xpub.derivationPath }}
         </span>
       </div>
-      <div v-if="xpubTags.length > 0" class="mt-1 ms-8">
-        <tag-icon
-          v-for="tag in xpubTags"
-          :key="tag"
-          :tag="tags[tag]"
-          class="mr-1"
-        />
-      </div>
+      <tag-display wrapper-class="mt-1 ms-8" :tags="xpubTags" />
     </td>
     <td class="text-end" :class="mobileClass">
       <amount-display
@@ -101,21 +94,16 @@
 <script lang="ts">
 import { Balance, BigNumber } from '@rotki/common';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
-import { mapState } from 'vuex';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
-import TagIcon from '@/components/tags/TagIcon.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { balanceSum, truncateAddress, truncationPoints } from '@/filters';
 import PrivacyMixin from '@/mixins/privacy-mixin';
 import { XpubAccountWithBalance } from '@/store/balances/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
-import { Tags } from '@/types/user';
 
 @Component({
-  components: { TagIcon, CopyButton, Fragment },
-  computed: {
-    ...mapState('session', ['tags'])
-  }
+  components: { TagDisplay, CopyButton, Fragment }
 })
 export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
   @Prop({ required: true, type: String })
@@ -126,8 +114,6 @@ export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
   expanded!: boolean;
   @Prop({ required: false, type: Boolean, default: false })
   loading!: boolean;
-
-  tags!: Tags;
 
   get mobileClass(): string | null {
     return this.$vuetify.breakpoint.xsOnly ? 'v-data-table__mobile-row' : null;
