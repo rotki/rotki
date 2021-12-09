@@ -152,7 +152,7 @@ class CSVExporter():
             start_ts: Timestamp,
             end_ts: Timestamp,
             profit_currency: Asset,
-            settings: DBSettings,
+            settings: 'DBSettings',
     ) -> int:
         """Creates a new report in the DB and sets it as current for the csv exporter"""
         dbreports = DBAccountingReports(self.database)

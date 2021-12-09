@@ -377,7 +377,7 @@ margin_history = [
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_end_to_end_tax_report(accountant):
-    result = accounting_history_process(
+    report, _ = accounting_history_process(
         accountant=accountant,
         start_ts=0,
         end_ts=1514764799,  # 31/12/2017
@@ -387,25 +387,24 @@ def test_end_to_end_tax_report(accountant):
         eth_transaction_list=eth_tx_list,
         margin_list=margin_history,
     )
-    result = result['overview']
     # Make sure that the "currently_processing_timestamp" is the ts of the last
     # action seen in history before end_ts
     assert accountant.currently_processing_timestamp == 1511626623
-    general_trade_pl = FVal(result['general_trade_profit_loss'])
+    general_trade_pl = FVal(report['general_trade_profit_loss'])
     assert general_trade_pl.is_close('5033.312065244648')
-    taxable_trade_pl = FVal(result['taxable_trade_profit_loss'])
+    taxable_trade_pl = FVal(report['taxable_trade_profit_loss'])
     assert taxable_trade_pl.is_close('3956.21087022028')
-    loan_profit = FVal(result['loan_profit'])
+    loan_profit = FVal(report['loan_profit'])
     assert loan_profit.is_close('0.116193915')
-    settlement_losses = FVal(result['settlement_losses'])
+    settlement_losses = FVal(report['settlement_losses'])
     assert settlement_losses.is_close('11.91758472725')
-    asset_movement_fees = FVal(result['asset_movement_fees'])
+    asset_movement_fees = FVal(report['asset_movement_fees'])
     assert asset_movement_fees.is_close('2.39096865')
-    ethereum_transaction_gas_costs = FVal(result['ethereum_transaction_gas_costs'])
+    ethereum_transaction_gas_costs = FVal(report['ethereum_transaction_gas_costs'])
     assert ethereum_transaction_gas_costs.is_close('2.736160')
-    margin_pl = FVal(result['margin_positions_profit_loss'])
+    margin_pl = FVal(report['margin_positions_profit_loss'])
     assert margin_pl.is_close('232.8225695')
-    defi_pl = FVal(result['defi_profit_loss'])
+    defi_pl = FVal(report['defi_profit_loss'])
     assert defi_pl == ZERO
     expected_total_taxable_pl = (
         taxable_trade_pl +
@@ -415,7 +414,7 @@ def test_end_to_end_tax_report(accountant):
         asset_movement_fees -
         ethereum_transaction_gas_costs
     )
-    total_taxable_pl = FVal(result['total_taxable_profit_loss'])
+    total_taxable_pl = FVal(report['total_taxable_profit_loss'])
     assert expected_total_taxable_pl.is_close(total_taxable_pl)
     expected_total_pl = (
         general_trade_pl +
@@ -425,13 +424,13 @@ def test_end_to_end_tax_report(accountant):
         asset_movement_fees -
         ethereum_transaction_gas_costs
     )
-    total_pl = FVal(result['total_profit_loss'])
+    total_pl = FVal(report['total_profit_loss'])
     assert expected_total_pl.is_close(total_pl)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_end_to_end_tax_report_in_period(accountant):
-    result = accounting_history_process(
+    report, _ = accounting_history_process(
         accountant=accountant,
         start_ts=1483228800,  # 01/01/2017
         end_ts=1514764799,  # 31/12/2017
@@ -444,22 +443,21 @@ def test_end_to_end_tax_report_in_period(accountant):
     # Make sure that the "currently_processing_timestamp" is the ts of the last
     # action seen in history before end_ts
     assert accountant.currently_processing_timestamp == 1511626623
-    result = result['overview']
-    general_trade_pl = FVal(result['general_trade_profit_loss'])
+    general_trade_pl = FVal(report['general_trade_profit_loss'])
     assert general_trade_pl.is_close('1506.698795886789')
-    taxable_trade_pl = FVal(result['taxable_trade_profit_loss'])
+    taxable_trade_pl = FVal(report['taxable_trade_profit_loss'])
     assert taxable_trade_pl.is_close('643.1971824900041')
-    loan_profit = FVal(result['loan_profit'])
+    loan_profit = FVal(report['loan_profit'])
     assert loan_profit.is_close('0.1140477')
-    settlement_losses = FVal(result['settlement_losses'])
+    settlement_losses = FVal(report['settlement_losses'])
     assert settlement_losses.is_close('10.81727783')
-    asset_movement_fees = FVal(result['asset_movement_fees'])
+    asset_movement_fees = FVal(report['asset_movement_fees'])
     assert asset_movement_fees.is_close('2.38205415')
-    ethereum_transaction_gas_costs = FVal(result['ethereum_transaction_gas_costs'])
+    ethereum_transaction_gas_costs = FVal(report['ethereum_transaction_gas_costs'])
     assert ethereum_transaction_gas_costs.is_close('2.276810')
-    margin_pl = FVal(result['margin_positions_profit_loss'])
+    margin_pl = FVal(report['margin_positions_profit_loss'])
     assert margin_pl.is_close('234.5323965')
-    defi_pl = FVal(result['defi_profit_loss'])
+    defi_pl = FVal(report['defi_profit_loss'])
     assert defi_pl == ZERO
     expected_total_taxable_pl = (
         taxable_trade_pl +
@@ -469,7 +467,7 @@ def test_end_to_end_tax_report_in_period(accountant):
         asset_movement_fees -
         ethereum_transaction_gas_costs
     )
-    total_taxable_pl = FVal(result['total_taxable_profit_loss'])
+    total_taxable_pl = FVal(report['total_taxable_profit_loss'])
     assert expected_total_taxable_pl.is_close(total_taxable_pl)
     expected_total_pl = (
         general_trade_pl +
@@ -479,7 +477,7 @@ def test_end_to_end_tax_report_in_period(accountant):
         asset_movement_fees -
         ethereum_transaction_gas_costs
     )
-    total_pl = FVal(result['total_profit_loss'])
+    total_pl = FVal(report['total_profit_loss'])
     assert expected_total_pl.is_close(total_pl)
 
 
@@ -625,7 +623,7 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
         'amount': 2.5,
         'location': 'kraken',
     }]
-    result = accounting_history_process(
+    report, _ = accounting_history_process(
         accountant=accountant,
         start_ts=0,
         end_ts=1514764799,  # 31/12/2017
@@ -635,9 +633,8 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
         eth_transaction_list=[],
         margin_list=[],
     )
-    result = result['overview']
     errors = accountant.msg_aggregator.consume_errors()
     assert len(errors) == 1
     assert 'due to inability to find a price at that point in time' in errors[0]
     # assert 'due to an asset unknown to cryptocompare being involved' in errors[1]
-    assert FVal(result['total_profit_loss']) == FVal('0')
+    assert FVal(report['total_profit_loss']) == FVal('0')

@@ -175,12 +175,12 @@ class DBAccountingReports():
                 'taxable_trade_profit_loss': report[13],
                 'total_taxable_profit_loss': report[14],
                 'total_profit_loss': report[15],
-                'profit_currency': reports[16],
-                'taxfree_after_period': reports[17],
-                'include_crypto2crypto': bool(reports[18]),
-                'calculate_past_cost_basis': bool(reports[19]),
-                'include_gas_costs': bool(reports[20]),
-                'account_for_assets_movements': bool(reports[21]),
+                'profit_currency': report[16],
+                'taxfree_after_period': report[17],
+                'include_crypto2crypto': bool(report[18]),
+                'calculate_past_cost_basis': bool(report[19]),
+                'include_gas_costs': bool(report[20]),
+                'account_for_assets_movements': bool(report[21]),
             })
 
         if report_id is not None:

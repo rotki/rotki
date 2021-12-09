@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, cast
 
 import gevent
 
@@ -295,7 +295,7 @@ class Accountant():
             eth_transactions: List[EthereumTransaction],
             defi_events: List[DefiEvent],
             ledger_actions: List[LedgerAction],
-    ) -> Dict[str, Any]:
+    ) -> None:
         """Processes the entire history of cryptoworld actions in order to determine
         the price and time at which every asset was obtained and also
         the general and taxable profit/loss.
@@ -472,13 +472,6 @@ class Accountant():
                 report_id=self.csvexporter.report_id,
                 **profit_loss_overview,
             )
-        return {
-            'overview': profit_loss_overview,
-            'first_processed_timestamp': self.first_processed_timestamp,
-            'events_processed': count,
-            'events_limit': events_limit,
-            'all_events': self.csvexporter.all_events,
-        }
 
     @staticmethod
     def _should_ignore_action(
