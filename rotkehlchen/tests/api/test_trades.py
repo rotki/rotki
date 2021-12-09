@@ -6,6 +6,7 @@ import requests
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_WETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import FREE_TRADES_LIMIT
@@ -20,7 +21,7 @@ from rotkehlchen.tests.utils.history import (
     assert_poloniex_trades_result,
     mock_history_processing_and_exchanges,
 )
-from rotkehlchen.typing import Location, TradeType
+from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, TradeType
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
@@ -786,3 +787,116 @@ def test_delete_trades_trades_errors(rotkehlchen_api_server):
         contained_in_msg="Tried to delete non-existing trade",
         status_code=HTTPStatus.CONFLICT,
     )
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
+def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges):
+    """Test that querying the trades endpoint works as expected when we have associated
+    locations including exchanges asociated and imported locations.
+    """
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    setup = mock_history_processing_and_exchanges(rotki)
+
+    trades = [Trade(
+        timestamp=Timestamp(1596429934),
+        location=Location.EXTERNAL,
+        base_asset=A_WETH,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('1')),
+        rate=Price(FVal('320')),
+        fee=Fee(ZERO),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    ), Trade(
+        timestamp=Timestamp(1596429934),
+        location=Location.KRAKEN,
+        base_asset=A_WETH,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('1')),
+        rate=Price(FVal('320')),
+        fee=Fee(ZERO),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    ), Trade(
+        timestamp=Timestamp(1596429934),
+        location=Location.BISQ,
+        base_asset=A_WETH,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('1')),
+        rate=Price(FVal('320')),
+        fee=Fee(ZERO),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    ), Trade(
+        timestamp=Timestamp(1596429934),
+        location=Location.BINANCE,
+        base_asset=A_WETH,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('1')),
+        rate=Price(FVal('320')),
+        fee=Fee(ZERO),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    )]
+
+    # Add multiple entries for same exchange + connected exchange
+    rotki.data.db.add_trades(trades)
+
+    # Simply get all trades without any filtering
+    with setup.binance_patch, setup.polo_patch:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'tradesresource',
+            ),
+        )
+    result = assert_proper_response_with_result(response)
+    result = result['entries']
+    assert len(result) == 9  # 3 polo, (2 + 1) binance trades, 1 kraken, 1 external, 1 BISQ
+    expected_locations = (
+        Location.KRAKEN,
+        Location.POLONIEX,
+        Location.BINANCE,
+        Location.BISQ,
+        Location.EXTERNAL,
+    )
+    returned_locations = {x['entry']['location'] for x in result}
+    assert returned_locations == set(map(str, expected_locations))
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tradesresource",
+        ), json={'location': 'kraken'},
+    )
+    result = assert_proper_response_with_result(response)
+    result = result['entries']
+    assert len(result) == 1
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tradesresource",
+        ), json={'location': 'binance'},
+    )
+    result = assert_proper_response_with_result(response)
+    result = result['entries']
+    assert len(result) == 3
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tradesresource",
+        ), json={'location': 'nexo'},
+    )
+    result = assert_proper_response_with_result(response)
+    result = result['entries']
+    assert len(result) == 0

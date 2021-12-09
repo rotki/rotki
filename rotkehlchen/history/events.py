@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union, cast, overload
 
 from typing_extensions import Literal
 
@@ -118,6 +118,11 @@ class EventsHistorian():
         self.dateformat = db_settings.date_display_format
         self.datelocaltime = db_settings.display_date_in_localtime
         self._reset_variables()
+
+    def locations_from_csv(self) -> Set[Location]:
+        locations_with_keys = set(self.exchange_manager.connected_exchanges.keys())
+        associated_exchanges_locations = self.db.get_associated_locations().intersection(ALL_SUPPORTED_EXCHANGES)  # noqa: E501
+        return associated_exchanges_locations - locations_with_keys
 
     def timestamp_to_date(self, timestamp: Timestamp) -> str:
         return timestamp_to_date(
@@ -291,7 +296,7 @@ class EventsHistorian():
                 self.actions_per_location['trade'][given_location] = 0
             trades = self.query_location_trades(from_ts, to_ts, Location.EXTERNAL, only_cache)
             # Look for trades that might be imported from CSV files
-            for csv_location in EXTERNAL_EXCHANGES:
+            for csv_location in self.locations_from_csv():
                 trades.extend(self.query_location_trades(
                     from_ts=from_ts,
                     to_ts=to_ts,
@@ -366,26 +371,27 @@ class EventsHistorian():
         else:
             # should only be an exchange
             exchanges_list = self.exchange_manager.connected_exchanges.get(location)
-            if exchanges_list is None:
-                log.warning(
-                    f'Tried to query trades from {str(location)} which is either not an '
-                    f'exchange or not an exchange the user has connected to',
-                )
-                return []
-
             location_trades = []
-            for exchange in exchanges_list:
-                all_set = {x.identifier for x in location_trades}
-                new_trades = exchange.query_trade_history(
-                    start_ts=from_ts,
-                    end_ts=to_ts,
-                    only_cache=only_cache,
+            if exchanges_list is None:
+                # Try to get imported trades for exchanges not connected
+                location_trades = self.db.get_trades(  # type: ignore  # list invariance
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                    location=location,
                 )
-                # TODO: Really dirty. Figure out a better way.
-                # Since some of the trades may already be in the DB if multiple
-                # keys are used for a single exchange.
-                new_trades = [x for x in new_trades if x.identifier not in all_set]
-                location_trades.extend(new_trades)
+            else:
+                for exchange in exchanges_list:
+                    all_set = {x.identifier for x in location_trades}
+                    new_trades = exchange.query_trade_history(
+                        start_ts=from_ts,
+                        end_ts=to_ts,
+                        only_cache=only_cache,
+                    )
+                    # TODO: Really dirty. Figure out a better way.
+                    # Since some of the trades may already be in the DB if multiple
+                    # keys are used for a single exchange.
+                    new_trades = [x for x in new_trades if x.identifier not in all_set]
+                    location_trades.extend(new_trades)
 
         trades: TRADES_LIST = []
         if self.chain_manager.premium is None:
@@ -423,7 +429,6 @@ class EventsHistorian():
             location_movements = [x for x in location_movements if x.identifier not in all_set]
         else:
             assert isinstance(exchange, Location), 'only a location should make it here'
-            assert exchange in EXTERNAL_EXCHANGES, 'only csv supported exchanges should get here'  # noqa : E501
             location = exchange
             # We might have no exchange information but CSV imported information
             self.actions_per_location['asset_movement'][location] = 0
@@ -466,7 +471,7 @@ class EventsHistorian():
         if location is not None:
             # clear the asset movements queried for this exchange
             self.actions_per_location['asset_movement'][location] = 0
-            if location in EXTERNAL_EXCHANGES:
+            if location in self.locations_from_csv():
                 movements = self._query_and_populate_exchange_asset_movements(
                     from_ts=from_ts,
                     to_ts=to_ts,
