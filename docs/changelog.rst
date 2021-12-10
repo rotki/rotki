@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Users connected to Alchemy as a node will be able to properly retrieve old ethereum transactions.
+* :bug:`-` Users that only deposited to Yearn's vaults won't see the deposit as a lost in the deposits section.
 
 
 * :release:`1.22.2 <2021-11-30>`

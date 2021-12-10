@@ -459,6 +459,10 @@ class YearnVaults(EthereumModule):
         """Process the events for a single vault and returns total profit/loss after all events"""
         total = Balance()
         profit_so_far = Balance()
+
+        if len(events) < 2:
+            return total
+
         for event in events:
             if event.event_type == 'deposit':
                 total -= event.from_value

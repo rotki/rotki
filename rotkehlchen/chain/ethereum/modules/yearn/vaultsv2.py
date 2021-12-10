@@ -77,7 +77,15 @@ class YearnVaultsV2(EthereumModule):
 
         So the numbers you see displayed on http://yearn.finance/vaults
         are ROI since launch of contract. All vaults start with pricePerFullShare = 1e18
+
+        A value of 0 for ROI is returned if the calculation couldn't be made
         """
+        if vault.started is None:
+            self.msg_aggregator.add_error(
+                f'Failed to query ROI for vault {vault.ethereum_address}. Missing creation time.',
+            )
+            return ZERO, 0
+
         now_block_number = self.ethereum.get_latest_block_number()
         price_per_full_share = self.ethereum.call_contract(
             contract_address=vault.ethereum_address,
@@ -85,7 +93,14 @@ class YearnVaultsV2(EthereumModule):
             method_name='pricePerShare',
         )
         nominator = price_per_full_share - (10**18)
-        denonimator = now_block_number - self.ethereum.etherscan.get_blocknumber_by_time(vault.started)  # noqa: E501
+        try:
+            denonimator = now_block_number - self.ethereum.etherscan.get_blocknumber_by_time(vault.started)  # noqa: E501
+        except RemoteError as e:
+            self.msg_aggregator.add_error(
+                f'Failed to query ROI for vault {vault.ethereum_address}. '
+                f'Etherscan error {str(e)}.',
+            )
+            return ZERO, price_per_full_share
         return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / 10**18, price_per_full_share
 
     def _get_single_addr_balance(
@@ -108,6 +123,12 @@ class YearnVaultsV2(EthereumModule):
                 pps = pps_cache.get(vault_address, None)
                 if roi is None:
                     roi, pps = self._calculate_vault_roi(asset)
+                    if roi == ZERO:
+                        self.msg_aggregator.add_warning(
+                            f'Ignoring vault {asset} because information failed to '
+                            f'be correctly queried.',
+                        )
+                        continue
                     roi_cache[vault_address] = roi
                     pps_cache[vault_address] = pps
 
@@ -149,6 +170,10 @@ class YearnVaultsV2(EthereumModule):
         """Process the events for a single vault and returns total profit/loss after all events"""
         total = Balance()
         profit_so_far = Balance()
+
+        if len(events) < 2:
+            return total
+
         for event in events:
             if event.event_type == 'deposit':
                 total -= event.from_value
