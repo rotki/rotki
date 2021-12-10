@@ -37,38 +37,7 @@
         <v-row class="pt-3 pb-2">
           <v-col cols="12" class="account-balance-table__account">
             <labeled-address-display :account="item" />
-            <span class="mt-2 flex-row d-flex align-center">
-              <span v-if="loopringBalances(item.address).length > 0">
-                <v-tooltip open-delay="400" top>
-                  <template #activator="{ on, attrs }">
-                    <v-chip
-                      label
-                      v-bind="attrs"
-                      class="account-balance-table__tag"
-                      v-on="on"
-                    >
-                      <v-img
-                        contain
-                        height="20px"
-                        width="20px"
-                        :src="require('@/assets/images/modules/loopring.svg')"
-                      />
-                    </v-chip>
-                  </template>
-                  <span>
-                    {{ $t('account_balance_table.loopring_tooltip') }}
-                  </span>
-                </v-tooltip>
-              </span>
-              <span v-if="item.tags.length > 0">
-                <tag-icon
-                  v-for="tag in item.tags"
-                  :key="tag"
-                  class="account-balance-table__tag"
-                  :tag="tags[tag]"
-                />
-              </span>
-            </span>
+            <tag-display :tags="item.tags" />
           </v-col>
         </v-row>
       </template>
@@ -165,7 +134,7 @@ import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapGetters, mapState } from 'vuex';
+import { mapGetters } from 'vuex';
 
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
@@ -175,7 +144,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
-import TagIcon from '@/components/tags/TagIcon.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { balanceSum } from '@/filters';
 import StatusMixin from '@/mixins/status-mixin';
 import { chainSection } from '@/store/balances/const';
@@ -187,7 +156,6 @@ import {
 import { Properties } from '@/types';
 import { Currency } from '@/types/currency';
 import { TaskType } from '@/types/task-type';
-import { Tags } from '@/types/user';
 import { Zero } from '@/utils/bignumbers';
 
 @Component({
@@ -196,7 +164,7 @@ import { Zero } from '@/utils/bignumbers';
     DataTable,
     TableExpandContainer,
     LabeledAddressDisplay,
-    TagIcon,
+    TagDisplay,
     RowActions,
     AccountGroupHeader,
     RowExpander,
@@ -210,8 +178,7 @@ import { Zero } from '@/utils/bignumbers';
       'accountAssets',
       'accountLiabilities',
       'loopringBalances'
-    ]),
-    ...mapState('session', ['tags'])
+    ])
   }
 })
 export default class AccountBalanceTable extends Mixins(StatusMixin) {
@@ -240,7 +207,6 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   accountLiabilities!: (account: string) => AssetBalance[];
   loopringBalances!: (account: string) => AssetBalance[];
   hasDetails!: (account: string) => boolean;
-  tags!: Tags;
 
   expanded = [];
 
@@ -487,6 +453,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
       const loopringEth =
         assetBalances.find(({ asset }) => asset === Blockchain.ETH)?.amount ??
         Zero;
+
       return {
         ...value,
         balance: {

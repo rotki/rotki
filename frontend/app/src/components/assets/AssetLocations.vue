@@ -24,16 +24,7 @@
           v-if="item.address"
           :account="account(item.address)"
         />
-        <span v-if="item.tags" class="mt-2 flex-row d-flex align-center">
-          <span v-if="item.tags.length > 0">
-            <tag-icon
-              v-for="tag in item.tags"
-              :key="tag"
-              class="asset-locations-table__tag"
-              :tag="tags[tag]"
-            />
-          </span>
-        </span>
+        <tag-display :tags="item.tags" />
       </template>
       <template #item.balance.amount="{ item }">
         <amount-display :value="item.balance.amount" />
@@ -58,29 +49,27 @@ import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapGetters, mapState } from 'vuex';
+import { mapGetters } from 'vuex';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
-import TagIcon from '@/components/tags/TagIcon.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { AssetBreakdown, AssetPriceInfo } from '@/store/balances/types';
-import { Tags } from '@/types/user';
 
 @Component({
   components: {
     DataTable,
     LabeledAddressDisplay,
     CardTitle,
-    TagIcon,
+    TagDisplay,
     TagFilter
   },
   computed: {
     ...mapGetters('balances', ['breakdown', 'account', 'assetPriceInfo']),
     ...mapGetters('session', ['currencySymbol']),
-    ...mapGetters(['detailsLoading']),
-    ...mapState('session', ['tags'])
+    ...mapGetters(['detailsLoading'])
   }
 })
 export default class AssetLocations extends Vue {
@@ -125,7 +114,6 @@ export default class AssetLocations extends Vue {
   currencySymbol!: string;
   detailsLoading!: boolean;
   assetPriceInfo!: (asset: string) => AssetPriceInfo;
-  tags!: Tags;
   onlyTags: string[] = [];
 
   get totalUsdValue(): BigNumber {

@@ -4,13 +4,15 @@ import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { Currency } from '@/types/currency';
 import { Module } from '@/types/modules';
-import { Tag } from '@/types/user';
+import { READ_ONLY_TAGS, Tag, Tags } from '@/types/user';
 
 interface SessionGetters {
   floatingPrecision: number;
   dateDisplayFormat: string;
   currency: Currency;
   tags: Tag[];
+  availableTags: Tags;
+  availableTagsArray: Tag[];
   loanWatchers: Watcher<WatcherType>[];
   activeModules: Module[];
   currencySymbol: string;
@@ -40,6 +42,14 @@ export const getters: Getters<
 
   tags: (state: SessionState) => {
     return Object.values(state.tags);
+  },
+
+  availableTags: (state: SessionState) => {
+    return { ...state.tags, ...READ_ONLY_TAGS };
+  },
+
+  availableTagsArray: (state: SessionState) => {
+    return Object.values({ ...state.tags, ...READ_ONLY_TAGS });
   },
 
   loanWatchers: ({ watchers }) => {

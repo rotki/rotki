@@ -6,7 +6,14 @@
     :color="`#${tag.backgroundColor}`"
     :text-color="`#${tag.foregroundColor}`"
   >
-    {{ tag.name }}
+    <v-img
+      v-if="tag.icon"
+      class="mr-2"
+      :width="20"
+      :height="20"
+      :src="tag.icon"
+    />
+    <span>{{ tag.name }}</span>
   </v-chip>
 </template>
 

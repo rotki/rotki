@@ -69,15 +69,7 @@
                 <account-display :account="data.item" />
               </v-chip>
             </div>
-            <div class="blockchain-account-selector__list__item__tags">
-              <tag-icon
-                v-for="tag in data.item.tags"
-                :key="tag"
-                small
-                class="mr-1"
-                :tag="tags[tag]"
-              />
-            </div>
+            <tag-display :tags="data.item.tags" :small="true" />
           </div>
         </template>
       </v-autocomplete>
@@ -101,16 +93,14 @@ import {
 } from '@vue/composition-api';
 import { uniqueId } from 'lodash';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
-import TagIcon from '@/components/tags/TagIcon.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
 
 import { setupBlockchainAccounts } from '@/composables/balances';
 import { setupThemeCheck } from '@/composables/common';
 import i18n from '@/i18n';
-import { useStore } from '@/store/utils';
-import { assert } from '@/utils/assertions';
 
 export default defineComponent({
-  components: { AccountDisplay, TagIcon },
+  components: { AccountDisplay, TagDisplay },
   props: {
     label: { required: false, type: String, default: '' },
     hint: { required: false, type: Boolean, default: false },
@@ -191,13 +181,6 @@ export default defineComponent({
 
     const input = (value: string | null) => emit('input', value);
 
-    const store = useStore();
-    const tags = computed(() => {
-      const session = store.state.session;
-      assert(session);
-      return session.tags;
-    });
-
     const { dark } = setupThemeCheck();
 
     const id = uniqueId('rcmp-');
@@ -207,7 +190,6 @@ export default defineComponent({
       search,
       input,
       filter,
-      tags,
       hintText,
       displayedAccounts,
       selectableAccounts,

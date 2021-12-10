@@ -35,6 +35,7 @@ import { Getters } from '@/store/typing';
 import { Writeable } from '@/types';
 import { ExchangeInfo, SupportedExchange } from '@/types/exchanges';
 import { L2_LOOPRING } from '@/types/protocols';
+import { ReadOnlyTag } from '@/types/user';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 import { assetSum, balanceSum } from '@/utils/calculation';
@@ -113,9 +114,22 @@ export const getters: Getters<
 > = {
   ethAccounts({
     eth,
-    ethAccounts
+    ethAccounts,
+    loopringBalances
   }: BalanceState): BlockchainAccountWithBalance[] {
-    return balances(ethAccounts, eth, Blockchain.ETH);
+    const accounts = balances(ethAccounts, eth, Blockchain.ETH);
+
+    // check if account is loopring account
+    return accounts.map(ethAccount => {
+      const address = ethAccount.address;
+      const balances = loopringBalances[address];
+      const tags = ethAccount.tags || [];
+      if (balances) {
+        tags.push(ReadOnlyTag.LOOPRING);
+      }
+
+      return { ...ethAccount, tags: [...new Set(tags)] };
+    });
   },
   eth2Balances({
     eth2,
@@ -741,7 +755,7 @@ export const getters: Getters<
             address,
             location: Blockchain.ETH,
             balance: loopringBalances[address][asset],
-            tags: []
+            tags: [ReadOnlyTag.LOOPRING]
           });
         }
       }

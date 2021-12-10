@@ -25,30 +25,19 @@
       sort-by="usdValue"
     >
       <template #item.label="{ item }">
-        <v-row>
-          <v-col
-            cols="12"
-            class="font-weight-medium"
-            data-cy="label"
-            :class="{
-              'pt-0': !item.tags,
-              [$style.label]: true
-            }"
-          >
-            {{ item.label }}
-          </v-col>
-        </v-row>
-        <v-row v-if="item.tags">
-          <v-col cols="12">
-            <tag-icon
-              v-for="tag in item.tags"
-              :key="tag"
-              small
-              :class="$style.tag"
-              :tag="tags[tag]"
-            />
-          </v-col>
-        </v-row>
+        <div
+          class="font-weight-medium"
+          data-cy="label"
+          :class="{
+            'pt-0': !item.tags,
+            [$style.label]: true
+          }"
+        >
+          {{ item.label }}
+        </div>
+        <div>
+          <tag-display :tags="item.tags" :small="true" />
+        </div>
       </template>
       <template #item.asset="{ item }">
         <asset-details opens-details :asset="item.asset" />
@@ -132,12 +121,12 @@ import { IVueI18n } from 'vue-i18n';
 import { DataTableHeader } from 'vuetify';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
-import TagIcon from '@/components/tags/TagIcon.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
 import {
   setupExchangeRateGetter,
   setupManualBalances
 } from '@/composables/balances';
-import { currency, tags } from '@/composables/session';
+import { currency } from '@/composables/session';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { ManualBalance } from '@/services/balances/types';
@@ -187,7 +176,7 @@ const setupHeaders: (
 
 const ManualBalanceTable = defineComponent({
   name: 'ManualBalanceTable',
-  components: { TagIcon, TagFilter, RefreshButton },
+  components: { TagFilter, RefreshButton, TagDisplay },
   props: {
     title: { required: true, type: String },
     loading: { required: false, type: Boolean, default: false },
@@ -242,7 +231,6 @@ const ManualBalanceTable = defineComponent({
       edit,
       deleteBalance,
       headers: setupHeaders(i18n, currency),
-      tags,
       onlyTags,
       total,
       currency,
@@ -257,10 +245,6 @@ export default ManualBalanceTable;
 <style module lang="scss">
 .total {
   font-weight: 500;
-}
-
-.tag {
-  margin-right: 8px;
 }
 
 .label {
