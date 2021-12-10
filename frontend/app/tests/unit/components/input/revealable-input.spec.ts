@@ -8,7 +8,7 @@ import store from '@/store/store';
 Vue.use(Vuetify);
 
 describe('RevealableInput.vue', () => {
-  let wrapper: Wrapper<RevealableInput>;
+  let wrapper: Wrapper<any>;
 
   beforeEach(() => {
     const vuetify = new Vuetify();

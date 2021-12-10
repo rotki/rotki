@@ -28,7 +28,6 @@ import {
   ITEMS_PER_PAGE,
   LAST_KNOWN_TIMEFRAME,
   NFTS_IN_NET_VALUE,
-  VERSION_UPDATE_CHECK_FREQUENCY,
   PROFIT_LOSS_PERIOD,
   Quarter,
   QUERY_PERIOD,
@@ -36,8 +35,9 @@ import {
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
   VALUE_ROUNDING_MODE,
+  VERSION_UPDATE_CHECK_FREQUENCY,
   VISIBLE_TIMEFRAMES
-} from '../../../../src/types/frontend-settings';
+} from '@/types/frontend-settings';
 
 jest.mock('@/services/rotkehlchen-api');
 

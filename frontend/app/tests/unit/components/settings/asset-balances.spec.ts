@@ -12,7 +12,7 @@ Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 
 describe('AssetBalances.vue', () => {
-  let wrapper: Wrapper<AssetBalances>;
+  let wrapper: Wrapper<any>;
 
   beforeEach(() => {
     const vuetify = new Vuetify();

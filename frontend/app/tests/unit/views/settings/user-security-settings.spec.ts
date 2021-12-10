@@ -19,7 +19,7 @@ Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 
 describe('UserSecuritySettings.vue', () => {
-  let wrapper: Wrapper<UserSecuritySettings>;
+  let wrapper: Wrapper<any>;
 
   function createWrapper() {
     const vuetify = new Vuetify();

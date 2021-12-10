@@ -9,8 +9,8 @@ import { BalanceState } from '@/store/balances/types';
 import { SessionState } from '@/store/session/types';
 import store from '@/store/store';
 import { RotkehlchenState } from '@/store/types';
+import { SupportedExchange } from '@/types/exchanges';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
-import { SupportedExchange } from '../../../../src/types/exchanges';
 import { stub } from '../../../common/utils';
 
 describe('balances:getters', () => {
