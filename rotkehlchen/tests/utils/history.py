@@ -179,7 +179,7 @@ prices = {
 }
 
 
-def check_result_of_history_creation_for_remote_errors(
+def check_result_of_history_creation_for_remote_errors(  # pylint: disable=useless-return
         start_ts: Timestamp,  # pylint: disable=unused-argument
         end_ts: Timestamp,  # pylint: disable=unused-argument
         trade_history: List[Union[Trade, MarginPosition, AMMTrade]],
@@ -188,14 +188,14 @@ def check_result_of_history_creation_for_remote_errors(
         eth_transactions: List[EthereumTransaction],
         defi_events: List[DefiEvent],
         ledger_actions: List[LedgerAction],
-) -> int:
+) -> Optional[int]:
     assert len(trade_history) == 0
     assert len(loan_history) == 0
     assert len(asset_movements) == 0
     assert len(eth_transactions) == 0
     assert len(defi_events) == 0
     assert len(ledger_actions) == 0
-    return 0  # fake report id
+    return None  # fake report id
 
 
 def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
@@ -704,7 +704,7 @@ def mock_history_processing(
             eth_transactions: List[EthereumTransaction],
             defi_events: List[DefiEvent],
             ledger_actions: List[LedgerAction],
-    ) -> int:
+    ) -> Optional[int]:
         """This function offers some simple assertions on the result of the
         created history. The entire processing part of the history is mocked
         away by this checking function"""
@@ -858,7 +858,7 @@ def mock_history_processing(
             eth_transactions: List[EthereumTransaction],
             defi_events: List[DefiEvent],
             ledger_actions: List[LedgerAction],
-    ) -> int:
+    ) -> Optional[int]:
         """Checks results of history creation but also proceeds to normal history processing"""
         check_result_of_history_creation(
             start_ts=start_ts,
