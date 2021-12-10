@@ -3,13 +3,14 @@ import { defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { userNotify } from '@/store/notifications/utils';
-import { emptyError, pnlOverview } from '@/store/reports/const';
 import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { Message } from '@/store/types';
 import {
   ProfitLossEvents,
+  ProfitLossOverview,
   ProfitLossReportPeriod,
+  ReportError,
   Reports,
   SelectedReport
 } from '@/types/reports';
@@ -17,6 +18,7 @@ import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { AccountingSettings } from '@/types/user';
 import { assert } from '@/utils/assertions';
+import { Zero } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
 
 const notify = async (info: {
@@ -33,26 +35,49 @@ const notify = async (info: {
   });
 };
 
+const emptyError: () => ReportError = () => ({
+  error: '',
+  message: ''
+});
+
+const pnlOverview = (): ProfitLossOverview => ({
+  loanProfit: Zero,
+  defiProfitLoss: Zero,
+  marginPositionsProfitLoss: Zero,
+  settlementLosses: Zero,
+  ethereumTransactionGasCosts: Zero,
+  ledgerActionsProfitLoss: Zero,
+  assetMovementFees: Zero,
+  generalTradeProfitLoss: Zero,
+  taxableTradeProfitLoss: Zero,
+  totalTaxableProfitLoss: Zero,
+  totalProfitLoss: Zero
+});
+
+const defaultReport = () => ({
+  overview: pnlOverview(),
+  entries: [] as ProfitLossEvents,
+  entriesLimit: 0,
+  entriesFound: 0,
+  start: 0,
+  end: 0,
+  firstProcessedTimestamp: 0
+});
+
+const defaultReports = () => ({
+  entries: [],
+  entriesLimit: 0,
+  entriesFound: 0
+});
+
+const defaultProgress = () => ({ processingState: '', totalProgress: '' });
+
 export const useReports = defineStore('reports', () => {
-  const report = ref({
-    overview: pnlOverview(),
-    entries: [] as ProfitLossEvents,
-    entriesLimit: 0,
-    entriesFound: 0,
-    start: 0,
-    end: 0,
-    firstProcessedTimestamp: 0
-  }) as Ref<SelectedReport>;
-
-  const reports = ref<Reports>({
-    entries: [],
-    entriesLimit: 0,
-    entriesFound: 0
-  }) as Ref<Reports>;
-
+  const report = ref(defaultReport()) as Ref<SelectedReport>;
+  const reports = ref<Reports>(defaultReports()) as Ref<Reports>;
   const accountingSettings = ref<AccountingSettings | null>(null);
   const loaded = ref(false);
-  const reportProgress = ref({ processingState: '', totalProgress: '' });
+  const reportProgress = ref(defaultProgress());
   const reportError = ref(emptyError());
 
   const createCsv = async (path: string) => {
@@ -207,6 +232,19 @@ export const useReports = defineStore('reports', () => {
   const progress = computed(() => reportProgress.value.totalProgress);
   const processingState = computed(() => reportProgress.value.processingState);
 
+  const clearReport = () => {
+    report.value = defaultReport();
+  };
+
+  const reset = () => {
+    report.value = defaultReport();
+    reports.value = defaultReports();
+    loaded.value = false;
+    accountingSettings.value = null;
+    reportProgress.value = defaultProgress();
+    reportError.value = emptyError();
+  };
+
   return {
     reports,
     report,
@@ -219,6 +257,8 @@ export const useReports = defineStore('reports', () => {
     generateReport,
     deleteReport,
     fetchReport,
-    fetchReports
+    fetchReports,
+    clearReport,
+    reset
   };
 });

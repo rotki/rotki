@@ -290,7 +290,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('statistics/reset', payload, opts);
     commit('staking/reset', payload, opts);
     commit('reset', payload, opts);
-    useReports().$reset();
+    useReports().reset();
     useTasks().reset();
   },
 

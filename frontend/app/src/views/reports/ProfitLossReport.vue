@@ -41,6 +41,7 @@ import {
   computed,
   defineComponent,
   onMounted,
+  onUnmounted,
   ref
 } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
@@ -65,7 +66,7 @@ export default defineComponent({
     const loading = ref(true);
     const reportsStore = useReports();
     const { report } = storeToRefs(reportsStore);
-    const { fetchReport } = reportsStore;
+    const { fetchReport, clearReport } = reportsStore;
     const route = useRoute();
 
     onMounted(async () => {
@@ -79,6 +80,8 @@ export default defineComponent({
         report.value.entriesLimit > 0 &&
         report.value.entriesLimit < report.value.entriesFound
     );
+
+    onUnmounted(() => clearReport());
 
     return {
       loading,
