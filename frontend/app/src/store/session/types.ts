@@ -8,6 +8,14 @@ import {
 } from '@/services/session/types';
 import { AccountingSettings, GeneralSettings, Tags } from '@/types/user';
 
+export enum PrivacyMode {
+  NORMAL = 0,
+  SEMI_PRIVATE = 1,
+  PRIVATE = 2
+}
+
+export const PrivacyModeEnum = z.nativeEnum(PrivacyMode);
+
 export interface SessionState {
   newAccount: boolean;
   logged: boolean;
@@ -17,7 +25,7 @@ export interface SessionState {
   accountingSettings: AccountingSettings;
   premium: boolean;
   premiumSync: boolean;
-  privacyMode: boolean;
+  privacyMode: PrivacyMode;
   scrambleData: boolean;
   nodeConnection: boolean;
   syncConflict: SyncConflict;

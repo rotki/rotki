@@ -1,5 +1,5 @@
 <template>
-  <span class="date-display" :class="privacyMode ? 'blur-content' : null">
+  <span class="date-display" :class="!shouldShowAmount ? 'blur-content' : null">
     {{ formatDate(displayTimestamp, dateFormat) }}
   </span>
 </template>
@@ -11,8 +11,8 @@ import { displayDateFormatter } from '@/data/date_formatter';
 
 @Component({
   computed: {
-    ...mapGetters('session', ['dateDisplayFormat']),
-    ...mapState('session', ['privacyMode', 'scrambleData'])
+    ...mapGetters('session', ['dateDisplayFormat', 'shouldShowAmount']),
+    ...mapState('session', ['scrambleData'])
   }
 })
 export default class DateDisplay extends Vue {
@@ -24,7 +24,7 @@ export default class DateDisplay extends Vue {
   noTime!: boolean;
 
   dateDisplayFormat!: string;
-  privacyMode!: boolean;
+  shouldShowAmount!: boolean;
   scrambleData!: boolean;
 
   formatDate(value: number, format: string): string {

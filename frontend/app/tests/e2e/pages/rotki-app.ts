@@ -44,9 +44,20 @@ export class RotkiApp {
     cy.get(`#change-to-${currency.toLocaleLowerCase()}`).click();
   }
 
-  togglePrivacyMode() {
+  changePrivacyMode(mode: number) {
     cy.get('.user-dropdown').click();
-    cy.get('.user-dropdown__privacy-mode').click();
+    cy.get('[data-cy="user-dropdown__privacy-mode"]').click();
+    cy.get(
+      '[data-cy="user-dropdown__privacy-mode__input"] ~ .v-slider__thumb-container'
+    ).as('input');
+
+    cy.get('@input').focus().type('{downarrow}'.repeat(3));
+
+    if (mode > 0) {
+      cy.get('@input').type('{uparrow}'.repeat(mode));
+    }
+    cy.get('[data-cy="user-dropdown__privacy-mode"]').click();
+    cy.get('.user-dropdown').click();
   }
 
   drawerIsVisible(isVisible: boolean) {

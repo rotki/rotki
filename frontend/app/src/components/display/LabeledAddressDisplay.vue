@@ -28,7 +28,7 @@
             </span>
             <span
               v-if="!$vuetify.breakpoint.smAndDown || !label"
-              :class="privacyMode ? 'blur-content' : null"
+              :class="!shouldShowAmount ? 'blur-content' : null"
             >
               {{ displayAddress }}
             </span>
@@ -47,16 +47,18 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import { mapGetters } from 'vuex';
 import { truncateAddress, truncationPoints } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
 import { randomHex } from '@/utils/data';
 
 @Component({
-  computed: { ...mapState('session', ['privacyMode']) }
+  computed: {
+    ...mapGetters('session', ['shouldShowAmount'])
+  }
 })
 export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
-  privacyMode!: boolean;
+  shouldShowAmount!: boolean;
 
   @Prop({ required: true })
   account!: GeneralAccount;

@@ -145,14 +145,6 @@ export class ManualBalancesPage extends AccountBalancesPage {
     return cy.wrap(balanceLocations);
   }
 
-  amountDisplayIsBlurred() {
-    cy.get('.amount-display').should('have.class', 'blur-content');
-  }
-
-  amountDisplayIsNotBlurred() {
-    cy.get('.amount-display').should('not.have.class', 'blur-content');
-  }
-
   editBalance(position: number, amount: string) {
     cy.get('[data-cy="manual-balances"] tbody')
       .find('tr')

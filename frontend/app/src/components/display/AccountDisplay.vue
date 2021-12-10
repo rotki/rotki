@@ -13,7 +13,7 @@
     </v-col>
     <v-col
       cols="auto"
-      :class="privacyMode ? 'blur-content' : ''"
+      :class="!shouldShowAmount ? 'blur-content' : ''"
       class="text-no-wrap"
     >
       ({{ truncateAddress(address) }})
@@ -24,7 +24,7 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import { mapGetters } from 'vuex';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { truncateAddress } from '@/filters';
 import ScrambleMixin from '@/mixins/scramble-mixin';
@@ -32,12 +32,14 @@ import { randomHex } from '@/utils/data';
 
 @Component({
   components: { AssetIcon },
-  computed: { ...mapState('session', ['privacyMode']) }
+  computed: {
+    ...mapGetters('session', ['shouldShowAmount'])
+  }
 })
 export default class AccountDisplay extends Mixins(ScrambleMixin) {
   @Prop({ required: true })
   account!: GeneralAccount;
-  privacyMode!: boolean;
+  shouldShowAmount!: boolean;
   readonly truncateAddress = truncateAddress;
 
   get address(): string {

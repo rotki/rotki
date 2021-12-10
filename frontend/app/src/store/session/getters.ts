@@ -1,5 +1,5 @@
 import { Watcher, WatcherType } from '@/services/session/types';
-import { SessionState } from '@/store/session/types';
+import { PrivacyMode, SessionState } from '@/store/session/types';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { Currency } from '@/types/currency';
@@ -16,6 +16,8 @@ interface SessionGetters {
   loanWatchers: Watcher<WatcherType>[];
   activeModules: Module[];
   currencySymbol: string;
+  shouldShowAmount: boolean;
+  shouldShowPercentage: boolean;
 }
 
 export const getters: Getters<
@@ -62,5 +64,13 @@ export const getters: Getters<
 
   activeModules: ({ generalSettings }) => {
     return generalSettings.activeModules;
+  },
+
+  shouldShowAmount: ({ privacyMode }) => {
+    return privacyMode < PrivacyMode.SEMI_PRIVATE;
+  },
+
+  shouldShowPercentage: ({ privacyMode }) => {
+    return privacyMode < PrivacyMode.PRIVATE;
   }
 };

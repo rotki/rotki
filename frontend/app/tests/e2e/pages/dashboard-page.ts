@@ -119,4 +119,23 @@ export class DashboardPage {
 
     return cy.wrap(balanceLocations);
   }
+
+  amountDisplayIsBlurred() {
+    cy.get('.amount-display').should('have.class', 'blur-content');
+  }
+
+  amountDisplayIsNotBlurred() {
+    cy.get('.amount-display').should('not.have.class', 'blur-content');
+  }
+
+  percentageDisplayIsBlurred() {
+    cy.get('.percentage-display__amount').should('have.class', 'blur-content');
+  }
+
+  percentageDisplayIsNotBlurred() {
+    cy.get('.percentage-display__amount').should(
+      'not.have.class',
+      'blur-content'
+    );
+  }
 }
