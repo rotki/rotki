@@ -6,8 +6,7 @@ import { balanceKeys } from '@/services/consts';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_MODULES } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
-import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
+import { useNotifications } from '@/store/notifications';
 import {
   ACTION_PURGE_DATA,
   ADEX_BALANCES,
@@ -61,14 +60,18 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
 
         commit(ETH2_DETAILS, result);
       } catch (e: any) {
-        notify(
-          i18n.tc('actions.staking.eth2.error.description', undefined, {
-            error: e.message
-          }),
-          i18n.tc('actions.staking.eth2.error.title'),
-          Severity.ERROR,
-          true
-        );
+        const { notify } = useNotifications();
+        notify({
+          title: i18n.tc('actions.staking.eth2.error.title'),
+          message: i18n.tc(
+            'actions.staking.eth2.error.description',
+            undefined,
+            {
+              error: e.message
+            }
+          ),
+          display: true
+        });
       }
       setStatus(Status.LOADED, section, status, commit);
     }
@@ -92,14 +95,17 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
 
         commit(ETH2_DEPOSITS, result);
       } catch (e: any) {
-        notify(
-          `${i18n.t('actions.staking.eth2_deposits.error.description', {
-            error: e.message
-          })}`,
-          `${i18n.t('actions.staking.eth2_deposits.error.title')}`,
-          Severity.ERROR,
-          true
-        );
+        const { notify } = useNotifications();
+        notify({
+          title: `${i18n.t('actions.staking.eth2_deposits.error.title')}`,
+          message: `${i18n.t(
+            'actions.staking.eth2_deposits.error.description',
+            {
+              error: e.message
+            }
+          )}`,
+          display: true
+        });
       }
       setStatus(Status.LOADED, secondarySection, status, commit);
     }
@@ -143,14 +149,14 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
 
       commit(ADEX_BALANCES, result);
     } catch (e: any) {
-      notify(
-        `${i18n.t('actions.staking.adex_balances.error.description', {
+      const { notify } = useNotifications();
+      notify({
+        title: `${i18n.t('actions.staking.adex_balances.error.title')}`,
+        message: `${i18n.t('actions.staking.adex_balances.error.description', {
           error: e.message
         })}`,
-        `${i18n.t('actions.staking.adex_balances.error.title')}`,
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
 
@@ -171,14 +177,14 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
 
       commit(ADEX_HISTORY, result);
     } catch (e: any) {
-      notify(
-        `${i18n.t('actions.staking.adex_history.error.description', {
+      const { notify } = useNotifications();
+      notify({
+        title: `${i18n.t('actions.staking.adex_history.error.title')}`,
+        message: `${i18n.t('actions.staking.adex_history.error.description', {
           error: e.message
         })}`,
-        `${i18n.t('actions.staking.adex_history.error.title')}`,
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, secondarySection, status, commit);
   },

@@ -145,8 +145,8 @@ import Fragment from '@/components/helper/Fragment';
 import OracleEntry from '@/components/settings/OracleEntry.vue';
 import { OracleCacheMeta } from '@/services/balances/types';
 import { OracleCachePayload } from '@/store/balances/types';
+import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { TaskType } from '@/types/task-type';
@@ -265,7 +265,13 @@ export default class OracleCacheManagement extends Vue {
         error: e.message
       }).toString();
 
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        severity: Severity.ERROR,
+        display: true
+      });
     }
   }
 
@@ -303,12 +309,13 @@ export default class OracleCacheManagement extends Vue {
       'oracle_cache_management.notification.title'
     ).toString();
 
-    notify(
-      message.toString(),
+    const { notify } = useNotifications();
+    notify({
       title,
-      status.success ? Severity.INFO : Severity.ERROR,
-      true
-    );
+      message: message.toString(),
+      severity: status.success ? Severity.INFO : Severity.ERROR,
+      display: true
+    });
   }
 }
 </script>

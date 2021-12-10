@@ -49,7 +49,7 @@
 import { defineComponent, nextTick, ref, watch } from '@vue/composition-api';
 import Notification from '@/components/status/notifications/Notification.vue';
 import { setupNotifications } from '@/composables/notifications';
-import { emptyNotification } from '@/store/notifications/utils';
+import { emptyNotification } from '@/store/notifications';
 
 const NotificationPopup = defineComponent({
   name: 'NotificationPopup',

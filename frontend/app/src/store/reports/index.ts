@@ -2,7 +2,7 @@ import { computed, Ref, ref } from '@vue/composition-api';
 import { defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { userNotify } from '@/store/notifications/utils';
+import { useNotifications } from '@/store/notifications';
 import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { Message } from '@/store/types';
@@ -21,14 +21,15 @@ import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
 
-const notify = async (info: {
+const notify = (info: {
   title: string;
   message: (value: { message: string }) => string;
   error?: any;
 }) => {
   logger.error(info.error);
   const message = info.error?.message ?? info.error ?? '';
-  await userNotify({
+  const { notify } = useNotifications();
+  notify({
     title: info.title,
     message: info.message({ message }),
     display: true
@@ -113,7 +114,7 @@ export const useReports = defineStore('reports', () => {
         entriesLimit: reports.value.entriesLimit
       };
     } catch (e: any) {
-      await notify({
+      notify({
         title: i18n.t('actions.reports.delete.error.title').toString(),
         message: values =>
           i18n.t('actions.reports.delete.error.description', values).toString(),
@@ -159,7 +160,7 @@ export const useReports = defineStore('reports', () => {
       };
       loaded.value = true;
     } catch (e: any) {
-      await notify({
+      notify({
         title: i18n.t('actions.reports.fetch.error.title').toString(),
         message: value =>
           i18n.t('actions.reports.fetch.error.description', value).toString(),
@@ -172,7 +173,7 @@ export const useReports = defineStore('reports', () => {
     try {
       reports.value = await api.reports.fetchReports();
     } catch (e: any) {
-      await notify({
+      notify({
         title: i18n.t('actions.reports.fetch.error.title').toString(),
         message: value =>
           i18n.t('actions.reports.fetch.error.description', value).toString(),

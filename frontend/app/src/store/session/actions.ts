@@ -24,8 +24,7 @@ import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { HistoryActions } from '@/store/history/consts';
-import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
+import { useNotifications } from '@/store/notifications';
 import { useReports } from '@/store/reports';
 import {
   ACTION_PURGE_CACHED_DATA,
@@ -241,16 +240,16 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         commit('updateLastDataUpload', lastDataUploadTs);
       }
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.t('actions.session.periodic_query.error.title').toString(),
+        message: i18n
           .t('actions.session.periodic_query.error.message', {
             message: e.message
           })
           .toString(),
-        i18n.t('actions.session.periodic_query.error.title').toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     } finally {
       periodic.isRunning = false;
     }
@@ -282,7 +281,6 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     const opts = { root: true };
     const payload = {};
     commit('session/reset', payload, opts);
-    commit('notifications/reset', payload, opts);
     commit('balances/reset', payload, opts);
     commit('defi/reset', payload, opts);
     commit('settings/reset', payload, opts);
@@ -290,6 +288,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('statistics/reset', payload, opts);
     commit('staking/reset', payload, opts);
     commit('reset', payload, opts);
+    useNotifications().reset();
     useReports().reset();
     useTasks().reset();
   },
@@ -411,16 +410,16 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const watchers = await api.session.watchers();
       commit('watchers', watchers);
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.t('actions.session.fetch_watchers.error.title').toString(),
+        message: i18n
           .t('actions.session.fetch_watchers.error.message', {
             message: e.message
           })
           .toString(),
-        i18n.t('actions.session.fetch_watchers.error.title').toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
   },
 
@@ -587,7 +586,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
           error: e.message
         }
       );
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
   },
   async ignoreAsset({ commit }, asset: string): Promise<ActionStatus> {
@@ -614,6 +618,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     if (isTaskRunning(taskType).value) {
       return;
     }
+    const { notify } = useNotifications();
     try {
       const { taskId } = await api.forceSync(action);
       await awaitTask<boolean, TaskMeta>(taskId, taskType, {
@@ -622,7 +627,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       });
       const title = i18n.tc('actions.session.force_sync.success.title');
       const message = i18n.tc('actions.session.force_sync.success.message');
-      notify(message, title, Severity.INFO, true);
+
+      notify({
+        title,
+        message,
+        display: true
+      });
 
       if (action === SYNC_DOWNLOAD) {
         await dispatch('logout');
@@ -632,7 +642,12 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       const message = i18n.tc('actions.session.force_sync.error.message', 0, {
         error: e.message
       });
-      notify(message, title, Severity.ERROR, true);
+
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
   },
   async [ACTION_PURGE_CACHED_DATA]({ dispatch }, purgable: Purgeable) {

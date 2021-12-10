@@ -47,8 +47,7 @@ import {
   Trades
 } from '@/store/history/types';
 import { getKey } from '@/store/history/utils';
-import { Severity } from '@/store/notifications/consts';
-import { notify, userNotify } from '@/store/notifications/utils';
+import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import {
   ActionStatus,
@@ -263,17 +262,17 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       message
     ) => {
       const exchange = exchangeName(location);
-      notify(
-        i18n.tc('actions.trades.error.description', undefined, {
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.trades.error.title', undefined, {
+          exchange
+        }),
+        message: i18n.tc('actions.trades.error.description', undefined, {
           exchange,
           error: message
         }),
-        i18n.tc('actions.trades.error.title', undefined, {
-          exchange
-        }),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     };
 
     await Promise.all(
@@ -427,15 +426,21 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       message
     ) => {
       const exchange = exchangeName(location);
-      notify(
-        i18n.tc('actions.asset_movements.error.description', undefined, {
-          exchange,
-          error: message
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.asset_movements.error.title', undefined, {
+          exchange
         }),
-        i18n.tc('actions.asset_movements.error.title', undefined, { exchange }),
-        Severity.ERROR,
-        true
-      );
+        message: i18n.tc(
+          'actions.asset_movements.error.description',
+          undefined,
+          {
+            exchange,
+            error: message
+          }
+        ),
+        display: true
+      });
     };
 
     await Promise.all(
@@ -518,9 +523,10 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
       if (!onlyCache) {
         setStatus(Status.REFRESHING);
+        const { notify } = useNotifications();
         const refreshAddressTxs = ethAddresses.map((address: string) =>
           fetchTransactions({ address }).catch(error => {
-            userNotify({
+            notify({
               title: i18n.t('actions.transactions.error.title').toString(),
               message: i18n
                 .t('actions.transactions.error.description', {
@@ -622,14 +628,18 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     };
 
     const onDefaultError: (message: string) => void = message => {
-      notify(
-        i18n.tc('actions.manual_ledger_actions.error.description', undefined, {
-          error: message
-        }),
-        i18n.tc('actions.manual_ledger_actions.error.title'),
-        Severity.ERROR,
-        true
-      );
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.manual_ledger_actions.error.title'),
+        message: i18n.tc(
+          'actions.manual_ledger_actions.error.description',
+          undefined,
+          {
+            error: message
+          }
+        ),
+        display: true
+      });
     };
 
     const fetchLocation: (location: TradeLocation) => Promise<void> =
@@ -685,15 +695,21 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       message
     ) => {
       const exchange = exchangeName(location);
-      notify(
-        i18n.tc('actions.ledger_actions.error.description', undefined, {
-          exchange,
-          error: message
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.ledger_actions.error.title', undefined, {
+          exchange
         }),
-        i18n.tc('actions.ledger_actions.error.title', undefined, { exchange }),
-        Severity.ERROR,
-        true
-      );
+        message: i18n.tc(
+          'actions.ledger_actions.error.description',
+          undefined,
+          {
+            exchange,
+            error: message
+          }
+        ),
+        display: true
+      });
     };
 
     await Promise.all([
@@ -846,10 +862,11 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     }
   },
   async [HistoryActions.FETCH_IGNORED]({ commit }) {
-    const notify = async (error?: any) => {
+    const notify = (error?: any) => {
       logger.error(error);
       const message = error?.message ?? error ?? '';
-      await userNotify({
+      const { notify } = useNotifications();
+      notify({
         title: i18n.t('actions.history.fetch_ignored.error.title').toString(),
         message: i18n
           .t('actions.history.fetch_ignored.error.message', { message })
@@ -861,7 +878,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       const result = await api.history.fetchIgnored();
       commit(HistoryMutations.SET_IGNORED, result);
     } catch (e: any) {
-      await notify(e);
+      notify(e);
     }
   }
 };

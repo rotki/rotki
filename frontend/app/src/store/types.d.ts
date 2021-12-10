@@ -3,7 +3,6 @@ import { BalanceState } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
 import { DefiState } from '@/store/defi/types';
 import { HistoryState } from '@/store/history/types';
-import { NotificationState } from '@/store/notifications/state';
 import { SessionState } from '@/store/session/types';
 import { SettingsState } from '@/store/settings/state';
 import { StatisticsState } from '@/store/statistics/types';
@@ -34,7 +33,6 @@ export interface RotkehlchenState {
   connectionFailure: boolean;
   status: SectionStatus;
   session?: SessionState;
-  notifications?: NotificationState;
   balances?: BalanceState;
   settings?: SettingsState;
   defi?: DefiState;

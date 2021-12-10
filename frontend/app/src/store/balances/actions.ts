@@ -41,8 +41,8 @@ import {
   XpubPayload
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
+import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
-import { notify, userNotify } from '@/store/notifications/utils';
 import { useTasks } from '@/store/tasks';
 import {
   ActionStatus,
@@ -130,16 +130,16 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         ignoreResult: true
       });
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.t('actions.balances.all_balances.error.title').toString(),
+        message: i18n
           .t('actions.balances.all_balances.error.message', {
             message: e.message
           })
           .toString(),
-        i18n.t('actions.balances.all_balances.error.title').toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     await dispatch('accounts');
   },
@@ -212,7 +212,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           location
         })
         .toString();
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     } finally {
       setStatus(Status.LOADED, section, status, commit);
     }
@@ -237,16 +242,16 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       commit('usdToFiatExchangeRates', ExchangeRates.parse(result));
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.t('actions.balances.exchange_rates.error.title').toString(),
+        message: i18n
           .t('actions.balances.exchange_rates.error.message', {
             message: e.message
           })
           .toString(),
-        i18n.t('actions.balances.exchange_rates.error.title').toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
   },
   async fetchBlockchainBalances(
@@ -315,12 +320,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           error: e.message
         }
       );
-      notify(
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.balances.blockchain.error.title'),
         message,
-        i18n.tc('actions.balances.blockchain.error.title'),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
   },
   async addExchanges(
@@ -431,7 +436,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           error: e.message
         }
       );
-      notify(description, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message: description,
+        display: true
+      });
     }
   },
 
@@ -481,7 +491,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           error: e.message
         }
       );
-      notify(description, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message: description,
+        display: true
+      });
     }
   },
 
@@ -510,7 +525,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const description = i18n.tc(
         'actions.balances.blockchain_accounts_add.no_new.description'
       );
-      notify(description, title, Severity.INFO, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message: description,
+        severity: Severity.INFO,
+        display: true
+      });
       return;
     }
 
@@ -601,7 +622,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           blockchain
         }
       );
-      notify(description, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message: description,
+        display: true
+      });
     }
   },
 
@@ -673,7 +699,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           error: e.message
         }
       );
-      notify(description, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message: description,
+        display: true
+      });
     }
   },
 
@@ -698,20 +729,23 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async accounts({ commit }, blockchains: Blockchain[] | null) {
+  async accounts(
+    { commit, rootState: { session } },
+    blockchains: Blockchain[] | null
+  ) {
     const error = (error: any, blockchain: Blockchain) => {
       logger.error(error);
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.t('actions.get_accounts.error.title').toString(),
+        message: i18n
           .t('actions.get_accounts.error.description', {
             blockchain: Blockchain[blockchain],
             message: error.message
           })
           .toString(),
-        i18n.t('actions.get_accounts.error.title').toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     };
     const getAccounts = async (
       blockchain: Exclude<Blockchain, Blockchain.BTC | Blockchain.ETH2>
@@ -744,6 +778,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     };
 
     const getEth2Validators = async () => {
+      const { activeModules } = session!.generalSettings;
+      if (!activeModules.includes(Module.ETH2)) {
+        return;
+      }
       try {
         const validators = await api.balances.getEth2Validators();
         commit('eth2Validators', validators);
@@ -810,13 +848,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const netvalueData = await api.queryNetvalueData(includeNfts);
       commit('netvalueData', netvalueData);
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.t('actions.balances.net_value.error.title').toString(),
+        message: i18n
           .t('actions.balances.net_value.error.message', { message: e.message })
           .toString(),
-        i18n.t('actions.balances.net_value.error.title').toString(),
-        Severity.ERROR
-      );
+        display: false
+      });
     }
   },
 
@@ -828,16 +867,18 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const supportedAssets = await api.assets.allAssets();
       commit('supportedAssets', convertSupportedAssets(supportedAssets));
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n
+          .t('actions.balances.supported_assets.error.title')
+          .toString(),
+        message: i18n
           .t('actions.balances.supported_assets.error.message', {
             message: e.message
           })
           .toString(),
-        i18n.t('actions.balances.supported_assets.error.title').toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
   },
 
@@ -863,16 +904,18 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       commit('manualBalances', result.balances);
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n
+          .t('actions.balances.manual_balances.error.title')
+          .toString(),
+        message: i18n
           .t('actions.balances.manual_balances.error.message', {
             message: e.message
           })
           .toString(),
-        i18n.t('actions.balances.manual_balances.error.title').toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     } finally {
       setStatus(Status.LOADED, section, status, commit);
     }
@@ -1174,7 +1217,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           error: e.message
         })
         .toString();
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
   },
 
@@ -1335,16 +1383,16 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       commit(BalanceMutations.UPDATE_LOOPRING_BALANCES, result);
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.t('actions.balances.loopring.error.title').toString(),
+        message: i18n
           .t('actions.balances.loopring.error.description', {
             error: e.message
           })
           .toString(),
-        i18n.t('actions.balances.loopring.error.title').toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -1366,16 +1414,18 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       );
       return result;
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n
+          .t('actions.assets.erc20.error.title', { address })
+          .toString(),
+        message: i18n
           .t('actions.assets.erc20.error.description', {
             message: e.message
           })
           .toString(),
-        i18n.t('actions.assets.erc20.error.title', { address }).toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
       return {};
     }
   },
@@ -1410,7 +1460,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       setStatus(Status.LOADED, section, status, commit);
     } catch (e: any) {
       logger.error(e);
-      await userNotify({
+      const { notify } = useNotifications();
+      notify({
         title: i18n.t('actions.nft_balances.error.title').toString(),
         message: i18n
           .t('actions.nft_balances.error.message', {

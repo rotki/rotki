@@ -3,8 +3,8 @@ import * as logger from 'loglevel';
 import { ActionContext, Commit, Store } from 'vuex';
 import i18n from '@/i18n';
 import { Section, Status } from '@/store/const';
+import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
 import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { Message, RotkehlchenState, StatusPayload } from '@/store/types';
@@ -54,12 +54,13 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
     commit(payload.mutation, payload.parser ? payload.parser(result) : result);
   } catch (e: any) {
     logger.error(`action failure for task ${TaskType[payload.taskType]}:`, e);
-    notify(
-      payload.onError.error(e.message),
-      payload.onError.title,
-      Severity.ERROR,
-      true
-    );
+    const { notify } = useNotifications();
+    notify({
+      title: payload.onError.title,
+      message: payload.onError.error(e.message),
+      severity: Severity.ERROR,
+      display: true
+    });
   }
   setStatus(Status.LOADED, section, status, commit);
 }

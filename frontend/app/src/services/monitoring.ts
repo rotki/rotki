@@ -1,4 +1,5 @@
 import { websocket } from '@/services/websocket/websocket-service';
+import { useNotifications } from '@/store/notifications';
 import store from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { QUERY_PERIOD, REFRESH_PERIOD } from '@/types/frontend-settings';
@@ -13,8 +14,9 @@ class Monitoring {
 
   private static fetch() {
     store.dispatch('session/periodicCheck');
+    const { consume } = useNotifications();
     if (!websocket.connected) {
-      store.dispatch('notifications/consume');
+      consume();
     }
   }
 

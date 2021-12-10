@@ -52,8 +52,8 @@ import { getFilepath } from '@/components/settings/data-security/backups/utils';
 import i18n from '@/i18n';
 import { DatabaseInfo, UserDbBackup } from '@/services/backup/types';
 import { api } from '@/services/rotkehlchen-api';
+import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
-import { userNotify } from '@/store/notifications/utils';
 import { size } from '@/utils/data';
 import { logger } from '@/utils/logging';
 
@@ -104,7 +104,8 @@ const setupBackupInfo = () => {
       backupInfo.value = await api.backups.info();
     } catch (e: any) {
       logger.error(e);
-      await userNotify({
+      const { notify } = useNotifications();
+      notify({
         display: true,
         title: i18n.t('database_backups.load_error.title').toString(),
         message: i18n
@@ -149,7 +150,8 @@ function setupBackupActions(
       }
     } catch (e: any) {
       logger.error(e);
-      await userNotify({
+      const { notify } = useNotifications();
+      notify({
         display: true,
         title: i18n.t('database_backups.delete_error.title').toString(),
         message: i18n
@@ -168,7 +170,8 @@ function setupBackupActions(
     try {
       saving.value = true;
       const filepath = await api.backups.createBackup();
-      await userNotify({
+      const { notify } = useNotifications();
+      notify({
         display: true,
         severity: Severity.INFO,
         title: i18n.t('database_backups.backup.title').toString(),
@@ -182,7 +185,8 @@ function setupBackupActions(
       await refresh();
     } catch (e: any) {
       logger.error(e);
-      await userNotify({
+      const { notify } = useNotifications();
+      notify({
         display: true,
         title: i18n.t('database_backups.backup_error.title').toString(),
         message: i18n

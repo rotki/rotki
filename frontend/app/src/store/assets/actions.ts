@@ -10,8 +10,7 @@ import {
   AssetUpdateCheckResult,
   AssetUpdateResult
 } from '@/store/assets/types';
-import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
+import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus, RotkehlchenState } from '@/store/types';
 import { TaskMeta } from '@/types/task';
@@ -41,7 +40,12 @@ export const actions: ActionTree<AssetState, RotkehlchenState> = {
       const description = i18n
         .t('actions.assets.versions.error.description', { message: e.message })
         .toString();
-      notify(description, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message: description,
+        display: true
+      });
       return {
         updateAvailable: false
       };
@@ -78,7 +82,12 @@ export const actions: ActionTree<AssetState, RotkehlchenState> = {
       const description = i18n
         .t('actions.assets.update.error.description', { message: e.message })
         .toString();
-      notify(description, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message: description,
+        display: true
+      });
       return {
         done: false
       };

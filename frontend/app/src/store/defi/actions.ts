@@ -41,8 +41,7 @@ import {
   DSRHistory,
   MakerDAOVaultDetails
 } from '@/store/defi/types';
-import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
+import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
 import { fetchAsync, isLoading, setStatus } from '@/store/utils';
@@ -96,7 +95,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         }
       );
       const title = i18n.tc('actions.defi.dsr_balances.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
 
     setStatus(Status.LOADED, section, status, commit);
@@ -146,7 +150,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         }
       );
       const title = i18n.tc('actions.defi.dsr_history.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -194,7 +203,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         }
       );
       const title = i18n.tc('actions.defi.makerdao_vaults.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -241,7 +255,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         { error: e.message }
       );
       const title = i18n.tc('actions.defi.makerdao_vault_details.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
 
     setStatus(Status.LOADED, section, status, commit);
@@ -291,7 +310,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         }
       );
       const title = i18n.tc('actions.defi.aave_balances.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
 
     setStatus(Status.LOADED, section, status, commit);
@@ -341,7 +365,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         { error: e.message }
       );
       const title = i18n.tc('actions.defi.aave_history.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
 
     setStatus(Status.LOADED, section, status, commit);
@@ -384,7 +413,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         undefined,
         { error: e.message }
       );
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -636,14 +670,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       );
       commit('compoundBalances', result);
     } catch (e: any) {
-      notify(
-        i18n.tc('actions.defi.compound.error.description', undefined, {
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.defi.compound.error.title'),
+        message: i18n.tc('actions.defi.compound.error.description', undefined, {
           error: e.message
         }),
-        i18n.tc('actions.defi.compound.error.title'),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -686,14 +720,18 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('compoundHistory', result);
     } catch (e: any) {
-      notify(
-        i18n.tc('actions.defi.compound_history.error.description', undefined, {
-          error: e.message
-        }),
-        i18n.tc('actions.defi.compound_history.error.title'),
-        Severity.ERROR,
-        true
-      );
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.defi.compound_history.error.title'),
+        message: i18n.tc(
+          'actions.defi.compound_history.error.description',
+          undefined,
+          {
+            error: e.message
+          }
+        ),
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -754,17 +792,19 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         result
       );
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n
+          .t('actions.defi.yearn_vaults.error.title', { version })
+          .toString(),
+        message: i18n
           .t('actions.defi.yearn_vaults.error.description', {
             error: e.message,
             version
           })
           .toString(),
-        i18n.t('actions.defi.yearn_vaults.error.title', { version }).toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -830,21 +870,21 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         result
       );
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n
+          .t('actions.defi.yearn_vaults_history.error.title', {
+            version: payload.version
+          })
+          .toString(),
+        message: i18n
           .t('actions.defi.yearn_vaults_history.error.description', {
             error: e.message,
             version: payload.version
           })
           .toString(),
-        i18n
-          .t('actions.defi.yearn_vaults_history.error.title', {
-            version: payload.version
-          })
-          .toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -885,14 +925,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('uniswapBalances', result);
     } catch (e: any) {
-      notify(
-        i18n.tc('actions.defi.uniswap.error.description', undefined, {
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.defi.uniswap.error.title'),
+        message: i18n.tc('actions.defi.uniswap.error.description', undefined, {
           error: e.message
         }),
-        i18n.tc('actions.defi.uniswap.error.title'),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
     await dispatch('balances/fetchSupportedAssets', true, { root: true });
@@ -934,14 +974,18 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('uniswapTrades', result);
     } catch (e: any) {
-      notify(
-        i18n.tc('actions.defi.uniswap_trades.error.description', undefined, {
-          error: e.message
-        }),
-        i18n.tc('actions.defi.uniswap_trades.error.title'),
-        Severity.ERROR,
-        true
-      );
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.defi.uniswap_trades.error.title'),
+        message: i18n.tc(
+          'actions.defi.uniswap_trades.error.description',
+          undefined,
+          {
+            error: e.message
+          }
+        ),
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
     await dispatch('balances/fetchSupportedAssets', true, { root: true });
@@ -984,14 +1028,18 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('uniswapEvents', result);
     } catch (e: any) {
-      notify(
-        i18n.tc('actions.defi.uniswap_events.error.description', undefined, {
-          error: e.message
-        }),
-        i18n.tc('actions.defi.uniswap_events.error.title'),
-        Severity.ERROR,
-        true
-      );
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.defi.uniswap_events.error.title'),
+        message: i18n.tc(
+          'actions.defi.uniswap_events.error.description',
+          undefined,
+          {
+            error: e.message
+          }
+        ),
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
     await dispatch('balances/fetchSupportedAssets', true, { root: true });
@@ -1028,16 +1076,16 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
       commit('airdrops', result);
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.t('actions.defi.airdrops.error.title').toString(),
+        message: i18n
           .t('actions.defi.airdrops.error.description', {
             error: e.message
           })
           .toString(),
-        i18n.t('actions.defi.airdrops.error.title').toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
