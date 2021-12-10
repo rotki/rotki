@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 import requests
 
-from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT
+from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.constants import (
     EV_ASSET_MOVE,
     EV_BUY,
@@ -44,8 +44,61 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
-from rotkehlchen.typing import Location
-from rotkehlchen.utils.misc import create_timestamp
+from rotkehlchen.typing import Location, Optional, Timestamp
+from rotkehlchen.utils.misc import create_timestamp, ts_now
+
+
+def query_api_create_and_get_report(
+        server,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+        prepare_mocks: bool,
+        events_offset: Optional[int] = None,
+        events_limit: Optional[int] = None,
+        events_ascending_timestamp: bool = False,
+):
+    async_query = random.choice([False, True])
+    rotki = server.rest_api.rotkehlchen
+    setup = None
+    if prepare_mocks:
+        setup = prepare_rotki_for_history_processing_test(
+            rotki,
+            should_mock_history_processing=False,
+            history_start_ts=start_ts,
+            history_end_ts=end_ts,
+        )
+
+    # Query history processing to start the history processing
+    with ExitStack() as stack:
+        if setup is not None:
+            for manager in setup:
+                stack.enter_context(manager)
+        response = requests.get(
+            api_url_for(server, 'historyprocessingresource'),
+            json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'async_query': async_query},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task_with_result(server, task_id)
+        else:
+            outcome = assert_proper_response_with_result(response)
+
+    report_id = outcome
+    response = requests.get(
+        api_url_for(server, 'per_report_resource', report_id=report_id),
+    )
+    report_result = assert_proper_response_with_result(response)
+
+    response = requests.post(
+        api_url_for(server, 'per_report_data_resource', report_id=report_id),
+        json={
+            'offset': events_offset,
+            'limit': events_limit,
+            'ascending': events_ascending_timestamp,
+        },
+    )
+    events_result = assert_proper_response_with_result(response)
+    return report_id, report_result, events_result
 
 
 @pytest.mark.parametrize(
@@ -54,64 +107,61 @@ from rotkehlchen.utils.misc import create_timestamp
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_query_history(rotkehlchen_api_server_with_exchanges):
-    """Test that the history processing REST API endpoint works. Similar to test_history.py"""
-    async_query = random.choice([False, True])
-    start_ts = 0
-    end_ts = 1601040361
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    setup = prepare_rotki_for_history_processing_test(
-        rotki,
-        should_mock_history_processing=False,
-    )
+@pytest.mark.parametrize(
+    'start_ts,end_ts',
+    [(0, 1601040361), (1539713237, 1539713238)],
+)
+def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
+    """Test that the history processing REST API endpoint works. Similar to test_history.py
 
-    # Query history processing to start the history processing
-    with ExitStack() as stack:
-        for manager in setup:
-            if manager is None:
-                continue
-            stack.enter_context(manager)
-        response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
-            json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'async_query': async_query},
-        )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(
-                rotkehlchen_api_server_with_exchanges,
-                task_id,
-            )
-        else:
-            outcome = assert_proper_response_with_result(response)
+    Both a test for full and limited time range.
+    """
+    report_id, report_result, events_result = query_api_create_and_get_report(
+        server=rotkehlchen_api_server_with_exchanges,
+        start_ts=start_ts,
+        end_ts=end_ts,
+        prepare_mocks=True,
+    )
 
     # Simply check that the results got returned here. The actual correctness of
     # accounting results is checked in other tests such as test_simple_accounting
-    assert len(outcome) == 5
-    assert outcome['events_limit'] == FREE_PNL_EVENTS_LIMIT
-    assert outcome['events_processed'] == 27
-    assert outcome['first_processed_timestamp'] == 1428994442
-    overview = outcome['overview']
-    assert len(overview) == 11
-    assert overview["loan_profit"] is not None
-    assert overview["margin_positions_profit_loss"] is not None
-    assert overview["settlement_losses"] is not None
-    assert overview["ethereum_transaction_gas_costs"] is not None
-    assert overview["asset_movement_fees"] is not None
-    assert overview["general_trade_profit_loss"] is not None
-    assert overview["taxable_trade_profit_loss"] is not None
-    assert overview["total_taxable_profit_loss"] is not None
-    assert overview["total_profit_loss"] is not None
-    assert overview["defi_profit_loss"] is not None
-    assert overview["ledger_actions_profit_loss"] is not None
-    all_events = outcome['all_events']
-    assert isinstance(all_events, list)
+    assert report_result['entries_found'] == 1
+    assert report_result['entries_limit'] == FREE_REPORTS_LOOKUP_LIMIT
+    report = report_result['entries'][0]
+    assert len(report) == 23
+    assert report['first_processed_timestamp'] == 1428994442
+    assert report['loan_profit'] is not None
+    assert report['margin_positions_profit_loss'] is not None
+    assert report['settlement_losses'] is not None
+    assert report['ethereum_transaction_gas_costs'] is not None
+    assert report['asset_movement_fees'] is not None
+    assert report['general_trade_profit_loss'] is not None
+    assert report['taxable_trade_profit_loss'] is not None
+    assert report['total_taxable_profit_loss'] is not None
+    assert report['total_profit_loss'] is not None
+    assert report['defi_profit_loss'] is not None
+    assert report['ledger_actions_profit_loss'] is not None
+    assert report['profit_currency'] == 'EUR'
+    assert report['account_for_assets_movements'] is True
+    assert report['calculate_past_cost_basis'] is True
+    assert report['include_crypto2crypto'] is True
+    assert report['include_gas_costs'] is True
+    assert report['taxfree_after_period'] == 31536000
+    assert report['identifier'] == report_id
+    assert report['size_on_disk'] == 19004 if start_ts == 0 else 2371
+
+    assert events_result['entries_limit'] == FREE_PNL_EVENTS_LIMIT
+    entries_length = 37 if start_ts == 0 else 4
+    assert events_result['entries_found'] == entries_length
+    assert isinstance(events_result['entries'], list)
     # TODO: These events are not actually checked anywhere for correctness
     #       A test should probably be made for their correctness, even though
     #       they are assumed correct if the overview is correct
-    assert len(all_events) == 37
+    assert len(events_result['entries']) == entries_length
 
     # And now make sure that warnings have also been generated for the query of
     # the unsupported/unknown assets
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 13
     assert 'poloniex trade with unknown asset NOEXISTINGASSET' in warnings[0]
@@ -163,89 +213,22 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
             api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
         )
 
-    assert_proper_response(response)
-    data = response.json()
+    assert_error_response(
+        response=response,
+        status_code=HTTPStatus.OK,
+        contained_in_msg=[
+            'invalid JSON', 'binance', 'Bittrex', 'Bitmex', 'Kraken', 'Poloniex',
+        ],
+    )
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 3
     assert 'Etherscan API request http://someurl.com returned invalid JSON response: [{' in errors[0]  # noqa: E501
-
     # The history processing is completely mocked away and omitted in this test.
     # because it is only for the history creation not its processing.
     # For history processing tests look at test_accounting.py and
     # test_accounting_events.py
-    assert 'invalid JSON' in data['message']
-    assert 'binance' in data['message']
-    assert 'Bittrex' in data['message']
-    assert 'Bitmex' in data['message']
-    assert 'Kraken' in data['message']
-    assert 'Poloniex' in data['message']
-    assert data['result'] == {}
-
-
-@pytest.mark.parametrize(
-    'added_exchanges',
-    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
-)
-@pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
-@pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_query_history_timerange(rotkehlchen_api_server_with_exchanges):
-    """Same as test_query_history but on a limited timerange"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    start_ts = 1539713237
-    end_ts = 1539713238
-    setup = prepare_rotki_for_history_processing_test(
-        rotki,
-        should_mock_history_processing=False,
-        history_start_ts=start_ts,
-        history_end_ts=end_ts,
-    )
-
-    # Query history processing to start the history processing
-    with ExitStack() as stack:
-        for manager in setup:
-            if manager is None:
-                continue
-            stack.enter_context(manager)
-        response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
-            json={'from_timestamp': start_ts, 'to_timestamp': end_ts},
-        )
-
-    # Simply check that the results got returned here. The actual correctness of
-    # accounting results is checked in other tests such as test_simple_accounting
-    assert_proper_response(response)
-    data = response.json()
-    assert data['message'] == ''
-    assert len(data['result']) == 5
-    assert data['result']['events_limit'] == FREE_PNL_EVENTS_LIMIT
-    assert data['result']['events_processed'] == 25
-    assert data['result']['first_processed_timestamp'] == 1428994442
-    overview = data['result']['overview']
-    assert len(overview) == 11
-    assert overview['loan_profit'] is not None
-    assert overview['margin_positions_profit_loss'] is not None
-    assert overview['settlement_losses'] is not None
-    assert overview['ethereum_transaction_gas_costs'] is not None
-    assert overview['asset_movement_fees'] is not None
-    assert overview['general_trade_profit_loss'] is not None
-    assert overview['taxable_trade_profit_loss'] is not None
-    assert overview['total_taxable_profit_loss'] is not None
-    assert overview['total_profit_loss'] is not None
-    assert overview['defi_profit_loss'] is not None
-    assert overview['ledger_actions_profit_loss'] is not None
-    all_events = data['result']['all_events']
-    assert isinstance(all_events, list)
-    assert len(all_events) == 4
-
-    response = requests.get(
-        api_url_for(rotkehlchen_api_server_with_exchanges, 'historystatusresource'),
-    )
-    assert_proper_response(response)
-    data = response.json()
-    assert FVal(data['result']['total_progress']) == 100
-    assert data['result']['processing_state'] == 'Processing all retrieved historical events'
 
 
 def test_query_history_errors(rotkehlchen_api_server):
@@ -335,7 +318,7 @@ def test_query_history_external_exchanges(rotkehlchen_api_server):
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'blockfi-trades.csv'
     json_data = {'source': 'blockfi-trades', 'file': str(filepath)}
-    response = requests.put(
+    requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'dataimportresource',
@@ -343,13 +326,85 @@ def test_query_history_external_exchanges(rotkehlchen_api_server):
     )
 
     # Query history processing to start the history processing
-    response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'historyprocessingresource'),
-        json={'from_timestamp': start_ts, 'to_timestamp': end_ts},
+    _, report_result, events_result = query_api_create_and_get_report(
+        server=rotkehlchen_api_server,
+        start_ts=start_ts,
+        end_ts=end_ts,
+        prepare_mocks=False,
     )
-    outcome = assert_proper_response_with_result(response)
-    assert len(outcome['all_events']) == 2
-    assert FVal(outcome['overview']['total_taxable_profit_loss']) == FVal('5278.03086')
+    assert len(events_result['entries']) == 2
+    assert FVal(report_result['entries'][0]['total_taxable_profit_loss']) == FVal('5278.03086')
+
+
+@pytest.mark.parametrize(
+    'added_exchanges',
+    [(Location.BINANCE, Location.POLONIEX, Location.BITTREX, Location.BITMEX, Location.KRAKEN)],
+)
+@pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('ascending_timestamp', [False, True])
+def test_query_pnl_report_events_pagination_filtering(
+        rotkehlchen_api_server_with_exchanges,
+        ascending_timestamp,
+):
+    """Test that for PnL reports pagination, filtering and order work fine"""
+    start_ts = 0
+    end_ts = 1601040361
+    report_id, _, _ = query_api_create_and_get_report(
+        server=rotkehlchen_api_server_with_exchanges,
+        start_ts=start_ts,
+        end_ts=end_ts,
+        prepare_mocks=True,
+    )
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'per_report_data_resource',
+            report_id=report_id,
+        ),
+    )
+    events_result = assert_proper_response_with_result(response)
+    master_events = events_result['entries']
+
+    events = []
+    for offset in (0, 10, 20, 30):
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'per_report_data_resource',
+                report_id=report_id,
+            ),
+            json={
+                'offset': offset,
+                'limit': 10,
+                'ascending': ascending_timestamp,
+            },
+        )
+        events_result = assert_proper_response_with_result(response)
+        assert len(events_result['entries']) <= 10
+        events.extend(events_result['entries'])
+
+    if ascending_timestamp is False:
+        assert master_events == events
+    else:
+        reverse_master = master_events[::-1]
+        # Verify all events are there. Order should be ascending ... but
+        # since some events have same timestamps order when ascending is not
+        # guaranteed to be the exact reverse as when descending
+        for x in events:
+            assert x in reverse_master
+            reverse_master.remove(x)
+
+    assert len(events) == 37
+    for idx, x in enumerate(events):
+        if idx == len(events) - 1:
+            break
+
+        if ascending_timestamp:
+            assert x['time'] <= events[idx + 1]['time']
+        else:
+            assert x['time'] >= events[idx + 1]['time']
 
 
 def assert_csv_formulas_all_events(row, profit_currency):
@@ -579,23 +634,15 @@ def test_history_export_download_csv(
     """Test that the csv export/download REST API endpoint works correctly"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     profit_currency = rotki.data.db.get_main_currency()
-    setup = prepare_rotki_for_history_processing_test(
-        rotki,
-        should_mock_history_processing=False,
+    # Query history api to have report data to export
+    query_api_create_and_get_report(
+        server=rotkehlchen_api_server_with_exchanges,
+        start_ts=0,
+        end_ts=ts_now(),
+        prepare_mocks=True,
     )
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
-
-    # First, query history processing to have data for exporting
-    with ExitStack() as stack:
-        for manager in setup:
-            if manager is None:
-                continue
-            stack.enter_context(manager)
-        response = requests.get(
-            api_url_for(rotkehlchen_api_server_with_exchanges, 'historyprocessingresource'),
-        )
-    assert_proper_response(response)
 
     # now query the export endpoint with json body
     response = requests.get(

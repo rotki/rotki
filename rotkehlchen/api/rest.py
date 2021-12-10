@@ -1607,11 +1607,11 @@ class RestAPI():
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Dict[str, Any]:
-        result, error_or_empty = self.rotkehlchen.process_history(
+        report_id, error_or_empty = self.rotkehlchen.process_history(
             start_ts=from_timestamp,
             end_ts=to_timestamp,
         )
-        return {'result': result, 'message': error_or_empty}
+        return {'result': report_id, 'message': error_or_empty}
 
     @require_loggedin_user()
     def process_history(
@@ -1634,7 +1634,7 @@ class RestAPI():
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)
-        result_dict = _wrap_in_result(result=process_result(result), message=msg)
+        result_dict = _wrap_in_result(result=result, message=msg)
         return api_response(result_dict, status_code=status_code)
 
     @require_loggedin_user()

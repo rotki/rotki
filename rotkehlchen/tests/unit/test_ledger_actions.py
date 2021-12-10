@@ -179,14 +179,14 @@ def test_taxable_ledger_action_setting(accountant, expected_pnl):
             notes='hoo',
         ),
     ]
-    result = accounting_history_process(
-        accountant,
-        1436979735,
-        1519693374,
+    report, _ = accounting_history_process(
+        accountant=accountant,
+        start_ts=1436979735,
+        end_ts=1519693374,
         history_list=[],
         ledger_actions_list=ledger_actions_list,
     )
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close(expected_pnl)
+    assert FVal(report['total_taxable_profit_loss']).is_close(expected_pnl)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -265,7 +265,7 @@ def test_ledger_actions_accounting(accountant):
         notes='we give a rate here too but doesnt matter',
     )]
 
-    result = accounting_history_process(
+    report, _ = accounting_history_process(
         accountant=accountant,
         start_ts=1436979735,
         end_ts=1519693374,
@@ -277,6 +277,6 @@ def test_ledger_actions_accounting(accountant):
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_XMR).is_close('10')
     # 400 * 1 + 0.4 * 10 - 1 * 0.1  - 500 * 0.9004 * 0.1 = 358.88
     expected_pnl = '358.88'
-    assert FVal(result['overview']['ledger_actions_profit_loss']).is_close(expected_pnl)
-    assert FVal(result['overview']['total_profit_loss']).is_close(expected_pnl)
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close(expected_pnl)
+    assert FVal(report['ledger_actions_profit_loss']).is_close(expected_pnl)
+    assert FVal(report['total_profit_loss']).is_close(expected_pnl)
+    assert FVal(report['total_taxable_profit_loss']).is_close(expected_pnl)

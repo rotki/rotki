@@ -7,7 +7,9 @@ from typing_extensions import Literal
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.typing import NamedJson
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.filtering import ReportDataFilterQuery
+from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Timestamp
@@ -48,17 +50,27 @@ class DBAccountingReports():
             first_processed_timestamp: Timestamp,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            profit_currency: Asset,
+            settings: DBSettings,
     ) -> int:
         cursor = self.db.conn_transient.cursor()
         timestamp = ts_now()
         query = """
         INSERT INTO pnl_reports(
-            timestamp, start_ts, end_ts, first_processed_timestamp
+            timestamp, start_ts, end_ts, first_processed_timestamp,
+            profit_currency, taxfree_after_period, include_crypto2crypto,
+            calculate_past_cost_basis, include_gas_costs, account_for_assets_movements
         )
-        VALUES (?, ?, ?, ?)"""
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         cursor.execute(
             query,
-            (timestamp, start_ts, end_ts, first_processed_timestamp),
+            (timestamp, start_ts, end_ts, first_processed_timestamp,
+             profit_currency.identifier, settings.taxfree_after_period,
+             int(settings.include_crypto2crypto),
+             int(settings.calculate_past_cost_basis),
+             int(settings.include_gas_costs),
+             int(settings.account_for_assets_movements),
+             ),
         )
         identifier = cursor.lastrowid
         self.db.conn_transient.commit()
@@ -141,7 +153,7 @@ class DBAccountingReports():
             query += ' WHERE identifier=?'
         results = cursor.execute(query, bindings)
 
-        reports = []
+        reports: List[Dict[str, Any]] = []
         for report in results:
             this_report_id = report[0]
             size_result = self._get_report_size(this_report_id)
@@ -163,6 +175,12 @@ class DBAccountingReports():
                 'taxable_trade_profit_loss': report[13],
                 'total_taxable_profit_loss': report[14],
                 'total_profit_loss': report[15],
+                'profit_currency': report[16],
+                'taxfree_after_period': report[17],
+                'include_crypto2crypto': bool(report[18]),
+                'calculate_past_cost_basis': bool(report[19]),
+                'include_gas_costs': bool(report[20]),
+                'account_for_assets_movements': bool(report[21]),
             })
 
         if report_id is not None:

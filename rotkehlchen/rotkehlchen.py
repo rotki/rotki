@@ -566,7 +566,7 @@ class Rotkehlchen():
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> Tuple[int, str]:
         (
             error_or_empty,
             history,
@@ -580,7 +580,7 @@ class Rotkehlchen():
             end_ts=end_ts,
             has_premium=self.premium is not None,
         )
-        result = self.accountant.process_history(
+        report_id = self.accountant.process_history(
             start_ts=start_ts,
             end_ts=end_ts,
             trade_history=history,
@@ -590,7 +590,7 @@ class Rotkehlchen():
             defi_events=defi_events,
             ledger_actions=ledger_actions,
         )
-        return result, error_or_empty
+        return report_id, error_or_empty
 
     def query_balances(
             self,

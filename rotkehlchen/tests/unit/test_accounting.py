@@ -9,6 +9,7 @@ from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH, A_WBTC
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
+from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.typing import AssetMovementCategory, EthereumTransaction, Fee, Location, Timestamp
@@ -462,14 +463,14 @@ def test_not_include_gas_costs(accountant):
             nonce=0,
         ),
     ]
-    result = accounting_history_process(
+    report, _ = accounting_history_process(
         accountant,
-        1436979735,
-        1519693374,
-        history,
+        start_ts=1436979735,
+        end_ts=1519693374,
+        history_list=history,
         eth_transaction_list=eth_tx_list,
     )
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1940.9561588')
+    assert FVal(report['total_taxable_profit_loss']).is_close('1940.9561588')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -496,8 +497,8 @@ def test_ignored_assets(accountant):
         'amount': 5,
         'location': 'kraken',
     }]
-    result = accounting_history_process(accountant, 1436979735, 1519693374, history)
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('558.253654902574637500')
+    report, _ = accounting_history_process(accountant, 1436979735, 1519693374, history)
+    assert FVal(report['total_taxable_profit_loss']).is_close('558.253654902574637500')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -534,15 +535,15 @@ def test_settlement_buy(accountant):
         'location': 'kraken',
     }]
 
-    result = accounting_history_process(
-        accountant,
-        1436979735,
-        1519693374,
-        history,
+    report, _ = accounting_history_process(
+        accountant=accountant,
+        start_ts=1436979735,
+        end_ts=1519693374,
+        history_list=history,
     )
     assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.9908725')
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1932.598999')
-    assert FVal(result['overview']['settlement_losses']).is_close('8.357159475')
+    assert FVal(report['total_taxable_profit_loss']).is_close('1932.598999')
+    assert FVal(report['settlement_losses']).is_close('8.357159475')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -590,17 +591,17 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         notes='margin2',
     )]
 
-    result = accounting_history_process(
-        accountant,
-        1436979735,
-        1519693374,
-        history,
+    report, _ = accounting_history_process(
+        accountant=accountant,
+        start_ts=1436979735,
+        end_ts=1519693374,
+        history_list=history,
         margin_list=margin_history,
     )
     assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.7468')
-    assert FVal(result['overview']['general_trade_profit_loss']).is_close('1940.9561588')
-    assert FVal(result['overview']['margin_positions_profit_loss']).is_close('-162.18738')
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('1778.7687788')
+    assert FVal(report['general_trade_profit_loss']).is_close('1940.9561588')
+    assert FVal(report['margin_positions_profit_loss']).is_close('-162.18738')
+    assert FVal(report['total_taxable_profit_loss']).is_close('1778.7687788')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -617,28 +618,28 @@ def test_no_corresponding_buy_for_sell(accountant):
         'location': 'kraken',
     }]
 
-    result = accounting_history_process(
-        accountant,
-        1436979735,
-        1519693374,
-        history,
+    report, _ = accounting_history_process(
+        accountant=accountant,
+        start_ts=1436979735,
+        end_ts=1519693374,
+        history_list=history,
     )
-    assert FVal(result['overview']['general_trade_profit_loss']).is_close('2519.6')
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('2519.6')
+    assert FVal(report['general_trade_profit_loss']).is_close('2519.6')
+    assert FVal(report['total_taxable_profit_loss']).is_close('2519.6')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_accounting_works_for_empty_history(accountant):
     history = []
 
-    result = accounting_history_process(
-        accountant,
-        1436979735,
-        1519693374,
-        history,
+    report, _ = accounting_history_process(
+        accountant=accountant,
+        start_ts=1436979735,
+        end_ts=1519693374,
+        history_list=history,
     )
-    assert FVal(result['overview']['general_trade_profit_loss']).is_close('0')
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close('0')
+    assert FVal(report['general_trade_profit_loss']).is_close('0')
+    assert FVal(report['total_taxable_profit_loss']).is_close('0')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -675,16 +676,16 @@ def test_assets_movements_not_accounted_for(accountant, expected):
     )]
     history = []
 
-    result = accounting_history_process(
-        accountant,
-        1436979735,
-        1519693374,
-        history,
+    report, _ = accounting_history_process(
+        accountant=accountant,
+        start_ts=1436979735,
+        end_ts=1519693374,
+        history_list=history,
         asset_movements_list=asset_movements_list,
     )
-    assert FVal(result['overview']['asset_movement_fees']).is_close(expected)
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close(-expected)
-    assert FVal(result['overview']['total_profit_loss']).is_close(-expected)
+    assert FVal(report['asset_movement_fees']).is_close(expected)
+    assert FVal(report['total_taxable_profit_loss']).is_close(-expected)
+    assert FVal(report['total_profit_loss']).is_close(-expected)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -727,13 +728,12 @@ def test_not_calculate_past_cost_basis(accountant, db_settings):
         'amount': 2,
         'location': 'kraken',
     }]
-    result = accounting_history_process(
+    report, _ = accounting_history_process(
         accountant=accountant,
         start_ts=1466979735,
         end_ts=1519693374,
         history_list=history,
     )
-
     sell_gain = (
         FVal(history[-1]['rate']) * FVal(history[-1]['amount']) -
         FVal(history[-1]['fee'])
@@ -744,9 +744,9 @@ def test_not_calculate_past_cost_basis(accountant, db_settings):
     else:
         expected = sell_gain
 
-    assert FVal(result['overview']['taxable_trade_profit_loss']).is_close(expected)
-    assert FVal(result['overview']['total_taxable_profit_loss']).is_close(expected)
-    assert FVal(result['overview']['total_profit_loss']).is_close(expected)
+    assert FVal(report['taxable_trade_profit_loss']).is_close(expected)
+    assert FVal(report['total_taxable_profit_loss']).is_close(expected)
+    assert FVal(report['total_profit_loss']).is_close(expected)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -776,15 +776,14 @@ def test_defi_event_zero_amount(accountant):
         count_spent_got_cost_basis=True,
         tx_hash='0x49c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
     )]
-    result = accounting_history_process(
+    _, events = accounting_history_process(
         accountant=accountant,
         start_ts=1466979735,
         end_ts=1519693374,
         history_list=[],
         defi_events_list=defi_events,
     )
-
-    assert result['all_events'][0] == {
+    assert_serialized_dicts_equal(events[0], {
         'cost_basis': None,
         'is_virtual': False,
         'location': 'blockchain',
@@ -801,7 +800,7 @@ def test_defi_event_zero_amount(accountant):
         'type': 'defi_event',
         'link': 'https://etherscan.io/tx/0x49c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',  # noqa: E501
         'notes': '',
-    }
+    })
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -842,13 +841,13 @@ def test_sell_fiat_for_crypto(accountant):
         'amount': 1,
         'location': 'kraken',
     }]
-    result = accounting_history_process(
-        accountant,
-        1436979735,
-        1519693374,
-        history,
+    report, _ = accounting_history_process(
+        accountant=accountant,
+        start_ts=1436979735,
+        end_ts=1519693374,
+        history_list=history,
     )
-    assert FVal(result['overview']['total_profit_loss']) == FVal(25000 - 0.02 - 250 * 1.001)  # the 0.02/2 fee from sell of CHF to ETH is not counted since the first sell is skipped, only the buy of ETH is counted  # noqa: E501
+    assert FVal(report['total_profit_loss']) == FVal(25000 - 0.02 - 250 * 1.001)  # the 0.02/2 fee from sell of CHF to ETH is not counted since the first sell is skipped, only the buy of ETH is counted  # noqa: E501
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_ETH) == FVal(1)
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC) == FVal(4)
     warnings = accountant.msg_aggregator.consume_warnings()
@@ -894,14 +893,14 @@ def test_fees_count_in_cost_basis(accountant):
         'amount': 0.5,
         'location': 'kraken',
     }]
-    result = accounting_history_process(
-        accountant,
-        1436979735,
-        1625001466,
-        history,
+    report, _ = accounting_history_process(
+        accountant=accountant,
+        start_ts=1436979735,
+        end_ts=1625001466,
+        history_list=history,
     )
 
-    assert FVal(result['overview']['total_profit_loss']) == FVal(
+    assert FVal(report['total_profit_loss']) == FVal(
         # first sell also has a huge fee, same as the amount sold
         1862.06 * 0.5 - (0.5 * 598.26 + 0.5) - 0.5 * 1862.06 +
         # 2nd sell can't find ETH due to fee of previous so considers pure profit

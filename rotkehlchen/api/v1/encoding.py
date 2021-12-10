@@ -932,7 +932,7 @@ class DBPaginationSchema(Schema):
 
 class DBOrderBySchema(Schema):
     order_by_attribute = fields.String(load_default='timestamp')
-    ascending = fields.Boolean(load_default=False)
+    ascending = fields.Boolean(load_default=False)  # most recent first by default
 
 
 class EthereumTransactionQuerySchema(
@@ -1444,7 +1444,7 @@ class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
         event_type = data.get('event_type')
         filter_query = ReportDataFilterQuery.make(
             order_by_attribute='timestamp',  # hard coding order by timestamp for API for now
-            order_ascending=False,  # most recent first
+            order_ascending=data['ascending'],
             limit=data['limit'],
             offset=data['offset'],
             report_id=report_id,
