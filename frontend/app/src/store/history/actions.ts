@@ -49,6 +49,7 @@ import {
 import { getKey } from '@/store/history/utils';
 import { Severity } from '@/store/notifications/consts';
 import { notify, userNotify } from '@/store/notifications/utils';
+import { useTasks } from '@/store/tasks';
 import {
   ActionStatus,
   Message,
@@ -58,12 +59,7 @@ import {
 import { getStatusUpdater } from '@/store/utils';
 import { Writeable } from '@/types';
 import { SupportedExchange } from '@/types/exchanges';
-import {
-  AddressMeta,
-  createTask,
-  taskCompletion,
-  TaskMeta
-} from '@/types/task';
+import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 
@@ -190,15 +186,12 @@ const ignoreInAccounting = async (
 
 export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   async [HistoryActions.FETCH_TRADES](
-    {
-      commit,
-      state,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status }
-    },
+    { commit, state, rootGetters: { status } },
     source: FetchSource
   ): Promise<void> {
+    const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.TRADES;
-    if (isTaskRunning(taskType)) {
+    if (isTaskRunning(taskType).value) {
       return;
     }
 
@@ -232,22 +225,22 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     const fetchLocation: (location: TradeLocation) => Promise<void> =
       async location => {
         const { taskId } = await api.history.trades(location, false);
-        const task = createTask<LocationRequestMeta>(taskId, taskType, {
-          title: i18n.tc('actions.trades.task.title'),
-          description: i18n.tc('actions.trades.task.description', undefined, {
-            exchange: exchangeName(location)
-          }),
-          ignoreResult: false,
-          location: location,
-          numericKeys: tradeNumericKeys
-        });
-
-        commit('tasks/add', task, { root: true });
-
-        const { result } = await taskCompletion<
+        const { result } = await awaitTask<
           LimitedResponse<EntryWithMeta<Trade>>,
-          TaskMeta
-        >(taskType, `${taskId}`);
+          LocationRequestMeta
+        >(
+          taskId,
+          taskType,
+          {
+            title: i18n.tc('actions.trades.task.title'),
+            description: i18n.tc('actions.trades.task.description', undefined, {
+              exchange: exchangeName(location)
+            }),
+            location: location,
+            numericKeys: tradeNumericKeys
+          },
+          true
+        );
 
         const trades = [
           ...state.trades.data.filter(trade => trade.location !== location),
@@ -350,15 +343,12 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     return { success, message };
   },
   async [HistoryActions.FETCH_MOVEMENTS](
-    {
-      commit,
-      state,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status }
-    },
+    { commit, state, rootGetters: { status } },
     source: FetchSource
   ): Promise<void> {
+    const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.MOVEMENTS;
-    if (isTaskRunning(taskType)) {
+    if (isTaskRunning(taskType).value) {
       return;
     }
 
@@ -392,26 +382,26 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     const fetchLocation: (location: TradeLocation) => Promise<void> =
       async location => {
         const { taskId } = await api.history.assetMovements(location, false);
-        const task = createTask<LocationRequestMeta>(taskId, taskType, {
-          title: i18n.tc('actions.asset_movements.task.title'),
-          description: i18n.tc(
-            'actions.asset_movements.task.description',
-            undefined,
-            {
-              exchange: exchangeName(location)
-            }
-          ),
-          ignoreResult: false,
-          location: location,
-          numericKeys: movementNumericKeys
-        });
-
-        commit('tasks/add', task, { root: true });
-
-        const { result } = await taskCompletion<
+        const { result } = await awaitTask<
           LimitedResponse<EntryWithMeta<AssetMovement>>,
-          TaskMeta
-        >(taskType, `${taskId}`);
+          LocationRequestMeta
+        >(
+          taskId,
+          taskType,
+          {
+            title: i18n.tc('actions.asset_movements.task.title'),
+            description: i18n.tc(
+              'actions.asset_movements.task.description',
+              undefined,
+              {
+                exchange: exchangeName(location)
+              }
+            ),
+            location: location,
+            numericKeys: movementNumericKeys
+          },
+          true
+        );
 
         const movements = [
           ...state.assetMovements.data.filter(
@@ -458,16 +448,10 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   },
 
   async [HistoryActions.FETCH_TRANSACTIONS](
-    {
-      commit,
-      rootGetters: {
-        'tasks/isTaskRunning': isTaskRunning,
-        'balances/ethAddresses': ethAddresses,
-        status
-      }
-    },
+    { commit, rootGetters: { 'balances/ethAddresses': ethAddresses, status } },
     payload: Partial<TransactionRequestPayload>
   ): Promise<void> {
+    const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad } = getStatusUpdater(
       commit,
       Section.TX,
@@ -495,7 +479,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
       const { taskId } = await api.history.ethTransactionsTask(params);
       const address = parameters?.address ?? '';
-      const task = createTask<AddressMeta>(taskId, taskType, {
+      const taskMeta = {
         title: i18n.t('actions.transactions.task.title').toString(),
         description: address
           ? i18n
@@ -504,16 +488,15 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
               })
               .toString()
           : undefined,
-        ignoreResult: false,
         numericKeys: [],
         address: address
-      });
+      };
 
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<Transactions, TaskMeta>(
+      const { result } = await awaitTask<Transactions, TaskMeta>(
+        taskId,
         taskType,
-        `${taskId}`
+        taskMeta,
+        true
       );
 
       return Transactions.parse(result);
@@ -523,7 +506,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       const taskType = TaskType.TX;
       const firstLoad = isFirstLoad();
       const onlyCache = firstLoad ? false : payload.onlyCache;
-      if ((isTaskRunning(taskType) || loading()) && !onlyCache) {
+      if ((isTaskRunning(taskType).value || loading()) && !onlyCache) {
         return;
       }
 
@@ -558,7 +541,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         }
       }
 
-      setStatus(isTaskRunning(TaskType.TX) ? Status.REFRESHING : Status.LOADED);
+      setStatus(
+        isTaskRunning(TaskType.TX).value ? Status.REFRESHING : Status.LOADED
+      );
     } catch (e: any) {
       logger.error(e);
       setStatus(Status.NONE);
@@ -566,15 +551,12 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   },
 
   async [HistoryActions.FETCH_LEDGER_ACTIONS](
-    {
-      commit,
-      state,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status }
-    },
+    { commit, state, rootGetters: { status } },
     source: FetchSource
   ): Promise<void> {
+    const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.LEDGER_ACTIONS;
-    if (isTaskRunning(taskType)) {
+    if (isTaskRunning(taskType).value) {
       return;
     }
 
@@ -611,21 +593,21 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         undefined,
         true
       );
-      const task = createTask<TaskMeta>(taskId, taskType, {
-        title: i18n.t('actions.manual_ledger_actions.task.title').toString(),
-        description: i18n
-          .t('actions.manual_ledger_actions.task.description', {})
-          .toString(),
-        ignoreResult: false,
-        numericKeys: [...balanceKeys, 'rate']
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<
+      const { result } = await awaitTask<
         LimitedResponse<EntryWithMeta<LedgerAction>>,
         TaskMeta
-      >(taskType, `${taskId}`);
+      >(
+        taskId,
+        taskType,
+        {
+          title: i18n.t('actions.manual_ledger_actions.task.title').toString(),
+          description: i18n
+            .t('actions.manual_ledger_actions.task.description', {})
+            .toString(),
+          numericKeys: [...balanceKeys, 'rate']
+        },
+        true
+      );
 
       const data: HistoricData<LedgerActionEntry> = {
         data: result.entries.map(({ entry, ignoredInAccounting }) => ({
@@ -658,25 +640,25 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           location,
           false
         );
-        const task = createTask<TaskMeta>(taskId, taskType, {
-          title: i18n.tc('actions.ledger_actions.task.title'),
-          description: i18n.tc(
-            'actions.ledger_actions.task.description',
-            undefined,
-            {
-              exchange: exchangeName(location)
-            }
-          ),
-          ignoreResult: false,
-          numericKeys: [...balanceKeys, 'rate']
-        });
-
-        commit('tasks/add', task, { root: true });
-
-        const { result } = await taskCompletion<
+        const { result } = await awaitTask<
           LimitedResponse<EntryWithMeta<LedgerAction>>,
           TaskMeta
-        >(taskType, `${taskId}`);
+        >(
+          taskId,
+          taskType,
+          {
+            title: i18n.tc('actions.ledger_actions.task.title'),
+            description: i18n.tc(
+              'actions.ledger_actions.task.description',
+              undefined,
+              {
+                exchange: exchangeName(location)
+              }
+            ),
+            numericKeys: [...balanceKeys, 'rate']
+          },
+          true
+        );
 
         const actions = [
           ...state.ledgerActions.data.filter(
@@ -836,29 +818,25 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     }
   },
   async [HistoryActions.FETCH_GITCOIN_GRANT](
-    { commit },
+    _,
     payload: GitcoinGrantEventsPayload
   ): Promise<ActionResult<GitcoinGrants>> {
     try {
+      const { awaitTask } = useTasks();
       const { taskId } = await api.history.gatherGitcoinGrandEvents(payload);
-
       const meta: TaskMeta = {
         title: i18n
           .t('actions.balances.gitcoin_grant.task.title', {
             grant: 'grantId' in payload ? payload.grantId : ''
           })
           .toString(),
-        ignoreResult: false,
         numericKeys: balanceKeys
       };
-
-      const type = TaskType.GITCOIN_GRANT_EVENTS;
-      const task = createTask(taskId, type, meta);
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<GitcoinGrants, TaskMeta>(type);
-
+      const { result } = await awaitTask<GitcoinGrants, TaskMeta>(
+        taskId,
+        TaskType.GITCOIN_GRANT_EVENTS,
+        meta
+      );
       return { result, message: '' };
     } catch (e: any) {
       return {

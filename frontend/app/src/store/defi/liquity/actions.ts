@@ -20,7 +20,6 @@ export const actions: ActionTree<LiquityState, RotkehlchenState> = {
   async fetchBalances(context, refresh: boolean = false) {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.liquity.task.title').toString(),
-      ignoreResult: false,
       numericKeys: []
     };
 
@@ -49,7 +48,6 @@ export const actions: ActionTree<LiquityState, RotkehlchenState> = {
   async fetchEvents(context, refresh: boolean = false) {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.liquity_events.task.title').toString(),
-      ignoreResult: false,
       numericKeys: []
     };
 
@@ -87,7 +85,6 @@ export const actions: ActionTree<LiquityState, RotkehlchenState> = {
   async fetchStaking(context, refresh: boolean = false) {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.liquity_staking.task.title').toString(),
-      ignoreResult: false,
       numericKeys: []
     };
 
@@ -117,7 +114,6 @@ export const actions: ActionTree<LiquityState, RotkehlchenState> = {
       title: i18n
         .t('actions.defi.liquity_staking_events.task.title')
         .toString(),
-      ignoreResult: false,
       numericKeys: []
     };
 

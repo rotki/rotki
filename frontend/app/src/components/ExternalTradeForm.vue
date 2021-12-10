@@ -254,9 +254,11 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { SupportedAsset } from '@rotki/common/lib/data';
+import { Ref } from '@vue/composition-api';
 import dayjs from 'dayjs';
+import { mapState as mapPiniaState } from 'pinia';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapState } from 'vuex';
+import { mapActions, mapState } from 'vuex';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { convertKeys } from '@/services/axios-tranformers';
@@ -264,6 +266,7 @@ import { deserializeApiErrorMessage } from '@/services/converters';
 import { NewTrade, Trade, TradeType } from '@/services/history/types';
 import { HistoricPricePayload } from '@/store/balances/types';
 import { HistoryActions } from '@/store/history/consts';
+import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
 import { TaskType } from '@/types/task-type';
@@ -273,7 +276,7 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 @Component({
   components: { AssetSelect, DateTimePicker },
   computed: {
-    ...mapGetters('tasks', ['isTaskRunning']),
+    ...mapPiniaState(useTasks, ['isTaskRunning']),
     ...mapState('balances', ['supportedAssets'])
   },
   methods: {
@@ -303,7 +306,7 @@ export default class ExternalTradeForm extends Vue {
   editExternalTrade!: (
     trade: Omit<Trade, 'ignoredInAccounting'>
   ) => Promise<ActionStatus>;
-  isTaskRunning!: (type: TaskType) => boolean;
+  isTaskRunning!: (type: TaskType) => Ref<boolean>;
   fetchHistoricPrice!: (payload: HistoricPricePayload) => Promise<BigNumber>;
 
   readonly baseRules = [
@@ -361,7 +364,7 @@ export default class ExternalTradeForm extends Vue {
   type: TradeType = 'buy';
 
   get fetching(): boolean {
-    return this.isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
+    return this.isTaskRunning(TaskType.FETCH_HISTORIC_PRICE).value;
   }
 
   mounted() {

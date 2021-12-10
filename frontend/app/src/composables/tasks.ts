@@ -1,16 +1,11 @@
 import { computed } from '@vue/composition-api';
-import { useStore } from '@/store/utils';
-import { Task, TaskMeta } from '@/types/task';
-import { TaskType } from '@/types/task-type';
+import { useTasks } from '@/store/tasks';
 
 export const setupTaskStatus = () => {
-  const store = useStore();
-  const isTaskRunning = (type: TaskType) => {
-    return computed(() => store.getters['tasks/isTaskRunning'](type));
+  const store = useTasks();
+  return {
+    isTaskRunning: store.isTaskRunning,
+    hasRunningTasks: computed(() => store.hasRunningTasks),
+    tasks: computed(() => store.tasks)
   };
-  const hasRunningTasks = computed<boolean>(
-    () => store.getters['tasks/hasRunningTasks']
-  );
-  const tasks = computed<Task<TaskMeta>[]>(() => store.getters['tasks/tasks']);
-  return { isTaskRunning, hasRunningTasks, tasks };
 };

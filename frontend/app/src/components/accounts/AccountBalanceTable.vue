@@ -130,12 +130,13 @@
 <script lang="ts">
 import { AssetBalance, Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Ref } from '@vue/composition-api';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
+import { mapState as mapPiniaState } from 'pinia';
 import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
-
 import AccountGroupHeader from '@/components/accounts/AccountGroupHeader.vue';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
@@ -153,6 +154,7 @@ import {
   XpubAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
+import { useTasks } from '@/store/tasks';
 import { Properties } from '@/types';
 import { Currency } from '@/types/currency';
 import { TaskType } from '@/types/task-type';
@@ -171,7 +173,7 @@ import { Zero } from '@/utils/bignumbers';
     AccountAssetBalances
   },
   computed: {
-    ...mapGetters('tasks', ['isTaskRunning']),
+    ...mapPiniaState(useTasks, ['isTaskRunning']),
     ...mapGetters('session', ['currency']),
     ...mapGetters('balances', [
       'hasDetails',
@@ -202,7 +204,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
 
   section = chainSection[this.blockchain];
   currency!: Currency;
-  isTaskRunning!: (type: TaskType) => boolean;
+  isTaskRunning!: (type: TaskType) => Ref<boolean>;
   accountAssets!: (account: string) => AssetBalance[];
   accountLiabilities!: (account: string) => AssetBalance[];
   loopringBalances!: (account: string) => AssetBalance[];
@@ -396,8 +398,8 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
 
   get accountOperation(): boolean {
     return (
-      this.isTaskRunning(TaskType.ADD_ACCOUNT) ||
-      this.isTaskRunning(TaskType.REMOVE_ACCOUNT)
+      this.isTaskRunning(TaskType.ADD_ACCOUNT).value ||
+      this.isTaskRunning(TaskType.REMOVE_ACCOUNT).value
     );
   }
 

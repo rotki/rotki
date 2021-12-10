@@ -95,9 +95,9 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { currency } from '@/composables/session';
-import { setupTaskStatus } from '@/composables/tasks';
 import { balanceSum } from '@/filters';
 import i18n from '@/i18n';
+import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { getSortItems } from '@/utils/assets';
 
@@ -147,7 +147,7 @@ const AssetBalancesTable = defineComponent({
       return balanceSum(balances.value.map(({ usdValue }) => usdValue));
     });
 
-    const { isTaskRunning } = setupTaskStatus();
+    const { isTaskRunning } = useTasks();
     const { getAssetInfo } = setupAssetInfoRetrieval();
     return {
       total,

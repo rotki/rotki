@@ -5,6 +5,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { userNotify } from '@/store/notifications/utils';
 import { emptyError, pnlOverview } from '@/store/reports/const';
 import store from '@/store/store';
+import { useTasks } from '@/store/tasks';
 import { Message } from '@/store/types';
 import {
   ProfitLossEvents,
@@ -12,7 +13,7 @@ import {
   Reports,
   SelectedReport
 } from '@/types/reports';
-import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { AccountingSettings } from '@/types/user';
 import { assert } from '@/utils/assertions';
@@ -166,17 +167,16 @@ export const useReports = defineStore('reports', () => {
       reportProgress.value = await api.history.getProgress();
     }, 2000);
 
+    const { awaitTask } = useTasks();
     try {
       const { taskId } = await api.reports.generateReport(period);
-      const task = createTask(taskId, TaskType.TRADE_HISTORY, {
-        title: i18n.t('actions.reports.generate.task.title').toString(),
-        numericKeys: [],
-        ignoreResult: false
-      });
-      store.commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<boolean, TaskMeta>(
-        TaskType.TRADE_HISTORY
+      const { result } = await awaitTask<boolean, TaskMeta>(
+        taskId,
+        TaskType.TRADE_HISTORY,
+        {
+          title: i18n.t('actions.reports.generate.task.title').toString(),
+          numericKeys: []
+        }
       );
 
       if (result) {

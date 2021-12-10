@@ -7,7 +7,6 @@ import { NotificationState } from '@/store/notifications/state';
 import { SessionState } from '@/store/session/types';
 import { SettingsState } from '@/store/settings/state';
 import { StatisticsState } from '@/store/statistics/types';
-import { TaskState } from '@/store/tasks/state';
 
 export interface ActionStatus {
   readonly message?: string;
@@ -35,7 +34,6 @@ export interface RotkehlchenState {
   connectionFailure: boolean;
   status: SectionStatus;
   session?: SessionState;
-  tasks?: TaskState;
   notifications?: NotificationState;
   balances?: BalanceState;
   settings?: SettingsState;

@@ -12,25 +12,26 @@ import {
 } from '@/store/assets/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
+import { useTasks } from '@/store/tasks';
 import { ActionStatus, RotkehlchenState } from '@/store/types';
-import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 export const actions: ActionTree<AssetState, RotkehlchenState> = {
-  async checkForUpdate({ commit }): Promise<AssetUpdateCheckResult> {
+  async checkForUpdate(): Promise<AssetUpdateCheckResult> {
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.ASSET_UPDATE;
       const { taskId } = await api.assets.checkForAssetUpdate();
-      const task = createTask(taskId, taskType, {
-        title: i18n.t('actions.assets.versions.task.title').toString(),
-        ignoreResult: false,
-        numericKeys: []
-      });
-
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<AssetDBVersion, TaskMeta>(
-        taskType
+      const { result } = await awaitTask<AssetDBVersion, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.t('actions.assets.versions.task.title').toString(),
+          numericKeys: []
+        }
       );
+
       return {
         updateAvailable: result.local < result.remote,
         versions: result
@@ -48,22 +49,21 @@ export const actions: ActionTree<AssetState, RotkehlchenState> = {
   },
 
   async applyUpdates(
-    { commit },
+    _,
     { version, resolution }: AssetUpdatePayload
   ): Promise<ApplyUpdateResult> {
     try {
-      const taskType = TaskType.ASSET_UPDATE_PERFORM;
+      const { awaitTask } = useTasks();
       const { taskId } = await api.assets.performUpdate(version, resolution);
-      const task = createTask(taskId, taskType, {
-        title: i18n.t('actions.assets.update.task.title').toString(),
-        ignoreResult: false,
-        numericKeys: []
-      });
-
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<AssetUpdateResult, TaskMeta>(
-        taskType
+      const { result } = await awaitTask<AssetUpdateResult, TaskMeta>(
+        taskId,
+        TaskType.ASSET_UPDATE_PERFORM,
+        {
+          title: i18n.t('actions.assets.update.task.title').toString(),
+          numericKeys: []
+        }
       );
+
       if (typeof result === 'boolean') {
         return {
           done: true

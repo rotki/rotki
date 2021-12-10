@@ -72,8 +72,10 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Ref } from '@vue/composition-api';
+import { mapState } from 'pinia';
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions } from 'vuex';
 import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -85,6 +87,7 @@ import {
   BlockchainBalancePayload,
   XpubPayload
 } from '@/store/balances/types';
+import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
 @Component({
@@ -96,7 +99,7 @@ import { TaskType } from '@/types/task-type';
     ConfirmDialog
   },
   computed: {
-    ...mapGetters('tasks', ['isTaskRunning'])
+    ...mapState(useTasks, ['isTaskRunning'])
   },
   methods: {
     ...mapActions('balances', ['fetchLoopringBalances'])
@@ -116,7 +119,7 @@ export default class AccountBalances extends Vue {
   confirmDelete: boolean = false;
   xpubToDelete: XpubPayload | null = null;
 
-  isTaskRunning!: (type: TaskType) => boolean;
+  isTaskRunning!: (type: TaskType) => Ref<boolean>;
   fetchLoopringBalances!: (refresh: true) => Promise<void>;
 
   get isEth2() {
@@ -124,13 +127,13 @@ export default class AccountBalances extends Vue {
   }
 
   get isLoading(): boolean {
-    return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+    return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES).value;
   }
 
   get operationRunning(): boolean {
     return (
-      this.isTaskRunning(TaskType.ADD_ACCOUNT) ||
-      this.isTaskRunning(TaskType.REMOVE_ACCOUNT)
+      this.isTaskRunning(TaskType.ADD_ACCOUNT).value ||
+      this.isTaskRunning(TaskType.REMOVE_ACCOUNT).value
     );
   }
 

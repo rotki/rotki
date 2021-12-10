@@ -1,4 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
+import { createPinia, PiniaVuePlugin } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { BackupApi } from '@/services/backup/backup-api';
@@ -15,14 +16,17 @@ jest.spyOn(api, 'backups', 'get').mockReturnValue(
 );
 
 Vue.use(Vuetify);
+Vue.use(PiniaVuePlugin);
 
 describe('UserSecuritySettings.vue', () => {
   let wrapper: Wrapper<UserSecuritySettings>;
 
   function createWrapper() {
     const vuetify = new Vuetify();
+    const pinia = createPinia();
     return mount(UserSecuritySettings, {
       store,
+      pinia,
       vuetify,
       stubs: [
         'v-tooltip',

@@ -16,10 +16,11 @@ import {
   ETH2_DETAILS
 } from '@/store/staking/consts';
 import { StakingState } from '@/store/staking/types';
+import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
 import { isLoading, setStatus } from '@/store/utils';
 import { Module } from '@/types/modules';
-import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 export const actions: ActionTree<StakingState, RotkehlchenState> = {
@@ -45,20 +46,17 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
 
     async function fetchDetails() {
       setStatus(newStatus, section, status, commit);
-
+      const { awaitTask } = useTasks();
       try {
         const taskType = TaskType.STAKING_ETH2;
         const { taskId } = await api.eth2StakingDetails();
-        const task = createTask(taskId, taskType, {
-          title: i18n.tc('actions.staking.eth2.task.title'),
-          ignoreResult: false,
-          numericKeys: balanceKeys
-        });
-
-        commit('tasks/add', task, { root: true });
-
-        const { result } = await taskCompletion<Eth2Detail[], TaskMeta>(
-          taskType
+        const { result } = await awaitTask<Eth2Detail[], TaskMeta>(
+          taskId,
+          taskType,
+          {
+            title: i18n.tc('actions.staking.eth2.task.title'),
+            numericKeys: balanceKeys
+          }
         );
 
         commit(ETH2_DETAILS, result);
@@ -78,20 +76,18 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
     async function fetchDeposits() {
       const secondarySection = Section.STAKING_ETH2_DEPOSITS;
       setStatus(newStatus, secondarySection, status, commit);
+      const { awaitTask } = useTasks();
 
       try {
         const taskType = TaskType.STAKING_ETH2_DEPOSITS;
         const { taskId } = await api.eth2StakingDeposits();
-        const task = createTask(taskId, taskType, {
-          title: `${i18n.t('actions.staking.eth2_deposits.task.title')}`,
-          ignoreResult: false,
-          numericKeys: balanceKeys
-        });
-
-        commit('tasks/add', task, { root: true });
-
-        const { result } = await taskCompletion<Eth2Deposit[], TaskMeta>(
-          taskType
+        const { result } = await awaitTask<Eth2Deposit[], TaskMeta>(
+          taskId,
+          taskType,
+          {
+            title: `${i18n.t('actions.staking.eth2_deposits.task.title')}`,
+            numericKeys: balanceKeys
+          }
         );
 
         commit(ETH2_DEPOSITS, result);
@@ -131,19 +127,19 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
+    const { awaitTask } = useTasks();
 
     try {
       const taskType = TaskType.STAKING_ADEX;
       const { taskId } = await api.adexBalances();
-      const task = createTask(taskId, taskType, {
-        title: `${i18n.t('actions.staking.adex_balances.task.title')}`,
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<AdexBalances, TaskMeta>(taskType);
+      const { result } = await awaitTask<AdexBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: `${i18n.t('actions.staking.adex_balances.task.title')}`,
+          numericKeys: balanceKeys
+        }
+      );
 
       commit(ADEX_BALANCES, result);
     } catch (e: any) {
@@ -160,18 +156,18 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
 
     const secondarySection = Section.STAKING_ADEX_HISTORY;
     setStatus(newStatus, secondarySection, status, commit);
+
     try {
       const taskType = TaskType.STAKING_ADEX_HISTORY;
       const { taskId } = await api.adexHistory();
-      const task = createTask(taskId, taskType, {
-        title: `${i18n.t('actions.staking.adex_history.task.title')}`,
-        ignoreResult: false,
-        numericKeys: [...balanceKeys, 'total_staked_amount']
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<AdexHistory, TaskMeta>(taskType);
+      const { result } = await awaitTask<AdexHistory, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: `${i18n.t('actions.staking.adex_history.task.title')}`,
+          numericKeys: [...balanceKeys, 'total_staked_amount']
+        }
+      );
 
       commit(ADEX_HISTORY, result);
     } catch (e: any) {

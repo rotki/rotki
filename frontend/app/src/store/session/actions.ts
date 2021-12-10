@@ -26,6 +26,7 @@ import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { HistoryActions } from '@/store/history/consts';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
+import { useReports } from '@/store/reports';
 import {
   ACTION_PURGE_CACHED_DATA,
   SessionActions
@@ -37,6 +38,7 @@ import {
   SessionState
 } from '@/store/session/types';
 import { ACTION_PURGE_DATA } from '@/store/staking/consts';
+import { useTasks } from '@/store/tasks';
 import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
 import { getStatusUpdater, showError, showMessage } from '@/store/utils';
 import {
@@ -56,7 +58,7 @@ import {
   UnlockPayload
 } from '@/types/login';
 import { Module } from '@/types/modules';
-import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { SettingsUpdate, Tag, UserSettingsModel } from '@/types/user';
 import { backoff } from '@/utils/backoff';
@@ -281,15 +283,15 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     const payload = {};
     commit('session/reset', payload, opts);
     commit('notifications/reset', payload, opts);
-    commit('reports/reset', payload, opts);
     commit('balances/reset', payload, opts);
     commit('defi/reset', payload, opts);
-    commit('tasks/reset', payload, opts);
     commit('settings/reset', payload, opts);
     commit('history/reset', payload, opts);
     commit('statistics/reset', payload, opts);
     commit('staking/reset', payload, opts);
     commit('reset', payload, opts);
+    useReports().$reset();
+    useTasks().reset();
   },
 
   async addTag({ commit }, tag: Tag): Promise<ActionStatus> {
@@ -606,23 +608,18 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       return { success: false, message: e.message };
     }
   },
-  async forceSync(
-    { commit, dispatch, rootGetters: { 'tasks/isTaskRunning': isTaskRunning } },
-    action: SyncAction
-  ): Promise<void> {
+  async forceSync({ dispatch }, action: SyncAction): Promise<void> {
+    const { isTaskRunning, awaitTask } = useTasks();
     const taskType = TaskType.FORCE_SYNC;
-    if (isTaskRunning(taskType)) {
+    if (isTaskRunning(taskType).value) {
       return;
     }
     try {
       const { taskId } = await api.forceSync(action);
-      const task = createTask(taskId, taskType, {
+      await awaitTask<boolean, TaskMeta>(taskId, taskType, {
         title: i18n.tc('actions.session.force_sync.task.title'),
-        ignoreResult: false,
         numericKeys: balanceKeys
       });
-      commit('tasks/add', task, { root: true });
-      await taskCompletion<boolean, TaskMeta>(taskType);
       const title = i18n.tc('actions.session.force_sync.success.title');
       const message = i18n.tc('actions.session.force_sync.success.message');
       notify(message, title, Severity.INFO, true);
@@ -671,19 +668,21 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   },
 
   async [SessionActions.FETCH_NFTS](
-    { commit },
+    _,
     payload?: { ignoreCache: boolean }
   ): Promise<ActionResult<NftResponse | null>> {
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.FETCH_NFTS;
       const { taskId } = await api.fetchNfts(payload);
-      const task = createTask(taskId, taskType, {
-        title: i18n.t('actions.session.fetch_nfts.task.title').toString(),
-        ignoreResult: false,
-        numericKeys: []
-      });
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<NftResponse, TaskMeta>(taskType);
+      const { result } = await awaitTask<NftResponse, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.t('actions.session.fetch_nfts.task.title').toString(),
+          numericKeys: []
+        }
+      );
       return {
         result: NftResponse.parse(result),
         message: ''

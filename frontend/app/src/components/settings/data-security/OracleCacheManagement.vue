@@ -133,9 +133,11 @@
 </template>
 
 <script lang="ts">
+import { Ref } from '@vue/composition-api';
+import { mapState } from 'pinia';
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -145,6 +147,7 @@ import { OracleCacheMeta } from '@/services/balances/types';
 import { OracleCachePayload } from '@/store/balances/types';
 import { Severity } from '@/store/notifications/consts';
 import { notify } from '@/store/notifications/utils';
+import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { TaskType } from '@/types/task-type';
 import { PriceOracle } from '@/types/user';
@@ -159,7 +162,7 @@ import { assert } from '@/utils/assertions';
     OracleEntry
   },
   computed: {
-    ...mapGetters('tasks', ['isTaskRunning'])
+    ...mapState(useTasks, ['isTaskRunning'])
   },
   methods: {
     ...mapActions('balances', ['createOracleCache'])
@@ -199,7 +202,7 @@ export default class OracleCacheManagement extends Vue {
   selection: PriceOracle = 'cryptocompare';
   deleteEntry: OracleCacheMeta | null = null;
   createOracleCache!: (payload: OracleCachePayload) => Promise<ActionStatus>;
-  isTaskRunning!: (type: TaskType) => boolean;
+  isTaskRunning!: (type: TaskType) => Ref<boolean>;
 
   @Watch('selection')
   async onSelectionChanged() {
@@ -221,7 +224,7 @@ export default class OracleCacheManagement extends Vue {
   }
 
   get pending(): boolean {
-    return this.isTaskRunning(TaskType.CREATE_PRICE_CACHE);
+    return this.isTaskRunning(TaskType.CREATE_PRICE_CACHE).value;
   }
 
   async mounted() {

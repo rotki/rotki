@@ -13,7 +13,6 @@ import { session } from '@/store/session';
 import { settings } from '@/store/settings';
 import { staking } from '@/store/staking';
 import { statistics } from '@/store/statistics';
-import { tasks } from '@/store/tasks';
 import {
   Message,
   RotkehlchenState,
@@ -181,7 +180,6 @@ const store: StoreOptions<RotkehlchenState> = {
     notifications,
     balances,
     defi,
-    tasks,
     history,
     session,
     settings,

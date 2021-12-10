@@ -31,8 +31,8 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
 import Generate from '@/components/profitloss/Generate.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
-import { setupTaskStatus } from '@/composables/tasks';
 import { useReports } from '@/store/reports';
+import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
 export default defineComponent({
@@ -45,7 +45,7 @@ export default defineComponent({
     Generate
   },
   setup() {
-    const { isTaskRunning } = setupTaskStatus();
+    const { isTaskRunning } = useTasks();
     const reportsStore = useReports();
     const { reportError, reports } = storeToRefs(reportsStore);
     const { generateReport } = reportsStore;

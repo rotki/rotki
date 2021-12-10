@@ -1,6 +1,6 @@
-import { taskManager } from '@/services/task-manager';
 import { websocket } from '@/services/websocket/websocket-service';
 import store from '@/store/store';
+import { useTasks } from '@/store/tasks';
 import { QUERY_PERIOD, REFRESH_PERIOD } from '@/types/frontend-settings';
 
 const PERIODIC = 'periodic';
@@ -52,10 +52,11 @@ class Monitoring {
     });
 
     if (!this.monitors[TASK]) {
+      const { monitor } = useTasks();
       if (!restarting) {
-        taskManager.monitor();
+        monitor();
       }
-      this.monitors[TASK] = setInterval(() => taskManager.monitor(), 2000);
+      this.monitors[TASK] = setInterval(() => monitor(), 2000);
     }
 
     if (!this.monitors[WATCHER]) {

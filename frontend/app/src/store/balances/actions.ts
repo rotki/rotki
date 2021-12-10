@@ -43,6 +43,7 @@ import {
 import { Section, Status } from '@/store/const';
 import { Severity } from '@/store/notifications/consts';
 import { notify, userNotify } from '@/store/notifications/utils';
+import { useTasks } from '@/store/tasks';
 import {
   ActionStatus,
   Message,
@@ -54,13 +55,7 @@ import { Writeable } from '@/types';
 import { Eth2Validator } from '@/types/balances';
 import { Exchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
-import {
-  BlockchainMetadata,
-  createTask,
-  ExchangeMeta,
-  taskCompletion,
-  TaskMeta
-} from '@/types/task';
+import { BlockchainMetadata, ExchangeMeta, TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
 import { assert } from '@/utils/assertions';
@@ -123,22 +118,17 @@ const updateBalancePrice: (
 };
 
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
-  async fetchBalances(
-    { commit, rootGetters, dispatch },
-    payload: Partial<AllBalancePayload> = {}
-  ) {
-    const isTaskRunning = rootGetters['tasks/isTaskRunning'];
-    if (isTaskRunning(TaskType.QUERY_BALANCES)) {
+  async fetchBalances({ dispatch }, payload: Partial<AllBalancePayload> = {}) {
+    const { addTask, isTaskRunning } = useTasks();
+    if (isTaskRunning(TaskType.QUERY_BALANCES).value) {
       return;
     }
     try {
-      const result = await api.queryBalancesAsync(payload);
-      const task = createTask(result.task_id, TaskType.QUERY_BALANCES, {
+      const { task_id } = await api.queryBalancesAsync(payload);
+      await addTask(task_id, TaskType.QUERY_BALANCES, {
         title: i18n.t('actions.balances.all_balances.task.title').toString(),
         ignoreResult: true
       });
-
-      commit('tasks/add', task, { root: true });
     } catch (e: any) {
       notify(
         i18n
@@ -171,14 +161,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     payload: ExchangeBalancePayload
   ): Promise<void> {
     const { location, ignoreCache } = payload;
-    const isTaskRunning = rootGetters['tasks/isTaskRunning'];
-    const taskMetadata = rootGetters['tasks/metadata'];
     const status = rootGetters['status'];
     const taskType = TaskType.QUERY_EXCHANGE_BALANCES;
 
-    const meta: ExchangeMeta = taskMetadata(taskType);
+    const { awaitTask, isTaskRunning, metadata } = useTasks();
+    const meta = metadata<ExchangeMeta>(taskType);
 
-    if (isTaskRunning(taskType) && meta.location === location) {
+    if (isTaskRunning(taskType).value && meta?.location === location) {
       return;
     }
 
@@ -197,17 +186,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
             location
           })
           .toString(),
-        ignoreResult: false,
         numericKeys: balanceKeys
       };
 
-      const task = createTask(taskId, taskType, meta);
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<AssetBalances, ExchangeMeta>(
+      const { result } = await awaitTask<AssetBalances, ExchangeMeta>(
+        taskId,
         taskType,
-        `${taskId}`
+        meta,
+        true
       );
 
       commit('addExchangeBalances', {
@@ -239,17 +225,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       const meta: TaskMeta = {
         title: i18n.t('actions.balances.exchange_rates.task.title').toString(),
-        ignoreResult: false,
         numericKeys: []
       };
 
-      const type = TaskType.EXCHANGE_RATES;
-      const task = createTask(taskId, type, meta);
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<ExchangeRates, ExchangeMeta>(
-        type
+      const { awaitTask } = useTasks();
+      const { result } = await awaitTask<ExchangeRates, TaskMeta>(
+        taskId,
+        TaskType.EXCHANGE_RATES,
+        meta
       );
 
       commit('usdToFiatExchangeRates', ExchangeRates.parse(result));
@@ -272,6 +255,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       ignoreCache: false
     }
   ): Promise<void> {
+    const { awaitTask } = useTasks();
     const { blockchain, ignoreCache } = payload;
 
     const chains: Blockchain[] = [];
@@ -300,18 +284,19 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         chain
       );
       const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
-      const task = createTask(taskId, taskType, {
-        chain,
-        title: `Query ${chain} Balances`,
-        ignoreResult: false,
-        numericKeys: []
-      } as BlockchainMetadata);
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<
+      const { result } = await awaitTask<
         BlockchainBalances,
         BlockchainMetadata
-      >(taskType, taskId.toString());
+      >(
+        taskId,
+        taskType,
+        {
+          chain,
+          title: `Query ${chain} Balances`,
+          numericKeys: []
+        } as BlockchainMetadata,
+        true
+      );
       const balances = BlockchainBalances.parse(result);
       await dispatch('updateBalances', {
         chain,
@@ -407,15 +392,18 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     dispatch('accounts', blockchainToRefresh).then();
   },
 
-  async deleteXpub({ commit, dispatch, rootGetters }, payload: XpubPayload) {
+  async deleteXpub({ dispatch }, payload: XpubPayload) {
+    const { awaitTask, isTaskRunning } = useTasks();
     try {
       const taskType = TaskType.REMOVE_ACCOUNT;
-      const isTaskRunning = rootGetters['tasks/isTaskRunning'];
-      if (isTaskRunning(taskType)) {
+      if (isTaskRunning(taskType).value) {
         return;
       }
       const { taskId } = await api.deleteXpub(payload);
-      const task = createTask(taskId, taskType, {
+      const { result } = await awaitTask<
+        BlockchainBalances,
+        BlockchainMetadata
+      >(taskId, taskType, {
         title: i18n.tc('actions.balances.xpub_removal.task.title'),
         description: i18n.tc(
           'actions.balances.xpub_removal.task.description',
@@ -424,15 +412,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
             xpub: payload.xpub
           }
         ),
-        ignoreResult: false,
         blockchain: Blockchain.BTC,
         numericKeys: []
       } as BlockchainMetadata);
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<
-        BlockchainBalances,
-        BlockchainMetadata
-      >(taskType);
       const balances = BlockchainBalances.parse(result);
       await dispatch('updateBalances', {
         chain: Blockchain.BTC,
@@ -457,10 +439,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const { accounts, blockchain } = payload;
     assert(accounts, 'Accounts was empty');
     const { taskId } = await api.removeBlockchainAccount(blockchain, accounts);
-
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.REMOVE_ACCOUNT;
-      const task = createTask(taskId, taskType, {
+      const { result } = await awaitTask<
+        BlockchainBalances,
+        BlockchainMetadata
+      >(taskId, taskType, {
         title: i18n.tc(
           'actions.balances.blockchain_account_removal.task.title',
           0,
@@ -474,15 +459,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           { count: accounts.length }
         ),
         blockchain,
-        ignoreResult: false,
         numericKeys: []
       } as BlockchainMetadata);
-
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<
-        BlockchainBalances,
-        BlockchainMetadata
-      >(taskType);
 
       const balances = BlockchainBalances.parse(result);
 
@@ -508,12 +486,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async addAccounts(
-    { state, commit, dispatch, rootGetters },
+    { state, commit, dispatch },
     { blockchain, payload, modules }: AddAccountsPayload
   ): Promise<void> {
+    const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.ADD_ACCOUNT;
-    const isTaskRunning = rootGetters['tasks/isTaskRunning'];
-    if (isTaskRunning(taskType)) {
+    if (isTaskRunning(taskType).value) {
       return;
     }
     const existingAddresses = state.ethAccounts.map(address =>
@@ -549,28 +527,28 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           tags
         });
 
-        const task = createTask(taskId, taskType, {
-          title: i18n.tc(
-            'actions.balances.blockchain_accounts_add.task.title',
-            0,
-            { blockchain }
-          ),
-          description: i18n.tc(
-            'actions.balances.blockchain_accounts_add.task.description',
-            0,
-            { address }
-          ),
-          blockchain,
-          ignoreResult: false,
-          numericKeys: []
-        } as BlockchainMetadata);
-
-        commit('tasks/add', task, { root: true });
-
-        const { result } = await taskCompletion<
+        const { result } = await awaitTask<
           BlockchainBalances,
           BlockchainMetadata
-        >(taskType, `${taskId}`);
+        >(
+          taskId,
+          taskType,
+          {
+            title: i18n.tc(
+              'actions.balances.blockchain_accounts_add.task.title',
+              0,
+              { blockchain }
+            ),
+            description: i18n.tc(
+              'actions.balances.blockchain_accounts_add.task.description',
+              0,
+              { address }
+            ),
+            blockchain,
+            numericKeys: []
+          } as BlockchainMetadata,
+          true
+        );
 
         if (modules && blockchain === Blockchain.ETH) {
           await dispatch(
@@ -628,30 +606,33 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async addAccount({ commit, dispatch }, payload: BlockchainAccountPayload) {
+    const { awaitTask } = useTasks();
     const { address, blockchain } = payload;
     const taskType = TaskType.ADD_ACCOUNT;
     const { taskId } = await api.addBlockchainAccount(payload);
 
-    const task = createTask(taskId, taskType, {
-      title: i18n.tc('actions.balances.blockchain_account_add.task.title', 0, {
-        blockchain
-      }),
-      description: i18n.tc(
-        'actions.balances.blockchain_account_add.task.description',
-        0,
-        { address }
-      ),
-      blockchain,
-      ignoreResult: false,
-      numericKeys: []
-    } as BlockchainMetadata);
+    const { result } = await awaitTask<BlockchainBalances, BlockchainMetadata>(
+      taskId,
+      taskType,
+      {
+        title: i18n.tc(
+          'actions.balances.blockchain_account_add.task.title',
+          0,
+          {
+            blockchain
+          }
+        ),
+        description: i18n.tc(
+          'actions.balances.blockchain_account_add.task.description',
+          0,
+          { address }
+        ),
+        blockchain,
+        numericKeys: []
+      } as BlockchainMetadata
+    );
 
-    commit('tasks/add', task, { root: true });
     try {
-      const { result } = await taskCompletion<
-        BlockchainBalances,
-        BlockchainMetadata
-      >(taskType);
       const balances = BlockchainBalances.parse(result);
       await dispatch('updateBalances', {
         chain: blockchain,
@@ -861,6 +842,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async fetchManualBalances({ commit, rootGetters: { status } }) {
+    const { awaitTask } = useTasks();
     const currentStatus: Status = status(Section.MANUAL_BALANCES);
     const section = Section.MANUAL_BALANCES;
     const newStatus =
@@ -870,16 +852,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     try {
       const taskType = TaskType.MANUAL_BALANCES;
       const { taskId } = await api.balances.manualBalances();
-      const task = createTask<TaskMeta>(taskId, taskType, {
-        title: i18n.tc('actions.manual_balances.task.title'),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<ManualBalances, TaskMeta>(
-        taskType
+      const { result } = await awaitTask<ManualBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.manual_balances.task.title'),
+          numericKeys: balanceKeys
+        }
       );
 
       commit('manualBalances', result.balances);
@@ -1152,18 +1131,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async fetchPrices(
-    {
-      state,
-      commit,
-      rootGetters: {
-        'tasks/isTaskRunning': isTaskRunning,
-        'balances/aggregatedAssets': assets
-      }
-    },
+    { state, commit, rootGetters: { 'balances/aggregatedAssets': assets } },
     payload: FetchPricePayload
   ): Promise<void> {
+    const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.UPDATE_PRICES;
-    if (isTaskRunning(taskType)) {
+    if (isTaskRunning(taskType).value) {
       return;
     }
     const fetchPrices: (assets: string[]) => Promise<void> = async assets => {
@@ -1172,16 +1145,16 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         CURRENCY_USD,
         payload.ignoreCache
       );
-      const task = createTask(taskId, taskType, {
-        title: i18n.t('actions.session.fetch_prices.task.title').toString(),
-        ignoreResult: false,
-        numericKeys: null
-      });
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<AssetPriceResponse, TaskMeta>(
+      const { result } = await awaitTask<AssetPriceResponse, TaskMeta>(
+        taskId,
         taskType,
-        `${taskId}`
+        {
+          title: i18n.t('actions.session.fetch_prices.task.title').toString(),
+          numericKeys: null
+        },
+        true
       );
+
       commit(BalanceMutations.UPDATE_PRICES, {
         ...state.prices,
         ...result.assets
@@ -1231,11 +1204,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async createOracleCache(
-    { commit, rootGetters: { 'tasks/isTaskRunning': isTaskRunning } },
+    _,
     { fromAsset, purgeOld, source, toAsset }: OracleCachePayload
   ): Promise<ActionStatus> {
+    const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.CREATE_PRICE_CACHE;
-    if (isTaskRunning(taskType)) {
+    if (isTaskRunning(taskType).value) {
       return {
         success: false,
         message: i18n
@@ -1250,22 +1224,22 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         toAsset,
         purgeOld
       );
-      const task = createTask(taskId, taskType, {
-        title: i18n
-          .t('actions.balances.create_oracle_cache.task', {
-            fromAsset,
-            toAsset,
-            source
-          })
-          .toString(),
-        ignoreResult: false,
-        numericKeys: null
-      });
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<boolean, TaskMeta>(
+      const { result } = await awaitTask<boolean, TaskMeta>(
+        taskId,
         taskType,
-        `${taskId}`
+        {
+          title: i18n
+            .t('actions.balances.create_oracle_cache.task', {
+              fromAsset,
+              toAsset,
+              source
+            })
+            .toString(),
+          numericKeys: null
+        },
+        true
       );
+
       return {
         success: result
       };
@@ -1285,11 +1259,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async fetchHistoricPrice(
-    { commit, rootGetters: { 'tasks/isTaskRunning': isTaskRunning } },
+    _,
     { fromAsset, timestamp, toAsset }: HistoricPricePayload
   ): Promise<BigNumber> {
+    const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.FETCH_HISTORIC_PRICE;
-    if (isTaskRunning(taskType)) {
+    if (isTaskRunning(taskType).value) {
       return bigNumberify(-1);
     }
 
@@ -1299,25 +1274,25 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         toAsset,
         timestamp
       );
-      const task = createTask(taskId, taskType, {
-        title: i18n
-          .t('actions.balances.historic_fetch_price.task.title')
-          .toString(),
-        description: i18n
-          .t('actions.balances.historic_fetch_price.task.description', {
-            fromAsset,
-            toAsset,
-            date: convertFromTimestamp(timestamp)
-          })
-          .toString(),
-        ignoreResult: false,
-        numericKeys: null
-      });
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<HistoricPrices, TaskMeta>(
+      const { result } = await awaitTask<HistoricPrices, TaskMeta>(
+        taskId,
         taskType,
-        `${taskId}`
+        {
+          title: i18n
+            .t('actions.balances.historic_fetch_price.task.title')
+            .toString(),
+          description: i18n
+            .t('actions.balances.historic_fetch_price.task.description', {
+              fromAsset,
+              toAsset,
+              date: convertFromTimestamp(timestamp)
+            })
+            .toString(),
+          numericKeys: null
+        },
+        true
       );
+
       return result.assets[fromAsset][timestamp];
     } catch (e) {
       return bigNumberify(-1);
@@ -1345,20 +1320,17 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
-
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.L2_LOOPRING;
       const { taskId } = await api.balances.loopring();
-      const task = createTask(taskId, taskType, {
-        title: i18n.t('actions.balances.loopring.task.title').toString(),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<AccountAssetBalances, TaskMeta>(
-        taskType
+      const { result } = await awaitTask<AccountAssetBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.t('actions.balances.loopring.task.title').toString(),
+          numericKeys: balanceKeys
+        }
       );
 
       commit(BalanceMutations.UPDATE_LOOPRING_BALANCES, result);
@@ -1377,21 +1349,21 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     setStatus(Status.LOADED, section, status, commit);
   },
 
-  async fetchTokenDetails({ commit }, address: string): Promise<ERC20Token> {
+  async fetchTokenDetails(_, address: string): Promise<ERC20Token> {
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.ERC20_DETAILS;
       const { taskId } = await api.erc20details(address);
-      const task = createTask(taskId, taskType, {
-        title: i18n
-          .t('actions.assets.erc20.task.title', { address })
-          .toString(),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<ERC20Token, TaskMeta>(taskType);
+      const { result } = await awaitTask<ERC20Token, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n
+            .t('actions.assets.erc20.task.title', { address })
+            .toString(),
+          numericKeys: balanceKeys
+        }
+      );
       return result;
     } catch (e: any) {
       notify(
@@ -1412,6 +1384,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     { commit, rootGetters: { status }, rootState: { session } },
     payload?: { ignoreCache: boolean }
   ): Promise<void> {
+    const { awaitTask } = useTasks();
     const { activeModules } = session!!.generalSettings;
     if (!activeModules.includes(Module.NFTS)) {
       return;
@@ -1421,15 +1394,15 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       setStatus(Status.LOADING, section, status, commit);
       const taskType = TaskType.NF_BALANCES;
       const { taskId } = await api.balances.fetchNfBalances(payload);
-      const task = createTask(taskId, taskType, {
-        title: i18n.t('actions.nft_balances.task.title').toString(),
-        ignoreResult: false,
-        numericKeys: []
-      });
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<NonFungibleBalances, TaskMeta>(
-        taskType
+      const { result } = await awaitTask<NonFungibleBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.t('actions.nft_balances.task.title').toString(),
+          numericKeys: []
+        }
       );
+
       commit(
         BalanceMutations.UPDATE_NF_BALANCES,
         NonFungibleBalances.parse(result)
@@ -1450,10 +1423,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
   async addEth2Validator(
-    { commit, dispatch, rootState: { session } },
+    { dispatch, rootState: { session } },
     payload: Eth2Validator
   ) {
     assert(session);
+    const { awaitTask } = useTasks();
     const { activeModules } = session.generalSettings;
     if (!activeModules.includes(Module.ETH2)) {
       return;
@@ -1463,16 +1437,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     try {
       const taskType = TaskType.ADD_ETH2_VALIDATOR;
       const { taskId } = await api.balances.addEth2Validator(payload);
-      const task = createTask(taskId, taskType, {
+      const { result } = await awaitTask<Boolean, TaskMeta>(taskId, taskType, {
         title: i18n.t('actions.add_eth2_validator.task.title').toString(),
         description: i18n
           .t('actions.add_eth2_validator.task.description', { id })
           .toString(),
-        ignoreResult: false,
         numericKeys: []
       });
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<Boolean, TaskMeta>(taskType);
       if (result) {
         await dispatch('fetchBlockchainBalances', {
           blockchain: Blockchain.ETH2
