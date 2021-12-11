@@ -49,7 +49,7 @@
       </span>
       <amount-currency
         v-if="!renderValue.isNaN() && currencyLocation === 'after'"
-        class="ml-1"
+        class="ml-1 amount-display__currency"
         :asset-padding="assetPadding"
         :show-currency="shownCurrency"
         :currency="currency"
@@ -268,6 +268,10 @@ export default class AmountDisplay extends Mixins(AssetMixin) {
 
   &--loss {
     color: var(--v-rotki-loss-base);
+  }
+
+  &__currency {
+    font-size: 1rem;
   }
 }
 

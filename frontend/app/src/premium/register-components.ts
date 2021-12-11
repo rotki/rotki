@@ -25,6 +25,7 @@ import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
@@ -75,4 +76,6 @@ export function registerComponents() {
   Vue.component('AssetLink', AssetLink);
   // Version 15 - 1.21.2
   Vue.component('StatisticsGraphSettings', StatisticsGraphSettings);
+  // Version 16 - 1.23
+  Vue.component('AmountInput', AmountInput);
 }
