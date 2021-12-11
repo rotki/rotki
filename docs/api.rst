@@ -9739,20 +9739,23 @@ Show NFT Balances
 
         {
             "result": {
-                "0xeE3766e4F996DC0e0F8c929954EAAFef3441de87": [{
-                    "id": "unique id",
-                    "name": "a name",
-		    "manually_input": true,
-		    "price_asset": "ETH",
-		    "price_in_asset": "1",
-                    "usd_price": "2501.15"
-                }, {
-                    "id": "unique id 2",
-                    "name": null,
-		    "manually_input": false,
-		    "price_asset": "USD",
-		    "price_in_asset": "150.55",
-                    "usd_price": "150.55"
+                "0xeE3766e4F996DC0e0F8c929954EAAFef3441de87": [
+                    {
+                        "id": "unique id",
+                        "name": "a name",
+                        "manually_input": true,
+                        "price_asset": "ETH",
+                        "price_in_asset": "1",
+                        "usd_price": "2501.15"
+                        "image_url": "https://storage.opensea.io/files/305952feb5321a50d5d4f6ab6c16da1f.mov"
+                    }, {
+                        "id": "unique id 2",
+                        "name": null,
+                        "manually_input": false,
+                        "price_asset": "USD",
+                        "price_in_asset": "150.55",
+                        "usd_price": "150.55"
+                        "image_url": "https://lh3.googleusercontent.com/xJpOAw7P96jdPgs91w7ZQMTq91tvcCva4J2RYHh7LjFufod_UP9FE0bVjhp1cYpbx2p1qFFj2NDFf3oS0eEcNI3L5w"
                 }],
             },
             "message": ""
@@ -9954,14 +9957,15 @@ Get associated locations
 ========================
 
 .. http:get:: /api/(version)/locations/associated
+   
    Doing a GET on this endpoint will return a list of locations where the user has information. It contains locations imported in CSV, exchanges and DeFi locations.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
+
       GET /api/1/locations/associated HTTP/1.1
       Host: localhost:5042
-
 
    **Example Response**:
 
@@ -9970,7 +9974,10 @@ Get associated locations
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      {'result': ['nexo', 'kraken', 'uniswap'], 'message': ''}
+      {
+          "result": ['nexo', 'kraken', 'uniswap'],
+          "message": ""
+      }
 
    :statuscode 200: Locations succesfully queried.
    :statuscode 409: User is not logged in. Check error message for details.
