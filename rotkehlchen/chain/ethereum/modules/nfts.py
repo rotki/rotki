@@ -140,6 +140,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                         'price_asset': cached_price_data['price_asset'],
                         'price_in_asset': FVal(cached_price_data['price_in_asset']),
                         'usd_price': FVal(cached_price_data['usd_price']),
+                        'image_url': nft.image_url,
                     })
                 elif nft.price_usd != ZERO:
                     result[address].append({
@@ -149,6 +150,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                         'price_asset': 'ETH',
                         'price_in_asset': nft.price_eth,
                         'usd_price': nft.price_usd,
+                        'image_url': nft.image_url,
                     })
                     db_data.append((nft.token_identifier, nft.name, str(nft.price_eth), 'ETH', 0, address))  # noqa: E501
                 else:
@@ -160,6 +162,7 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
                             'price_asset': 'USD',
                             'price_in_asset': ZERO,
                             'usd_price': ZERO,
+                            'image_url': nft.image_url,
                         })
                     # Always write detected nfts in the DB to have name and address associated
                     db_data.append((nft.token_identifier, nft.name, None, None, 0, address))  # noqa: E501
