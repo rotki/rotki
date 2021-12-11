@@ -3,8 +3,8 @@ Changelog
 =========
 
 * :bug:`-` Users connected to Alchemy as a node will be able to properly retrieve old ethereum transactions.
-* :bug:`-` Users that only deposited to Yearn's vaults won't see the deposit as a lost in the deposits section.
-
+* :bug:`-` Users whose only interaction with a yearn vault was a deposit will no longer see the entire deposit as loss in the PnL.
+* :bug:`3804` Bitpanda users should now be able to see their crypto deposits and withdrawals.
 
 * :release:`1.22.2 <2021-11-30>`
 * :feature:`-` rotki will now detect locked SRM balances in FTX.

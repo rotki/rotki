@@ -140,23 +140,28 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return False, f'Error validating Bitpanda API Key due to {str(e)}'
         return True, ''
 
-    def _deserialize_fiattx(
+    def _deserialize_wallettx(
             self,
             entry: Dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
     ) -> Optional[AssetMovement]:
-        """Deserializes a bitpanda fiatwallets/transactions entry to a deposit/withdrawal
+        """Deserializes a bitpanda fiatwallets/transactions or wallets/transactions
+        entry to a deposit/withdrawal
 
         Returns None and logs error is there is a problem or simpy None if
         it's not a type of entry we are interested in
         """
         try:
-            if entry['type'] != 'fiat_wallet_transaction' or entry['attributes']['status'] != 'finished':  # noqa: E501
+            transaction_type = entry['type']
+            if (
+                transaction_type not in ('fiat_wallet_transaction', 'wallet_transaction') or
+                entry['attributes']['status'] != 'finished'
+            ):
                 return None
             time = Timestamp(deserialize_int_from_str(
                 symbol=entry['attributes']['time']['unix'],
-                location='bitpanda fiat wallet transaction',
+                location='bitpanda wallet transaction',
             ))
             if time < from_ts or time > to_ts:
                 # should we also stop querying from calling method?
@@ -169,26 +174,32 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             except DeserializationError:
                 return None  # not a deposit/withdrawal
 
-            fiat_id = entry['attributes']['fiat_id']
-            fiat_asset = self.fiat_map.get(fiat_id)
-            if fiat_asset is None:
+            if transaction_type == 'fiat_wallet_transaction':
+                asset_id = entry['attributes']['fiat_id']
+                asset = self.fiat_map.get(asset_id)
+            else:
+                asset_id = entry['attributes']['cryptocoin_id']
+                asset = self.cryptocoin_map.get(asset_id)
+            if asset is None:
                 self.msg_aggregator.add_error(
                     f'While deserializing Bitpanda fiat transaction, could not find '
-                    f'bitpanda fiat with id {fiat_id} in the mapping',
+                    f'bitpanda asset with id {asset_id} in the mapping',
                 )
                 return None
             amount = deserialize_asset_amount(entry['attributes']['amount'])
             fee = deserialize_fee(entry['attributes']['fee'])
             tx_id = entry['id']
 
+            transaction_id = entry['attributes'].get('tx_id')
+            address = entry['attributes'].get('recipient')
         except (DeserializationError, KeyError) as e:
             msg = str(e)
             if isinstance(e, KeyError):
-                msg = f'Missing key {msg} for fiat transaction entry'
+                msg = f'Missing key {msg} for wallet transaction entry'
 
-            self.msg_aggregator.add_error(f'Error processing bitpanda fiat transaction entry due to {msg}')  # noqa: E501
+            self.msg_aggregator.add_error(f'Error processing bitpanda wallet transaction entry due to {msg}')  # noqa: E501
             log.error(
-                'Error processing bitpanda fiat transaction entry',
+                'Error processing bitpanda wallet transaction entry',
                 error=msg,
                 entry=entry,
             )
@@ -197,12 +208,12 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return AssetMovement(
             location=Location.BITPANDA,
             category=movement_category,
-            address=None,
-            transaction_id=None,
+            address=address,
+            transaction_id=transaction_id,
             timestamp=time,
-            asset=fiat_asset,
+            asset=asset,
             amount=amount,
-            fee_asset=fiat_asset,
+            fee_asset=asset,
             fee=fee,
             link=tx_id,
         )
@@ -297,7 +308,13 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     @overload
     def _api_query(  # pylint: disable=no-self-use
             self,
-            endpoint: Literal['wallets', 'fiatwallets', 'trades', 'fiatwallets/transactions'],
+            endpoint: Literal[
+                'wallets',
+                'fiatwallets',
+                'trades',
+                'fiatwallets/transactions',
+                'wallets/transactions',
+            ],
             options: Optional[Dict[str, Any]] = None,
     ) -> Tuple[List[Any], Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
         ...
@@ -389,7 +406,7 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     @overload
     def _query_endpoint_until_end(  # pylint: disable=no-self-use
             self,
-            endpoint: Literal['fiatwallets/transactions'],
+            endpoint: Literal['fiatwallets/transactions', 'wallets/transactions'],
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             options: Optional[Dict[str, Any]] = None,
@@ -398,7 +415,7 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def _query_endpoint_until_end(
             self,
-            endpoint: Literal['trades', 'fiatwallets/transactions'],
+            endpoint: Literal['trades', 'fiatwallets/transactions', 'wallets/transactions'],
             from_ts: Optional[Timestamp],
             to_ts: Optional[Timestamp],
             options: Optional[Dict[str, Any]] = None,
@@ -413,7 +430,8 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         page = 1
         count_so_far = 0
         result = []
-        deserialize_fn = self._deserialize_trade if endpoint == 'trades' else self._deserialize_fiattx  # noqa: E501
+        deserialize_fn = self._deserialize_trade if endpoint == 'trades' else self._deserialize_wallettx  # noqa: E501
+
         while True:
             given_options['page_size'] = MAX_PAGE_SIZE
             given_options['page'] = page
@@ -529,6 +547,12 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             from_ts=start_ts,
             to_ts=end_ts,
         )
+        crypto_movements = self._query_endpoint_until_end(
+            endpoint='wallets/transactions',
+            from_ts=start_ts,
+            to_ts=end_ts,
+        )
+        movements.extend(crypto_movements)
         return movements
 
     def query_online_margin_history(
