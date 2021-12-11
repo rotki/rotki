@@ -58,7 +58,6 @@ import { deserializeApiErrorMessage } from '@/services/converters';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
 import {
-  FETCH_FROM_CACHE,
   FETCH_FROM_SOURCE,
   FETCH_REFRESH,
   HistoryActions
@@ -160,12 +159,15 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   }
 
   async refresh() {
-    await this[HistoryActions.FETCH_LEDGER_ACTIONS](FETCH_REFRESH);
+    await this.fetch(FETCH_REFRESH);
   }
 
   async mounted() {
-    await this[HistoryActions.FETCH_LEDGER_ACTIONS](FETCH_FROM_CACHE);
-    await this[HistoryActions.FETCH_LEDGER_ACTIONS](FETCH_FROM_SOURCE);
+    await this.fetch(FETCH_FROM_SOURCE);
+  }
+
+  async fetch(source: FetchSource) {
+    await this[HistoryActions.FETCH_LEDGER_ACTIONS](source);
   }
 
   async showForm(action: LedgerActionEntry | UnsavedAction = emptyAction()) {

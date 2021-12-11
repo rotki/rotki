@@ -21,7 +21,6 @@ import StatusMixin from '@/mixins/status-mixin';
 import { TradeLocation } from '@/services/history/types';
 import { Section } from '@/store/const';
 import {
-  FETCH_FROM_CACHE,
   FETCH_FROM_SOURCE,
   FETCH_REFRESH,
   HistoryActions
@@ -89,18 +88,16 @@ export default class TradeHistory extends Mixins(StatusMixin) {
   }
 
   private async load() {
-    await Promise.all([
-      this.fetchTrades(FETCH_FROM_CACHE),
-      this.fetchUniswapTrades(false),
-      this.fetchBalancerTrades(false),
-      this.fetchSushiswapTrades(false)
-    ]);
-    await this.fetchTrades(FETCH_FROM_SOURCE);
+    await this.fetch(FETCH_FROM_SOURCE);
   }
 
   private async refresh() {
+    await this.fetch(FETCH_REFRESH);
+  }
+
+  private async fetch(source: FetchSource) {
     await Promise.all([
-      this.fetchTrades(FETCH_REFRESH),
+      this.fetchTrades(source),
       this.fetchUniswapTrades(true),
       this.fetchBalancerTrades(true),
       this.fetchSushiswapTrades(true)

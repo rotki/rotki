@@ -24,7 +24,6 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import StatusMixin from '@/mixins/status-mixin';
 import { Section } from '@/store/const';
 import {
-  FETCH_FROM_CACHE,
   FETCH_FROM_SOURCE,
   FETCH_REFRESH,
   HistoryActions
@@ -52,19 +51,19 @@ export default defineComponent({
     ])
   },
   async mounted() {
-    const { fetchMovements } = this as {
-      fetchMovements: (source: FetchSource) => Promise<void>;
-    };
-    await fetchMovements(FETCH_FROM_CACHE);
-    await fetchMovements(FETCH_FROM_SOURCE);
+    await this.fetch(FETCH_FROM_SOURCE);
   },
   methods: {
     ...mapActions('history', [HistoryActions.FETCH_MOVEMENTS]),
     async refresh() {
+      await this.fetch(FETCH_REFRESH);
+    },
+
+    async fetch(source: FetchSource) {
       const { fetchMovements } = this as {
         fetchMovements: (source: FetchSource) => Promise<void>;
       };
-      await fetchMovements(FETCH_REFRESH);
+      await fetchMovements(source);
     }
   }
 });
