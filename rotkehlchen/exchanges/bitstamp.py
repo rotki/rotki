@@ -721,7 +721,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raise AssertionError(f'Unexpected Bitstamp response_case: {case}.') from e
 
         error_code = response_dict.get('code', None)
-        if error_code in set(API_KEY_ERROR_CODE_ACTION.keys()):
+        if error_code in API_KEY_ERROR_CODE_ACTION:
             msg = API_KEY_ERROR_CODE_ACTION[error_code]
         else:
             reason = response_dict.get('reason', None) or response.text
