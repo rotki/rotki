@@ -21,13 +21,22 @@ When you start rotki you are greeted with a sign-in/signup prompt.
 
 .. role:: red
 
-For creating an account press "Create New Account" and provide a username and a password:
+For creating an account press "Create New Account".
+You can choose to enable premium feature or not.
+
+If you want to restore an account using premium sync during the account creation, then you can **Enable premium**,
+and enable **Restore synced database**, and insert your **API Key** and the **secret** here.
+
+Then you can click **Continue** button.
+
+.. image:: images/rotki_create_account_enable_sync.png
+   :alt: Enable premium sync
+   :align: center
+
+You have to provide a username and a password:
 
   - **Username**: it is just an identifier for your database; a local user.
   - **Password**: :red:`Do not forget this password`. It is used to encrypt all your local files.
-
-If you want to restore an account using premium sync during the account creation, then you can **Enable premium**,
-and insert your **API Key** and the **secret** here.
 
 For a completely new account it is suggested to add your premium API key and secret using :ref:`set-up-rotki-premium`
 after logging in with the new account.

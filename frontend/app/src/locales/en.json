@@ -279,14 +279,23 @@
   },
   "create_account": {
     "title": "Create Account",
+    "premium": {
+      "title": "Enable Premium",
+      "premium_question": "Do you want to enable premium features? (This is needed if you want to sync your Rotki database from another device)",
+      "button_premium_reject": "No",
+      "button_premium_approve": "Yes, enable premium",
+      "button_cancel": "Cancel",
+      "button_continue": "Continue"
+    },
     "select_credentials": {
       "title": "Select Credentials",
       "label_username": "Username",
       "label_password": "Password",
       "label_password_repeat": "Repeat Password",
       "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
-      "button_cancel": "Cancel",
+      "button_back": "Back",
       "button_continue": "Continue",
+      "password_sync_requirement": "Ensure that the account uses the same password as the database originally backed up. You can't access the database if you input a different password.",
       "validation": {
         "non_empty_username": "Please provide a user name",
         "valid_username": "A username must contain only alphanumeric characters and have no spaces",
@@ -1580,10 +1589,9 @@
     "at_least_one": "You need to activate at least one of them."
   },
   "premium_credentials": {
-    "label_enable": "Enable Premium",
     "label_api_key": "rotki API Key",
     "label_api_secret": "rotki API Secret",
-    "tooltip": "Enabling premium for a new account will restore the database associated with these credentials from the server. Ensure that the account uses the same password as the database originally backed up.",
+    "restore_synced_database": "Restore synced database",
     "validation": {
       "non_empty_key": "The API key cannot be empty",
       "non_empty_secret": "The API secret cannot be empty"
