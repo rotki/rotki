@@ -4,10 +4,12 @@ Changelog
 
 * :feature:`3716` Users can now see if any of their addresses have PSP available to claim from the PSP airdrop.
 * :feature:`824` Users will now be able to import their trade history from bisq.
+* :feature:`1864` Users will now be able to see trades, deposits and withdrawals imported in CSV from exchanges not connected using API keys.
 * :feature:`3685` Users will now be able to correctly read more transaction types in CSV files imported from crypto.com.
 * :feature:`3497` Users will now be able to add ETH2 validators via index or public key.
 * :feature:`3725` Users can now see if any of their addresses have SDL available to claim from the SDL airdrop.
 * :feature:`3549` Users will now be able to select whether to include or not NFT total value in total net worth and graphs.
+* :feature:`3712` Users will now be able to choose a custom date format while importing CSV files.
 * :bug:`-` Deposits and withdrawals in files from cointracking will now be correctly registered.
 
 * :release:`1.22.2 <2021-11-30>`
