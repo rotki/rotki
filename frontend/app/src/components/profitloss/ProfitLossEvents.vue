@@ -106,8 +106,15 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, watch } from '@vue/composition-api';
-import { storeToRefs } from 'pinia';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  Ref,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -118,88 +125,89 @@ import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import { useRoute } from '@/composables/common';
 import i18n from '@/i18n';
-import { useReports } from '@/store/reports';
+import { SelectedReport } from '@/types/reports';
 
-const getHeaders: () => DataTableHeader[] = () => [
-  {
-    text: i18n.t('profit_loss_events.headers.type').toString(),
-    align: 'center',
-    value: 'type',
-    width: 110,
-    sortable: false
-  },
-  {
-    text: i18n.t('profit_loss_events.headers.location').toString(),
-    value: 'location',
-    width: '120px',
-    align: 'center',
-    sortable: false
-  },
-  {
-    text: i18n
-      .t('profit_loss_events.headers.paid_in', {
-        currency: 'USD'
-      })
-      .toString(),
-    sortable: false,
-    value: 'paidInProfitCurrency',
-    align: 'end'
-  },
-  {
-    text: i18n.t('profit_loss_events.headers.paid_in_asset').toString(),
-    sortable: false,
-    value: 'paidInAsset',
-    align: 'end'
-  },
-  {
-    text: i18n.t('profit_loss_events.headers.taxable_amount').toString(),
-    sortable: false,
-    value: 'taxableAmount',
-    align: 'end'
-  },
-  {
-    text: i18n
-      .t('profit_loss_events.headers.taxable_bought_cost_in', {
-        currency: 'USD'
-      })
-      .toString(),
-    sortable: false,
-    value: 'taxableBoughtCostInProfitCurrency',
-    align: 'end'
-  },
-  {
-    text: i18n.t('profit_loss_events.headers.received_in_asset').toString(),
-    sortable: false,
-    value: 'receivedInAsset',
-    align: 'end'
-  },
-  {
-    text: i18n
-      .t('profit_loss_events.headers.taxable_received_in', {
-        currency: 'USD'
-      })
-      .toString(),
-    sortable: false,
-    value: 'taxableReceivedInProfitCurrency',
-    align: 'end'
-  },
-  {
-    text: i18n.t('profit_loss_events.headers.time').toString(),
-    value: 'time'
-  },
-  {
-    text: i18n.t('profit_loss_events.headers.virtual').toString(),
-    sortable: false,
-    value: 'isVirtual',
-    align: 'center'
-  },
-  {
-    text: '',
-    value: 'expand',
-    align: 'end',
-    sortable: false
-  }
-];
+const getHeaders: (report: Ref<SelectedReport>) => DataTableHeader[] =
+  report => [
+    {
+      text: i18n.t('profit_loss_events.headers.type').toString(),
+      align: 'center',
+      value: 'type',
+      width: 110,
+      sortable: false
+    },
+    {
+      text: i18n.t('profit_loss_events.headers.location').toString(),
+      value: 'location',
+      width: '120px',
+      align: 'center',
+      sortable: false
+    },
+    {
+      text: i18n
+        .t('profit_loss_events.headers.paid_in', {
+          currency: report.value.currency
+        })
+        .toString(),
+      sortable: false,
+      value: 'paidInProfitCurrency',
+      align: 'end'
+    },
+    {
+      text: i18n.t('profit_loss_events.headers.paid_in_asset').toString(),
+      sortable: false,
+      value: 'paidInAsset',
+      align: 'end'
+    },
+    {
+      text: i18n.t('profit_loss_events.headers.taxable_amount').toString(),
+      sortable: false,
+      value: 'taxableAmount',
+      align: 'end'
+    },
+    {
+      text: i18n
+        .t('profit_loss_events.headers.taxable_bought_cost_in', {
+          currency: report.value.currency
+        })
+        .toString(),
+      sortable: false,
+      value: 'taxableBoughtCostInProfitCurrency',
+      align: 'end'
+    },
+    {
+      text: i18n.t('profit_loss_events.headers.received_in_asset').toString(),
+      sortable: false,
+      value: 'receivedInAsset',
+      align: 'end'
+    },
+    {
+      text: i18n
+        .t('profit_loss_events.headers.taxable_received_in', {
+          currency: report.value.currency
+        })
+        .toString(),
+      sortable: false,
+      value: 'taxableReceivedInProfitCurrency',
+      align: 'end'
+    },
+    {
+      text: i18n.t('profit_loss_events.headers.time').toString(),
+      value: 'time'
+    },
+    {
+      text: i18n.t('profit_loss_events.headers.virtual').toString(),
+      sortable: false,
+      value: 'isVirtual',
+      align: 'center'
+    },
+    {
+      text: '',
+      value: 'expand',
+      align: 'end',
+      sortable: false
+    }
+  ];
 
 type PaginationOptions = {
   page: number;
@@ -223,15 +231,23 @@ export default defineComponent({
       required: false,
       type: Boolean,
       default: false
+    },
+    refreshing: {
+      required: false,
+      type: Boolean,
+      default: false
+    },
+    report: {
+      required: true,
+      type: Object as PropType<SelectedReport>
     }
   },
-  setup() {
+  emits: ['update:page'],
+  setup(props, { emit }) {
     const route = useRoute();
-    const reportsStore = useReports();
-    const { report } = storeToRefs(reportsStore);
     const options = ref<PaginationOptions | null>(null);
     const expanded = ref([]);
-    const refreshing = ref(false);
+    const { report } = toRefs(props);
 
     const items = computed(() => {
       return report.value.entries.map((value, index) => ({
@@ -262,25 +278,21 @@ export default defineComponent({
 
       const reportId = parseInt(route.value.params.id);
 
-      refreshing.value = true;
-      await reportsStore.fetchReport(reportId, {
+      emit('update:page', {
+        reportId,
         limit: itemsPerPage,
-        offset: itemsPerPage * page
+        offset: itemsPerPage * (page - 1)
       });
-      refreshing.value = false;
     };
 
     watch(options, updatePagination);
     return {
-      currency: 'USD',
-      refreshing,
-      report,
       items,
       itemLength,
       options,
       expanded,
       showUpgradeMessage,
-      tableHeaders: getHeaders()
+      tableHeaders: getHeaders(report)
     };
   }
 });

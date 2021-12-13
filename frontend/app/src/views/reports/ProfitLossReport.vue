@@ -36,7 +36,12 @@
       :symbol="report.currency"
       :loading="loading"
     />
-    <profit-loss-events class="mt-8" />
+    <profit-loss-events
+      class="mt-8"
+      :report="report"
+      :refreshing="refreshing"
+      @update:page="onPage"
+    />
   </v-container>
 </template>
 
@@ -71,11 +76,13 @@ export default defineComponent({
   },
   setup() {
     const loading = ref(true);
+    const refreshing = ref(false);
     const reportsStore = useReports();
     const { report, reports } = storeToRefs(reportsStore);
     const { fetchReports, fetchReport, clearReport } = reportsStore;
     const router = useRouter();
     const route = useRoute();
+    let firstPage = true;
 
     onMounted(async () => {
       if (reports.value.entries.length === 0) {
@@ -97,10 +104,30 @@ export default defineComponent({
 
     onUnmounted(() => clearReport());
 
+    const onPage = async ({
+      limit,
+      offset,
+      reportId
+    }: {
+      reportId: number;
+      limit: number;
+      offset: number;
+    }) => {
+      if (firstPage) {
+        firstPage = false;
+        return;
+      }
+      refreshing.value = true;
+      await fetchReport(reportId, { limit, offset });
+      refreshing.value = false;
+    };
+
     return {
       loading,
+      refreshing,
       report,
-      showUpgradeMessage
+      showUpgradeMessage,
+      onPage
     };
   }
 });
