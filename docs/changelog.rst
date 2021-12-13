@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3819` Add minimal context menu (copy, cut and paste).
 * :feature:`3818` NFT icon added to NFT Balance table, and Non Fungible Balance table.
 * :feature:`1214` Users will now be able to load and manage previously generated profit and loss reports.
 * :feature:`3716` Users can now see if any of their addresses have PSP available to claim from the PSP airdrop.
