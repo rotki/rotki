@@ -30,6 +30,7 @@
       :accounting-settings="report.settings"
       class="mt-4"
     />
+    <export-report-csv v-if="exportable" />
     <profit-loss-overview
       class="mt-8"
       :overview="report.overview"
@@ -57,6 +58,7 @@ import { storeToRefs } from 'pinia';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
+import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
 import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
@@ -67,6 +69,7 @@ import { useReports } from '@/store/reports';
 export default defineComponent({
   name: 'ProfitLossReports',
   components: {
+    ExportReportCsv,
     ProgressScreen,
     ReportHeader,
     BaseExternalLink,
@@ -79,17 +82,20 @@ export default defineComponent({
     const refreshing = ref(false);
     const reportsStore = useReports();
     const { report, reports } = storeToRefs(reportsStore);
-    const { fetchReports, fetchReport, clearReport } = reportsStore;
+    const { fetchReports, fetchReport, clearReport, canExport } = reportsStore;
     const router = useRouter();
     const route = useRoute();
     let firstPage = true;
+
+    const currentRoute = route.value;
+    const reportId = parseInt(currentRoute.params.id);
+    const exportable = canExport(reportId);
 
     onMounted(async () => {
       if (reports.value.entries.length === 0) {
         await fetchReports();
       }
-      const currentRoute = route.value;
-      const success = await fetchReport(parseInt(currentRoute.params.id));
+      const success = await fetchReport(reportId);
       if (!success) {
         router.push(Routes.PROFIT_LOSS_REPORTS);
       }
@@ -127,6 +133,7 @@ export default defineComponent({
       refreshing,
       report,
       showUpgradeMessage,
+      exportable,
       onPage
     };
   }

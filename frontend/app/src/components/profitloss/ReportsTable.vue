@@ -43,6 +43,7 @@
         {{ size(item.sizeOnDisk) }}
       </template>
       <template #item.actions="{ item }">
+        <export-report-csv v-if="canExport(item.identifier)" icon />
         <v-tooltip top open-delay="400">
           <template #activator="{ on, attrs }">
             <v-btn
@@ -105,6 +106,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import { setupStatusChecking } from '@/composables/common';
 import i18n from '@/i18n';
@@ -148,7 +150,7 @@ const getHeaders: () => DataTableHeader[] = () => [
     text: i18n.t('profit_loss_reports.columns.actions').toString(),
     value: 'actions',
     align: 'end',
-    width: 115
+    width: 140
   },
   { text: '', value: 'expand', align: 'end', width: 48 }
 ];
@@ -156,6 +158,7 @@ const getHeaders: () => DataTableHeader[] = () => [
 export default defineComponent({
   name: 'ReportsTable',
   components: {
+    ExportReportCsv,
     UpgradeRow,
     RowExpander,
     ProfitLossOverview,
@@ -166,7 +169,7 @@ export default defineComponent({
     const selected = ref<string[]>([]);
     const expanded = ref([]);
     const reportStore = useReports();
-    const { fetchReports, fetchReport, deleteReport } = reportStore;
+    const { fetchReports, fetchReport, deleteReport, canExport } = reportStore;
     const { reports } = storeToRefs(reportStore);
     const items = computed(() =>
       reports.value.entries.map((value, index) => ({
@@ -209,6 +212,7 @@ export default defineComponent({
       size,
       refresh,
       selected,
+      canExport: (reportId: number) => canExport(reportId).value,
       getReportUrl,
       fetchReports,
       fetchReport,

@@ -1,5 +1,29 @@
 <template>
+  <span v-if="icon">
+    <v-tooltip top open-delay="400">
+      <template #activator="{ on, attrs }">
+        <v-btn
+          icon
+          v-bind="attrs"
+          small
+          color="primary"
+          v-on="on"
+          @click="exportCSV()"
+        >
+          <v-icon small> mdi-export </v-icon>
+        </v-btn>
+      </template>
+      <span>
+        {{
+          packaged
+            ? $t('profit_loss_report.export_csv')
+            : $t('profit_loss_report.download_csv')
+        }}
+      </span>
+    </v-tooltip>
+  </span>
   <v-btn
+    v-else
     class="profit_loss_report__export-csv mt-8"
     depressed
     color="primary"
@@ -24,6 +48,13 @@ import { useStore } from '@/store/utils';
 
 export default defineComponent({
   name: 'ExportReportCsv',
+  props: {
+    icon: {
+      required: false,
+      type: Boolean,
+      default: false
+    }
+  },
   setup() {
     const { createCsv } = useReports();
     const store = useStore();

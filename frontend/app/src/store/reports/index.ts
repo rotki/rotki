@@ -87,6 +87,7 @@ export const useReports = defineStore('reports', () => {
   const loaded = ref(false);
   const reportProgress = ref(defaultProgress());
   const reportError = ref(emptyError());
+  const generatedReport = ref(false);
 
   const createCsv = async (path: string) => {
     let message: Message;
@@ -112,14 +113,7 @@ export const useReports = defineStore('reports', () => {
   const deleteReport = async (reportId: number) => {
     try {
       await api.reports.deleteReport(reportId);
-      const remainingReports = reports.value.entries.filter(
-        x => x.identifier !== reportId
-      );
-      reports.value = {
-        entries: remainingReports,
-        entriesFound: remainingReports.length,
-        entriesLimit: reports.value.entriesLimit
-      };
+      await fetchReports();
     } catch (e: any) {
       notify({
         title: i18n.t('actions.reports.delete.error.title').toString(),
@@ -231,6 +225,7 @@ export const useReports = defineStore('reports', () => {
       );
 
       if (result) {
+        generatedReport.value = true;
         await fetchReports();
       } else {
         reportError.value = {
@@ -259,6 +254,16 @@ export const useReports = defineStore('reports', () => {
 
   const progress = computed(() => reportProgress.value.totalProgress);
   const processingState = computed(() => reportProgress.value.processingState);
+
+  const canExport = (reportId: number) =>
+    computed(() => {
+      const entries = reports.value.entries;
+      if (!generatedReport.value || entries.length === 0) {
+        return false;
+      }
+      const reverse = [...entries].sort((a, b) => b.identifier - a.identifier);
+      return reverse[0].identifier === reportId;
+    });
 
   const clearError = () => {
     reportError.value = emptyError();
@@ -292,6 +297,7 @@ export const useReports = defineStore('reports', () => {
     fetchReports,
     clearReport,
     clearError,
+    canExport,
     reset
   };
 });
