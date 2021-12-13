@@ -1,4 +1,5 @@
 import { computed } from '@vue/composition-api';
+import { acceptHMRUpdate } from 'pinia';
 import { useNotifications } from '@/store/notifications';
 import { NotificationData } from '@/store/notifications/types';
 
@@ -21,3 +22,7 @@ export const setupNotifications = () => {
     displayed
   };
 };
+
+if (module.hot) {
+  module.hot.accept(acceptHMRUpdate(useNotifications, module.hot));
+}

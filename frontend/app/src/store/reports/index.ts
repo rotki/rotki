@@ -1,5 +1,5 @@
 import { computed, Ref, ref } from '@vue/composition-api';
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
@@ -295,3 +295,7 @@ export const useReports = defineStore('reports', () => {
     reset
   };
 });
+
+if (module.hot) {
+  module.hot.accept(acceptHMRUpdate(useReports, module.hot));
+}

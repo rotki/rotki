@@ -3,7 +3,7 @@ import { computed, ref, Ref } from '@vue/composition-api';
 import dayjs from 'dayjs';
 import find from 'lodash/find';
 import toArray from 'lodash/toArray';
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { TaskNotFoundError } from '@/services/types-api';
@@ -231,3 +231,7 @@ export const useTasks = defineStore('tasks', () => {
     reset
   };
 });
+
+if (module.hot) {
+  module.hot.accept(acceptHMRUpdate(useTasks, module.hot));
+}
