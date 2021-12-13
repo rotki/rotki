@@ -1,5 +1,5 @@
 <template>
-  <card v-if="balances.length > 0" outlined-body>
+  <card v-if="mappedBalances.length > 0" outlined-body>
     <template #title>
       {{ $t('nft_balance_table.title') }}
       <v-btn :to="nonFungibleRoute" icon class="ml-2">
@@ -25,9 +25,34 @@
         <visible-columns-selector group="NFT" />
       </v-menu>
     </template>
-    <data-table :headers="tableHeaders" :items="balances" sort-by="usdPrice">
+    <data-table
+      :headers="tableHeaders"
+      :items="mappedBalances"
+      sort-by="usdPrice"
+    >
       <template #item.name="{ item }">
-        {{ item.name ? item.name : item.id }}
+        <div class="d-flex align-center">
+          <div class="my-2 nft-balance-table__item__preview">
+            <video
+              v-if="item.isVideo"
+              width="100%"
+              height="100%"
+              aspect-ratio="1"
+              :src="item.imageUrl"
+            />
+            <v-img
+              v-if="!item.isVideo"
+              :src="item.imageUrl"
+              width="100%"
+              height="100%"
+              contain
+              aspect-ratio="1"
+            />
+          </div>
+          <span class="ml-4">
+            {{ item.name ? item.name : item.id }}
+          </span>
+        </div>
       </template>
       <template #item.priceInAsset="{ item }">
         <amount-display
@@ -107,6 +132,7 @@ import {
 } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { Zero } from '@/utils/bignumbers';
+import { isVideo } from '@/utils/nft';
 
 const tableHeaders = (
   currency: Ref<string>,
@@ -216,8 +242,19 @@ export default defineComponent({
 
     const { dashboardTablesVisibleColumns } = setupSettings();
 
+    const mappedBalances = computed(() => {
+      return balances.value.map(balance => {
+        return {
+          ...balance,
+          imageUrl:
+            balance.imageUrl || require('@/assets/images/placeholder.svg'),
+          isVideo: isVideo(balance.imageUrl)
+        };
+      });
+    });
+
     return {
-      balances,
+      mappedBalances,
       tableHeaders: tableHeaders(currency, dashboardTablesVisibleColumns),
       currency,
       refresh,
@@ -229,3 +266,14 @@ export default defineComponent({
   }
 });
 </script>
+<style scoped lang="scss">
+.nft-balance-table {
+  &__item {
+    &__preview {
+      width: 50px;
+      height: 50px;
+      max-width: 50px;
+    }
+  }
+}
+</style>
