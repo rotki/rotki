@@ -1,5 +1,8 @@
 <template>
-  <v-container>
+  <progress-screen v-if="loading">
+    {{ $t('profit_loss_report.loading') }}
+  </progress-screen>
+  <v-container v-else>
     <report-header :period="report" />
     <card v-if="showUpgradeMessage" class="mt-4 mb-8">
       <i18n tag="div" path="profit_loss_report.upgrade" class="text-subtitle-1">
@@ -24,12 +27,13 @@
       </i18n>
     </card>
     <accounting-settings-display
-      :accounting-settings="accountingSettings"
+      :accounting-settings="report.settings"
       class="mt-4"
     />
     <profit-loss-overview
       class="mt-8"
       :overview="report.overview"
+      :symbol="report.currency"
       :loading="loading"
     />
     <profit-loss-events class="mt-8" />
@@ -46,16 +50,19 @@ import {
 } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
 import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
-import { useRoute } from '@/composables/common';
+import { useRoute, useRouter } from '@/composables/common';
+import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
 
 export default defineComponent({
   name: 'ProfitLossReports',
   components: {
+    ProgressScreen,
     ReportHeader,
     BaseExternalLink,
     ProfitLossOverview,
@@ -65,13 +72,20 @@ export default defineComponent({
   setup() {
     const loading = ref(true);
     const reportsStore = useReports();
-    const { report } = storeToRefs(reportsStore);
-    const { fetchReport, clearReport } = reportsStore;
+    const { report, reports } = storeToRefs(reportsStore);
+    const { fetchReports, fetchReport, clearReport } = reportsStore;
+    const router = useRouter();
     const route = useRoute();
 
     onMounted(async () => {
+      if (reports.value.entries.length === 0) {
+        await fetchReports();
+      }
       const currentRoute = route.value;
-      await fetchReport(parseInt(currentRoute.params.id));
+      const success = await fetchReport(parseInt(currentRoute.params.id));
+      if (!success) {
+        router.push(Routes.PROFIT_LOSS_REPORTS);
+      }
       loading.value = false;
     });
 

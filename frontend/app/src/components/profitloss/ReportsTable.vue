@@ -12,7 +12,6 @@
     >
       <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
         <upgrade-row
-          events
           :total="limits.total"
           :limit="limits.limit"
           :colspan="headers.length"
@@ -29,10 +28,16 @@
         <date-display no-time :timestamp="item.endTs" />
       </template>
       <template #item.totalProfitLoss="{ item }">
-        <amount-display :value="item.totalProfitLoss" />
+        <amount-display
+          :value="item.totalProfitLoss"
+          :asset="item.profitCurrency"
+        />
       </template>
       <template #item.totalTaxableProfitLoss="{ item }">
-        <amount-display :value="item.totalTaxableProfitLoss" />
+        <amount-display
+          :value="item.totalTaxableProfitLoss"
+          :asset="item.profitCurrency"
+        />
       </template>
       <template #item.sizeOnDisk="{ item }">
         {{ size(item.sizeOnDisk) }}
@@ -70,7 +75,11 @@
       </template>
       <template #expanded-item="{ headers, item }">
         <table-expand-container visible :colspan="headers.length">
-          <profit-loss-overview :overview="item" flat />
+          <profit-loss-overview
+            :overview="item"
+            flat
+            :symbol="item.profitCurrency"
+          />
         </table-expand-container>
       </template>
       <template #item.expand="{ item }">

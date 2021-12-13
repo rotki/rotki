@@ -1357,6 +1357,9 @@
       "total_profit_loss": "Total P/L",
       "total_taxable_profit_loss": "Total Taxable P/L"
     },
+    "error": {
+      "close": "Close"
+    },
     "title": "Saved Historical Reports"
   },
   "timeframe_settings": {
@@ -3001,6 +3004,7 @@
       "subtitle": "The report generation was not possible due to an error",
       "title": "Profit and Loss Report Generation"
     },
+    "loading": "Please wait while your PnL report is loading",
     "settings_tooltip": "Open the accounting settings",
     "export_csv": "Export CSV",
     "loading_message": "Please wait while your report is generated...",

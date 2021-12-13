@@ -36,7 +36,10 @@ export default new Router({
     },
     {
       path: Routes.PROFIT_LOSS_REPORT,
-      component: () => import('../views/reports/ProfitLossReport.vue')
+      component: () => import('../views/reports/ProfitLossReport.vue'),
+      meta: {
+        canNavigateBack: true
+      }
     },
     {
       path: '/history',

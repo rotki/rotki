@@ -164,6 +164,10 @@ export default defineComponent({
       required: true,
       type: Object as PropType<ProfitLossOverview>
     },
+    symbol: {
+      required: true,
+      type: String
+    },
     flat: {
       required: false,
       type: Boolean,

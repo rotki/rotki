@@ -1,6 +1,7 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { Entries } from '@/types/common';
+import { BaseAccountingSettings } from '@/types/user';
 
 export const ProfitLossOverview = z.object({
   loanProfit: NumericString,
@@ -58,9 +59,11 @@ export const Report = z
     startTs: z.number(),
     endTs: z.number(),
     sizeOnDisk: z.number(),
-    timestamp: z.number()
+    timestamp: z.number(),
+    profitCurrency: z.string()
   })
-  .extend(ProfitLossOverview.shape);
+  .merge(ProfitLossOverview)
+  .merge(BaseAccountingSettings);
 
 const ProfitLossEvents = z.array(ProfitLossEvent);
 
@@ -98,6 +101,8 @@ export type SelectedReport = {
   start: number;
   end: number;
   firstProcessedTimestamp: number;
+  currency: string;
+  settings: BaseAccountingSettings;
 };
 
 export interface ProfitLossReportPeriod {

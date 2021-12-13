@@ -16,8 +16,7 @@ import {
 } from '@/types/reports';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { AccountingSettings } from '@/types/user';
-import { assert } from '@/utils/assertions';
+import { AccountingSettings, BaseAccountingSettings } from '@/types/user';
 import { Zero } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
 
@@ -55,14 +54,22 @@ const pnlOverview = (): ProfitLossOverview => ({
   totalProfitLoss: Zero
 });
 
-const defaultReport = () => ({
+const defaultReport = (): SelectedReport => ({
   overview: pnlOverview(),
   entries: [] as ProfitLossEvents,
   entriesLimit: 0,
   entriesFound: 0,
   start: 0,
   end: 0,
-  firstProcessedTimestamp: 0
+  firstProcessedTimestamp: 0,
+  currency: 'USD',
+  settings: {
+    taxfreeAfterPeriod: 0,
+    calculatePastCostBasis: false,
+    accountForAssetsMovements: false,
+    includeGasCosts: false,
+    includeCrypto2crypto: false
+  }
 });
 
 const defaultReports = () => ({
@@ -126,7 +133,7 @@ export const useReports = defineStore('reports', () => {
   const fetchReport = async (
     reportId: number,
     page?: { limit: number; offset: number }
-  ) => {
+  ): Promise<boolean> => {
     loaded.value = false;
     const itemsPerPage = store.state.settings!.itemsPerPage;
     const currentPage = page ?? { limit: itemsPerPage, offset: 0 };
@@ -136,27 +143,41 @@ export const useReports = defineStore('reports', () => {
         value => value.identifier === reportId
       );
 
-      assert(selectedReport);
-      const {
-        sizeOnDisk,
-        startTs,
-        endTs,
-        identifier,
-        timestamp,
-        firstProcessedTimestamp,
-        ...overview
-      } = selectedReport;
-
+      if (!selectedReport) {
+        return false;
+      }
       const reportEntries = await api.reports.fetchReportEvents(
         reportId,
         currentPage
       );
+      const overview: ProfitLossOverview = {
+        assetMovementFees: selectedReport.assetMovementFees,
+        defiProfitLoss: selectedReport.defiProfitLoss,
+        generalTradeProfitLoss: selectedReport.generalTradeProfitLoss,
+        ethereumTransactionGasCosts: selectedReport.ethereumTransactionGasCosts,
+        ledgerActionsProfitLoss: selectedReport.ledgerActionsProfitLoss,
+        marginPositionsProfitLoss: selectedReport.marginPositionsProfitLoss,
+        settlementLosses: selectedReport.settlementLosses,
+        taxableTradeProfitLoss: selectedReport.taxableTradeProfitLoss,
+        totalProfitLoss: selectedReport.totalProfitLoss,
+        totalTaxableProfitLoss: selectedReport.totalTaxableProfitLoss,
+        loanProfit: selectedReport.loanProfit
+      };
+      const settings: BaseAccountingSettings = {
+        includeCrypto2crypto: selectedReport.includeCrypto2crypto,
+        accountForAssetsMovements: selectedReport.accountForAssetsMovements,
+        calculatePastCostBasis: selectedReport.calculatePastCostBasis,
+        includeGasCosts: selectedReport.includeGasCosts,
+        taxfreeAfterPeriod: selectedReport.taxfreeAfterPeriod
+      };
       report.value = {
         overview,
+        settings,
         ...reportEntries,
-        start: startTs,
-        end: endTs,
-        firstProcessedTimestamp
+        start: selectedReport.startTs,
+        end: selectedReport.endTs,
+        firstProcessedTimestamp: selectedReport.firstProcessedTimestamp,
+        currency: selectedReport.profitCurrency
       };
       loaded.value = true;
     } catch (e: any) {
@@ -166,7 +187,9 @@ export const useReports = defineStore('reports', () => {
           i18n.t('actions.reports.fetch.error.description', value).toString(),
         error: e
       });
+      return false;
     }
+    return true;
   };
 
   const fetchReports = async () => {
@@ -182,7 +205,9 @@ export const useReports = defineStore('reports', () => {
     }
   };
 
-  const generateReport = async (period: ProfitLossReportPeriod) => {
+  const generateReport = async (
+    period: ProfitLossReportPeriod
+  ): Promise<number> => {
     reportProgress.value = {
       processingState: '',
       totalProgress: '0'
@@ -196,7 +221,7 @@ export const useReports = defineStore('reports', () => {
     const { awaitTask } = useTasks();
     try {
       const { taskId } = await api.reports.generateReport(period);
-      const { result } = await awaitTask<boolean, TaskMeta>(
+      const { result } = await awaitTask<number, TaskMeta>(
         taskId,
         TaskType.TRADE_HISTORY,
         {
@@ -215,23 +240,29 @@ export const useReports = defineStore('reports', () => {
             .toString()
         };
       }
+      return result;
     } catch (e: any) {
       reportError.value = {
         error: e.message,
         message: i18n.t('actions.reports.generate.error.description').toString()
       };
+      return -1;
+    } finally {
+      clearInterval(interval);
+
+      reportProgress.value = {
+        processingState: '',
+        totalProgress: '0'
+      };
     }
-
-    clearInterval(interval);
-
-    reportProgress.value = {
-      processingState: '',
-      totalProgress: '0'
-    };
   };
 
   const progress = computed(() => reportProgress.value.totalProgress);
   const processingState = computed(() => reportProgress.value.processingState);
+
+  const clearError = () => {
+    reportError.value = emptyError();
+  };
 
   const clearReport = () => {
     report.value = defaultReport();
@@ -260,6 +291,7 @@ export const useReports = defineStore('reports', () => {
     fetchReport,
     fetchReports,
     clearReport,
+    clearError,
     reset
   };
 });
