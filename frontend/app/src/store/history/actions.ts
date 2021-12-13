@@ -5,7 +5,6 @@ import {
 } from '@rotki/common/lib/gitcoin';
 import { ActionContext, ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
-import { EXTERNAL_EXCHANGES, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import {
@@ -27,8 +26,6 @@ import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
 import { EntryWithMeta, LimitedResponse } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import {
-  FETCH_FROM_CACHE,
-  FETCH_FROM_SOURCE,
   FETCH_REFRESH,
   HistoryActions,
   HistoryMutations
@@ -68,7 +65,6 @@ import {
   TaskMeta
 } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 
 function getIgnored(type: string, result: IgnoredActions) {
@@ -197,8 +193,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     {
       commit,
       state,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
-      rootState: { balances }
+      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status }
     },
     source: FetchSource
   ): Promise<void> {
@@ -209,7 +204,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     const section = Section.TRADES;
     const currentStatus = status(section);
-    const refresh = source === FETCH_REFRESH || source === FETCH_FROM_SOURCE;
+    const refresh = source === FETCH_REFRESH;
 
     if (
       currentStatus === Status.LOADING ||
@@ -232,20 +227,11 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
-    const { connectedExchanges } = balances!;
-    const locations: TradeLocation[] = [
-      ...(source !== FETCH_FROM_SOURCE
-        ? ([TRADE_LOCATION_EXTERNAL, ...EXTERNAL_EXCHANGES] as TradeLocation[])
-        : []),
-      ...connectedExchanges.map(exchange => exchange.location)
-    ];
+    const associatedLocations = await api.history.associatedLocations();
 
     const fetchLocation: (location: TradeLocation) => Promise<void> =
       async location => {
-        const { taskId } = await api.history.trades(
-          location,
-          source === FETCH_FROM_CACHE
-        );
+        const { taskId } = await api.history.trades(location, false);
         const task = createTask<LocationRequestMeta>(taskId, taskType, {
           title: i18n.tc('actions.trades.task.title'),
           description: i18n.tc('actions.trades.task.description', undefined, {
@@ -298,7 +284,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     };
 
     await Promise.all(
-      locations.map(location =>
+      associatedLocations.map(location =>
         fetchLocation(location).catch(e => onError(location, e))
       )
     );
@@ -367,8 +353,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     {
       commit,
       state,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
-      rootState: { balances }
+      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status }
     },
     source: FetchSource
   ): Promise<void> {
@@ -379,7 +364,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     const section = Section.ASSET_MOVEMENT;
     const currentStatus = status(section);
-    const refresh = source === FETCH_REFRESH || source === FETCH_FROM_SOURCE;
+    const refresh = source === FETCH_REFRESH;
 
     if (
       currentStatus === Status.LOADING ||
@@ -402,16 +387,11 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
-    const locations = balances!.connectedExchanges
-      .map(({ location }) => location)
-      .filter(uniqueStrings);
+    const associatedLocations = await api.history.associatedLocations();
 
     const fetchLocation: (location: TradeLocation) => Promise<void> =
       async location => {
-        const { taskId } = await api.history.assetMovements(
-          location,
-          source === FETCH_FROM_CACHE
-        );
+        const { taskId } = await api.history.assetMovements(location, false);
         const task = createTask<LocationRequestMeta>(taskId, taskType, {
           title: i18n.tc('actions.asset_movements.task.title'),
           description: i18n.tc(
@@ -469,12 +449,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     };
 
     await Promise.all(
-      (
-        [
-          ...(source !== FETCH_FROM_SOURCE ? EXTERNAL_EXCHANGES : []),
-          ...locations
-        ] as TradeLocation[]
-      ).map(location =>
+      associatedLocations.map(location =>
         fetchLocation(location).catch(e => onError(location, e.message))
       )
     );
@@ -594,8 +569,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     {
       commit,
       state,
-      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status },
-      rootState: { balances }
+      rootGetters: { 'tasks/isTaskRunning': isTaskRunning, status }
     },
     source: FetchSource
   ): Promise<void> {
@@ -606,7 +580,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     const section = Section.LEDGER_ACTIONS;
     const currentStatus = status(section);
-    const refresh = source === FETCH_REFRESH || source === FETCH_FROM_SOURCE;
+    const refresh = source === FETCH_REFRESH;
 
     if (
       currentStatus === Status.LOADING ||
@@ -628,9 +602,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     setStatus(refresh ? Status.REFRESHING : Status.LOADING);
 
-    const locations = balances!.connectedExchanges
-      .map(({ location }) => location)
-      .filter(uniqueStrings);
+    const associatedLocations = await api.history.associatedLocations();
 
     const fetchDefault: () => Promise<void> = async () => {
       const { taskId } = await api.history.ledgerActions(
@@ -684,7 +656,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           undefined,
           undefined,
           location,
-          source === FETCH_FROM_CACHE
+          false
         );
         const task = createTask<TaskMeta>(taskId, taskType, {
           title: i18n.tc('actions.ledger_actions.task.title'),
@@ -744,12 +716,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
     await Promise.all([
       fetchDefault().catch(e => onDefaultError(e.message)),
-      ...(
-        [
-          ...(source !== FETCH_FROM_SOURCE ? EXTERNAL_EXCHANGES : []),
-          ...locations
-        ] as TradeLocation[]
-      ).map(location =>
+      associatedLocations.map(location =>
         fetchLocation(location).catch(e => onError(location, e.message))
       )
     ]);

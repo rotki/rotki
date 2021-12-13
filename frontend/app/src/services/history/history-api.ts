@@ -54,6 +54,15 @@ export class HistoryApi {
     );
   }
 
+  async associatedLocations(): Promise<TradeLocation[]> {
+    return this.axios
+      .get<ActionResult<TradeLocation[]>>('/locations/associated', {
+        validateStatus: validStatus,
+        transformResponse: this.responseTransformer
+      })
+      .then(handleResponse);
+  }
+
   async trades(
     location?: TradeLocation,
     onlyCache?: boolean
