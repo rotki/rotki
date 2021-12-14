@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3819` Add minimal context menu (copy, cut and paste).
 * :feature:`3818` NFT icon added to NFT Balance table, and Non Fungible Balance table.
 * :feature:`3814` Users will now see amount/currency format when inputting.
 * :feature:`1214` Users will now be able to load and manage previously generated profit and loss reports.
