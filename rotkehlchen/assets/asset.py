@@ -358,6 +358,8 @@ WORLD_TO_BITFINEX = {
     strethaddress_to_identifier('0x8f693ca8D21b157107184d29D398A8D082b38b76'): 'DAT',
     'XEC': 'BCHABC',
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
+    # Spankchain is SPK in bitfinex
+    strethaddress_to_identifier('0x42d6622deCe394b54999Fbd73D108123806f6a18'): 'SPK',
 }
 
 WORLD_TO_KUCOIN = {
