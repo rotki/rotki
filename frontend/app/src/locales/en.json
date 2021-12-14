@@ -1437,6 +1437,12 @@
     "date_display_format_hint": "Resulting date: {format}",
     "date_display_tooltip": "Restore the default date display format",
     "date_input_format_hint": "Input example: {format}",
+    "decimal_separator": {
+      "validation": {
+        "empty": "The decimal separator cannot be empty",
+        "cannot_be_the_same": "The decimal separator cannot be the same as thousand separator"
+      }
+    },
     "version_update_check_hint": "How often (in hours) your app version will be checked for update",
     "labels": {
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
@@ -1455,6 +1461,12 @@
       "title": "Local Nodes"
     },
     "title": "General Settings",
+    "thousand_separator": {
+      "validation": {
+        "empty": "The thousand separator cannot be empty",
+        "cannot_be_the_same": "The thousand separator cannot be the same as decimal separator"
+      }
+    },
     "validation": {
       "btc_derivation_gap": {
         "error": "Error setting the BTC derivation gap limit",

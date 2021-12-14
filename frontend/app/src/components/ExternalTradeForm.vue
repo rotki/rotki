@@ -74,7 +74,7 @@
                 />
               </v-col>
             </v-row>
-            <v-text-field
+            <amount-input
               v-model="amount"
               required
               outlined
@@ -93,7 +93,7 @@
                   : 'flex-column'
               }`"
             >
-              <v-text-field
+              <amount-input
                 ref="rateInput"
                 v-model="rate"
                 :disabled="selectedCalculationInput !== 'rate'"
@@ -112,7 +112,7 @@
                 :error-messages="errorMessages['rate']"
                 @focus="delete errorMessages['rate']"
               />
-              <v-text-field
+              <amount-input
                 ref="quoteAmountInput"
                 v-model="quoteAmount"
                 :disabled="selectedCalculationInput !== 'quoteAmount'"
@@ -198,7 +198,7 @@
 
         <v-row>
           <v-col cols="12" md="6">
-            <v-text-field
+            <amount-input
               v-model="fee"
               class="external-trade-form__fee"
               outlined
@@ -543,13 +543,17 @@ export default class ExternalTradeForm extends Vue {
       this.selectedCalculationInput = 'quoteAmount';
       this.$nextTick(() => {
         const quoteAmountInput = this.$refs.quoteAmountInput as any;
-        if (quoteAmountInput) quoteAmountInput.focus();
+        if (quoteAmountInput) {
+          quoteAmountInput.focus();
+        }
       });
     } else {
       this.selectedCalculationInput = 'rate';
       this.$nextTick(() => {
         const rateInput = this.$refs.rateInput as any;
-        if (rateInput) rateInput.focus();
+        if (rateInput) {
+          rateInput.focus();
+        }
       });
     }
   }

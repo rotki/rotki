@@ -203,6 +203,7 @@
             class="general-settings__fields__thousand-separator"
             :label="$t('general_settings.amount.label.thousand_separator')"
             type="text"
+            :rules="thousandSeparatorRules"
             :success-messages="settingsMessages[THOUSAND_SEPARATOR].success"
             :error-messages="settingsMessages[THOUSAND_SEPARATOR].error"
             @change="onThousandSeparatorChange($event)"
@@ -214,6 +215,7 @@
             class="general-settings__fields__decimal-separator"
             :label="$t('general_settings.amount.label.decimal_separator')"
             type="text"
+            :rules="decimalSeparatorRules"
             :success-messages="settingsMessages[DECIMAL_SEPARATOR].success"
             :error-messages="settingsMessages[DECIMAL_SEPARATOR].error"
             @change="onDecimalSeparatorChange($event)"
@@ -579,6 +581,20 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     return result;
   }
 
+  readonly thousandSeparatorRules = [
+    (v: string) => {
+      if (!v) {
+        return this.$t('general_settings.thousand_separator.validation.empty');
+      }
+      if (v === this.decimalSeparator) {
+        return this.$t(
+          'general_settings.thousand_separator.validation.cannot_be_the_same'
+        ).toString();
+      }
+      return true;
+    }
+  ];
+
   async onThousandSeparatorChange(thousandSeparator: string) {
     const messages = makeMessage(
       this.$t(
@@ -595,6 +611,20 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
       messages
     );
   }
+
+  readonly decimalSeparatorRules = [
+    (v: string) => {
+      if (!v) {
+        return this.$t('general_settings.decimal_separator.validation.empty');
+      }
+      if (v === this.decimalSeparator) {
+        return this.$t(
+          'general_settings.decimal_separator.validation.cannot_be_the_same'
+        ).toString();
+      }
+      return true;
+    }
+  ];
 
   async onDecimalSeparatorChange(decimalSeparator: string) {
     const message = makeMessage(

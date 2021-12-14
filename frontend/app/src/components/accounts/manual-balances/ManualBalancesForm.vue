@@ -34,13 +34,12 @@
       :disabled="pending"
       @focus="delete errors['asset']"
     />
-    <v-text-field
+    <amount-input
       v-model="amount"
       :label="$t('manual_balances_form.fields.amount')"
       :error-messages="errors['amount']"
       class="manual-balances-form__amount"
       outlined
-      type="number"
       autocomplete="off"
       :disabled="pending"
       :rules="amountRules"
