@@ -14,9 +14,34 @@
         @refresh="refresh"
       />
     </template>
-    <data-table :headers="tableHeaders" :items="balances" sort-by="usdPrice">
+    <data-table
+      :headers="tableHeaders"
+      :items="mappedBalances"
+      sort-by="usdPrice"
+    >
       <template #item.name="{ item }">
-        {{ item.name ? item.name : item.id }}
+        <div class="d-flex align-center">
+          <div class="my-2 non-fungible-balances__item__preview">
+            <video
+              v-if="item.isVideo"
+              width="100%"
+              height="100%"
+              aspect-ratio="1"
+              :src="item.imageUrl"
+            />
+            <v-img
+              v-if="!item.isVideo"
+              :src="item.imageUrl"
+              width="100%"
+              height="100%"
+              contain
+              aspect-ratio="1"
+            />
+          </div>
+          <span class="ml-4">
+            {{ item.name ? item.name : item.id }}
+          </span>
+        </div>
       </template>
       <template #item.usdPrice="{ item }">
         <amount-display
@@ -107,6 +132,7 @@ import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
+import { isVideo } from '@/utils/nft';
 
 const tableHeaders = (currency: Ref<string>) => {
   return computed<DataTableHeader[]>(() => {
@@ -238,12 +264,23 @@ export default defineComponent({
       );
     });
 
+    const mappedBalances = computed(() => {
+      return balances.value.map(balance => {
+        return {
+          ...balance,
+          imageUrl:
+            balance.imageUrl || require('@/assets/images/placeholder.svg'),
+          isVideo: isVideo(balance.imageUrl)
+        };
+      });
+    });
+
     return {
       loading: isSectionLoading(Section.NON_FUNGIBLE_BALANCES),
       ...setupConfirm(refreshBalances),
       ...setupEdit(refreshBalances),
       refresh,
-      balances,
+      mappedBalances,
       currency,
       tableHeaders: tableHeaders(currency),
       total,
@@ -258,3 +295,14 @@ export default defineComponent({
   }
 });
 </script>
+<style scoped lang="scss">
+.non-fungible-balances {
+  &__item {
+    &__preview {
+      width: 50px;
+      height: 50px;
+      max-width: 50px;
+    }
+  }
+}
+</style>

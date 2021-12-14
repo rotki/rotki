@@ -229,7 +229,8 @@ export type AssetSymbolGetter = (identifier: string) => string;
 export const NonFungibleBalance = PriceInformation.merge(
   z.object({
     name: z.string().nullable(),
-    id: z.string().nonempty()
+    id: z.string().nonempty(),
+    imageUrl: z.string()
   })
 );
 

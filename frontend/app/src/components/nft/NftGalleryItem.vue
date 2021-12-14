@@ -5,7 +5,7 @@
         v-if="isVideo"
         controls
         width="auto"
-        aspect-ration="1"
+        aspect-ratio="1"
         :src="imageUrl"
         :style="{
           'background-color': `#${item.backgroundColor}`
@@ -93,8 +93,7 @@ import {
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import IconLink from '@/components/base/IconLink.vue';
 import { GalleryNft } from '@/store/session/types';
-
-let videoExtensions = ['mp4', 'mov', 'webm', 'ogg'];
+import { isVideo } from '@/utils/nft';
 
 export default defineComponent({
   name: 'NftGalleryItem',
@@ -113,14 +112,8 @@ export default defineComponent({
     const imageUrl = computed(() => {
       return item.value.imageUrl ?? require('@/assets/images/placeholder.svg');
     });
-    const isVideo = computed(() => {
-      return videoExtensions.some(
-        extension =>
-          item.value.imageUrl !== null &&
-          item.value.imageUrl.endsWith(extension)
-      );
-    });
-    return { name, imageUrl, isVideo };
+
+    return { name, imageUrl, isVideo: isVideo(item.value.imageUrl) };
   }
 });
 </script>
