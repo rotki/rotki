@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union,
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import ActionType, BalanceType, LedgerEvent
+from rotkehlchen.accounting.structures import ActionType, BalanceType, HistoryEvent, HistoryEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -3421,31 +3421,54 @@ class DBHandler:
             locations.add(Location.BALANCER)
         return locations
 
-    def get_kraken_staking_events(
-        self,
-        start_ts: Timestamp,
-        end_ts: Timestamp,
-    ) -> List[LedgerEvent]:
-        query_str = 'SELECT * from ledger_events WHERE timestamp > ? AND timestamp < ? and notes LIKE "staking event%" and location = "B"'
-        cursor = self.conn.cursor()
-        query = cursor.execute(query_str, (start_ts, end_ts))
-        output = []
-        for result in query:
-            try:
-                output.append(LedgerEvent.deserialize_from_db(result))
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Failed to read kraken staking information from database. {result}. {str(e)}',
-                )
-        return output
-
-    def add_kraken_staking_event(self, events: List[LedgerEvent]) -> bool:
-        query_str = 'INSERT INTO ledger_events VALUES (?, ?, ?, ?, ?, ?, ?, ?);'
+    def save_history_events(self, history: List[HistoryEvent]):
+        query_str = 'INSERT INTO history_events(identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'
         cursor = self.conn.cursor()
         try:
-            cursor.executemany(query_str, [event.serialize_for_db() for event in events])
-        except sqlcipher.IntegrityError as e:
+            cursor.executemany(query_str, [event.serialize_for_db() for event in history])
+        except DeserializationError as e:
             log.error(f'Failed to insert kraken statking events in database. {str(e)}')
             return False
         self.update_last_write()
         return True
+
+    def get_history_events(
+        self,
+        location: Optional[Location],
+        location_label: Optional[str],
+        from_ts: Optional[Timestamp],
+        end_ts: Optional[Timestamp],
+        type_in: Optional[List[HistoryEventType]],
+    ) -> List[HistoryEvent]:
+        base_query = 'SELECT * FROM history_events '
+        query_strings = []
+        query_params = []
+        if location is not None:
+            query_strings.append('location=? ')
+            query_params.append(location.serialize_for_db())
+        if location_label is not None:
+            query_strings.append('location_label=? ')
+            query_params.append(location_label)
+        if None not in (from_ts, end_ts):
+            query_strings.append('timestamp >= ? AND timestamp <= ? ')
+            query_params.append(from_ts)
+            query_params.append(end_ts)
+        elif from_ts is not None:
+            query_strings.append('timestamp >= ? ')
+            query_params.append(from_ts)
+        elif end_ts is not None:
+            query_strings.append('timestamp <= ? ')
+            query_params.append(end_ts)
+        if type_in is not None:
+            query_strings.append(f'type in ({", ".join(["?" * len(type_in)])}) ')
+            query_params.extend([x.serialize_for_db() for x in type_in])
+
+        if len(query_strings) != 0:
+            query_str = base_query + 'WHERE ' + 'AND '.join(query_strings)
+        else:
+            query_str = base_query
+
+        cursor = self.conn.cursor()
+        cursor.execute(query_str, query_params)
+        data = [HistoryEvent.deserialize_from_db(entry) for entry in cursor.fetchall()]
+        return data

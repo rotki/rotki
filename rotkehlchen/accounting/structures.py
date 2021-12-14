@@ -1,9 +1,12 @@
+import binascii
 import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Dict, List, NamedTuple, Optional, Tuple
+import os
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import InputError
 from rotkehlchen.fval import FVal
@@ -114,7 +117,7 @@ class AssetBalance:
         return AssetBalance(asset=self.asset, balance=-self.balance)
 
     def serialize_for_db(self) -> [str, str, str]:
-        return (self.asset, str(self.amount), str(self.usd_value))
+        return (self.asset.identifier, str(self.amount), str(self.usd_value))
 
 
 class DefiEventType(Enum):
@@ -275,31 +278,117 @@ class ActionType(DBEnumMixIn):
     LEDGER_ACTION = 4
 
 
-LEDGER_EVENT_DB_TUPLE = Tuple[
+class HistoryEventType(DBEnumMixIn):
+    TRADE = 1
+    STAKING = 2
+    UNSTAKING = 3
+    DEPOSIT = 4
+    WITHDRAWAL = 5
+    TRANSFER = 6
+    SPEND = 7
+    RECEIVE = 8
+    UNKNOWN = 9
+
+    @classmethod
+    def from_string(cls, value: str) -> 'HistoryEventType':
+        if value == 'trade':
+            return HistoryEventType.TRADE
+        if value == 'staking':
+            return HistoryEventType.STAKING
+        if value == 'deposit':
+            return HistoryEventType.DEPOSIT
+        if value == 'withdrawal':
+            return HistoryEventType.WITHDRAWAL
+        if value == 'transfer':
+            return HistoryEventType.TRANSFER
+        if value == 'spend':
+            return HistoryEventType.SPEND
+        if value == 'receive':
+            return HistoryEventType.RECEIVE
+
+        raise DeserializationError(f'Failed to read kraken event: {value}')
+
+
+class HistoryEventSubType(DBEnumMixIn):
+    REWARD = 1
+    STAKING_DEPOSIT_ASSET = 2
+    STAKING_REMOVE_ASSET = 3
+    STAKING_RECEIVE_ASSET = 4
+
+    @classmethod
+    def from_string(cls, value: str) -> 'HistoryEventType':
+        if value == 'trade':
+            return HistoryEventSubType.TRADE
+        if value == 'staking':
+            return HistoryEventSubType.STAKING
+        if value == 'deposit':
+            return HistoryEventSubType.DEPOSIT
+        if value == 'withdrawal':
+            return HistoryEventSubType.WITHDRAWAL
+
+    @classmethod
+    def deserialize_from_db(cls, value: Optional[str]) -> Optional['HistoryEventSubType']:
+        if value is None:
+            return value
+        return super().deserialize_from_db(value)
+
+
+HISTORY_EVENT_DB_TUPLE = Tuple[
     str,
     str,
 ]
 
-class LedgerEvent(NamedTuple):
-    identifer: str
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class HistoryEvent:
     event_identifier: str
     sequence_index: int
     timestamp: Timestamp
     location: Location
+    location_label: str
     amount: AssetBalance
-    origin_label: str
-    target_label: str
     notes: str
+    event_type: HistoryEventType
+    event_subtype: Optional[HistoryEventSubType]
+    identifier: str = None
 
-    def serialize_for_db(self):
+    def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE:
+        event_subtype = None
+        if self.event_subtype is not None:
+            event_subtype = self.event_subtype.serialize_for_db()
         return (
-            self.identifer,
+            self.identifier,
             self.event_identifier,
             self.sequence_index,
             self.timestamp,
             self.location.serialize_for_db(),
+            self.location_label,
             *self.amount.serialize_for_db(),
-            self.origin_label,
-            self.target_label,
             self.notes,
+            self.event_type.serialize_for_db(),
+            event_subtype,
         )
+
+    @classmethod
+    def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE) -> 'HistoryEvent':
+        return HistoryEvent(
+            identifier=entry[0],
+            event_identifier=entry[1],
+            sequence_index=entry[2],
+            timestamp=Timestamp(entry[3]),
+            location=Location.deserialize_from_db(entry[4]),
+            location_label=entry[5],
+            amount=AssetBalance(
+                asset=Asset(entry[6]),
+                balance=Balance(
+                    amount=FVal(entry[7]),
+                    usd_value=FVal(entry[8]),
+                ),
+            ),
+            notes=entry[9],
+            event_type=HistoryEventType.deserialize_from_db(entry[10]),
+            event_subtype=HistoryEventSubType.deserialize_from_db(entry[11]),
+        )
+
+    def __post_init__(self) -> None:
+        if not hasattr(self, 'identifier'):
+            self.identifier = binascii.hexlify(os.urandom(8)).decode('utf-8')

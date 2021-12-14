@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
-from rotkehlchen.accounting.structures import AssetBalance, LedgerEvent
+from rotkehlchen.accounting.structures import AssetBalance, HistoryEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.crypto import sha3
@@ -440,8 +440,8 @@ class KrakenStakingEvent(NamedTuple):
     timestamp: Timestamp
     eventy_type: str
 
-    def as_ledger_event(self) -> LedgerEvent:
-        return LedgerEvent(
+    def as_ledger_event(self) -> HistoryEvent:
+        return HistoryEvent(
             identifier=self.refid,
             event_identifier=self.refid,
             sequence_index=0,
