@@ -2,18 +2,18 @@
 Changelog
 =========
 
-* :feature:`3805` Users will now be able to filter specific accounts such as the ones with Loopring using an automatically added tag.
+* :feature:`2382` Users will now be able to filter specific accounts such as the ones from Loopring using an automatically added tag.
 * :feature:`2901` Users will now be able to select between a full privacy mode and a semi-privacy mode that keeps the percentages visible.
 * :feature:`2624` Users will now be able to filter by tag in the asset details page.
 * :feature:`3712` Users will now be able to input a custom date format when importing from CSV.
-* :feature:`2265` Users will now be able to see a hint when adding an external trade.
+* :feature:`2265` Users will now be able to see a hint for the trade rate when adding an external trade.
 * :feature:`2848` Users will now get taken to the top of the table automatically when changing a page.
 * :feature:`2121` Users can now select a different timezone when selecting a date to input.
-* :feature:`1875` Users can now disable unused timeframes.
-* :feature:`2446` Users can now switch between adding an external trade using quote or rate.
+* :feature:`1875` Users can now enable or disable specific time frames in the PnL report.
+* :feature:`2446` Users can now switch between adding an external trade using quote asset amount or trade rate.
 * :feature:`2297` The application will now perform an update check every 24h (user-configurable) while the application is running.
-* :feature:`3470` Users can now select the date input format.
-* :feature:`2918` Users can now select the which percentage columns are visible on the dashboard asset tables.
+* :feature:`3470` Users can now customize the date input format.
+* :feature:`2918` Users can now select how the percentage column is calculated in the dashboard. Either based on total net value or based on current group (assets, liabilities, or nft).
 * :feature:`3753` Application users will now be able to (copy, cut and paste) using the context menu .
 * :feature:`3525` Users can now see the NFT icon at the NFT Balance table, and Non Fungible Balance table.
 * :feature:`3176` Amount inputs will now adhere to the user specified amount formatting.
@@ -26,7 +26,7 @@ Changelog
 * :feature:`3725` Users can now see if any of their addresses have SDL available to claim from the SDL airdrop.
 * :feature:`3549` Users will now be able to select whether to include or not NFT total value in total net worth and graphs.
 * :feature:`3712` Users will now be able to choose a custom date format while importing CSV files.
-* :bug:`1864` The trade querying mechanism will now only query import locations that have entries.
+* :bug:`1864` If any trades, deposits or withdrawals have been imported from a CSV file for an exchange that's also connected with an api key they will now be properly visible.
 * :bug:`3767` The module selector will now properly clear after selecting a module by clicking.
 * :bug:`3128` Bigger net worth values on dashboard should not overlap with the net worth graph.
 * :bug:`3641` Users should now be able to view profit and loss reports that have many thousands of events without the UI freezing.
