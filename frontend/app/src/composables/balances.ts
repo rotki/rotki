@@ -27,6 +27,7 @@ export type BlockchainData = {
   eth2Balances: Ref<BlockchainAccountWithBalance[]>;
   avaxAccounts: Ref<BlockchainAccountWithBalance[]>;
   kusamaBalances: Ref<BlockchainAccountWithBalance[]>;
+  loopringAccounts: Ref<BlockchainAccountWithBalance[]>;
 };
 
 export const setupBlockchainData = (): BlockchainData => {
@@ -53,6 +54,10 @@ export const setupBlockchainData = (): BlockchainData => {
   const avaxAccounts = computed<BlockchainAccountWithBalance[]>(
     () => store.getters['balances/avaxAccounts']
   );
+  const loopringAccounts = computed<BlockchainAccountWithBalance[]>(
+    () => store.getters['balances/loopringAccounts']
+  );
+
   return {
     ethAccounts,
     eth2Balances,
@@ -60,7 +65,8 @@ export const setupBlockchainData = (): BlockchainData => {
     blockchainAssets,
     kusamaBalances,
     polkadotBalances,
-    avaxAccounts
+    avaxAccounts,
+    loopringAccounts
   };
 };
 

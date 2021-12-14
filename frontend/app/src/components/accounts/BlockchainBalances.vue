@@ -136,6 +136,16 @@
       data-cy="blockchain-balances-AVAX"
       @edit-account="editAccount($event)"
     />
+
+    <account-balances
+      v-if="loopringAccounts.length > 0"
+      loopring
+      class="mt-8"
+      :title="$t('blockchain_balances.balances.loopring')"
+      blockchain="ETH"
+      :balances="loopringAccounts"
+      data-cy="blockchain-balances-LOOPRING"
+    />
   </div>
 </template>
 

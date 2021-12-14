@@ -49,6 +49,7 @@ export interface BalanceGetters {
   kusamaBalances: BlockchainAccountWithBalance[];
   avaxAccounts: BlockchainAccountWithBalance[];
   polkadotBalances: BlockchainAccountWithBalance[];
+  loopringAccounts: BlockchainAccountWithBalance[];
   totals: AssetBalance[];
   exchangeRate: ExchangeRateGetter;
   exchanges: ExchangeInfo[];
@@ -228,6 +229,39 @@ export const getters: Getters<
           balance: balance
         });
       }
+    }
+    return accounts;
+  },
+  loopringAccounts({
+    loopringBalances,
+    ethAccounts
+  }): BlockchainAccountWithBalance[] {
+    const accounts: BlockchainAccountWithBalance[] = [];
+    for (const address in loopringBalances) {
+      const assets = loopringBalances[address];
+
+      const tags =
+        ethAccounts.find(account => account.address === address)?.tags || [];
+
+      const balance = {
+        amount: Zero,
+        usdValue: Zero
+      };
+
+      for (const asset in assets) {
+        const assetBalance = assets[asset];
+
+        balance.amount = balance.amount.plus(assetBalance.amount);
+        balance.usdValue = balance.usdValue.plus(assetBalance.usdValue);
+      }
+
+      accounts.push({
+        address,
+        balance,
+        chain: Blockchain.ETH,
+        label: '',
+        tags: [...new Set([...tags, ReadOnlyTag.LOOPRING])]
+      });
     }
     return accounts;
   },
@@ -586,13 +620,16 @@ export const getters: Getters<
 
   hasDetails: (state: BalanceState) => (account: string) => {
     const ethAccount = state.eth[account];
+    const loopringBalance = state.loopringBalances[account] || {};
     if (!ethAccount || isEmpty(ethAccount)) {
       return false;
     }
 
-    const assets = Object.entries(ethAccount.assets);
-    const liabilities = Object.entries(ethAccount.liabilities);
-    return assets.length > 1 || liabilities.length > 1;
+    const assetsCount = Object.entries(ethAccount.assets).length;
+    const liabilitiesCount = Object.entries(ethAccount.liabilities).length;
+    const loopringsCount = Object.entries(loopringBalance).length;
+
+    return assetsCount + liabilitiesCount + loopringsCount > 1;
   },
 
   manualLabels: ({ manualBalances, manualLiabilities }: BalanceState) => {
