@@ -1154,13 +1154,16 @@ How to run the PnL report
 
 To create a PnL report click on the "Profit and Loss Report" button from the left menu. Choose a period for the report (or click on Custom to set a custom time range) and press on "Generate" to start the report.
 
-.. image:: images/sc_pnl_report1.png
-   :alt: Overview of the profit/loss report
+.. image:: images/sc_pnl_report.png
+   :alt: View profit/loss report list
    :align: center
 
 The calculation may take some time. You can also see a summary of the accounting setting the report is running with in the "Accounting settings" section.
 
 If you encounter any problems during the profit/loss report check out the :ref:`troubleshooting-pnl-report` section.
+
+In the report screen you can also see any previously generated profit and loss reports, and manage them. Free users
+are limited to 20 stored reports in total.
 
 Results of the PnL report
 =========================
@@ -1174,7 +1177,11 @@ Additionally below the overview you get a table containing all of the events tha
    :align: center
 
 
-Finally you can get a CSV export by pressing the "Export CSV" button. This export is meant to be imported into Google Sheets. Press the button and then choose a directory to write the CSV files to. Once done you can import the CSV files into Google Sheets via its import menu. Following are definitions for the all_event document's columns
+Finally you can get a CSV export by pressing the "Export CSV" button. This export is meant to be imported into
+Google Sheets. Press the button and then choose a directory to write the CSV files to. Once done you can import the CSV
+files into Google Sheets via its import menu. CSV export only works for the latest report generated in the active session.
+
+Following are definitions for the all_event document's columns
 
 - ``type`` is a string describing the type of event a user engaged in, e.g. in "I buy ETH for EUR", buy is the ``type``.
 - ``location`` is a string describing the location the event occured at. For example "kraken" for kraken trades.
