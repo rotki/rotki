@@ -15,14 +15,10 @@
       <v-card-title>
         {{ title }}
         <v-spacer />
-        <v-tooltip top>
-          <template #activator="{ on, attrs }">
-            <v-btn v-bind="attrs" icon v-on="on" @click="copy()">
-              <v-icon>mdi-content-copy</v-icon>
-            </v-btn>
-          </template>
-          <span v-text="$t('error_screen.copy_tooltip')" />
-        </v-tooltip>
+        <copy-button
+          :tooltip="$t('error_screen.copy_tooltip')"
+          :value="errorText"
+        />
       </v-card-title>
       <v-card-subtitle>
         {{ subtitle }}
@@ -47,42 +43,39 @@
       </v-card-text>
     </v-card>
     <div v-else class="text-h5 mt-12">{{ alternative }}</div>
+    <slot name="bottom" />
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import CopyButton from '@/components/helper/CopyButton.vue';
 
-@Component({})
-export default class ErrorScreen extends Vue {
-  @Prop({ required: false, type: String, default: '' })
-  header!: string;
-  @Prop({ required: false, type: String, default: '' })
-  title!: string;
-  @Prop({ required: false, type: String, default: '' })
-  subtitle!: string;
-  @Prop({ required: false, type: String, default: '' })
-  message!: string;
-  @Prop({ required: false, type: String, default: '' })
-  error!: string;
-  @Prop({ required: false, type: String, default: '' })
-  alternative!: string;
+export default defineComponent({
+  name: 'ErrorScreen',
+  components: { CopyButton },
+  props: {
+    header: { required: false, type: String, default: '' },
+    title: { required: false, type: String, default: '' },
+    subtitle: { required: false, type: String, default: '' },
+    message: { required: false, type: String, default: '' },
+    error: { required: false, type: String, default: '' },
+    alternative: { required: false, type: String, default: '' }
+  },
+  setup(props) {
+    const { error, message } = toRefs(props);
 
-  get errorText(): string {
-    if (!this.error) {
-      return this.message;
-    }
-    return this.message + '\n\n' + this.error;
+    const errorText = computed(() => {
+      const errorText = error.value;
+      const errorMessage = message.value;
+      return !errorText ? errorMessage : `${errorMessage}\n\n${errorText}`;
+    });
+
+    return {
+      errorText
+    };
   }
-
-  copy() {
-    const copy = this.$refs.copy as HTMLTextAreaElement;
-    copy.focus();
-    copy.select();
-    document.execCommand('copy');
-    copy.blur();
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

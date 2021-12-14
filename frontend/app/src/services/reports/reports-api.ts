@@ -1,25 +1,28 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import {
-  ReportEventsPayloadData,
-  ReportOverviewPayloadData,
-  ReportsPayloadData
-} from '@rotki/common/lib/reports';
-import {
   AxiosInstance,
-  AxiosResponseTransformer,
-  AxiosRequestTransformer
+  AxiosRequestTransformer,
+  AxiosResponseTransformer
 } from 'axios';
 import {
   axiosSnakeCaseTransformer,
   setupTransformer
 } from '@/services/axios-tranformers';
-import { reportNumericKeys } from '@/services/reports/const';
+import { basicAxiosTransformer } from '@/services/consts';
+import { PendingTask } from '@/services/types-api';
 import { handleResponse, validStatus } from '@/services/utils';
+import {
+  ProfitLossOverview,
+  ProfitLossReportEvents,
+  ProfitLossReportOverview,
+  ProfitLossReportPeriod,
+  Reports
+} from '@/types/reports';
 
 export class ReportsApi {
   private readonly axios: AxiosInstance;
   private readonly responseTransformer: AxiosResponseTransformer[] =
-    setupTransformer(reportNumericKeys);
+    setupTransformer([]);
   private readonly requestTransformer: AxiosRequestTransformer[];
 
   constructor(axios: AxiosInstance) {
@@ -31,47 +34,65 @@ export class ReportsApi {
     );
   }
 
-  fetchReports(): Promise<ReportsPayloadData> {
-    return this.axios
-      .get<ActionResult<ReportsPayloadData>>('/reports', {
+  async generateReport({
+    end,
+    start
+  }: ProfitLossReportPeriod): Promise<PendingTask> {
+    const response = await this.axios.get<ActionResult<PendingTask>>(
+      '/history/',
+      {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          fromTimestamp: start,
+          toTimestamp: end
+        }),
         validateStatus: validStatus,
-        transformResponse: setupTransformer(reportNumericKeys)
-      })
-      .then(handleResponse)
-      .then(result => ReportsPayloadData.parse(result));
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return handleResponse(response);
   }
 
-  fetchReportOverview(reportId: number): Promise<ReportOverviewPayloadData> {
-    return this.axios
-      .get<ActionResult<ReportOverviewPayloadData>>(
-        `/reports/${reportId}/data/accounting_overview`,
-        {
-          validateStatus: validStatus,
-          transformResponse: setupTransformer(reportNumericKeys)
-        }
-      )
-      .then(handleResponse)
-      .then(result => ReportOverviewPayloadData.parse(result));
+  async fetchReports(): Promise<Reports> {
+    const response = await this.axios.get<ActionResult<Reports>>('/reports/', {
+      validateStatus: validStatus,
+      transformResponse: setupTransformer([])
+    });
+    const data = handleResponse(response);
+    return Reports.parse(data);
   }
 
-  fetchReportEvents(reportId: number): Promise<ReportEventsPayloadData> {
-    return this.axios
-      .post<ActionResult<ReportEventsPayloadData>>(
-        `/reports/${reportId}/data/`,
-        {
-          validateStatus: validStatus,
-          transformResponse: setupTransformer(reportNumericKeys)
-        }
-      )
-      .then(handleResponse)
-      .then(result => ReportEventsPayloadData.parse(result));
+  async fetchReport(reportId: number): Promise<ProfitLossOverview> {
+    const response = await this.axios.get<
+      ActionResult<ProfitLossReportOverview>
+    >(`/reports/${reportId}`, {
+      validateStatus: validStatus,
+      transformResponse: setupTransformer([])
+    });
+    const data = handleResponse(response);
+    const overview = ProfitLossReportOverview.parse(data);
+    return overview.entries[0];
+  }
+
+  async fetchReportEvents(
+    reportId: number,
+    page: { limit: number; offset: number }
+  ): Promise<ProfitLossReportEvents> {
+    const response = await this.axios.post<
+      ActionResult<ProfitLossReportEvents>
+    >(`/reports/${reportId}/data`, page, {
+      validateStatus: validStatus,
+      transformResponse: setupTransformer([])
+    });
+    const data = handleResponse(response);
+    return ProfitLossReportEvents.parse(data);
   }
 
   deleteReport(reportId: number): Promise<boolean> {
     return this.axios
       .delete<ActionResult<boolean>>(`/reports/${reportId}`, {
         validateStatus: validStatus,
-        transformResponse: setupTransformer(reportNumericKeys)
+        transformResponse: setupTransformer([])
       })
       .then(handleResponse);
   }

@@ -136,7 +136,6 @@ import NotificationIndicator from '@/components/status/NotificationIndicator.vue
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
 import NotificationSidebar from '@/components/status/notifications/NotificationSidebar.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
-import '@/services/task-manager';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
 import UpdatePopup from '@/components/status/update/UpdatePopup.vue';
 import UpdateIndicator from '@/components/status/UpdateIndicator.vue';

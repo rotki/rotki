@@ -717,6 +717,14 @@
     "subtitle": "Manage the addresses that will be queried for {module}",
     "title": "Queried Addresses"
   },
+  "reports_table": {
+    "delete": {
+      "tooltip": "Delete the report"
+    },
+    "load": {
+      "tooltip": "Load the report"
+    }
+  },
   "rounding_settings": {
     "amount_rounding": "Amount Rounding",
     "round": {
@@ -1342,13 +1350,15 @@
   "profit_loss_reports": {
     "columns": {
       "created": "Creation Date",
+      "size": "Size",
       "start": "Period Start",
       "end": "Period End",
-      "actions": "Actions"
+      "actions": "Actions",
+      "total_profit_loss": "Total P/L",
+      "total_taxable_profit_loss": "Total Taxable P/L"
     },
-    "actions": {
-      "load_report": "Load",
-      "delete_report": "Delete"
+    "error": {
+      "close": "Close"
     },
     "title": "Saved Historical Reports"
   },
@@ -2994,6 +3004,7 @@
       "subtitle": "The report generation was not possible due to an error",
       "title": "Profit and Loss Report Generation"
     },
+    "loading": "Please wait while your PnL report is loading",
     "settings_tooltip": "Open the accounting settings",
     "export_csv": "Export CSV",
     "loading_message": "Please wait while your report is generated...",

@@ -4,14 +4,15 @@ import {
   SocketMessageType,
   WebsocketMessage
 } from '@/services/websocket/messages';
+import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
-import { userNotify } from '@/store/notifications/utils';
 
 export async function handleSnapshotError(
   message: WebsocketMessage<SocketMessageType>
 ) {
   const data = BalanceSnapshotError.parse(message.data);
-  await userNotify({
+  const { notify } = useNotifications();
+  notify({
     title: i18n.t('notification_messages.snapshot_failed.title').toString(),
     message: i18n
       .t('notification_messages.snapshot_failed.message', data)
@@ -21,7 +22,8 @@ export async function handleSnapshotError(
 }
 
 export async function handleLegacyMessage(message: string, isWarning: boolean) {
-  await userNotify({
+  const { notify } = useNotifications();
+  notify({
     title: i18n.t('notification_messages.backend.title').toString(),
     message: message,
     display: !isWarning,

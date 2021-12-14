@@ -102,7 +102,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { Section } from '@/store/const';
-import { userNotify } from '@/store/notifications/utils';
+import { useNotifications } from '@/store/notifications';
 import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { assert } from '@/utils/assertions';
@@ -156,7 +156,8 @@ const setupEdit = (refresh: () => Promise<void>) => {
       await api.assets.setCurrentPrice(nft.id, toAsset, price);
       await refresh();
     } catch (e: any) {
-      await userNotify({
+      const { notify } = useNotifications();
+      notify({
         title: '',
         message: e.message,
         display: true
@@ -180,7 +181,8 @@ const setupConfirm = (refresh: () => Promise<void>) => {
       await api.assets.deleteCurrentPrice(price.id);
       await refresh();
     } catch (e: any) {
-      await userNotify({
+      const { notify } = useNotifications();
+      notify({
         title: i18n.t('non_fungible_balances.delete.error.title').toString(),
         message: i18n
           .t('non_fungible_balances.delete.error.message', {

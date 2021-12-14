@@ -120,6 +120,8 @@
 
 <script lang="ts">
 import { AssetBalance } from '@rotki/common';
+import { Ref } from '@vue/composition-api';
+import { mapState } from 'pinia';
 import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import BlockchainBalanceCardList from '@/components/dashboard/BlockchainBalanceCardList.vue';
@@ -136,6 +138,7 @@ import {
   ExchangeBalancePayload,
   LocationBalance
 } from '@/store/balances/types';
+import { useTasks } from '@/store/tasks';
 import { ExchangeInfo } from '@/types/exchanges';
 import { TaskType } from '@/types/task-type';
 
@@ -151,7 +154,7 @@ import { TaskType } from '@/types/task-type';
     BlockchainBalanceCardList
   },
   computed: {
-    ...mapGetters('tasks', ['isTaskRunning']),
+    ...mapState(useTasks, ['isTaskRunning']),
     ...mapGetters('balances', [
       'exchanges',
       'manualBalanceByLocation',
@@ -172,7 +175,7 @@ import { TaskType } from '@/types/task-type';
 })
 export default class Dashboard extends Vue {
   exchanges!: ExchangeInfo[];
-  isTaskRunning!: (type: TaskType) => boolean;
+  isTaskRunning!: (type: TaskType) => Ref<boolean>;
   blockchainTotals!: BlockchainTotal[];
   aggregatedBalances!: AssetBalance[];
   liabilities!: AssetBalance[];
@@ -185,19 +188,19 @@ export default class Dashboard extends Vue {
   fetchManualBalances!: () => Promise<void>;
 
   get blockchainIsLoading(): boolean {
-    return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+    return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES).value;
   }
 
   get exchangeIsLoading(): boolean {
-    return this.isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+    return this.isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES).value;
   }
 
   get allBalancesIsLoading(): boolean {
-    return this.isTaskRunning(TaskType.QUERY_BALANCES);
+    return this.isTaskRunning(TaskType.QUERY_BALANCES).value;
   }
 
   get manualBalancesLoading(): boolean {
-    return this.isTaskRunning(TaskType.MANUAL_BALANCES);
+    return this.isTaskRunning(TaskType.MANUAL_BALANCES).value;
   }
 
   get anyIsLoading(): boolean {

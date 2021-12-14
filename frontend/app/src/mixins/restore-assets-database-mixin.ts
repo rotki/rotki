@@ -1,8 +1,8 @@
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import BackendMixin from '@/mixins/backend-mixin';
+import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
 
 @Component({
   methods: {
@@ -39,7 +39,13 @@ export default class RestoreAssetsDatabaseMixin extends Mixins(BackendMixin) {
         this.doubleConfirmation = true;
         this.confirmRestore = false;
       }
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        severity: Severity.ERROR,
+        display: true
+      });
     }
   }
 

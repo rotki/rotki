@@ -4,7 +4,7 @@ import {
   QueriedAddressPayload
 } from '@/services/session/types';
 import store from '@/store/store';
-import { Module } from '../../../../src/types/modules';
+import { Module } from '@/types/modules';
 
 jest.mock('@/services/rotkehlchen-api');
 

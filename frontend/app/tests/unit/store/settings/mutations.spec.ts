@@ -5,11 +5,11 @@ import {
   LIGHT_THEME
 } from '@rotki/common/lib/settings';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
+import { SettingsState } from '@/store/settings/state';
 import store from '@/store/store';
+import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import { TableColumn } from '@/types/table-column';
-import { SettingsState } from '../../../../src/store/settings/state';
-import { CurrencyLocation } from '../../../../src/types/currency-location';
 import {
   AMOUNT_ROUNDING_MODE,
   CURRENCY_LOCATION,
@@ -23,7 +23,6 @@ import {
   ITEMS_PER_PAGE,
   LAST_KNOWN_TIMEFRAME,
   NFTS_IN_NET_VALUE,
-  VERSION_UPDATE_CHECK_FREQUENCY,
   PROFIT_LOSS_PERIOD,
   Quarter,
   QUERY_PERIOD,
@@ -31,6 +30,7 @@ import {
   THOUSAND_SEPARATOR,
   TIMEFRAME_SETTING,
   VALUE_ROUNDING_MODE,
+  VERSION_UPDATE_CHECK_FREQUENCY,
   VISIBLE_TIMEFRAMES
 } from '../../../../src/types/frontend-settings';
 

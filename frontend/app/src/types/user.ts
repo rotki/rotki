@@ -50,16 +50,23 @@ const GeneralSettings = z.object({
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
 
-const AccountingSettings = z.object({
+export const BaseAccountingSettings = z.object({
   calculatePastCostBasis: z.boolean(),
-  pnlCsvWithFormulas: z.boolean(),
-  pnlCsvHaveSummary: z.boolean(),
   includeCrypto2crypto: z.boolean(),
   includeGasCosts: z.boolean(),
   taxfreeAfterPeriod: z.number().nullable(),
-  accountForAssetsMovements: z.boolean(),
-  taxableLedgerActions: z.array(LedgerActionEnum)
+  accountForAssetsMovements: z.boolean()
 });
+
+export type BaseAccountingSettings = z.infer<typeof BaseAccountingSettings>;
+
+const AccountingSettings = z
+  .object({
+    pnlCsvWithFormulas: z.boolean(),
+    pnlCsvHaveSummary: z.boolean(),
+    taxableLedgerActions: z.array(LedgerActionEnum)
+  })
+  .merge(BaseAccountingSettings);
 
 export type AccountingSettings = z.infer<typeof AccountingSettings>;
 

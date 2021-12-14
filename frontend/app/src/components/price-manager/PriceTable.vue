@@ -45,7 +45,6 @@
 import {
   computed,
   defineComponent,
-  inject,
   onMounted,
   PropType,
   ref,
@@ -64,8 +63,8 @@ import { api } from '@/services/rotkehlchen-api';
 import { Severity } from '@/store/notifications/consts';
 import { NotificationPayload } from '@/store/notifications/types';
 import { RotkehlchenState } from '@/store/types';
+import { useStore } from '@/store/utils';
 import { Nullable } from '@/types';
-import { assert } from '@/utils/assertions';
 import { nonNullProperties } from '@/utils/data';
 
 const priceRetrieval = (store: Store<RotkehlchenState>) => {
@@ -150,8 +149,7 @@ export default defineComponent({
     }
   },
   setup(props, { emit }) {
-    const store = inject<Store<RotkehlchenState>>('vuex-store');
-    assert(store);
+    const store = useStore();
     const { fetchPrices, prices, loading } = priceRetrieval(store);
     watch(props.filter, async payload => {
       await fetchPrices(nonNullProperties(payload));

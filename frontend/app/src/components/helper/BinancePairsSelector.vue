@@ -63,8 +63,8 @@ import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import ThemeMixin from '@/mixins/theme-mixin';
+import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
 
 @Component({
   components: { AccountDisplay, TagIcon }
@@ -104,7 +104,13 @@ export default class BinancePairsSelector extends Mixins(ThemeMixin) {
       const description = this.$t('binance_market_selector.query_user.error', {
         message: e.message
       }).toString();
-      notify(description, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message: description,
+        severity: Severity.ERROR,
+        display: true
+      });
     }
 
     try {
@@ -116,7 +122,13 @@ export default class BinancePairsSelector extends Mixins(ThemeMixin) {
       const description = this.$t('binance_market_selector.query_all.error', {
         message: e.message
       }).toString();
-      notify(description, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message: description,
+        severity: Severity.ERROR,
+        display: true
+      });
     }
 
     this.loading = false;

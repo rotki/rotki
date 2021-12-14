@@ -10,7 +10,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import i18n from '@/i18n';
 
 const BUY = 'buy';
@@ -69,17 +74,19 @@ const names: Resources = {
   [LEDGER_ACTION]: i18n.t('profit_loss_event_type.ledger_action').toString()
 };
 
-@Component({})
-export default class ProfitLossEventType extends Vue {
-  @Prop({ required: true, type: String })
-  type!: EventTypes;
-
-  get icon(): string {
-    return icons[this.type] ?? '';
+export default defineComponent({
+  name: 'ProfitLossEventType',
+  props: {
+    type: { required: true, type: String as PropType<EventTypes> }
+  },
+  setup(props) {
+    const { type } = toRefs(props);
+    const icon = computed(() => icons[type.value] ?? '');
+    const name = computed(() => names[type.value] ?? '');
+    return {
+      icon,
+      name
+    };
   }
-
-  get name(): string {
-    return names[this.type] ?? '';
-  }
-}
+});
 </script>

@@ -36,33 +36,32 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
-import RangeSelector, {
-  SelectedRange
-} from '@/components/helper/date/RangeSelector.vue';
-import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
+import { defineComponent, ref } from '@vue/composition-api';
+import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import { convertToTimestamp } from '@/utils/date';
 
-@Component({
+export default defineComponent({
+  name: 'Generate',
   components: {
-    RangeSelector,
-    ReportPeriodSelector,
-    DateTimePicker
+    RangeSelector
   },
-  methods: {}
-})
-export default class Generate extends Vue {
-  range: SelectedRange = { start: '', end: '' };
-  valid: boolean = false;
-
-  generate() {
-    const start = convertToTimestamp(this.range.start);
-    const end = convertToTimestamp(this.range.end);
-    this.$emit('generate', {
-      start,
-      end
-    });
+  emits: ['generate'],
+  setup(_, { emit }) {
+    const range = ref({ start: '', end: '' });
+    const valid = ref(false);
+    const generate = () => {
+      const start = convertToTimestamp(range.value.start);
+      const end = convertToTimestamp(range.value.end);
+      emit('generate', {
+        start,
+        end
+      });
+    };
+    return {
+      range,
+      valid,
+      generate
+    };
   }
-}
+});
 </script>

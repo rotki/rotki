@@ -3,8 +3,8 @@
     <report-period-selector
       :year="year"
       :quarter="quarter"
-      @period-update="onPeriodChange"
-      @changed="onChanged"
+      @update:period="onPeriodChange"
+      @update:selection="onChanged"
     />
     <v-row v-if="custom">
       <v-col cols="12" md="6">
@@ -35,21 +35,14 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, inject } from '@vue/composition-api';
+import { computed, defineComponent } from '@vue/composition-api';
 import dayjs from 'dayjs';
-import { Store } from 'vuex';
 import ReportPeriodSelector, {
   PeriodChangedEvent,
   SelectionChangedEvent
 } from '@/components/profitloss/ReportPeriodSelector.vue';
-import { RotkehlchenState } from '@/store/types';
-import { assert } from '@/utils/assertions';
+import { useStore } from '@/store/utils';
 import { convertToTimestamp } from '@/utils/date';
-
-export interface SelectedRange {
-  readonly start: string;
-  readonly end: string;
-}
 
 export default defineComponent({
   name: 'RangeSelector',
@@ -61,8 +54,7 @@ export default defineComponent({
     }
   },
   setup(_props, { emit }) {
-    const store = inject<Store<RotkehlchenState>>('vuex-store');
-    assert(store);
+    const store = useStore();
     const custom = computed(({ year }) => year === 'custom');
     const invalidRange = computed(
       ({ value }) =>

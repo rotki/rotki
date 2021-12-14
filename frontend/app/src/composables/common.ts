@@ -15,6 +15,11 @@ export const useRouter = () => {
   return $router;
 };
 
+export const useRoute = () => {
+  const { $router } = useProxy();
+  return computed(() => $router.currentRoute);
+};
+
 export const setupThemeCheck = () => {
   const { $vuetify } = useProxy();
   const isMobile = computed(() => $vuetify.breakpoint.mobile);

@@ -105,8 +105,8 @@ import {
   BlockchainAccountPayload,
   XpubPayload
 } from '@/store/balances/types';
+import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
 import { Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { TaskType } from '@/types/task-type';
@@ -312,7 +312,13 @@ const AccountForm = defineComponent({
             error: e.message
           })
           .toString();
-        notify(description, title, Severity.ERROR, true);
+        const { notify } = useNotifications();
+        notify({
+          title,
+          message: description,
+          severity: Severity.ERROR,
+          display: true
+        });
         return false;
       }
     };

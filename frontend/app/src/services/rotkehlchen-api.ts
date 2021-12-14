@@ -409,20 +409,6 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  processTradeHistoryAsync(start: number, end: number): Promise<PendingTask> {
-    return this.axios
-      .get<ActionResult<PendingTask>>('/history/', {
-        params: {
-          async_query: true,
-          from_timestamp: start,
-          to_timestamp: end
-        },
-        validateStatus: validStatus,
-        transformResponse: basicAxiosTransformer
-      })
-      .then(handleResponse);
-  }
-
   getFiatExchangeRates(currencies: SupportedCurrency[]): Promise<PendingTask> {
     return this.axios
       .get<ActionResult<PendingTask>>('/exchange_rates', {

@@ -8,13 +8,10 @@ import { defiSections, Section, Status } from '@/store/const';
 import { storePlugins } from '@/store/debug';
 import { defi } from '@/store/defi';
 import { history } from '@/store/history';
-import { notifications } from '@/store/notifications';
-import { reports } from '@/store/reports';
 import { session } from '@/store/session';
 import { settings } from '@/store/settings';
 import { staking } from '@/store/staking';
 import { statistics } from '@/store/statistics';
-import { tasks } from '@/store/tasks';
 import {
   Message,
   RotkehlchenState,
@@ -179,13 +176,10 @@ const store: StoreOptions<RotkehlchenState> = {
     }
   },
   modules: {
-    notifications,
     balances,
     defi,
-    tasks,
     history,
     session,
-    reports,
     settings,
     statistics,
     staking,

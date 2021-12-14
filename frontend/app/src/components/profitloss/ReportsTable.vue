@@ -1,188 +1,222 @@
 <template>
-  <v-card>
-    <v-card-title>
-      <card-title> {{ $t('profit_loss_reports.title') }}</card-title>
-    </v-card-title>
-    <v-card-text>
-      <v-sheet outlined rounded>
-        <data-table
-          :headers="headers"
-          :items="entries"
-          sort-by="timestamp"
-          item-key="index"
-        >
-          <template #item.timestamp="{ item }">
-            <date-display :timestamp="item.timestamp" />
-          </template>
-          <template #item.startTs="{ item }">
-            <date-display no-time :timestamp="item.startTs" />
-          </template>
-          <template #item.endTs="{ item }">
-            <date-display no-time :timestamp="item.endTs" />
-          </template>
-          <template #item.actions="{ item }">
+  <card outlined-body>
+    <template #title>
+      {{ $t('profit_loss_reports.title') }}
+    </template>
+    <data-table
+      :headers="tableHeaders"
+      :items="items"
+      sort-by="timestamp"
+      single-expand
+      :expanded.sync="expanded"
+    >
+      <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
+        <upgrade-row
+          :total="limits.total"
+          :limit="limits.limit"
+          :colspan="headers.length"
+          :label="$t('profit_loss_reports.title')"
+        />
+      </template>
+      <template #item.timestamp="{ item }">
+        <date-display :timestamp="item.timestamp" />
+      </template>
+      <template #item.startTs="{ item }">
+        <date-display no-time :timestamp="item.startTs" />
+      </template>
+      <template #item.endTs="{ item }">
+        <date-display no-time :timestamp="item.endTs" />
+      </template>
+      <template #item.totalProfitLoss="{ item }">
+        <amount-display
+          :value="item.totalProfitLoss"
+          :asset="item.profitCurrency"
+        />
+      </template>
+      <template #item.totalTaxableProfitLoss="{ item }">
+        <amount-display
+          :value="item.totalTaxableProfitLoss"
+          :asset="item.profitCurrency"
+        />
+      </template>
+      <template #item.sizeOnDisk="{ item }">
+        {{ size(item.sizeOnDisk) }}
+      </template>
+      <template #item.actions="{ item }">
+        <export-report-csv v-if="canExport(item.identifier)" icon />
+        <v-tooltip top open-delay="400">
+          <template #activator="{ on, attrs }">
             <v-btn
-              class="profit_loss_report__load-report mr-2"
-              depressed
+              icon
               color="primary"
-              @click="loadReport(item.identifier)"
+              v-bind="attrs"
+              :to="getReportUrl(item.identifier)"
+              v-on="on"
             >
-              {{ $t('profit_loss_reports.actions.load_report') }}
+              <v-icon small>mdi-open-in-app</v-icon>
             </v-btn>
+          </template>
+          <span>{{ $t('reports_table.load.tooltip') }}</span>
+        </v-tooltip>
+
+        <v-tooltip top open-delay="400">
+          <template #activator="{ on, attrs }">
             <v-btn
-              class="profit_loss_report__delete-report"
-              depressed
+              icon
               color="primary"
+              v-bind="attrs"
               @click="deleteReport(item.identifier)"
+              v-on="on"
             >
-              {{ $t('profit_loss_reports.actions.delete_report') }}
+              <v-icon small>mdi-delete</v-icon>
             </v-btn>
           </template>
-        </data-table>
-      </v-sheet>
-    </v-card-text>
-  </v-card>
+          <span>{{ $t('reports_table.delete.tooltip') }}</span>
+        </v-tooltip>
+      </template>
+      <template #expanded-item="{ headers, item }">
+        <table-expand-container visible :colspan="headers.length">
+          <profit-loss-overview
+            :overview="item"
+            flat
+            :symbol="item.profitCurrency"
+          />
+        </table-expand-container>
+      </template>
+      <template #item.expand="{ item }">
+        <row-expander
+          :expanded="expanded.includes(item)"
+          @click="expanded = expanded.includes(item) ? [] : [item]"
+        />
+      </template>
+    </data-table>
+  </card>
 </template>
 
 <script lang="ts">
-import { PagedResourceParameters } from '@rotki/common';
-import { PagedReport } from '@rotki/common/lib/reports';
 import {
   computed,
   defineComponent,
   onBeforeMount,
-  Ref,
   ref
 } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
+import RowExpander from '@/components/helper/RowExpander.vue';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
+import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import { setupStatusChecking } from '@/composables/common';
 import i18n from '@/i18n';
+import { Routes } from '@/router/routes';
 import { Section } from '@/store/const';
-import { ReportActions } from '@/store/reports/const';
-import { RotkehlchenState } from '@/store/types';
-import { useStore } from '@/store/utils';
+import { useReports } from '@/store/reports';
+import { size } from '@/utils/data';
+
+const getHeaders: () => DataTableHeader[] = () => [
+  {
+    text: i18n.t('profit_loss_reports.columns.start').toString(),
+    value: 'startTs'
+  },
+  {
+    text: i18n.t('profit_loss_reports.columns.end').toString(),
+    value: 'endTs'
+  },
+  {
+    text: i18n.t('profit_loss_reports.columns.total_profit_loss').toString(),
+    value: 'totalProfitLoss',
+    align: 'end'
+  },
+  {
+    text: i18n
+      .t('profit_loss_reports.columns.total_taxable_profit_loss')
+      .toString(),
+    value: 'totalTaxableProfitLoss',
+    align: 'end'
+  },
+  {
+    text: i18n.t('profit_loss_reports.columns.size').toString(),
+    value: 'sizeOnDisk',
+    align: 'end'
+  },
+  {
+    text: i18n.t('profit_loss_reports.columns.created').toString(),
+    value: 'timestamp',
+    align: 'end'
+  },
+  {
+    text: i18n.t('profit_loss_reports.columns.actions').toString(),
+    value: 'actions',
+    align: 'end',
+    width: 140
+  },
+  { text: '', value: 'expand', align: 'end', width: 48 }
+];
 
 export default defineComponent({
   name: 'ReportsTable',
   components: {
+    ExportReportCsv,
+    UpgradeRow,
+    RowExpander,
+    ProfitLossOverview,
     DataTable,
-    CardTitle,
     DateDisplay
   },
   setup() {
-    const selected: Ref<string[]> = ref([]);
-    const store = useStore();
+    const selected = ref<string[]>([]);
+    const expanded = ref([]);
+    const reportStore = useReports();
+    const { fetchReports, fetchReport, deleteReport, canExport } = reportStore;
+    const { reports } = storeToRefs(reportStore);
+    const items = computed(() =>
+      reports.value.entries.map((value, index) => ({
+        ...value,
+        id: index
+      }))
+    );
 
-    const state: RotkehlchenState = store.state;
-    const itemsPerPage = state.settings!!.itemsPerPage;
+    const limits = computed(() => ({
+      total: reports.value.entriesFound,
+      limit: reports.value.entriesLimit
+    }));
 
-    const payload = ref<PagedResourceParameters>({
-      limit: itemsPerPage,
-      offset: 0,
-      orderByAttribute: 'timestamp',
-      ascending: false
-    });
-
-    const entries = computed(() => {
-      const state: RotkehlchenState = store.state;
-      return state.reports!!.reports;
-    });
-    const limit = computed(() => {
-      const state: RotkehlchenState = store.state;
-      return state.reports!!.reportsLimit;
-    });
-    const found = computed(() => {
-      const state: RotkehlchenState = store.state;
-      return state.reports!!.reportsFound;
-    });
-
-    const fetchReports = async (refresh: boolean = false) => {
-      await store.dispatch(`reports/${ReportActions.FETCH_REPORTS}`, {
-        ...payload.value,
-        onlyCache: !refresh
-      });
-    };
-    const loadReport = async (reportId: number, refresh: boolean = false) => {
-      const state: RotkehlchenState = store.state;
-      state.reports!!.reportId = reportId;
-      await store.dispatch(`reports/${ReportActions.FETCH_REPORT}`, {
-        ...payload.value,
-        onlyCache: !refresh
-      });
-    };
-    const deleteReport = async (reportId: number) => {
-      const state: RotkehlchenState = store.state;
-      state.reports!!.reportId = reportId;
-      await store.dispatch(`reports/${ReportActions.DELETE_REPORT}`, {});
-    };
-    const refresh = async () => await fetchReports(true);
-    const onPaginationUpdate = ({
-      ascending,
-      page,
-      sortBy,
-      itemsPerPage
-    }: {
-      page: number;
-      itemsPerPage: number;
-      sortBy: keyof PagedReport;
-      ascending: boolean;
-    }) => {
-      const offset = (page - 1) * itemsPerPage;
-      payload.value = {
-        ...payload.value,
-        orderByAttribute: sortBy,
-        offset,
-        limit: itemsPerPage,
-        ascending
-      };
-      fetchReports().then();
-    };
+    const refresh = async () => await fetchReports();
 
     onBeforeMount(async () => await fetchReports());
 
     const { isSectionRefreshing, shouldShowLoadingScreen } =
       setupStatusChecking();
 
+    const showUpgradeMessage = computed(
+      () =>
+        reports.value.entriesLimit > 0 &&
+        reports.value.entriesLimit < reports.value.entriesFound
+    );
+
+    const getReportUrl = (identifier: number) => {
+      const url = Routes.PROFIT_LOSS_REPORT;
+      return url.replace(':id', identifier.toString());
+    };
+
     return {
-      entries,
-      limit,
-      found,
+      items,
+      expanded,
+      limits,
+      tableHeaders: getHeaders(),
       loading: shouldShowLoadingScreen(Section.REPORTS),
       refreshing: isSectionRefreshing(Section.REPORTS),
+      showUpgradeMessage,
+      size,
       refresh,
       selected,
+      canExport: (reportId: number) => canExport(reportId).value,
+      getReportUrl,
       fetchReports,
-      loadReport,
-      deleteReport,
-      onPaginationUpdate
-    };
-  },
-  data: function () {
-    return {
-      headers: (() => {
-        const headers: DataTableHeader[] = [
-          {
-            text: i18n.t('profit_loss_reports.columns.created').toString(),
-            value: 'timestamp'
-          },
-          {
-            text: i18n.t('profit_loss_reports.columns.start').toString(),
-            value: 'startTs'
-          },
-          {
-            text: i18n.t('profit_loss_reports.columns.end').toString(),
-            value: 'endTs'
-          },
-          {
-            text: i18n.t('profit_loss_reports.columns.actions').toString(),
-            value: 'actions'
-          }
-        ];
-        return headers;
-      })()
+      fetchReport,
+      deleteReport
     };
   }
 });

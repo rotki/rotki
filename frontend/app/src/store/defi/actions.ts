@@ -41,12 +41,12 @@ import {
   DSRHistory,
   MakerDAOVaultDetails
 } from '@/store/defi/types';
-import { Severity } from '@/store/notifications/consts';
-import { notify } from '@/store/notifications/utils';
+import { useNotifications } from '@/store/notifications';
+import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
 import { fetchAsync, isLoading, setStatus } from '@/store/utils';
 import { Module } from '@/types/modules';
-import { createTask, taskCompletion, TaskMeta } from '@/types/task';
+import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 
@@ -72,16 +72,19 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
 
+    const { awaitTask } = useTasks();
+
     try {
       const taskType = TaskType.DSR_BALANCE;
       const { taskId } = await api.defi.dsrBalance();
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.defi.dsr_balances.task.title'),
-        ignoreResult: false,
-        numericKeys: dsrKeys
-      });
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<DSRBalances, TaskMeta>(taskType);
+      const { result } = await awaitTask<DSRBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.dsr_balances.task.title'),
+          numericKeys: dsrKeys
+        }
+      );
       commit('dsrBalances', result);
     } catch (e: any) {
       const message = i18n.tc(
@@ -92,7 +95,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         }
       );
       const title = i18n.tc('actions.defi.dsr_balances.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
 
     setStatus(Status.LOADED, section, status, commit);
@@ -118,17 +126,20 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
+    const { awaitTask } = useTasks();
 
     try {
       const taskType = TaskType.DSR_HISTORY;
       const { taskId } = await api.defi.dsrHistory();
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.defi.dsr_history.task.title'),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<DSRHistory, TaskMeta>(taskType);
+      const { result } = await awaitTask<DSRHistory, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.dsr_history.task.title'),
+          numericKeys: balanceKeys
+        }
+      );
+
       commit('dsrHistory', result);
     } catch (e: any) {
       const message = i18n.tc(
@@ -139,7 +150,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         }
       );
       const title = i18n.tc('actions.defi.dsr_history.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -164,23 +180,20 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
-
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.MAKEDAO_VAULTS;
       const { taskId } = await api.defi.makerDAOVaults();
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.defi.makerdao_vaults.task.title'),
-        ignoreResult: false,
-        numericKeys: vaultKeys
-      });
+      const { result } = await awaitTask<ApiMakerDAOVault[], TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.makerdao_vaults.task.title'),
+          numericKeys: vaultKeys
+        }
+      );
 
-      commit('tasks/add', task, { root: true });
-
-      const { result: makerDAOVaults } = await taskCompletion<
-        ApiMakerDAOVault[],
-        TaskMeta
-      >(taskType);
-      commit('makerDAOVaults', convertMakerDAOVaults(makerDAOVaults));
+      commit('makerDAOVaults', convertMakerDAOVaults(result));
     } catch (e: any) {
       const message = i18n.tc(
         'actions.defi.makerdao_vaults.error.description',
@@ -190,7 +203,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         }
       );
       const title = i18n.tc('actions.defi.makerdao_vaults.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -216,18 +234,17 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
 
+    const { awaitTask } = useTasks();
+
     try {
       const { taskId } = await api.defi.makerDAOVaultDetails();
-      const task = createTask(taskId, TaskType.MAKERDAO_VAULT_DETAILS, {
-        title: i18n.tc('actions.defi.makerdao_vault_details.task.title'),
-        ignoreResult: false,
-        numericKeys: vaultDetailsKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<MakerDAOVaultDetails[], TaskMeta>(
-        TaskType.MAKERDAO_VAULT_DETAILS
+      const { result } = await awaitTask<MakerDAOVaultDetails[], TaskMeta>(
+        taskId,
+        TaskType.MAKERDAO_VAULT_DETAILS,
+        {
+          title: i18n.tc('actions.defi.makerdao_vault_details.task.title'),
+          numericKeys: vaultDetailsKeys
+        }
       );
 
       commit('makerDAOVaultDetails', result);
@@ -238,7 +255,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         { error: e.message }
       );
       const title = i18n.tc('actions.defi.makerdao_vault_details.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
 
     setStatus(Status.LOADED, section, status, commit);
@@ -264,19 +286,19 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
+    const { awaitTask } = useTasks();
 
     try {
       const taskType = TaskType.AAVE_BALANCES;
       const { taskId } = await api.defi.fetchAaveBalances();
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.defi.aave_balances.task.title'),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<AaveBalances, TaskMeta>(taskType);
+      const { result } = await awaitTask<AaveBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.aave_balances.task.title'),
+          numericKeys: balanceKeys
+        }
+      );
 
       commit('aaveBalances', result);
     } catch (e: any) {
@@ -288,7 +310,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         }
       );
       const title = i18n.tc('actions.defi.aave_balances.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
 
     setStatus(Status.LOADED, section, status, commit);
@@ -316,19 +343,19 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
+    const { awaitTask } = useTasks();
 
     try {
       const taskType = TaskType.AAVE_HISTORY;
       const { taskId } = await api.defi.fetchAaveHistory(reset);
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.defi.aave_history.task.title'),
-        ignoreResult: false,
-        numericKeys: aaveHistoryKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<AaveHistory, TaskMeta>(taskType);
+      const { result } = await awaitTask<AaveHistory, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.aave_history.task.title'),
+          numericKeys: aaveHistoryKeys
+        }
+      );
 
       commit('aaveHistory', result);
     } catch (e: any) {
@@ -338,7 +365,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         { error: e.message }
       );
       const title = i18n.tc('actions.defi.aave_history.error.title');
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
 
     setStatus(Status.LOADED, section, status, commit);
@@ -360,18 +392,17 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     setStatus(Status.LOADING, section, status, commit);
 
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_BALANCES;
       const { taskId } = await api.defi.fetchAllDefi();
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.defi.balances.task.title'),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-      const { result } = await taskCompletion<AllDefiProtocols, TaskMeta>(
-        taskType
+      const { result } = await awaitTask<AllDefiProtocols, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.balances.task.title'),
+          numericKeys: balanceKeys
+        }
       );
 
       commit('allDefiProtocols', result);
@@ -382,7 +413,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         undefined,
         { error: e.message }
       );
-      notify(message, title, Severity.ERROR, true);
+      const { notify } = useNotifications();
+      notify({
+        title,
+        message,
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -620,31 +656,28 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
 
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_COMPOUND_BALANCES;
       const { taskId } = await api.defi.fetchCompoundBalances();
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.defi.compound.task.title'),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<CompoundBalances, TaskMeta>(
-        taskType
+      const { result } = await awaitTask<CompoundBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.compound.task.title'),
+          numericKeys: balanceKeys
+        }
       );
-
       commit('compoundBalances', result);
     } catch (e: any) {
-      notify(
-        i18n.tc('actions.defi.compound.error.description', undefined, {
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.defi.compound.error.title'),
+        message: i18n.tc('actions.defi.compound.error.description', undefined, {
           error: e.message
         }),
-        i18n.tc('actions.defi.compound.error.title'),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -672,31 +705,33 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
 
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_COMPOUND_HISTORY;
       const { taskId } = await api.defi.fetchCompoundHistory();
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.defi.compound_history.task.title'),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<CompoundHistory, TaskMeta>(
-        taskType
+      const { result } = await awaitTask<CompoundHistory, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.compound_history.task.title'),
+          numericKeys: balanceKeys
+        }
       );
 
       commit('compoundHistory', result);
     } catch (e: any) {
-      notify(
-        i18n.tc('actions.defi.compound_history.error.description', undefined, {
-          error: e.message
-        }),
-        i18n.tc('actions.defi.compound_history.error.title'),
-        Severity.ERROR,
-        true
-      );
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.defi.compound_history.error.title'),
+        message: i18n.tc(
+          'actions.defi.compound_history.error.description',
+          undefined,
+          {
+            error: e.message
+          }
+        ),
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -733,24 +768,21 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
-
+    const { awaitTask } = useTasks();
     try {
       const taskType = isV1
         ? TaskType.DEFI_YEARN_VAULT_BALANCES
         : TaskType.DEFI_YEARN_VAULT_V2_BALANCES;
       const { taskId } = await api.defi.fetchYearnVaultsBalances(version);
-      const task = createTask(taskId, taskType, {
-        title: i18n
-          .t('actions.defi.yearn_vaults.task.title', { version })
-          .toString(),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<YearnVaultsBalances, TaskMeta>(
-        taskType
+      const { result } = await awaitTask<YearnVaultsBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n
+            .t('actions.defi.yearn_vaults.task.title', { version })
+            .toString(),
+          numericKeys: balanceKeys
+        }
       );
 
       commit(
@@ -760,17 +792,19 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         result
       );
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n
+          .t('actions.defi.yearn_vaults.error.title', { version })
+          .toString(),
+        message: i18n
           .t('actions.defi.yearn_vaults.error.description', {
             error: e.message,
             version
           })
           .toString(),
-        i18n.t('actions.defi.yearn_vaults.error.title', { version }).toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -807,7 +841,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
-
+    const { awaitTask } = useTasks();
     try {
       const taskType = isV1
         ? TaskType.DEFI_YEARN_VAULT_HISTORY
@@ -816,20 +850,17 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         payload.version,
         reset
       );
-      const task = createTask(taskId, taskType, {
-        title: i18n
-          .t('actions.defi.yearn_vaults_history.task.title', {
-            version: payload.version
-          })
-          .toString(),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<YearnVaultsHistory, TaskMeta>(
-        taskType
+      const { result } = await awaitTask<YearnVaultsHistory, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n
+            .t('actions.defi.yearn_vaults_history.task.title', {
+              version: payload.version
+            })
+            .toString(),
+          numericKeys: balanceKeys
+        }
       );
 
       commit(
@@ -839,21 +870,21 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         result
       );
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n
+          .t('actions.defi.yearn_vaults_history.error.title', {
+            version: payload.version
+          })
+          .toString(),
+        message: i18n
           .t('actions.defi.yearn_vaults_history.error.description', {
             error: e.message,
             version: payload.version
           })
           .toString(),
-        i18n
-          .t('actions.defi.yearn_vaults_history.error.title', {
-            version: payload.version
-          })
-          .toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -879,32 +910,29 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
-
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_UNISWAP_BALANCES;
       const { taskId } = await api.defi.fetchUniswapBalances();
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.defi.uniswap.task.title'),
-        ignoreResult: false,
-        numericKeys: uniswapNumericKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<XswapBalances, TaskMeta>(
-        taskType
+      const { result } = await awaitTask<XswapBalances, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.uniswap.task.title'),
+          numericKeys: uniswapNumericKeys
+        }
       );
 
       commit('uniswapBalances', result);
     } catch (e: any) {
-      notify(
-        i18n.tc('actions.defi.uniswap.error.description', undefined, {
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.defi.uniswap.error.title'),
+        message: i18n.tc('actions.defi.uniswap.error.description', undefined, {
           error: e.message
         }),
-        i18n.tc('actions.defi.uniswap.error.title'),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
     await dispatch('balances/fetchSupportedAssets', true, { root: true });
@@ -931,30 +959,33 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
-
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_UNISWAP_TRADES;
       const { taskId } = await api.defi.fetchUniswapTrades();
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.defi.uniswap_trades.task.title'),
-        ignoreResult: false,
-        numericKeys: dexTradeNumericKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<DexTrades, TaskMeta>(taskType);
+      const { result } = await awaitTask<DexTrades, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.uniswap_trades.task.title'),
+          numericKeys: dexTradeNumericKeys
+        }
+      );
 
       commit('uniswapTrades', result);
     } catch (e: any) {
-      notify(
-        i18n.tc('actions.defi.uniswap_trades.error.description', undefined, {
-          error: e.message
-        }),
-        i18n.tc('actions.defi.uniswap_trades.error.title'),
-        Severity.ERROR,
-        true
-      );
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.defi.uniswap_trades.error.title'),
+        message: i18n.tc(
+          'actions.defi.uniswap_trades.error.description',
+          undefined,
+          {
+            error: e.message
+          }
+        ),
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
     await dispatch('balances/fetchSupportedAssets', true, { root: true });
@@ -982,29 +1013,33 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
 
+    const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_UNISWAP_EVENTS;
       const { taskId } = await api.defi.fetchUniswapEvents();
-      const task = createTask(taskId, taskType, {
-        title: i18n.tc('actions.defi.uniswap_events.task.title'),
-        ignoreResult: false,
-        numericKeys: uniswapEventsNumericKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<XswapEvents, TaskMeta>(taskType);
+      const { result } = await awaitTask<XswapEvents, TaskMeta>(
+        taskId,
+        taskType,
+        {
+          title: i18n.tc('actions.defi.uniswap_events.task.title'),
+          numericKeys: uniswapEventsNumericKeys
+        }
+      );
 
       commit('uniswapEvents', result);
     } catch (e: any) {
-      notify(
-        i18n.tc('actions.defi.uniswap_events.error.description', undefined, {
-          error: e.message
-        }),
-        i18n.tc('actions.defi.uniswap_events.error.title'),
-        Severity.ERROR,
-        true
-      );
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.tc('actions.defi.uniswap_events.error.title'),
+        message: i18n.tc(
+          'actions.defi.uniswap_events.error.description',
+          undefined,
+          {
+            error: e.message
+          }
+        ),
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
     await dispatch('balances/fetchSupportedAssets', true, { root: true });
@@ -1026,32 +1061,31 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus, section, status, commit);
+    const { awaitTask } = useTasks();
 
     try {
-      const taskType = TaskType.DEFI_AIRDROPS;
       const { taskId } = await api.airdrops();
-      const task = createTask(taskId, taskType, {
-        title: i18n.t('actions.defi.airdrops.task.title').toString(),
-        ignoreResult: false,
-        numericKeys: balanceKeys
-      });
-
-      commit('tasks/add', task, { root: true });
-
-      const { result } = await taskCompletion<Airdrops, TaskMeta>(taskType);
+      const { result } = await awaitTask<Airdrops, TaskMeta>(
+        taskId,
+        TaskType.DEFI_AIRDROPS,
+        {
+          title: i18n.t('actions.defi.airdrops.task.title').toString(),
+          numericKeys: balanceKeys
+        }
+      );
 
       commit('airdrops', result);
     } catch (e: any) {
-      notify(
-        i18n
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.t('actions.defi.airdrops.error.title').toString(),
+        message: i18n
           .t('actions.defi.airdrops.error.description', {
             error: e.message
           })
           .toString(),
-        i18n.t('actions.defi.airdrops.error.title').toString(),
-        Severity.ERROR,
-        true
-      );
+        display: true
+      });
     }
     setStatus(Status.LOADED, section, status, commit);
   },
@@ -1061,7 +1095,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
   ) {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.balancer_balances.task.title').toString(),
-      ignoreResult: false,
       numericKeys: [...balanceKeys, 'total_amount', 'usd_price']
     };
 
@@ -1094,7 +1127,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
   ) {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.balancer_trades.task.title').toString(),
-      ignoreResult: false,
       numericKeys: dexTradeNumericKeys
     };
 
@@ -1127,7 +1159,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
   ) {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.balancer_events.task.title').toString(),
-      ignoreResult: false,
       numericKeys: [
         ...balanceKeys,
         'amounts',

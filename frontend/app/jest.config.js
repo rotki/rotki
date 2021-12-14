@@ -14,7 +14,7 @@ module.exports = {
       experimentalCSSCompile: false
     },
     'ts-jest': {
-      tsConfig: 'tsconfig.jest.json'
+      tsConfig: './tests/unit/tsconfig.json'
     }
   }
 };

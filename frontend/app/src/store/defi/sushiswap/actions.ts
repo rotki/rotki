@@ -19,7 +19,6 @@ export const actions: ActionTree<SushiswapState, RotkehlchenState> = {
   async fetchBalances(context, refresh: boolean = false) {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.sushiswap_balances.task.title').toString(),
-      ignoreResult: false,
       numericKeys: uniswapNumericKeys
     };
 
@@ -51,7 +50,6 @@ export const actions: ActionTree<SushiswapState, RotkehlchenState> = {
   async fetchTrades(context, refresh: boolean = false) {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.sushiswap_trades.task.title').toString(),
-      ignoreResult: false,
       numericKeys: dexTradeNumericKeys
     };
 
@@ -83,7 +81,6 @@ export const actions: ActionTree<SushiswapState, RotkehlchenState> = {
   async fetchEvents(context, refresh: boolean = false) {
     const meta: TaskMeta = {
       title: i18n.t('actions.defi.sushiswap_events.task.title').toString(),
-      ignoreResult: false,
       numericKeys: uniswapEventsNumericKeys
     };
 

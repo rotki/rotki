@@ -5,7 +5,7 @@ import Vuetify from 'vuetify';
 import ExternalServices from '@/components/settings/api-keys/ExternalServices.vue';
 import store from '@/store/store';
 import '../../../i18n';
-import { ExternalServiceKeys } from '../../../../../src/types/user';
+import { ExternalServiceKeys } from '@/types/user';
 
 Vue.use(Vuetify);
 
