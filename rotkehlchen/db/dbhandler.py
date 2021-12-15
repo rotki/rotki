@@ -55,6 +55,7 @@ from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
+from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
@@ -2556,21 +2557,15 @@ class DBHandler:
         self.update_last_write()
         return True, ''
 
-    def get_trades(
-            self,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            location: Optional[Location] = None,
-    ) -> List[Trade]:
-        """Returns a list of trades optionally filtered by time and location
+    def get_trades(self, filter_query: TradesFilterQuery) -> List[Trade]:
+        """Returns a list of trades optionally filtered by various filters.
 
-        The returned list is ordered from oldest to newest
-        """
+        This will also take into account AMMSwaps and return them as trades via a view.
+
+        The returned list is ordered according to the passed filter query"""
         cursor = self.conn.cursor()
-        query = 'SELECT * FROM trades '
-        if location is not None:
-            query += f'WHERE location="{location.serialize_for_db()}" '
-        query, bindings = form_query_to_filter_timestamps(query, 'time', from_ts, to_ts)
+        query, bindings = filter_query.prepare()
+        query = 'SELECT * from combined_trades_view ' + query
         results = cursor.execute(query, bindings)
 
         trades = []
