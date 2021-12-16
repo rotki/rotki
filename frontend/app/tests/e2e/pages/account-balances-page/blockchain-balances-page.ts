@@ -80,37 +80,21 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
 
   getBlockchainBalances() {
     const blockchainBalances = [
-      { blockchain: Blockchain.ETH, renderedValue: Zero },
-      { blockchain: Blockchain.BTC, renderedValue: Zero }
+      { blockchain: 'Ethereum', symbol: Blockchain.ETH, renderedValue: Zero },
+      { blockchain: 'Bitcoin', symbol: Blockchain.BTC, renderedValue: Zero }
     ];
 
     blockchainBalances.forEach(blockchainBalance => {
-      cy.get(
-        `[data-cy="blockchain-balances-${blockchainBalance.blockchain}"] tr`
-      ).then($rows => {
-        if ($rows.text().includes(blockchainBalance.blockchain)) {
+      const tableClass = `[data-cy="blockchain-balances-${blockchainBalance.symbol}"]`;
+      cy.get('body').then($body => {
+        if ($body.find(tableClass).length > 0) {
           cy.get(
-            `[data-cy="blockchain-balances-${blockchainBalance.blockchain}"] tbody tr:contains(${blockchainBalance.blockchain})`
-          ).each($row => {
-            // loops over all blockchain asset balances rows and adds up the total per blockchain type
-            cy.wrap($row)
-              .find(
-                ':nth-child(4) > .amount-display > .v-skeleton-loader .amount-display__value'
-              )
-              .then($amount => {
-                if (blockchainBalance.renderedValue === Zero) {
-                  blockchainBalance.renderedValue = bigNumberify(
-                    this.getSanitizedAmountString($amount.text())
-                  );
-                } else {
-                  blockchainBalance.renderedValue =
-                    blockchainBalance.renderedValue.plus(
-                      bigNumberify(
-                        this.getSanitizedAmountString($amount.text())
-                      )
-                    );
-                }
-              });
+            `${tableClass} tr:contains(${blockchainBalance.symbol}) td:nth-child(4) [data-cy="display-amount"]`
+          ).each($amount => {
+            blockchainBalance.renderedValue =
+              blockchainBalance.renderedValue.plus(
+                bigNumberify(this.getSanitizedAmountString($amount.text()))
+              );
           });
         }
       });

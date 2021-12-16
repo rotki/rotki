@@ -16,7 +16,7 @@ import { GeneralSettingsPage } from '../pages/general-settings-page';
 import { RotkiApp } from '../pages/rotki-app';
 import { TagManager } from '../pages/tag-manager';
 
-describe('Accounts', () => {
+describe('balances', () => {
   let username: string;
   let app: RotkiApp;
   let page: AccountBalancesPage;
@@ -110,9 +110,7 @@ describe('Accounts', () => {
             });
           });
           dashboardPage.getBlockchainBalances().then($dashboardBalances => {
-            expect($dashboardBalances.toString()).to.eq(
-              $blockchainBalances.toString()
-            );
+            expect($dashboardBalances).to.deep.eq($blockchainBalances);
           });
         });
       page.visit();
@@ -195,9 +193,7 @@ describe('Accounts', () => {
           });
         });
         dashboardPage.getLocationBalances().then($dashboardBalances => {
-          expect($dashboardBalances.toString()).to.eq(
-            $manualBalances.toString()
-          );
+          expect($dashboardBalances).to.deep.eq($manualBalances);
         });
       });
     });

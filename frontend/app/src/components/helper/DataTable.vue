@@ -5,6 +5,7 @@
     :sort-desc="sortDesc"
     must-sort
     :items="items"
+    :item-class="itemClass"
     :headers="headers"
     :expanded="expanded"
     :footer-props="footerProps"
@@ -61,6 +62,8 @@ export default class DataTable extends Mixins(SettingsMixin) {
   headers!: DataTableHeader[];
   @Prop({ required: false, type: Array, default: () => [] })
   expanded!: any[];
+  @Prop({ required: false, type: [String, Function], default: () => '' })
+  itemClass!: string | Function;
 
   async onSelectionChange(itemsPerPage: number) {
     await this.updateSetting({

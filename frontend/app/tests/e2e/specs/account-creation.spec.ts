@@ -1,7 +1,7 @@
 import { Guid } from '../../common/guid';
 import { RotkiApp } from '../pages/rotki-app';
 
-describe('Accounts', () => {
+describe('accounts', () => {
   let username: string;
   let app: RotkiApp;
 

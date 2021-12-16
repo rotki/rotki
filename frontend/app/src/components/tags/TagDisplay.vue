@@ -26,7 +26,7 @@ export default defineComponent({
     TagIcon
   },
   props: {
-    tags: { required: true, type: Array },
+    tags: { required: false, type: Array, default: () => [] },
     small: { required: false, type: Boolean, default: false },
     wrapperClass: { required: false, type: String, default: '' }
   },
