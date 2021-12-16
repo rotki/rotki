@@ -165,6 +165,47 @@ KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE = """
             "count": 3
 }"""
 
+KRAKEN_GENERAL_LEDGER_RESPONSE = """
+{
+  "ledger": {
+        "0": {
+            "refid": "0",
+            "time": 1439994442,
+            "type": "withdrawal",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "XETH",
+            "amount": "-1.0000000000",
+            "fee": "0.0035000000",
+            "balance": "0.0000100000"
+        },
+        "L343242342": {
+            "refid": "1",
+            "time": 1458994442.064,
+            "type": "trade",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "XXBT",
+            "amount": "1",
+            "fee": "0.0000000000",
+            "balance": "0.0437477300"
+            },
+        "L5354645643": {
+            "refid": "1",
+            "time": 1458994442.063,
+            "type": "trade",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "ZEUR",
+            "amount": "-100",
+            "fee": "0.1",
+            "balance": "200"
+        },
+    },
+    "count": 37
+}
+"""
+
 
 def get_random_kraken_asset() -> str:
     kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)

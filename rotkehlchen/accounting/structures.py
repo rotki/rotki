@@ -1,21 +1,18 @@
 import binascii
 import operator
+import os
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Dict, List, NamedTuple, Optional, Tuple
-import os
+from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import InputError
+from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
-
-if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
 
 
 class BalanceType(DBEnumMixIn):
@@ -116,7 +113,7 @@ class AssetBalance:
     def __neg__(self) -> 'AssetBalance':
         return AssetBalance(asset=self.asset, balance=-self.balance)
 
-    def serialize_for_db(self) -> [str, str, str]:
+    def serialize_for_db(self) -> Tuple[str, str, str]:
         return (self.asset.identifier, str(self.amount), str(self.usd_value))
 
 
@@ -314,29 +311,30 @@ class HistoryEventSubType(DBEnumMixIn):
     STAKING_DEPOSIT_ASSET = 2
     STAKING_REMOVE_ASSET = 3
     STAKING_RECEIVE_ASSET = 4
-
-    @classmethod
-    def from_string(cls, value: str) -> 'HistoryEventType':
-        if value == 'trade':
-            return HistoryEventSubType.TRADE
-        if value == 'staking':
-            return HistoryEventSubType.STAKING
-        if value == 'deposit':
-            return HistoryEventSubType.DEPOSIT
-        if value == 'withdrawal':
-            return HistoryEventSubType.WITHDRAWAL
+    FEE = 5
 
     @classmethod
     def deserialize_from_db(cls, value: Optional[str]) -> Optional['HistoryEventSubType']:
-        if value is None:
-            return value
-        return super().deserialize_from_db(value)
+        if value is not None:
+            return super().deserialize_from_db(value)
+        return None
 
 
 HISTORY_EVENT_DB_TUPLE = Tuple[
-    str,
-    str,
+    str,            # identifier
+    str,            # event_identifier
+    int,            # sequence_index
+    int,            # timestamp
+    str,            # location
+    Optional[str],  # location label
+    str,            # asset
+    str,            # amount
+    str,            # usd value
+    Optional[str],  # notes
+    str,            # type
+    Optional[str],  # subtype
 ]
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class HistoryEvent:
@@ -344,12 +342,12 @@ class HistoryEvent:
     sequence_index: int
     timestamp: Timestamp
     location: Location
-    location_label: str
+    location_label: Optional[str]
     amount: AssetBalance
-    notes: str
+    notes: Optional[str]
     event_type: HistoryEventType
     event_subtype: Optional[HistoryEventSubType]
-    identifier: str = None
+    identifier: str = ''
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE:
         event_subtype = None
@@ -359,7 +357,7 @@ class HistoryEvent:
             self.identifier,
             self.event_identifier,
             self.sequence_index,
-            self.timestamp,
+            int(self.timestamp),
             self.location.serialize_for_db(),
             self.location_label,
             *self.amount.serialize_for_db(),
@@ -390,5 +388,5 @@ class HistoryEvent:
         )
 
     def __post_init__(self) -> None:
-        if not hasattr(self, 'identifier'):
+        if not hasattr(self, 'identifier') or self.identifier == '':
             self.identifier = binascii.hexlify(os.urandom(8)).decode('utf-8')

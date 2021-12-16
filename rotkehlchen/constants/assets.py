@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 01/12/2021 21:00:50.
+# tools/scripts/generate_constant_assets.py at 15/12/2021 12:36:55.
 # Do not edit manually!
 
 from typing import List
@@ -155,6 +155,18 @@ A_BSQ = Asset.initialize(
     cryptocompare=None,
 )
 CONSTANT_ASSETS.append(A_BSQ)
+A_KFEE = Asset.initialize(
+    identifier='KFEE',
+    asset_type=AssetType.OWN_CHAIN,
+    name="Kraken fees",
+    symbol='KFEE',
+    started=Timestamp(1377993600),
+    forked=None,
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+)
+CONSTANT_ASSETS.append(A_KFEE)
 
 
 A_BAL = EthereumToken.initialize(

@@ -11,7 +11,12 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union,
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import ActionType, BalanceType, HistoryEvent, HistoryEventType
+from rotkehlchen.accounting.structures import (
+    ActionType,
+    BalanceType,
+    HistoryEvent,
+    HistoryEventType,
+)
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -90,7 +95,7 @@ from rotkehlchen.errors import (
     UnsupportedAsset,
 )
 from rotkehlchen.exchanges.binance import BINANCE_MARKETS_KEY
-from rotkehlchen.exchanges.data_structures import AssetMovement,  MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.ftx import FTX_SUBACCOUNT_DB_SETTING
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
@@ -3407,7 +3412,8 @@ class DBHandler:
             'SELECT location FROM ledger_actions UNION '
             'SELECT location FROM margin_positions UNION '
             'SELECT location FROM user_credentials UNION '
-            'SELECT location FROM amm_swaps',
+            'SELECT location FROM amm_swaps UNION'
+            'SELECT location FROM history_events',
         )
         locations = {Location.deserialize_from_db(loc[0]) for loc in cursor}
         cursor.execute('SELECT DISTINCT type FROM amm_events')
@@ -3421,8 +3427,8 @@ class DBHandler:
             locations.add(Location.BALANCER)
         return locations
 
-    def save_history_events(self, history: List[HistoryEvent]):
-        query_str = 'INSERT INTO history_events(identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'
+    def save_history_events(self, history: List[HistoryEvent]) -> bool:
+        query_str = 'INSERT INTO history_events(identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'  # noqa: E501
         cursor = self.conn.cursor()
         try:
             cursor.executemany(query_str, [event.serialize_for_db() for event in history])
@@ -3442,14 +3448,14 @@ class DBHandler:
     ) -> List[HistoryEvent]:
         base_query = 'SELECT * FROM history_events '
         query_strings = []
-        query_params = []
+        query_params: List[Union[str, Timestamp]] = []
         if location is not None:
             query_strings.append('location=? ')
             query_params.append(location.serialize_for_db())
         if location_label is not None:
             query_strings.append('location_label=? ')
             query_params.append(location_label)
-        if None not in (from_ts, end_ts):
+        if from_ts is not None and end_ts is not None:
             query_strings.append('timestamp >= ? AND timestamp <= ? ')
             query_params.append(from_ts)
             query_params.append(end_ts)
@@ -3460,14 +3466,13 @@ class DBHandler:
             query_strings.append('timestamp <= ? ')
             query_params.append(end_ts)
         if type_in is not None:
-            query_strings.append(f'type in ({", ".join(["?" * len(type_in)])}) ')
+            query_strings.append(f'type in ({", ".join(["?"]* len(type_in))}) ')
             query_params.extend([x.serialize_for_db() for x in type_in])
 
         if len(query_strings) != 0:
             query_str = base_query + 'WHERE ' + 'AND '.join(query_strings)
         else:
             query_str = base_query
-
         cursor = self.conn.cursor()
         cursor.execute(query_str, query_params)
         data = [HistoryEvent.deserialize_from_db(entry) for entry in cursor.fetchall()]

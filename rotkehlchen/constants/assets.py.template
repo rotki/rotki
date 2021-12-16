@@ -19,6 +19,7 @@ A_KSM = Asset('KSM')
 A_AVAX = Asset('AVAX')
 A_DOGE = Asset('DOGE')
 A_BSQ = Asset('BSQ')
+A_KFEE = Asset('KFEE')
 
 
 A_BAL = EthereumToken('0xba100000625a3754423978a60c9317c58a424e3D')

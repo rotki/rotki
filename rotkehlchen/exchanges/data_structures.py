@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
-from rotkehlchen.accounting.structures import AssetBalance, HistoryEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.crypto import sha3
