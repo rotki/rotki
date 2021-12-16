@@ -1069,3 +1069,18 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
     result = assert_proper_response_with_result(response)
     some_pairs = {'ETHUSDC', 'BTCUSDC', 'BNBBTC', 'FTTBNB'}
     assert some_pairs.issubset(result)
+
+
+def test_binance_query_pairs_without_exchange(rotkehlchen_api_server):
+    """Test that the binance endpoint returns some market pairs when no
+    instance of the exchange has been created"""
+    server = rotkehlchen_api_server
+    response = requests.get(
+        api_url_for(
+            server,
+            'binanceavailablemarkets',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    some_pairs = {'ETHUSDC', 'BTCUSDC', 'BNBBTC', 'FTTBNB'}
+    assert some_pairs.issubset(result)

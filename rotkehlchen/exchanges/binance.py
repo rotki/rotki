@@ -4,18 +4,7 @@ import json
 import logging
 from collections import defaultdict
 from json.decoder import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    DefaultDict,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Type, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -29,7 +18,13 @@ from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade, TradeType
+from rotkehlchen.exchanges.data_structures import (
+    AssetMovement,
+    BinancePair,
+    MarginPosition,
+    Trade,
+    TradeType,
+)
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.fval import FVal
@@ -82,21 +77,13 @@ BINANCE_API_TYPE = Literal['api', 'sapi', 'dapi', 'fapi']
 BINANCE_BASE_URL = 'binance.com/'
 BINANCEUS_BASE_URL = 'binance.us/'
 BINANCE_MARKETS_KEY = 'PAIRS'
+symbols_to_pair: Dict[str, BinancePair] = {}
 
 
 class BinancePermissionError(RemoteError):
     """Exception raised when a binance permission problem is detected
 
     Example is when there is no margin account to query or insufficient api key permissions."""
-
-
-class BinancePair(NamedTuple):
-    """A binance pair. Contains the symbol in the Binance mode e.g. "ETHBTC" and
-    the base and quote assets of that symbol as parsed from exchangeinfo endpoint
-    result"""
-    symbol: str
-    binance_base_asset: str
-    binance_quote_asset: str
 
 
 def trade_from_binance(
@@ -170,20 +157,34 @@ def trade_from_binance(
 def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, BinancePair]:
     """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping
     """
-    symbols_to_pair: Dict[str, BinancePair] = {}
+    result: Dict[str, BinancePair] = {}
     for symbol in exchange_data['symbols']:
         symbol_str = symbol['symbol']
         if isinstance(symbol_str, FVal):
             # the to_int here may rase but should never due to the if check above
             symbol_str = str(symbol_str.to_int(exact=True))
 
-        symbols_to_pair[symbol_str] = BinancePair(
+        result[symbol_str] = BinancePair(
             symbol=symbol_str,
             binance_base_asset=symbol['baseAsset'],
             binance_quote_asset=symbol['quoteAsset'],
         )
 
-    return symbols_to_pair
+    return result
+
+
+def query_binance_exchange_pairs() -> Dict[str, BinancePair]:
+    global symbols_to_pair
+    if len(symbols_to_pair) != 0:
+        return symbols_to_pair
+    try:
+        data = requests.get('https://binance.com/api/v3/exchangeInfo')
+    except requests.exceptions.RequestException as e:
+        log.debug(f'Failed to obtain market pairs from binance. {str(e)}')
+        return {}
+    pairs = create_binance_symbols_to_pair(data.json())
+    symbols_to_pair = pairs
+    return pairs
 
 
 class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
@@ -235,7 +236,10 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         # If it's the first time, populate the binance pair trade symbols
         # We know exchangeInfo returns a dict
         exchange_data = self.api_query_dict('api', 'exchangeInfo')
-        self._symbols_to_pair = create_binance_symbols_to_pair(exchange_data)
+        if len(symbols_to_pair) == 0:
+            self._symbols_to_pair = create_binance_symbols_to_pair(exchange_data)
+        else:
+            self._symbols_to_pair = symbols_to_pair
 
         server_time = self.api_query_dict('api', 'time')
         self.offset_ms = server_time['serverTime'] - ts_now_in_ms()

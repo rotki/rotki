@@ -388,3 +388,12 @@ def trades_from_dictlist(
             continue
 
     return returned_trades
+
+
+class BinancePair(NamedTuple):
+    """A binance pair. Contains the symbol in the Binance mode e.g. "ETHBTC" and
+    the base and quote assets of that symbol as parsed from exchangeinfo endpoint
+    result"""
+    symbol: str
+    binance_base_asset: str
+    binance_quote_asset: str
