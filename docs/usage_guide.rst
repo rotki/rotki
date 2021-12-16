@@ -1370,6 +1370,19 @@ Before v1.6.0 rotki was saving data in ``$USER/.rotkehlchen``. From v1.6.0 that 
 
 A very good idea about the rotki data directory would be to be making frequent backups of it as it contains all of the data of all of your rotki accounts and cache data for historical price queries.
 
+Manually accessing the database
+*******************************
+
+It is possible that to detect potential problems with data or modify the state of the database the user needs to manually access it. To do so we recommend the usage of `DB Browser for SQLite <https://sqlitebrowser.org/dl/>`_.
+DB Browser for SQLite is an open source software that provides an accessible UI and brings two programs, one with the normal browser and another with the functionalities to access encrypted databases. You can download it
+for Windows, MacOS and Linux at the previous link.
+
+Once installed you have to start the program with the sqlcipher functionality and after that you need to select the rotki database. This database can be found in the :ref:`rotki data directory<rotki_data_directory>`. Once you open it, the program will
+ask for the password of the database. The password used for the database is the same as the one you use to unlock your rotki account.
+
+Once the database is unlocked you can browse the information in the ``Browse Data`` tab or execute custom SQL commands. Please be aware that manually modifying the information of the database can lead to inconsistent state. 
+So only run commands that you have double checked with our team there. Or use it without supervision only if you really know what you are doing. And always take backups of the database before you modify it.
+
 Troubleshooting
 *****************
 
