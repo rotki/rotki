@@ -2,7 +2,7 @@
   <fragment>
     <v-list-item
       :id="`${name}_box`"
-      data-cy="blockchain-balance-box__item"
+      :data-cy="`blockchain-balance-box__item__${name}`"
       class="blockchain-balance-box__item"
       to="/accounts-balances/blockchain-balances"
     >

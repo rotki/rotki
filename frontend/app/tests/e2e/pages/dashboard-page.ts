@@ -1,4 +1,5 @@
 import { BigNumber } from '@rotki/common';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 
 export class DashboardPage {
@@ -15,7 +16,7 @@ export class DashboardPage {
   getOverallBalance() {
     let overallBalance: BigNumber = Zero;
     const balance = cy
-      .get('.overall-balances__net-worth .amount-display__value')
+      .get('.overall-balances__net-worth [data-cy="display-amount"]')
       .then($amount => {
         overallBalance = bigNumberify(
           this.getSanitizedAmountString($amount.text())
@@ -28,31 +29,19 @@ export class DashboardPage {
 
   getBlockchainBalances() {
     const blockchainBalances = [
-      { blockchain: 'Ethereum', renderedValue: Zero },
-      { blockchain: 'Bitcoin', renderedValue: Zero }
+      { blockchain: 'Ethereum', symbol: Blockchain.ETH, renderedValue: Zero },
+      { blockchain: 'Bitcoin', symbol: Blockchain.BTC, renderedValue: Zero }
     ];
 
     blockchainBalances.forEach(blockchainBalance => {
-      cy.get('[data-cy="blockchain-balance-box__item"]').then($rows => {
-        if ($rows.text().includes(blockchainBalance.blockchain)) {
-          cy.get(
-            `[data-cy="blockchain-balance-box__item"]:contains(${blockchainBalance.blockchain})`
-          ).each($row => {
-            // loops over all blockchain asset balances rows and adds up the total per blockchain type
-            cy.wrap($row)
-              .find('.amount-display__value')
-              .then($amount => {
-                if (blockchainBalance.renderedValue === Zero) {
-                  blockchainBalance.renderedValue = bigNumberify(
-                    this.getSanitizedAmountString($amount.text())
-                  );
-                } else {
-                  blockchainBalance.renderedValue =
-                    blockchainBalance.renderedValue.plus(
-                      this.getSanitizedAmountString($amount.text())
-                    );
-                }
-              });
+      const rowClass = `.dashboard__summary-card__blockchain [data-cy="blockchain-balance-box__item__${blockchainBalance.blockchain}"]`;
+      cy.get('body').then($body => {
+        if ($body.find(rowClass).length > 0) {
+          cy.get(`${rowClass} [data-cy="display-amount"]`).each($amount => {
+            blockchainBalance.renderedValue =
+              blockchainBalance.renderedValue.plus(
+                bigNumberify(this.getSanitizedAmountString($amount.text()))
+              );
           });
         }
       });
@@ -62,9 +51,9 @@ export class DashboardPage {
   }
 
   getNonFungibleBalances() {
-    const balance = cy
+    return cy
       .get(
-        '[data-cy="nft-balance-table"] tbody tr:last-child td:nth-child(2) > .amount-display > .v-skeleton-loader .amount-display__value'
+        '[data-cy="nft-balance-table"] tbody tr:last-child td:nth-child(2) [data-cy="display-amount"]'
       )
       .then($amount => {
         if ($amount.length > 0) {
@@ -72,49 +61,29 @@ export class DashboardPage {
         }
         return Zero;
       });
-
-    return balance;
   }
 
   getLocationBalances() {
     const balanceLocations = [
-      { location: 'Blockchain', renderedValue: Zero },
-      { location: 'Banks', renderedValue: Zero },
-      { location: 'External', renderedValue: Zero },
-      { location: 'Commodities', renderedValue: Zero },
-      { location: 'Real estate', renderedValue: Zero },
-      { location: 'Equities', renderedValue: Zero }
+      { location: 'blockchain', renderedValue: Zero },
+      { location: 'banks', renderedValue: Zero },
+      { location: 'external', renderedValue: Zero },
+      { location: 'commodities', renderedValue: Zero },
+      { location: 'real estate', renderedValue: Zero },
+      { location: 'equities', renderedValue: Zero }
     ];
 
     balanceLocations.forEach(balanceLocation => {
-      cy.get('.dashboard__summary-card__manual .manual-balance-box__item').then(
-        $rows => {
-          if ($rows.text().includes(balanceLocation.location)) {
-            cy.get(
-              `.dashboard__summary-card__manual .manual-balance-box__item:contains(${balanceLocation.location})`
-            ).each($row => {
-              // loops over all manual balances rows and adds up the total per location
-              // TODO: extract the replace(',', '') as to use user settings (when implemented)
-              cy.wrap($row)
-                .find('.amount-display__value')
-                .then($amount => {
-                  if (balanceLocation.renderedValue === Zero) {
-                    balanceLocation.renderedValue = bigNumberify(
-                      this.getSanitizedAmountString($amount.text())
-                    );
-                  } else {
-                    balanceLocation.renderedValue =
-                      balanceLocation.renderedValue.plus(
-                        bigNumberify(
-                          this.getSanitizedAmountString($amount.text())
-                        )
-                      );
-                  }
-                });
-            });
-          }
+      const rowClass = `.dashboard__summary-card__manual [data-cy="manual-balance-box__item__${balanceLocation.location}"]`;
+      cy.get('body').then($body => {
+        if ($body.find(rowClass).length > 0) {
+          cy.get(`${rowClass} [data-cy="display-amount"]`).each($amount => {
+            balanceLocation.renderedValue = balanceLocation.renderedValue.plus(
+              bigNumberify(this.getSanitizedAmountString($amount.text()))
+            );
+          });
         }
-      );
+      });
     });
 
     return cy.wrap(balanceLocations);

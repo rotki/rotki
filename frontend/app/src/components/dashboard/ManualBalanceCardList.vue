@@ -2,6 +2,7 @@
   <v-list-item
     :id="`${name}_box`"
     :ripple="false"
+    :data-cy="`manual-balance-box__item__${name}`"
     class="manual-balance-box__item"
     to="/accounts-balances/manual-balances"
   >

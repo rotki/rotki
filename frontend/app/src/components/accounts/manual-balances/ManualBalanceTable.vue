@@ -21,6 +21,7 @@
       :loading="loading"
       :headers="headers"
       :items="visibleBalances"
+      :item-class="getRowClass"
       class="manual-balances-list"
       sort-by="usdValue"
     >
@@ -60,6 +61,7 @@
         <location-display
           class="manual-balances-list__location"
           :identifier="item.location"
+          :data-cy="`manual-balances__location__${item.location}`"
         />
       </template>
       <template #item.actions="{ item }">
@@ -226,6 +228,10 @@ const ManualBalanceTable = defineComponent({
       );
     });
 
+    const getRowClass = (item: ManualBalance) => {
+      return `manual-balance__location__${item.location}`;
+    };
+
     return {
       refresh,
       edit,
@@ -235,6 +241,7 @@ const ManualBalanceTable = defineComponent({
       total,
       currency,
       visibleBalances,
+      getRowClass,
       pendingDeletion
     };
   }

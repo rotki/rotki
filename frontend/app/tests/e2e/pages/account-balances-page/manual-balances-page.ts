@@ -103,41 +103,26 @@ export class ManualBalancesPage extends AccountBalancesPage {
 
   getLocationBalances() {
     const balanceLocations = [
-      { location: 'Blockchain', renderedValue: Zero },
-      { location: 'Banks', renderedValue: Zero },
-      { location: 'External', renderedValue: Zero },
-      { location: 'Commodities', renderedValue: Zero },
-      { location: 'Real estate', renderedValue: Zero },
-      { location: 'Equities', renderedValue: Zero }
+      { location: 'blockchain', renderedValue: Zero },
+      { location: 'banks', renderedValue: Zero },
+      { location: 'external', renderedValue: Zero },
+      { location: 'commodities', renderedValue: Zero },
+      { location: 'real estate', renderedValue: Zero },
+      { location: 'equities', renderedValue: Zero }
     ];
 
     balanceLocations.forEach(balanceLocation => {
-      cy.get('[data-cy="manual-balances"] tr').then($rows => {
-        if ($rows.text().includes(balanceLocation.location)) {
-          cy.get(
-            `[data-cy="manual-balances"] tr:contains(${balanceLocation.location})`
-          ).each($row => {
-            // loops over all manual balances rows and adds up the total per location
-            // TODO: extract the replace(',', '') as to use user settings (when implemented)
-            cy.wrap($row)
-              .find(
-                ':nth-child(5) > .amount-display > .v-skeleton-loader .amount-display__value'
-              )
-              .then($amount => {
-                if (balanceLocation.renderedValue === Zero) {
-                  balanceLocation.renderedValue = bigNumberify(
-                    this.getSanitizedAmountString($amount.text())
-                  );
-                } else {
-                  balanceLocation.renderedValue =
-                    balanceLocation.renderedValue.plus(
-                      bigNumberify(
-                        this.getSanitizedAmountString($amount.text())
-                      )
-                    );
-                }
-              });
-          });
+      const rowClass = `.manual-balance__location__${balanceLocation.location}`;
+      cy.get('body').then($body => {
+        if ($body.find(rowClass).length > 0) {
+          cy.get(`${rowClass} td:nth-child(5) [data-cy="display-amount"]`).each(
+            $amount => {
+              balanceLocation.renderedValue =
+                balanceLocation.renderedValue.plus(
+                  bigNumberify(this.getSanitizedAmountString($amount.text()))
+                );
+            }
+          );
         }
       });
     });
