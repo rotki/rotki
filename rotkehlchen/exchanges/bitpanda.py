@@ -17,7 +17,7 @@ from rotkehlchen.constants.assets import A_BEST
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade, TradeType
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
@@ -27,9 +27,8 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_int_from_str,
-    deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -249,7 +248,7 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 return None
 
-            trade_type = deserialize_trade_type(entry['attributes']['type'])
+            trade_type = TradeType.deserialize(entry['attributes']['type'])
             if trade_type in (TradeType.BUY, TradeType.SELL):
                 # you buy crypto with fiat and sell it for fiat
                 base_asset = crypto_asset

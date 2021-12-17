@@ -5,7 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.constants.assets import A_DAI
-from rotkehlchen.history.events import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.constants.limits import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,

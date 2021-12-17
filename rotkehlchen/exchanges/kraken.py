@@ -39,9 +39,8 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_timestamp_from_kraken,
-    deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, Location, Timestamp, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -132,7 +131,7 @@ def trade_from_kraken(kraken_trade: Dict[str, Any]) -> Optional[Trade]:
     amount = deserialize_asset_amount(kraken_trade['vol'])
     cost = deserialize_price(kraken_trade['cost'])
     fee = deserialize_fee(kraken_trade['fee'])
-    order_type = deserialize_trade_type(kraken_trade['type'])
+    order_type = TradeType.deserialize(kraken_trade['type'])
     rate = deserialize_price(kraken_trade['price'])
 
     # pylint does not seem to see that Price is essentially FVal

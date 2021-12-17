@@ -9,13 +9,18 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.chain.ethereum.graph import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.constants.limits import LIMITS_MAPPING
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
-from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, ExchangeManager
+from rotkehlchen.exchanges.manager import (
+    ALL_SUPPORTED_EXCHANGES,
+    SUPPORTED_EXCHANGES,
+    ExchangeManager,
+)
 from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -53,7 +58,7 @@ log = RotkehlchenLogsAdapter(logger)
 # liquity
 # Please, update this number each time a history query step is either added or removed
 NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 10 + len(EXTERNAL_LOCATION) + len(AMMTradeLocations)
-FREE_LEDGER_ACTIONS_LIMIT = 50
+
 
 HistoryResult = Tuple[
     str,
@@ -64,16 +69,8 @@ HistoryResult = Tuple[
     List['DefiEvent'],
     List['LedgerAction'],
 ]
-TRADES_LIST = List[Union[Trade, AMMTrade]]
-
-FREE_TRADES_LIMIT = 250
-FREE_ASSET_MOVEMENTS_LIMIT = 100
-
-LIMITS_MAPPING = {
-    'trade': FREE_TRADES_LIMIT,
-    'asset_movement': FREE_ASSET_MOVEMENTS_LIMIT,
-    'ledger_action': FREE_LEDGER_ACTIONS_LIMIT,
-}
+# TRADES_LIST = List[Union[Trade, AMMTrade]]
+TRADES_LIST = List[Trade]
 
 
 def limit_trade_list_to_period(
@@ -266,13 +263,38 @@ class EventsHistorian():
 
         return actions, original_length
 
+    def _query_services_for_trades(self, filter_query: TradesFilterQuery) -> None:
+        """Queries all services requested for trades and writes them to the DB"""
+        location = filter_query.location
+        from_ts = filter_query.from_ts
+        to_ts = filter_query.to_ts
+
+        if location is not None:
+            self.query_location_latest_trades(location=location, from_ts=from_ts, to_ts=to_ts)
+            return
+
+        # else query all CEXes and all AMMs
+        for exchange in self.exchange_manager.iterate_exchanges():
+            exchange.query_trade_history(
+                start_ts=from_ts,
+                end_ts=to_ts,
+                only_cache=False,
+            )
+
+        # for all trades we also need the trades from the amm protocols
+        if self.chain_manager.premium is not None:
+            for amm_location in AMMTradeLocations:
+                self.query_location_latest_trades(
+                    location=amm_location,
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                )
+
     def query_trades(
             self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-            location: Optional[Location],
+            filter_query: TradesFilterQuery,
             only_cache: bool,
-    ) -> TRADES_LIST:
+    ) -> Tuple[TRADES_LIST, int]:
         """Queries trades for the given location and time range.
         If no location is given then all external, all exchange and DEX trades are queried.
 
@@ -282,129 +304,55 @@ class EventsHistorian():
         DEX Trades are queried only if the user has premium
         If the user does not have premium then a trade limit is applied.
 
+        Returns all trades and the full amount of trades that got found for the filter.
+        May be less than returned trades if user is non premium.
+
         May raise:
         - RemoteError: If there are problems connecting to any of the remote exchanges
         """
-        trades: TRADES_LIST
-        if location is not None:
-            # clear the trades queried for this location
-            self.actions_per_location['trade'][location] = 0
-            trades = self.query_location_trades(from_ts, to_ts, location, only_cache)
-        else:
-            for given_location in ALL_SUPPORTED_EXCHANGES + [Location.EXTERNAL]:
-                # clear the trades queried for this location
-                self.actions_per_location['trade'][given_location] = 0
-            trades = self.query_location_trades(from_ts, to_ts, Location.EXTERNAL, only_cache)
-            # Look for trades that might be imported from CSV files
-            for csv_location in self.locations_from_csv():
-                trades.extend(self.query_location_trades(
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                    location=csv_location,
-                    only_cache=only_cache,
-                ))
+        if only_cache is not True:
+            self._query_services_for_trades(filter_query)
 
-            for exchange in self.exchange_manager.iterate_exchanges():
-                all_set = {x.identifier for x in trades}
-                exchange_trades = exchange.query_trade_history(
-                    start_ts=from_ts,
-                    end_ts=to_ts,
-                    only_cache=only_cache,
-                )
-                # TODO: Really dirty. Figure out a better way.
-                # Since some of the trades may already be in the DB if multiple
-                # keys are used for a single exchange.
-                exchange_trades = [x for x in exchange_trades if x.identifier not in all_set]
-                if self.chain_manager.premium is None:
-                    trades = self._apply_actions_limit(
-                        location=exchange.location,
-                        action_type='trade',
-                        location_actions=exchange_trades,
-                        all_actions=trades,
-                    )
-                else:
-                    trades.extend(exchange_trades)
+        has_premium = self.chain_manager.premium is not None
+        trades, filter_total_found = self.db.get_trades_and_limit_info(
+            filter_query=filter_query,
+            has_premium=has_premium,
+        )
+        return trades, filter_total_found
 
-            # for all trades we also need the trades from the amm protocols
-            if self.chain_manager.premium is not None:
-                for amm_location in AMMTradeLocations:
-                    amm_module_name = cast(AMMTRADE_LOCATION_NAMES, str(amm_location))
-                    amm_module = self.chain_manager.get_module(amm_module_name)
-                    if amm_module is not None:
-                        trades.extend(
-                            amm_module.get_trades(
-                                addresses=self.chain_manager.queried_addresses_for_module(amm_module_name),  # noqa: E501
-                                from_timestamp=from_ts,
-                                to_timestamp=to_ts,
-                                only_cache=only_cache,
-                            ),
-                        )
-        # return trades with most recent first
-        trades.sort(key=lambda x: x.timestamp, reverse=True)
-        return trades
-
-    def query_location_trades(
+    def query_location_latest_trades(
             self,
+            location: Location,
             from_ts: Timestamp,
             to_ts: Timestamp,
-            location: Location,
-            only_cache: bool,
-    ) -> TRADES_LIST:
-        location_trades: TRADES_LIST
-        if location in EXTERNAL_LOCATION:
-            location_trades = self.db.get_trades(  # type: ignore  # list invariance
-                from_ts=from_ts,
-                to_ts=to_ts,
-                location=location,
-            )
-        elif location in AMMTradeLocations:
+    ) -> None:
+        """Queries the service of a specific location for latest trades and saves them in the DB.
+        May raise:
+
+        - RemoteError if there is a problem with reaching the service
+        """
+        if location in AMMTradeLocations:
             if self.chain_manager.premium is not None:
                 amm_module_name = cast(AMMTRADE_LOCATION_NAMES, str(location))
                 amm_module = self.chain_manager.get_module(amm_module_name)
                 if amm_module is not None:
-                    location_trades = amm_module.get_trades(  # type: ignore  # list invariance
+                    amm_module.get_trades(
                         addresses=self.chain_manager.queried_addresses_for_module(amm_module_name),
                         from_timestamp=from_ts,
                         to_timestamp=to_ts,
-                        only_cache=only_cache,
+                        only_cache=False,
                     )
-        else:
-            # should only be an exchange
+        elif location in SUPPORTED_EXCHANGES:
             exchanges_list = self.exchange_manager.connected_exchanges.get(location)
-            location_trades = []
             if exchanges_list is None:
-                # Try to get imported trades for exchanges not connected
-                location_trades = self.db.get_trades(  # type: ignore  # list invariance
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                    location=location,
+                return
+
+            for exchange in exchanges_list:
+                exchange.query_trade_history(
+                    start_ts=from_ts,
+                    end_ts=to_ts,
+                    only_cache=False,
                 )
-            else:
-                for exchange in exchanges_list:
-                    all_set = {x.identifier for x in location_trades}
-                    new_trades = exchange.query_trade_history(
-                        start_ts=from_ts,
-                        end_ts=to_ts,
-                        only_cache=only_cache,
-                    )
-                    # TODO: Really dirty. Figure out a better way.
-                    # Since some of the trades may already be in the DB if multiple
-                    # keys are used for a single exchange.
-                    new_trades = [x for x in new_trades if x.identifier not in all_set]
-                    location_trades.extend(new_trades)
-
-        trades: TRADES_LIST = []
-        if self.chain_manager.premium is None:
-            trades = self._apply_actions_limit(
-                location=location,
-                action_type='trade',
-                location_actions=location_trades,
-                all_actions=trades,
-            )
-        else:
-            trades = location_trades
-
-        return trades
 
     def _query_and_populate_exchange_asset_movements(
             self,
@@ -616,12 +564,9 @@ class EventsHistorian():
         # Include all external trades and trades from external exchanges
         for location in EXTERNAL_LOCATION:
             self.processing_state_name = f'Querying {location} trades history'
-            external_trades = self.query_location_trades(
-                # We need to have history of trades since before the range
-                from_ts=Timestamp(0),
-                to_ts=end_ts,
-                location=location,
-                only_cache=True,
+            external_trades = self.db.get_trades(
+                filter_query=TradesFilterQuery.make(location=location),
+                has_premium=True,  # we need all trades for accounting -- limit happens later
             )
             history.extend(external_trades)
             step = self._increase_progress(step, total_steps)

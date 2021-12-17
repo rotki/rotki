@@ -92,6 +92,7 @@ from rotkehlchen.api.v1.encoding import (
     TradeDeleteSchema,
     TradePatchSchema,
     TradeSchema,
+    TradesQuerySchema,
     UserActionSchema,
     UserPasswordChangeSchema,
     UserPremiumSyncSchema,
@@ -585,7 +586,7 @@ class ManuallyTrackedBalancesResource(BaseResource):
 
 class TradesResource(BaseResource):
 
-    get_schema = TimerangeLocationCacheQuerySchema()
+    get_schema = TradesQuerySchema()
     put_schema = TradeSchema()
     patch_schema = TradePatchSchema()
     delete_schema = TradeDeleteSchema()
@@ -593,18 +594,14 @@ class TradesResource(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')
     def get(
             self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            location: Optional[Location],
             async_query: bool,
             only_cache: bool,
+            filter_query: TradesQuerySchema,
     ) -> Response:
         return self.rest_api.get_trades(
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-            location=location,
             async_query=async_query,
             only_cache=only_cache,
+            filter_query=filter_query,
         )
 
     @use_kwargs(put_schema, location='json')

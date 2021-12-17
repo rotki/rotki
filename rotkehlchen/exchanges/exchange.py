@@ -6,6 +6,7 @@ import requests
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
@@ -245,10 +246,14 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         only what is already saved in the DB without performing an exchange query
         """
         log.debug(f'Querying trade history for {self.name} exchange')
-        trades = self.db.get_trades(
+        filter_query = TradesFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
             location=self.location,
+        )
+        trades = self.db.get_trades(
+            filter_query=filter_query,
+            has_premium=True,  # this is okay since the returned trades don't make it to the user
         )
         if only_cache:
             return trades

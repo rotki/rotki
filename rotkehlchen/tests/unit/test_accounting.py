@@ -517,7 +517,7 @@ def test_settlement_buy(accountant):
         'timestamp': 1484629704,  # 17/01/2017
         'base_asset': 'DASH',  # DASH/EUR price: 12.88
         'quote_asset': 'BTC',
-        'trade_type': 'settlement_buy',  # Buy DASH with BTC to settle. Essentially BTC loss
+        'trade_type': 'settlement buy',  # Buy DASH with BTC to settle. Essentially BTC loss
         'rate': 0.015855,  # BTC/EUR price: 810.49
         'fee': 0.15,
         'fee_currency': 'DASH',

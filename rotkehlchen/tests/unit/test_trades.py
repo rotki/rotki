@@ -12,8 +12,8 @@ from rotkehlchen.utils.serialization import rlk_jsondumps
 def test_trade_type_to_string():
     assert str(TradeType.BUY) == 'buy'
     assert str(TradeType.SELL) == 'sell'
-    assert str(TradeType.SETTLEMENT_BUY) == 'settlement_buy'
-    assert str(TradeType.SETTLEMENT_SELL) == 'settlement_sell'
+    assert str(TradeType.SETTLEMENT_BUY) == 'settlement buy'
+    assert str(TradeType.SETTLEMENT_SELL) == 'settlement sell'
 
 
 raw_trade1 = {

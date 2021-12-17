@@ -27,7 +27,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_timestamp_from_date,
-    deserialize_trade_type,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -38,6 +37,7 @@ from rotkehlchen.typing import (
     Location,
     Price,
     Timestamp,
+    TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -76,7 +76,7 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
         raw_time = raw_trade['payout_at']
 
     timestamp = deserialize_timestamp_from_date(raw_time, 'iso8601', 'coinbase')
-    trade_type = deserialize_trade_type(raw_trade['resource'])
+    trade_type = TradeType.deserialize(raw_trade['resource'])
     tx_amount = deserialize_asset_amount(raw_trade['amount']['amount'])
     tx_asset = asset_from_coinbase(raw_trade['amount']['currency'], time=timestamp)
     native_amount = deserialize_asset_amount(raw_trade['subtotal']['amount'])
@@ -119,7 +119,6 @@ def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> O
         trade_a, trade_b = trade_b, trade_a
 
     timestamp = deserialize_timestamp_from_date(trade_a['updated_at'], 'iso8601', 'coinbase')
-    trade_type = deserialize_trade_type('sell')
     tx_amount = AssetAmount(abs(deserialize_asset_amount(trade_a['amount']['amount'])))
     tx_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
     native_amount = deserialize_asset_amount(trade_b['amount']['amount'])
@@ -148,7 +147,7 @@ def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> O
         # in coinbase you are buying/selling tx_asset for native_asset
         base_asset=tx_asset,
         quote_asset=native_asset,
-        trade_type=trade_type,
+        trade_type=TradeType.SELL,
         amount=amount,
         rate=rate,
         fee=fee_amount,

@@ -3,10 +3,11 @@ from dataclasses import dataclass
 from typing import Any, List, NamedTuple, Optional, Tuple, Union, cast
 
 from rotkehlchen.accounting.typing import SchemaEventType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, Timestamp
-from rotkehlchen.utils.misc import hexstring_to_bytes
+from rotkehlchen.typing import ChecksumEthAddress, Location, Timestamp, TradeType
+from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -178,7 +179,6 @@ class DBFilterQuery():
             order_by_attribute: Optional[str] = None,
             order_ascending: bool = True,
     ) -> 'DBFilterQuery':
-        # if None in (limit, offset):
         if limit is None or offset is None:
             pagination = None
         else:
@@ -282,6 +282,112 @@ class ETHTransactionsFilterQuery(DBFilterQuery):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBAssetFilter(DBFilter):
+    asset: Asset
+    asset_key: str
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        return [f'{self.asset_key}=?'], [self.asset.identifier]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBTradeTypeFilter(DBFilter):
+    trade_type: TradeType
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        return ['type=?'], [self.trade_type.serialize_for_db()]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBLocationFilter(DBFilter):
+    location: Location
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        return ['location=?'], [self.location.serialize_for_db()]
+
+
+class TradesFilterQuery(DBFilterQuery):
+
+    @property
+    def timestamp_filter(self) -> DBTimestampFilter:
+        if len(self.filters) >= 2 and isinstance(self.filters[1], DBTimestampFilter):
+            return self.filters[1]
+        return DBTimestampFilter(and_op=True, timestamp_attribute='time')
+
+    @property
+    def location(self) -> Optional[Location]:
+        for _filter in self.filters:
+            if isinstance(_filter, DBLocationFilter):
+                return _filter.location
+        return None
+
+    @property
+    def from_ts(self) -> Timestamp:
+        if self.timestamp_filter.from_ts is None:
+            return Timestamp(0)
+
+        return self.timestamp_filter.from_ts
+
+    @from_ts.setter
+    def from_ts(self, from_ts: Optional[Timestamp]) -> None:
+        self.timestamp_filter.from_ts = from_ts
+
+    @property
+    def to_ts(self) -> Timestamp:
+        if self.timestamp_filter.to_ts is None:
+            return ts_now()
+
+        return self.timestamp_filter.to_ts
+
+    @to_ts.setter
+    def to_ts(self, to_ts: Optional[Timestamp]) -> None:
+        self.timestamp_filter.to_ts = to_ts
+
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            order_by_attribute: str = 'time',
+            order_ascending: bool = True,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            base_asset: Optional[Asset] = None,
+            quote_asset: Optional[Asset] = None,
+            trade_type: Optional[TradeType] = None,
+            location: Optional[Location] = None,
+    ) -> 'TradesFilterQuery':
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+            order_by_attribute=order_by_attribute,
+            order_ascending=order_ascending,
+        )
+        filters: List[DBFilter] = []
+        if base_asset is not None:
+            filters.append(DBAssetFilter(and_op=True, asset=base_asset, asset_key='base_asset'))
+        if quote_asset is not None:
+            filters.append(DBAssetFilter(and_op=True, asset=quote_asset, asset_key='quote_asset'))
+        if trade_type is not None:
+            filters.append(DBTradeTypeFilter(and_op=True, trade_type=trade_type))
+        if location is not None:
+            filters.append(DBLocationFilter(and_op=True, location=location))
+
+        filters.append(
+            DBTimestampFilter(
+                and_op=True,
+                from_ts=from_ts,
+                to_ts=to_ts,
+                timestamp_attribute='time',
+            ),
+        )
+        filter_query.filters = filters
+        return cast('TradesFilterQuery', filter_query)
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class ReportDataFilterQuery(DBFilterQuery):
 
     @property
@@ -317,7 +423,10 @@ class ReportDataFilterQuery(DBFilterQuery):
         return event_type_filter.event_type
 
     @property
-    def from_ts(self) -> Optional[Timestamp]:
+    def from_ts(self) -> Timestamp:
+        if self.timestamp_filter.from_ts is None:
+            return Timestamp(0)
+
         return self.timestamp_filter.from_ts
 
     @from_ts.setter
@@ -325,7 +434,10 @@ class ReportDataFilterQuery(DBFilterQuery):
         self.timestamp_filter.from_ts = from_ts
 
     @property
-    def to_ts(self) -> Optional[Timestamp]:
+    def to_ts(self) -> Timestamp:
+        if self.timestamp_filter.to_ts is None:
+            return ts_now()
+
         return self.timestamp_filter.to_ts
 
     @to_ts.setter

@@ -30,9 +30,8 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_timestamp_from_date,
-    deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp
 
@@ -100,7 +99,7 @@ def trade_from_bitcoinde(raw_trade: Dict) -> Trade:
             'bitcoinde',
         )
 
-    trade_type = deserialize_trade_type(raw_trade['type'])
+    trade_type = TradeType.deserialize(raw_trade['type'])
     tx_amount = deserialize_asset_amount(raw_trade['amount_currency_to_trade'])
     native_amount = deserialize_asset_amount(raw_trade['volume_currency_to_pay'])
     tx_asset, native_asset = bitcoinde_pair_to_world(raw_trade['trading_pair'])

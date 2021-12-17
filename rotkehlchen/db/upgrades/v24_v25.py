@@ -13,8 +13,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.exchanges.data_structures import hash_id
-from rotkehlchen.serialization.deserialize import deserialize_trade_type_from_db
-from rotkehlchen.typing import AssetMovementCategory, Location
+from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -342,7 +341,7 @@ class V24V25UpgradeHelper():
             new_trade_id_string = (
                 str(Location.deserialize_from_db(entry[2])) +
                 str(timestamp) +
-                str(deserialize_trade_type_from_db(entry[4])) +
+                str(TradeType.deserialize_from_db(entry[4])) +
                 new_base +
                 new_quote +
                 amount +

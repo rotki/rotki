@@ -303,7 +303,7 @@ def test_query_transactions_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='no such column: tim3',
+        contained_in_msg='order_by_attribute for transactions can not be tim3',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

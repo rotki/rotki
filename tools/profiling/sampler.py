@@ -20,7 +20,7 @@ from .timer import TIMER, TIMER_SIGNAL, Timer
 # - Experiment with heapy or PySizer for memory profiling / leak hunting
 
 FlameStack = NewType("FlameStack", str)
-FlameGraph = Dict[FlameStack, int]
+FlameGraph = Dict[FlameStack, float]
 
 
 def frame_format(frame: FrameType) -> str:
@@ -44,7 +44,7 @@ def flamegraph_format(stack_count: FlameGraph) -> str:
     return "\n".join("%s %d" % (key, value) for key, value in sorted(stack_count.items()))
 
 
-def sample_stack(stack_count: FlameGraph, frame: FrameType, timespent) -> None:
+def sample_stack(stack_count: FlameGraph, frame: FrameType, timespent: float) -> None:
     callstack = collect_frames(frame)
 
     formatted_stack = FlameStack(";".join(callstack))
@@ -81,7 +81,7 @@ class FlameGraphCollector:
 
     def __init__(self, stack_stream: IO) -> None:
         self.stack_stream = stack_stream
-        self.stack_count: FlameGraph = collections.defaultdict(int)
+        self.stack_count: FlameGraph = collections.defaultdict(float)
 
         # Correct the flamegraph proportionally to the time spent in the
         # function call. This is important for functions which are considerably

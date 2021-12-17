@@ -287,14 +287,15 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             'offset': 0,
         }
         if start_ts != Timestamp(0):
-            db_trades = self.db.get_trades(
-                to_ts=start_ts,
-                location=Location.BITSTAMP,
-            )
-            # NB: sort trades by int(link) in asc mode. Type ignore is since we always got a link
-            db_trades.sort(key=lambda trade: int(trade.link))  # type: ignore
-            if db_trades:
-                options.update({'since_id': int(db_trades[-1].link) + 1})  # type: ignore
+            # Get latest link from the DB to know where to resume from
+            cursor = self.db.conn.cursor()
+            query_result = cursor.execute(
+                'SELECT link FROM trades WHERE location=? AND time <= ? ORDER BY time DESC LIMIT 1',  # noqa: E501
+                (Location.BITSTAMP.serialize_for_db(), start_ts),
+            ).fetchone()
+            if query_result is not None:
+                since_id = int(query_result[0]) + 1
+                options.update({'since_id': since_id})
 
         trades: List[Trade] = self._api_query_paginated(
             start_ts=start_ts,

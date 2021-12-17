@@ -1,9 +1,10 @@
 from enum import Enum
-from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Type, Union
 
 from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
+from rotkehlchen.errors import DeserializationError  # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
@@ -296,35 +297,35 @@ class SupportedBlockchain(Enum):
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
 
-class TradeType(Enum):
+class TradeType(DBEnumMixIn):
     BUY = 1
     SELL = 2
     SETTLEMENT_BUY = 3
     SETTLEMENT_SELL = 4
 
-    def __str__(self) -> str:
-        if self == TradeType.BUY:
-            return 'buy'
-        if self == TradeType.SELL:
-            return 'sell'
-        if self == TradeType.SETTLEMENT_BUY:
-            return 'settlement_buy'
-        if self == TradeType.SETTLEMENT_SELL:
-            return 'settlement_sell'
-        # else
-        raise RuntimeError(f'Corrupt value {self} for TradeType -- Should never happen')
+    @classmethod
+    def deserialize(cls: Type['TradeType'], symbol: str) -> 'TradeType':
+        """Overriding deserialize here since it can have different wordings for the same type
+        so the automatic deserialization does not work
+        """
+        if not isinstance(symbol, str):
+            raise DeserializationError(
+                f'Failed to deserialize trade type symbol from {type(symbol)} entry',
+            )
 
-    def serialize_for_db(self) -> str:
-        if self == TradeType.BUY:
-            return 'A'
-        if self == TradeType.SELL:
-            return 'B'
-        if self == TradeType.SETTLEMENT_BUY:
-            return 'C'
-        if self == TradeType.SETTLEMENT_SELL:
-            return 'D'
+        if symbol in ('buy', 'LIMIT_BUY', 'BUY', 'Buy'):
+            return TradeType.BUY
+        if symbol in ('sell', 'LIMIT_SELL', 'SELL', 'Sell'):
+            return TradeType.SELL
+        if symbol in ('settlement_buy', 'settlement buy'):
+            return TradeType.SETTLEMENT_BUY
+        if symbol in ('settlement_sell', 'settlement sell'):
+            return TradeType.SETTLEMENT_SELL
+
         # else
-        raise RuntimeError(f'Corrupt value {self} for TradeType -- Should never happen')
+        raise DeserializationError(
+            f'Failed to deserialize trade type symbol. Unknown symbol {symbol} for trade type',
+        )
 
 
 class Location(DBEnumMixIn):
