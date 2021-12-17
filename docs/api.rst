@@ -3438,10 +3438,10 @@ Dealing with trades
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson string location: Optionally filter trades by location. A valid location name has to be provided. If missing location filtering does not happen.
-   :param int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
-   :param int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
-   :param string location: Optionally filter trades by location. A valid location name has to be provided. If missing location filtering does not happen.
-   :param bool only_cache: Optional.If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
+   :reqjson string base_asset: Optionally filter trades by base_asset. A valid asset identifier has to be provided. If missing trades are not filtered by base asset.
+   :reqjson string quote_asset: Optionally filter trades by quote_asset. A valid asset identifier has to be provided. If missing trades are not filtered by quote asset.
+   :reqjson string trade_type: Optionally filter trades by type. A valid trade type (buy, sell) has to be provided. If missing trades are not filtered by type.
+   :reqjson bool only_cache: Optional.If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
 
    .. _trades_schema_section:
 
@@ -3489,8 +3489,9 @@ Dealing with trades
    :resjsonarr string fee_currency: Optional. The currency in which ``fee`` is denominated in.
    :resjsonarr string link: Optional unique trade identifier or link to the trade.
    :resjsonarr string notes: Optional notes about the trade.
-   :resjson int entries_found: The amount of trades found for the user. That disregards the filter and shows all trades found.
-   :resjson int entries_limit: The trades limit for the account tier of the user. If unlimited then -1 is returned.
+   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :resjson int entries_limit: The limit of entries if free version. -1 for premium.
+   :resjson int entries_total: The number of total entries ignoring all filters.
    :statuscode 200: Trades are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.

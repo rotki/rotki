@@ -52,6 +52,7 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
+from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
@@ -2403,6 +2404,7 @@ class DBHandler:
                 'trades',
                 'ethereum_transactions',
                 'amm_swaps',
+                'combined_trades_view',
                 'ledger_actions',
             ],
             op: Literal['OR', 'AND'] = 'OR',
@@ -2557,7 +2559,26 @@ class DBHandler:
         self.update_last_write()
         return True, ''
 
-    def get_trades(self, filter_query: TradesFilterQuery) -> List[Trade]:
+    def get_trades_and_limit_info(
+            self,
+            filter_query: TradesFilterQuery,
+            has_premium: bool,
+    ) -> Tuple[List[Trade], int]:
+        """Gets all trades for the query from the DB
+
+        Also returns how many are the total found for the filter
+        """
+        trades = self.get_trades(filter_query=filter_query, has_premium=has_premium)
+        if has_premium:
+            return trades, len(trades)
+
+        cursor = self.conn.cursor()
+        query, bindings = filter_query.prepare()
+        query = 'SELECT COUNT(*) from combined_trades_view ' + query
+        total_found_result = cursor.execute(query, bindings)
+        return trades, total_found_result.fetchone()[0]
+
+    def get_trades(self, filter_query: TradesFilterQuery, has_premium: bool) -> List[Trade]:
         """Returns a list of trades optionally filtered by various filters.
 
         This will also take into account AMMSwaps and return them as trades via a view.
@@ -2565,8 +2586,12 @@ class DBHandler:
         The returned list is ordered according to the passed filter query"""
         cursor = self.conn.cursor()
         query, bindings = filter_query.prepare()
-        query = 'SELECT * from combined_trades_view ' + query
-        results = cursor.execute(query, bindings)
+        if has_premium:
+            query = 'SELECT * from combined_trades_view ' + query
+            results = cursor.execute(query, bindings)
+        else:
+            query = 'SELECT * FROM (SELECT * from combined_trades_view ORDER BY time DESC LIMIT ?) ' + query  # noqa: E501
+            results = cursor.execute(query, [FREE_TRADES_LIMIT] + bindings)
 
         trades = []
         for result in results:

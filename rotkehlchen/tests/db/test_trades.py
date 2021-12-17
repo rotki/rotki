@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_GNO, A_UNI, A_USDC
@@ -159,7 +161,7 @@ def test_query_trades_including_ammswaps(data_dir, username):
             address='0xfoo',
             from_address='0xfrom',
             to_address='0xto',
-            timestamp=10,
+            timestamp=11,
             location=Location.UNISWAP,
             token0=A_GNO,
             token1=A_USDC,
@@ -201,7 +203,7 @@ def test_query_trades_including_ammswaps(data_dir, username):
             address='0xfoo',
             from_address='0xfrom',
             to_address='0xto',
-            timestamp=16,
+            timestamp=14,
             location=Location.SUSHISWAP,
             token0=A_USDC,
             token1=A_GNO,
@@ -306,7 +308,7 @@ def test_query_trades_including_ammswaps(data_dir, username):
     )
 
     # Get all trades
-    returned_trades = data.db.get_trades(filter_query=TradesFilterQuery.make())
+    returned_trades = data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
     assert len(returned_trades) == 10
     assert returned_trades[0] == trades[0]
     assert returned_trades[2] == trades[1]
@@ -320,8 +322,10 @@ def test_query_trades_including_ammswaps(data_dir, username):
     assert_trades_equal(returned_trades[9], swap5_trade2)
 
     # # Get last 5 trades
-    returned_trades = data.db.get_trades(filter_query=TradesFilterQuery.make(
-        limit=5, offset=5))
+    returned_trades = data.db.get_trades(
+        filter_query=TradesFilterQuery.make(limit=5, offset=5),
+        has_premium=True,
+    )
     assert len(returned_trades) == 5
     assert_trades_equal(returned_trades[0], swap3_trade)
     assert_trades_equal(returned_trades[1], swap4_trade1)
@@ -330,14 +334,52 @@ def test_query_trades_including_ammswaps(data_dir, username):
     assert_trades_equal(returned_trades[4], swap5_trade2)
 
     # Get first 5 trades that are in uniswap and that buy USDC
-    returned_trades = data.db.get_trades(filter_query=TradesFilterQuery.make(
-        limit=5, offset=0, location=Location.UNISWAP, base_asset=A_USDC))
+    returned_trades = data.db.get_trades(
+        filter_query=TradesFilterQuery.make(
+            limit=5, offset=0, location=Location.UNISWAP, base_asset=A_USDC,
+        ), has_premium=True,
+    )
     assert len(returned_trades) == 1
     assert_trades_equal(returned_trades[0], swap1_trade)
 
     # Get all trades with quote asset USDC
-    returned_trades = data.db.get_trades(filter_query=TradesFilterQuery.make(quote_asset=A_USDC))
+    returned_trades = data.db.get_trades(
+        filter_query=TradesFilterQuery.make(quote_asset=A_USDC),
+        has_premium=True,
+    )
     assert len(returned_trades) == 3
     assert_trades_equal(returned_trades[0], trades[0])
     assert_trades_equal(returned_trades[1], swap4_trade2)
     assert_trades_equal(returned_trades[2], swap5_trade1)
+
+    # Get all trades as non premium user with 2 free trades as limit
+    limit_patch = patch(
+        target='rotkehlchen.db.dbhandler.FREE_TRADES_LIMIT',
+        new=2,
+    )
+    with limit_patch:
+        returned_trades, total_found = data.db.get_trades_and_limit_info(
+            filter_query=TradesFilterQuery.make(),
+            has_premium=False,
+        )
+    # trades should be the latest 2
+    assert total_found == 10
+    assert len(returned_trades) == 2
+    assert_trades_equal(returned_trades[0], swap5_trade1)
+    assert_trades_equal(returned_trades[1], swap5_trade2)
+
+    # Get filtered trades as non premium user with 2 free trades as limit
+    limit_patch = patch(
+        target='rotkehlchen.db.dbhandler.FREE_TRADES_LIMIT',
+        new=4,
+    )
+    with limit_patch:
+        returned_trades, total_found = data.db.get_trades_and_limit_info(
+            filter_query=TradesFilterQuery.make(from_ts=4, to_ts=12),
+            has_premium=False,
+        )
+    # trades should be the latest 2
+    assert total_found == 3, 'total found for filter should be 4'
+    assert len(returned_trades) == 2
+    assert_trades_equal(returned_trades[0], swap4_trade1)
+    assert_trades_equal(returned_trades[1], swap4_trade2)

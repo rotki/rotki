@@ -49,14 +49,22 @@ from rotkehlchen.chain.ethereum.gitcoin.api import GitcoinAPI
 from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter
 from rotkehlchen.chain.ethereum.gitcoin.processor import GitcoinProcessor
 from rotkehlchen.chain.ethereum.modules.eth2 import FREE_VALIDATORS_LIMIT
-from rotkehlchen.chain.ethereum.trades import AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT, EthTransactions
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.limits import (
+    FREE_ASSET_MOVEMENTS_LIMIT,
+    FREE_LEDGER_ACTIONS_LIMIT,
+    FREE_TRADES_LIMIT,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.cache_handler import DBAccountingReports
 from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery
+from rotkehlchen.db.filtering import (
+    ETHTransactionsFilterQuery,
+    ReportDataFilterQuery,
+    TradesFilterQuery,
+)
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -85,11 +93,6 @@ from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
-from rotkehlchen.history.events import (
-    FREE_ASSET_MOVEMENTS_LIMIT,
-    FREE_LEDGER_ACTIONS_LIMIT,
-    FREE_TRADES_LIMIT,
-)
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
@@ -735,16 +738,12 @@ class RestAPI():
 
     def _get_trades(
             self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-            location: Optional[Location],
             only_cache: bool,
+            filter_query: TradesFilterQuery,
     ) -> Dict[str, Any]:
         try:
-            trades = self.rotkehlchen.events_historian.query_trades(
-                from_ts=from_ts,
-                to_ts=to_ts,
-                location=location,
+            trades, filter_total_found = self.rotkehlchen.events_historian.query_trades(
+                filter_query=filter_query,
                 only_cache=only_cache,
             )
         except RemoteError as e:
@@ -752,18 +751,9 @@ class RestAPI():
 
         trades_result = []
         for trade in trades:
-            if isinstance(trade, AMMTrade):
-                serialized_trade = trade.serialize()
-            else:
-                serialized_trade = self.trade_schema.dump(trade)
-                serialized_trade['trade_id'] = trade.identifier
+            serialized_trade = self.trade_schema.dump(trade)
+            serialized_trade['trade_id'] = trade.identifier
             trades_result.append(serialized_trade)
-
-        entry_table: Literal['amm_swaps', 'trades']
-        if location in AMMTradeLocations:
-            entry_table = 'amm_swaps'
-        else:
-            entry_table = 'trades'
 
         mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.TRADE)
         ignored_ids = mapping.get(ActionType.TRADE, [])
@@ -775,7 +765,8 @@ class RestAPI():
 
         result = {
             'entries': entries_result,
-            'entries_found': self.rotkehlchen.data.db.get_entries_count(entry_table),
+            'entries_found': filter_total_found,
+            'entries_total': self.rotkehlchen.data.db.get_entries_count('combined_trades_view'),
             'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
         }
 
@@ -784,26 +775,20 @@ class RestAPI():
     @require_loggedin_user()
     def get_trades(
             self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-            location: Optional[Location],
             async_query: bool,
             only_cache: bool,
+            filter_query: TradesFilterQuery,
     ) -> Response:
         if async_query:
             return self._query_async(
                 command='_get_trades',
-                from_ts=from_ts,
-                to_ts=to_ts,
-                location=location,
                 only_cache=only_cache,
+                filter_query=filter_query,
             )
 
         response = self._get_trades(
-            from_ts=from_ts,
-            to_ts=to_ts,
-            location=location,
             only_cache=only_cache,
+            filter_query=filter_query,
         )
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}

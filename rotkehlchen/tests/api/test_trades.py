@@ -6,10 +6,10 @@ import requests
 
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_WETH
+from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events import FREE_TRADES_LIMIT
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -206,7 +206,7 @@ def test_query_trades_over_limit(rotkehlchen_api_server_with_exchanges, start_wi
             response = requests.get(
                 api_url_for(
                     rotkehlchen_api_server_with_exchanges,
-                    "tradesresource",
+                    'tradesresource',
                 ),
             )
         result = assert_proper_response_with_result(response)

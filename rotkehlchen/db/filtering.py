@@ -7,7 +7,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Location, Timestamp, TradeType
-from rotkehlchen.utils.misc import hexstring_to_bytes
+from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -179,7 +179,6 @@ class DBFilterQuery():
             order_by_attribute: Optional[str] = None,
             order_ascending: bool = True,
     ) -> 'DBFilterQuery':
-        # if None in (limit, offset):
         if limit is None or offset is None:
             pagination = None
         else:
@@ -310,12 +309,6 @@ class DBLocationFilter(DBFilter):
 class TradesFilterQuery(DBFilterQuery):
 
     @property
-    def asset_filter(self, base: bool) -> Optional[DBAssetFilter]:
-        if len(self.filters) >= 1 and isinstance(self.filters[0], DBAssetFilter):
-            return self.filters[0]
-        return None
-
-    @property
     def timestamp_filter(self) -> DBTimestampFilter:
         if len(self.filters) >= 2 and isinstance(self.filters[1], DBTimestampFilter):
             return self.filters[1]
@@ -328,7 +321,10 @@ class TradesFilterQuery(DBFilterQuery):
         return None
 
     @property
-    def from_ts(self) -> Optional[Timestamp]:
+    def from_ts(self) -> Timestamp:
+        if self.timestamp_filter.from_ts is None:
+            return Timestamp(0)
+
         return self.timestamp_filter.from_ts
 
     @from_ts.setter
@@ -336,7 +332,10 @@ class TradesFilterQuery(DBFilterQuery):
         self.timestamp_filter.from_ts = from_ts
 
     @property
-    def to_ts(self) -> Optional[Timestamp]:
+    def to_ts(self) -> Timestamp:
+        if self.timestamp_filter.to_ts is None:
+            return ts_now()
+
         return self.timestamp_filter.to_ts
 
     @to_ts.setter
@@ -380,10 +379,12 @@ class TradesFilterQuery(DBFilterQuery):
                 and_op=True,
                 from_ts=from_ts,
                 to_ts=to_ts,
+                timestamp_attribute='time',
             ),
         )
         filter_query.filters = filters
         return cast('TradesFilterQuery', filter_query)
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class ReportDataFilterQuery(DBFilterQuery):
@@ -421,7 +422,10 @@ class ReportDataFilterQuery(DBFilterQuery):
         return event_type_filter.event_type
 
     @property
-    def from_ts(self) -> Optional[Timestamp]:
+    def from_ts(self) -> Timestamp:
+        if self.timestamp_filter.from_ts is None:
+            return Timestamp(0)
+
         return self.timestamp_filter.from_ts
 
     @from_ts.setter
@@ -429,7 +433,10 @@ class ReportDataFilterQuery(DBFilterQuery):
         self.timestamp_filter.from_ts = from_ts
 
     @property
-    def to_ts(self) -> Optional[Timestamp]:
+    def to_ts(self) -> Timestamp:
+        if self.timestamp_filter.to_ts is None:
+            return ts_now()
+
         return self.timestamp_filter.to_ts
 
     @to_ts.setter

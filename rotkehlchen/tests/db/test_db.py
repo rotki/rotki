@@ -15,6 +15,7 @@ from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
+from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
@@ -860,14 +861,14 @@ def test_add_trades(data_dir, username, caplog):
     warnings = msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
-    returned_trades = data.db.get_trades()
+    returned_trades = data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
     assert returned_trades == [trade1, trade2]
 
     # Add the last 2 trades. Since trade2 already exists in the DB it should be
     # ignored and a warning should be logged
     data.db.add_trades([trade2, trade3])
     assert 'Did not add "buy trade with id a1ed19c8284940b4e59bdac941db2fd3c0ed004ddb10fdd3b9ef0a3a9b2c97bc' in caplog.text  # noqa: E501
-    returned_trades = data.db.get_trades()
+    returned_trades = data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
     assert returned_trades == [trade1, trade2, trade3]
 
 

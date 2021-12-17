@@ -46,7 +46,11 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_polkadot_address,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery
+from rotkehlchen.db.filtering import (
+    ETHTransactionsFilterQuery,
+    ReportDataFilterQuery,
+    TradesFilterQuery,
+)
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors import (
     DeserializationError,
@@ -931,7 +935,7 @@ class DBPaginationSchema(Schema):
 
 
 class DBOrderBySchema(Schema):
-    order_by_attribute = fields.String(load_default='timestamp')
+    order_by_attribute = fields.String(load_default=None)
     ascending = fields.Boolean(load_default=False)  # most recent first by default
 
 
@@ -945,6 +949,19 @@ class EthereumTransactionQuerySchema(
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
 
+    @validates_schema
+    def validate_ethtx_query_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        value = data['order_by_attribute']
+        if data['order_by_attribute'] not in (None, 'timestamp'):
+            raise ValidationError(
+                message=f'order_by_attribute for transactions can not be {value}',
+                field_name='order_by_attribute',
+            )
+
     @post_load
     def make_ethereum_transaction_query(  # pylint: disable=no-self-use
             self,
@@ -952,8 +969,9 @@ class EthereumTransactionQuerySchema(
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         address = data.get('address')
+        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         filter_query = ETHTransactionsFilterQuery.make(
-            order_by_attribute=data['order_by_attribute'],
+            order_by_attribute=order_by_attribute,
             order_ascending=data['ascending'],
             limit=data['limit'],
             offset=data['offset'],
@@ -962,6 +980,58 @@ class EthereumTransactionQuerySchema(
             to_ts=data['to_timestamp'],
         )
 
+        return {
+            'async_query': data['async_query'],
+            'only_cache': data['only_cache'],
+            'filter_query': filter_query,
+        }
+
+
+class TradesQuerySchema(
+        AsyncQueryArgumentSchema,
+        OnlyCacheQuerySchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
+):
+    base_asset = AssetField(load_default=None)
+    quote_asset = AssetField(load_default=None)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+    trade_type = TradeTypeField(load_default=None)
+    location = LocationField(load_default=None)
+
+    @validates_schema
+    def validate_trades_query_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        value = data['order_by_attribute']
+        if data['order_by_attribute'] not in (None, 'time'):
+            raise ValidationError(
+                message=f'order_by_attribute for trades can not be {value}',
+                field_name='order_by_attribute',
+            )
+
+    @post_load
+    def make_trades_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'time'  # noqa: E501
+        filter_query = TradesFilterQuery.make(
+            order_by_attribute=order_by_attribute,
+            order_ascending=data['ascending'],
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            base_asset=data['base_asset'],
+            quote_asset=data['quote_asset'],
+            trade_type=data['trade_type'],
+            location=data['location'],
+        )
         return {
             'async_query': data['async_query'],
             'only_cache': data['only_cache'],
@@ -1434,6 +1504,19 @@ class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
 
+    @validates_schema
+    def validate_report_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        value = data['order_by_attribute']
+        if data['order_by_attribute'] not in (None, 'timestamp'):
+            raise ValidationError(
+                message=f'order_by_attribute for accounting report data can not be {value}',
+                field_name='order_by_attribute',
+            )
+
     @post_load
     def make_report_data_query(  # pylint: disable=no-self-use
             self,
@@ -1442,8 +1525,9 @@ class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
     ) -> Dict[str, Any]:
         report_id = data.get('report_id')
         event_type = data.get('event_type')
+        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         filter_query = ReportDataFilterQuery.make(
-            order_by_attribute='timestamp',  # hard coding order by timestamp for API for now
+            order_by_attribute=order_by_attribute,
             order_ascending=data['ascending'],
             limit=data['limit'],
             offset=data['offset'],

@@ -8,6 +8,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.exchanges.binance import (
     BINANCE_BASE_URL,
     BINANCEUS_BASE_URL,
@@ -863,7 +864,10 @@ def check_saved_events_for_exchange(
         should_exist: bool,
         queryrange_formatstr: str = '{exchange}_{type}_{exchange}',
 ) -> None:
-    trades = db.get_trades(location=exchange_location)
+    trades = db.get_trades(
+        filter_query=TradesFilterQuery.make(location=exchange_location),
+        has_premium=True,
+    )
     trades_range = db.get_used_query_range(queryrange_formatstr.format(exchange=exchange_location, type='trades'))  # noqa: E501
     margins_range = db.get_used_query_range(queryrange_formatstr.format(exchange=exchange_location, type='margins'))  # noqa: E501
     movements_range = db.get_used_query_range(queryrange_formatstr.format(exchange=exchange_location, type='asset_movements'))  # noqa: E501

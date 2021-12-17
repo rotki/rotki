@@ -723,35 +723,35 @@ CREATE VIEW combined_trades_view AS
         FROM amounts_query
         WHERE first1in > 0 AND first0in > 0 AND last1out > 0 AND last0out > 0
     ), SWAPS AS (
-    SELECT base1 AS base, quote1 AS quote, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C1
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C1
     UNION
-    SELECT base1 AS base, quote1 AS quote, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C2
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C2
     UNION
-    SELECT base1 AS base, quote1 AS quote, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C3
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C3
     UNION
-    SELECT base1 AS base, quote1 AS quote, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C4
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C4
     UNION
-    SELECT base1 AS base, quote1 AS quote, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C5
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C5
     UNION
-    SELECT base2 AS base, quote2 AS quote, amount2 AS amount, rate2 AS rate, txhash, logindex, time, location FROM C5
+    SELECT base2 AS base_asset, quote2 AS quote_asset, amount2 AS amount, rate2 AS rate, txhash, logindex, time, location FROM C5
     UNION
-    SELECT base1 AS base, quote1 AS quote, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C6
+    SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C6
     UNION
-    SELECT base2 AS base, quote2 AS quote, amount2 AS amount, rate2 AS rate, txhash, logindex, time, location FROM C6
+    SELECT base2 AS base_asset, quote2 AS quote_asset, amount2 AS amount, rate2 AS rate, txhash, logindex, time, location FROM C6
    )
    SELECT
        txhash + logindex AS id,
        time,
        location,
-       base,
-       quote,
-       'A', /* always a BUY */
+       base_asset,
+       quote_asset,
+       'A' AS type, /* always a BUY */
        amount,
        rate,
-       NULL, /* no fee */
-       NULL, /* no fee */
-       txhash,
-       NULL /* no notes */
+       NULL AS fee, /* no fee */
+       NULL AS fee_currency, /* no fee */
+       txhash AS link,
+       NULL AS notes /* no notes */
    FROM SWAPS
    UNION
    SELECT * from trades
