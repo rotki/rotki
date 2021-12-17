@@ -316,8 +316,9 @@ class TradesFilterQuery(DBFilterQuery):
 
     @property
     def location(self) -> Optional[Location]:
-        if len(self.filters) >= 2 and isinstance(self.filters[1], DBLocationFilter):
-            return self.filters[1].location
+        for _filter in self.filters:
+            if isinstance(_filter, DBLocationFilter):
+                return _filter.location
         return None
 
     @property

@@ -23,7 +23,6 @@ from rotkehlchen.typing import (
     Optional,
     Timestamp,
     TradePair,
-    TradeType,
 )
 from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
 
@@ -278,55 +277,6 @@ def deserialize_asset_amount_force_positive(amount: AcceptableFValInitInput) -> 
     if result < ZERO:
         result = AssetAmount(abs(result))
     return result
-
-
-def deserialize_trade_type(symbol: str) -> TradeType:
-    """Takes a string and attempts to turn it into a TradeType
-
-    Can throw DeserializationError if the symbol is not as expected
-    """
-    if not isinstance(symbol, str):
-        raise DeserializationError(
-            f'Failed to deserialize trade type symbol from {type(symbol)} entry',
-        )
-
-    if symbol in ('buy', 'LIMIT_BUY', 'BUY', 'Buy'):
-        return TradeType.BUY
-    if symbol in ('sell', 'LIMIT_SELL', 'SELL', 'Sell'):
-        return TradeType.SELL
-    if symbol == 'settlement_buy':
-        return TradeType.SETTLEMENT_BUY
-    if symbol == 'settlement_sell':
-        return TradeType.SETTLEMENT_SELL
-
-    # else
-    raise DeserializationError(
-        f'Failed to deserialize trade type symbol. Unknown symbol {symbol} for trade type',
-    )
-
-
-def deserialize_trade_type_from_db(symbol: str) -> TradeType:
-    """Takes a string from the DB and attempts to turn it into a TradeType
-
-    Can throw DeserializationError if the symbol is not as expected
-    """
-    if not isinstance(symbol, str):
-        raise DeserializationError(
-            f'Failed to deserialize trade type symbol from {type(symbol)} entry',
-        )
-
-    if symbol == 'A':
-        return TradeType.BUY
-    if symbol == 'B':
-        return TradeType.SELL
-    if symbol == 'C':
-        return TradeType.SETTLEMENT_BUY
-    if symbol == 'D':
-        return TradeType.SETTLEMENT_SELL
-    # else
-    raise DeserializationError(
-        f'Failed to deserialize trade type symbol. Unknown DB symbol {symbol} for trade type',
-    )
 
 
 def _split_pair(pair: TradePair) -> Tuple[str, str]:

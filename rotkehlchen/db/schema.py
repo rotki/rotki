@@ -659,7 +659,7 @@ CREATE TABLE IF NOT EXISTS nfts (
 """  # noqa: E501
 
 DB_CREATE_COMBINED_TRADES_VIEW = """
-CREATE VIEW combined_trades_view AS
+CREATE VIEW IF NOT EXISTS combined_trades_view AS
     WITH amounts_query AS (
           SELECT
           A.tx_hash AS txhash,

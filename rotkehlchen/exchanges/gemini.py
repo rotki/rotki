@@ -48,9 +48,8 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_timestamp,
-    deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp
+from rotkehlchen.typing import ApiKey, ApiSecret, Fee, Location, Timestamp, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -481,7 +480,7 @@ class Gemini(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         location=Location.GEMINI,
                         base_asset=base,
                         quote_asset=quote,
-                        trade_type=deserialize_trade_type(entry['type']),
+                        trade_type=TradeType.deserialize(entry['type']),
                         amount=deserialize_asset_amount(entry['amount']),
                         rate=deserialize_price(entry['price']),
                         fee=deserialize_fee(entry['fee_amount']),

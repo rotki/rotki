@@ -5,10 +5,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance, add_manually_tra
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import (
-    deserialize_int_from_hex_or_int,
-    deserialize_trade_type,
-)
+from rotkehlchen.serialization.deserialize import deserialize_int_from_hex_or_int
 from rotkehlchen.typing import Location, TradeType
 from rotkehlchen.utils.serialization import pretty_json_dumps, rlk_jsondumps
 
@@ -39,21 +36,29 @@ def test_pretty_json_dumps():
 
 
 def test_deserialize_trade_type():
-    assert deserialize_trade_type('buy') == TradeType.BUY
-    assert deserialize_trade_type('sell') == TradeType.SELL
-    assert deserialize_trade_type('settlement_buy') == TradeType.SETTLEMENT_BUY
-    assert deserialize_trade_type('settlement_sell') == TradeType.SETTLEMENT_SELL
+    assert TradeType.deserialize('buy') == TradeType.BUY
+    assert TradeType.deserialize('LIMIT_BUY') == TradeType.BUY
+    assert TradeType.deserialize('BUY') == TradeType.BUY
+    assert TradeType.deserialize('Buy') == TradeType.BUY
+    assert TradeType.deserialize('sell') == TradeType.SELL
+    assert TradeType.deserialize('LIMIT_SELL') == TradeType.SELL
+    assert TradeType.deserialize('SELL') == TradeType.SELL
+    assert TradeType.deserialize('Sell') == TradeType.SELL
+    assert TradeType.deserialize('settlement buy') == TradeType.SETTLEMENT_BUY
+    assert TradeType.deserialize('settlement_buy') == TradeType.SETTLEMENT_BUY
+    assert TradeType.deserialize('settlement sell') == TradeType.SETTLEMENT_SELL
+    assert TradeType.deserialize('settlement_sell') == TradeType.SETTLEMENT_SELL
 
     assert len(list(TradeType)) == 4
 
     with pytest.raises(DeserializationError):
-        deserialize_trade_type('dsad')
+        TradeType.deserialize('dsad')
 
     with pytest.raises(DeserializationError):
-        deserialize_trade_type(None)
+        TradeType.deserialize(None)
 
     with pytest.raises(DeserializationError):
-        deserialize_trade_type(1)
+        TradeType.deserialize(1)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

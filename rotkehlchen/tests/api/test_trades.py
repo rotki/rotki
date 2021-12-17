@@ -792,7 +792,7 @@ def test_delete_trades_trades_errors(rotkehlchen_api_server):
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges):
     """Test that querying the trades endpoint works as expected when we have associated
-    locations including exchanges asociated and imported locations.
+    locations including associated exchanges and imported locations.
     """
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = mock_history_processing_and_exchanges(rotki)
@@ -874,8 +874,8 @@ def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
-        ), json={'location': 'kraken'},
+            'tradesresource',
+        ), json={'location': 'kraken', 'only_cache': True},
     )
     result = assert_proper_response_with_result(response)
     result = result['entries']
@@ -884,8 +884,8 @@ def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
-        ), json={'location': 'binance'},
+            'tradesresource',
+        ), json={'location': 'binance', 'only_cache': True},
     )
     result = assert_proper_response_with_result(response)
     result = result['entries']
@@ -894,7 +894,7 @@ def test_query_trades_associated_locations(rotkehlchen_api_server_with_exchanges
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server_with_exchanges,
-            "tradesresource",
+            'tradesresource',
         ), json={'location': 'nexo'},
     )
     result = assert_proper_response_with_result(response)

@@ -1,9 +1,10 @@
 from enum import Enum
-from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Type, Union
 
 from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
+from rotkehlchen.errors import DeserializationError  # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
@@ -301,6 +302,30 @@ class TradeType(DBEnumMixIn):
     SELL = 2
     SETTLEMENT_BUY = 3
     SETTLEMENT_SELL = 4
+
+    @classmethod
+    def deserialize(cls: Type['TradeType'], symbol: str) -> 'TradeType':
+        """Overriding deserialize here since it can have different wordings for the same type
+        so the automatic deserialization does not work
+        """
+        if not isinstance(symbol, str):
+            raise DeserializationError(
+                f'Failed to deserialize trade type symbol from {type(symbol)} entry',
+            )
+
+        if symbol in ('buy', 'LIMIT_BUY', 'BUY', 'Buy'):
+            return TradeType.BUY
+        if symbol in ('sell', 'LIMIT_SELL', 'SELL', 'Sell'):
+            return TradeType.SELL
+        if symbol in ('settlement_buy', 'settlement buy'):
+            return TradeType.SETTLEMENT_BUY
+        if symbol in ('settlement_sell', 'settlement sell'):
+            return TradeType.SETTLEMENT_SELL
+
+        # else
+        raise DeserializationError(
+            f'Failed to deserialize trade type symbol. Unknown symbol {symbol} for trade type',
+        )
 
 
 class Location(DBEnumMixIn):

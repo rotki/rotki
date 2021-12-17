@@ -11,8 +11,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_optional,
     deserialize_timestamp,
-    deserialize_trade_type,
-    deserialize_trade_type_from_db,
 )
 from rotkehlchen.typing import (
     AssetAmount,
@@ -219,7 +217,7 @@ class Trade(NamedTuple):
             location=Location.deserialize_from_db(entry[2]),
             base_asset=Asset(entry[3]),
             quote_asset=Asset(entry[4]),
-            trade_type=deserialize_trade_type_from_db(entry[5]),
+            trade_type=TradeType.deserialize_from_db(entry[5]),
             amount=deserialize_asset_amount(entry[6]),
             rate=deserialize_price(entry[7]),
             fee=deserialize_optional(entry[8], deserialize_fee),
@@ -334,7 +332,7 @@ def deserialize_trade(data: Dict[str, Any]) -> Trade:
     """
     rate = deserialize_price(data['rate'])
     amount = deserialize_asset_amount(data['amount'])
-    trade_type = deserialize_trade_type(data['trade_type'])
+    trade_type = TradeType.deserialize(data['trade_type'])
     location = Location.deserialize(data['location'])
 
     trade_link = ''

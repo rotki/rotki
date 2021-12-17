@@ -51,7 +51,7 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
     FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (validator_index, timestamp));""")  # noqa: E501
     cursor.execute("""
-CREATE VIEW combined_trades_view AS
+CREATE VIEW IF NOT EXISTS combined_trades_view AS
     WITH amounts_query AS (
           SELECT
           A.tx_hash AS txhash,

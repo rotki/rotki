@@ -41,9 +41,16 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_category,
     deserialize_fee,
     deserialize_timestamp_from_date,
-    deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Timestamp,
+    TradeType,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -567,7 +574,7 @@ class Coinbasepro(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         location=Location.COINBASEPRO,
                         base_asset=base_asset,
                         quote_asset=quote_asset,
-                        trade_type=deserialize_trade_type(fill_entry['side']),
+                        trade_type=TradeType.deserialize(fill_entry['side']),
                         amount=deserialize_asset_amount(fill_entry['size']),
                         rate=deserialize_price(fill_entry['price']),
                         fee=deserialize_fee(fill_entry['fee']),

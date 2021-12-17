@@ -100,10 +100,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.serialization.deserialize import (
-    deserialize_hex_color_code,
-    deserialize_trade_type_from_db,
-)
+from rotkehlchen.serialization.deserialize import deserialize_hex_color_code
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -120,6 +117,7 @@ from rotkehlchen.typing import (
     ModuleName,
     SupportedBlockchain,
     Timestamp,
+    TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
@@ -200,7 +198,7 @@ def db_tuple_to_str(
     """
     if tuple_type == 'trade':
         return (
-            f'{deserialize_trade_type_from_db(data[5])} trade with id {data[0]} '
+            f'{TradeType.deserialize_from_db(data[5])} trade with id {data[0]} '
             f'in {Location.deserialize_from_db(data[2])} and base/quote asset {data[3]} / '
             f'{data[4]} at timestamp {data[1]}'
         )

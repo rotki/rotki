@@ -45,11 +45,7 @@ from rotkehlchen.errors import AuthenticationError, InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_movement_category,
-    deserialize_trade_type,
-    deserialize_trade_type_from_db,
-)
+from rotkehlchen.serialization.deserialize import deserialize_asset_movement_category
 from rotkehlchen.tests.utils.constants import (
     A_DAO,
     A_DOGE,
@@ -1281,7 +1277,7 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
     (Location, 'SELECT location, seq from location',
         Location.deserialize_from_db, Location.deserialize),
     (TradeType, 'SELECT type, seq from trade_type',
-        deserialize_trade_type_from_db, deserialize_trade_type),
+        TradeType.deserialize_from_db, TradeType.deserialize),
     (ActionType, 'SELECT type, seq from action_type',
         ActionType.deserialize_from_db, ActionType.deserialize),
     (LedgerActionType, 'SELECT type, seq from ledger_action_type',

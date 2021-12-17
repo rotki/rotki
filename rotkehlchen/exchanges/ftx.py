@@ -28,9 +28,16 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_fee,
     deserialize_timestamp_from_date,
-    deserialize_trade_type,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, AssetMovementCategory, Fee, Location, Timestamp
+from rotkehlchen.typing import (
+    ApiKey,
+    ApiSecret,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Timestamp,
+    TradeType,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
@@ -63,7 +70,7 @@ def trade_from_ftx(raw_trade: Dict[str, Any]) -> Optional[Trade]:
         return None
 
     timestamp = deserialize_timestamp_from_date(raw_trade['time'], 'iso8601', 'FTX')
-    trade_type = deserialize_trade_type(raw_trade['side'])
+    trade_type = TradeType.deserialize(raw_trade['side'])
     base_asset = asset_from_ftx(raw_trade['baseCurrency'])
     quote_asset = asset_from_ftx(raw_trade['quoteCurrency'])
     amount = deserialize_asset_amount(raw_trade['size'])

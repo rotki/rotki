@@ -73,7 +73,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_hex_color_code,
     deserialize_timestamp,
-    deserialize_trade_type,
 )
 from rotkehlchen.typing import (
     AVAILABLE_MODULES_MAP,
@@ -543,7 +542,7 @@ class TradeTypeField(fields.Field):
             **_kwargs: Any,
     ) -> TradeType:
         try:
-            trade_type = deserialize_trade_type(value)
+            trade_type = TradeType.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 

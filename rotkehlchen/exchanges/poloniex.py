@@ -43,7 +43,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp,
     deserialize_timestamp_from_poloniex_date,
-    deserialize_trade_type,
     get_pair_position_str,
 )
 from rotkehlchen.typing import (
@@ -79,7 +78,7 @@ def trade_from_poloniex(poloniex_trade: Dict[str, Any], pair: TradePair) -> Trad
     """
 
     try:
-        trade_type = deserialize_trade_type(poloniex_trade['type'])
+        trade_type = TradeType.deserialize(poloniex_trade['type'])
         amount = deserialize_asset_amount(poloniex_trade['amount'])
         rate = deserialize_price(poloniex_trade['rate'])
         perc_fee = deserialize_fee(poloniex_trade['fee'])

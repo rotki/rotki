@@ -13,7 +13,6 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import UPGRADES_LIST
@@ -1740,11 +1739,9 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
         ('7aae102d9240f7d5f7f0669d6eefb47f2d1cf5bba462b0cee267719e9272ffde', 1612302374, 'A', '_ceth_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', 'ETH', 'A', '1', '0.01241', '0', '_ceth_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', None, None),  # noqa: E501
     ]
     # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
-    trades = db.get_trades(
-        filter_query=TradesFilterQuery.make(),
-        has_premium=True,
-    )
-    assert all(x.identifier == trades_query[idx][0] for idx, x in enumerate(trades))
+    cursor = db.conn.cursor()
+    result = cursor.execute('SELECT id from trades ORDER BY time ASC').fetchall()
+    assert all(x[0] == trades_query[idx][0] for idx, x in enumerate(result))
 
     # Check that cached icons were purged but custom icons were not
     assert (custom_icons_dir / custom_icon_filename).is_file()

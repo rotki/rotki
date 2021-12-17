@@ -34,7 +34,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_fee,
     deserialize_timestamp_from_date,
-    deserialize_trade_type,
     get_pair_position_str,
     pair_get_assets,
 )
@@ -47,6 +46,7 @@ from rotkehlchen.typing import (
     Price,
     Timestamp,
     TradePair,
+    TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_now_in_ms
@@ -120,7 +120,7 @@ def trade_from_bittrex(bittrex_trade: Dict[str, Any]) -> Trade:
             deserialize_asset_amount(bittrex_trade['proceeds']) /
             deserialize_asset_amount(bittrex_trade['fillQuantity']),
         )
-    order_type = deserialize_trade_type(bittrex_trade['direction'])
+    order_type = TradeType.deserialize(bittrex_trade['direction'])
     fee = deserialize_fee(bittrex_trade['commission'])
     base_asset, quote_asset = bittrex_pair_to_world(bittrex_trade['marketSymbol'])
     log.debug(

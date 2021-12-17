@@ -750,7 +750,7 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
     assert result == expected_result
 
 
-@pytest.mark.parametrize('start_ts, since_id', [(0, 1), (1, 6)])
+@pytest.mark.parametrize('start_ts, since_id', [(0, 1), (1606995001, 6)])
 def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
     """Test `since_id` value will change depending on `start_ts` value.
     Also tests `db_trades` are sorted by `link` (as int) in ascending mode.
@@ -783,12 +783,12 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
             notes='',
         ),
     ]
-    database = MagicMock()
-    database.get_trades.return_value = trades
+    mock_bitstamp.db.add_trades(trades)
 
+    end_ts = Timestamp(1606995000)
     expected_call = call(
         start_ts=start_ts,
-        end_ts=2,
+        end_ts=end_ts,
         options={
             'since_id': since_id,
             'limit': 1000,
@@ -797,13 +797,12 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         },
         case='trades',
     )
-    with patch.object(mock_bitstamp, 'db', new_callable=MagicMock(return_value=database)):
-        with patch.object(mock_bitstamp, '_api_query_paginated') as mock_api_query_paginated:
-            mock_bitstamp.query_online_trade_history(
-                start_ts=Timestamp(start_ts),
-                end_ts=Timestamp(2),
-            )
-            assert mock_api_query_paginated.call_args == expected_call
+    with patch.object(mock_bitstamp, '_api_query_paginated') as mock_api_query_paginated:
+        mock_bitstamp.query_online_trade_history(
+            start_ts=Timestamp(start_ts),
+            end_ts=end_ts,
+        )
+        assert mock_api_query_paginated.call_args == expected_call
 
 
 def test_deserialize_asset_movement_deposit(mock_bitstamp):
