@@ -35,8 +35,6 @@ RUN python3 -m pip install --upgrade pip setuptools wheel
 COPY ./requirements.txt /app/requirements.txt
 
 WORKDIR /app
-
-RUN pip install maturin==0.12.3 py-sr25519-bindings==0.1.3 py-ed25519-bindings==0.1.3 py-bip39-bindings==0.1.7 wheel
 RUN pip install -r requirements.txt
 
 COPY . /app
