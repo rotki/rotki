@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :feature:`2386` User will see separate section of L2 balances in Blockchain Balances section.
+* :feature:`2876` The application users will now be able to start the auto update mechanism manually from the update indicator.
+* :feature:`2386` Users will see a separate section of L2 balances in Blockchain Balances section.
 * :feature:`2382` Users will now be able to filter specific accounts such as the ones from Loopring using an automatically added tag.
 * :feature:`2901` Users will now be able to select between a full privacy mode and a semi-privacy mode that keeps the percentages visible.
 * :feature:`2624` Users will now be able to filter by tag in the asset details page.

@@ -1,7 +1,7 @@
 <template>
   <v-tooltip v-if="updateNeeded" bottom>
     <template #activator="{ on }">
-      <v-btn text icon @click="openLink()">
+      <v-btn text icon @click="update()">
         <v-icon color="error" dark v-on="on"> mdi-arrow-up-bold-circle </v-icon>
       </v-btn>
     </template>
@@ -11,7 +11,7 @@
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { mapGetters, mapState } from 'vuex';
+import { mapActions, mapGetters, mapState } from 'vuex';
 import { Version } from '@/store/types';
 
 @Component({
@@ -19,13 +19,18 @@ import { Version } from '@/store/types';
     ...mapState(['version']),
     ...mapGetters('settings', ['versionUpdateCheckFrequency']),
     ...mapGetters(['updateNeeded'])
+  },
+  methods: {
+    ...mapActions('session', ['openUpdatePopup'])
   }
 })
-export default class UpdateIndicator extends Vue {
+export default class AppUpdateIndicator extends Vue {
   updateNeeded!: boolean;
   version!: Version;
   versionUpdateCheckFrequency!: number;
   refreshInterval: any;
+
+  openUpdatePopup!: () => void;
 
   @Watch('versionUpdateCheckFrequency')
   async setVersionUpdateCheckInterval() {
@@ -42,12 +47,24 @@ export default class UpdateIndicator extends Vue {
     this.setVersionUpdateCheckInterval();
   }
 
+  openAutomaticUpdatePopup() {
+    this.openUpdatePopup();
+  }
+
   get appVersion(): string {
     return this.version.latestVersion;
   }
 
   openLink() {
     this.$interop.openUrl(this.version.downloadUrl);
+  }
+
+  update() {
+    if (this.$interop.isPackaged) {
+      this.openUpdatePopup();
+    } else {
+      this.openLink();
+    }
   }
 }
 </script>

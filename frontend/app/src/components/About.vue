@@ -22,7 +22,7 @@
           />
         </div>
         <v-spacer />
-        <update-indicator />
+        <app-update-indicator />
       </div>
       <v-divider class="mt-4 mb-2" />
       <div class="d-flex flex-row align-center">
@@ -108,14 +108,14 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
-import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
+import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import { SystemVersion } from '@/electron-main/ipc';
 import { Version } from '@/store/types';
 import { WebVersion } from '@/types';
 
 @Component({
   name: 'About',
-  components: { UpdateIndicator, BaseExternalLink },
+  components: { AppUpdateIndicator, BaseExternalLink },
   computed: {
     ...mapState(['version', 'dataDirectory'])
   }

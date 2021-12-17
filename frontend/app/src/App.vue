@@ -1,6 +1,6 @@
 <template>
   <v-app v-if="!isPlayground" id="rotki" class="app">
-    <update-popup />
+    <app-update-popup />
     <div v-if="logged" class="app__content rotki-light-grey">
       <asset-update auto />
       <notification-popup />
@@ -51,7 +51,7 @@
         <v-btn v-if="isDevelopment" to="/playground" icon>
           <v-icon>mdi-crane</v-icon>
         </v-btn>
-        <update-indicator />
+        <app-update-indicator />
         <theme-switch v-if="premium" />
         <theme-switch-lock v-else />
         <notification-indicator
@@ -111,7 +111,7 @@
     <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
       <about />
     </v-dialog>
-    <update-notifier />
+    <frontend-update-notifier />
   </v-app>
   <dev-app v-else />
 </template>
@@ -131,15 +131,15 @@ import HelpSidebar from '@/components/help/HelpSidebar.vue';
 import BackButton from '@/components/helper/BackButton.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
+import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
+import FrontendUpdateNotifier from '@/components/status/FrontendUpdateNotifier.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
 import NotificationSidebar from '@/components/status/notifications/NotificationSidebar.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
+import AppUpdatePopup from '@/components/status/update/AppUpdatePopup.vue';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
-import UpdatePopup from '@/components/status/update/UpdatePopup.vue';
-import UpdateIndicator from '@/components/status/UpdateIndicator.vue';
-import UpdateNotifier from '@/components/status/UpdateNotifier.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import DevApp from '@/DevApp.vue';
 import { BackendCode } from '@/electron-main/backend-code';
@@ -152,7 +152,7 @@ import { Message } from '@/store/types';
 
 @Component({
   components: {
-    UpdateNotifier,
+    FrontendUpdateNotifier,
     About,
     ThemeSwitchLock,
     MacOsVersionUnsupported,
@@ -160,7 +160,7 @@ import { Message } from '@/store/types';
     HelpIndicator,
     HelpSidebar,
     BackButton,
-    UpdatePopup,
+    AppUpdatePopup,
     StartupErrorScreen,
     ThemeSwitch,
     DevApp,
@@ -168,7 +168,7 @@ import { Message } from '@/store/types';
     NotificationSidebar,
     ErrorScreen,
     AccountManagement,
-    UpdateIndicator,
+    AppUpdateIndicator,
     NotificationIndicator,
     BalanceSavedIndicator: SyncIndicator,
     NodeStatusIndicator,
