@@ -303,7 +303,7 @@ class HistoryEventType(DBEnumMixIn):
         if value == 'receive':
             return HistoryEventType.RECEIVE
 
-        raise DeserializationError(f'Failed to read kraken event: {value}')
+        return HistoryEventType.UNKNOWN
 
 
 class HistoryEventSubType(DBEnumMixIn):

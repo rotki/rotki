@@ -276,7 +276,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.call_counter = 0
         self.last_query_ts = 0
         self.pairs: Set[str] = set()
-        self.query_pairs()
         self.ledger_lock = gevent.lock.Semaphore()
 
     def set_account_type(self, account_type: Optional[KrakenAccountType]) -> None:
@@ -836,7 +835,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         except RemoteError as e:
             self.msg_aggregator.add_error(f'Failed to query kraken pairs due to {str(e)}')
             raise RemoteError from e
-
         trades = []
         get_attr = operator.attrgetter('event_identifier')
         grouped_events = [list(g) for k, g in itertools.groupby(sorted(raw_data, key=get_attr), get_attr)]  # noqa: E501
@@ -856,6 +854,10 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             ]
             pair = self.kraken_asset_to_pair(trade_assets)
             if pair is None:
+                self.msg_aggregator.add_error(
+                    f'Couldnt find pair for assets {trade_assets} and '
+                    f'trade id {trade_parts[0].event_identifier}',
+                )
                 continue
             base_asset, quote_asset = kraken_to_world_pair(pair)
             timestamp = trade_parts[0].timestamp
@@ -911,7 +913,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 fee_asset = fee_part.amount.asset
             elif kfee_part is not None:
                 fee = Fee(kfee_part.amount.balance.amount)
-                fee_asset = kfee_part.amount.asset
+                fee_asset = A_KFEE
 
             trade = Trade(
                 timestamp=timestamp,
@@ -945,7 +947,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 end_ts=now,
                 extra_dict={},
             )
-
             # Group related events
             raw_events_groupped = defaultdict(list)
             for raw_event in response:
@@ -953,19 +954,21 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             new_events = []
             for events in raw_events_groupped.values():
-                events = sorted(events, key=lambda x: x['time'])
+                try:
+                    events = sorted(events, key=lambda x: deserialize_timestamp_from_kraken(x['time']))
+                except DeserializationError as e:
+                    self.msg_aggregator.add_error(
+                        f'Failed to read timestamp in kraken event group '
+                        f'{events} due to {str(e)}',
+                    )
+                    continue
+                group_events = []
                 for idx, raw_event in enumerate(events):
+                    found_unknown_event = False
                     try:
                         timestamp = deserialize_timestamp_from_kraken(raw_event['time'])
                         identifier = raw_event['refid']
-                        try:
-                            event_type = HistoryEventType.from_string(raw_event['type'])
-                        except DeserializationError as e:
-                            self.msg_aggregator.add_error(
-                                f'Failed to read type for kraken event with identifier '
-                                f'{identifier} and value {raw_event["type"]}. {str(e)}',
-                            )
-                            event_type = HistoryEventType.UNKNOWN
+                        event_type = HistoryEventType.from_string(raw_event['type'])
                         asset = asset_from_kraken(raw_event['asset'])
                         event_subtype = None
                         amount = abs(deserialize_asset_amount(raw_event['amount']))
@@ -982,9 +985,15 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                             if raw_event['subtype'] == 'spotfromstaking':
                                 event_type = HistoryEventType.UNSTAKING
                                 event_subtype = HistoryEventSubType.STAKING_RECEIVE_ASSET
+                        elif event_type == HistoryEventType.UNKNOWN:
+                            found_unknown_event = True
+                            self.msg_aggregator.add_warning(
+                                f'Encountered unknown event type {event_type}. Event will be '
+                                f'stored but not processed.'
+                            )
                         fee = deserialize_asset_amount(raw_event['fee'])
 
-                        new_events.append(HistoryEvent(
+                        group_events.append(HistoryEvent(
                             event_identifier=identifier,
                             sequence_index=idx,
                             timestamp=timestamp,
@@ -1002,7 +1011,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                             event_subtype=event_subtype,
                         ))
                         if fee != ZERO:
-                            new_events.append(HistoryEvent(
+                            group_events.append(HistoryEvent(
                                 event_identifier=identifier,
                                 sequence_index=len(events),
                                 timestamp=timestamp,
@@ -1026,7 +1035,14 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         self.msg_aggregator.add_error(
                             f'Failed to read staking event from kraken {raw_event} due to {msg}',
                         )
-                        continue
+                        break
+                else:
+                    # In the case where a part of the event can't be correctly procesed change
+                    # the event type of the whole group
+                    if found_unknown_event:
+                        for event in group_events:
+                            event.event_type = HistoryEventType.UNKNOWN
+                    new_events.extend(group_events)
             is_db_saved = True
             if len(new_events) != 0:
                 is_db_saved = self.db.save_history_events(new_events)

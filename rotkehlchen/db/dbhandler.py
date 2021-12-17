@@ -3438,6 +3438,41 @@ class DBHandler:
         self.update_last_write()
         return True
 
+    def delete_history_events(
+        self,
+        location: Optional[Location] = None,
+        location_label: Optional[str] = None,
+    ) -> int:
+        query_str = 'DELETE FROM history_events'
+        params = []
+        query_additions = []
+        if location is not None:
+            query_additions.append(' location=? ')
+            params.append(location.serialize_for_db())
+        if location_label is not None:
+            query_additions.append(' location_label=? ')
+            params.append(location_label)
+
+        if len(query_additions) != 0:
+            query_str += " WHERE " + "AND".join(query_additions)
+
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(query_str, params)
+            affected_rows = cursor.rowcount
+            self.update_last_write()
+            cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{location}_history_events_%"')
+            query_ranges_removals = cursor.rowcount
+            if affected_rows != 0:
+                assert query_ranges_removals == 1
+            return affected_rows
+        except sqlcipher.DatabaseError as e:
+            self.msg_aggregator.add_error(
+                f'Failed to delete history events with params {params} and '
+                f'query {query_str}. {str(e)}'
+            )
+        return -1
+
     def get_history_events(
         self,
         location: Optional[Location],
