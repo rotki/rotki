@@ -1,5 +1,6 @@
 import warnings as test_warnings
 from contextlib import ExitStack
+from pathlib import Path
 from unittest.mock import patch
 
 import gevent
@@ -42,7 +43,7 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location
+from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -102,6 +103,8 @@ def test_querying_balances(function_scope_kraken):
 
 
 def test_querying_trade_history(function_scope_kraken):
+    kraken = function_scope_kraken
+    kraken.random_ledgers_data = False
     now = ts_now()
     result = function_scope_kraken.query_trade_history(
         start_ts=1451606400,
@@ -129,17 +132,20 @@ def test_querying_rate_limit_exhaustion(function_scope_kraken, database):
 
     def mock_response(url, **kwargs):  # pylint: disable=unused-argument
         nonlocal count
-        if 'TradesHistory' in url:
+        if 'Ledgers' in url:
             if count == 0:
-                text = '{"result":{"trades": {"id1": {"ordertxid": "id1", "postxid": "bb1", "pair": "ETHDAI", "time": "1629490727.0000", "type": "buy", "ordertype": "limit", "price": "1.0", "vol": "1.0", "fee": "1.0", "cost": "1.0", "margin": "0.0", "misc": ""}}, "count": 10}}'  # noqa: E501
+                text = '{"result":{"ledger":{"L1":{"refid":"AOEXXV-61T63-AKPSJ0","time":1609950165.4497,"type":"trade","subtype":"","aclass":"currency","asset":"KFEE","amount":"0.00","fee":"1.145","balance":"0.00"},"L2":{"refid":"AOEXXV-61T63-AKPSJ0","time":1609950165.4492,"type":"trade","subtype":"","aclass":"currency","asset":"ZEUR","amount":"50","fee":"0.4429","balance":"500"},"L3":{"refid":"AOEXXV-61T63-AKPSJ0","time":1609950165.4486,"type":"trade","subtype":"","aclass":"currency","asset":"XETH","amount":"-0.1","fee":"0.0000000000","balance":1.1}},"count":2}}'  # noqa: E501
                 count += 1
                 return MockResponse(200, text)
-
             # else
             text = '{"result": "", "error": "EAPI Rate limit exceeded"}'
             count += 1
             return MockResponse(200, text)
-
+        if 'AssetPairs' in url:
+            dir_path = Path(__file__).resolve().parent.parent
+            filepath = dir_path / 'data' / 'assets_kraken.json'
+            with open(filepath) as f:
+                return MockResponse(200, f.read())
         # else
         raise AssertionError(f'Unexpected url in kraken query: {url}')
 
@@ -157,18 +163,20 @@ def test_querying_rate_limit_exhaustion(function_scope_kraken, database):
     assert len(trades) == 1
     from_ts, to_ts = database.get_used_query_range('kraken_trades_mockkraken')
     assert from_ts == 0
-    assert to_ts == 1629490727, 'should have saved only until the last trades timestamp'
+    assert to_ts == 1638529919, 'should have saved only until the last trades timestamp'
 
 
 def test_querying_deposits_withdrawals(function_scope_kraken):
+    kraken = function_scope_kraken
+    kraken.random_ledgers_data = False
     now = ts_now()
     result = function_scope_kraken.query_deposits_withdrawals(
-        start_ts=1451606400,
+        start_ts=1439994442,
         end_ts=now,
         only_cache=False,
     )
     assert isinstance(result, list)
-    assert len(result) != 0
+    assert len(result) == 2
 
 
 def test_kraken_to_world_pair(kraken):
@@ -249,173 +257,108 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
     kraken = function_scope_kraken
     kraken.random_ledgers_data = False
 
-    movements = kraken.query_deposits_withdrawals(
-        start_ts=1408994442,
-        end_ts=1498994442,
-        only_cache=False,
-    )
-
-    assert len(movements) == 4
-    assert movements[0].asset == A_BTC
-    assert movements[0].amount == FVal('5.0')
-    assert movements[0].category == AssetMovementCategory.DEPOSIT
-    assert movements[1].asset == A_ETH
-    assert movements[1].amount == FVal('10.0')
-    assert movements[1].category == AssetMovementCategory.DEPOSIT
-    assert movements[2].asset == A_BTC
-    assert movements[2].amount == FVal('5.0')
-    assert movements[2].category == AssetMovementCategory.WITHDRAWAL
-    assert movements[3].asset == A_ETH
-    assert movements[3].amount == FVal('10.0')
-    assert movements[3].category == AssetMovementCategory.WITHDRAWAL
-
-    warnings = kraken.msg_aggregator.consume_warnings()
-    assert len(warnings) == 2
-    assert 'unknown kraken asset IDONTEXIST' in warnings[0]
-    assert 'unknown kraken asset IDONTEXISTEITHER' in warnings[1]
-
-
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_query_deposit_withdrawals_unexpected_data(function_scope_kraken):
-    """Test if a kraken deposits_withdrawals query returns invalid data we handle it gracefully"""
-    kraken = function_scope_kraken
-    kraken.random_ledgers_data = False
-
-    test_deposits = """{
+    input_ledger = """
+    {
     "ledger": {
-    "1": {
-    "refid": "1",
-    "time": "1458994442",
-    "type": "deposit",
-    "aclass": "currency",
-    "asset": "BTC",
-    "amount": "5.0",
-    "balance": "10.0",
-    "fee": "0.1"
-    }
+        "0": {
+            "refid": "2",
+            "time": 1439994442,
+            "type": "withdrawal",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "XETH",
+            "amount": "-1.0000000000",
+            "fee": "0.0035000000",
+            "balance": "0.0000100000"
+        },
+        "L12382343902": {
+            "refid": "0",
+            "time": 1458994441.396,
+            "type": "deposit",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "EUR.HOLD",
+            "amount": "4000000.0000",
+            "fee": "1.7500",
+            "balance": "3999998.25"
+        },
+        "L12382343903": {
+            "refid": "3",
+            "time": 1458994441.396,
+            "type": "deposit",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "YYYYYYYYYYYY",
+            "amount": "4000000.0000",
+            "fee": "1.7500",
+            "balance": "3999998.25"
+        }
     },
-    "count": 1
-    }"""
+        "count": 3
+    }
+    """
 
-    withdraws = 'rotkehlchen.tests.utils.kraken.KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE'
-    zero_withdraws = patch(withdraws, new='{"count": 0, "ledger":{}}')
-
-    def query_kraken_and_test(
-            input_ledger,
-            expected_warnings_num,
-            expected_errors_num,
-            expect_skip=False,
-    ):
-        with patch(target, new=input_ledger), zero_withdraws:
-            deposits = kraken.query_online_deposits_withdrawals(
-                start_ts=0,
-                end_ts=TEST_END_TS,
-            )
-
-        if not expect_skip and expected_warnings_num == 0 and expected_errors_num == 0:
-            assert len(deposits) == 1
-            assert deposits[0].category == AssetMovementCategory.DEPOSIT
-            assert deposits[0].asset == A_BTC
-        else:
-            assert len(deposits) == 0
-        errors = kraken.msg_aggregator.consume_errors()
-        warnings = kraken.msg_aggregator.consume_warnings()
-        assert len(errors) == expected_errors_num
-        assert len(warnings) == expected_warnings_num
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
+    with patch(target, new=input_ledger):
+        movements = kraken.query_deposits_withdrawals(
+            start_ts=1408994442,
+            end_ts=1498994442,
+            only_cache=False,
+        )
 
     # first normal deposit should have no problem
-    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_SPECIFIC_DEPOSITS_RESPONSE'
-    query_kraken_and_test(test_deposits, expected_warnings_num=0, expected_errors_num=0)
-
-    # From here and on let's make sure we react correctly to unexpected data
-    # Invalid timestamp
-    input_ledger = test_deposits
-    input_ledger = input_ledger.replace('1458994442', 'dsadsadad')
-    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
-
-    # Invalid category type -- is skipped so no errors but a warning
-    input_ledger = test_deposits
-    input_ledger = input_ledger.replace('deposit', 'drinking')
-    query_kraken_and_test(
-        input_ledger,
-        expected_warnings_num=0,
-        expected_errors_num=0,
-        expect_skip=True,
-    )
-
-    # Invalid asset type
-    input_ledger = test_deposits
-    input_ledger = input_ledger.replace('"BTC"', '[]')
-    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
-
-    # Unknown asset
-    input_ledger = test_deposits
-    input_ledger = input_ledger.replace('"BTC"', '"DSADSD"')
-    query_kraken_and_test(input_ledger, expected_warnings_num=1, expected_errors_num=0)
-
-    # Invalid amount
-    input_ledger = test_deposits
-    input_ledger = input_ledger.replace('"5.0"', 'null')
-    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
-
-    # Invalid fee
-    input_ledger = test_deposits
-    input_ledger = input_ledger.replace('"0.1"', '{}')
-    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
-
-    # Missing key entry
-    input_ledger = test_deposits
-    input_ledger = input_ledger.replace('"asset": "BTC",', '')
-    query_kraken_and_test(input_ledger, expected_warnings_num=0, expected_errors_num=1)
+    assert len(movements) == 2
+    assert movements[0].asset == A_EUR
+    assert movements[0].amount == FVal('4000000')
+    assert movements[0].category == AssetMovementCategory.DEPOSIT
+    assert movements[1].asset == A_ETH
+    assert movements[1].amount == FVal('1')
+    assert movements[1].category == AssetMovementCategory.WITHDRAWAL
+    errors = kraken.msg_aggregator.consume_errors()
+    assert len(errors) == 1
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_trade_with_margin_skipped(function_scope_kraken):
-    """Test that kraken trades with non-zero margin field are skipped"""
+def test_kraken_trade_with_spend_receive(function_scope_kraken):
+    """Test sta"""
     kraken = function_scope_kraken
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.cache_ttl_secs = 0
 
     test_trades = """{
-        "trades": {
-            "1": {
-                "ordertxid": "1",
-                "postxid": 1,
-                "pair": "XXBTZEUR",
-                "time": "1458994442.2353",
-                "type": "buy",
-                "ordertype": "market",
-                "price": "100",
-                "vol": "1",
-                "fee": "0.1",
-                "cost": "100",
-                "margin": "0.0",
-                "misc": ""
-            },
-            "2": {
-                "ordertxid": "2",
-                "postxid": 2,
-                "pair": "XXBTZEUR",
-                "time": "1468994442.2353",
-                "type": "buy",
-                "ordertype": "market",
-                "price": "100",
-                "vol": "1",
-                "fee": "0.1",
-                "cost": "100",
-                "margin": "5.0",
-                "misc": ""
+        "ledger": {
+            "L2": {
+                "refid": "1",
+                "time": 1636406000.8555,
+                "type": "receive",
+                "subtype": "",
+                "aclass": "currency",
+                "asset": "XETH",
+                "amount": "1",
+                "fee": "0.0000000000",
+                "balance": "1001"
+                },
+            "L1": {
+                "refid": "1",
+                "time": 1636406000.8654,
+                "type": "spend",
+                "subtype": "",
+                "aclass": "currency",
+                "asset": "ZEUR",
+                "amount": "-100",
+                "fee": "0.4500",
+                "balance": "30000000"
             }
         },
         "count": 2
     }"""
 
-    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE'
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
     with patch(target, new=test_trades):
         trades, _ = kraken.query_online_trade_history(
             start_ts=0,
-            end_ts=TEST_END_TS,
+            end_ts=Timestamp(1637406000.8555),
         )
 
     assert len(trades) == 1
@@ -515,15 +458,11 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
 
     input_trades = test_trades
     input_trades = input_trades.replace('"type": "trade"', '"type": "not existing type"')
-    query_kraken_and_test(input_trades, expected_warnings_num=1, expected_errors_num=0)
-
-    input_trades = test_trades
-    input_trades = input_trades.replace('"price": "100"', '"price": "dsadsda"')
-    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+    query_kraken_and_test(input_trades, expected_warnings_num=2, expected_errors_num=0)
 
     # Also test key error
     input_trades = test_trades
-    input_trades = input_trades.replace('"vol": "1",', '')
+    input_trades = input_trades.replace('"amount": "-100",', '')
     query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
 
 

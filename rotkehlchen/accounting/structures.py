@@ -8,7 +8,7 @@ from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import DeserializationError, InputError
+from rotkehlchen.errors import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts
@@ -314,7 +314,10 @@ class HistoryEventSubType(DBEnumMixIn):
     FEE = 5
 
     @classmethod
-    def deserialize_from_db(cls, value: Optional[str]) -> Optional['HistoryEventSubType']:
+    def deserialize_from_db(    # type: ignore
+        cls,
+        value: Optional[str],
+    ) -> Optional['HistoryEventSubType']:
         if value is not None:
             return super().deserialize_from_db(value)
         return None

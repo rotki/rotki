@@ -238,7 +238,6 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]
     if result is None:
         if method == 'Balance':
             return {}
-
         raise RemoteError(f'Missing result in kraken response for {method}')
 
     return result
@@ -697,6 +696,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
+        self.query_kraken_ledger_actions()
         events = self.db.get_history_events(
             location=Location.KRAKEN,
             location_label=self.name,
@@ -779,17 +779,14 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[LedgerAction]:
         return []  # noop for kraken
 
-    def query_online_staking_history(
-        self,
-        ranges: List[Tuple[Timestamp, Timestamp]],
-    ) -> None:
-        self.query_kraken_ledger_actions()
-        return None
-
     def query_pairs(self) -> None:
         self.pairs = set(self.api_query('AssetPairs').keys())
 
     def kraken_asset_to_pair(self, assets: List[Asset]) -> Optional[str]:
+        """Given a pair of assets find the kraken pair that has this two assets as
+        base and quote"""
+        if len(assets) != 2:
+            return None
         assets_symbols = [asset.symbol for asset in assets]
         pair = "".join(assets_symbols)
         if pair not in self.pairs:
@@ -955,7 +952,10 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             new_events = []
             for events in raw_events_groupped.values():
                 try:
-                    events = sorted(events, key=lambda x: deserialize_timestamp_from_kraken(x['time']))
+                    events = sorted(
+                        events,
+                        key=lambda x: deserialize_timestamp_from_kraken(x['time']),
+                    )
                 except DeserializationError as e:
                     self.msg_aggregator.add_error(
                         f'Failed to read timestamp in kraken event group '
@@ -972,6 +972,9 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         asset = asset_from_kraken(raw_event['asset'])
                         event_subtype = None
                         amount = abs(deserialize_asset_amount(raw_event['amount']))
+                        # If we don't know how to handle an event atm or we find an unsupported
+                        # event type the logic will be to store it as unknown and if in the future
+                        # we need some information from it we can take actions to process them
                         if event_type == HistoryEventType.TRANSFER:
                             if raw_event['subtype'] == 'spottostaking':
                                 event_type = HistoryEventType.STAKING
@@ -988,8 +991,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         elif event_type == HistoryEventType.UNKNOWN:
                             found_unknown_event = True
                             self.msg_aggregator.add_warning(
-                                f'Encountered unknown event type {event_type}. Event will be '
-                                f'stored but not processed.'
+                                f'Encountered unknown event type {raw_event["type"]}. Event '
+                                f'will be stored but not processed.',
                             )
                         fee = deserialize_asset_amount(raw_event['fee'])
 
@@ -1033,7 +1036,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         if isinstance(e, KeyError):
                             msg = f'Keyrror {msg}'
                         self.msg_aggregator.add_error(
-                            f'Failed to read staking event from kraken {raw_event} due to {msg}',
+                            f'Failed to read ledger event from kraken {raw_event} due to {msg}',
                         )
                         break
                 else:
@@ -1043,6 +1046,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         for event in group_events:
                             event.event_type = HistoryEventType.UNKNOWN
                     new_events.extend(group_events)
+            # Make sure that events are saved and if we fail to save them don't update
+            # the time ranges queried
             is_db_saved = True
             if len(new_events) != 0:
                 is_db_saved = self.db.save_history_events(new_events)

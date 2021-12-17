@@ -1295,6 +1295,7 @@ class DBHandler:
         - {exchange_location_name}_margins_{exchange_name}
         - {exchange_location_name}_asset_movements_{exchange_name}
         - {exchange_location_name}_ledger_actions_{exchange_name}
+        - {location}_history_events_{optional_label}
         - aave_events_{address}
         - yearn_vaults_events_{address}
         - yearn_vaults_v2_events_{address}
@@ -1335,6 +1336,10 @@ class DBHandler:
         )
         cursor.execute(
             'DELETE FROM asset_movements WHERE location = ?;',
+            (location.serialize_for_db(),),
+        )
+        cursor.execute(
+            'DELETE FROM history_events WHERE location = ?;',
             (location.serialize_for_db(),),
         )
         self.update_last_write()
@@ -3412,7 +3417,7 @@ class DBHandler:
             'SELECT location FROM ledger_actions UNION '
             'SELECT location FROM margin_positions UNION '
             'SELECT location FROM user_credentials UNION '
-            'SELECT location FROM amm_swaps UNION'
+            'SELECT location FROM amm_swaps UNION '
             'SELECT location FROM history_events',
         )
         locations = {Location.deserialize_from_db(loc[0]) for loc in cursor}
@@ -3461,15 +3466,17 @@ class DBHandler:
             cursor.execute(query_str, params)
             affected_rows = cursor.rowcount
             self.update_last_write()
-            cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{location}_history_events_%"')
+            cursor.execute(
+                f'DELETE FROM used_query_ranges WHERE name LIKE "{location}_history_events_%"',
+            )
             query_ranges_removals = cursor.rowcount
             if affected_rows != 0:
                 assert query_ranges_removals == 1
             return affected_rows
-        except sqlcipher.DatabaseError as e:
+        except sqlcipher.OperationalError as e:    # pylint: disable=no-member
             self.msg_aggregator.add_error(
                 f'Failed to delete history events with params {params} and '
-                f'query {query_str}. {str(e)}'
+                f'query {query_str}. {str(e)}',
             )
         return -1
 
