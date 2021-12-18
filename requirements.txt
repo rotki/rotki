@@ -27,7 +27,7 @@ miniupnpc==2.0.2
 flask-cors==3.0.10
 flask-restful==0.3.9
 flask==2.0.2
-marshmallow==3.14.1
+marshmallow==3.14.0
 webargs==8.0.1
 
 #constraints

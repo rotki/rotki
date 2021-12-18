@@ -1,5 +1,5 @@
+from json.decoder import JSONDecodeError
 import logging
-import os
 import platform
 import shutil
 import sys
@@ -29,11 +29,15 @@ class GeolocationData(NamedTuple):
 def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
     """This functions tries to get the country of the user based on the ip.
     To do that it makes use of an open ip to country database and tries to obtain
-    the ip ussing UPnP protocol."""
-    # Download a copy of database with maps of ip to country
+    the ip ussing UPnP protocol.
+
+    If UpNP fails we just return None
+
+    **IMPORTANT:** The ip never leaves the user's machine. It's all calculated locally.
+    """
     geoip_dir = data_dir / 'misc'
     geoip_dir.mkdir(parents=True, exist_ok=True)
-    # get latests database version
+    # get latest database version
     metadata_query_failed = False
     try:
         response = requests.get(
@@ -49,7 +53,7 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
     except requests.exceptions.RequestException as e:
         log.debug(f'Failed to get metadata information for geoip file. {str(e)}')
         metadata_query_failed = True
-    except DeserializationError as e:
+    except (DeserializationError, JSONDecodeError) as e:
         log.debug(f'Failed to deserialize date in metadata information for geoip file. {str(e)}')
         metadata_query_failed = True
     except KeyError as e:
@@ -68,7 +72,7 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
         # Remove old files
         files = geoip_dir.glob('*.*')
         for f in files:
-            os.remove(f)
+            f.unlink()
         # Download latest version
         try:
             response = requests.get(
@@ -91,9 +95,8 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
         u.selectigd()
         user_ip = u.externalipaddress()
     except Exception as e:  # pylint: disable=broad-except
-        # In my case I was getting a generic exception rised
-        # when failing to detect the ip
-        log.debug(f'Failed to get ip for analytics. {str(e)}')
+        # can raise base exception so we catch it
+        log.debug(f'Failed to get ip via UPnP for analytics. {str(e)}')
         return None
 
     try:
@@ -104,7 +107,7 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
                 return None
             return GeolocationData(country_code=location)
     except maxminddb.errors.InvalidDatabaseError as e:
-        os.remove(filename)
+        filename.unlink()
         log.debug(f'Failed to read database {str(e)}')
     except ValueError as e:
         log.debug(f'Wrong ip search {str(e)}')
@@ -124,10 +127,7 @@ def create_usage_analytics(data_dir: Path) -> Dict[str, Any]:
         location_data = GeolocationData('unknown')
 
     analytics['country'] = location_data.country_code
-    # To improvice privacy of the users we have changed the method of obtaining information
-    # about the country of the user and the city is not information we get anymore. We leave
-    # the field city for compatibility with the API.
-    analytics['city'] = 'unknown'
+    analytics['city'] = 'unknown'  # deprecated -- we no longer use it
 
     return analytics
 

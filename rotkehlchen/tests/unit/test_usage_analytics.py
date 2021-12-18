@@ -12,7 +12,6 @@ def test_create_usage_analytics(data_dir):
     assert 'system_version' in analytics
     assert analytics['rotki_version'] == get_system_spec()['rotkehlchen']
     if sys.platform != 'darwin':
-        assert analytics['country'] != 'unknown'
         assert analytics['city'] == 'unknown'
     else:
         assert analytics['country'] is not None
