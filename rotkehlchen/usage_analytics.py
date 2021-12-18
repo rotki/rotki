@@ -1,4 +1,3 @@
-import glob
 import logging
 import os
 import platform
@@ -9,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, NamedTuple, Optional
 
 import maxminddb
+import miniupnpc
 import requests
 
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
@@ -27,6 +27,9 @@ class GeolocationData(NamedTuple):
 
 
 def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
+    """This functions tries to get the country of the user based on the ip.
+    To do that it makes use of an open ip to country database and tries to obtain
+    the ip ussing UPnP protocol."""
     # Download a copy of database with maps of ip to country
     geoip_dir = data_dir / 'misc'
     geoip_dir.mkdir(parents=True, exist_ok=True)
@@ -54,16 +57,16 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
         metadata_query_failed = True
 
     if metadata_query_failed:
-        old_files = glob.glob(str(geoip_dir) + '/*.mmdb')
+        old_files = list(geoip_dir.glob('*.mmdb'))
         if len(old_files) == 0:
             return None
-        filename = geoip_dir / old_files[0]
+        filename = old_files[0]
     else:
         filename = geoip_dir / f'geoip-{date}.mmdb'
 
     if not filename.is_file():
         # Remove old files
-        files = glob.glob(str(geoip_dir) + '/*')
+        files = geoip_dir.glob('*.*')
         for f in files:
             os.remove(f)
         # Download latest version
@@ -82,12 +85,15 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
 
     # get user ip
     try:
-        user_ip = requests.get(
-            url='https://checkip.amazonaws.com',
-            timeout=DEFAULT_TIMEOUT_TUPLE,
-        ).text.strip()
-    except requests.exceptions.RequestException as e:
-        log.debug(f'Failed to get ip. {str(e)}')
+        u = miniupnpc.UPnP()
+        u.discoverdelay = 200
+        u.discover()
+        u.selectigd()
+        user_ip = u.externalipaddress()
+    except Exception as e:  # pylint: disable=broad-except
+        # In my case I was getting a generic exception rised
+        # when failing to detect the ip
+        log.debug(f'Failed to get ip for analytics. {str(e)}')
         return None
 
     try:
@@ -118,6 +124,9 @@ def create_usage_analytics(data_dir: Path) -> Dict[str, Any]:
         location_data = GeolocationData('unknown')
 
     analytics['country'] = location_data.country_code
+    # To improvice privacy of the users we have changed the method of obtaining information
+    # about the country of the user and the city is not information we get anymore. We leave
+    # the field city for compatibility with the API.
     analytics['city'] = 'unknown'
 
     return analytics
