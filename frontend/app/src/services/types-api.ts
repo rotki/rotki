@@ -12,17 +12,6 @@ export interface SupportedAssets {
   readonly [key: string]: Omit<SupportedAsset, 'identifier'>;
 }
 
-export interface EntryWithMeta<T> {
-  readonly entry: T;
-  readonly ignoredInAccounting: boolean;
-}
-
-export interface LimitedResponse<T> {
-  readonly entries: T[];
-  readonly entriesFound: number;
-  readonly entriesLimit: number;
-}
-
 export class TaskNotFoundError extends Error {}
 
 export interface AsyncQuery {

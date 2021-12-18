@@ -45,7 +45,8 @@
         :total="total"
         :found="found"
         :selected="selected"
-        @update:selected="selected = $event"
+        :is-selected="isSelected"
+        @update:selection="selectionChanged(...$event)"
         @update:pagination="onPaginationUpdate($event)"
       />
     </card>
@@ -55,7 +56,6 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import {
-  computed,
   defineComponent,
   onBeforeMount,
   Ref,
@@ -67,17 +67,16 @@ import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import { setupStatusChecking } from '@/composables/common';
+import { setupTransactions } from '@/composables/history';
+import { setupSettings } from '@/composables/settings';
 import {
   EthTransaction,
   TransactionRequestPayload
 } from '@/services/history/types';
 import { Section } from '@/store/const';
-import { HistoryActions } from '@/store/history/consts';
-import { IgnoreActionType } from '@/store/history/types';
-import { getKey } from '@/store/history/utils';
-import { RotkehlchenState } from '@/store/types';
-import { useStore } from '@/store/utils';
+import { EthTransactionEntry, IgnoreActionType } from '@/store/history/types';
 import { setupIgnore } from '@/views/history/composables/ignore';
+import { setupSelectionMode } from '@/views/history/composables/selection';
 import TransactionTable from '@/views/history/tx/TransactionTable.vue';
 
 export default defineComponent({
@@ -91,56 +90,37 @@ export default defineComponent({
   },
   setup() {
     const account: Ref<GeneralAccount | null> = ref(null);
-    const selected: Ref<string[]> = ref([]);
-    const store = useStore();
-
-    const state: RotkehlchenState = store.state;
-    const itemsPerPage = state.settings!!.itemsPerPage;
+    const { itemsPerPage } = setupSettings();
 
     const payload = ref<TransactionRequestPayload>({
-      limit: itemsPerPage,
+      limit: itemsPerPage.value,
       offset: 0,
       orderByAttribute: 'timestamp',
       ascending: false
     });
 
     watch(account, account => {
-      const state: RotkehlchenState = store.state;
-      const limit = state.settings!!.itemsPerPage;
+      const limit = itemsPerPage.value;
       payload.value = {
         ...payload.value,
         offset: 0,
         limit,
         address: account?.address
       };
-      fetchTransactions().then();
+      fetchTransactionsHandler().then();
     });
 
-    const transactions = computed(() => {
-      const state: RotkehlchenState = store.state;
-      return state.history!!.transactions.entries;
-    });
-    const limit = computed(() => {
-      const state: RotkehlchenState = store.state;
-      return state.history!!.transactions.entriesLimit;
-    });
-    const found = computed(() => {
-      const state: RotkehlchenState = store.state;
-      return state.history!!.transactions.entriesFound;
-    });
-    const total = computed(() => {
-      const state: RotkehlchenState = store.state;
-      return state.history!!.transactions.entriesTotal;
-    });
+    const { transactions, limit, found, total, fetchTransactions } =
+      setupTransactions();
 
-    const fetchTransactions = async (refresh: boolean = false) => {
-      await store.dispatch(`history/${HistoryActions.FETCH_TRANSACTIONS}`, {
+    const fetchTransactionsHandler = async (refresh: boolean = false) => {
+      await fetchTransactions({
         ...payload.value,
         onlyCache: !refresh
       });
     };
 
-    const refresh = async () => await fetchTransactions(true);
+    const refresh = async () => await fetchTransactionsHandler(true);
 
     const onPaginationUpdate = ({
       ascending,
@@ -162,13 +142,19 @@ export default defineComponent({
         ascending
       };
 
-      fetchTransactions().then();
+      fetchTransactionsHandler().then();
     };
 
-    onBeforeMount(async () => await fetchTransactions());
+    onBeforeMount(async () => await fetchTransactionsHandler());
 
     const { isSectionRefreshing, shouldShowLoadingScreen } =
       setupStatusChecking();
+
+    const { selected, isSelected, selectionChanged } =
+      setupSelectionMode<EthTransactionEntry>(
+        transactions,
+        item => item.identifier
+      );
 
     return {
       account,
@@ -180,13 +166,16 @@ export default defineComponent({
       refreshing: isSectionRefreshing(Section.TX),
       refresh,
       selected,
-      fetchTransactions,
+      isSelected,
+      selectionChanged,
+      fetchTransactionsHandler,
       onPaginationUpdate,
       ...setupIgnore(
         IgnoreActionType.ETH_TRANSACTIONS,
         selected,
         transactions,
-        item => getKey(item.entry)
+        () => fetchTransactionsHandler(false),
+        item => item.identifier
       )
     };
   }

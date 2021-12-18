@@ -1,19 +1,19 @@
 <template>
   <data-table
+    :class="$style.table"
+    :expanded="expanded"
     :headers="tableHeaders"
     :items="txs"
+    :options.sync="options"
+    :server-items-length="itemLength"
     show-expand
     single-expand
-    :expanded="expanded"
-    :server-items-length="itemLength"
-    :options.sync="options"
-    :class="$style.table"
   >
     <template #item.selection="{ item }">
       <v-simple-checkbox
         :ripple="false"
         color="primary"
-        :value="isSelected(item)"
+        :value="isSelected(item.identifier)"
         @input="selectionChanged(item, $event)"
       />
     </template>
@@ -78,10 +78,8 @@ import TransactionsDetails from '@/components/history/TransactionsDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
-import {
-  EthTransaction,
-  EthTransactionWithMeta
-} from '@/services/history/types';
+import { EthTransaction } from '@/services/history/types';
+import { EthTransactionEntry } from '@/store/history/types';
 import { toUnit, Unit } from '@/utils/calculation';
 
 const tableHeaders: DataTableHeader[] = [
@@ -93,13 +91,15 @@ const tableHeaders: DataTableHeader[] = [
   {
     text: i18n.t('transactions.headers.txhash').toString(),
     value: 'txHash',
-    class: 'text-no-wrap'
+    class: 'text-no-wrap',
+    sortable: false
   },
   {
     text: i18n.t('transactions.headers.block').toString(),
     value: 'blockNumber',
     align: 'end',
-    class: 'text-no-wrap'
+    class: 'text-no-wrap',
+    sortable: false
   },
   {
     text: i18n.t('transactions.headers.timestamp').toString(),
@@ -109,18 +109,21 @@ const tableHeaders: DataTableHeader[] = [
   {
     text: i18n.t('transactions.headers.from_address').toString(),
     value: 'fromAddress',
-    class: 'text-no-wrap'
+    class: 'text-no-wrap',
+    sortable: false
   },
   {
     text: i18n.t('transactions.headers.to_address').toString(),
     value: 'toAddress',
-    class: 'text-no-wrap'
+    class: 'text-no-wrap',
+    sortable: false
   },
   {
     text: i18n.t('transactions.headers.value').toString(),
     value: 'value',
     align: 'end',
-    class: 'text-no-wrap'
+    class: 'text-no-wrap',
+    sortable: false
   },
   {
     text: i18n.t('transactions.headers.gas_fee').toString(),
@@ -136,7 +139,7 @@ const tableHeaders: DataTableHeader[] = [
     class: 'text-no-wrap',
     sortable: false
   },
-  { text: '', value: 'data-table-expand' }
+  { text: '', value: 'data-table-expand', sortable: false }
 ];
 
 type PaginationOptions = {
@@ -151,7 +154,7 @@ export default defineComponent({
   props: {
     transactions: {
       required: true,
-      type: Array as PropType<EthTransactionWithMeta[]>
+      type: Array as PropType<EthTransactionEntry[]>
     },
     limit: {
       required: true,
@@ -168,43 +171,29 @@ export default defineComponent({
     selected: {
       required: true,
       type: Array as PropType<string[]>
+    },
+    isSelected: {
+      required: true,
+      type: Function
     }
   },
-  emits: ['update:selected', 'update:pagination'],
+  emits: ['update:selection', 'update:pagination'],
   setup(props, { emit }) {
     const expanded = ref([]);
     const options: Ref<PaginationOptions | null> = ref(null);
-    const { selected, transactions, found, limit } = toRefs(props);
-
-    const getKey = ({ fromAddress, nonce, txHash }: EthTransaction) =>
-      `${txHash}${nonce}${fromAddress}`;
+    const { transactions, found, limit } = toRefs(props);
 
     const txs = computed(() => {
       let id = 1;
       const txs = transactions.value;
-      return txs.map(({ entry, ignoredInAccounting }) => ({
-        ...entry,
-        id: `${id++}`,
-        ignoredInAccounting
+      return txs.map(data => ({
+        ...data,
+        id: `${id++}`
       }));
     });
 
-    const isSelected = (item: EthTransaction) => {
-      return selected.value.includes(getKey(item));
-    };
-
     const selectionChanged = (tx: EthTransaction, select: boolean) => {
-      const key = getKey(tx);
-      const selection = [...selected.value];
-      if (!select) {
-        const index = selection.indexOf(key);
-        if (index >= 0) {
-          selection.splice(index, 1);
-        }
-      } else if (key && !selection.includes(key)) {
-        selection.push(key);
-      }
-      emit('update:selected', selection);
+      emit('update:selection', [tx.identifier, select]);
     };
 
     const updatePagination = (options: PaginationOptions | null) => {
@@ -216,7 +205,7 @@ export default defineComponent({
         page: page,
         sortBy: sortBy.length > 0 ? sortBy[0] : 'timestamp',
         ascending: !sortDesc[0],
-        itemsPerPage: itemsPerPage
+        itemsPerPage
       });
     };
 
@@ -231,7 +220,7 @@ export default defineComponent({
       }
 
       const entryLimit = limit.value;
-      return totalFound > entryLimit ? entryLimit : totalFound;
+      return Math.min(totalFound, entryLimit);
     });
 
     return {
@@ -241,7 +230,6 @@ export default defineComponent({
       options,
       itemLength,
       selectionChanged,
-      isSelected,
       gasFee: (tx: EthTransaction) =>
         toUnit(tx.gasPrice.multipliedBy(tx.gasUsed), Unit.ETH),
       toEth: (value: BigNumber) => toUnit(value, Unit.ETH)

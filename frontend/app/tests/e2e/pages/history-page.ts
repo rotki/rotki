@@ -5,7 +5,21 @@ export class HistoryPage {
   visit() {
     cy.get('.v-app-bar__nav-icon').click();
     cy.get('.navigation__history').click();
+    const fetchTradesAssertion = this.fetchTrades();
     cy.get('.navigation__history-trades').click();
+    fetchTradesAssertion();
+  }
+
+  fetchTrades() {
+    cy.intercept({
+      method: 'GET',
+      url: '/api/1/trades**'
+    }).as('apiCall');
+
+    return () => {
+      // Wait for response.status to be 200
+      cy.wait('@apiCall').its('response.statusCode').should('equal', 200);
+    };
   }
 
   addTrade(trade: ExternalTrade) {
@@ -39,7 +53,9 @@ export class HistoryPage {
     selectAsset('[data-cy=fee-currency]', trade.fee_currency, trade.fee_id);
     cy.get('[data-cy=link]').type(trade.link);
     cy.get('[data-cy=notes]').type(trade.notes);
+    const fetchTradesAssertion = this.fetchTrades();
     cy.get('.big-dialog__buttons__confirm').click();
+    fetchTradesAssertion();
     cy.get('[data-cy=trade-form]').should('not.exist');
   }
 
@@ -47,7 +63,9 @@ export class HistoryPage {
     cy.get('[data-cy=confirm-dialog]')
       .find('[data-cy=dialog-title]')
       .should('contain', 'Delete Trade');
+    const fetchTradesAssertion = this.fetchTrades();
     cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
+    fetchTradesAssertion();
     cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
   }
 
@@ -90,7 +108,9 @@ export class HistoryPage {
     cy.get('[data-cy=amount]').clear();
     cy.get('[data-cy=amount]').type(amount);
 
+    const fetchTradesAssertion = this.fetchTrades();
     cy.get('.big-dialog__buttons__confirm').click();
+    fetchTradesAssertion();
     cy.get('[data-cy=trade-form]').should('not.exist');
   }
 

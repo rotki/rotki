@@ -1,5 +1,6 @@
 import { AssetBalanceWithPrice } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
+import { SupportedAsset } from '@rotki/common/lib/data';
 import { computed, Ref } from '@vue/composition-api';
 import { ManualBalance } from '@/services/balances/types';
 import {
@@ -8,7 +9,8 @@ import {
   AssetSymbolGetter,
   BlockchainAccountPayload,
   BlockchainAccountWithBalance,
-  ExchangeRateGetter
+  ExchangeRateGetter,
+  IdentifierForSymbolGetter
 } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
@@ -17,6 +19,15 @@ import { Eth2Validator } from '@/types/balances';
 export const setupExchangeRateGetter = () => {
   const store = useStore();
   return store.getters['balances/exchangeRate'] as ExchangeRateGetter;
+};
+
+export const setupSupportedAssets = () => {
+  const store = useStore();
+  const supportedAssets = computed<SupportedAsset[]>(() => {
+    return store.state.balances!.supportedAssets;
+  });
+
+  return { supportedAssets };
 };
 
 export type BlockchainData = {
@@ -75,14 +86,21 @@ export const setupAssetInfoRetrieval = () => {
   const getAssetInfo: AssetInfoGetter = store.getters['balances/assetInfo'];
   const getAssetSymbol: AssetSymbolGetter =
     store.getters['balances/assetSymbol'];
+  const getAssetIdentifierForSymbol: IdentifierForSymbolGetter =
+    store.getters['balances/getIdentifierForSymbol'];
   const getAssetName = (identifier: string) => {
     const asset = getAssetInfo(identifier);
     return asset ? (asset.name ? asset.name : '') : '';
   };
+  const getTokenAddress = (identifier: string) => {
+    return getAssetInfo(identifier)?.ethereumAddress ?? '';
+  };
   return {
     getAssetInfo,
+    getAssetIdentifierForSymbol,
     getAssetSymbol,
-    getAssetName
+    getAssetName,
+    getTokenAddress
   };
 };
 

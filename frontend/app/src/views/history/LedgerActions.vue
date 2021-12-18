@@ -64,7 +64,6 @@ import {
 } from '@/store/history/consts';
 import {
   FetchSource,
-  HistoricData,
   IgnoreActionPayload,
   LedgerAction,
   LedgerActionEntry,
@@ -72,6 +71,7 @@ import {
 } from '@/store/history/types';
 import { ActionStatus, Message } from '@/store/types';
 import { Writeable } from '@/types';
+import { Collection } from '@/types/collection';
 import { LedgerActionType } from '@/types/ledger-actions';
 import { Zero } from '@/utils/bignumbers';
 import LedgerActionsContent from '@/views/history/LedgerActionsContent.vue';
@@ -117,6 +117,7 @@ function lastSelectedLocation(): TradeLocation {
   },
   methods: {
     ...mapActions('history', [
+      HistoryActions.FETCH_ASSOCIATED_LOCATIONS,
       HistoryActions.FETCH_LEDGER_ACTIONS,
       HistoryActions.ADD_LEDGER_ACTION,
       HistoryActions.EDIT_LEDGER_ACTION,
@@ -129,6 +130,7 @@ function lastSelectedLocation(): TradeLocation {
 })
 export default class LedgerActions extends Mixins(StatusMixin) {
   readonly section = Section.LEDGER_ACTIONS;
+  [HistoryActions.FETCH_ASSOCIATED_LOCATIONS]!: () => Promise<void>;
   [HistoryActions.FETCH_LEDGER_ACTIONS]!: (
     payload: FetchSource
   ) => Promise<void>;
@@ -144,7 +146,9 @@ export default class LedgerActions extends Mixins(StatusMixin) {
   ignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   unignoreActions!: (actionsIds: IgnoreActionPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
-  ledgerActions!: HistoricData<LedgerActionEntry>;
+  ledgerActions!: Collection<LedgerActionEntry>;
+  ledgerActionsTotal!: number;
+  ledgerActionsLimit!: number;
 
   openDialog: boolean = false;
   validForm: boolean = false;
@@ -162,7 +166,8 @@ export default class LedgerActions extends Mixins(StatusMixin) {
     await this.fetch(FETCH_REFRESH);
   }
 
-  async mounted() {
+  async created() {
+    await this.fetchAssociatedLocations();
     await this.fetch(FETCH_FROM_SOURCE);
   }
 

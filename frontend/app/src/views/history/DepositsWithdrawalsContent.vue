@@ -38,16 +38,16 @@
       <template #header.selection>
         <v-simple-checkbox
           :ripple="false"
-          :value="allSelected"
+          :value="isAllSelected"
           color="primary"
-          @input="setSelected($event)"
+          @input="setAllSelected($event)"
         />
       </template>
       <template #item.selection="{ item }">
         <v-simple-checkbox
           :ripple="false"
           color="primary"
-          :value="selected.includes(item.identifier)"
+          :value="isSelected(item.identifier)"
           @input="selectionChanged(item.identifier, $event)"
         />
       </template>
@@ -352,7 +352,10 @@ export default defineComponent({
       }
     });
 
-    const selectionMode = setupSelectionMode(items, item => item.identifier);
+    const selectionMode = setupSelectionMode<AssetMovementEntry>(
+      items,
+      item => item.identifier
+    );
 
     return {
       tableHeaders,
@@ -364,6 +367,7 @@ export default defineComponent({
         IgnoreActionType.MOVEMENTS,
         selectionMode.selected,
         items,
+        () => {}, // TODO: Change it in next PR
         item => item.identifier
       ),
       ...setupFilter(assets, locations, items, visibleItems, getSymbol),

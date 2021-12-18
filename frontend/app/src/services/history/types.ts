@@ -1,39 +1,87 @@
 import { NumericString, BigNumber } from '@rotki/common';
-import { z } from 'zod';
-import { SupportedTradeLocation } from '@/services/balances/types';
-import { TradeEntry } from '@/store/history/types';
-import { Nullable } from '@/types';
-import { SupportedExchange } from '@/types/exchanges';
+import { z, ZodTypeAny } from 'zod';
+import { SUPPORTED_TRADE_LOCATIONS } from '@/data/defaults';
+import { SUPPORTED_EXCHANGES } from '@/types/exchanges';
 
-export type TradeType = 'buy' | 'sell';
+// Common wrapper function
+const EntryMeta = z.object({
+  ignoredInAccounting: z.boolean()
+});
 
-export interface Trade {
-  readonly tradeId: string;
-  readonly timestamp: number;
-  readonly location: TradeLocation;
-  readonly baseAsset: string;
-  readonly quoteAsset: string;
-  readonly tradeType: TradeType;
-  readonly amount: BigNumber;
-  readonly rate: BigNumber;
-  readonly fee?: Nullable<BigNumber>;
-  readonly feeCurrency?: Nullable<string>;
-  readonly link?: Nullable<string>;
-  readonly notes?: Nullable<string>;
+export type EntryMeta = z.infer<typeof EntryMeta>;
+
+export type EntryWithMeta<T> = {
+  readonly entry: T;
+} & EntryMeta;
+
+function getEntryWithMeta(obj: ZodTypeAny) {
+  return z
+    .object({
+      entry: obj
+    })
+    .merge(EntryMeta);
 }
+
+function getCollectionResponseType(obj: ZodTypeAny) {
+  return z.object({
+    entries: z.array(obj),
+    entriesFound: z.number(),
+    entriesLimit: z.number(),
+    entriesTotal: z.number()
+  });
+}
+
+// Trades
+export const TradeType = z.enum(['buy', 'sell']);
+export type TradeType = z.infer<typeof TradeType>;
+
+// @ts-ignore
+export const TradeLocation = z.enum([
+  ...SUPPORTED_EXCHANGES,
+  ...SUPPORTED_TRADE_LOCATIONS,
+  'gitcoin'
+]);
+
+export type TradeLocation = z.infer<typeof TradeLocation>;
+
+export const Trade = z.object({
+  tradeId: z.string(),
+  timestamp: z.number(),
+  location: TradeLocation,
+  baseAsset: z.string(),
+  quoteAsset: z.string(),
+  tradeType: TradeType,
+  amount: NumericString,
+  rate: NumericString,
+  fee: NumericString.nullable().optional(),
+  feeCurrency: z.string().nullable().optional(),
+  link: z.string().nullable().optional(),
+  notes: z.string().nullable().optional()
+});
+
+export type Trade = z.infer<typeof Trade>;
+
+export const TradeCollectionResponse = getCollectionResponseType(
+  getEntryWithMeta(Trade)
+);
 
 export type NewTrade = Omit<Trade, 'tradeId' | 'ignoredInAccounting'>;
 
-export interface TradeUpdate {
-  readonly trade: TradeEntry;
-  readonly oldTradeId: string;
-}
+export type TradeRequestPayload = {
+  readonly limit: number;
+  readonly offset: number;
+  readonly orderByAttribute?: string;
+  readonly ascending: boolean;
+  readonly fromTimestamp?: string | number;
+  readonly toTimestamp?: string | number;
+  readonly location?: string;
+  readonly baseAsset?: string;
+  readonly quoteAsset?: string;
+  readonly tradeType?: string;
+  readonly onlyCache?: boolean;
+};
 
-export type TradeLocation =
-  | SupportedExchange
-  | SupportedTradeLocation
-  | 'gitcoin';
-
+// Asset Movements
 type MovementCategory = 'deposit' | 'withdrawal';
 
 export interface AssetMovement {
@@ -50,6 +98,7 @@ export interface AssetMovement {
   readonly link: string;
 }
 
+// ETH Transactions
 export const EthTransaction = z.object({
   txHash: z.string(),
   timestamp: z.number(),
@@ -61,30 +110,15 @@ export const EthTransaction = z.object({
   gasPrice: NumericString,
   gasUsed: NumericString,
   inputData: z.string(),
-  nonce: z.number()
+  nonce: z.number(),
+  identifier: z.string()
 });
 
 export type EthTransaction = z.infer<typeof EthTransaction>;
 
-const EthTransactionWithMeta = z.object({
-  entry: EthTransaction,
-  ignoredInAccounting: z.boolean()
-});
-
-export type EthTransactionWithMeta = z.infer<typeof EthTransactionWithMeta>;
-
-export const Transactions = z.object({
-  entries: z.array(EthTransactionWithMeta),
-  entriesFound: z.number(),
-  entriesLimit: z.number(),
-  entriesTotal: z.number()
-});
-
-export type Transactions = z.infer<typeof Transactions>;
-
-export interface LedgerActionResult {
-  readonly identifier: number;
-}
+export const EthTransactionCollectionResponse = getCollectionResponseType(
+  getEntryWithMeta(EthTransaction)
+);
 
 export type TransactionRequestPayload = {
   readonly limit: number;
@@ -96,3 +130,8 @@ export type TransactionRequestPayload = {
   readonly onlyCache?: boolean;
   readonly address?: string;
 };
+
+// Ledger Actions
+export interface LedgerActionResult {
+  readonly identifier: number;
+}
