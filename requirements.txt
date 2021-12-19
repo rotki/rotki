@@ -20,6 +20,8 @@ py-bip39-bindings==0.1.6
 substrate-interface==1.0.6
 scalecodec==1.0.16
 beautifulsoup4==4.10.0
+maxminddb==2.2.0
+miniupnpc==2.0.2
 
 # For the rest api
 flask-cors==3.0.10
