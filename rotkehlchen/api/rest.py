@@ -61,6 +61,7 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.cache_handler import DBAccountingReports
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
+    AssetMovementsFilterQuery,
     ETHTransactionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
@@ -878,19 +879,15 @@ class RestAPI():
 
     def _get_asset_movements(
             self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            location: Optional[Location],
+            filter_query: AssetMovementsFilterQuery,
             only_cache: bool,
     ) -> Dict[str, Any]:
         msg = ''
         status_code = HTTPStatus.OK
         result = None
         try:
-            movements = self.rotkehlchen.events_historian.query_asset_movements(
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-                location=location,
+            movements, filter_total_found = self.rotkehlchen.events_historian.query_asset_movements(  # noqa: E501
+                filter_query=filter_query,
                 only_cache=only_cache,
             )
         except RemoteError as e:
@@ -910,7 +907,8 @@ class RestAPI():
 
         result = {
             'entries': entries_result,
-            'entries_found': self.rotkehlchen.data.db.get_entries_count('asset_movements'),
+            'entries_total': self.rotkehlchen.data.db.get_entries_count('asset_movements'),
+            'entries_found': filter_total_found,
             'entries_limit': limit,
         }
 
@@ -919,25 +917,19 @@ class RestAPI():
     @require_loggedin_user()
     def get_asset_movements(
             self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            location: Optional[Location],
+            filter_query: AssetMovementsFilterQuery,
             async_query: bool,
             only_cache: bool,
     ) -> Response:
         if async_query:
             return self._query_async(
                 command='_get_asset_movements',
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-                location=location,
+                filter_query=filter_query,
                 only_cache=only_cache,
             )
 
         response = self._get_asset_movements(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            location=location,
+            filter_query=filter_query,
             only_cache=only_cache,
         )
         result_dict = {'result': response['result'], 'message': response['message']}

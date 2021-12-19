@@ -5,6 +5,7 @@ from rotkehlchen.assets.asset import WORLD_TO_BITTREX, Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from_bittrex
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LTC
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.filtering import AssetMovementsFilterQuery
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.data_structures import Trade
@@ -430,7 +431,10 @@ def test_bittrex_query_asset_movement_int_transaction_id(bittrex):
     assert movements[0].transaction_id == '9875231951530679373'
 
     # also make sure they are written in the db
-    db_movements = bittrex.db.get_asset_movements(from_ts=0, to_ts=TEST_END_TS)
+    db_movements = bittrex.db.get_asset_movements(
+        filter_query=AssetMovementsFilterQuery.make(),
+        has_premium=True,
+    )
     assert len(db_movements) == 1
     assert db_movements[0] == movements[0]
 

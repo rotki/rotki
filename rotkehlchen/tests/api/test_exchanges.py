@@ -8,7 +8,7 @@ import requests
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
-from rotkehlchen.db.filtering import TradesFilterQuery
+from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
@@ -824,7 +824,10 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
         link='') for x in (Location.CRYPTOCOM, Location.KRAKEN)]
     rotki.data.db.add_asset_movements(movements)
     assert len(rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)) == 2  # noqa: E501
-    assert len(rotki.data.db.get_asset_movements()) == 2
+    assert len(rotki.data.db.get_asset_movements(
+        filter_query=AssetMovementsFilterQuery.make(),
+        has_premium=True,
+    )) == 2
     response = requests.delete(
         api_url_for(
             server,
@@ -835,7 +838,10 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
     result = assert_proper_response_with_result(response)  # just check no validation error happens
     assert result is True
     assert len(rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)) == 1  # noqa: E501
-    assert len(rotki.data.db.get_asset_movements()) == 1
+    assert len(rotki.data.db.get_asset_movements(
+        filter_query=AssetMovementsFilterQuery.make(),
+        has_premium=True,
+    )) == 1
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.POLONIEX)])

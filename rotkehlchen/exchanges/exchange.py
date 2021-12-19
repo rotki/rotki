@@ -6,7 +6,7 @@ import requests
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.db.filtering import TradesFilterQuery
+from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
@@ -353,10 +353,14 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         an actual exchange query.
         """
         log.debug(f'Querying deposits/withdrawals history for {self.name} exchange')
-        asset_movements = self.db.get_asset_movements(
+        filter_query = AssetMovementsFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
             location=self.location,
+        )
+        asset_movements = self.db.get_asset_movements(
+            filter_query=filter_query,
+            has_premium=True,  # this is okay since the returned trades don't make it to the user
         )
         if only_cache:
             return asset_movements
