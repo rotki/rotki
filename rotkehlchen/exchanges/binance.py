@@ -77,7 +77,6 @@ BINANCE_API_TYPE = Literal['api', 'sapi', 'dapi', 'fapi']
 BINANCE_BASE_URL = 'binance.com/'
 BINANCEUS_BASE_URL = 'binance.us/'
 BINANCE_MARKETS_KEY = 'PAIRS'
-symbols_to_pair: Dict[str, BinancePair] = {}
 
 
 class BinancePermissionError(RemoteError):
@@ -166,25 +165,10 @@ def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, B
 
         result[symbol_str] = BinancePair(
             symbol=symbol_str,
-            binance_base_asset=symbol['baseAsset'],
-            binance_quote_asset=symbol['quoteAsset'],
+            binance_base_asset=asset_from_binance(symbol['baseAsset']),
+            binance_quote_asset=asset_from_binance(symbol['quoteAsset']),
         )
-
     return result
-
-
-def query_binance_exchange_pairs() -> Dict[str, BinancePair]:
-    global symbols_to_pair
-    if len(symbols_to_pair) != 0:
-        return symbols_to_pair
-    try:
-        data = requests.get('https://binance.com/api/v3/exchangeInfo')
-    except requests.exceptions.RequestException as e:
-        log.debug(f'Failed to obtain market pairs from binance. {str(e)}')
-        return {}
-    pairs = create_binance_symbols_to_pair(data.json())
-    symbols_to_pair = pairs
-    return pairs
 
 
 class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]

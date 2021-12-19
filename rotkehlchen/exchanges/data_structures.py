@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
@@ -395,5 +396,15 @@ class BinancePair(NamedTuple):
     the base and quote assets of that symbol as parsed from exchangeinfo endpoint
     result"""
     symbol: str
-    binance_base_asset: str
-    binance_quote_asset: str
+    base_asset: Asset
+    quote_asset: Asset
+
+    def serialize_for_db(self) -> Tuple[str, str, str]:
+        return (self.symbol, base_asset.identifer, quote_asset.identifier)
+
+    def deserialize_from_db(cls, entry: Tuple[str, str, str]) -> 'BinancePair':
+        return BinancePair(
+            symbol=entry[0],
+            base_asset=asset_from_binance(entry[1]),
+            quote_asset=asset_from_binance(entry[2]),
+        )

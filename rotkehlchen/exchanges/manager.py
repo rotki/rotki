@@ -4,12 +4,9 @@ from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, cast
 
-from rotkehlchen.exchanges.binance import (
-    BINANCE_BASE_URL,
-    BINANCEUS_BASE_URL,
-    query_binance_exchange_pairs,
-)
+from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     EXTERNAL_EXCHANGES,
@@ -297,12 +294,6 @@ class ExchangeManager():
                 self.connected_exchanges[location].append(exchange_obj)
 
     def get_all_binance_pairs(self) -> List[str]:
-        if Location.BINANCE in self.connected_exchanges:
-            binance = cast('Binance', self.connected_exchanges[Location.BINANCE][0])
-            return list(binance.symbols_to_pair.keys())
-        if Location.BINANCEUS in self.connected_exchanges:
-            binance = cast('Binance', self.connected_exchanges[Location.BINANCEUS][0])
-            return list(binance.symbols_to_pair.keys())
         pairs = list(query_binance_exchange_pairs().keys())
         if len(pairs) == 0:
             self.msg_aggregator.add_error('Failed to query Binance available pairs')

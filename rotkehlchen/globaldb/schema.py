@@ -150,6 +150,16 @@ CREATE TABLE IF NOT EXISTS price_history (
 );
 """
 
+DB_CREATE_BINANCE_PARIS = """
+CREATE TABLE IF NOT EXISTS binance_pairs (
+    pair TEXT NOT NULL PRIMARY KEY,
+    base_asset TEXT NOT NULL,
+    quote_asset TEXT NOT NULL,
+    FOREIGN KEY(base_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(quote_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+)
+"""
+
 DB_SCRIPT_CREATE_TABLES = """
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
