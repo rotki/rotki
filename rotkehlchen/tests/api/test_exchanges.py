@@ -771,7 +771,8 @@ def test_query_asset_movements_over_limit(
                 ), json={'location': 'poloniex'},
             )
         result = assert_proper_response_with_result(response)
-        assert result['entries_found'] == all_movements_num
+        assert result['entries_found'] == polo_entries_num
+        assert result['entries_total'] == all_movements_num
         assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
         assert_poloniex_asset_movements([x['entry'] for x in result['entries']], deserialized=True)
 
@@ -785,11 +786,13 @@ def test_query_asset_movements_over_limit(
         if start_with_valid_premium:
             assert len(result['entries']) == kraken_entries_num
             assert result['entries_limit'] == -1
-            assert result['entries_found'] == all_movements_num
+            assert result['entries_found'] == kraken_entries_num
+            assert result['entries_total'] == all_movements_num
         else:
             assert len(result['entries']) == FREE_ASSET_MOVEMENTS_LIMIT - polo_entries_num
             assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
-            assert result['entries_found'] == all_movements_num
+            assert result['entries_found'] == kraken_entries_num
+            assert result['entries_total'] == all_movements_num
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

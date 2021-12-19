@@ -944,7 +944,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp):
     assert movement == expected_movement
 
 
-@pytest.mark.parametrize('start_ts, since_id', [(0, 1), (1, 6)])
+@pytest.mark.parametrize('start_ts, since_id', [(0, 1), (1606901401, 6)])
 def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
     """Test `since_id` value will change depending on `start_ts` value.
     Also tests `db_asset_movements` are sorted by `link` (as int) in ascending
@@ -966,7 +966,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
             link='5',
         ),
         AssetMovement(
-            timestamp=1606901400,
+            timestamp=1606801400,
             location=Location.BITSTAMP,
             category=AssetMovementCategory.DEPOSIT,
             address=None,
@@ -978,12 +978,12 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
             link='2',
         ),
     ]
-    database = MagicMock()
-    database.get_asset_movements.return_value = movements
+    mock_bitstamp.db.add_asset_movements(movements)
 
+    end_ts = Timestamp(1606901401)
     expected_call = call(
         start_ts=start_ts,
-        end_ts=2,
+        end_ts=end_ts,
         options={
             'since_id': since_id,
             'limit': 1000,
@@ -992,13 +992,12 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         },
         case='asset_movements',
     )
-    with patch.object(mock_bitstamp, 'db', new_callable=MagicMock(return_value=database)):
-        with patch.object(mock_bitstamp, '_api_query_paginated') as mock_api_query_paginated:
-            mock_bitstamp.query_online_deposits_withdrawals(
-                start_ts=Timestamp(start_ts),
-                end_ts=Timestamp(2),
-            )
-            assert mock_api_query_paginated.call_args == expected_call
+    with patch.object(mock_bitstamp, '_api_query_paginated') as mock_api_query_paginated:
+        mock_bitstamp.query_online_deposits_withdrawals(
+            start_ts=Timestamp(start_ts),
+            end_ts=end_ts,
+        )
+        assert mock_api_query_paginated.call_args == expected_call
 
 
 @pytest.mark.freeze_time(datetime(2020, 12, 3, 12, 0, 0))

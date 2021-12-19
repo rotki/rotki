@@ -487,7 +487,7 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
             and_op=True,
             from_ts=from_ts,
             to_ts=to_ts,
-            timestamp_attribute='time',
+            timestamp_attribute='timestamp',
         )
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters

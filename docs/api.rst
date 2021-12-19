@@ -3474,6 +3474,7 @@ Dealing with trades
                   "ignored_in_accounting": false
               }],
               "entries_found": 95,
+              "entries_total": 155,
               "entries_limit": 250,
           "message": ""
       }
@@ -3730,6 +3731,7 @@ Querying asset movements
                   "ignored_in_accounting": false
               }],
               "entries_found": 80,
+              "entries_total": 120,
               "entries_limit": 100,
           "message": ""
       }
