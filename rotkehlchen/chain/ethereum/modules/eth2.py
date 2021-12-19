@@ -36,8 +36,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 ETH2_DEPOSIT = EthereumConstants().contract('ETH2_DEPOSIT')
-ETH2_DEPLOYED_TS = Timestamp(1602667372)
-EVENT_ABI = [x for x in ETH2_DEPOSIT.abi if x['type'] == 'event'][0]
 
 REQUEST_DELTA_TS = 60 * 60  # 1
 

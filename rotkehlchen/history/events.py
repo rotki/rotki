@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
 
 from typing_extensions import Literal
 
@@ -19,11 +19,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
-from rotkehlchen.exchanges.manager import (
-    ALL_SUPPORTED_EXCHANGES,
-    SUPPORTED_EXCHANGES,
-    ExchangeManager,
-)
+from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -112,11 +108,6 @@ class EventsHistorian():
         self.dateformat = db_settings.date_display_format
         self.datelocaltime = db_settings.display_date_in_localtime
         self._reset_variables()
-
-    def locations_from_csv(self) -> Set[Location]:
-        locations_with_keys = set(self.exchange_manager.connected_exchanges.keys())
-        associated_exchanges_locations = self.db.get_associated_locations().intersection(ALL_SUPPORTED_EXCHANGES)  # noqa: E501
-        return associated_exchanges_locations - locations_with_keys
 
     def timestamp_to_date(self, timestamp: Timestamp) -> str:
         return timestamp_to_date(
