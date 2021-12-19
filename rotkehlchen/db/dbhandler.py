@@ -52,11 +52,11 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
-from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
+from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
-from rotkehlchen.db.filtering import TradesFilterQuery
+from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
@@ -2358,22 +2358,42 @@ class DBHandler:
         """
         self.write_tuples(tuple_type='asset_movement', query=query, tuples=movement_tuples)
 
+    def get_asset_movements_and_limit_info(
+            self,
+            filter_query: AssetMovementsFilterQuery,
+            has_premium: bool,
+    ) -> Tuple[List[AssetMovement], int]:
+        """Gets all asset movements for the query from the DB
+
+        Also returns how many are the total found for the filter
+        """
+        movements = self.get_asset_movements(filter_query=filter_query, has_premium=has_premium)
+        if has_premium:
+            return movements, len(movements)
+
+        cursor = self.conn.cursor()
+        query, bindings = filter_query.prepare()
+        query = 'SELECT COUNT(*) from asset_movements ' + query
+        total_found_result = cursor.execute(query, bindings)
+        return movements, total_found_result.fetchone()[0]
+
     def get_asset_movements(
             self,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            location: Optional[Location] = None,
+            filter_query: AssetMovementsFilterQuery,
+            has_premium: bool,
     ) -> List[AssetMovement]:
-        """Returns a list of asset movements optionally filtered by time and location
+        """Returns a list of asset movements optionally filtered by the given filter.
 
-        The returned list is ordered from oldest to newest
+        Returned list is ordered according to the passed filter query
         """
         cursor = self.conn.cursor()
-        query = 'SELECT * FROM asset_movements '
-        if location is not None:
-            query += f'WHERE location="{location.serialize_for_db()}" '
-        query, bindings = form_query_to_filter_timestamps(query, 'time', from_ts, to_ts)
-        results = cursor.execute(query, bindings)
+        query, bindings = filter_query.prepare()
+        if has_premium:
+            query = 'SELECT * from asset_movements ' + query
+            results = cursor.execute(query, bindings)
+        else:
+            query = 'SELECT * FROM (SELECT * from asset_movements ORDER BY time DESC LIMIT ?) ' + query  # noqa: E501
+            results = cursor.execute(query, [FREE_ASSET_MOVEMENTS_LIMIT] + bindings)
 
         asset_movements = []
         for result in results:

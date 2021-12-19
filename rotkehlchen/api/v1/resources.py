@@ -19,6 +19,7 @@ from rotkehlchen.api.v1.encoding import (
     AccountingReportsSchema,
     AllBalancesQuerySchema,
     AssetIconUploadSchema,
+    AssetMovementsQuerySchema,
     AssetResetRequestSchema,
     AssetSchema,
     AssetSchemaWithIdentifier,
@@ -107,7 +108,11 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
-from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, ReportDataFilterQuery
+from rotkehlchen.db.filtering import (
+    AssetMovementsFilterQuery,
+    ETHTransactionsFilterQuery,
+    ReportDataFilterQuery,
+)
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.typing import (
@@ -671,21 +676,17 @@ class TradesResource(BaseResource):
 
 class AssetMovementsResource(BaseResource):
 
-    get_schema = TimerangeLocationCacheQuerySchema()
+    get_schema = AssetMovementsQuerySchema()
 
     @use_kwargs(get_schema, location='json_and_query')
     def get(
             self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            location: Optional[Location],
+            filter_query: AssetMovementsFilterQuery,
             async_query: bool,
             only_cache: bool,
     ) -> Response:
         return self.rest_api.get_asset_movements(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            location=location,
+            filter_query=filter_query,
             async_query=async_query,
             only_cache=only_cache,
         )

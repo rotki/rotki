@@ -251,14 +251,15 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             'offset': 0,
         }
         if start_ts != Timestamp(0):
-            db_asset_movements = self.db.get_asset_movements(
-                to_ts=start_ts,
-                location=Location.BITSTAMP,
-            )
-            # NB: sort asset_movements by int(link) in asc mode
-            db_asset_movements.sort(key=lambda asset_movement: int(asset_movement.link))
-            if db_asset_movements:
-                options.update({'since_id': int(db_asset_movements[-1].link) + 1})
+            # Get latest link from the DB to know where to resume from
+            cursor = self.db.conn.cursor()
+            query_result = cursor.execute(
+                'SELECT link FROM asset_movements WHERE location=? AND time <= ? ORDER BY time DESC LIMIT 1',  # noqa: E501
+                (Location.BITSTAMP.serialize_for_db(), start_ts),
+            ).fetchone()
+            if query_result is not None:
+                since_id = int(query_result[0]) + 1
+                options.update({'since_id': since_id})
 
         asset_movements: List[AssetMovement] = self._api_query_paginated(
             start_ts=start_ts,

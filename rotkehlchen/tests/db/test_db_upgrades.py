@@ -13,6 +13,7 @@ from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.filtering import AssetMovementsFilterQuery
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import UPGRADES_LIST
@@ -1637,7 +1638,10 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     ]
     assert len(raw_upgraded) == asset_movements_count - 2, 'coinbase/pro movements should have been deleted'  # noqa: E501
     # Check that identifiers match with what is expected. This may need amendment if the upgrade test stays around while the code changes.  # noqa: E501
-    movements = db.get_asset_movements()
+    movements = db.get_asset_movements(
+        filter_query=AssetMovementsFilterQuery.make(),
+        has_premium=True,
+    )
     assert all(x.identifier == raw_upgraded[idx][0] for idx, x in enumerate(movements))
 
     # check that the timed balances had the currency properly changed

@@ -15,7 +15,7 @@ from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
-from rotkehlchen.db.filtering import TradesFilterQuery
+from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
@@ -983,7 +983,10 @@ def test_add_asset_movements(data_dir, username, caplog):
     warnings = msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
-    returned_movements = data.db.get_asset_movements()
+    returned_movements = data.db.get_asset_movements(
+        filter_query=AssetMovementsFilterQuery.make(),
+        has_premium=True,
+    )
     assert returned_movements == [movement1, movement2]
 
     # Add the last 2 movements. Since movement2 already exists in the DB it should be
@@ -993,7 +996,10 @@ def test_add_asset_movements(data_dir, username, caplog):
         'Did not add "withdrawal of ETH with id 94405f38c7b86dd2e7943164d'
         '67ff44a32d56cef25840b3f5568e23c037fae0a'
     ) in caplog.text
-    returned_movements = data.db.get_asset_movements()
+    returned_movements = data.db.get_asset_movements(
+        filter_query=AssetMovementsFilterQuery.make(),
+        has_premium=True,
+    )
     assert returned_movements == [movement1, movement2, movement3]
 
 

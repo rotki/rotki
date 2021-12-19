@@ -47,6 +47,7 @@ from rotkehlchen.chain.substrate.utils import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import (
+    AssetMovementsFilterQuery,
     ETHTransactionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
@@ -79,6 +80,7 @@ from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    AssetMovementCategory,
     BTCAddress,
     ChecksumEthAddress,
     ExternalService,
@@ -397,6 +399,23 @@ class BalanceTypeField(fields.Field):
         if value == 'liability':
             return BalanceType.LIABILITY
         raise ValidationError(f'Unrecognized value {value} given for balance type')
+
+
+class AssetMovementCategoryField(fields.Field):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> AssetMovementCategory:
+        try:
+            result = AssetMovementCategory.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        return result
 
 
 class AssetField(fields.Field):
@@ -1029,6 +1048,56 @@ class TradesQuerySchema(
             base_asset=data['base_asset'],
             quote_asset=data['quote_asset'],
             trade_type=data['trade_type'],
+            location=data['location'],
+        )
+        return {
+            'async_query': data['async_query'],
+            'only_cache': data['only_cache'],
+            'filter_query': filter_query,
+        }
+
+
+class AssetMovementsQuerySchema(
+        AsyncQueryArgumentSchema,
+        OnlyCacheQuerySchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
+):
+    asset = AssetField(load_default=None)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+    action = AssetMovementCategoryField(load_default=None)
+    location = LocationField(load_default=None)
+
+    @validates_schema
+    def validate_asset_movements_query_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        value = data['order_by_attribute']
+        if data['order_by_attribute'] not in (None, 'time'):
+            raise ValidationError(
+                message=f'order_by_attribute for asset movements can not be {value}',
+                field_name='order_by_attribute',
+            )
+
+    @post_load
+    def make_asset_movements_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'time'  # noqa: E501
+        filter_query = AssetMovementsFilterQuery.make(
+            order_by_attribute=order_by_attribute,
+            order_ascending=data['ascending'],
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            asset=data['asset'],
+            action=data['action'],
             location=data['location'],
         )
         return {

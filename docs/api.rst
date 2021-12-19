@@ -3435,6 +3435,8 @@ Dealing with trades
 
       {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "external", "only_cache": false}
 
+   :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
    :reqjson string location: Optionally filter trades by location. A valid location name has to be provided. If missing location filtering does not happen.
@@ -3472,6 +3474,7 @@ Dealing with trades
                   "ignored_in_accounting": false
               }],
               "entries_found": 95,
+              "entries_total": 155,
               "entries_limit": 250,
           "message": ""
       }
@@ -3692,10 +3695,14 @@ Querying asset movements
 
       {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "kraken", "only_cache": false}
 
+   :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
-   :reqjson string location: Optionally filter trades by location. A valid location name has to be provided. Valid locations are for now only exchanges for deposits/widthrawals.
-   :param bool only_cache: Optional. If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
+   :reqjson string location: Optionally filter asset movements by location. A valid location name has to be provided. Valid locations are for now only exchanges for deposits/widthrawals.
+   :reqjson string asset: Optionally filter asset movements by asset. A valid asset identifier has to be provided. If missing, movements are not filtered by asset.
+   :reqjson string action: Optionally filter asset movements by action type. A valid action type (deposit, withdrawals) has to be provided. If missing movements are not filtered by type.
+   :reqjson bool only_cache: Optional. If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
 
 
    **Example Response**:
@@ -3724,6 +3731,7 @@ Querying asset movements
                   "ignored_in_accounting": false
               }],
               "entries_found": 80,
+              "entries_total": 120,
               "entries_limit": 100,
           "message": ""
       }
@@ -3740,8 +3748,9 @@ Querying asset movements
    :resjsonarr string fee_asset: The asset in which ``fee`` is denominated in
    :resjsonarr string fee: The fee that was paid, if anything, for this deposit/withdrawal
    :resjsonarr string link: Optional unique exchange identifier for the deposit/withdrawal
-   :resjson int entries_found: The amount of deposit/withdrawals found for the user. That disregards the filter and shows all asset movements found.
-   :resjson int entries_limit: The movements query limit for the account tier of the user. If unlimited then -1 is returned.
+   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :resjson int entries_limit: The limit of entries if free version. -1 for premium.
+   :resjson int entries_total: The number of total entries ignoring all filters.
    :statuscode 200: Deposits/withdrawals are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.
