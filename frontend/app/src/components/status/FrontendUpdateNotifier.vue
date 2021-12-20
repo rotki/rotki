@@ -15,9 +15,9 @@
 import { Component, Vue } from 'vue-property-decorator';
 
 @Component({
-  name: 'UpdateNotifier'
+  name: 'FrontendUpdateNotifier'
 })
-export default class UpdateNotifier extends Vue {
+export default class FrontendUpdateNotifier extends Vue {
   updating: boolean = false;
   updateAvailable: boolean = false;
   swRegistration: ServiceWorkerRegistration | null = null;

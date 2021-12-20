@@ -1,7 +1,7 @@
 <template>
   <v-snackbar
     v-if="$interop.isPackaged"
-    v-model="popup"
+    :value="showUpdatePopup"
     class="update-popup"
     :timeout="-1"
     light
@@ -11,7 +11,7 @@
     right
     app
     rounded
-    width="400px"
+    width="380px"
   >
     <v-row v-if="!restarting" align="center">
       <v-col cols="auto">
@@ -34,9 +34,17 @@
         <span v-else-if="downloading">
           {{ $t('update_popup.download_progress') }}
         </span>
-        <span v-else-if="!downloadReady">
-          {{ $t('update_popup.messages') }}
-        </span>
+        <div v-else-if="!downloadReady">
+          <i18n tag="div" path="update_popup.messages">
+            <template #releaseNotes>
+              <base-external-link
+                :text="$t('update_popup.release_notes')"
+                :href="releaseNotesLink"
+              />
+            </template>
+          </i18n>
+          <div>{{ $t('update_popup.download_nudge') }}</div>
+        </div>
         <span v-else>{{ $t('update_popup.downloaded') }}</span>
       </v-col>
     </v-row>
@@ -67,7 +75,7 @@
       </v-btn>
     </template>
     <template v-else-if="!downloading && !restarting" #action="{ attrs }">
-      <v-btn text v-bind="attrs" @click="popup = false">
+      <v-btn text v-bind="attrs" @click="dismiss">
         {{ $t('update_popup.action.cancel') }}
       </v-btn>
       <v-btn
@@ -88,20 +96,38 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import { mapActions, mapState } from 'vuex';
+import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import { Interop } from '@/electron-main/ipc';
 import { assert } from '@/utils/assertions';
 
-@Component({})
-export default class UpdatePopup extends Vue {
-  popup: boolean = false;
+@Component({
+  components: { BaseExternalLink },
+  computed: {
+    ...mapState('session', ['showUpdatePopup'])
+  },
+  methods: {
+    ...mapActions('session', [
+      'checkForUpdate',
+      'dismissUpdatePopup',
+      'openUpdatePopup'
+    ])
+  }
+})
+export default class AppUpdatePopup extends Vue {
+  showUpdatePopup!: boolean;
   downloadReady: boolean = false;
   downloading: boolean = false;
   restarting: boolean = false;
   percentage: number = 0;
   error: string = '';
 
+  checkForUpdate!: () => void;
+  dismissUpdatePopup!: () => void;
+  openUpdatePopup!: () => void;
+
   dismiss() {
-    this.popup = false;
+    this.dismissUpdatePopup();
     setTimeout(() => {
       this.error = '';
       this.downloading = false;
@@ -117,8 +143,7 @@ export default class UpdatePopup extends Vue {
     });
     this.downloading = false;
     if (downloaded) {
-      this.downloadReady = true;
-      this.popup = true;
+      this.openUpdatePopup();
     } else {
       this.error = this.$t('update_popup.download_failed.message').toString();
     }
@@ -145,7 +170,11 @@ export default class UpdatePopup extends Vue {
     if (!this.$interop.isPackaged) {
       return;
     }
-    this.popup = await this.interop.checkForUpdates();
+    this.checkForUpdate();
+  }
+
+  get releaseNotesLink(): string {
+    return 'https://github.com/rotki/rotki/releases';
   }
 }
 </script>

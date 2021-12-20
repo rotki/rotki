@@ -83,5 +83,8 @@ export const mutations: MutationTree<SessionState> = {
   },
   setTimeframe(state: SessionState, timeframe: TimeFramePeriod) {
     state.timeframe = timeframe;
+  },
+  setShowUpdatePopup(state: SessionState, showUpdatePopup: boolean) {
+    state.showUpdatePopup = showUpdatePopup;
   }
 };

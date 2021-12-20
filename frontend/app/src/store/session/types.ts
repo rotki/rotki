@@ -36,6 +36,7 @@ export interface SessionState {
   lastBalanceSave: number;
   lastDataUpload: number;
   timeframe: TimeFramePeriod;
+  showUpdatePopup: boolean;
 }
 
 export const SyncConflictPayload = z.object({

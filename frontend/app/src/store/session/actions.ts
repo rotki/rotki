@@ -708,5 +708,19 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         message: e.message
       };
     }
+  },
+
+  async checkForUpdate({ commit }): Promise<void> {
+    const updateAvailable = await window.interop?.checkForUpdates();
+
+    commit('setShowUpdatePopup', updateAvailable);
+  },
+
+  async openUpdatePopup({ commit }): Promise<void> {
+    commit('setShowUpdatePopup', true);
+  },
+
+  async dismissUpdatePopup({ commit }): Promise<void> {
+    commit('setShowUpdatePopup', false);
   }
 };
