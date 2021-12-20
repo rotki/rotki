@@ -51,6 +51,7 @@
       <account-balance-table
         ref="balances"
         data-cy="blockchain-balances"
+        :loopring="loopring"
         :blockchain="blockchain"
         :balances="balances"
         :visible-tags="visibleTags"
@@ -112,6 +113,8 @@ export default class AccountBalances extends Vue {
   blockchain!: Blockchain;
   @Prop({ required: true })
   title!: string;
+  @Prop({ required: false, type: Boolean, default: false })
+  loopring!: boolean;
 
   selectedAddresses: string[] = [];
   visibleTags: string[] = [];

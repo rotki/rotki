@@ -2787,7 +2787,8 @@
       "eth2": "Eth2 balances",
       "ksm": "Kusama balances",
       "avax": "Avalanche balances",
-      "dot": "Polkadot balances"
+      "dot": "Polkadot balances",
+      "loopring": "Loopring balances"
     },
     "metamask_import": {
       "error": {

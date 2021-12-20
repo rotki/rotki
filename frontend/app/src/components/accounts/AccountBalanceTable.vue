@@ -52,7 +52,7 @@
           :loading="loading"
         />
       </template>
-      <template v-if="!isEth2" #item.actions="{ item }">
+      <template v-if="!isEth2 && !loopring" #item.actions="{ item }">
         <row-actions
           class="account-balance-table__actions"
           :no-delete="true"
@@ -84,27 +84,29 @@
       </template>
       <template #expanded-item="{ headers, item }">
         <table-expand-container visible :colspan="headers.length">
-          <account-asset-balances
-            :title="$t('account_balance_table.assets')"
-            :assets="accountAssets(item.address)"
-          />
-          <account-asset-balances
-            v-if="accountLiabilities(item.address).length > 0"
-            :title="$t('account_balance_table.liabilities')"
-            :assets="accountLiabilities(item.address)"
-          />
+          <template v-if="!loopring">
+            <account-asset-balances
+              :title="$t('account_balance_table.assets')"
+              :assets="accountAssets(item.address)"
+            />
+            <account-asset-balances
+              v-if="accountLiabilities(item.address).length > 0"
+              :title="$t('account_balance_table.liabilities')"
+              :assets="accountLiabilities(item.address)"
+            />
+          </template>
           <account-asset-balances
             v-if="
               blockchain === 'ETH' && loopringBalances(item.address).length > 0
             "
-            :title="$t('account_balance_table.loopring')"
+            :title="loopring ? '' : $t('account_balance_table.loopring')"
             :assets="loopringBalances(item.address)"
           />
         </table-expand-container>
       </template>
       <template #item.expand="{ item }">
         <row-expander
-          v-if="expandable && hasDetails(item.address)"
+          v-if="expandable && (hasDetails(item.address) || loopring)"
           :expanded="expanded.includes(item)"
           @click="expanded = expanded.includes(item) ? [] : [item]"
         />
@@ -154,6 +156,7 @@ import {
   XpubAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
+import { Section } from '@/store/const';
 import { useTasks } from '@/store/tasks';
 import { Properties } from '@/types';
 import { Currency } from '@/types/currency';
@@ -192,6 +195,8 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   visibleTags!: string[];
   @Prop({ required: true, type: Array })
   selected!: string[];
+  @Prop({ required: false, type: Boolean, default: false })
+  loopring!: boolean;
 
   @Emit()
   editClick(_account: BlockchainAccountWithBalance) {}
@@ -202,7 +207,9 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   @Emit()
   addressesSelected(_selected: string[]) {}
 
-  section = chainSection[this.blockchain];
+  section = !this.loopring
+    ? chainSection[this.blockchain]
+    : Section.L2_LOOPRING_BALANCES;
   currency!: Currency;
   isTaskRunning!: (type: TaskType) => Ref<boolean>;
   accountAssets!: (account: string) => AssetBalance[];
@@ -441,7 +448,7 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
   private withL2(
     balances: BlockchainAccountWithBalance[]
   ): BlockchainAccountWithBalance[] {
-    if (this.blockchain !== Blockchain.ETH) {
+    if (this.blockchain !== Blockchain.ETH || this.loopring) {
       return balances;
     }
 
