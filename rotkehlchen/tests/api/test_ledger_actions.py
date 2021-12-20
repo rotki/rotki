@@ -65,7 +65,7 @@ def _add_ledger_actions(server) -> List[Dict]:
         assert 'identifier' in result
         action['identifier'] = int(result['identifier'])
 
-    return actions
+    return actions[::-1]  # return it as the DB would, latest first
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -81,6 +81,7 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 4
+    assert result['entries_total'] == 4
     assert result['entries_limit'] == FREE_LEDGER_ACTIONS_LIMIT
     assert all(x['ignored_in_accounting'] is False for x in result['entries']), 'by default nothing should be ignored'  # noqa: E501
     result = [x['entry'] for x in result['entries']]
@@ -94,55 +95,88 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server):
         ), json={'action_type': 'ledger action', 'action_ids': ['3', '4']},  # external ones
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'ledger action': [str(a['identifier']) for a in actions[2:]]}
+    assert result == {'ledger action': [str(a['identifier']) for a in actions[0:2][::-1]]}
 
     # Now filter by location with json body
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "ledgeractionsresource",
+            'ledgeractionsresource',
         ), json={'location': 'external'},
     )
     result = assert_proper_response_with_result(response)
     result = result['entries']
     assert all(x['ignored_in_accounting'] for x in result), 'all external should be ignored'
     result = [x['entry'] for x in result]
-    assert result == actions[2:]
+    assert result == actions[0:2]
 
     # Now filter by location with query param
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "ledgeractionsresource",
+            'ledgeractionsresource',
         ) + '?location=external',
     )
     result = assert_proper_response_with_result(response)
     result = result['entries']
     assert all(x['ignored_in_accounting'] for x in result), 'all external should be ignored'
     result = [x['entry'] for x in result]
-    assert result == actions[2:]
+    assert result == actions[0:2]
 
     # Now filter by time
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "ledgeractionsresource",
+            'ledgeractionsresource',
         ), json={'from_timestamp': 1, 'to_timestamp': 2},
     )
     result = assert_proper_response_with_result(response)
     result = [x['entry'] for x in result['entries']]
-    assert result == actions[:2]
+    assert result == actions[2:4]
 
-    # and finally filter by both time and location
+    # filter by both time and location
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "ledgeractionsresource",
+            'ledgeractionsresource',
         ), json={'from_timestamp': 2, 'to_timestamp': 3, 'location': 'blockchain'},
     )
     result = assert_proper_response_with_result(response)
     result = [x['entry'] for x in result['entries']]
-    assert result == actions[1:2]
+    assert result == [actions[2]]
+
+    # filter by ledger action type
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ledgeractionsresource',
+        ), json={'type': 'expense'},
+    )
+    result = assert_proper_response_with_result(response)
+    result = [x['entry'] for x in result['entries']]
+    assert result == [actions[2]]
+
+    # filter by asset
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ledgeractionsresource',
+        ), json={'asset': 'EUR'},
+    )
+    result = assert_proper_response_with_result(response)
+    result = [x['entry'] for x in result['entries']]
+    assert result == [actions[0], actions[1]]
+
+    # filter by asset with timestamp ascending order
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ledgeractionsresource',
+        ), json={'asset': 'EUR', 'ascending': True},
+    )
+    result = assert_proper_response_with_result(response)
+    result = [x['entry'] for x in result['entries']]
+    assert result == [actions[1], actions[0]]
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -153,7 +187,7 @@ def test_edit_ledger_actions(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "ledgeractionsresource",
+            'ledgeractionsresource',
         ),
     )
     result = assert_proper_response_with_result(response)
@@ -175,12 +209,12 @@ def test_edit_ledger_actions(rotkehlchen_api_server):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "ledgeractionsresource",
+            'ledgeractionsresource',
         ), json={'action': new_action},
     )
     result = assert_proper_response_with_result(response)
     result = [x['entry'] for x in result['entries']]
-    assert result == [actions[0], actions[2], actions[3], actions[1]]
+    assert result == [actions[3], actions[2], actions[0], new_action]
 
     # Try to edit unknown identifier and see it fails
     new_action['identifier'] = 666
@@ -188,7 +222,7 @@ def test_edit_ledger_actions(rotkehlchen_api_server):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "ledgeractionsresource",
+            'ledgeractionsresource',
         ), json={'action': new_action},
     )
     assert_error_response(
@@ -209,7 +243,7 @@ def test_delete_ledger_actions(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "ledgeractionsresource",
+            'ledgeractionsresource',
         ),
     )
     result = assert_proper_response_with_result(response)
@@ -220,19 +254,19 @@ def test_delete_ledger_actions(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "ledgeractionsresource",
+            'ledgeractionsresource',
         ), json={'identifier': 2},
     )
     result = assert_proper_response_with_result(response)
     result = [x['entry'] for x in result['entries']]
-    assert result == [actions[0], actions[2], actions[3]]
+    assert result == [actions[3], actions[1], actions[0]]
 
     # Try to delete unknown identifier and see it fails
     identifier = 666
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "ledgeractionsresource",
+            'ledgeractionsresource',
         ), json={'identifier': identifier},
     )
     assert_error_response(
