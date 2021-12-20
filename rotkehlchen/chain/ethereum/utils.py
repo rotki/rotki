@@ -14,7 +14,6 @@ from rotkehlchen.utils.misc import hexstring_to_bytes
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 
-ABI_CODEC = Web3().codec
 # TODO: remove this once web3.py updates ENS library for supporting multichain
 # https://github.com/ethereum/web3.py/issues/1839
 ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS = [

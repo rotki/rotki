@@ -1164,10 +1164,6 @@ class TimerangeQuerySchema(Schema):
     async_query = fields.Boolean(load_default=False)
 
 
-class TimerangeLocationQuerySchema(TimerangeQuerySchema):
-    location = LocationField(load_default=None)
-
-
 class GitcoinReportSchema(TimerangeQuerySchema):
     grant_id = fields.Integer(
         strict=True,

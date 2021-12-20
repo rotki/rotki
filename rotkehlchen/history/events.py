@@ -1,15 +1,11 @@
 import logging
-from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
-
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union, cast
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.chain.ethereum.graph import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.constants.limits import LIMITS_MAPPING
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -119,11 +115,6 @@ class EventsHistorian():
 
     def _reset_variables(self) -> None:
         # Keeps how many trades we have found per location. Used for free user limiting
-        self.actions_per_location: Dict[str, Dict[Optional[Location], int]] = {
-            'trade': defaultdict(int),
-            'asset_movement': defaultdict(int),
-            'ledger_action': defaultdict(int),
-        }
         self.processing_state_name = 'Starting query of historical events'
         self.progress = ZERO
         db_settings = self.db.get_settings()
@@ -134,66 +125,6 @@ class EventsHistorian():
         step += 1
         self.progress = FVal(step / total_steps) * 100
         return step
-
-    @overload
-    def _apply_actions_limit(
-            self,
-            location: Location,
-            action_type: Literal['trade'],
-            location_actions: TRADES_LIST,
-            all_actions: TRADES_LIST,
-    ) -> TRADES_LIST:
-        ...
-
-    @overload
-    def _apply_actions_limit(
-            self,
-            location: Location,
-            action_type: Literal['asset_movement'],
-            location_actions: List[AssetMovement],
-            all_actions: List[AssetMovement],
-    ) -> List[AssetMovement]:
-        ...
-
-    @overload
-    def _apply_actions_limit(
-            self,
-            location: Optional[Location],
-            action_type: Literal['ledger_action'],
-            location_actions: List[LedgerAction],
-            all_actions: List[LedgerAction],
-    ) -> List[LedgerAction]:
-        ...
-
-    def _apply_actions_limit(
-            self,
-            location: Union[Location, Optional[Location]],
-            action_type: Literal['trade', 'asset_movement', 'ledger_action'],
-            location_actions: Union[TRADES_LIST, List[AssetMovement], List[LedgerAction]],
-            all_actions: Union[TRADES_LIST, List[AssetMovement], List[LedgerAction]],
-    ) -> Union[TRADES_LIST, List[AssetMovement], List[LedgerAction]]:
-        """Take as many actions from location actions and add them to all actions as the limit permits
-
-        Returns the modified (or not) all_actions
-        """
-        # If we are already at or above the limit return current actions disregarding this location
-        actions_mapping = self.actions_per_location[action_type]
-        current_num_actions = sum(x for _, x in actions_mapping.items())
-        limit = LIMITS_MAPPING[action_type]
-        if current_num_actions >= limit:
-            return all_actions
-
-        # Find out how many more actions can we return, and depending on that get
-        # the number of actions from the location actions and add them to the total
-        remaining_num_actions = limit - current_num_actions
-        if remaining_num_actions < 0:
-            remaining_num_actions = 0
-
-        num_actions_to_take = min(len(location_actions), remaining_num_actions)
-
-        actions_mapping[location] = num_actions_to_take
-        all_actions.extend(location_actions[0:num_actions_to_take])  # type: ignore
-        return all_actions
 
     def query_ledger_actions(
             self,
