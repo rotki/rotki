@@ -1954,10 +1954,10 @@ Querying ethereum transactions
         "message": ""
       }
 
-   :reqjson object result: A list of transaction entries to return for the given filter.
-   :reqjson int entries_found: The number of entries found for the current filter. Ignores pagination.
-   :reqjson int entries_limit: The limit of entries if free version. -1 for premium.
-   :reqjson int entries_total: The number of total entries ignoring all filters.
+   :resjson object result: A list of transaction entries to return for the given filter.
+   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :resjson int entries_limit: The limit of entries if free version. -1 for premium.
+   :resjson int entries_total: The number of total entries ignoring all filters.
 
    :statuscode 200: Transactions succesfull queried
    :statuscode 400: Provided JSON is in some way malformed
@@ -3781,13 +3781,14 @@ Dealing with ledger actions
 
       {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "blockchain"}
 
+   :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
+   :reqjson string asset: Optionally filter by action asset. A valid asset has to be provided. If missing asset filtering does not happen.
    :reqjson string location: Optionally filter actions by location. A valid location name has to be provided. If missing location filtering does not happen.
-   :param int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
-   :param int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
-   :param string location: Optionally filter actions by location. A valid location name has to be provided. If missing location filtering does not happen.
-   :param bool only_cache: Optional. If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
+   :reqjson string type: Optionally filter by ledger action type. A valid action type to be provided. If missing action type fltering does not happen.
+   :reqjson bool only_cache: Optional. If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
 
    .. _ledger_actions_schema_section:
 
@@ -3816,6 +3817,7 @@ Dealing with ledger actions
                   "ignored_in_accounting": false
               }],
               "entries_found": 1,
+              "entries_total": 1,
               "entries_limit": 50,
           "message": ""
       }
@@ -3831,8 +3833,9 @@ Dealing with ledger actions
    :resjsonarr string rate_asset: Optional. If given then this is the asset for which ``rate`` is given.
    :resjsonarr string link: Optional unique identifier or link to the action. Can be an empty string
    :resjsonarr string notes: Optional notes about the action. Can be an empty string
-   :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
-   :resjson int entries_limit: The actions limit for the account tier of the user. If unlimited then -1 is returned.
+   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :resjson int entries_limit: The limit of entries if free version. -1 for premium.
+   :resjson int entries_total: The number of total entries ignoring all filters.
    :statuscode 200: Actions are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.

@@ -14,6 +14,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     ETHTransactionsFilterQuery,
+    LedgerActionsFilterQuery,
     TradesFilterQuery,
 )
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -196,60 +197,33 @@ class EventsHistorian():
 
     def query_ledger_actions(
             self,
-            from_ts: Optional[Timestamp],
-            to_ts: Optional[Timestamp],
-            location: Optional[Location] = None,
-            only_cache: Optional[bool] = None,
+            filter_query: LedgerActionsFilterQuery,
+            only_cache: bool,
     ) -> Tuple[List['LedgerAction'], int]:
-        """Queries the ledger actions from the given location and applies the free version limit
+        """Queries the ledger actions with the given filter query
 
-        :param location: Location parameter to filter query results
-        :param to_ts: End timestamp to filter query results
-        :param from_ts: Start timestamp to filter query results
         :param only_cache: Optional. If this is true then the equivalent exchange/location
          is not queried, but only what is already in the DB is returned.
         """
-        db = DBLedgerActions(self.db, self.msg_aggregator)
-        # clear the actions queried for this location
-        self.actions_per_location['ledger_action'][location] = 0
-        all_actions: List[LedgerAction] = []
-        location_actions = db.get_ledger_actions(from_ts=from_ts, to_ts=to_ts, location=location)
-        original_length = len(location_actions)
-        if self.chain_manager.premium is None:
-            actions = self._apply_actions_limit(
-                location=location,
-                action_type='ledger_action',
-                location_actions=location_actions,
-                all_actions=all_actions,
-            )
-        else:
-            actions = location_actions
-
-        for exchange in self.exchange_manager.iterate_exchanges():
-            if exchange.location == location:
-                # clear the actions queried for this location
-                self.actions_per_location['ledger_action'][exchange.location] = 0
-                exchange_actions = exchange.query_income_loss_expense(
-                    start_ts=from_ts,
-                    end_ts=to_ts,
-                    only_cache=only_cache,
-                )
-                # Use set difference to determine uniqueness.
-                all_set = set(actions)
-                unique_exchange_actions = set(exchange_actions)
-                new_exchange_actions = list(unique_exchange_actions - all_set)
-                original_length += len(exchange_actions)
-                if self.chain_manager.premium is None:
-                    actions = self._apply_actions_limit(
-                        location=exchange.location,
-                        action_type='ledger_action',
-                        location_actions=new_exchange_actions,
-                        all_actions=list(all_set),
+        location = filter_query.location
+        from_ts = filter_query.from_ts
+        to_ts = filter_query.to_ts
+        if only_cache is False:  # query services
+            for exchange in self.exchange_manager.iterate_exchanges():
+                if location is None or exchange.location == location:
+                    exchange.query_income_loss_expense(
+                        start_ts=from_ts,
+                        end_ts=to_ts,
+                        only_cache=False,
                     )
-                else:
-                    actions.extend(new_exchange_actions)
 
-        return actions, original_length
+        db = DBLedgerActions(self.db, self.msg_aggregator)
+        has_premium = self.chain_manager.premium is not None
+        actions, filter_total_found = db.get_ledger_actions_and_limit_info(
+            filter_query=filter_query,
+            has_premium=has_premium,
+        )
+        return actions, filter_total_found
 
     def _query_services_for_trades(self, filter_query: TradesFilterQuery) -> None:
         """Queries all services requested for trades and writes them to the DB"""
@@ -498,7 +472,10 @@ class EventsHistorian():
 
         # include the ledger actions from offline sources
         self.processing_state_name = 'Querying ledger actions history'
-        offline_ledger_actions, _ = self.query_ledger_actions(from_ts=None, to_ts=end_ts)
+        offline_ledger_actions, _ = self.query_ledger_actions(
+            filter_query=LedgerActionsFilterQuery.make(),
+            only_cache=True,
+        )
         unique_ledger_actions = list(set(offline_ledger_actions) - set(ledger_actions))
         ledger_actions.extend(unique_ledger_actions)
         step = self._increase_progress(step, total_steps)

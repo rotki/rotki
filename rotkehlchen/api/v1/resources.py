@@ -64,6 +64,7 @@ from rotkehlchen.api.v1.encoding import (
     IntegerIdentifierSchema,
     LedgerActionEditSchema,
     LedgerActionSchema,
+    LedgerActionsQuerySchema,
     LimitsCounterResetSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
@@ -89,7 +90,6 @@ from rotkehlchen.api.v1.encoding import (
     TagEditSchema,
     TagSchema,
     TimedManualPriceSchema,
-    TimerangeLocationCacheQuerySchema,
     TradeDeleteSchema,
     TradePatchSchema,
     TradeSchema,
@@ -111,6 +111,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     ETHTransactionsFilterQuery,
+    LedgerActionsFilterQuery,
     ReportDataFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -738,7 +739,7 @@ class TagsResource(BaseResource):
 
 class LedgerActionsResource(BaseResource):
 
-    get_schema = TimerangeLocationCacheQuerySchema()
+    get_schema = LedgerActionsQuerySchema()
     put_schema = LedgerActionSchema()
     patch_schema = LedgerActionEditSchema()
     delete_schema = IntegerIdentifierSchema()
@@ -746,16 +747,12 @@ class LedgerActionsResource(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')
     def get(
             self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            location: Optional[Location],
+            filter_query: LedgerActionsFilterQuery,
             async_query: bool,
-            only_cache: Optional[bool],
+            only_cache: bool,
     ) -> Response:
         return self.rest_api.get_ledger_actions(
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-            location=location,
+            filter_query=filter_query,
             async_query=async_query,
             only_cache=only_cache,
         )

@@ -4,6 +4,7 @@ from typing import Any, List, NamedTuple, Optional, Tuple, Union, cast
 
 from typing_extensions import Literal
 
+from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.typing import SchemaEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import DeserializationError
@@ -329,7 +330,7 @@ class DBAssetFilter(DBFilter):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBTypeFilter(DBFilter):
     """A filter for type/category enums"""
-    filter_type: Union[TradeType, AssetMovementCategory]
+    filter_type: Union[TradeType, AssetMovementCategory, LedgerActionType]
     type_key: Literal['type', 'category']
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
@@ -421,6 +422,50 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
             from_ts=from_ts,
             to_ts=to_ts,
             timestamp_attribute='time',
+        )
+        filters.append(filter_query.timestamp_filter)
+        filter_query.filters = filters
+        return filter_query
+
+
+class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
+
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            order_by_attribute: str = 'timestamp',
+            order_ascending: bool = True,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            asset: Optional[Asset] = None,
+            action_type: Optional[LedgerActionType] = None,
+            location: Optional[Location] = None,
+    ) -> 'LedgerActionsFilterQuery':
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+            order_by_attribute=order_by_attribute,
+            order_ascending=order_ascending,
+        )
+        filter_query = cast('LedgerActionsFilterQuery', filter_query)
+        filters: List[DBFilter] = []
+        if asset is not None:
+            filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
+        if action_type is not None:
+            filters.append(DBTypeFilter(and_op=True, filter_type=action_type, type_key='type'))
+        if location is not None:
+            filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
+            filters.append(filter_query.location_filter)
+
+        filter_query.timestamp_filter = DBTimestampFilter(
+            and_op=True,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            timestamp_attribute='timestamp',
         )
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters

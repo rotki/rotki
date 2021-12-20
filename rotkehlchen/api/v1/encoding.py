@@ -49,6 +49,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     ETHTransactionsFilterQuery,
+    LedgerActionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
 )
@@ -1107,6 +1108,56 @@ class AssetMovementsQuerySchema(
         }
 
 
+class LedgerActionsQuerySchema(
+        AsyncQueryArgumentSchema,
+        OnlyCacheQuerySchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
+):
+    asset = AssetField(load_default=None)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+    type = LedgerActionTypeField(load_default=None)
+    location = LocationField(load_default=None)
+
+    @validates_schema
+    def validate_asset_movements_query_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        value = data['order_by_attribute']
+        if data['order_by_attribute'] not in (None, 'timestamp'):
+            raise ValidationError(
+                message=f'order_by_attribute for ledger actions can not be {value}',
+                field_name='order_by_attribute',
+            )
+
+    @post_load
+    def make_asset_movements_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
+        filter_query = LedgerActionsFilterQuery.make(
+            order_by_attribute=order_by_attribute,
+            order_ascending=data['ascending'],
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            asset=data['asset'],
+            action_type=data['type'],
+            location=data['location'],
+        )
+        return {
+            'async_query': data['async_query'],
+            'only_cache': data['only_cache'],
+            'filter_query': filter_query,
+        }
+
+
 class TimerangeQuerySchema(Schema):
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
@@ -1115,10 +1166,6 @@ class TimerangeQuerySchema(Schema):
 
 class TimerangeLocationQuerySchema(TimerangeQuerySchema):
     location = LocationField(load_default=None)
-
-
-class TimerangeLocationCacheQuerySchema(TimerangeLocationQuerySchema):
-    only_cache = fields.Boolean(load_default=False)
 
 
 class GitcoinReportSchema(TimerangeQuerySchema):

@@ -16,7 +16,11 @@ from rotkehlchen.constants.assets import (
     A_XRP,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
+from rotkehlchen.db.filtering import (
+    AssetMovementsFilterQuery,
+    LedgerActionsFilterQuery,
+    TradesFilterQuery,
+)
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
@@ -122,7 +126,10 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         has_premium=True,
     )
     ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-    ledger_actions = ledger_db.get_ledger_actions(None, None, None)
+    ledger_actions = ledger_db.get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(),
+        has_premium=True,
+    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -421,7 +428,10 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from crypto.com"""
     trades = rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
     ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-    ledger_actions = ledger_db.get_ledger_actions(None, None, None)
+    ledger_actions = ledger_db.get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(),
+        has_premium=True,
+    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -504,7 +514,10 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
 def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from blockfi"""
     ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-    ledger_actions = ledger_db.get_ledger_actions(None, None, None)
+    ledger_actions = ledger_db.get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(),
+        has_premium=True,
+    )
     asset_movements = rotki.data.db.get_asset_movements(
         filter_query=AssetMovementsFilterQuery.make(),
         has_premium=True,
@@ -603,7 +616,10 @@ def assert_blockfi_trades_import_results(rotki: Rotkehlchen):
 def assert_nexo_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from nexo"""
     ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-    ledger_actions = ledger_db.get_ledger_actions(None, None, None)
+    ledger_actions = ledger_db.get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(),
+        has_premium=True,
+    )
     asset_movements = rotki.data.db.get_asset_movements(
         filter_query=AssetMovementsFilterQuery.make(),
         has_premium=True,
@@ -818,7 +834,10 @@ def assert_uphold_transactions_import_results(rotki: Rotkehlchen):
         has_premium=True,
     )
     ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-    ledger_actions = ledger_db.get_ledger_actions(None, None, None)
+    ledger_actions = ledger_db.get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(),
+        has_premium=True,
+    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     notes1 = """

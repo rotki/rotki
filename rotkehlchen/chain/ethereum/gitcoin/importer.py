@@ -10,6 +10,7 @@ from rotkehlchen.chain.ethereum.gitcoin.utils import process_gitcoin_txid
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.history.price import query_usd_price_zero_if_error
@@ -136,10 +137,8 @@ class GitcoinDataImporter():
                     actions.append(action)
 
         db_actions = self.db_ledger.get_ledger_actions(
-            from_ts=None,
-            to_ts=None,
-            location=Location.BLOCKCHAIN,
-            link='gitcoin',
+            filter_query=LedgerActionsFilterQuery.make(location=Location.GITCOIN),
+            has_premium=True,
         )
         existing_txids = [x.link for x in db_actions]
         self.db_ledger.add_ledger_actions([x for x in actions if x.link not in existing_txids])

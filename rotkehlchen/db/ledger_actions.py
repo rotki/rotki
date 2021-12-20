@@ -6,7 +6,8 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.chain.ethereum.gitcoin.constants import GITCOIN_GRANTS_PREFIX
-from rotkehlchen.db.utils import form_query_to_filter_timestamps
+from rotkehlchen.constants.limits import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import Location, Timestamp
@@ -50,44 +51,47 @@ class DBLedgerActions():
         self.db = database
         self.msg_aggregator = msg_aggregator
 
+    def get_ledger_actions_and_limit_info(
+            self,
+            filter_query: LedgerActionsFilterQuery,
+            has_premium: bool,
+    ) -> Tuple[List[LedgerAction], int]:
+        """Gets all ledger actions for the query from the DB
+
+        Also returns how many are the total found for the filter
+        """
+        actions = self.get_ledger_actions(filter_query=filter_query, has_premium=has_premium)
+        if has_premium:
+            return actions, len(actions)
+
+        cursor = self.db.conn.cursor()
+        query, bindings = filter_query.prepare()
+        query = 'SELECT COUNT(*) from ledger_actions ' + query
+        total_found_result = cursor.execute(query, bindings)
+        return actions, total_found_result.fetchone()[0]
+
     def get_ledger_actions(
             self,
-            from_ts: Optional[Timestamp],
-            to_ts: Optional[Timestamp],
-            location: Optional[Location],
-            link: Optional[str] = None,
-            notes: Optional[str] = None,
+            filter_query: LedgerActionsFilterQuery,
+            has_premium: bool,
     ) -> List[LedgerAction]:
-        bindings = []
+        """Returns a list of ledger actions optionally filtered by the given filter.
+
+        Returned list is ordered according to the passed filter query
+        """
         cursor = self.db.conn.cursor()
-        query_selection = 'SELECT * '
-        query = 'FROM ledger_actions '
-        if location is not None:
-            query += f'WHERE location="{location.serialize_for_db()}" '
+        query_filter, bindings = filter_query.prepare()
+        if has_premium:
+            query = 'SELECT * from ledger_actions ' + query_filter
+            results = cursor.execute(query, bindings)
+        else:
+            query = 'SELECT * FROM (SELECT * from ledger_actions ORDER BY timestamp DESC LIMIT ?) ' + query_filter  # noqa: E501
+            results = cursor.execute(query, [FREE_LEDGER_ACTIONS_LIMIT] + bindings)
 
-        if link is not None:
-            if 'WHERE' not in query:
-                query += ' WHERE '
-            else:
-                query += ' AND '
-            query += 'link=? '
-            bindings.append(link)
-
-        if notes is not None:
-            if 'WHERE' not in query:
-                query += ' WHERE '
-            else:
-                query += ' AND '
-            query += 'notes=? '
-            bindings.append(notes)
-
-        query, time_bindings = form_query_to_filter_timestamps(query, 'timestamp', from_ts, to_ts)
-        full_query = query_selection + query
-        results = cursor.execute(full_query, bindings + list(time_bindings)).fetchall()  # type: ignore  # noqa: E501
-
-        original_query = 'SELECT identifier ' + query[:-1]
+        original_query = 'SELECT identifier from ledger_actions ' + query_filter
         gitcoin_query = f'SELECT * from ledger_actions_gitcoin_data WHERE parent_id IN ({original_query});'  # noqa: E501
-        gitcoin_results = cursor.execute(gitcoin_query, bindings + list(time_bindings))  # type: ignore  # noqa: E501
+        cursor2 = self.db.conn.cursor()
+        gitcoin_results = cursor2.execute(gitcoin_query, bindings)
         gitcoin_map = {x[0]: x for x in gitcoin_results}
 
         actions = []
@@ -158,11 +162,12 @@ class DBLedgerActions():
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> List[LedgerAction]:
-        ledger_actions = self.get_ledger_actions(
+        filter_query = LedgerActionsFilterQuery.make(
             from_ts=from_ts,
             to_ts=to_ts,
             location=Location.GITCOIN,
         )
+        ledger_actions = self.get_ledger_actions(filter_query=filter_query, has_premium=True)
         if grant_id is None:
             return ledger_actions
         # else

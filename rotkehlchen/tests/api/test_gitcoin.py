@@ -4,6 +4,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.gitcoin.constants import GITCOIN_GRANTS_PREFIX
+from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions, GitcoinGrantMetadata
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -174,7 +175,10 @@ def test_delete_grant_events(rotkehlchen_api_server):
     # make sure events are saved
     db = rotki.data.db
     ledgerdb = DBLedgerActions(db, db.msg_aggregator)
-    actions = ledgerdb.get_ledger_actions(from_ts=None, to_ts=None, location=Location.GITCOIN)
+    actions = ledgerdb.get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(location=Location.GITCOIN),
+        has_premium=True,
+    )
     assert len(actions) == 5
     assert len([x for x in actions if x.extra_data.grant_id == id1]) == 3
     assert len([x for x in actions if x.extra_data.grant_id == id2]) == 1
@@ -200,7 +204,10 @@ def test_delete_grant_events(rotkehlchen_api_server):
     ), json={'grant_id': id2})
     assert_proper_response(response)
     # check that they got deleted but rest is fine
-    actions = ledgerdb.get_ledger_actions(from_ts=None, to_ts=None, location=Location.GITCOIN)
+    actions = ledgerdb.get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(location=Location.GITCOIN),
+        has_premium=True,
+    )
     assert len(actions) == 4
     assert len([x for x in actions if x.extra_data.grant_id == id1]) == 3
     assert len([x for x in actions if x.extra_data.grant_id == id2]) == 0
@@ -221,7 +228,10 @@ def test_delete_grant_events(rotkehlchen_api_server):
     ))
     assert_proper_response(response)
     # check that they got deleted but rest is fine
-    actions = ledgerdb.get_ledger_actions(from_ts=None, to_ts=None, location=Location.GITCOIN)
+    actions = ledgerdb.get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(location=Location.GITCOIN),
+        has_premium=True,
+    )
     assert len(actions) == 0
     # make sure db ranges were written
     assert db.get_used_query_range(f'{GITCOIN_GRANTS_PREFIX}_{id1}') is None

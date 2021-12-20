@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
+from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
@@ -47,7 +48,10 @@ def test_all_action_types_writtable_in_db(database, function_scope_messages_aggr
         # Check that changes have been committed to db
         cursor.execute(query, (identifier,))
         assert cursor.fetchone() == (1,)
-    assert len(db.get_ledger_actions(None, None, None)) == len(LedgerActionType)
+    assert len(db.get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(),
+        has_premium=True,
+    )) == len(LedgerActionType)
 
 
 def test_ledger_action_can_be_removed(database, function_scope_messages_aggregator):

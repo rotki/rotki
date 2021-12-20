@@ -6,7 +6,11 @@ import requests
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
+from rotkehlchen.db.filtering import (
+    AssetMovementsFilterQuery,
+    LedgerActionsFilterQuery,
+    TradesFilterQuery,
+)
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
@@ -408,11 +412,13 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         an actual exchange query.
         """
         db = DBLedgerActions(self.db, self.db.msg_aggregator)
-        ledger_actions = db.get_ledger_actions(
+        filter_query = LedgerActionsFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
             location=self.location,
         )
+        # has_premium True is fine here since the result of this is not user facing atm
+        ledger_actions = db.get_ledger_actions(filter_query=filter_query, has_premium=True)
         if only_cache:
             return ledger_actions
 

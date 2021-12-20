@@ -10,6 +10,7 @@ from rotkehlchen.accounting.ledger_actions import (
 )
 from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter
 from rotkehlchen.constants.assets import A_ETH, A_USD
+from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import prices
@@ -22,7 +23,10 @@ def test_csv_import(database, price_historian):  # pylint: disable=unused-argume
     csv_path = Path(__file__).resolve().parent.parent / 'data' / 'gitcoin.csv'
     imp.import_gitcoin_csv(csv_path)
 
-    actions = imp.db_ledger.get_ledger_actions(from_ts=None, to_ts=None, location=Location.GITCOIN)
+    actions = imp.db_ledger.get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(location=Location.GITCOIN),
+        has_premium=True,
+    )
 
     assert len(actions) == 10
     expected_actions = [LedgerAction(
@@ -122,7 +126,10 @@ def test_store_same_tx_hash_in_db(database):
     )
     dbledger = DBLedgerActions(database, database.msg_aggregator)
     dbledger.add_ledger_actions([action1, action2, action3])
-    stored_actions = dbledger.get_ledger_actions(from_ts=None, to_ts=None, location=Location.GITCOIN)  # noqa: E501
+    stored_actions = dbledger.get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(location=Location.GITCOIN),
+        has_premium=True,
+    )
     assert stored_actions == [action1, action3]
     errors = database.msg_aggregator.consume_errors()
     warnings = database.msg_aggregator.consume_warnings()
