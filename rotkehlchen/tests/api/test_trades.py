@@ -107,7 +107,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
         trades_to_check=(1, 2),
     )
 
-    # and now filter by both time and location
+    # filter by both time and location
     with setup.binance_patch, setup.polo_patch:
         data = {'from_timestamp': 1512561942, 'to_timestamp': 1539713237, 'location': 'poloniex'}
         response = requests.get(
@@ -123,7 +123,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
         trades_to_check=(1, 2),
     )
 
-    # and now let's test pagination
+    # test pagination
     data = {'location': 'poloniex', 'offset': 1, 'limit': 1, 'only_cache': True}
     response = requests.get(
         api_url_for(
@@ -141,6 +141,77 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
         trades=[t['entry'] for t in result if t['entry']['location'] == 'poloniex'],
         trades_to_check=(1,),
     )
+
+    def assert_order_by(order_by: str):
+        """A helper to keep things DRY in the test"""
+        data = {'order_by_attribute': order_by, 'ascending': False, 'only_cache': True}
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'tradesresource',
+            ), json=data,
+        )
+        result = assert_proper_response_with_result(response)
+        assert result['entries_limit'] == FREE_TRADES_LIMIT
+        assert result['entries_total'] == 5
+        assert result['entries_found'] == 5
+        desc_result = result['entries']
+        assert len(desc_result) == 5
+        data = {'order_by_attribute': order_by, 'ascending': True, 'only_cache': True}
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'tradesresource',
+            ), json=data,
+        )
+        result = assert_proper_response_with_result(response)
+        assert result['entries_limit'] == FREE_TRADES_LIMIT
+        assert result['entries_total'] == 5
+        assert result['entries_found'] == 5
+        asc_result = result['entries']
+        assert len(asc_result) == 5
+        return desc_result, asc_result
+
+    # test order by location
+    desc_result, asc_result = assert_order_by('location')
+    assert all(x['entry']['location'] == 'binance' for x in desc_result[:2])
+    assert all(x['entry']['location'] == 'poloniex' for x in desc_result[2:])
+    assert all(x['entry']['location'] == 'poloniex' for x in asc_result[:3])
+    assert all(x['entry']['location'] == 'binance' for x in asc_result[3:])
+
+    # test order by type
+    desc_result, asc_result = assert_order_by('type')
+    assert all(x['entry']['trade_type'] == 'sell' for x in desc_result[:2])
+    assert all(x['entry']['trade_type'] == 'buy' for x in desc_result[2:])
+    assert all(x['entry']['trade_type'] == 'buy' for x in asc_result[:3])
+    assert all(x['entry']['trade_type'] == 'sell' for x in asc_result[3:])
+
+    # test order by amount
+    desc_result, asc_result = assert_order_by('amount')
+    for idx, x in enumerate(desc_result):
+        if idx < len(desc_result) - 1:
+            assert FVal(x['entry']['amount']) >= FVal(desc_result[idx + 1]['entry']['amount'])
+    for idx, x in enumerate(asc_result):
+        if idx < len(asc_result) - 1:
+            assert FVal(x['entry']['amount']) <= FVal(asc_result[idx + 1]['entry']['amount'])
+
+    # test order by rate
+    desc_result, asc_result = assert_order_by('rate')
+    for idx, x in enumerate(desc_result):
+        if idx < len(desc_result) - 1:
+            assert FVal(x['entry']['rate']) >= FVal(desc_result[idx + 1]['entry']['rate'])
+    for idx, x in enumerate(asc_result):
+        if idx < len(asc_result) - 1:
+            assert FVal(x['entry']['rate']) <= FVal(asc_result[idx + 1]['entry']['rate'])
+
+    # test order by fee
+    desc_result, asc_result = assert_order_by('fee')
+    for idx, x in enumerate(desc_result):
+        if idx < len(desc_result) - 1:
+            assert FVal(x['entry']['fee']) >= FVal(desc_result[idx + 1]['entry']['fee'])
+    for idx, x in enumerate(asc_result):
+        if idx < len(asc_result) - 1:
+            assert FVal(x['entry']['fee']) <= FVal(asc_result[idx + 1]['entry']['fee'])
 
 
 def test_query_trades_errors(rotkehlchen_api_server_with_exchanges):

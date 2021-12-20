@@ -1026,7 +1026,15 @@ class TradesQuerySchema(
             **_kwargs: Any,
     ) -> None:
         value = data['order_by_attribute']
-        if data['order_by_attribute'] not in (None, 'time'):
+        if data['order_by_attribute'] not in (
+                None,
+                'time',
+                'location',
+                'type',
+                'amount',
+                'rate',
+                'fee',
+        ):
             raise ValidationError(
                 message=f'order_by_attribute for trades can not be {value}',
                 field_name='order_by_attribute',
