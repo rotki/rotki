@@ -92,7 +92,7 @@ def query_binance_exchange_pairs(location: Location) -> Dict[str, BinancePair]:
             log.debug(f'Failed to obtain market pairs from binance. {str(e)}')
             # If request fails try to get them from
             database_pairs = db.get_binance_pairs(location)
-            pairs = {pair.symbol: pair for pair in database_pairs}
+            return {pair.symbol: pair for pair in database_pairs}
         try:
             pairs = create_binance_symbols_to_pair(data.json(), location)
         except JSONDecodeError as e:
