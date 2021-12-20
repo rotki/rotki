@@ -722,6 +722,21 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
             api_url_for(server, "assetmovementsresource") + '?' + urlencode(data))
         assert_okay(response)
 
+    # and now test pagination
+    data = {'only_cache': True, 'offset': 1, 'limit': 2, 'location': 'kraken'}
+    response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
+    result = assert_proper_response_with_result(response)
+    assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
+    assert result['entries_found'] == 4
+    assert result['entries_total'] == 8
+    movements = result['entries']
+    assert len(movements) == 2
+    assert_kraken_asset_movements(
+        to_check_list=[x['entry'] for x in movements if x['entry']['location'] == 'kraken'],
+        deserialized=True,
+        movements_to_check=(1, 2),
+    )
+
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.POLONIEX)])

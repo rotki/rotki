@@ -74,7 +74,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
+                'tradesresource',
             ), json={'location': 'binance'},
         )
     assert_okay(response)
@@ -83,7 +83,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
+                'tradesresource',
             ) + '?location=binance',
         )
     assert_okay(response)
@@ -93,7 +93,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
+                'tradesresource',
             ), json={'from_timestamp': 1512561942, 'to_timestamp': 1539713237},
         )
     result = assert_proper_response_with_result(response)['entries']
@@ -113,7 +113,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server_with_exchanges,
-                "tradesresource",
+                'tradesresource',
             ), json=data,
         )
     result = assert_proper_response_with_result(response)['entries']
@@ -121,6 +121,25 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
     assert_poloniex_trades_result(
         trades=[t['entry'] for t in result if t['entry']['location'] == 'poloniex'],
         trades_to_check=(1, 2),
+    )
+
+    # and now let's test pagination
+    data = {'location': 'poloniex', 'offset': 1, 'limit': 1, 'only_cache': True}
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'tradesresource',
+        ), json=data,
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_limit'] == FREE_TRADES_LIMIT
+    assert result['entries_total'] == 5
+    assert result['entries_found'] == 3  # for this filter
+    result = result['entries']
+    assert len(result) == 1  # this filter and pagination
+    assert_poloniex_trades_result(
+        trades=[t['entry'] for t in result if t['entry']['location'] == 'poloniex'],
+        trades_to_check=(1,),
     )
 
 

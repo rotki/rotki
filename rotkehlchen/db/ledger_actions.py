@@ -65,7 +65,7 @@ class DBLedgerActions():
             return actions, len(actions)
 
         cursor = self.db.conn.cursor()
-        query, bindings = filter_query.prepare()
+        query, bindings = filter_query.prepare(with_pagination=False)
         query = 'SELECT COUNT(*) from ledger_actions ' + query
         total_found_result = cursor.execute(query, bindings)
         return actions, total_found_result.fetchone()[0]

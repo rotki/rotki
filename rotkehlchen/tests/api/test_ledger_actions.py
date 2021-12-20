@@ -178,6 +178,32 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server):
     result = [x['entry'] for x in result['entries']]
     assert result == [actions[1], actions[0]]
 
+    # test offset/limit pagination
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ledgeractionsresource',
+        ), json={'offset': 1, 'limit': 2},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 4
+    assert result['entries_total'] == 4
+    result = [x['entry'] for x in result['entries']]
+    assert result == [actions[1], actions[2]]
+
+    # test offset/limit pagination with a filter
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ledgeractionsresource',
+        ), json={'offset': 1, 'limit': 2, 'asset': 'EUR'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 2
+    assert result['entries_total'] == 4
+    result = [x['entry'] for x in result['entries']]
+    assert result == [actions[1]]
+
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_edit_ledger_actions(rotkehlchen_api_server):

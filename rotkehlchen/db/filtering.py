@@ -158,7 +158,7 @@ class DBFilterQuery():
     order_by: Optional[DBFilterOrder] = None
     pagination: Optional[DBFilterPagination] = None
 
-    def prepare(self) -> Tuple[str, List[Any]]:
+    def prepare(self, with_pagination: bool = True) -> Tuple[str, List[Any]]:
         query_parts = []
         bindings = []
         filterstrings = []
@@ -181,7 +181,7 @@ class DBFilterQuery():
             orderby_query = self.order_by.prepare()
             query_parts.append(orderby_query)
 
-        if self.pagination is not None:
+        if with_pagination and self.pagination is not None:
             pagination_query = self.pagination.prepare()
             query_parts.append(pagination_query)
 
