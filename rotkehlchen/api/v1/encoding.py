@@ -2453,3 +2453,10 @@ class Eth2ValidatorDeleteSchema(Schema):
 
 class StatisticsNetValueSchema(Schema):
     include_nfts = fields.Boolean(load_default=True)
+
+
+class BinanceMarketsSchema(Schema):
+    location = LocationField(
+        limit_to=[Location.BINANCEUS, Location.BINANCE],
+        load_default=Location.BINANCE,
+    )

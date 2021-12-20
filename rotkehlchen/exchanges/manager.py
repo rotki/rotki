@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from importlib import import_module
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -19,7 +19,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.exchanges.binance import Binance
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 logger = logging.getLogger(__name__)
@@ -293,8 +292,8 @@ class ExchangeManager():
                 )
                 self.connected_exchanges[location].append(exchange_obj)
 
-    def get_all_binance_pairs(self) -> List[str]:
-        pairs = list(query_binance_exchange_pairs().keys())
+    def get_all_binance_pairs(self, location: Location) -> List[str]:
+        pairs = list(query_binance_exchange_pairs(location=location).keys())
         if len(pairs) == 0:
             self.msg_aggregator.add_error('Failed to query Binance available pairs')
         return pairs

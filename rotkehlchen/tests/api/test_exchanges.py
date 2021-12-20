@@ -18,6 +18,7 @@ from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAcco
 from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -1065,7 +1066,25 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
             server,
             'binanceavailablemarkets',
         ),
+        params={'location': Location.BINANCE},
     )
+    globaldb = GlobalDBHandler()
     result = assert_proper_response_with_result(response)
     some_pairs = {'ETHUSDC', 'BTCUSDC', 'BNBBTC', 'FTTBNB'}
     assert some_pairs.issubset(result)
+    binance_pairs_num = len(globaldb.get_binance_pairs(Location.BINANCE))
+    assert binance_pairs_num != 0
+    response = requests.get(
+        api_url_for(
+            server,
+            'binanceavailablemarkets',
+        ),
+        params={'location': Location.BINANCEUS},
+    )
+    binanceus_pairs_num = len(globaldb.get_binance_pairs(Location.BINANCEUS))
+    assert binanceus_pairs_num != 0
+    result = assert_proper_response_with_result(response)
+    some_pairs = {'ETHUSD', 'BTCUSDC', 'BNBUSDT'}
+    assert some_pairs.issubset(result)
+    assert 'ETHUSDC' not in result
+    assert binance_pairs_num > binanceus_pairs_num

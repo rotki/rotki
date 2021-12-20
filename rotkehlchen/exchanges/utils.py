@@ -1,12 +1,24 @@
+import logging
+from json.decoder import JSONDecodeError
 from typing import Any, Dict, Optional
 
 import requests
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import BinancePair
+from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.typing import Location, Timestamp
+from rotkehlchen.utils.misc import ts_now
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def get_key_if_has_val(mapping: Dict[str, Any], key: str) -> Optional[str]:
@@ -37,22 +49,57 @@ def deserialize_asset_movement_address(
     return value
 
 
-def query_binance_exchange_pairs(ignore_cache: bool = False) -> Dict[str, BinancePair]:
-    if not ignore_cache:
-        last_pair_check = Timestamp(GlobalDBHandler().get_setting_value('binance_pairs_queried_at', 0))
+def create_binance_symbols_to_pair(
+    exchange_data: Dict[str, Any],
+    location: Location,
+) -> Dict[str, BinancePair]:
+    """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping
+    """
+    result: Dict[str, BinancePair] = {}
+    for symbol in exchange_data['symbols']:
+        symbol_str = symbol['symbol']
+        if isinstance(symbol_str, FVal):
+            # the to_int here may rase but should never due to the if check above
+            symbol_str = str(symbol_str.to_int(exact=True))
+        try:
+            result[symbol_str] = BinancePair(
+                symbol=symbol_str,
+                base_asset=asset_from_binance(symbol['baseAsset']),
+                quote_asset=asset_from_binance(symbol['quoteAsset']),
+                location=location,
+            )
+        except (UnknownAsset, UnsupportedAsset) as e:
+            log.debug(f'Found pair with no processable asset. {str(e)}')
+    return result
+
+
+def query_binance_exchange_pairs(location: Location) -> Dict[str, BinancePair]:
+    db = GlobalDBHandler()
+    last_pair_check = Timestamp(
+        db.get_setting_value(f'binance_pairs_queried_at_{location}', 0),
+    )
+    if location == Location.BINANCE:
+        url = 'https://api.binance.com/api/v3/exchangeInfo'
+    elif location == Location.BINANCEUS:
+        url = 'https://api.binance.us/api/v3/exchangeInfo'
     else:
-        last_pair_check = Timestamp(0)
+        log.error(f'Invalid location used as argument. {location}')
+        return {}
     if ts_now() - last_pair_check > DAY_IN_SECONDS:
         try:
-            data = requests.get('https://binance.com/api/v3/exchangeInfo')
+            data = requests.get(url)
         except requests.exceptions.RequestException as e:
             log.debug(f'Failed to obtain market pairs from binance. {str(e)}')
-            # If request fails try to get them from 
-            database_pairs = GlobalDBHandler().get_binance_pairs()
-            pairs = {pair['symbol']: pair for pair in database_pairs}
-        pairs = create_binance_symbols_to_pair(data.json())
-        GlobalDBHandler().save_binance_pairs(pairs.values())
+            # If request fails try to get them from
+            database_pairs = db.get_binance_pairs(location)
+            pairs = {pair.symbol: pair for pair in database_pairs}
+        try:
+            pairs = create_binance_symbols_to_pair(data.json(), location)
+        except JSONDecodeError as e:
+            log.error(f'Failed to query binance pairs. {str(e)}')
+            return {}
+        db.save_binance_pairs(pairs.values(), location)
     else:
-        database_pairs = GlobalDBHandler().get_binance_pairs()
-        pairs = {pair['symbol']: pair for pair in database_pairs}
+        database_pairs = db.get_binance_pairs(location)
+        pairs = {pair.symbol: pair for pair in database_pairs}
     return pairs

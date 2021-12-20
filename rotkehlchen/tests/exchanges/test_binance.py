@@ -8,6 +8,7 @@ from unittest.mock import call, patch
 from urllib.parse import urlencode
 
 import pytest
+import requests
 
 from rotkehlchen.assets.asset import WORLD_TO_BINANCE, Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
@@ -36,7 +37,6 @@ from rotkehlchen.tests.utils.exchanges import (
     assert_binance_asset_movements_result,
     mock_binance_balance_response,
 )
-from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -174,27 +174,16 @@ exchange_info_mock_text = '''{
 }'''
 
 
-def test_binance_assets_are_known(
-        database,
-        inquirer,  # pylint: disable=unused-argument
-):
+def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
     unsupported_assets = set(UNSUPPORTED_BINANCE_ASSETS)
     common_items = unsupported_assets.intersection(set(WORLD_TO_BINANCE.values()))
     assert not common_items, f'Binance assets {common_items} should not be unsupported'
-    # use a real binance instance so that we always get the latest data
-    binance = Binance(
-        name='binance1',
-        api_key=make_api_key(),
-        secret=make_api_secret(),
-        database=database,
-        msg_aggregator=MessagesAggregator(),
-    )
 
-    mapping = binance.symbols_to_pair
+    exchange_data = requests.get('https://binance.com/api/v3/exchangeInfo').json()
     binance_assets = set()
-    for _, pair in mapping.items():
-        binance_assets.add(pair.binance_base_asset)
-        binance_assets.add(pair.binance_quote_asset)
+    for pair_symbol in exchange_data['symbols']:
+        binance_assets.add(pair_symbol['baseAsset'])
+        binance_assets.add(pair_symbol['quoteAsset'])
 
     sorted_assets = sorted(binance_assets)
     for binance_asset in sorted_assets:

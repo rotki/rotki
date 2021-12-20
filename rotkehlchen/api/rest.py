@@ -3369,9 +3369,11 @@ class RestAPI():
             status_code=response.get('status_code', HTTPStatus.OK),
         )
 
-    def get_all_binance_pairs(self) -> Response:
+    def get_all_binance_pairs(self, location: Location) -> Response:
         return api_response(
-            _wrap_in_ok_result(list(self.rotkehlchen.exchange_manager.get_all_binance_pairs())),
+            _wrap_in_ok_result(
+                list(self.rotkehlchen.exchange_manager.get_all_binance_pairs(location)),
+            ),
             status_code=HTTPStatus.OK,
         )
 

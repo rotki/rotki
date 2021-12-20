@@ -9401,8 +9401,11 @@ All Binance markets
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/exchanges/binance/pairs HTTP/1.1
+      GET /api/1/exchanges/binance/pairs?location=binance HTTP/1.1
       Host: localhost:5042
+
+   
+   :query string location: Either ``binance`` or ``binanceus`` locations. This argumetn will fitler the result based on the exchange type.
 
    **Example Response**:
 

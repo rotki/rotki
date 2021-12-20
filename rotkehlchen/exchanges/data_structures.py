@@ -391,6 +391,9 @@ def trades_from_dictlist(
     return returned_trades
 
 
+binance_pair_db_tuple = Tuple[str, str, str, str]
+
+
 class BinancePair(NamedTuple):
     """A binance pair. Contains the symbol in the Binance mode e.g. "ETHBTC" and
     the base and quote assets of that symbol as parsed from exchangeinfo endpoint
@@ -398,13 +401,21 @@ class BinancePair(NamedTuple):
     symbol: str
     base_asset: Asset
     quote_asset: Asset
+    location: Location
 
-    def serialize_for_db(self) -> Tuple[str, str, str]:
-        return (self.symbol, base_asset.identifer, quote_asset.identifier)
+    def serialize_for_db(self) -> binance_pair_db_tuple:
+        return (
+            self.symbol,
+            self.base_asset.identifier,
+            self.quote_asset.identifier,
+            self.location.serialize_for_db(),
+        )
 
-    def deserialize_from_db(cls, entry: Tuple[str, str, str]) -> 'BinancePair':
+    @classmethod
+    def deserialize_from_db(cls, entry: binance_pair_db_tuple) -> 'BinancePair':
         return BinancePair(
             symbol=entry[0],
             base_asset=asset_from_binance(entry[1]),
             quote_asset=asset_from_binance(entry[2]),
+            location=Location.deserialize_from_db(entry[3]),
         )

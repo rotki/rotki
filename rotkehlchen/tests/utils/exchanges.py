@@ -9,12 +9,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import TradesFilterQuery
-from rotkehlchen.exchanges.binance import (
-    BINANCE_BASE_URL,
-    BINANCEUS_BASE_URL,
-    Binance,
-    create_binance_symbols_to_pair,
-)
+from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, Binance
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
 from rotkehlchen.exchanges.bitmex import Bitmex
@@ -32,6 +27,7 @@ from rotkehlchen.exchanges.independentreserve import Independentreserve
 from rotkehlchen.exchanges.kucoin import Kucoin
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.poloniex import Poloniex
+from rotkehlchen.exchanges.utils import create_binance_symbols_to_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.factories import (
@@ -588,7 +584,7 @@ def create_test_binance(
     with json_path.open('r') as f:
         json_data = json.loads(f.read())
 
-    binance._symbols_to_pair = create_binance_symbols_to_pair(json_data)
+    binance._symbols_to_pair = create_binance_symbols_to_pair(json_data, location)
     binance.first_connection_made = True
     return binance
 
