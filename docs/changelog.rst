@@ -7,7 +7,6 @@ Changelog
 * :feature:`2382` Users will now be able to filter specific accounts such as the ones from Loopring using an automatically added tag.
 * :feature:`2901` Users will now be able to select between a full privacy mode and a semi-privacy mode that keeps the percentages visible.
 * :feature:`2624` Users will now be able to filter by tag in the asset details page.
-* :feature:`3712` Users will now be able to input a custom date format when importing from CSV.
 * :feature:`2265` Users will now be able to see a hint for the trade rate when adding an external trade.
 * :feature:`2848` Users will now get taken to the top of the table automatically when changing a page.
 * :feature:`2121` Users can now select a different timezone when selecting a date to input.
@@ -28,7 +27,6 @@ Changelog
 * :feature:`3725` Users can now see if any of their addresses have SDL available to claim from the SDL airdrop.
 * :feature:`3549` Users will now be able to select whether to include or not NFT total value in total net worth and graphs.
 * :feature:`3712` Users will now be able to choose a custom date format while importing CSV files.
-* :bug:`1864` If any trades, deposits or withdrawals have been imported from a CSV file for an exchange that's also connected with an api key they will now be properly visible.
 * :bug:`3767` The module selector will now properly clear after selecting a module by clicking.
 * :bug:`3128` Bigger net worth values on dashboard should not overlap with the net worth graph.
 * :bug:`3641` Users should now be able to view profit and loss reports that have many thousands of events without the UI freezing.
