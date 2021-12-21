@@ -5,13 +5,10 @@ from eth_typing import ChecksumAddress
 from typing_extensions import Literal
 
 from rotkehlchen.errors import DeserializationError  # lgtm [py/unsafe-cyclic-import]  # noqa: E501
-# from rotkehlchen.accounting.structures import AssetBalance
-from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
-# from rotkehlchen.accounting.structures import AssetBalance
 from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 
 
@@ -370,17 +367,6 @@ class Location(DBEnumMixIn):
     UPHOLD = 33
     BITPANDA = 34
     BISQ = 35
-
-
-class DetailedLocation(NamedTuple):
-    location: Location
-    chain: Optional[str]  # In the globaldb upgrade we introduce a valid chainID here
-
-    def serialize_for_db(self) -> str:
-        elements = [str(self.location)]
-        if self.chain is not None:
-            elements.append(self.chain)
-        return "|".join(elements)
 
 
 class AssetMovementCategory(DBEnumMixIn):

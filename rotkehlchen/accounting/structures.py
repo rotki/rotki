@@ -8,11 +8,12 @@ from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import InputError
+from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 
 class BalanceType(DBEnumMixIn):
@@ -275,7 +276,7 @@ class ActionType(DBEnumMixIn):
     LEDGER_ACTION = 4
 
 
-class HistoryEventType(DBEnumMixIn):
+class HistoryEventType(DBEnumMixIn, SerializableEnumMixin):
     TRADE = 1
     STAKING = 2
     UNSTAKING = 3
@@ -288,22 +289,10 @@ class HistoryEventType(DBEnumMixIn):
 
     @classmethod
     def from_string(cls, value: str) -> 'HistoryEventType':
-        if value == 'trade':
-            return HistoryEventType.TRADE
-        if value == 'staking':
-            return HistoryEventType.STAKING
-        if value == 'deposit':
-            return HistoryEventType.DEPOSIT
-        if value == 'withdrawal':
-            return HistoryEventType.WITHDRAWAL
-        if value == 'transfer':
-            return HistoryEventType.TRANSFER
-        if value == 'spend':
-            return HistoryEventType.SPEND
-        if value == 'receive':
-            return HistoryEventType.RECEIVE
-
-        return HistoryEventType.UNKNOWN
+        try:
+            return super().deserialize(value)
+        except DeserializationError:
+            return HistoryEventType.UNKNOWN
 
 
 class HistoryEventSubType(DBEnumMixIn):
@@ -312,15 +301,6 @@ class HistoryEventSubType(DBEnumMixIn):
     STAKING_REMOVE_ASSET = 3
     STAKING_RECEIVE_ASSET = 4
     FEE = 5
-
-    @classmethod
-    def deserialize_from_db(    # type: ignore
-        cls,
-        value: Optional[str],
-    ) -> Optional['HistoryEventSubType']:
-        if value is not None:
-            return super().deserialize_from_db(value)
-        return None
 
 
 HISTORY_EVENT_DB_TUPLE = Tuple[
@@ -341,8 +321,8 @@ HISTORY_EVENT_DB_TUPLE = Tuple[
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class HistoryEvent:
-    event_identifier: str
-    sequence_index: int
+    event_identifier: str  # identifier shared between related events
+    sequence_index: int  # When this transaction was executed relative to other related events
     timestamp: Timestamp
     location: Location
     location_label: Optional[str]
@@ -371,6 +351,9 @@ class HistoryEvent:
 
     @classmethod
     def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE) -> 'HistoryEvent':
+        event_subtype = None
+        if entry[11] is not None:
+            event_subtype = HistoryEventSubType.deserialize_from_db(entry[11])
         return HistoryEvent(
             identifier=entry[0],
             event_identifier=entry[1],
@@ -387,9 +370,12 @@ class HistoryEvent:
             ),
             notes=entry[9],
             event_type=HistoryEventType.deserialize_from_db(entry[10]),
-            event_subtype=HistoryEventSubType.deserialize_from_db(entry[11]),
+            event_subtype=event_subtype,
         )
 
     def __post_init__(self) -> None:
         if not hasattr(self, 'identifier') or self.identifier == '':
+            """The identifier is unique and we create it randomly at initialization."""
+            # We use this method for creating the identifier as is random enough
+            # and faster than uuid
             self.identifier = binascii.hexlify(os.urandom(8)).decode('utf-8')

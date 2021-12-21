@@ -338,7 +338,7 @@ def deserialize_asset_movement_category(
 
     Can throw DeserializationError if value is not as expected
     """
-    if not (isinstance(value, str) or isinstance(value, HistoryEventType)):
+    if not isinstance(value, (str, HistoryEventType)):
         raise DeserializationError(
             f'Failed to deserialize asset movement category from {type(value)} entry',
         )

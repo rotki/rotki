@@ -3432,7 +3432,8 @@ class DBHandler:
             locations.add(Location.BALANCER)
         return locations
 
-    def save_history_events(self, history: List[HistoryEvent]) -> bool:
+    def add_history_events(self, history: List[HistoryEvent]) -> bool:
+        """Insert a list of history events in database"""
         query_str = 'INSERT INTO history_events(identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'  # noqa: E501
         cursor = self.conn.cursor()
         try:
@@ -3448,22 +3449,26 @@ class DBHandler:
         location: Optional[Location] = None,
         location_label: Optional[str] = None,
     ) -> int:
+        """
+        Deletes history entries for one location, one location label or a combination
+        of location and location label.
+        """
         query_str = 'DELETE FROM history_events'
-        params = []
+        bindings = []
         query_additions = []
         if location is not None:
             query_additions.append(' location=? ')
-            params.append(location.serialize_for_db())
+            bindings.append(location.serialize_for_db())
         if location_label is not None:
             query_additions.append(' location_label=? ')
-            params.append(location_label)
+            bindings.append(location_label)
 
         if len(query_additions) != 0:
             query_str += " WHERE " + "AND".join(query_additions)
 
         cursor = self.conn.cursor()
         try:
-            cursor.execute(query_str, params)
+            cursor.execute(query_str, bindings)
             affected_rows = cursor.rowcount
             self.update_last_write()
             cursor.execute(
@@ -3475,7 +3480,7 @@ class DBHandler:
             return affected_rows
         except sqlcipher.OperationalError as e:    # pylint: disable=no-member
             self.msg_aggregator.add_error(
-                f'Failed to delete history events with params {params} and '
+                f'Failed to delete history events with params {bindings} and '
                 f'query {query_str}. {str(e)}',
             )
         return -1
@@ -3485,7 +3490,7 @@ class DBHandler:
         location: Optional[Location],
         location_label: Optional[str],
         from_ts: Optional[Timestamp],
-        end_ts: Optional[Timestamp],
+        to_ts: Optional[Timestamp],
         type_in: Optional[List[HistoryEventType]],
     ) -> List[HistoryEvent]:
         base_query = 'SELECT * FROM history_events '
@@ -3497,16 +3502,16 @@ class DBHandler:
         if location_label is not None:
             query_strings.append('location_label=? ')
             query_params.append(location_label)
-        if from_ts is not None and end_ts is not None:
+        if from_ts is not None and to_ts is not None:
             query_strings.append('timestamp >= ? AND timestamp <= ? ')
             query_params.append(from_ts)
-            query_params.append(end_ts)
+            query_params.append(to_ts)
         elif from_ts is not None:
             query_strings.append('timestamp >= ? ')
             query_params.append(from_ts)
-        elif end_ts is not None:
+        elif to_ts is not None:
             query_strings.append('timestamp <= ? ')
-            query_params.append(end_ts)
+            query_params.append(to_ts)
         if type_in is not None:
             query_strings.append(f'type in ({", ".join(["?"]* len(type_in))}) ')
             query_params.extend([x.serialize_for_db() for x in type_in])
