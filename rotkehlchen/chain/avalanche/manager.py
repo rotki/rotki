@@ -121,6 +121,9 @@ class AvalancheManager():
             successful = tx_receipt.pop('successful', None)
             tx_receipt['status'] = 1 if successful else 0
             tx_receipt['transactionIndex'] = 0
+            txhash = tx_receipt.pop('tx_hash')
+            tx_receipt['hash'] = txhash
+
             # TODO input and nonce is decoded in Covalent api, encoded in future
             tx_receipt['input'] = '0x'
             tx_receipt['nonce'] = 0
