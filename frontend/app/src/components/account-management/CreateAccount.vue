@@ -84,7 +84,7 @@
               depressed
               outlined
               color="primary"
-              :disabled="loading"
+              :disabled="loading || newUser"
               @click="cancel()"
             >
               {{ $t('create_account.premium.button_cancel') }}
@@ -253,12 +253,16 @@
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { mapState } from 'vuex';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { CreateAccountPayload } from '@/types/login';
 
 @Component({
-  components: { RevealableInput, PremiumCredentials }
+  components: { RevealableInput, PremiumCredentials },
+  computed: {
+    ...mapState(['newUser'])
+  }
 })
 export default class CreateAccount extends Vue {
   @Prop({ required: true })
@@ -270,6 +274,7 @@ export default class CreateAccount extends Vue {
   @Prop({ required: false, type: String, default: '' })
   error!: string;
 
+  newUser!: boolean;
   username: string = '';
   password: string = '';
   passwordConfirm: string = '';

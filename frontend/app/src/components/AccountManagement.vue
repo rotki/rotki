@@ -81,7 +81,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
+import { Component, Emit, Mixins, Prop, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
@@ -111,7 +111,7 @@ import { CreateAccountPayload, LoginCredentials } from '@/types/login';
     CreateAccount
   },
   computed: {
-    ...mapState(['connectionFailure']),
+    ...mapState(['connectionFailure', 'newUser']),
     ...mapState('session', ['syncConflict', 'premium']),
     ...mapState(['message', 'connected']),
     ...mapGetters(['updateNeeded', 'message'])
@@ -140,6 +140,7 @@ export default class AccountManagement extends Mixins(BackendMixin) {
   @Prop({ required: true, type: Boolean })
   logged!: boolean;
   connectionFailure!: boolean;
+  newUser!: boolean;
 
   get xsOnly(): boolean {
     return this.$vuetify.breakpoint.xsOnly;
@@ -180,11 +181,21 @@ export default class AccountManagement extends Mixins(BackendMixin) {
       this.showGetPremiumButton();
     }
     this.autolog = false;
+    if (this.newUser) {
+      this.accountCreation = true;
+    }
   }
 
   @Emit()
   loginComplete() {
     this.dismiss();
+  }
+
+  @Watch('newUser')
+  onNewUser(newUser: boolean) {
+    if (newUser) {
+      this.accountCreation = true;
+    }
   }
 
   async backendChanged(url: string | null) {

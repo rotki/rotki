@@ -9,12 +9,12 @@
 
 <script lang="ts">
 import {
-  watch,
+  computed,
   defineComponent,
   onMounted,
   ref,
   toRefs,
-  computed
+  watch
 } from '@vue/composition-api';
 import Cleave from 'cleave.js';
 import { useStore } from '@/store/utils';

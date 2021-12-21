@@ -17,9 +17,7 @@ export type PremiumSetup = {
   readonly syncDatabase: boolean;
 };
 
-export interface AccountSession {
-  [account: string]: 'loggedin' | 'loggedout';
-}
+export type AccountSession = Record<string, 'loggedin' | 'loggedout'>;
 
 export class SyncConflictError extends Error {
   readonly payload: SyncConflictPayload;
