@@ -71,7 +71,8 @@ def _add_ledger_actions(server) -> List[Dict]:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_and_query_ledger_actions(rotkehlchen_api_server):
+@pytest.mark.parametrize('start_with_valid_premium', [False, True])
+def test_add_and_query_ledger_actions(rotkehlchen_api_server, start_with_valid_premium):
     """Test that querying the ledger actions endpoint works as expected"""
     actions = _add_ledger_actions(rotkehlchen_api_server)
 
@@ -84,7 +85,7 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 4
     assert result['entries_total'] == 4
-    assert result['entries_limit'] == FREE_LEDGER_ACTIONS_LIMIT
+    assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_LEDGER_ACTIONS_LIMIT
     assert all(x['ignored_in_accounting'] is False for x in result['entries']), 'by default nothing should be ignored'  # noqa: E501
     result = [x['entry'] for x in result['entries']]
     assert result == actions
@@ -216,7 +217,7 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server):
             ), json=data,
         )
         result = assert_proper_response_with_result(response)
-        assert result['entries_limit'] == FREE_LEDGER_ACTIONS_LIMIT
+        assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_LEDGER_ACTIONS_LIMIT  # noqa: E501
         assert result['entries_total'] == 4
         assert result['entries_found'] == 4
         desc_result = result['entries']
@@ -229,7 +230,7 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server):
             ), json=data,
         )
         result = assert_proper_response_with_result(response)
-        assert result['entries_limit'] == FREE_LEDGER_ACTIONS_LIMIT
+        assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_LEDGER_ACTIONS_LIMIT  # noqa: E501
         assert result['entries_total'] == 4
         assert result['entries_found'] == 4
         asc_result = result['entries']

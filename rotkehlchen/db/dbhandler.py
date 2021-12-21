@@ -2368,9 +2368,6 @@ class DBHandler:
         Also returns how many are the total found for the filter
         """
         movements = self.get_asset_movements(filter_query=filter_query, has_premium=has_premium)
-        if has_premium:
-            return movements, len(movements)
-
         cursor = self.conn.cursor()
         query, bindings = filter_query.prepare(with_pagination=False)
         query = 'SELECT COUNT(*) from asset_movements ' + query
@@ -2587,9 +2584,6 @@ class DBHandler:
         Also returns how many are the total found for the filter
         """
         trades = self.get_trades(filter_query=filter_query, has_premium=has_premium)
-        if has_premium:
-            return trades, len(trades)
-
         cursor = self.conn.cursor()
         query, bindings = filter_query.prepare(with_pagination=False)
         query = 'SELECT COUNT(*) from combined_trades_view ' + query

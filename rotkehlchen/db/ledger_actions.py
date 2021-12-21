@@ -61,9 +61,6 @@ class DBLedgerActions():
         Also returns how many are the total found for the filter
         """
         actions = self.get_ledger_actions(filter_query=filter_query, has_premium=has_premium)
-        if has_premium:
-            return actions, len(actions)
-
         cursor = self.db.conn.cursor()
         query, bindings = filter_query.prepare(with_pagination=False)
         query = 'SELECT COUNT(*) from ledger_actions ' + query
