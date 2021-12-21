@@ -737,6 +737,68 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
         movements_to_check=(1, 2),
     )
 
+    def assert_order_by(order_by: str):
+        """A helper to keep things DRY in the test"""
+        data = {'order_by_attribute': order_by, 'ascending': False, 'only_cache': True}
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'assetmovementsresource',
+            ), json=data,
+        )
+        result = assert_proper_response_with_result(response)
+        assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
+        assert result['entries_total'] == 8
+        assert result['entries_found'] == 8
+        desc_result = result['entries']
+        assert len(desc_result) == 8
+        data = {'order_by_attribute': order_by, 'ascending': True, 'only_cache': True}
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server_with_exchanges,
+                'assetmovementsresource',
+            ), json=data,
+        )
+        result = assert_proper_response_with_result(response)
+        assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
+        assert result['entries_total'] == 8
+        assert result['entries_found'] == 8
+        asc_result = result['entries']
+        assert len(asc_result) == 8
+        return desc_result, asc_result
+
+    # test order by location
+    desc_result, asc_result = assert_order_by('location')
+    assert all(x['entry']['location'] == 'poloniex' for x in desc_result[:4])
+    assert all(x['entry']['location'] == 'kraken' for x in desc_result[4:])
+    assert all(x['entry']['location'] == 'kraken' for x in asc_result[:4])
+    assert all(x['entry']['location'] == 'poloniex' for x in asc_result[4:])
+
+    # test order by category
+    desc_result, asc_result = assert_order_by('category')
+    assert all(x['entry']['category'] == 'withdrawal' for x in desc_result[:4])
+    assert all(x['entry']['category'] == 'deposit' for x in desc_result[4:])
+    assert all(x['entry']['category'] == 'deposit' for x in asc_result[:4])
+    assert all(x['entry']['category'] == 'withdrawal' for x in asc_result[4:])
+
+    # test order by amount
+    desc_result, asc_result = assert_order_by('amount')
+    for idx, x in enumerate(desc_result):
+        if idx < len(desc_result) - 1:
+            assert FVal(x['entry']['amount']) >= FVal(desc_result[idx + 1]['entry']['amount'])
+    for idx, x in enumerate(asc_result):
+        if idx < len(asc_result) - 1:
+            assert FVal(x['entry']['amount']) <= FVal(asc_result[idx + 1]['entry']['amount'])
+
+    # test order by fee
+    desc_result, asc_result = assert_order_by('fee')
+    for idx, x in enumerate(desc_result):
+        if idx < len(desc_result) - 1:
+            assert FVal(x['entry']['fee']) >= FVal(desc_result[idx + 1]['entry']['fee'])
+    for idx, x in enumerate(asc_result):
+        if idx < len(asc_result) - 1:
+            assert FVal(x['entry']['fee']) <= FVal(asc_result[idx + 1]['entry']['fee'])
+
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.POLONIEX)])

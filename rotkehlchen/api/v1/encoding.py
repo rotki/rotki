@@ -1085,7 +1085,14 @@ class AssetMovementsQuerySchema(
             **_kwargs: Any,
     ) -> None:
         value = data['order_by_attribute']
-        if data['order_by_attribute'] not in (None, 'time'):
+        if data['order_by_attribute'] not in (
+                None,
+                'time',
+                'location',
+                'category',
+                'amount',
+                'fee',
+        ):
             raise ValidationError(
                 message=f'order_by_attribute for asset movements can not be {value}',
                 field_name='order_by_attribute',

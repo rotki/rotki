@@ -27,7 +27,12 @@ class DBFilterOrder(NamedTuple):
     ascending: bool
 
     def prepare(self) -> str:
-        return f'ORDER BY {self.attribute} {"ASC" if self.ascending else "DESC"}'
+        if self.attribute in ('amount', 'fee', 'rate'):
+            order_by = f'CAST({self.attribute} AS REAL)'
+        else:
+            order_by = self.attribute
+
+        return f'ORDER BY {order_by} {"ASC" if self.ascending else "DESC"}'
 
 
 class DBFilterPagination(NamedTuple):
