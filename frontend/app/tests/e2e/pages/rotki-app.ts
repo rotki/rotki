@@ -7,12 +7,13 @@ export class RotkiApp {
     cy.logout();
     // simulate high scaling / low res by making a very small viewpoirt
     cy.get('.login__button__new-account').click();
+    cy.get('[data-cy="create-account__premium__button__continue"]').click();
     cy.get('.create-account__fields__username').type(username);
     cy.get('.create-account__fields__password').type(password);
     cy.get('.create-account__fields__password-repeat').type(password);
     cy.get('.create-account__boxes__user-prompted').click();
-    cy.get('.create-account__buttons__continue').click();
-    cy.get('.create-account__analytics__buttons__confirm').click();
+    cy.get('.create-account__credentials__button__continue').click();
+    cy.get('.create-account__analytics__button__confirm').click();
     cy.get('.account-management__loading').should('not.exist');
     cy.updateAssets();
   }

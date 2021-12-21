@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1242` Users will be asked first whether to activate premium feature, and enable database sync when create new account.
 * :feature:`2876` The application users will now be able to start the auto update mechanism manually from the update indicator.
 * :feature:`2386` Users will see a separate section of L2 balances in Blockchain Balances section.
 * :feature:`2382` Users will now be able to filter specific accounts such as the ones from Loopring using an automatically added tag.

@@ -1,32 +1,11 @@
 <template>
   <div>
-    <v-row no-gutters>
-      <v-checkbox
-        :value="enabled"
-        :label="$t('premium_credentials.label_enable')"
-        @change="updateEnabled"
-      />
-    </v-row>
     <div v-if="enabled">
-      <v-row no-gutters>
-        <v-col>
-          <v-switch
-            label="Restore synced database"
-            :value="syncDatabase"
-            @change="updateSyncDatabase"
-          />
-        </v-col>
-        <v-col cols="auto">
-          <v-tooltip bottom max-width="400px">
-            <template #activator="{ on }">
-              <v-icon small class="mb-3 ml-1" v-on="on">mdi-information</v-icon>
-            </template>
-            <span>
-              {{ $t('premium_credentials.tooltip') }}
-            </span>
-          </v-tooltip>
-        </v-col>
-      </v-row>
+      <v-switch
+        :label="$t('premium_credentials.restore_synced_database')"
+        :value="syncDatabase"
+        @change="updateSyncDatabase"
+      />
 
       <revealable-input
         outlined
@@ -83,12 +62,7 @@ const PremiumCredentials = defineComponent({
     apiKey: { required: true, type: String },
     syncDatabase: { required: true, type: Boolean }
   },
-  emits: [
-    'update:api-key',
-    'update:api-secret',
-    'update:enabled',
-    'update:sync-database'
-  ],
+  emits: ['update:api-key', 'update:api-secret', 'update:sync-database'],
   setup(props, { emit }) {
     const { enabled } = toRefs(props);
     const showKey = ref(false);
@@ -100,10 +74,6 @@ const PremiumCredentials = defineComponent({
 
     const updateApiSecret = (apiSecret: string) => {
       emit('update:api-secret', apiSecret?.trim() ?? '');
-    };
-
-    const updateEnabled = (enabled: boolean | null) => {
-      emit('update:enabled', !!enabled);
     };
 
     const updateSyncDatabase = (enabled: boolean | null) => {
@@ -135,7 +105,6 @@ const PremiumCredentials = defineComponent({
     return {
       updateApiKey,
       updateApiSecret,
-      updateEnabled,
       updateSyncDatabase,
       onApiKeyPaste,
       onApiSecretPaste,
