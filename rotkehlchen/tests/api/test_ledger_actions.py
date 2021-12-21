@@ -4,8 +4,10 @@ from typing import Dict, List
 import pytest
 import requests
 
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.limits import FREE_LEDGER_ACTIONS_LIMIT
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -30,7 +32,7 @@ def _add_ledger_actions(server) -> List[Dict]:
         'location': 'blockchain',
         'amount': '5',
         'asset': A_DAI.identifier,
-        'rate': None,
+        'rate': '2.353',
         'rate_asset': None,
         'link': 'explorer link',
         'notes': 'Spent 5 DAI for something',
@@ -50,7 +52,7 @@ def _add_ledger_actions(server) -> List[Dict]:
         'location': 'external',
         'amount': '75',
         'asset': 'EUR',
-        'rate': None,
+        'rate': '1.23',
         'rate_asset': None,
         'link': 'APPL_dividens_income_id',
         'notes': None,
@@ -203,6 +205,71 @@ def test_add_and_query_ledger_actions(rotkehlchen_api_server):
     assert result['entries_total'] == 4
     result = [x['entry'] for x in result['entries']]
     assert result == [actions[1]]
+
+    def assert_order_by(order_by: str):
+        """A helper to keep things DRY in the test"""
+        data = {'order_by_attribute': order_by, 'ascending': False, 'only_cache': True}
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'ledgeractionsresource',
+            ), json=data,
+        )
+        result = assert_proper_response_with_result(response)
+        assert result['entries_limit'] == FREE_LEDGER_ACTIONS_LIMIT
+        assert result['entries_total'] == 4
+        assert result['entries_found'] == 4
+        desc_result = result['entries']
+        assert len(desc_result) == 4
+        data = {'order_by_attribute': order_by, 'ascending': True, 'only_cache': True}
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'ledgeractionsresource',
+            ), json=data,
+        )
+        result = assert_proper_response_with_result(response)
+        assert result['entries_limit'] == FREE_LEDGER_ACTIONS_LIMIT
+        assert result['entries_total'] == 4
+        assert result['entries_found'] == 4
+        asc_result = result['entries']
+        assert len(asc_result) == 4
+        return desc_result, asc_result
+
+    # test order by location
+    desc_result, asc_result = assert_order_by('location')
+    assert all(x['entry']['location'] == 'blockchain' for x in desc_result[:2])
+    assert all(x['entry']['location'] == 'external' for x in desc_result[2:])
+    assert all(x['entry']['location'] == 'external' for x in asc_result[:2])
+    assert all(x['entry']['location'] == 'blockchain' for x in asc_result[2:])
+
+    # test order by type
+    desc_result, asc_result = assert_order_by('type')
+    descending_types = [x['entry']['action_type'] for x in desc_result]
+    assert [x['entry']['action_type'] for x in asc_result] == descending_types[::-1]
+
+    # test order by amount
+    desc_result, asc_result = assert_order_by('amount')
+    for idx, x in enumerate(desc_result):
+        if idx < len(desc_result) - 1:
+            assert FVal(x['entry']['amount']) >= FVal(desc_result[idx + 1]['entry']['amount'])
+    for idx, x in enumerate(asc_result):
+        if idx < len(asc_result) - 1:
+            assert FVal(x['entry']['amount']) <= FVal(asc_result[idx + 1]['entry']['amount'])
+
+    # test order by rate
+    desc_result, asc_result = assert_order_by('rate')
+    for idx, x in enumerate(desc_result):
+        if idx < len(desc_result) - 1:
+            this = FVal(x['entry']['rate']) if x['entry']['rate'] is not None else ZERO
+            next_ = FVal(desc_result[idx + 1]['entry']['rate']) if desc_result[idx + 1]['entry']['rate'] is not None else ZERO  # noqa: E501
+
+            assert this >= next_
+    for idx, x in enumerate(asc_result):
+        if idx < len(asc_result) - 1:
+            this = FVal(x['entry']['rate']) if x['entry']['rate'] is not None else ZERO
+            next_ = FVal(asc_result[idx + 1]['entry']['rate']) if asc_result[idx + 1]['entry']['rate'] is not None else ZERO  # noqa: E501
+            assert this <= next_
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

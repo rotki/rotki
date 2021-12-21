@@ -1142,7 +1142,14 @@ class LedgerActionsQuerySchema(
             **_kwargs: Any,
     ) -> None:
         value = data['order_by_attribute']
-        if data['order_by_attribute'] not in (None, 'timestamp'):
+        if data['order_by_attribute'] not in (
+                None,
+                'timestamp',
+                'type',
+                'location',
+                'amount',
+                'rate',
+        ):
             raise ValidationError(
                 message=f'order_by_attribute for ledger actions can not be {value}',
                 field_name='order_by_attribute',
