@@ -2,12 +2,13 @@ import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC
+from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import limit_trade_list_to_period
 from rotkehlchen.history.typing import HistoricalPriceOracle
-from rotkehlchen.typing import Location, Timestamp, TradeType
+from rotkehlchen.typing import Location, TradeType
 
 
 def test_limit_trade_list_to_period():
@@ -121,8 +122,7 @@ def test_query_ledger_actions(events_historian, function_scope_messages_aggregat
     db.add_ledger_action(action)
 
     actions, length = events_historian.query_ledger_actions(
-        from_ts=None,
-        to_ts=Timestamp(selected_timestamp + 4),
+        filter_query=LedgerActionsFilterQuery.make(to_ts=selected_timestamp + 4),
         only_cache=False,
     )
 

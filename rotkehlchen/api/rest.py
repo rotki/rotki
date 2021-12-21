@@ -63,6 +63,7 @@ from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     ETHTransactionsFilterQuery,
+    LedgerActionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
 )
@@ -938,15 +939,11 @@ class RestAPI():
 
     def _get_ledger_actions(
             self,
-            from_ts: Optional[Timestamp],
-            to_ts: Optional[Timestamp],
-            location: Optional[Location],
-            only_cache: Optional[bool],
+            filter_query: LedgerActionsFilterQuery,
+            only_cache: bool,
     ) -> Dict[str, Any]:
-        actions, original_length = self.rotkehlchen.events_historian.query_ledger_actions(
-            from_ts=from_ts,
-            to_ts=to_ts,
-            location=location,
+        actions, filter_total_found = self.rotkehlchen.events_historian.query_ledger_actions(
+            filter_query=filter_query,
             only_cache=only_cache,
         )
 
@@ -961,7 +958,8 @@ class RestAPI():
 
         result = {
             'entries': entries_result,
-            'entries_found': original_length,
+            'entries_found': filter_total_found,
+            'entries_total': self.rotkehlchen.data.db.get_entries_count('ledger_actions'),
             'entries_limit': FREE_LEDGER_ACTIONS_LIMIT if self.rotkehlchen.premium is None else -1,
         }
 
@@ -970,25 +968,19 @@ class RestAPI():
     @require_loggedin_user()
     def get_ledger_actions(
             self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-            location: Optional[Location],
+            filter_query: LedgerActionsFilterQuery,
             async_query: bool,
-            only_cache: Optional[bool],
+            only_cache: bool,
     ) -> Response:
         if async_query:
             return self._query_async(
                 command='_get_ledger_actions',
-                from_ts=from_ts,
-                to_ts=to_ts,
-                location=location,
+                filter_query=filter_query,
                 only_cache=only_cache,
             )
 
         response = self._get_ledger_actions(
-            from_ts=from_ts,
-            to_ts=to_ts,
-            location=location,
+            filter_query=filter_query,
             only_cache=only_cache,
         )
         status_code = _get_status_code_from_async_response(response)
@@ -1017,10 +1009,8 @@ class RestAPI():
 
         # Success - return all ledger actions after the edit
         response = self._get_ledger_actions(
-            from_ts=None,
-            to_ts=None,
-            location=None,
-            only_cache=None,
+            filter_query=LedgerActionsFilterQuery.make(),
+            only_cache=True,
         )
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
@@ -1034,10 +1024,8 @@ class RestAPI():
 
         # Success - return all ledger actions after the removal
         response = self._get_ledger_actions(
-            from_ts=None,
-            to_ts=None,
-            location=None,
-            only_cache=None,
+            filter_query=LedgerActionsFilterQuery.make(),
+            only_cache=True,
         )
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)

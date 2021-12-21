@@ -2372,7 +2372,7 @@ class DBHandler:
             return movements, len(movements)
 
         cursor = self.conn.cursor()
-        query, bindings = filter_query.prepare()
+        query, bindings = filter_query.prepare(with_pagination=False)
         query = 'SELECT COUNT(*) from asset_movements ' + query
         total_found_result = cursor.execute(query, bindings)
         return movements, total_found_result.fetchone()[0]
@@ -2591,7 +2591,7 @@ class DBHandler:
             return trades, len(trades)
 
         cursor = self.conn.cursor()
-        query, bindings = filter_query.prepare()
+        query, bindings = filter_query.prepare(with_pagination=False)
         query = 'SELECT COUNT(*) from combined_trades_view ' + query
         total_found_result = cursor.execute(query, bindings)
         return trades, total_found_result.fetchone()[0]
