@@ -25,7 +25,8 @@ from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, Tra
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
-def test_query_trades(rotkehlchen_api_server_with_exchanges):
+@pytest.mark.parametrize('start_with_valid_premium', [False, True])
+def test_query_trades(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
     """Test that querying the trades endpoint works as expected
 
     Many similarities with test_exchanges.py::test_exchange_query_trades since
@@ -132,7 +133,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
         ), json=data,
     )
     result = assert_proper_response_with_result(response)
-    assert result['entries_limit'] == FREE_TRADES_LIMIT
+    assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_TRADES_LIMIT
     assert result['entries_total'] == 5
     assert result['entries_found'] == 3  # for this filter
     result = result['entries']
@@ -152,7 +153,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
             ), json=data,
         )
         result = assert_proper_response_with_result(response)
-        assert result['entries_limit'] == FREE_TRADES_LIMIT
+        assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_TRADES_LIMIT
         assert result['entries_total'] == 5
         assert result['entries_found'] == 5
         desc_result = result['entries']
@@ -165,7 +166,7 @@ def test_query_trades(rotkehlchen_api_server_with_exchanges):
             ), json=data,
         )
         result = assert_proper_response_with_result(response)
-        assert result['entries_limit'] == FREE_TRADES_LIMIT
+        assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_TRADES_LIMIT
         assert result['entries_total'] == 5
         assert result['entries_found'] == 5
         asc_result = result['entries']

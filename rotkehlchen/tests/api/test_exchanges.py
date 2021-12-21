@@ -636,12 +636,12 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN, Location.POLONIEX)])
-def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
+@pytest.mark.parametrize('start_with_valid_premium', [False, True])
+def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
     """Test that using the asset movements query endpoint works fine"""
     async_query = random.choice([False, True])
     server = rotkehlchen_api_server_with_exchanges
     setup = prepare_rotki_for_history_processing_test(server.rest_api.rotkehlchen)
-    # setup = mock_history_processing_and_exchanges(server.rest_api.rotkehlchen)
     # query asset movements of one specific exchange
     with setup.polo_patch:
         response = requests.get(
@@ -657,7 +657,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
         else:
             result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 4
-    assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
+    assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
     poloniex_ids = [x['entry']['identifier'] for x in result['entries']]
     assert_poloniex_asset_movements([x['entry'] for x in result['entries']], deserialized=True)
     assert all(x['ignored_in_accounting'] is False for x in result['entries']), 'ignored should be false'  # noqa: E501
@@ -726,7 +726,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
     data = {'only_cache': True, 'offset': 1, 'limit': 2, 'location': 'kraken'}
     response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
     result = assert_proper_response_with_result(response)
-    assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
+    assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
     assert result['entries_found'] == 4
     assert result['entries_total'] == 8
     movements = result['entries']
@@ -747,7 +747,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
             ), json=data,
         )
         result = assert_proper_response_with_result(response)
-        assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
+        assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
         assert result['entries_total'] == 8
         assert result['entries_found'] == 8
         desc_result = result['entries']
@@ -760,7 +760,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges):
             ), json=data,
         )
         result = assert_proper_response_with_result(response)
-        assert result['entries_limit'] == FREE_ASSET_MOVEMENTS_LIMIT
+        assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
         assert result['entries_total'] == 8
         assert result['entries_found'] == 8
         asc_result = result['entries']
