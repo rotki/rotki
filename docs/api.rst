@@ -9405,7 +9405,7 @@ All Binance markets
       Host: localhost:5042
 
    
-   :query string location: Either ``binance`` or ``binanceus`` locations. This argumetn will fitler the result based on the exchange type.
+   :query string location: Either ``binance`` or ``binanceus`` locations. This argument will filter the result based on the exchange type.
 
    **Example Response**:
 
@@ -9418,6 +9418,9 @@ All Binance markets
           "result": ["BTCUSD", "ETHUSD", "XRPUSD"],
           "message": ""
       }
+
+   :statuscode 200: Pairs successfully queried
+   :statuscode 502: Failed to query pairs from the binance API and the database.
 
 User selected Binance markets
 ================================

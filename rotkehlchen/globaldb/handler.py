@@ -1365,8 +1365,8 @@ class GlobalDBHandler():
         return False
 
     def get_binance_pairs(self, location: Location) -> List['BinancePair']:
-        from rotkehlchen.exchanges.utils import \
-            BinancePair  # noqa: E501  # pylint: disable=import-outside-toplevel
+        # TODO: Change the logic around BinancePair to avoid the importing here
+        from rotkehlchen.exchanges.utils import BinancePair  # noqa: E501  # pylint: disable=import-outside-toplevel  # isort:skip
         cursor = self._conn.cursor()
         cursor.execute(
             'SELECT pair, base_asset, quote_asset, location FROM binance_pairs WHERE location=?',

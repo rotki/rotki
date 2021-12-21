@@ -91,6 +91,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
@@ -3370,12 +3371,16 @@ class RestAPI():
         )
 
     def get_all_binance_pairs(self, location: Location) -> Response:
-        return api_response(
-            _wrap_in_ok_result(
-                list(self.rotkehlchen.exchange_manager.get_all_binance_pairs(location)),
-            ),
-            status_code=HTTPStatus.OK,
-        )
+        # pylint: disable=no-self-use
+        pairs = list(query_binance_exchange_pairs(location=location).keys())
+        if len(pairs) == 0:
+            return api_response(
+                wrap_in_fail_result(
+                    'Failed to query binance pairs both from database and the binance API.',
+                    status_code=HTTPStatus.BAD_GATEWAY,
+                ),
+            )
+        return api_response(_wrap_in_ok_result(list(pairs)), status_code=HTTPStatus.OK)
 
     def get_user_binance_pairs(self, name: str, location: Location) -> Response:
         return api_response(

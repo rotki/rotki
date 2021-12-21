@@ -59,7 +59,7 @@ def create_binance_symbols_to_pair(
     for symbol in exchange_data['symbols']:
         symbol_str = symbol['symbol']
         if isinstance(symbol_str, FVal):
-            # the to_int here may rase but should never due to the if check above
+            # the to_int here may raise but should never due to the if check above
             symbol_str = str(symbol_str.to_int(exact=True))
         try:
             result[symbol_str] = BinancePair(
@@ -69,35 +69,38 @@ def create_binance_symbols_to_pair(
                 location=location,
             )
         except (UnknownAsset, UnsupportedAsset) as e:
-            log.debug(f'Found pair with no processable asset. {str(e)}')
+            log.debug(f'Found binance pair with no processable asset. {str(e)}')
     return result
 
 
 def query_binance_exchange_pairs(location: Location) -> Dict[str, BinancePair]:
+    """Query all the binance pairs for a valid binance location (binance or binanceus).
+    This function first tries to update the list of known pairs and store them in the database.
+    If it fails tries to return available information in the database.
+
+    This function doesn't raise errors.
+    """
     db = GlobalDBHandler()
-    last_pair_check = Timestamp(
+    last_pair_check_ts = Timestamp(
         db.get_setting_value(f'binance_pairs_queried_at_{location}', 0),
     )
+
+    msg = f'Invalid location used as argument for binance pair query. {location}'
+    assert location in (Location.BINANCE, Location.BINANCEUS), msg
     if location == Location.BINANCE:
         url = 'https://api.binance.com/api/v3/exchangeInfo'
     elif location == Location.BINANCEUS:
         url = 'https://api.binance.us/api/v3/exchangeInfo'
-    else:
-        log.error(f'Invalid location used as argument. {location}')
-        return {}
-    if ts_now() - last_pair_check > DAY_IN_SECONDS:
+
+    if ts_now() - last_pair_check_ts > DAY_IN_SECONDS:
         try:
             data = requests.get(url)
-        except requests.exceptions.RequestException as e:
+            pairs = create_binance_symbols_to_pair(data.json(), location)
+        except (JSONDecodeError, requests.exceptions.RequestException) as e:
             log.debug(f'Failed to obtain market pairs from binance. {str(e)}')
-            # If request fails try to get them from
+            # If request fails try to get them from the database
             database_pairs = db.get_binance_pairs(location)
             return {pair.symbol: pair for pair in database_pairs}
-        try:
-            pairs = create_binance_symbols_to_pair(data.json(), location)
-        except JSONDecodeError as e:
-            log.error(f'Failed to query binance pairs. {str(e)}')
-            return {}
         db.save_binance_pairs(pairs.values(), location)
     else:
         database_pairs = db.get_binance_pairs(location)

@@ -391,7 +391,7 @@ def trades_from_dictlist(
     return returned_trades
 
 
-binance_pair_db_tuple = Tuple[str, str, str, str]
+BINANCE_PAIR_DB_TUPLE = Tuple[str, str, str, str]
 
 
 class BinancePair(NamedTuple):
@@ -401,9 +401,15 @@ class BinancePair(NamedTuple):
     symbol: str
     base_asset: Asset
     quote_asset: Asset
-    location: Location
+    location: Location  # Should only be binance or binanceus
 
-    def serialize_for_db(self) -> binance_pair_db_tuple:
+    def serialize_for_db(self) -> BINANCE_PAIR_DB_TUPLE:
+        """Create tuple to be inserted in the database containing:
+        - symbol for the pair. Example: ETHBTC
+        - identifier of the base asset
+        - identifier of the quote asset
+        - the location, this is to differentiate binance from binanceus
+        """
         return (
             self.symbol,
             self.base_asset.identifier,
@@ -412,7 +418,12 @@ class BinancePair(NamedTuple):
         )
 
     @classmethod
-    def deserialize_from_db(cls, entry: binance_pair_db_tuple) -> 'BinancePair':
+    def deserialize_from_db(cls, entry: BINANCE_PAIR_DB_TUPLE) -> 'BinancePair':
+        """Create a BinancePair from data in the database. May raise:
+        - DeserializationError
+        - UnsupportedAsset
+        - UnknownAsset
+        """
         return BinancePair(
             symbol=entry[0],
             base_asset=asset_from_binance(entry[1]),
