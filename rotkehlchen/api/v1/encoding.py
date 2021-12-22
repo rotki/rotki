@@ -48,6 +48,7 @@ from rotkehlchen.chain.substrate.utils import (
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
+    Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
@@ -2514,6 +2515,70 @@ class Eth2ValidatorPutSchema(Eth2ValidatorSchema):
 
 class Eth2ValidatorDeleteSchema(Schema):
     validators = fields.List(fields.Nested(Eth2ValidatorSchema), required=True)
+
+
+class Eth2DailyStatsSchema(
+        AsyncQueryArgumentSchema,
+        OnlyCacheQuerySchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
+):
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+    validators = fields.List(fields.Integer(), load_default=None)
+
+    @validates_schema
+    def validate_eth2_daily_stats_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        value = data['order_by_attribute']
+        if data['order_by_attribute'] not in (
+                None,
+                'timestamp',
+                'validator_index',
+                'start_usd_price',
+                'end_usd_price',
+                'pnl',
+                'start_amount',
+                'end_amount',
+                'missed_attestations',
+                'orphaned_attestations',
+                'proposed_blocks',
+                'missed_blocks',
+                'orphaned_blocks',
+                'included_attester_slashings',
+                'proposer_attester_slashings',
+                'deposits_number',
+                'amount_deposited',
+        ):
+            raise ValidationError(
+                message=f'order_by_attribute for eth2 daily stats can not be {value}',
+                field_name='order_by_attribute',
+            )
+
+    @post_load
+    def make_eth2_daily_stats_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
+        filter_query = Eth2DailyStatsFilterQuery.make(
+            order_by_attribute=order_by_attribute,
+            order_ascending=data['ascending'],
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            validators=data['validators'],
+        )
+        return {
+            'async_query': data['async_query'],
+            'only_cache': data['only_cache'],
+            'filter_query': filter_query,
+        }
 
 
 class StatisticsNetValueSchema(Schema):

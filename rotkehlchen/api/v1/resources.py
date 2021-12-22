@@ -41,6 +41,7 @@ from rotkehlchen.api.v1.encoding import (
     DataImportSchema,
     EditSettingsSchema,
     ERC20InfoSchema,
+    Eth2DailyStatsSchema,
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPutSchema,
     EthereumTransactionQuerySchema,
@@ -110,6 +111,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
+    Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
@@ -1236,6 +1238,23 @@ class DataImportResource(BaseResource):
             )
 
         return response
+
+
+class Eth2DailyStatsResource(BaseResource):
+    get_schema = Eth2DailyStatsSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            filter_query: Eth2DailyStatsFilterQuery,
+            async_query: bool,
+            only_cache: bool,
+    ) -> Response:
+        return self.rest_api.get_eth2_daily_stats(
+            filter_query=filter_query,
+            async_query=async_query,
+            only_cache=only_cache,
+        )
 
 
 class Eth2ValidatorsResource(BaseResource):

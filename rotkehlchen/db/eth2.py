@@ -5,10 +5,12 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDailyStats
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors import InputError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, Timestamp, Union
+from rotkehlchen.typing import ChecksumEthAddress, Timestamp, Tuple, Union
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -23,6 +25,27 @@ class DBEth2():
 
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
+
+    def get_validators_to_query_for_stats(self, up_to_ts: Timestamp) -> List[Tuple[int, Timestamp]]:  # noqa: E501
+        """Gets a list of validators that need to be queried for new daily stats
+
+        Returns a list of tuples. First entry is validator index and second entry is
+        last queried timestamp for daily stats of that validator.
+        """
+        query_str = """
+            SELECT D.validator_index, D.timestamp FROM eth2_validators V LEFT JOIN
+            eth2_daily_staking_details D ON
+            V.validator_index = D.validator_index AND ? - (SELECT MAX(timestamp) FROM eth2_daily_staking_details WHERE validator_index=V.validator_index) > ? WHERE D.validator_index IS NOT NULL AND D.timestamp==(SELECT MAX(timestamp) FROM eth2_daily_staking_details WHERE validator_index=V.validator_index)
+            UNION
+            SELECT DISTINCT V2.validator_index, 0 FROM eth2_validators V2 WHERE
+            V2.validator_index NOT IN (SELECT validator_index FROM eth2_daily_staking_details)
+        """  # noqa: E501
+        cursor = self.db.conn.cursor()
+        result = cursor.execute(
+            query_str,
+            (up_to_ts, DAY_IN_SECONDS),
+        )
+        return result.fetchall()
 
     def add_eth2_deposits(self, deposits: Sequence[Eth2Deposit]) -> None:
         """Inserts a list of Eth2Deposit"""
@@ -122,41 +145,30 @@ class DBEth2():
 
         self.db.update_last_write()
 
+    def get_validator_daily_stats_and_limit_info(
+            self,
+            filter_query: Eth2DailyStatsFilterQuery,
+    ) -> Tuple[List[ValidatorDailyStats], int]:
+        """Gets all eth2 daily stats for the query from the DB
+
+        Also returns how many are the total found for the filter
+        """
+        stats = self.get_validator_daily_stats(filter_query=filter_query)
+        cursor = self.db.conn.cursor()
+        query, bindings = filter_query.prepare(with_pagination=False)
+        query = 'SELECT COUNT(*) from eth2_daily_staking_details ' + query
+        total_found_result = cursor.execute(query, bindings)
+        return stats, total_found_result.fetchone()[0]
+
     def get_validator_daily_stats(
             self,
-            validator_index: int,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
+            filter_query: Eth2DailyStatsFilterQuery,
     ) -> List[ValidatorDailyStats]:
-        """Gets all DB entries for daily staking stats of a validator"""
+        """Gets all DB entries for validator daily stats according to the given filter"""
         cursor = self.db.conn.cursor()
-        querystr = (
-            'SELECT validator_index,'
-            '    timestamp,'
-            '    start_usd_price,'
-            '    end_usd_price,'
-            '    pnl,'
-            '    start_amount,'
-            '    end_amount,'
-            '    missed_attestations,'
-            '    orphaned_attestations,'
-            '    proposed_blocks,'
-            '    missed_blocks,'
-            '    orphaned_blocks,'
-            '    included_attester_slashings,'
-            '    proposer_attester_slashings,'
-            '    deposits_number,'
-            '    amount_deposited '
-            '    FROM eth2_daily_staking_details '
-            '    WHERE validator_index = ? '
-        )
-        querystr, bindings = form_query_to_filter_timestamps(
-            query=querystr,
-            timestamp_attribute='timestamp',
-            from_ts=from_ts,
-            to_ts=to_ts,
-        )
-        results = cursor.execute(querystr, (validator_index, *bindings))
+        query, bindings = filter_query.prepare()
+        query = 'SELECT * from eth2_daily_staking_details ' + query
+        results = cursor.execute(query, bindings)
         return [ValidatorDailyStats.deserialize_from_db(x) for x in results]
 
     def validator_exists(self, field: str, arg: Union[int, str]) -> bool:

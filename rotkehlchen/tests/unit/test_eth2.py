@@ -16,11 +16,12 @@ from rotkehlchen.chain.ethereum.typing import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.eth2 import DBEth2
+from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.typing import Timestamp
-from rotkehlchen.utils.misc import hexstring_to_bytes
+from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
 
 ADDR1 = string_to_ethereum_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
 ADDR2 = string_to_ethereum_address('0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19')
@@ -313,6 +314,94 @@ def test_eth2_deposits_serialization():
     ]
 
 
+def test_get_validators_to_query_for_stats(database):
+    db = DBEth2(database)
+    now = ts_now()
+    assert db.get_validators_to_query_for_stats(now) == []
+    db.add_validators([Eth2Validator(index=1, public_key='0xfoo1')])
+    assert db.get_validators_to_query_for_stats(now) == [(1, 0)]
+
+    db.add_validator_daily_stats([ValidatorDailyStats(
+        validator_index=1,
+        timestamp=1607126400,
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
+        pnl=ZERO,
+        start_amount=ZERO,
+        end_amount=FVal(32),
+        deposits_number=1,
+        amount_deposited=FVal(32),
+    ), ValidatorDailyStats(
+        validator_index=1,
+        timestamp=1607212800,
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
+        pnl=ZERO,
+        start_amount=FVal(32),
+        end_amount=FVal(32),
+    )])
+    assert db.get_validators_to_query_for_stats(now) == [(1, 1607212800)]
+
+    # now add a daily stats entry closer than a day in the past and see we don't query anything
+    db.add_validator_daily_stats([ValidatorDailyStats(
+        validator_index=1,
+        timestamp=now - 3600,
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
+        pnl=ZERO,
+        start_amount=ZERO,
+        end_amount=FVal(32),
+        deposits_number=1,
+        amount_deposited=FVal(32),
+    )])
+    assert db.get_validators_to_query_for_stats(now) == []
+
+    # Now add multiple validators and daily stats and assert on result
+    db.add_validators([
+        Eth2Validator(index=2, public_key='0xfoo2'),
+        Eth2Validator(index=3, public_key='0xfoo3'),
+        Eth2Validator(index=4, public_key='0xfoo4'),
+    ])
+    db.add_validator_daily_stats([ValidatorDailyStats(
+        validator_index=3,
+        timestamp=1607126400,
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
+        pnl=ZERO,
+        start_amount=ZERO,
+        end_amount=FVal(32),
+        deposits_number=1,
+        amount_deposited=FVal(32),
+    ), ValidatorDailyStats(
+        validator_index=3,
+        timestamp=1617512800,
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
+        pnl=ZERO,
+        start_amount=FVal(32),
+        end_amount=FVal(32),
+    ), ValidatorDailyStats(
+        validator_index=4,
+        timestamp=1617512800,
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
+        pnl=ZERO,
+        start_amount=FVal(32),
+        end_amount=FVal(32),
+    ), ValidatorDailyStats(
+        validator_index=4,
+        timestamp=now - 7200,
+        start_usd_price=FVal(1.55),
+        end_usd_price=FVal(1.55),
+        pnl=ZERO,
+        start_amount=FVal(32),
+        end_amount=FVal(32),
+    )])
+    assert db.get_validators_to_query_for_stats(now) == [(2, 0), (3, 1617512800)]
+
+    assert db.get_validators_to_query_for_stats(1617512800 + 100000) == [(2, 0), (3, 1617512800)]
+
+
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
 def test_validator_daily_stats(price_historian, function_scope_messages_aggregator):  # pylint: disable=unused-argument  # noqa: E501
     validator_index = 33710
@@ -593,15 +682,20 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
     dbeth2 = DBEth2(database)
     dbeth2.add_validators([Eth2Validator(index=validator_index, public_key=public_key)])
     with stats_call_patch as stats_call:
-        stats = eth2.get_validator_daily_stats(
-            validator_index=validator_index,
+        filter_query = Eth2DailyStatsFilterQuery.make(
+            validators=[validator_index],
+            from_ts=1613606300,
+            to_ts=1614038500,
+        )
+        stats, filter_total_found = eth2.get_validator_daily_stats(
+            filter_query=filter_query,
+            only_cache=False,
             msg_aggregator=function_scope_messages_aggregator,
-            from_timestamp=1613606300,
-            to_timestamp=1614038500,
         )
 
         assert stats_call.call_count == 1
         assert len(stats) >= 6
+        assert filter_total_found >= 6
         expected_stats = [ValidatorDailyStats(
             validator_index=validator_index,
             timestamp=1613606400,    # 2021/02/18
@@ -660,11 +754,10 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         assert stats[:len(expected_stats)] == expected_stats
 
         # Make sure that calling it again does not make an external call
-        stats = eth2.get_validator_daily_stats(
-            validator_index=33710,
+        stats, filter_total_found = eth2.get_validator_daily_stats(
+            filter_query=filter_query,
+            only_cache=False,
             msg_aggregator=function_scope_messages_aggregator,
-            from_timestamp=1613606300,
-            to_timestamp=1614038500,
         )
         assert stats_call.call_count == 1
         assert stats[:len(expected_stats)] == expected_stats

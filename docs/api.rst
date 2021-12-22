@@ -1951,6 +1951,7 @@ Querying ethereum transactions
             "entries_found": 95,
             "entries_limit": 500,
             "entries_total": 1000
+	    },
         "message": ""
       }
 
@@ -7447,35 +7448,6 @@ Getting Eth2 Staking details
               "performance_1w": {"amount": "0.7", "usd_value": "700"},
               "performance_1m": {"amount": "3", "usd_value": "3000"},
               "performance_1y": {"amount": "36.5", "usd_value": "36500"},
-              "daily_stats": [{
-                  "timestamp": 1613952000,
-                  "pnl": {"amount": "0.007", "usd_value": "70"},
-                  "start_balance": {"amount": "32.69", "usd_value": "32690"},
-                  "end_balance": {"amount": "32.7", "usd_value": "32700"},
-                  "missed_attestations": 1,
-                  "orphaned_attestations": 0,
-                  "proposed_blocks": 1,
-                  "missed_blocks": 0,
-                  "orphaned_blocks": 0,
-                  "included_attester_slashings": 0,
-                  "proposer_attester_slashings": 0,
-                  "deposits_number": 1,
-                  "deposited_balance": {"amount": "32", "usd_value": "32000"}
-              }, {
-                  "timestamp": 1613865600,
-                  "pnl": {"amount": "-0.0066", "usd_value": "-6.6"},
-                  "start_balance": {"amount": "32.69", "usd_value": "32690"},
-                  "end_balance": {"amount": "32.7", "usd_value": "32700"},
-                  "missed_attestations": 0,
-                  "orphaned_attestations": 0,
-                  "proposed_blocks": 0,
-                  "missed_blocks": 1,
-                  "orphaned_blocks": 0,
-                  "included_attester_slashings": 0,
-                  "proposer_attester_slashings": 0,
-                  "deposits_number": 0,
-                  "amount_deposited": {"amount": "0", "usd_value": "0"},
-              }],
           }, {
               "eth1_depositor": "0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397",
               "index": 10,
@@ -7485,7 +7457,6 @@ Getting Eth2 Staking details
               "performance_1w": {"amount": "0.7", "usd_value": "700"},
               "performance_1m": {"amount": "3", "usd_value": "3000"},
               "performance_1y": {"amount": "36.5", "usd_value": "36500"},
-              "daily_stats": [],
           }, {
               "eth1_depositor": "0xaee017635291ea8E3C70FeAC5B86e1d3B0e23341",
               "index": 155,
@@ -7495,7 +7466,6 @@ Getting Eth2 Staking details
               "performance_1w": {"amount": "0", "usd_value": "0"},
               "performance_1m": {"amount": "0", "usd_value": "0"},
               "performance_1y": {"amount": "0", "usd_value": "0"},
-              "daily_stats": [],
           }],
         "message": "",
       }
@@ -7511,7 +7481,87 @@ Getting Eth2 Staking details
    :resjson performance_1m object: How much has the validator earned in ETH (and USD equivalent value) in the past month.
    :resjson performance_1y object: How much has the validator earned in ETH (and USD equivalent value) in the past year.
 
-   For the daily stats the fields are:
+   :statuscode 200: Eth2 staking details succesfully queried
+   :statuscode 409: User is not logged in. Or eth2 module is not activated.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
+Getting Eth2 Staking daily stats
+==============================
+
+.. http:get:: /api/(version)/blockchains/ETH2/stake/dailystats
+
+   Doing a GET on the ETH2 stake daily stats endpoint will return daily stats for your ETH2 validators filtered and paginated by the given parameters
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH2/stake/dailystats HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson bool only_cache: If true then only the daily stats in the DB are queried.
+   :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson string order_by_attribute: Optional. This is the attribute of the eth2_daily_staking_details table by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'validator_index', 'start_usd_price', 'end_usd_price', 'pnl', 'start_amount', 'end_amount', 'missed_attestations', 'orphaned_attestations', 'proposed_blocks', 'missed_blocks', 'orphaned_blocks', 'included_attester_slashings', 'proposer_attester_slashings', 'deposits_number', 'amount_deposited'].
+   :reqjson bool ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+	    "entries": [{
+                  "validator_index": 15,
+                  "timestamp": 1613952000,
+                  "pnl": {"amount": "0.007", "usd_value": "70"},
+                  "start_balance": {"amount": "32.69", "usd_value": "32690"},
+                  "end_balance": {"amount": "32.7", "usd_value": "32700"},
+                  "missed_attestations": 1,
+                  "orphaned_attestations": 0,
+                  "proposed_blocks": 1,
+                  "missed_blocks": 0,
+                  "orphaned_blocks": 0,
+                  "included_attester_slashings": 0,
+                  "proposer_attester_slashings": 0,
+                  "deposits_number": 1,
+                  "deposited_balance": {"amount": "32", "usd_value": "32000"}
+              }, {
+                  "validator_index": 43567,
+                  "timestamp": 1613865600,
+                  "pnl": {"amount": "-0.0066", "usd_value": "-6.6"},
+                  "start_balance": {"amount": "32.69", "usd_value": "32690"},
+                  "end_balance": {"amount": "32.7", "usd_value": "32700"},
+                  "missed_attestations": 0,
+                  "orphaned_attestations": 0,
+                  "proposed_blocks": 0,
+                  "missed_blocks": 1,
+                  "orphaned_blocks": 0,
+                  "included_attester_slashings": 0,
+                  "proposer_attester_slashings": 0,
+                  "deposits_number": 0,
+                  "amount_deposited": {"amount": "0", "usd_value": "0"},
+              }],
+              "entries_found": 95,
+              "entries_total": 1000
+         },
+        "message": "",
+      }
+
+   :resjson entries : The list of daily stats filtered by the given filter.
+
+   :resjson eth_depositor string: The eth1 address that made the deposit for the validator.
    :resjson timestamp int: The timestamp of the start of the day in GMT for which this entry is.
    :resjson pnl object: The amount of ETH gained or lost in that day along with its usd value. Average price of the day is taken.
    :resjson start_balance object: The amount of ETH the day started with along with its usd value.
@@ -7525,6 +7575,8 @@ Getting Eth2 Staking details
    :resjson proposer_attester_slashings int: The number of proposer attester slashins the validator had inside the day.
    :resjson deposits_number int: The number of deposits from the eth1 chain the validator had inside the day.
    :resjson deposited_balance object: The amount deposited from the eth1 chain for the validator inside the day along with its usd value.
+   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :resjson int entries_total: The number of total entries ignoring all filters.
 
    :statuscode 200: Eth2 staking details succesfully queried
    :statuscode 409: User is not logged in. Or eth2 module is not activated.

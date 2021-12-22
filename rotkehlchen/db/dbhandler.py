@@ -2421,6 +2421,7 @@ class DBHandler:
                 'amm_swaps',
                 'combined_trades_view',
                 'ledger_actions',
+                'eth2_daily_staking_details',
             ],
             op: Literal['OR', 'AND'] = 'OR',
             **kwargs: Any,

@@ -33,8 +33,8 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
-    """This test uses real data and queries the eth2 deposits"""
+def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_accounts):
+    """This test uses real data and queries the eth2 details, deposits and daily stats"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
@@ -104,6 +104,98 @@ def test_query_eth2_info(rotkehlchen_api_server, ethereum_accounts):
         # https://twitter.com/LefterisJP/status/1361091757274972160
         assert FVal(performance['amount']) is not None
         assert FVal(performance['usd_value']) is not None
+
+    # for daily stats let's have 3 validators
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={'validator_index': 43948},
+    )
+    assert_simple_ok_response(response)
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={'validator_index': 23948},
+    )
+    assert_simple_ok_response(response)
+    # query daily stats, first without cache -- requesting all
+    json = {'only_cache': False}
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2dailystatsresource',
+        ), json=json,
+    )
+    result = assert_proper_response_with_result(response)
+    total_stats = len(result['entries'])
+    assert total_stats == result['entries_total']
+    assert total_stats == result['entries_found']
+
+    # filter by validator_index
+    queried_validators = [43948, 9]
+    json = {'only_cache': True, 'validators': queried_validators}
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2dailystatsresource',
+        ), json=json,
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_total'] == total_stats
+    assert result['entries_found'] <= total_stats
+    assert all(x['validator_index'] in queried_validators for x in result['entries'])
+
+    # filter by validator_index and timestamp
+    queried_validators = [43948, 9]
+    from_ts = 1613779200
+    to_ts = 1632182400
+    json = {'only_cache': True, 'validators': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts}  # noqa: E501
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2dailystatsresource',
+        ), json=json,
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_total'] == total_stats
+    assert result['entries_found'] <= total_stats
+    assert len(result['entries']) == result['entries_found']
+    next_page_times = []
+    for idx, entry in enumerate(result['entries']):
+        assert entry['validator_index'] in queried_validators
+        time = entry['timestamp']
+        assert time >= from_ts
+        assert time <= to_ts
+
+        if 5 <= idx <= 9:
+            next_page_times.append(time)
+
+        if idx >= result['entries_found'] - 1:
+            continue
+        assert entry['timestamp'] >= result['entries'][idx + 1]['timestamp']
+
+    # filter by validator_index and timestamp and add pagination
+    json = {'only_cache': True, 'validators': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts, 'limit': 5, 'offset': 5}  # noqa: E501
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2dailystatsresource',
+        ), json=json,
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_total'] == total_stats
+    assert result['entries_found'] <= total_stats
+    assert len(result['entries']) == 5
+    for idx, entry in enumerate(result['entries']):
+        assert entry['validator_index'] in queried_validators
+        time = entry['timestamp']
+        assert time >= from_ts
+        assert time <= to_ts
+
+        if idx <= 4:
+            assert time == next_page_times[idx]
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[
