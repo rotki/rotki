@@ -119,19 +119,19 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
         WHERE first1in > 0 AND first0in > 0 AND last1out > 0 AND last0out > 0
     ), SWAPS AS (
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C1
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C2
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C3
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C4
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C5
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base2 AS base_asset, quote2 AS quote_asset, amount2 AS amount, rate2 AS rate, txhash, logindex, time, location FROM C5
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C6
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base2 AS base_asset, quote2 AS quote_asset, amount2 AS amount, rate2 AS rate, txhash, logindex, time, location FROM C6
    )
    SELECT
@@ -148,7 +148,7 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
        txhash AS link,
        NULL AS notes /* no notes */
    FROM SWAPS
-   UNION
+   UNION ALL /* using union all as there can be no duplicates so no need to handle them */
    SELECT * from trades
 ;""")  # noqa: E501
     db.conn.commit()
