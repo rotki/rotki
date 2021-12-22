@@ -38,7 +38,8 @@ const defaultVersion = () =>
     downloadUrl: ''
   } as Version);
 
-const defaultState = () => ({
+const defaultState = (): RotkehlchenState => ({
+  newUser: false,
   message: emptyMessage(),
   version: defaultVersion(),
   connected: false,
@@ -78,6 +79,9 @@ const store: StoreOptions<RotkehlchenState> = {
     ) => {
       state.connectionFailure = connectionFailure;
     },
+    newUser: (state: RotkehlchenState, newUser: boolean) => {
+      state.newUser = newUser;
+    },
     reset: (state: RotkehlchenState) => {
       Object.assign(state, defaultState(), {
         version: state.version,
@@ -116,6 +120,10 @@ const store: StoreOptions<RotkehlchenState> = {
 
           const connected = await api.ping();
           if (connected) {
+            const accounts = await api.users();
+            if (accounts.length === 0) {
+              commit('newUser', true);
+            }
             clearInterval(intervalId);
             commit('setConnected', connected);
             await dispatch('version');

@@ -190,6 +190,14 @@ export class RotkehlchenApi {
       });
   }
 
+  async users(): Promise<string[]> {
+    const response = await this.axios.get<ActionResult<AccountSession>>(
+      `/users`
+    );
+    const data = handleResponse(response);
+    return Object.keys(data);
+  }
+
   logout(username: string): Promise<boolean> {
     return this.axios
       .patch<ActionResult<boolean>>(
