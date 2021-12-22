@@ -8,8 +8,11 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
     """Upgrades the DB from v30 to v31
 
     - Add the new eth2 validator table and upgrade the old ones to have foreign key relationships.
+    - Delete all ignored ethereum transaction ids as now the identifier
+    is the one specified by the backend.
     """
     cursor = db.conn.cursor()
+    cursor.execute('DELETE FROM ignored_actions WHERE type="C";')
     cursor.execute('DROP TABLE IF EXISTS eth2_deposits;')
     cursor.execute('DROP TABLE IF EXISTS eth2_daily_staking_details;')
     cursor.execute("""

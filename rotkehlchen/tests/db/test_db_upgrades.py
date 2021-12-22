@@ -2338,6 +2338,7 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
     the eth2_validators table.
 
     - Upgrades the ETH2 tables
+    - Deletes ignored ethereum transactions ids
     """
     msg_aggregator = MessagesAggregator()
     # Check we have data in the eth2 tables before the DB upgrade
@@ -2352,6 +2353,8 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
     assert result.fetchone()[0] == 1
     result = cursor.execute('SELECT COUNT(*) FROM eth2_daily_staking_details;')
     assert result.fetchone()[0] == 356
+    result = cursor.execute('SELECT * FROM ignored_actions;')
+    assert result.fetchall() == [('C', '0x1'), ('C', '0x2'), ('A', '0x3'), ('B', '0x4')]
 
     if db_with_set_version:
         db_name = 'v30_rotkehlchen.db'
@@ -2373,6 +2376,8 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
     assert result.fetchone()[0] == 0
     result = cursor.execute('SELECT COUNT(*) FROM eth2_daily_staking_details;')
     assert result.fetchone()[0] == 0
+    result = cursor.execute('SELECT * FROM ignored_actions;')
+    assert result.fetchall() == [('A', '0x3'), ('B', '0x4')]
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):
