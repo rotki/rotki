@@ -62,6 +62,7 @@ from rotkehlchen.db.cache_handler import DBAccountingReports
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
+    Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
@@ -2188,6 +2189,53 @@ class RestAPI():
             return self._query_async(command='_get_eth2_stake_details')
 
         response = self._get_eth2_stake_details()
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=status_code)
+
+    def _get_eth2_daily_stats(
+            self,
+            filter_query: Eth2DailyStatsFilterQuery,
+            only_cache: bool,
+    ) -> Dict[str, Any]:
+        try:
+            stats, filter_total_found = self.rotkehlchen.chain_manager.get_eth2_daily_stats(
+                filter_query=filter_query,
+                only_cache=only_cache,
+            )
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
+        except ModuleInactive as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+
+        result = {
+            'entries': [x.serialize() for x in stats],
+            'entries_found': filter_total_found,
+            'entries_total': self.rotkehlchen.data.db.get_entries_count('eth2_daily_staking_details'),  # noqa: E501
+        }
+        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
+
+    @require_premium_user(active_check=False)
+    def get_eth2_daily_stats(
+            self,
+            filter_query: Eth2DailyStatsFilterQuery,
+            async_query: bool,
+            only_cache: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_eth2_daily_stats',
+                filter_query=filter_query,
+                only_cache=only_cache,
+            )
+
+        response = self._get_eth2_daily_stats(filter_query=filter_query, only_cache=only_cache)
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)

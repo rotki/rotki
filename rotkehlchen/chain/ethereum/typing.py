@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, Dict, NamedTuple, Optional, Tuple
 
 from eth_typing import HexAddress, HexStr
 
@@ -202,6 +202,7 @@ class ValidatorDailyStats(NamedTuple):
 
     def serialize(self) -> Dict[str, Any]:
         return {
+            'validator_index': self.validator_index,
             'timestamp': self.timestamp,
             'pnl': self.pnl_balance.serialize(),
             'start_balance': self.start_balance.serialize(),
@@ -271,7 +272,6 @@ class ValidatorDetails(NamedTuple):
     public_key: str
     eth1_depositor: ChecksumEthAddress
     performance: ValidatorPerformance
-    daily_stats: List['ValidatorDailyStats']
 
     def serialize(self, eth_usd_price: FVal) -> Dict[str, Any]:
         return {
@@ -279,7 +279,6 @@ class ValidatorDetails(NamedTuple):
             'public_key': self.public_key,
             'eth1_depositor': self.eth1_depositor,
             **self.performance.serialize(eth_usd_price),
-            'daily_stats': [x.serialize() for x in self.daily_stats],
         }
 
 

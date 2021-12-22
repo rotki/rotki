@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import gevent
 
@@ -16,8 +16,8 @@ from rotkehlchen.chain.ethereum.typing import (
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
-from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
+from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.errors import InputError, PremiumPermissionError, RemoteError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -227,7 +227,6 @@ class Eth2(EthereumModule):
                         public_key=validator.public_key,
                         eth1_depositor=address,
                         performance=DEPOSITING_VALIDATOR_PERFORMANCE,
-                        daily_stats=[],
                     ))
                     continue
 
@@ -242,94 +241,83 @@ class Eth2(EthereumModule):
         # Get current balance of all validator indices
         performance_result = self.beaconchain.get_performance(list(indices))
         for validator_index, entry in performance_result.items():
-            stats = self.get_validator_daily_stats(
-                validator_index=validator_index,
-                msg_aggregator=self.msg_aggregator,
-            )
             result.append(ValidatorDetails(
                 validator_index=validator_index,
                 public_key=index_to_pubkey[validator_index],
                 eth1_depositor=index_to_address[validator_index],
                 performance=entry,
-                daily_stats=stats,
             ))
 
         # Performance call does not return validators that are not active and are still depositing
         depositing_indices = set(index_to_address.keys()) - set(performance_result.keys())
         for index in depositing_indices:
-            stats = self.get_validator_daily_stats(
-                validator_index=index,
-                msg_aggregator=self.msg_aggregator,
-            )
             result.append(ValidatorDetails(
                 validator_index=index,
                 public_key=index_to_pubkey[index],
                 eth1_depositor=index_to_address[index],
                 performance=DEPOSITING_VALIDATOR_PERFORMANCE,
-                daily_stats=stats,
             ))
 
         return result
 
+    def _query_services_for_validator_daily_stats(
+            self,
+            to_ts: Timestamp,
+            msg_aggregator: MessagesAggregator,
+    ) -> None:
+        """Goes through all saved validators and sees which need to have their stats requeried"""
+        now = ts_now()
+        dbeth2 = DBEth2(self.database)
+        result = dbeth2.get_validators_to_query_for_stats(up_to_ts=to_ts)
+
+        for validator_index, last_ts in result:
+            should_backoff = (
+                now - self.last_stats_query_ts < VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE and
+                self.validator_stats_queried >= VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS
+            )
+            if should_backoff:
+                log.debug(
+                    f'Queried {self.validator_stats_queried} validators in the last '
+                    f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE} seconds. Backing off for '
+                    f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME} seconds.',
+                )
+                self.validator_stats_queried = 0
+                gevent.sleep(VALIDATOR_STATS_QUERY_BACKOFF_TIME)
+
+            new_stats = scrape_validator_daily_stats(
+                validator_index=validator_index,
+                last_known_timestamp=last_ts,
+                msg_aggregator=msg_aggregator,
+            )
+            self.validator_stats_queried += 1
+            self.last_stats_query_ts = now
+
+            if len(new_stats) != 0:
+                dbeth2.add_validator_daily_stats(stats=new_stats)
+
     def get_validator_daily_stats(
             self,
-            validator_index: int,
+            filter_query: Eth2DailyStatsFilterQuery,
+            only_cache: bool,
             msg_aggregator: MessagesAggregator,
-            from_timestamp: Optional[Timestamp] = None,
-            to_timestamp: Optional[Timestamp] = None,
-    ) -> List[ValidatorDailyStats]:
-        """Gets the daily stats of an ETH2 validator by index
+    ) -> Tuple[List[ValidatorDailyStats], int]:
+        """Gets the daily stats eth2 validators depending on the given filter.
 
-        The caller of this function has to make sure that the validator index is in
-        the DB.
+        This won't detect new validators
 
-        First queries the DB for the already known stats and then if needed also scrapes
-        the beaconcha.in website for more. Saves all new entries to the DB.
+        Will query for new validator daily stats if only_cache is False.
 
         May raise:
         - RemoteError due to problems with beaconcha.in
         """
-        dbeth2 = DBEth2(self.database)
-        known_stats = dbeth2.get_validator_daily_stats(
-            validator_index=validator_index,
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-        )
-        last_ts = Timestamp(0) if len(known_stats) == 0 else known_stats[-1].timestamp
-        limit_ts = to_timestamp if to_timestamp else ts_now()
-        if limit_ts - last_ts <= DAY_IN_SECONDS:
-            return known_stats  # no need to requery if less than a day passed
-
-        now = ts_now()
-        should_backoff = (
-            now - self.last_stats_query_ts < VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE and
-            self.validator_stats_queried >= VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS
-        )
-        if should_backoff:
-            log.debug(
-                f'Queried {self.validator_stats_queried} validators in the last '
-                f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE} seconds. Backing off for '
-                f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME} seconds.',
+        if only_cache is False:
+            self._query_services_for_validator_daily_stats(
+                to_ts=filter_query.to_ts,
+                msg_aggregator=msg_aggregator,
             )
-            self.validator_stats_queried = 0
-            gevent.sleep(VALIDATOR_STATS_QUERY_BACKOFF_TIME)
 
-        new_stats = scrape_validator_daily_stats(
-            validator_index=validator_index,
-            last_known_timestamp=last_ts,
-            msg_aggregator=msg_aggregator,
-        )
-        self.validator_stats_queried += 1
-        self.last_stats_query_ts = now
-
-        if len(new_stats) != 0:
-            dbeth2.add_validator_daily_stats(stats=new_stats)
-
-        return dbeth2.get_validator_daily_stats(
-            validator_index=validator_index,
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-        )
+        dbeth2 = DBEth2(self.database)
+        return dbeth2.get_validator_daily_stats_and_limit_info(filter_query=filter_query)
 
     def add_validator(self, validator_index: Optional[int], public_key: Optional[Eth2PubKey]) -> None:  # noqa: E501
         """Adds the given validator to the DB. Due to marshmallow here at least one

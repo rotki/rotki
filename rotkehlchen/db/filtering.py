@@ -342,6 +342,18 @@ class DBTypeFilter(DBFilter):
         return [f'{self.type_key}=?'], [self.filter_type.serialize_for_db()]
 
 
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBEth2ValidatorIndicesFilter(DBFilter):
+    """A filter for Eth2 validator indices"""
+    validators: Optional[List[int]]
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        if self.validators is None:
+            return [], []
+        questionmarks = '?' * len(self.validators)
+        return [f'validator_index IN ({",".join(questionmarks)})'], self.validators
+
+
 class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
 
     @classmethod
@@ -473,6 +485,42 @@ class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoc
             timestamp_attribute='timestamp',
         )
         filters.append(filter_query.timestamp_filter)
+        filter_query.filters = filters
+        return filter_query
+
+
+class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
+
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            order_by_attribute: str = 'timestamp',
+            order_ascending: bool = True,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            validators: Optional[List[int]] = None,
+    ) -> 'Eth2DailyStatsFilterQuery':
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+            order_by_attribute=order_by_attribute,
+            order_ascending=order_ascending,
+        )
+        filter_query = cast('Eth2DailyStatsFilterQuery', filter_query)
+        filters: List[DBFilter] = []
+
+        filter_query.timestamp_filter = DBTimestampFilter(
+            and_op=True,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            timestamp_attribute='timestamp',
+        )
+        filters.append(filter_query.timestamp_filter)
+        filters.append(DBEth2ValidatorIndicesFilter(and_op=True, validators=validators))
         filter_query.filters = filters
         return filter_query
 

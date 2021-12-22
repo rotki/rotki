@@ -73,6 +73,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.eth2 import DBEth2
+from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.errors import (
@@ -80,7 +81,6 @@ from rotkehlchen.errors import (
     InputError,
     ModuleInactive,
     ModuleInitializationFailure,
-    RemoteError,
     UnknownAsset,
 )
 from rotkehlchen.fval import FVal
@@ -108,7 +108,11 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.nfts import Nfts
-    from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDetails
+    from rotkehlchen.chain.ethereum.typing import (
+        Eth2Deposit,
+        ValidatorDailyStats,
+        ValidatorDetails,
+    )
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -1627,6 +1631,25 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
+    def get_eth2_daily_stats(
+            self,
+            filter_query: Eth2DailyStatsFilterQuery,
+            only_cache: bool,
+    ) -> Tuple[List['ValidatorDailyStats'], int]:
+        """May raise:
+        - ModuleInactive if eth2 module is not activated
+        """
+        eth2 = self.get_module('eth2')
+        if eth2 is None:
+            raise ModuleInactive('Cant query eth2 daily stats details since eth2 module is not active')  # noqa: E501
+        return eth2.get_validator_daily_stats(
+            filter_query=filter_query,
+            only_cache=only_cache,
+            msg_aggregator=self.msg_aggregator,
+        )
+
+    @protect_with_lock()
+    @cache_response_timewise()
     def get_eth2_history_events(
             self,
             from_timestamp: Timestamp,
@@ -1644,48 +1667,37 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             return []  # no need to bother querying before beacon chain launch
 
         defi_events = []
-        eth2_details = eth2.get_details(addresses=self.queried_addresses_for_module('eth2'))
-        for entry in eth2_details:
-            if entry.validator_index is None:
-                continue  # don't query stats for validators without an index yet
-
-            try:
-                stats = eth2.get_validator_daily_stats(
-                    validator_index=entry.validator_index,
-                    msg_aggregator=self.msg_aggregator,
-                    from_timestamp=from_timestamp,
-                    to_timestamp=to_timestamp,
-                )
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f'Will not include details for validator {entry.validator_index} '
-                    f'due to {str(e)}',
-                )
+        # Ask for details to detect any new validators
+        eth2.get_details(addresses=self.queried_addresses_for_module('eth2'))
+        # And now get all daily stats and create defi events for them
+        stats, _ = eth2.get_validator_daily_stats(
+            filter_query=Eth2DailyStatsFilterQuery.make(from_ts=from_timestamp, to_ts=to_timestamp),  # noqa: E501
+            only_cache=False,
+            msg_aggregator=self.msg_aggregator,
+        )
+        for stats_entry in stats:
+            got_asset = got_balance = spent_asset = spent_balance = None
+            if stats_entry.pnl_balance.amount == ZERO:
                 continue
 
-            for stats_entry in stats:
-                got_asset = got_balance = spent_asset = spent_balance = None
-                if stats_entry.pnl_balance.amount == ZERO:
-                    continue
+            if stats_entry.pnl_balance.amount > ZERO:
+                got_asset = A_ETH
+                got_balance = stats_entry.pnl_balance
+            else:  # negative
+                spent_asset = A_ETH
+                spent_balance = -stats_entry.pnl_balance
 
-                if stats_entry.pnl_balance.amount > ZERO:
-                    got_asset = A_ETH
-                    got_balance = stats_entry.pnl_balance
-                else:  # negative
-                    spent_asset = A_ETH
-                    spent_balance = -stats_entry.pnl_balance
-
-                defi_events.append(DefiEvent(
-                    timestamp=stats_entry.timestamp,
-                    wrapped_event=stats_entry,
-                    event_type=DefiEventType.ETH2_EVENT,
-                    got_asset=got_asset,
-                    got_balance=got_balance,
-                    spent_asset=spent_asset,
-                    spent_balance=spent_balance,
-                    pnl=[AssetBalance(asset=A_ETH, balance=stats_entry.pnl_balance)],
-                    count_spent_got_cost_basis=True,
-                ))
+            defi_events.append(DefiEvent(
+                timestamp=stats_entry.timestamp,
+                wrapped_event=stats_entry,
+                event_type=DefiEventType.ETH2_EVENT,
+                got_asset=got_asset,
+                got_balance=got_balance,
+                spent_asset=spent_asset,
+                spent_balance=spent_balance,
+                pnl=[AssetBalance(asset=A_ETH, balance=stats_entry.pnl_balance)],
+                count_spent_got_cost_basis=True,
+            ))
 
         return defi_events
 
