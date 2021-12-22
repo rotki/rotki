@@ -17,7 +17,13 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors import (
+    DeserializationError,
+    InputError,
+    RemoteError,
+    UnknownAsset,
+    UnsupportedAsset,
+)
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     BinancePair,
@@ -205,7 +211,14 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         # If it's the first time, populate the binance pair trade symbols
         # We know exchangeInfo returns a dict
-        self._symbols_to_pair = query_binance_exchange_pairs(location=self.location)
+        try:
+            self._symbols_to_pair = query_binance_exchange_pairs(location=self.location)
+        except InputError as e:
+            self.msg_aggregator.add_error(
+                f'Binance exchange couldnt be properly initialized. '
+                f'Missing the exchange markets. {str(e)}',
+            )
+            self._symbols_to_pair = {}
 
         server_time = self.api_query_dict('api', 'time')
         self.offset_ms = server_time['serverTime'] - ts_now_in_ms()

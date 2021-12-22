@@ -78,15 +78,15 @@ def query_binance_exchange_pairs(location: Location) -> Dict[str, BinancePair]:
     This function first tries to update the list of known pairs and store them in the database.
     If it fails tries to return available information in the database.
 
-    This function doesn't raise errors.
+    May raise:
+    - InputError when adding the pairs to the database fails
     """
     db = GlobalDBHandler()
     last_pair_check_ts = Timestamp(
         db.get_setting_value(f'binance_pairs_queried_at_{location}', 0),
     )
 
-    msg = f'Invalid location used as argument for binance pair query. {location}'
-    assert location in (Location.BINANCE, Location.BINANCEUS), msg
+    assert location in (Location.BINANCE, Location.BINANCEUS), f'Invalid location used as argument for binance pair query. {location}'  # noqa: E501
     if location == Location.BINANCE:
         url = 'https://api.binance.com/api/v3/exchangeInfo'
     elif location == Location.BINANCEUS:
@@ -95,13 +95,16 @@ def query_binance_exchange_pairs(location: Location) -> Dict[str, BinancePair]:
     if ts_now() - last_pair_check_ts > DAY_IN_SECONDS:
         try:
             data = requests.get(url)
-            pairs = create_binance_symbols_to_pair(data.json(), location)
+            pairs = create_binance_symbols_to_pair(
+                exchange_data=data.json(),
+                location=location,
+            )
         except (JSONDecodeError, requests.exceptions.RequestException) as e:
             log.debug(f'Failed to obtain market pairs from binance. {str(e)}')
             # If request fails try to get them from the database
             database_pairs = db.get_binance_pairs(location)
             return {pair.symbol: pair for pair in database_pairs}
-        db.save_binance_pairs(pairs.values(), location)
+        db.save_binance_pairs(new_pairs=pairs.values(), location=location)
     else:
         database_pairs = db.get_binance_pairs(location)
         pairs = {pair.symbol: pair for pair in database_pairs}

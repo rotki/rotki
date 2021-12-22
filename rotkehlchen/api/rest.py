@@ -3372,7 +3372,15 @@ class RestAPI():
 
     def get_all_binance_pairs(self, location: Location) -> Response:
         # pylint: disable=no-self-use
-        pairs = list(query_binance_exchange_pairs(location=location).keys())
+        try:
+            pairs = list(query_binance_exchange_pairs(location=location).keys())
+        except InputError as e:
+            return api_response(
+                wrap_in_fail_result(
+                    f'Failed to handle binance markets internally. {str(e)}',
+                    status_code=HTTPStatus.BAD_GATEWAY,
+                ),
+            )
         if len(pairs) == 0:
             return api_response(
                 wrap_in_fail_result(
