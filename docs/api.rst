@@ -1919,6 +1919,7 @@ Querying ethereum transactions
       { "result":
             "entries": [{
                 "entry": {
+	            "identifier": "0xdasdsadsadadads",
                     "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
                     "timestamp": 1598006527,
                     "block_number": 10703085,
@@ -1934,6 +1935,7 @@ Querying ethereum transactions
                "ignored_in_accounting": false
             }, {
                 "entry": {
+	            "identifier": "0xdasdsadsadadads",
                     "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
                     "timestamp": 1588006528,
                     "block_number": 10700085,

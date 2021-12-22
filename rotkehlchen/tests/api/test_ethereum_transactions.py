@@ -24,6 +24,7 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import EthereumTransaction
 
 EXPECTED_AFB7_TXS = [{
+    # 'identifier': '0x13684203a4bf07aaed0112983cb380db6004acac772af2a5d46cb2a28245fbad0xC47Aaa860008be6f65B58c6C6E02a84e666EfE31100',  # noqa: E501
     'tx_hash': '0x13684203a4bf07aaed0112983cb380db6004acac772af2a5d46cb2a28245fbad',
     'timestamp': 1439984408,
     'block_number': 111083,
@@ -36,6 +37,7 @@ EXPECTED_AFB7_TXS = [{
     'input_data': '0x',
     'nonce': 100,
 }, {
+    # 'identifier': '0xe58af420fd8430c061303e4c5bd2668fafbc0fd41078fa6aa01d7781c1dadc7a0x9e6316f44BaEeeE5d41A1070516cc5fA47BAF227326',  # noqa: E501
     'tx_hash': '0xe58af420fd8430c061303e4c5bd2668fafbc0fd41078fa6aa01d7781c1dadc7a',
     'timestamp': 1461221228,
     'block_number': 1375816,
@@ -48,6 +50,7 @@ EXPECTED_AFB7_TXS = [{
     'input_data': '0x',
     'nonce': 326,
 }, {
+    # 'identifier': '0x0ae8b470b4a69c7f6905b9ec09f50c8772821080d11ba0acc83ac23a7ccb4ad80xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA70',  # noqa: E501
     'tx_hash': '0x0ae8b470b4a69c7f6905b9ec09f50c8772821080d11ba0acc83ac23a7ccb4ad8',
     'timestamp': 1461399856,
     'block_number': 1388248,
@@ -84,6 +87,8 @@ EXPECTED_AFB7_TXS = [{
     'input_data': '0xf7654176',
     'nonce': 1,
 }]
+for x in EXPECTED_AFB7_TXS:
+    x['identifier'] = x['tx_hash'] + x['from_address'] + str(x['nonce'])  # type: ignore
 
 EXPECTED_4193_TXS = [{
     'tx_hash': '0x2964f3a91408337b05aeb8f8f670f4107999be05376e630742404664c96a5c31',
@@ -122,6 +127,8 @@ EXPECTED_4193_TXS = [{
     'input_data': '0x',
     'nonce': 1,
 }]
+for x in EXPECTED_4193_TXS:
+    x['identifier'] = x['tx_hash'] + x['from_address'] + str(x['nonce'])  # type: ignore
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[
