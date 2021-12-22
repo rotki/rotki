@@ -450,6 +450,8 @@ class DBHandler:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
         conn.executescript(script)
         conn.execute('PRAGMA foreign_keys=ON')
+        # Optimizations for the combined trades view
+        conn.execute('PRAGMA cache_size = -32768')
         setattr(self, conn_attribute, conn)
 
     def _change_password(
