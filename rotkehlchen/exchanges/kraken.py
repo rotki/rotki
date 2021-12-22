@@ -31,6 +31,7 @@ from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.errors import (
     DeserializationError,
     RemoteError,
@@ -130,6 +131,11 @@ def history_event_from_kraken(
     name: str,
     msg_aggregator: MessagesAggregator,
 ) -> Tuple[List[HistoryEvent], bool]:
+    """
+    This function gets raw data from kraken and creates a list of related history events
+    to be used in the app. It returns a list of events and a boolean in case that a unknown
+    type is found.
+    """
     group_events = []
     found_unknown_event = False
     for idx, raw_event in enumerate(events):
@@ -666,18 +672,23 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
+        """
+        Query kraken events from database and create trades from them. May raise:
+        - RemoteError if the kraken pairs couldn't be queried
+        """
         self.query_kraken_ledger_actions()
-        trades_raw = self.db.get_history_events(
-            location=Location.KRAKEN,
-            location_label=self.name,
+        filter_query = HistoryEventFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
-            type_in=[
+            event_type=[
                 HistoryEventType.TRADE,
                 HistoryEventType.RECEIVE,
                 HistoryEventType.SPEND,
             ],
+            location=Location.KRAKEN,
+            location_label=self.name,
         )
+        trades_raw = self.db.get_history_events(filter_query)
         trades = self.process_kraken_trades(trades_raw)
         queried_range = (start_ts, end_ts)
         return trades, queried_range
@@ -706,19 +717,21 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
         self.query_kraken_ledger_actions()
-        events = self.db.get_history_events(
-            location=Location.KRAKEN,
-            location_label=self.name,
+        filter_query = HistoryEventFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
-            type_in=[
+            event_type=[
                 HistoryEventType.DEPOSIT,
                 HistoryEventType.WITHDRAWAL,
             ],
+            location=Location.KRAKEN,
+            location_label=self.name,
         )
+        events = self.db.get_history_events(filter_query)
         log.debug('Kraken deposit/withdrawals query result', num_results=len(events))
         movements = []
         get_attr = operator.attrgetter('event_identifier')
+        # Create a list of lists where each sublist has the events for the same event identifier
         grouped_events = [list(g) for k, g in itertools.groupby(sorted(events, key=get_attr), get_attr)]  # noqa: E501
         for movement_events in grouped_events:
             if len(movement_events) == 2:
@@ -828,13 +841,13 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         A pair of receive and spend events can be a trade and kraken uses this kind of event
         for instant trades and trades made from the phone app. What we do is verify that is a trade
         is to check if we can find a pair with the same event id.
+
+        May raise:
+        - RemoteError if the paris couldn't be correctly queried
         """
-        try:
-            if len(self.pairs) == 0:
-                self.query_pairs()
-        except RemoteError as e:
-            self.msg_aggregator.add_error(f'Failed to query kraken pairs due to {str(e)}')
-            raise RemoteError from e
+        if len(self.pairs) == 0:
+            self.query_pairs()
+
         trades = []
         get_attr = operator.attrgetter('event_identifier')
         # Create a list of lists where each sublist has the events for the same event identifier
@@ -871,6 +884,9 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             base_asset, quote_asset = kraken_to_world_pair(pair)
             timestamp = trade_parts[0].timestamp
+            # Now in the parts in which we break the vents we try to find the
+            # base/quote parts and the fee. It might be possible that kfee was used
+            # so we also search for it
             base_trade, quote_trade, fee_part, kfee_part = None, None, None, None
             for trade_part in trade_parts:
                 part_asset = trade_part.amount.asset
@@ -916,18 +932,16 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 str(event_id) +
                 str(timestamp)
             )
-            if fee_part is not None and kfee_part is not None:
-                fee = Fee(fee_part.amount.balance.amount)
-                fee_asset = fee_part.amount.asset
+            # If kfee was found we use it as the fee for the trade
+            if kfee_part is not None:
+                fee = Fee(kfee_part.amount.balance.amount)
+                fee_asset = A_KFEE
             elif (None, None) == (fee_part, kfee_part):
                 fee = Fee(ZERO)
                 fee_asset = received_asset
             elif fee_part is not None:
                 fee = Fee(fee_part.amount.balance.amount)
                 fee_asset = fee_part.amount.asset
-            elif kfee_part is not None:
-                fee = Fee(kfee_part.amount.balance.amount)
-                fee_asset = A_KFEE
 
             trade = Trade(
                 timestamp=timestamp,
@@ -989,14 +1003,16 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 for event in group_events:
                     event.event_type = HistoryEventType.UNKNOWN
             new_events.extend(group_events)
-        # Make sure that events are saved and if we fail to save them don't update
-        # the time ranges queried
-        is_db_saved = True
+
         if len(new_events) != 0:
-            is_db_saved = self.db.add_history_events(new_events)
-        if is_db_saved:
-            self.db.update_used_query_range(
-                name=range_query_name,
-                start_ts=from_ts,
-                end_ts=now,
-            )
+            try:
+                self.db.add_history_events(new_events)
+                self.db.update_used_query_range(
+                    name=range_query_name,
+                    start_ts=from_ts,
+                    end_ts=now,
+                )
+            except ValueError as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to save kraken events from {from_ts} to {now} in database. {str(e)}',
+                )

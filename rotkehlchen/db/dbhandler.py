@@ -11,12 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union,
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import (
-    ActionType,
-    BalanceType,
-    HistoryEvent,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures import ActionType, BalanceType, HistoryEvent
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -60,7 +55,11 @@ from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
-from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
+from rotkehlchen.db.filtering import (
+    AssetMovementsFilterQuery,
+    HistoryEventFilterQuery,
+    TradesFilterQuery,
+)
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
@@ -3432,95 +3431,69 @@ class DBHandler:
             locations.add(Location.BALANCER)
         return locations
 
-    def add_history_events(self, history: List[HistoryEvent]) -> bool:
-        """Insert a list of history events in database"""
+    def add_history_events(self, history: List[HistoryEvent]) -> None:
+        """Insert a list of history events in database. May raise:
+        - ValueError if the events couldn't be stored in database
+        """
         query_str = 'INSERT INTO history_events(identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'  # noqa: E501
         cursor = self.conn.cursor()
+        events = []
+        for event in history:
+            try:
+                events.append(event.serialize_for_db())
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to process kraken event for database. {str(e)}',
+                )
         try:
-            cursor.executemany(query_str, [event.serialize_for_db() for event in history])
-        except DeserializationError as e:
-            log.error(f'Failed to insert kraken statking events in database. {str(e)}')
-            return False
+            cursor.executemany(query_str, events)
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            log.error(f'Failed to save history events: {history}')
+            raise ValueError(f'Failed to save history events in database. {str(e)}') from e
+
         self.update_last_write()
-        return True
 
-    def delete_history_events(
-        self,
-        location: Optional[Location] = None,
-        location_label: Optional[str] = None,
-    ) -> int:
+    def delete_history_events(self, location: Location) -> None:
         """
-        Deletes history entries for one location, one location label or a combination
-        of location and location label.
+        Deletes history entries following the criteria of the filter_query. May raise:
+        - ValueError if the delete of the history events or the used_query_ranges fails
+        - DeserializationError if the location is not valid
         """
-        query_str = 'DELETE FROM history_events'
-        bindings = []
-        query_additions = []
-        if location is not None:
-            query_additions.append(' location=? ')
-            bindings.append(location.serialize_for_db())
-        if location_label is not None:
-            query_additions.append(' location_label=? ')
-            bindings.append(location_label)
-
-        if len(query_additions) != 0:
-            query_str += " WHERE " + "AND".join(query_additions)
-
+        # TODO: In the future this method should allow for more granularity in the delete query
+        query = 'DELETE FROM history_events WHERE location=?'
+        bindings = [location.serialize_for_db()]
         cursor = self.conn.cursor()
         try:
-            cursor.execute(query_str, bindings)
-            affected_rows = cursor.rowcount
-            self.update_last_write()
+            cursor.execute(query, bindings)
             cursor.execute(
                 f'DELETE FROM used_query_ranges WHERE name LIKE "{location}_history_events_%"',
             )
-            query_ranges_removals = cursor.rowcount
-            if affected_rows != 0:
-                assert query_ranges_removals == 1
-            return affected_rows
         except sqlcipher.OperationalError as e:    # pylint: disable=no-member
-            self.msg_aggregator.add_error(
+            log.debug(
                 f'Failed to delete history events with params {bindings} and '
-                f'query {query_str}. {str(e)}',
+                f'query {query}',
             )
-        return -1
+            raise ValueError(
+                'Failed to delete history events. Read the logs for more information.',
+            ) from e
+        self.update_last_write()
 
-    def get_history_events(
-        self,
-        location: Optional[Location],
-        location_label: Optional[str],
-        from_ts: Optional[Timestamp],
-        to_ts: Optional[Timestamp],
-        type_in: Optional[List[HistoryEventType]],
-    ) -> List[HistoryEvent]:
-        base_query = 'SELECT * FROM history_events '
-        query_strings = []
-        query_params: List[Union[str, Timestamp]] = []
-        if location is not None:
-            query_strings.append('location=? ')
-            query_params.append(location.serialize_for_db())
-        if location_label is not None:
-            query_strings.append('location_label=? ')
-            query_params.append(location_label)
-        if from_ts is not None and to_ts is not None:
-            query_strings.append('timestamp >= ? AND timestamp <= ? ')
-            query_params.append(from_ts)
-            query_params.append(to_ts)
-        elif from_ts is not None:
-            query_strings.append('timestamp >= ? ')
-            query_params.append(from_ts)
-        elif to_ts is not None:
-            query_strings.append('timestamp <= ? ')
-            query_params.append(to_ts)
-        if type_in is not None:
-            query_strings.append(f'type in ({", ".join(["?"]* len(type_in))}) ')
-            query_params.extend([x.serialize_for_db() for x in type_in])
-
-        if len(query_strings) != 0:
-            query_str = base_query + 'WHERE ' + 'AND '.join(query_strings)
-        else:
-            query_str = base_query
+    def get_history_events(self, filter_query: HistoryEventFilterQuery) -> List[HistoryEvent]:
+        """
+        Get history events using the provided query filter. May raise:
+        - DeserializationError
+        """
+        query, bindings = filter_query.prepare(with_pagination=False)
+        query = 'SELECT * FROM history_events ' + query
         cursor = self.conn.cursor()
-        cursor.execute(query_str, query_params)
-        data = [HistoryEvent.deserialize_from_db(entry) for entry in cursor.fetchall()]
-        return data
+        cursor.execute(query, bindings)
+        result = []
+        for entry in cursor:
+            try:
+                result.append(HistoryEvent.deserialize_from_db(entry))
+            except DeserializationError as e:
+                log.debug(f'Failed to deserialize history event {entry}')
+                self.msg_aggregator.add_error(
+                    f'Failed to read history event from database. {str(e)}',
+                )
+        return result

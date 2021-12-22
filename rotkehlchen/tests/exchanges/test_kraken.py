@@ -320,7 +320,7 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_kraken_trade_with_spend_receive(function_scope_kraken):
-    """Test sta"""
+    """Test that trades based on spend/receive events are correctly processed"""
     kraken = function_scope_kraken
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False

@@ -5,6 +5,7 @@ from typing import Any, List, NamedTuple, Optional, Tuple, Union, cast
 from typing_extensions import Literal
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
+from rotkehlchen.accounting.structures import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.typing import SchemaEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import DeserializationError
@@ -334,9 +335,15 @@ class DBAssetFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBTypeFilter(DBFilter):
-    """A filter for type/category enums"""
-    filter_type: Union[TradeType, AssetMovementCategory, LedgerActionType]
-    type_key: Literal['type', 'category']
+    """A filter for type/category/historyEvent enums"""
+    filter_type: Union[
+        TradeType,
+        AssetMovementCategory,
+        LedgerActionType,
+        HistoryEventType,
+        HistoryEventSubType,
+    ]
+    type_key: Literal['type', 'subtype', 'category']
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
         return [f'{self.type_key}=?'], [self.filter_type.serialize_for_db()]
@@ -352,6 +359,33 @@ class DBEth2ValidatorIndicesFilter(DBFilter):
             return [], []
         questionmarks = '?' * len(self.validators)
         return [f'validator_index IN ({",".join(questionmarks)})'], self.validators
+
+class DBTypeFilterInList(DBFilter):
+    """A filter for type/category/historyEvent enums"""
+    type_key: Literal['type', 'subtype', 'category']
+    values: Union[
+        List[TradeType],
+        List[AssetMovementCategory],
+        List[LedgerActionType],
+        List[HistoryEventType],
+        List[HistoryEventSubType],
+    ]
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        return (
+            [f'{self.type_key} in ({", ".join(["?"] * len(self.values))})'],
+            [entry.serialize_for_db() for entry in self.values],
+        )
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBStringFilter(DBFilter):
+    """Filter a column having a string value"""
+    column: str
+    value: str
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        return [f'{self.column}=?'], [self.value]
 
 
 class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
@@ -580,6 +614,60 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
             filters.append(DBReportDataReportIDFilter(and_op=True, report_id=report_id))
         if event_type is not None:
             filters.append(DBReportDataEventTypeFilter(and_op=True, event_type=event_type))
+
+        filter_query.timestamp_filter = DBTimestampFilter(
+            and_op=True,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            timestamp_attribute='timestamp',
+        )
+        filters.append(filter_query.timestamp_filter)
+        filter_query.filters = filters
+        return filter_query
+
+
+class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
+
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            order_by_attribute: str = 'timestamp',
+            order_ascending: bool = True,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+            asset: Optional[Asset] = None,
+            event_type: Optional[List[HistoryEventType]] = None,
+            event_subtype: Optional[List[HistoryEventSubType]] = None,
+            location: Optional[Location] = None,
+            location_label: Optional[str] = None,
+    ) -> 'HistoryEventFilterQuery':
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+            order_by_attribute=order_by_attribute,
+            order_ascending=order_ascending,
+        )
+        filter_query = cast('HistoryEventFilterQuery', filter_query)
+        filters: List[DBFilter] = []
+        if asset is not None:
+            filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
+        if event_type is not None:
+            filters.append(DBTypeFilterInList(and_op=True, type_key='type', values=event_type))
+        if event_subtype is not None:
+            filters.append(
+                DBTypeFilterInList(and_op=True, type_key='subtype', values=event_subtype),
+            )
+        if location is not None:
+            filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
+            filters.append(filter_query.location_filter)
+        if location_label is not None:
+            filters.append(
+                DBStringFilter(and_op=True, column='location_label', value=location_label),
+            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
