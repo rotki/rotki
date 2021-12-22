@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
@@ -388,3 +389,44 @@ def trades_from_dictlist(
             continue
 
     return returned_trades
+
+
+BINANCE_PAIR_DB_TUPLE = Tuple[str, str, str, str]
+
+
+class BinancePair(NamedTuple):
+    """A binance pair. Contains the symbol in the Binance mode e.g. "ETHBTC" and
+    the base and quote assets of that symbol as parsed from exchangeinfo endpoint
+    result"""
+    symbol: str
+    base_asset: Asset
+    quote_asset: Asset
+    location: Location  # Should only be binance or binanceus
+
+    def serialize_for_db(self) -> BINANCE_PAIR_DB_TUPLE:
+        """Create tuple to be inserted in the database containing:
+        - symbol for the pair. Example: ETHBTC
+        - identifier of the base asset
+        - identifier of the quote asset
+        - the location, this is to differentiate binance from binanceus
+        """
+        return (
+            self.symbol,
+            self.base_asset.identifier,
+            self.quote_asset.identifier,
+            self.location.serialize_for_db(),
+        )
+
+    @classmethod
+    def deserialize_from_db(cls, entry: BINANCE_PAIR_DB_TUPLE) -> 'BinancePair':
+        """Create a BinancePair from data in the database. May raise:
+        - DeserializationError
+        - UnsupportedAsset
+        - UnknownAsset
+        """
+        return BinancePair(
+            symbol=entry[0],
+            base_asset=asset_from_binance(entry[1]),
+            quote_asset=asset_from_binance(entry[2]),
+            location=Location.deserialize_from_db(entry[3]),
+        )

@@ -4,18 +4,7 @@ import json
 import logging
 from collections import defaultdict
 from json.decoder import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    DefaultDict,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Type, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -28,10 +17,26 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade, TradeType
+from rotkehlchen.errors import (
+    DeserializationError,
+    InputError,
+    RemoteError,
+    UnknownAsset,
+    UnsupportedAsset,
+)
+from rotkehlchen.exchanges.data_structures import (
+    AssetMovement,
+    BinancePair,
+    MarginPosition,
+    Trade,
+    TradeType,
+)
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
+from rotkehlchen.exchanges.utils import (
+    deserialize_asset_movement_address,
+    get_key_if_has_val,
+    query_binance_exchange_pairs,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
@@ -90,15 +95,6 @@ class BinancePermissionError(RemoteError):
     Example is when there is no margin account to query or insufficient api key permissions."""
 
 
-class BinancePair(NamedTuple):
-    """A binance pair. Contains the symbol in the Binance mode e.g. "ETHBTC" and
-    the base and quote assets of that symbol as parsed from exchangeinfo endpoint
-    result"""
-    symbol: str
-    binance_base_asset: str
-    binance_quote_asset: str
-
-
 def trade_from_binance(
         binance_trade: Dict,
         binance_symbols_to_pair: Dict[str, BinancePair],
@@ -129,8 +125,8 @@ def trade_from_binance(
     binance_pair = binance_symbols_to_pair[binance_trade['symbol']]
     timestamp = deserialize_timestamp_from_binance(binance_trade['time'])
 
-    base_asset = asset_from_binance(binance_pair.binance_base_asset)
-    quote_asset = asset_from_binance(binance_pair.binance_quote_asset)
+    base_asset = binance_pair.base_asset
+    quote_asset = binance_pair.quote_asset
 
     if binance_trade['isBuyer']:
         order_type = TradeType.BUY
@@ -165,25 +161,6 @@ def trade_from_binance(
         fee_currency=fee_currency,
         link=str(binance_trade['id']),
     )
-
-
-def create_binance_symbols_to_pair(exchange_data: Dict[str, Any]) -> Dict[str, BinancePair]:
-    """Parses the result of 'exchangeInfo' endpoint and creates the symbols_to_pair mapping
-    """
-    symbols_to_pair: Dict[str, BinancePair] = {}
-    for symbol in exchange_data['symbols']:
-        symbol_str = symbol['symbol']
-        if isinstance(symbol_str, FVal):
-            # the to_int here may rase but should never due to the if check above
-            symbol_str = str(symbol_str.to_int(exact=True))
-
-        symbols_to_pair[symbol_str] = BinancePair(
-            symbol=symbol_str,
-            binance_base_asset=symbol['baseAsset'],
-            binance_quote_asset=symbol['quoteAsset'],
-        )
-
-    return symbols_to_pair
 
 
 class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
@@ -234,8 +211,14 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         # If it's the first time, populate the binance pair trade symbols
         # We know exchangeInfo returns a dict
-        exchange_data = self.api_query_dict('api', 'exchangeInfo')
-        self._symbols_to_pair = create_binance_symbols_to_pair(exchange_data)
+        try:
+            self._symbols_to_pair = query_binance_exchange_pairs(location=self.location)
+        except InputError as e:
+            self.msg_aggregator.add_error(
+                f'Binance exchange couldnt be properly initialized. '
+                f'Missing the exchange markets. {str(e)}',
+            )
+            self._symbols_to_pair = {}
 
         server_time = self.api_query_dict('api', 'time')
         self.offset_ms = server_time['serverTime'] - ts_now_in_ms()

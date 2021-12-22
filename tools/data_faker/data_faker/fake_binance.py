@@ -7,13 +7,11 @@ from typing import Any, Callable, Dict, List, Optional
 from data_faker.utils import assets_exist_at_time
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.errors import UnsupportedAsset
-from rotkehlchen.exchanges.binance import create_binance_symbols_to_pair
 from rotkehlchen.exchanges.data_structures import Trade, TradeType, trade_pair_from_assets
+from rotkehlchen.exchanges.utils import create_binance_symbols_to_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result, process_result_list
-from rotkehlchen.typing import Timestamp, TradePair
+from rotkehlchen.typing import Location, Timestamp, TradePair
 
 # Disallow some assets for simplicity
 DISALLOWED_ASSETS = (
@@ -47,7 +45,10 @@ class FakeBinance():
         with json_path.open('r') as f:
             self._exchange_info = json.loads(f.read())
 
-        self._symbols_to_pair = create_binance_symbols_to_pair(self._exchange_info)
+        self._symbols_to_pair = create_binance_symbols_to_pair(
+            exchange_data=self._exchange_info,
+            location=Location.BINANCE,
+        )
 
         self.trades_list: List[Dict[str, Any]] = []
         self.balances_dict: Dict[str, FVal] = {}
@@ -80,13 +81,10 @@ class FakeBinance():
             pair = random.choice(tuple(choices))
             choices.remove(pair)
             binance_pair = self._symbols_to_pair[pair]
-            bbase = binance_pair.binance_base_asset
-            bquote = binance_pair.binance_quote_asset
-            try:
-                base = asset_from_binance(bbase)
-                quote = asset_from_binance(bquote)
-            except UnsupportedAsset:
-                continue
+            base = binance_pair.base_asset
+            quote = binance_pair.quote_asset
+            bbase = base.symbol
+            bquote = quote.symbol
 
             if bbase in self.balances_dict or bquote in self.balances_dict:
                 if bbase in DISALLOWED_ASSETS or bquote in DISALLOWED_ASSETS:

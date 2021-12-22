@@ -9462,8 +9462,11 @@ All Binance markets
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/exchanges/binance/pairs HTTP/1.1
+      GET /api/1/exchanges/binance/pairs?location=binance HTTP/1.1
       Host: localhost:5042
+
+   
+   :query string location: Either ``binance`` or ``binanceus`` locations. This argument will filter the result based on the exchange type.
 
    **Example Response**:
 
@@ -9476,6 +9479,9 @@ All Binance markets
           "result": ["BTCUSD", "ETHUSD", "XRPUSD"],
           "message": ""
       }
+
+   :statuscode 200: Pairs successfully queried
+   :statuscode 502: Failed to query pairs from the binance API and the database.
 
 User selected Binance markets
 ================================

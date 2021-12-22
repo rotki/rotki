@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from importlib import import_module
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -18,7 +18,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.exchanges.binance import Binance
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 logger = logging.getLogger(__name__)
@@ -291,15 +290,6 @@ class ExchangeManager():
                     **extras,
                 )
                 self.connected_exchanges[location].append(exchange_obj)
-
-    def get_all_binance_pairs(self) -> List[str]:
-        if Location.BINANCE in self.connected_exchanges:
-            binance = cast('Binance', self.connected_exchanges[Location.BINANCE][0])
-            return list(binance.symbols_to_pair.keys())
-        if Location.BINANCEUS in self.connected_exchanges:
-            binance = cast('Binance', self.connected_exchanges[Location.BINANCEUS][0])
-            return list(binance.symbols_to_pair.keys())
-        return []
 
     def get_user_binance_pairs(self, name: str, location: Location) -> List[str]:
         is_connected = location in self.connected_exchanges

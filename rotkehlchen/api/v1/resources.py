@@ -31,6 +31,7 @@ from rotkehlchen.api.v1.encoding import (
     AsyncTasksQuerySchema,
     AvalancheTransactionQuerySchema,
     BaseXpubSchema,
+    BinanceMarketsSchema,
     BinanceMarketsUserSchema,
     BlockchainAccountsDeleteSchema,
     BlockchainAccountsGetSchema,
@@ -1951,8 +1952,12 @@ class ERC20TokenInfo(BaseResource):
 
 
 class BinanceAvailableMarkets(BaseResource):
-    def get(self) -> Response:
-        return self.rest_api.get_all_binance_pairs()
+
+    get_schema = BinanceMarketsSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, location: Location) -> Response:
+        return self.rest_api.get_all_binance_pairs(location)
 
 
 class BinanceUserMarkets(BaseResource):

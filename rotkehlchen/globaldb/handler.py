@@ -2,7 +2,7 @@ import logging
 import shutil
 import sqlite3
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union, cast, overload
 
 from typing_extensions import Literal
 
@@ -16,12 +16,14 @@ from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Location, Timestamp
+from rotkehlchen.utils.misc import ts_now
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import BinancePair
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -1346,6 +1348,37 @@ class GlobalDBHandler():
         connection.commit()
         cursor.execute(detach_database)
         return True, ''
+
+    def save_binance_pairs(
+        self,
+        new_pairs: Iterable['BinancePair'],
+        location: Location,
+    ) -> None:
+        query = 'INSERT OR IGNORE INTO binance_pairs(pair, base_asset, quote_asset, location) VALUES (?, ?, ?, ?)'  # noqa: E501
+        cursor = self._conn.cursor()
+        try:
+            cursor.executemany(query, [pair.serialize_for_db() for pair in new_pairs])
+            self.add_setting_value(name=f'binance_pairs_queried_at_{location}', value=ts_now())
+        except sqlite3.IntegrityError as e:
+            raise InputError(
+                f'Tried to add a binance pair to the database but failed due to {str(e)}',
+            ) from e
+
+    def get_binance_pairs(self, location: Location) -> List['BinancePair']:
+        # TODO: Change the logic around BinancePair to avoid the importing here
+        from rotkehlchen.exchanges.utils import BinancePair  # noqa: E501  # pylint: disable=import-outside-toplevel  # isort:skip
+        cursor = self._conn.cursor()
+        cursor.execute(
+            'SELECT pair, base_asset, quote_asset, location FROM binance_pairs WHERE location=?',
+            location.serialize_for_db(),
+        )
+        pairs = []
+        for pair in cursor:
+            try:
+                pairs.append(BinancePair.deserialize_from_db(pair))
+            except DeserializationError as e:
+                log.debug(f'Failed to deserialize binance pair {pair}. {str(e)}')
+        return pairs
 
 
 def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:
