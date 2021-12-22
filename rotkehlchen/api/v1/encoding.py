@@ -2468,6 +2468,7 @@ class Eth2ValidatorSchema(Schema):
         ),
     )
     public_key = fields.String(load_default=None)
+    ownership_percentage = FloatingPercentageField(load_default=FVal(1))
 
     @validates_schema
     def validate_eth2_validator_schema(  # pylint: disable=no-self-use

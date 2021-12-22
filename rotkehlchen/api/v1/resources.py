@@ -118,6 +118,7 @@ from rotkehlchen.db.filtering import (
     ReportDataFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.typing import (
     IMPORTABLE_LOCATIONS,
@@ -1271,11 +1272,13 @@ class Eth2ValidatorsResource(BaseResource):
             self,
             validator_index: Optional[int],
             public_key: Optional[Eth2PubKey],
+            ownership_percentage: FVal,
             async_query: bool,
     ) -> Response:
         return self.rest_api.add_eth2_validator(
             validator_index=validator_index,
             public_key=public_key,
+            ownership_proportion=ownership_percentage,
             async_query=async_query,
         )
 

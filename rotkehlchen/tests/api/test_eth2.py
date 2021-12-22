@@ -262,15 +262,19 @@ def test_add_get_delete_eth2_validators(rotkehlchen_api_server, start_with_valid
     validators = [Eth2Validator(
         index=4235,
         public_key='0xadd548bb2e6962c255ec5420e40e6e506dfc936592c700d56718ada7dcc52e4295644ff8f94f4ef898aa8a5ad81a5b84',  # noqa: E501
+        ownership_proportion=FVal(1),
     ), Eth2Validator(
         index=5235,
         public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
+        ownership_proportion=FVal(1),
     ), Eth2Validator(
         index=23948,
         public_key='0x8a569c702a5b51894a25b261960f6b792aa35f8f67d9e1d96a52b15857cf0ee4fa30670b9bfca40e9a9dba81057ba4c7',  # noqa: E501
+        ownership_proportion=FVal(1),
     ), Eth2Validator(
         index=43948,
         public_key='0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb',  # noqa: E501
+        ownership_proportion=FVal(1),
     )]
     response = requests.put(
         api_url_for(
@@ -353,6 +357,33 @@ def test_add_get_delete_eth2_validators(rotkehlchen_api_server, start_with_valid
     )
     result = assert_proper_response_with_result(response)
     assert result == {'entries': [validators[1].serialize()], 'entries_limit': expected_limit, 'entries_found': 1}  # noqa: E501
+
+    # Try to add validator with a custom ownership percentage
+    validator = Eth2Validator(
+        index=43948,
+        public_key='0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb',  # noqa: E501
+        ownership_proportion=FVal(0.5),
+    )
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={
+            'validator_index': validator.index,
+            'public_key': validator.public_key,
+            'ownership_percentage': 50,
+        },
+    )
+    assert_simple_ok_response(response)
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == {'entries': [validators[1].serialize(), validator.serialize()], 'entries_limit': expected_limit, 'entries_found': 2}  # noqa: E501
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
@@ -504,9 +535,11 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     validators = [Eth2Validator(
         index=4235,
         public_key='0xadd548bb2e6962c255ec5420e40e6e506dfc936592c700d56718ada7dcc52e4295644ff8f94f4ef898aa8a5ad81a5b84',  # noqa: E501
+        ownership_proportion=FVal(1),
     ), Eth2Validator(
         index=5235,
         public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
+        ownership_proportion=FVal(1),
     )]
     response = requests.put(
         api_url_for(

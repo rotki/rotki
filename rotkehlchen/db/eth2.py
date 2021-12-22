@@ -185,7 +185,11 @@ class DBEth2():
         """Gets all DB entries for validator daily stats according to the given filter"""
         cursor = self.db.conn.cursor()
         query, bindings = filter_query.prepare()
-        query = 'SELECT * from eth2_daily_staking_details ' + query
+        query = """
+            SELECT eth2_daily_staking_details.*, eth2_validators.ownership_proportion from
+            eth2_daily_staking_details LEFT JOIN eth2_validators ON
+            eth2_daily_staking_details.validator_index
+            = eth2_validators.validator_index """ + query
         results = cursor.execute(query, bindings)
         return [ValidatorDailyStats.deserialize_from_db(x) for x in results]
 
@@ -203,7 +207,7 @@ class DBEth2():
         cursor = self.db.conn.cursor()
         cursor.executemany(
             'INSERT OR IGNORE INTO '
-            'eth2_validators(validator_index, public_key) VALUES(?, ?)',
+            'eth2_validators(validator_index, public_key, ownership_proportion) VALUES(?, ?, ?)',
             [x.serialize_for_db() for x in validators],
         )
         self.db.update_last_write()

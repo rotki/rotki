@@ -1714,6 +1714,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self,
             validator_index: Optional[int],
             public_key: Optional[Eth2PubKey],
+            ownership_proportion: FVal,
     ) -> None:
         """May raise:
         - ModuleInactive if eth2 module is not activated
@@ -1726,7 +1727,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('query_ethereum_beaconchain_balances')
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
-        return eth2.add_validator(validator_index=validator_index, public_key=public_key)
+        return eth2.add_validator(
+            validator_index=validator_index,
+            public_key=public_key,
+            ownership_proportion=ownership_proportion,
+        )
 
     def delete_eth2_validator(
             self,

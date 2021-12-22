@@ -7532,6 +7532,7 @@ Getting Eth2 Staking daily stats
         "result": {
 	    "entries": [{
                   "validator_index": 15,
+                  "ownership_percentage": "100",
                   "timestamp": 1613952000,
                   "pnl": {"amount": "0.007", "usd_value": "70"},
                   "start_balance": {"amount": "32.69", "usd_value": "32690"},
@@ -7547,6 +7548,7 @@ Getting Eth2 Staking daily stats
                   "deposited_balance": {"amount": "32", "usd_value": "32000"}
               }, {
                   "validator_index": 43567,
+                  "ownership_percentage": "100",
                   "timestamp": 1613865600,
                   "pnl": {"amount": "-0.0066", "usd_value": "-6.6"},
                   "start_balance": {"amount": "32.69", "usd_value": "32690"},
@@ -7570,6 +7572,7 @@ Getting Eth2 Staking daily stats
    :resjson entries : The list of daily stats filtered by the given filter.
 
    :resjson eth_depositor string: The eth1 address that made the deposit for the validator.
+   :resjson ownership_percentage: The amount of the validator owned by the user.
    :resjson timestamp int: The timestamp of the start of the day in GMT for which this entry is.
    :resjson pnl object: The amount of ETH gained or lost in that day along with its usd value. Average price of the day is taken.
    :resjson start_balance object: The amount of ETH the day started with along with its usd value.
@@ -7682,6 +7685,7 @@ Adding an Eth2 validator
 
    :reqjson validator_index int: An optional integer representing the validator index of the validator to track. If this is not given then the pulic key of the validator has to be given!
    :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to track. If this is not given the the validator index has to be given!
+   :resjson ownership_percentage: An optional string representing the amount of the validator owned by the user in the range of 0 to 100. If not provided a default value of 100 is assigned.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
    **Example Response**:

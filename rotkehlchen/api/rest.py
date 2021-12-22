@@ -2277,11 +2277,13 @@ class RestAPI():
             self,
             validator_index: Optional[int],
             public_key: Optional[Eth2PubKey],
+            ownership_proportion: FVal,
     ) -> Dict[str, Any]:
         try:
             self.rotkehlchen.chain_manager.add_eth2_validator(
                 validator_index=validator_index,
                 public_key=public_key,
+                ownership_proportion=ownership_proportion,
             )
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
@@ -2297,6 +2299,7 @@ class RestAPI():
             self,
             validator_index: Optional[int],
             public_key: Optional[Eth2PubKey],
+            ownership_proportion: FVal,
             async_query: bool,
     ) -> Response:
         if async_query:
@@ -2304,9 +2307,14 @@ class RestAPI():
                 command='_add_eth2_validator',
                 validator_index=validator_index,
                 public_key=public_key,
+                ownership_proportion=ownership_proportion,
             )
 
-        response = self._add_eth2_validator(validator_index=validator_index, public_key=public_key)
+        response = self._add_eth2_validator(
+            validator_index=validator_index,
+            public_key=public_key,
+            ownership_proportion=ownership_proportion,
+        )
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)

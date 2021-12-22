@@ -108,9 +108,31 @@ ValidatorDailyStatsDBTuple = Tuple[
     str,  # amount_deposited
 ]
 
+# When reading from the database we take into account the ownership proportion
+ValidatorDailyStatsDBTupleRead = Tuple[
+    int,  # validator index
+    int,  # timestamp
+    str,  # usd_price_start
+    str,  # usd_price_end
+    str,  # pnl_amount
+    str,  # start_balance
+    str,  # end_balance
+    int,  # missed_attestations
+    int,  # orphaned_attestations
+    int,  # proposed_blocks
+    int,  # missed_blocks
+    int,  # orphaned_blocks
+    int,  # included_attester_slashings
+    int,  # proposer_attester_slashings
+    int,  # deposits_number
+    str,  # amount_deposited
+    int,  # ownership_proportion
+]
+
 
 class ValidatorDailyStats(NamedTuple):
     validator_index: int  # keeping the index here so it can be shown in accounting
+    ownership_proportion: FVal  # Keeping this so it can be used during accounting
     timestamp: Timestamp
     start_usd_price: FVal = ZERO
     end_usd_price: FVal = ZERO
@@ -132,10 +154,11 @@ class ValidatorDailyStats(NamedTuple):
 
     @property
     def pnl_balance(self) -> Balance:
+        pnl = self.pnl * self.ownership_proportion
         usd_price = (self.start_usd_price + self.end_usd_price) / 2
         return Balance(
-            amount=self.pnl,
-            usd_value=self.pnl * usd_price,
+            amount=pnl,
+            usd_value=pnl * usd_price,
         )
 
     @property
@@ -180,9 +203,10 @@ class ValidatorDailyStats(NamedTuple):
         )
 
     @classmethod
-    def deserialize_from_db(cls, entry: ValidatorDailyStatsDBTuple) -> 'ValidatorDailyStats':
+    def deserialize_from_db(cls, entry: ValidatorDailyStatsDBTupleRead) -> 'ValidatorDailyStats':
         return cls(
             validator_index=entry[0],
+            ownership_proportion=FVal(entry[16]),
             timestamp=Timestamp(entry[1]),
             start_usd_price=FVal(entry[2]),
             end_usd_price=FVal(entry[3]),
@@ -203,6 +227,7 @@ class ValidatorDailyStats(NamedTuple):
     def serialize(self) -> Dict[str, Any]:
         return {
             'validator_index': self.validator_index,
+            'ownership_percentage': str(self.ownership_proportion * 100),
             'timestamp': self.timestamp,
             'pnl': self.pnl_balance.serialize(),
             'start_balance': self.start_balance.serialize(),
