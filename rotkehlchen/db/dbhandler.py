@@ -2585,9 +2585,10 @@ class DBHandler:
         Also returns how many are the total found for the filter
         """
         trades = self.get_trades(filter_query=filter_query, has_premium=has_premium)
+        table_name = 'combined_trades_view' if has_premium else 'trades'
         cursor = self.conn.cursor()
         query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from combined_trades_view ' + query
+        query = f'SELECT COUNT(*) from {table_name} ' + query
         total_found_result = cursor.execute(query, bindings)
         return trades, total_found_result.fetchone()[0]
 
@@ -2603,7 +2604,7 @@ class DBHandler:
             query = 'SELECT * from combined_trades_view ' + query
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT * from combined_trades_view ORDER BY time DESC LIMIT ?) ' + query  # noqa: E501
+            query = 'SELECT * FROM (SELECT * from trades ORDER BY time DESC LIMIT ?) ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_TRADES_LIMIT] + bindings)
 
         trades = []
