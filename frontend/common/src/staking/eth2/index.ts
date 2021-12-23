@@ -1,47 +1,74 @@
 import { z } from "zod";
 import { Balance } from "../../index";
 
-export interface Eth2Deposit {
-  readonly fromAddress: string;
-  readonly pubkey: string;
-  readonly withdrawalCredentials: string;
-  readonly value: Balance;
-  readonly depositIndex: number;
-  readonly txHash: string;
-  readonly logIndex: number;
-}
+export const Eth2Deposit = z.object({
+  fromAddress: z.string(),
+  pubkey: z.string(),
+  withdrawalCredentials: z.string(),
+  value: Balance,
+  txHash: z.string(),
+  txIndex: z.number().nonnegative()
+})
 
-export interface Eth2DailyStat {
-  readonly timestamp: number;
-  readonly pnl: Balance;
-  readonly startBalance: Balance;
-  readonly endBalance: Balance;
-  readonly missedAttestations: number;
-  readonly orphanedAttestations: number;
-  readonly proposedBlocks: number;
-  readonly missedBlocks: number;
-  readonly orphanedBlocks: number;
-  readonly includedAttesterSlashings: number;
-  readonly proposerAttesterSlashings: number;
-  readonly depositsNumber: number;
-  readonly depositedBalance: Balance;
-}
+export type Eth2Deposit  = z.infer<typeof Eth2Deposit>
 
-export interface Eth2Detail {
-  readonly eth1Depositor: string;
-  readonly publicKey: string;
-  readonly index: number;
-  readonly balance: Balance;
-  readonly performance1d: Balance;
-  readonly performance1w: Balance;
-  readonly performance1m: Balance;
-  readonly performance1y: Balance;
-  readonly dailyStats: Eth2DailyStat[];
-}
+export const Eth2Deposits = z.array(Eth2Deposit)
 
+export type Eth2Deposits = z.infer<typeof Eth2Deposits>
 
-export interface Eth2DailyStatWithIndex extends Eth2DailyStat {
-  readonly index: number;
+const Eth2DailyStat = z.object({
+  validatorIndex: z.number().nonnegative(),
+  timestamp: z.number().nonnegative(),
+  pnl: Balance,
+  startBalance: Balance,
+  endBalance: Balance,
+  missedAttestations: z.number().nonnegative(),
+  orphanedAttestations: z.number().nonnegative(),
+  proposedBlocks: z.number().nonnegative(),
+  missedBlocks: z.number().nonnegative(),
+  orphanedBlocks: z.number().nonnegative(),
+  includedAttesterSlashings: z.number().nonnegative(),
+  proposerAttesterSlashings: z.number().nonnegative(),
+  depositsNumber: z.number().nonnegative(),
+  depositedBalance: Balance
+});
+
+export type Eth2DailyStat = z.infer<typeof Eth2DailyStat>
+
+export const Eth2DailyStats = z.object({
+  entries: z.array(Eth2DailyStat),
+  entriesFound: z.number().nonnegative(),
+  entriesTotal: z.number().nonnegative(),
+})
+
+export type Eth2DailyStats = z.infer<typeof Eth2DailyStats>
+
+const Eth2Detail = z.object({
+  eth1Depositor: z.string(),
+  publicKey: z.string(),
+  index: z.number(),
+  balance: Balance,
+  performance1d: Balance,
+  performance1w: Balance,
+  performance1m: Balance,
+  performance1y: Balance
+});
+
+export type Eth2Detail = z.infer<typeof Eth2Detail>
+
+export const Eth2Details = z.array(Eth2Detail);
+
+export type Eth2Details = z.infer<typeof Eth2Details>
+
+export type Eth2DailyStatsPayload = {
+  readonly limit: number;
+  readonly offset: number;
+  readonly orderByAttribute: string;
+  readonly ascending: boolean;
+  readonly validators?: number[]
+  readonly fromTimestamp?: number;
+  readonly toTimestamp?: number;
+  readonly onlyCache?: boolean;
 }
 
 const Validator = z.object({

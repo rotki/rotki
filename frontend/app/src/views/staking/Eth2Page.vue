@@ -13,6 +13,11 @@
       :validators="eth2Validators"
       :filter-type="filterType"
       :filter="selection"
+      :eth2-details="details"
+      :eth2-deposits="deposits"
+      :eth2-stats="stats"
+      @refresh="refresh"
+      @update:stats-pagination="updatePagination"
     >
       <template #selection="{ usableAddresses }">
         <v-row>
@@ -49,7 +54,19 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { defineComponent, onMounted, ref, watch } from '@vue/composition-api';
+import {
+  Eth2DailyStats,
+  Eth2DailyStatsPayload,
+  Eth2Deposits,
+  Eth2Details
+} from '@rotki/common/lib/staking/eth2';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  ref,
+  watch
+} from '@vue/composition-api';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
@@ -60,6 +77,7 @@ import { setupModuleEnabled } from '@/composables/session';
 import { setupStaking } from '@/composables/staking';
 import { Eth2Staking } from '@/premium/premium';
 import { Section } from '@/store/const';
+import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 
 const Eth2Page = defineComponent({
@@ -96,6 +114,25 @@ const Eth2Page = defineComponent({
     const { eth2Validators } = setupBlockchainAccounts();
     watch(filterType, () => (selection.value = []));
 
+    const store = useStore();
+    const deposits = computed<Eth2Deposits>(
+      () => store.getters['staking/deposits']
+    );
+    const details = computed<Eth2Details>(
+      () => store.getters['staking/details']
+    );
+    const stats = computed<Eth2DailyStats>(
+      () => store.getters['staking/stats']
+    );
+
+    const refresh = async () => {
+      await store.dispatch('staking/fetchStakingDetails');
+    };
+
+    const updatePagination = async (payload: Eth2DailyStatsPayload) => {
+      await store.dispatch('staking/fetchDailyStats', payload);
+    };
+
     return {
       selection,
       loading,
@@ -104,6 +141,11 @@ const Eth2Page = defineComponent({
       enabled,
       filterType,
       eth2Validators,
+      deposits,
+      details,
+      stats,
+      refresh,
+      updatePagination,
       chains: [Blockchain.ETH],
       module: [Module.ETH2]
     };
