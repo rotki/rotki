@@ -2207,7 +2207,7 @@ class RestAPI():
             only_cache: bool,
     ) -> Dict[str, Any]:
         try:
-            stats, filter_total_found = self.rotkehlchen.chain_manager.get_eth2_daily_stats(
+            stats, filter_total_found, sum_pnl, sum_usd_value = self.rotkehlchen.chain_manager.get_eth2_daily_stats(  # noqa: E501
                 filter_query=filter_query,
                 only_cache=only_cache,
             )
@@ -2218,6 +2218,8 @@ class RestAPI():
 
         result = {
             'entries': [x.serialize() for x in stats],
+            'sum_pnl': str(sum_pnl),
+            'sum_usd_value': str(sum_usd_value),
             'entries_found': filter_total_found,
             'entries_total': self.rotkehlchen.data.db.get_entries_count('eth2_daily_staking_details'),  # noqa: E501
         }

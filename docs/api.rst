@@ -7489,7 +7489,7 @@ Getting Eth2 Staking details
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 Getting Eth2 Staking daily stats
-==============================
+=====================================
 
 .. http:get:: /api/(version)/blockchains/ETH2/stake/dailystats
 
@@ -7507,6 +7507,9 @@ Getting Eth2 Staking daily stats
 
       GET /api/1/blockchains/ETH2/stake/dailystats HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "validators": [0, 15, 23542], "only_cache": false}
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
    :reqjson bool only_cache: If true then only the daily stats in the DB are queried.
@@ -7514,6 +7517,9 @@ Getting Eth2 Staking daily stats
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson string order_by_attribute: Optional. This is the attribute of the eth2_daily_staking_details table by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'validator_index', 'start_usd_price', 'end_usd_price', 'pnl', 'start_amount', 'end_amount', 'missed_attestations', 'orphaned_attestations', 'proposed_blocks', 'missed_blocks', 'orphaned_blocks', 'included_attester_slashings', 'proposer_attester_slashings', 'deposits_number', 'amount_deposited'].
    :reqjson bool ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
+   :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
+   :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
+   :reqjson list(string) validators: Optionally filter entries validator indices. If missing data for all validators are returned.
 
    **Example Response**:
 
@@ -7577,6 +7583,8 @@ Getting Eth2 Staking daily stats
    :resjson proposer_attester_slashings int: The number of proposer attester slashins the validator had inside the day.
    :resjson deposits_number int: The number of deposits from the eth1 chain the validator had inside the day.
    :resjson deposited_balance object: The amount deposited from the eth1 chain for the validator inside the day along with its usd value.
+   :resjson string sum_pnl: The sum of PnL in ETH for the current filter. Ignores pagination.
+   :resjson string sum_usd_value: The sum of usd value of ETH PnL for the current filter. Ignores pagination.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_total: The number of total entries ignoring all filters.
 
@@ -10054,7 +10062,7 @@ Get associated locations
       Content-Type: application/json
 
       {
-          "result": ['nexo', 'kraken', 'uniswap'],
+          "result": ["nexo", "kraken", "uniswap"],
           "message": ""
       }
 

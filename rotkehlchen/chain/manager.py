@@ -1635,7 +1635,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self,
             filter_query: Eth2DailyStatsFilterQuery,
             only_cache: bool,
-    ) -> Tuple[List['ValidatorDailyStats'], int]:
+    ) -> Tuple[List['ValidatorDailyStats'], int, FVal, FVal]:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         """
@@ -1670,7 +1670,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         # Ask for details to detect any new validators
         eth2.get_details(addresses=self.queried_addresses_for_module('eth2'))
         # And now get all daily stats and create defi events for them
-        stats, _ = eth2.get_validator_daily_stats(
+        stats, _, _, _ = eth2.get_validator_daily_stats(
             filter_query=Eth2DailyStatsFilterQuery.make(from_ts=from_timestamp, to_ts=to_timestamp),  # noqa: E501
             only_cache=False,
             msg_aggregator=self.msg_aggregator,

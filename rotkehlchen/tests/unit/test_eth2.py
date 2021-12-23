@@ -687,12 +687,11 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             from_ts=1613606300,
             to_ts=1614038500,
         )
-        stats, filter_total_found = eth2.get_validator_daily_stats(
+        stats, filter_total_found, sum_pnl, sum_usd_value = eth2.get_validator_daily_stats(
             filter_query=filter_query,
             only_cache=False,
             msg_aggregator=function_scope_messages_aggregator,
         )
-
         assert stats_call.call_count == 1
         assert len(stats) >= 6
         assert filter_total_found >= 6
@@ -752,9 +751,11 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             missed_attestations=1,
         )]
         assert stats[:len(expected_stats)] == expected_stats
+        assert sum_pnl >= sum(x.pnl for x in expected_stats)
+        assert sum_usd_value >= sum(x.pnl * ((x.start_usd_price + x.end_usd_price) / 2) for x in expected_stats)  # noqa: E501
 
         # Make sure that calling it again does not make an external call
-        stats, filter_total_found = eth2.get_validator_daily_stats(
+        stats, filter_total_found, _, _ = eth2.get_validator_daily_stats(
             filter_query=filter_query,
             only_cache=False,
             msg_aggregator=function_scope_messages_aggregator,
