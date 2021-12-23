@@ -183,6 +183,7 @@ class EthereumTransaction(NamedTuple):
 
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
+        result['identifier'] = self.identifier
         result['tx_hash'] = '0x' + result['tx_hash'].hex()
         result['input_data'] = '0x' + result['input_data'].hex()
 

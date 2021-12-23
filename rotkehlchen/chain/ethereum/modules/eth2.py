@@ -19,6 +19,7 @@ from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.errors import InputError, PremiumPermissionError, RemoteError
+from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
@@ -300,7 +301,7 @@ class Eth2(EthereumModule):
             filter_query: Eth2DailyStatsFilterQuery,
             only_cache: bool,
             msg_aggregator: MessagesAggregator,
-    ) -> Tuple[List[ValidatorDailyStats], int]:
+    ) -> Tuple[List[ValidatorDailyStats], int, FVal, FVal]:
         """Gets the daily stats eth2 validators depending on the given filter.
 
         This won't detect new validators

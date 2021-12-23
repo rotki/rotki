@@ -132,6 +132,15 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     total_stats = len(result['entries'])
     assert total_stats == result['entries_total']
     assert total_stats == result['entries_found']
+    full_sum_pnl = FVal(result['sum_pnl'])
+    full_sum_usd_value = FVal(result['sum_usd_value'])
+    calculated_sum_pnl = ZERO
+    calculated_sum_usd_value = ZERO
+    for entry in result['entries']:
+        calculated_sum_pnl += FVal(entry['pnl']['amount'])
+        calculated_sum_usd_value += FVal(entry['pnl']['usd_value'])
+    assert full_sum_pnl.is_close(calculated_sum_pnl)
+    assert full_sum_usd_value.is_close(calculated_sum_usd_value)
 
     # filter by validator_index
     queried_validators = [43948, 9]
@@ -162,8 +171,14 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     assert result['entries_total'] == total_stats
     assert result['entries_found'] <= total_stats
     assert len(result['entries']) == result['entries_found']
+    full_sum_pnl = FVal(result['sum_pnl'])
+    full_sum_usd_value = FVal(result['sum_usd_value'])
+    calculated_sum_pnl = ZERO
+    calculated_sum_usd_value = ZERO
     next_page_times = []
     for idx, entry in enumerate(result['entries']):
+        calculated_sum_pnl += FVal(entry['pnl']['amount'])
+        calculated_sum_usd_value += FVal(entry['pnl']['usd_value'])
         assert entry['validator_index'] in queried_validators
         time = entry['timestamp']
         assert time >= from_ts
@@ -175,6 +190,8 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
         if idx >= result['entries_found'] - 1:
             continue
         assert entry['timestamp'] >= result['entries'][idx + 1]['timestamp']
+    assert full_sum_pnl.is_close(calculated_sum_pnl)
+    assert full_sum_usd_value.is_close(calculated_sum_usd_value)
 
     # filter by validator_index and timestamp and add pagination
     json = {'only_cache': True, 'validators': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts, 'limit': 5, 'offset': 5}  # noqa: E501
@@ -187,6 +204,8 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     result = assert_proper_response_with_result(response)
     assert result['entries_total'] == total_stats
     assert result['entries_found'] <= total_stats
+    assert FVal(result['sum_pnl']) == full_sum_pnl, 'pagination should show same sum'
+    assert FVal(result['sum_usd_value']) == full_sum_usd_value, 'pagination should show same sum'
     assert len(result['entries']) == 5
     for idx, entry in enumerate(result['entries']):
         assert entry['validator_index'] in queried_validators

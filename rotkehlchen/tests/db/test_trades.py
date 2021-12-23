@@ -316,20 +316,20 @@ def test_query_trades_including_ammswaps(data_dir, username):
     assert_trades_equal(returned_trades[1], swap1_trade)
     assert_trades_equal(returned_trades[3], swap2_trade)
     assert_trades_equal(returned_trades[5], swap3_trade)
-    assert_trades_equal(returned_trades[6], swap4_trade1)
-    assert_trades_equal(returned_trades[7], swap4_trade2)
+    assert_trades_equal(returned_trades[6], swap4_trade2)
+    assert_trades_equal(returned_trades[7], swap4_trade1)
     assert_trades_equal(returned_trades[8], swap5_trade1)
     assert_trades_equal(returned_trades[9], swap5_trade2)
 
-    # # Get last 5 trades
+    # Get last 5 trades
     returned_trades = data.db.get_trades(
         filter_query=TradesFilterQuery.make(limit=5, offset=5),
         has_premium=True,
     )
     assert len(returned_trades) == 5
     assert_trades_equal(returned_trades[0], swap3_trade)
-    assert_trades_equal(returned_trades[1], swap4_trade1)
-    assert_trades_equal(returned_trades[2], swap4_trade2)
+    assert_trades_equal(returned_trades[1], swap4_trade2)
+    assert_trades_equal(returned_trades[2], swap4_trade1)
     assert_trades_equal(returned_trades[3], swap5_trade1)
     assert_trades_equal(returned_trades[4], swap5_trade2)
 
@@ -363,23 +363,22 @@ def test_query_trades_including_ammswaps(data_dir, username):
             has_premium=False,
         )
     # trades should be the latest 2
-    assert total_found == 10
+    assert total_found == 3  # the 3 normal trades -- free users don't see swaps
     assert len(returned_trades) == 2
-    assert_trades_equal(returned_trades[0], swap5_trade1)
-    assert_trades_equal(returned_trades[1], swap5_trade2)
+    assert_trades_equal(returned_trades[0], trades[1])
+    assert_trades_equal(returned_trades[1], trades[2])
 
     # Get filtered trades as non premium user with 2 free trades as limit
     limit_patch = patch(
         target='rotkehlchen.db.dbhandler.FREE_TRADES_LIMIT',
-        new=4,
+        new=2,
     )
     with limit_patch:
         returned_trades, total_found = data.db.get_trades_and_limit_info(
-            filter_query=TradesFilterQuery.make(from_ts=4, to_ts=12),
+            filter_query=TradesFilterQuery.make(from_ts=1, to_ts=2),
             has_premium=False,
         )
-    # trades should be the latest 2
-    assert total_found == 3, 'total found for filter should be 4'
-    assert len(returned_trades) == 2
-    assert_trades_equal(returned_trades[0], swap4_trade1)
-    assert_trades_equal(returned_trades[1], swap4_trade2)
+    # trades should be the second one since the free limit includes the last 2 only
+    assert total_found == 2, 'total found for filter should be 2'
+    assert len(returned_trades) == 1
+    assert_trades_equal(returned_trades[0], trades[1])

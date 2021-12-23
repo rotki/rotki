@@ -5,10 +5,12 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDailyStats
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors import InputError
+from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp, Tuple, Union
 
@@ -148,17 +150,33 @@ class DBEth2():
     def get_validator_daily_stats_and_limit_info(
             self,
             filter_query: Eth2DailyStatsFilterQuery,
-    ) -> Tuple[List[ValidatorDailyStats], int]:
+    ) -> Tuple[List[ValidatorDailyStats], int, FVal, FVal]:
         """Gets all eth2 daily stats for the query from the DB
 
-        Also returns how many are the total found for the filter
+        Returns a tuple with the following in order:
+         - A list of the daily stats
+         - how many are the total found for the filter
+         - What is the PnL in ETH for the filter
+         - What is the sum of the usd_value of the PnL counting price at the time of each entry
         """
         stats = self.get_validator_daily_stats(filter_query=filter_query)
         cursor = self.db.conn.cursor()
         query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from eth2_daily_staking_details ' + query
-        total_found_result = cursor.execute(query, bindings)
-        return stats, total_found_result.fetchone()[0]
+        query = (
+            'SELECT COUNT(*), SUM(CAST(pnl AS REAL)), '
+            'SUM(CAST(pnl AS REAL) * '
+            '((CAST(start_usd_price AS REAL) + CAST(end_usd_price AS REAL)) / 2)) '
+            'from eth2_daily_staking_details ' + query
+        )
+        result = cursor.execute(query, bindings).fetchone()
+        try:
+            pnl = FVal(result[1])
+            usd_value_sum = FVal(result[2])
+        except ValueError:
+            pnl = ZERO
+            usd_value_sum = ZERO
+
+        return stats, result[0], pnl, usd_value_sum
 
     def get_validator_daily_stats(
             self,

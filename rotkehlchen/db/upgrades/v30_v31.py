@@ -8,8 +8,24 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
     """Upgrades the DB from v30 to v31
 
     - Add the new eth2 validator table and upgrade the old ones to have foreign key relationships.
+    - Delete all ignored ethereum transaction ids as now the identifier
+    is the one specified by the backend.
     """
     cursor = db.conn.cursor()
+    # Should exist -- but we are being extremely pedantic here
+    ignored_actions_exists = cursor.execute(
+        'SELECT count(*) FROM sqlite_master WHERE type="table" AND name="ignored_actions";',
+    ).fetchone()[0]
+    if ignored_actions_exists == 1:
+        cursor.execute('DELETE FROM ignored_actions WHERE type="C";')
+    else:
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ignored_actions (
+        type CHAR(1) NOT NULL DEFAULT('A') REFERENCES action_type(type),
+        identifier TEXT,
+        PRIMARY KEY (type, identifier)
+        );
+        """)
     cursor.execute('DROP TABLE IF EXISTS eth2_deposits;')
     cursor.execute('DROP TABLE IF EXISTS eth2_daily_staking_details;')
     cursor.execute("""
@@ -116,19 +132,19 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
         WHERE first1in > 0 AND first0in > 0 AND last1out > 0 AND last0out > 0
     ), SWAPS AS (
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C1
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C2
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C3
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C4
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C5
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base2 AS base_asset, quote2 AS quote_asset, amount2 AS amount, rate2 AS rate, txhash, logindex, time, location FROM C5
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base1 AS base_asset, quote1 AS quote_asset, amount1 AS amount, rate1 AS rate, txhash, logindex, time, location FROM C6
-    UNION
+    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
     SELECT base2 AS base_asset, quote2 AS quote_asset, amount2 AS amount, rate2 AS rate, txhash, logindex, time, location FROM C6
    )
    SELECT
@@ -145,7 +161,7 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
        txhash AS link,
        NULL AS notes /* no notes */
    FROM SWAPS
-   UNION
+   UNION ALL /* using union all as there can be no duplicates so no need to handle them */
    SELECT * from trades
 ;""")  # noqa: E501
     db.conn.commit()

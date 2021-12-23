@@ -761,6 +761,7 @@ class RestAPI():
 
         mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.TRADE)
         ignored_ids = mapping.get(ActionType.TRADE, [])
+        table_name = 'trades' if self.rotkehlchen.premium is None else 'combined_trades_view'
         entries_result = []
         for entry in trades_result:
             entries_result.append(
@@ -770,7 +771,7 @@ class RestAPI():
         result = {
             'entries': entries_result,
             'entries_found': filter_total_found,
-            'entries_total': self.rotkehlchen.data.db.get_entries_count('combined_trades_view'),
+            'entries_total': self.rotkehlchen.data.db.get_entries_count(table_name),  # type: ignore  # noqa: E501
             'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
         }
 
@@ -2206,7 +2207,7 @@ class RestAPI():
             only_cache: bool,
     ) -> Dict[str, Any]:
         try:
-            stats, filter_total_found = self.rotkehlchen.chain_manager.get_eth2_daily_stats(
+            stats, filter_total_found, sum_pnl, sum_usd_value = self.rotkehlchen.chain_manager.get_eth2_daily_stats(  # noqa: E501
                 filter_query=filter_query,
                 only_cache=only_cache,
             )
@@ -2217,6 +2218,8 @@ class RestAPI():
 
         result = {
             'entries': [x.serialize() for x in stats],
+            'sum_pnl': str(sum_pnl),
+            'sum_usd_value': str(sum_usd_value),
             'entries_found': filter_total_found,
             'entries_total': self.rotkehlchen.data.db.get_entries_count('eth2_daily_staking_details'),  # noqa: E501
         }
