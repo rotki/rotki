@@ -1,5 +1,5 @@
 <template>
-  <tab-navigation :tab-contents="tabs" data-cy="accounts-balances" />
+  <tab-navigation :tab-contents="tabs" data-cy="accounts-balances-tab" />
 </template>
 
 <script lang="ts">

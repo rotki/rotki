@@ -7,11 +7,12 @@
   </progress-screen>
   <div v-else>
     <open-trades v-if="preview" :data="openTrades" />
-    <closed-trades
-      class="mt-8"
-      @fetch="fetchTradesHandler"
-      @update:payload="onFilterUpdate($event)"
-    />
+    <div class="mt-8">
+      <closed-trades
+        @fetch="fetchTradesHandler"
+        @update:payload="onFilterUpdate($event)"
+      />
+    </div>
   </div>
 </template>
 
@@ -21,7 +22,6 @@ import {
   defineComponent,
   onBeforeMount,
   onUnmounted,
-  Ref,
   ref
 } from '@vue/composition-api';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -42,8 +42,6 @@ export default defineComponent({
     OpenTrades
   },
   setup() {
-    const selected: Ref<string[]> = ref([]);
-
     const { itemsPerPage, refreshPeriod } = setupSettings();
     const { fetchTrades } = setupTrades();
     const { fetchAssociatedLocations } = setupAssociatedLocations();
@@ -77,7 +75,6 @@ export default defineComponent({
 
     onBeforeMount(async () => {
       fetchAssociatedLocations().then();
-
       fetchTradesHandler().then();
 
       const period = refreshPeriod.value * 60 * 1000;
@@ -102,7 +99,6 @@ export default defineComponent({
       preview,
       openTrades,
       fetchTradesHandler,
-      selected,
       onFilterUpdate,
       loading: shouldShowLoadingScreen(Section.TRADES)
     };

@@ -13,6 +13,6 @@ export class AccountBalancesPage {
   visit() {
     cy.get('.v-app-bar__nav-icon').click();
     cy.get('.navigation__accounts-balances').click();
-    cy.get('[data-cy=accounts-balances]').should('be.visible');
+    cy.get('[data-cy=accounts-balances-tab]').should('be.visible');
   }
 }

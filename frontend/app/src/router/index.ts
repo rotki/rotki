@@ -49,23 +49,28 @@ export default new Router({
           path: '',
           name: 'trades',
           redirect: 'trades',
-          component: () => import('../views/history/TradeHistory.vue')
+          component: () => import('../views/history/trades/TradeHistory.vue')
         },
         {
           path: 'trades',
-          component: () => import('../views/history/TradeHistory.vue')
+          component: () => import('../views/history/trades/TradeHistory.vue')
         },
         {
           path: 'deposits-withdrawals',
-          component: () => import('../views/history/DepositsWithdrawals.vue')
+          component: () =>
+            import(
+              '../views/history/deposits-withdrawals/DepositsWithdrawals.vue'
+            )
         },
         {
           path: 'transactions',
-          component: () => import('../views/history/Transactions.vue')
+          component: () =>
+            import('../views/history/transactions/Transactions.vue')
         },
         {
           path: Routes.HISTORY_LEDGER_ACTIONS,
-          component: () => import('../views/history/LedgerActions.vue')
+          component: () =>
+            import('../views/history/ledger-actions/LedgerActions.vue')
         },
         {
           path: Routes.HISTORY_GITCOIN,

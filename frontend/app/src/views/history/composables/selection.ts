@@ -3,6 +3,8 @@ import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import * as logger from 'loglevel';
 
+type IdType = string | number;
+
 type GetId<T> = (item: T) => string | undefined;
 export const setupSelectionMode = function <T>(
   data: Ref<Array<T>>,
@@ -10,19 +12,20 @@ export const setupSelectionMode = function <T>(
 ) {
   const selected = ref<string[]>([]);
 
-  const isSelected = (id: string) => {
-    return selected.value.includes(id);
+  const isSelected = (id: IdType) => {
+    return selected.value.includes(id.toString());
   };
 
-  const selectionChanged = (id: string, select: boolean) => {
+  const selectionChanged = (id: IdType, select: boolean) => {
+    const idString = id.toString();
     const selection = [...selected.value];
     if (!select) {
-      const index = selection.indexOf(id);
+      const index = selection.indexOf(idString);
       if (index >= 0) {
         selection.splice(index, 1);
       }
-    } else if (id && !selection.includes(id)) {
-      selection.push(id);
+    } else if (idString && !selection.includes(idString)) {
+      selection.push(idString);
     }
     selected.value = selection;
   };
@@ -32,13 +35,14 @@ export const setupSelectionMode = function <T>(
     if (selectAll) {
       for (const item of data.value) {
         const id = getId(item);
-        if (!id || selection.includes(id)) {
+        const idString = id?.toString() ?? '';
+        if (!idString || selection.includes(idString)) {
           logger.warn(
             'A problematic item has been detected, possible duplicate id',
             item
           );
         } else {
-          selection.push(id);
+          selection.push(idString);
         }
       }
     }

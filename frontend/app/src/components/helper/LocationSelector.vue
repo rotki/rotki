@@ -1,6 +1,7 @@
 <template>
   <v-autocomplete
     v-bind="$attrs"
+    data-cy="location-input"
     :value="value"
     :disabled="pending"
     :items="locations"
