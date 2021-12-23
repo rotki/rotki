@@ -1,6 +1,4 @@
-import binascii
 import operator
-import os
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -8,6 +6,7 @@ from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, Timestamp
@@ -320,7 +319,7 @@ HISTORY_EVENT_DB_TUPLE = Tuple[
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class HistoryEvent:
+class HistoryBaseEntry:
     event_identifier: str  # identifier shared between related events
     sequence_index: int  # When this transaction was executed relative to other related events
     timestamp: Timestamp
@@ -330,7 +329,6 @@ class HistoryEvent:
     notes: Optional[str]
     event_type: HistoryEventType
     event_subtype: Optional[HistoryEventSubType]
-    identifier: str = ''
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE:
         event_subtype = None
@@ -350,12 +348,11 @@ class HistoryEvent:
         )
 
     @classmethod
-    def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE) -> 'HistoryEvent':
+    def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE) -> 'HistoryBaseEntry':
         event_subtype = None
         if entry[11] is not None:
             event_subtype = HistoryEventSubType.deserialize_from_db(entry[11])
-        return HistoryEvent(
-            identifier=entry[0],
+        return HistoryBaseEntry(
             event_identifier=entry[1],
             sequence_index=entry[2],
             timestamp=Timestamp(entry[3]),
@@ -373,9 +370,18 @@ class HistoryEvent:
             event_subtype=event_subtype,
         )
 
-    def __post_init__(self) -> None:
-        if not hasattr(self, 'identifier') or self.identifier == '':
-            """The identifier is unique and we create it randomly at initialization."""
-            # We use this method for creating the identifier as is random enough
-            # and faster than uuid
-            self.identifier = binascii.hexlify(os.urandom(8)).decode('utf-8')
+    @property
+    def identifier(self) -> str:
+        location_label = self.location_label if self.location_label is not None else ''
+        event_subtype = self.event_subtype if self.event_subtype is not None else ''
+        hashable = (
+            str(self.location) +
+            str(self.timestamp) +
+            self.event_identifier +
+            str(self.sequence_index) +
+            location_label +
+            str(self.amount) +
+            str(self.event_type) +
+            str(event_subtype)
+        )
+        return sha3(hashable.encode()).hex()

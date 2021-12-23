@@ -21,7 +21,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import (
     AssetBalance,
     Balance,
-    HistoryEvent,
+    HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
 )
@@ -34,6 +34,7 @@ from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.errors import (
     DeserializationError,
+    InputError,
     RemoteError,
     UnknownAsset,
     UnprocessableTradePair,
@@ -130,10 +131,10 @@ def history_event_from_kraken(
     events: List[Dict[str, Any]],
     name: str,
     msg_aggregator: MessagesAggregator,
-) -> Tuple[List[HistoryEvent], bool]:
+) -> Tuple[List[HistoryBaseEntry], bool]:
     """
     This function gets raw data from kraken and creates a list of related history events
-    to be used in the app. It returns a list of events and a boolean in case that a unknown
+    to be used in the app. It returns a list of events and a boolean in the case that an unknown
     type is found.
     """
     group_events = []
@@ -170,7 +171,7 @@ def history_event_from_kraken(
                 )
             fee = deserialize_asset_amount(raw_event['fee'])
 
-            group_events.append(HistoryEvent(
+            group_events.append(HistoryBaseEntry(
                 event_identifier=identifier,
                 sequence_index=idx,
                 timestamp=timestamp,
@@ -188,7 +189,7 @@ def history_event_from_kraken(
                 event_subtype=event_subtype,
             ))
             if fee != ZERO:
-                group_events.append(HistoryEvent(
+                group_events.append(HistoryBaseEntry(
                     event_identifier=identifier,
                     sequence_index=len(events),
                     timestamp=timestamp,
@@ -676,7 +677,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         Query kraken events from database and create trades from them. May raise:
         - RemoteError if the kraken pairs couldn't be queried
         """
-        self.query_kraken_ledger_actions()
+        self.query_kraken_ledger_actions(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -716,7 +717,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
-        self.query_kraken_ledger_actions()
+        self.query_kraken_ledger_actions(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -801,12 +802,15 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[LedgerAction]:
         return []  # noop for kraken
 
-    def query_pairs(self) -> None:
-        self.pairs = set(self.api_query('AssetPairs').keys())
+    def query_pairs_if_needed(self) -> None:
+        if len(self.pairs) == 0:
+            self.pairs = set(self.api_query('AssetPairs').keys())
 
     def kraken_asset_to_pair(self, asset1: Asset, asset2: Asset) -> Optional[str]:
         """Given a pair of assets find the kraken pair that has this two assets as
-        base and quote"""
+        base and quote.
+        Precondition: It requires that the self.pairs list is populated to properly work.
+        """
         asset1_symbol, asset2_symbol = asset1.symbol, asset2.symbol
         asset1_kraken_tr = WORLD_TO_KRAKEN.get(asset1_symbol, asset1_symbol)
         asset2_kraken_tr = WORLD_TO_KRAKEN.get(asset2_symbol, asset2_symbol)
@@ -829,7 +833,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
     def process_kraken_trades(
         self,
-        raw_data: List[HistoryEvent],
+        raw_data: List[HistoryBaseEntry],
     ) -> List[Trade]:
         """
         Given a list of history events we process them to create Trade objects. The valid
@@ -845,9 +849,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         May raise:
         - RemoteError if the paris couldn't be correctly queried
         """
-        if len(self.pairs) == 0:
-            self.query_pairs()
-
+        self.query_pairs_if_needed()
         trades = []
         get_attr = operator.attrgetter('event_identifier')
         # Create a list of lists where each sublist has the events for the same event identifier
@@ -868,23 +870,25 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             if is_spend_receive and len(trade_parts) < 2:
                 continue
+
             if len(trade_assets) != 2:
                 self.msg_aggregator.add_error(
-                    f'Found trade event {event_id} with more '
+                    f'Found kraken trade event {event_id} with more '
                     f'than two assets involved. Skipping...',
                 )
                 continue
+
             pair = self.kraken_asset_to_pair(trade_assets[0], trade_assets[1])
             if pair is None:
                 self.msg_aggregator.add_error(
-                    f'Couldnt find pair for assets {trade_assets} and '
+                    f'Couldnt find Kraken pair for assets {trade_assets} and '
                     f'trade id {event_id}. Skipping trade',
                 )
                 continue
 
             base_asset, quote_asset = kraken_to_world_pair(pair)
             timestamp = trade_parts[0].timestamp
-            # Now in the parts in which we break the vents we try to find the
+            # Now in the parts in which we break the events we try to find the
             # base/quote parts and the fee. It might be possible that kfee was used
             # so we also search for it
             base_trade, quote_trade, fee_part, kfee_part = None, None, None, None
@@ -959,24 +963,16 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return trades
 
     @protect_with_lock()
-    def query_kraken_ledger_actions(self) -> None:
+    def query_kraken_ledger_actions(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
         """
         Query Kraken's ledger to retrieve events and transform them to our internal representation
         of history events.
         """
-        range_query_name = f'{self.location}_history_events_{self.name}'
-        last_query = self.db.get_used_query_range(range_query_name)
-        now = ts_now()
-        from_ts = Timestamp(0)
-        if last_query is not None:
-            last_query_ts = last_query[1]
-            from_ts = Timestamp(last_query_ts + 1)
-
         response, _ = self.query_until_finished(
             endpoint='Ledgers',
             keyname='ledger',
-            start_ts=from_ts,
-            end_ts=now,
+            start_ts=start_ts,
+            end_ts=end_ts,
             extra_dict={},
         )
         # Group related events
@@ -998,7 +994,11 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 log.error(f'Failed to read timestamp for {events}')
                 continue
-            group_events, found_unknown_event = history_event_from_kraken(events, self.name, self.msg_aggregator)  # noqa: E501
+            group_events, found_unknown_event = history_event_from_kraken(
+                events=events,
+                name=self.name,
+                msg_aggregator=self.msg_aggregator,
+            )
             if found_unknown_event:
                 for event in group_events:
                     event.event_type = HistoryEventType.UNKNOWN
@@ -1007,12 +1007,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         if len(new_events) != 0:
             try:
                 self.db.add_history_events(new_events)
-                self.db.update_used_query_range(
-                    name=range_query_name,
-                    start_ts=from_ts,
-                    end_ts=now,
-                )
-            except ValueError as e:
+            except InputError as e:
                 self.msg_aggregator.add_error(
-                    f'Failed to save kraken events from {from_ts} to {now} in database. {str(e)}',
+                    f'Failed to save kraken events from {start_ts} to {end_ts} '
+                    f'in database. {str(e)}',
                 )

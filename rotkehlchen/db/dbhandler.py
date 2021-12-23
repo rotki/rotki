@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union,
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import ActionType, BalanceType, HistoryEvent
+from rotkehlchen.accounting.structures import ActionType, BalanceType, HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -3431,11 +3431,13 @@ class DBHandler:
             locations.add(Location.BALANCER)
         return locations
 
-    def add_history_events(self, history: List[HistoryEvent]) -> None:
+    def add_history_events(self, history: List[HistoryBaseEntry]) -> None:
         """Insert a list of history events in database. May raise:
-        - ValueError if the events couldn't be stored in database
+        - InputError if the events couldn't be stored in database
         """
-        query_str = 'INSERT INTO history_events(identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'  # noqa: E501
+        query_str = """INSERT INTO history_events(identifier, event_identifier, sequence_index,
+        timestamp,location, location_label, asset, amount, usd_value, notes,
+        type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
         cursor = self.conn.cursor()
         events = []
         for event in history:
@@ -3449,36 +3451,25 @@ class DBHandler:
             cursor.executemany(query_str, events)
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             log.error(f'Failed to save history events: {history}')
-            raise ValueError(f'Failed to save history events in database. {str(e)}') from e
+            raise InputError(f'Failed to save history events in database. {str(e)}') from e
 
         self.update_last_write()
 
     def delete_history_events(self, location: Location) -> None:
         """
         Deletes history entries following the criteria of the filter_query. May raise:
-        - ValueError if the delete of the history events or the used_query_ranges fails
         - DeserializationError if the location is not valid
         """
         # TODO: In the future this method should allow for more granularity in the delete query
         query = 'DELETE FROM history_events WHERE location=?'
-        bindings = [location.serialize_for_db()]
         cursor = self.conn.cursor()
-        try:
-            cursor.execute(query, bindings)
-            cursor.execute(
-                f'DELETE FROM used_query_ranges WHERE name LIKE "{location}_history_events_%"',
-            )
-        except sqlcipher.OperationalError as e:    # pylint: disable=no-member
-            log.debug(
-                f'Failed to delete history events with params {bindings} and '
-                f'query {query}',
-            )
-            raise ValueError(
-                'Failed to delete history events. Read the logs for more information.',
-            ) from e
+        cursor.execute(query, (location.serialize_for_db(),))
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{location}_history_events_%"',
+        )
         self.update_last_write()
 
-    def get_history_events(self, filter_query: HistoryEventFilterQuery) -> List[HistoryEvent]:
+    def get_history_events(self, filter_query: HistoryEventFilterQuery) -> List[HistoryBaseEntry]:
         """
         Get history events using the provided query filter. May raise:
         - DeserializationError
@@ -3490,7 +3481,7 @@ class DBHandler:
         result = []
         for entry in cursor:
             try:
-                result.append(HistoryEvent.deserialize_from_db(entry))
+                result.append(HistoryBaseEntry.deserialize_from_db(entry))
             except DeserializationError as e:
                 log.debug(f'Failed to deserialize history event {entry}')
                 self.msg_aggregator.add_error(

@@ -1057,7 +1057,7 @@ class TradesQuerySchema(
             to_ts=data['to_timestamp'],
             base_asset=data['base_asset'],
             quote_asset=data['quote_asset'],
-            trade_type=data['trade_type'],
+            trade_type=[data['trade_type']] if data['trade_type'] is not None else None,
             location=data['location'],
         )
         return {
@@ -1114,7 +1114,7 @@ class AssetMovementsQuerySchema(
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
             asset=data['asset'],
-            action=data['action'],
+            action=[data['action']] if data['action'] is not None else None,
             location=data['location'],
         )
         return {
@@ -1171,7 +1171,7 @@ class LedgerActionsQuerySchema(
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
             asset=data['asset'],
-            action_type=data['type'],
+            action_type=[data['type']] if data['type'] is not None else None,
             location=data['location'],
         )
         return {

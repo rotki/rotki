@@ -334,22 +334,6 @@ class DBAssetFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBTypeFilter(DBFilter):
-    """A filter for type/category/historyEvent enums"""
-    filter_type: Union[
-        TradeType,
-        AssetMovementCategory,
-        LedgerActionType,
-        HistoryEventType,
-        HistoryEventSubType,
-    ]
-    type_key: Literal['type', 'subtype', 'category']
-
-    def prepare(self) -> Tuple[List[str], List[Any]]:
-        return [f'{self.type_key}=?'], [self.filter_type.serialize_for_db()]
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEth2ValidatorIndicesFilter(DBFilter):
     """A filter for Eth2 validator indices"""
     validators: Optional[List[int]]
@@ -360,21 +344,25 @@ class DBEth2ValidatorIndicesFilter(DBFilter):
         questionmarks = '?' * len(self.validators)
         return [f'validator_index IN ({",".join(questionmarks)})'], self.validators
 
-class DBTypeFilterInList(DBFilter):
-    """A filter for type/category/historyEvent enums"""
-    type_key: Literal['type', 'subtype', 'category']
-    values: Union[
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBTypeFilter(DBFilter):
+    """A filter for type/category/HistoryBaseEntry enums"""
+    filter_types: Union[
         List[TradeType],
         List[AssetMovementCategory],
         List[LedgerActionType],
         List[HistoryEventType],
         List[HistoryEventSubType],
     ]
+    type_key: Literal['type', 'subtype', 'category']
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
+        if len(self.filter_types) == 1:
+            return [f'{self.type_key}=?'], [self.filter_types[0].serialize_for_db()]
         return (
-            [f'{self.type_key} in ({", ".join(["?"] * len(self.values))})'],
-            [entry.serialize_for_db() for entry in self.values],
+            [f'{self.type_key} in ({", ".join(["?"] * len(self.filter_types))})'],
+            [entry.serialize_for_db() for entry in self.filter_types],
         )
 
 
@@ -402,7 +390,7 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
             to_ts: Optional[Timestamp] = None,
             base_asset: Optional[Asset] = None,
             quote_asset: Optional[Asset] = None,
-            trade_type: Optional[TradeType] = None,
+            trade_type: Optional[List[TradeType]] = None,
             location: Optional[Location] = None,
     ) -> 'TradesFilterQuery':
         filter_query = cls.create(
@@ -419,7 +407,7 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
         if quote_asset is not None:
             filters.append(DBAssetFilter(and_op=True, asset=quote_asset, asset_key='quote_asset'))
         if trade_type is not None:
-            filters.append(DBTypeFilter(and_op=True, filter_type=trade_type, type_key='type'))
+            filters.append(DBTypeFilter(and_op=True, filter_types=trade_type, type_key='type'))
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
@@ -448,7 +436,7 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             asset: Optional[Asset] = None,
-            action: Optional[AssetMovementCategory] = None,
+            action: Optional[List[AssetMovementCategory]] = None,
             location: Optional[Location] = None,
     ) -> 'AssetMovementsFilterQuery':
         filter_query = cls.create(
@@ -463,7 +451,7 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
         if asset is not None:
             filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
         if action is not None:
-            filters.append(DBTypeFilter(and_op=True, filter_type=action, type_key='category'))
+            filters.append(DBTypeFilter(and_op=True, filter_types=action, type_key='category'))
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
@@ -492,7 +480,7 @@ class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoc
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             asset: Optional[Asset] = None,
-            action_type: Optional[LedgerActionType] = None,
+            action_type: Optional[List[LedgerActionType]] = None,
             location: Optional[Location] = None,
     ) -> 'LedgerActionsFilterQuery':
         filter_query = cls.create(
@@ -507,7 +495,7 @@ class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoc
         if asset is not None:
             filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
         if action_type is not None:
-            filters.append(DBTypeFilter(and_op=True, filter_type=action_type, type_key='type'))
+            filters.append(DBTypeFilter(and_op=True, filter_types=action_type, type_key='type'))
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
@@ -656,10 +644,10 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
         if asset is not None:
             filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
         if event_type is not None:
-            filters.append(DBTypeFilterInList(and_op=True, type_key='type', values=event_type))
+            filters.append(DBTypeFilter(and_op=True, type_key='type', filter_types=event_type))
         if event_subtype is not None:
             filters.append(
-                DBTypeFilterInList(and_op=True, type_key='subtype', values=event_subtype),
+                DBTypeFilter(and_op=True, type_key='subtype', filter_types=event_subtype),
             )
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
