@@ -1,19 +1,17 @@
 import { Ref } from '@vue/composition-api';
 import i18n from '@/i18n';
+import { EntryMeta } from '@/services/history/types';
 import { HistoryActions } from '@/store/history/consts';
 import { IgnoreActionPayload, IgnoreActionType } from '@/store/history/types';
 import store from '@/store/store';
 import { ActionStatus, Message } from '@/store/types';
 import { uniqueStrings } from '@/utils/data';
 
-type IgnoredInAccounting = {
-  ignoredInAccounting: boolean;
-};
-
-export const setupIgnore = <T extends IgnoredInAccounting>(
+export const setupIgnore = <T extends EntryMeta>(
   type: IgnoreActionType,
   selected: Ref<string[]>,
   items: Ref<T[]>,
+  refresh: () => any,
   getIdentifier: (item: T) => string
 ) => {
   const setMessage = (message: Message) => {
@@ -67,6 +65,7 @@ export const setupIgnore = <T extends IgnoredInAccounting>(
     }
 
     if (status.success) {
+      refresh();
       selected.value = [];
     }
   };

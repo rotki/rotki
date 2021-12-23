@@ -17,6 +17,14 @@ export const setupSettings = () => {
     () => store.getters['settings/dateInputFormat']
   );
 
+  const itemsPerPage = computed<number>(
+    () => store.state.settings!.itemsPerPage
+  );
+
+  const refreshPeriod = computed<number>(
+    () => store.state.settings!.refreshPeriod
+  );
+
   const updateSetting = async (
     settings: FrontendSettingsPayload
   ): Promise<void> => {
@@ -26,6 +34,8 @@ export const setupSettings = () => {
   return {
     dateInputFormat,
     dashboardTablesVisibleColumns,
+    itemsPerPage,
+    refreshPeriod,
     updateSetting
   };
 };

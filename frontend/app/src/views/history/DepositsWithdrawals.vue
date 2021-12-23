@@ -50,11 +50,20 @@ export default defineComponent({
       'assetMovementsLimit'
     ])
   },
-  async mounted() {
+  async created() {
+    const { fetchAssociatedLocations } = this as {
+      fetchAssociatedLocations: () => Promise<void>;
+    };
+
+    await fetchAssociatedLocations();
     await this.fetch(FETCH_FROM_SOURCE);
   },
   methods: {
-    ...mapActions('history', [HistoryActions.FETCH_MOVEMENTS]),
+    ...mapActions('history', [
+      HistoryActions.FETCH_MOVEMENTS,
+      HistoryActions.FETCH_ASSOCIATED_LOCATIONS
+    ]),
+
     async refresh() {
       await this.fetch(FETCH_REFRESH);
     },

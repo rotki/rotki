@@ -1,10 +1,9 @@
 import { Balance, BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { z } from 'zod';
-import { EXTERNAL_EXCHANGES, SUPPORTED_TRADE_LOCATIONS } from '@/data/defaults';
+import { EXTERNAL_EXCHANGES } from '@/data/defaults';
 import { TradeLocation } from '@/services/history/types';
 
-export type SupportedTradeLocation = typeof SUPPORTED_TRADE_LOCATIONS[number];
 export type SupportedExternalExchanges = typeof EXTERNAL_EXCHANGES[number];
 
 export enum BalanceType {

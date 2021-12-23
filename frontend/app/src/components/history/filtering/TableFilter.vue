@@ -90,7 +90,6 @@ export default defineComponent({
 
     const onSelectionUpdate = (pairs: string[]) => {
       updateMatches(pairs);
-      selection.value = pairs;
     };
 
     const appendToSearch = (key: string) => {
@@ -105,12 +104,20 @@ export default defineComponent({
 
     function updateMatches(pairs: string[]) {
       const matched: Partial<MatchedKeyword<any>> = {};
+      const validPairs: string[] = [];
       for (const entry of pairs) {
         const [key, keyword] = splitSearch(entry);
         const matcher = matcherForKey(key);
         assert(matcher);
-        matched[matcher.key as string] = keyword;
+
+        if (matcher.validate(keyword)) {
+          validPairs.push(entry);
+          const valueKey = (matcher.keyValue ?? matcher.key) as string;
+          matched[valueKey] = matcher.transformer?.(keyword) ?? keyword;
+        }
       }
+
+      selection.value = validPairs;
 
       emit('update:matches', matched);
     }
@@ -128,9 +135,7 @@ export default defineComponent({
         newSelection.push(filter);
       }
 
-      selection.value = newSelection;
-
-      updateMatches(selection.value);
+      updateMatches(newSelection);
       search.value = '';
     };
 

@@ -2,38 +2,29 @@ import { BigNumber } from '@rotki/common';
 import { IgnoredActions } from '@/services/history/const';
 import {
   AssetMovement,
+  EntryMeta,
+  EthTransaction,
   Trade,
-  TradeLocation,
-  Transactions
+  TradeLocation
 } from '@/services/history/types';
 import { FETCH_SOURCE } from '@/store/history/consts';
 import { Nullable } from '@/types';
+import { Collection } from '@/types/collection';
 import { LedgerActionType } from '@/types/ledger-actions';
 import { TaskMeta } from '@/types/task';
 
-export interface HistoricData<T> {
-  readonly limit: number;
-  readonly found: number;
-  readonly data: T[];
-}
-
-type EntryMeta = { readonly ignoredInAccounting: boolean };
-
-export type AssetMovementEntry = AssetMovement & EntryMeta;
 export type TradeEntry = Trade & EntryMeta;
+export type AssetMovementEntry = AssetMovement & EntryMeta;
 export type LedgerActionEntry = LedgerAction & EntryMeta;
-
-export interface Trades extends HistoricData<TradeEntry> {}
-
-export interface AssetMovements extends HistoricData<AssetMovementEntry> {}
-export interface LedgerActions extends HistoricData<LedgerActionEntry> {}
+export type EthTransactionEntry = EthTransaction & EntryMeta;
 
 export interface HistoryState {
   ignored: IgnoredActions;
-  ledgerActions: LedgerActions;
-  trades: Trades;
-  assetMovements: AssetMovements;
-  transactions: Transactions;
+  associatedLocations: TradeLocation[];
+  ledgerActions: Collection<LedgerActionEntry>;
+  trades: Collection<TradeEntry>;
+  assetMovements: Collection<AssetMovementEntry>;
+  transactions: Collection<EthTransactionEntry>;
 }
 
 export interface LocationRequestMeta extends TaskMeta {
@@ -55,11 +46,12 @@ export interface LedgerAction {
 export type UnsavedAction = Omit<LedgerAction, 'identifier'>;
 
 export enum IgnoreActionType {
-  MOVEMENTS = 'asset movement',
   TRADES = 'trade',
-  LEDGER_ACTIONS = 'ledger action',
-  ETH_TRANSACTIONS = 'ethereum transaction'
+  MOVEMENTS = 'asset movement',
+  ETH_TRANSACTIONS = 'ethereum transaction',
+  LEDGER_ACTIONS = 'ledger action'
 }
+
 export type IgnoreActionPayload = {
   readonly actionIds: string[];
   readonly type: IgnoreActionType;

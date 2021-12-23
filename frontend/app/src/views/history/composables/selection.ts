@@ -9,7 +9,25 @@ export const setupSelectionMode = function <T>(
   getId: GetId<T>
 ) {
   const selected = ref<string[]>([]);
-  const setSelected = (selectAll: boolean) => {
+
+  const isSelected = (id: string) => {
+    return selected.value.includes(id);
+  };
+
+  const selectionChanged = (id: string, select: boolean) => {
+    const selection = [...selected.value];
+    if (!select) {
+      const index = selection.indexOf(id);
+      if (index >= 0) {
+        selection.splice(index, 1);
+      }
+    } else if (id && !selection.includes(id)) {
+      selection.push(id);
+    }
+    selected.value = selection;
+  };
+
+  const setAllSelected = (selectAll: boolean) => {
     const selection: string[] = [];
     if (selectAll) {
       for (const item of data.value) {
@@ -27,20 +45,7 @@ export const setupSelectionMode = function <T>(
     selected.value = selection;
   };
 
-  const selectionChanged = (id: string, select: boolean) => {
-    const selection = [...selected.value];
-    if (!select) {
-      const index = selection.indexOf(id);
-      if (index >= 0) {
-        selection.splice(index, 1);
-      }
-    } else if (id && !selection.includes(id)) {
-      selection.push(id);
-    }
-    selected.value = selection;
-  };
-
-  const allSelected = computed(() => {
+  const isAllSelected = computed(() => {
     const strings = data.value.map(getId);
     return (
       strings.length > 0 && isEqual(sortBy(strings), sortBy(selected.value))
@@ -49,8 +54,9 @@ export const setupSelectionMode = function <T>(
 
   return {
     selected,
-    setSelected,
+    isSelected,
     selectionChanged,
-    allSelected
+    setAllSelected,
+    isAllSelected
   };
 };

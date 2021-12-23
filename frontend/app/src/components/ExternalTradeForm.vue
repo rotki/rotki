@@ -299,6 +299,9 @@ export default class ExternalTradeForm extends Vue {
   @Emit()
   input(_valid: boolean) {}
 
+  @Emit()
+  refresh() {}
+
   errorMessages: {
     [field: string]: string[];
   } = {};
@@ -524,6 +527,7 @@ export default class ExternalTradeForm extends Vue {
       : await this.editExternalTrade({ ...tradePayload, tradeId: this.id });
 
     if (success) {
+      this.refresh();
       this.reset();
       return true;
     }

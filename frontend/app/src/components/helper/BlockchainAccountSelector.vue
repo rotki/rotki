@@ -55,6 +55,7 @@
             class="
               blockchain-account-selector__list__item
               d-flex
+              align-center
               justify-space-between
               flex-grow-1
             "

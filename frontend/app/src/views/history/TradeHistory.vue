@@ -7,101 +7,105 @@
   </progress-screen>
   <div v-else>
     <open-trades v-if="preview" :data="openTrades" />
-    <closed-trades class="mt-8" :data="closedTrades" @refresh="refresh" />
+    <closed-trades
+      class="mt-8"
+      @fetch="fetchTradesHandler"
+      @update:payload="onFilterUpdate($event)"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapState } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  onBeforeMount,
+  onUnmounted,
+  Ref,
+  ref
+} from '@vue/composition-api';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import OpenTrades from '@/components/history/OpenTrades.vue';
-import StatusMixin from '@/mixins/status-mixin';
-import { TradeLocation } from '@/services/history/types';
+import { setupStatusChecking } from '@/composables/common';
+import { setupAssociatedLocations, setupTrades } from '@/composables/history';
+import { setupSettings } from '@/composables/settings';
+import { TradeRequestPayload } from '@/services/history/types';
 import { Section } from '@/store/const';
-import {
-  FETCH_FROM_SOURCE,
-  FETCH_REFRESH,
-  HistoryActions
-} from '@/store/history/consts';
-import { FetchSource, TradeEntry } from '@/store/history/types';
-import { REFRESH_PERIOD, RefreshPeriod } from '@/types/frontend-settings';
+import { TradeEntry } from '@/store/history/types';
 
-@Component({
+export default defineComponent({
+  name: 'Trades',
   components: {
     ProgressScreen,
     ClosedTrades,
     OpenTrades
   },
-  computed: {
-    ...mapGetters('history', ['trades']),
-    ...mapState('settings', [REFRESH_PERIOD])
-  },
-  methods: {
-    ...mapActions('history', [HistoryActions.FETCH_TRADES]),
-    ...mapActions('defi', ['fetchUniswapTrades', 'fetchBalancerTrades']),
-    ...mapActions('defi/sushiswap', { fetchSushiswapTrades: 'fetchTrades' })
-  }
-})
-export default class TradeHistory extends Mixins(StatusMixin) {
-  selectedLocation: TradeLocation | null = null;
-  [HistoryActions.FETCH_TRADES]!: (payload: FetchSource) => Promise<void>;
-  fetchUniswapTrades!: (refresh: boolean) => Promise<void>;
-  fetchBalancerTrades!: (refresh: boolean) => Promise<void>;
-  fetchSushiswapTrades!: (refresh: boolean) => Promise<void>;
-  [REFRESH_PERIOD]!: RefreshPeriod;
-  trades!: TradeEntry[];
-  openTrades: TradeEntry[] = [];
-  section = Section.TRADES;
-  refreshInterval: any;
+  setup() {
+    const selected: Ref<string[]> = ref([]);
 
-  get preview(): boolean {
-    return !!process.env.VUE_APP_TRADES_PREVIEW;
-  }
+    const { itemsPerPage, refreshPeriod } = setupSettings();
+    const { fetchTrades } = setupTrades();
+    const { fetchAssociatedLocations } = setupAssociatedLocations();
 
-  get closedTrades(): TradeEntry[] {
-    if (!this.selectedLocation) {
-      return this.trades;
-    }
+    const preview = computed<boolean>(() => {
+      return !!process.env.VUE_APP_TRADES_PREVIEW;
+    });
 
-    return this.trades.filter(
-      trade => trade.location === this.selectedLocation
-    );
-  }
+    const openTrades: TradeEntry[] = [];
 
-  created() {
-    const period = this[REFRESH_PERIOD] * 60 * 1000;
-    if (period > 0) {
-      this.refreshInterval = setInterval(async () => this.refresh(), period);
-    }
-  }
+    const payload = ref<TradeRequestPayload>({
+      limit: itemsPerPage.value,
+      offset: 0,
+      orderByAttribute: 'time',
+      ascending: false
+    });
 
-  destroyed() {
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-    }
-  }
+    const fetchTradesHandler = async (refresh: boolean = false) => {
+      await fetchTrades({
+        ...payload.value,
+        onlyCache: !refresh
+      });
+    };
 
-  async mounted() {
-    await this.load();
-  }
+    const onFilterUpdate = (newPayload: TradeRequestPayload) => {
+      payload.value = newPayload;
+      fetchTradesHandler().then();
+    };
 
-  private async load() {
-    await this.fetch(FETCH_FROM_SOURCE);
-  }
+    const refreshInterval = ref<any>(null);
 
-  private async refresh() {
-    await this.fetch(FETCH_REFRESH);
-  }
+    onBeforeMount(async () => {
+      fetchAssociatedLocations().then();
 
-  private async fetch(source: FetchSource) {
-    await Promise.all([
-      this.fetchTrades(source),
-      this.fetchUniswapTrades(true),
-      this.fetchBalancerTrades(true),
-      this.fetchSushiswapTrades(true)
-    ]);
+      fetchTradesHandler().then();
+
+      const period = refreshPeriod.value * 60 * 1000;
+
+      if (period > 0) {
+        refreshInterval.value = setInterval(
+          async () => fetchTradesHandler(true),
+          period
+        );
+      }
+    });
+
+    onUnmounted(() => {
+      if (refreshInterval.value) {
+        clearInterval(refreshInterval.value);
+      }
+    });
+
+    const { shouldShowLoadingScreen } = setupStatusChecking();
+
+    return {
+      preview,
+      openTrades,
+      fetchTradesHandler,
+      selected,
+      onFilterUpdate,
+      loading: shouldShowLoadingScreen(Section.TRADES)
+    };
   }
-}
+});
 </script>

@@ -1636,12 +1636,6 @@
       "timestamp": "Date",
       "ignored": "Ignored"
     },
-    "ignore": {
-      "no_actions": {
-        "description": "All the selected actions are already ignored | All the selected actions are already included",
-        "title": "No actions to ignore | No actions to unignore"
-      }
-    },
     "details": {
       "title": "Trade Details",
       "fee": "Fee",

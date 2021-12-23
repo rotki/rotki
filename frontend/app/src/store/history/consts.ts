@@ -2,6 +2,7 @@ import i18n from '@/i18n';
 import { LedgerActionType } from '@/types/ledger-actions';
 
 export enum HistoryActions {
+  FETCH_ASSOCIATED_LOCATIONS = 'fetchAssociatedLocations',
   FETCH_TRADES = 'fetchTrades',
   ADD_EXTERNAL_TRADE = 'addExternalTrade',
   FETCH_LEDGER_ACTIONS = 'fetchLedgerActions',
@@ -22,14 +23,12 @@ export enum HistoryActions {
 }
 
 export enum HistoryMutations {
+  SET_ASSOCIATED_LOCATIONS = 'setAssociatedLocations',
   ADD_LEDGER_ACTION = 'addLedgerAction',
   SET_LEDGER_ACTIONS = 'setLedgerActions',
   RESET = 'reset',
   SET_TRANSACTIONS = 'setTransactions',
   SET_MOVEMENTS = 'setMovements',
-  DELETE_TRADE = 'deleteTrade',
-  UPDATE_TRADE = 'updateTrade',
-  ADD_TRADE = 'addTrade',
   SET_TRADES = 'setTrades',
   SET_IGNORED = 'setIgnored'
 }
