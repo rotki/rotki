@@ -2,7 +2,6 @@ import logging
 import os
 import time
 from copy import deepcopy
-from shutil import copyfile
 from unittest.mock import patch
 
 import pytest
@@ -14,7 +13,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants import YEAR_IN_SECONDS
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_USD
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.db.dbhandler import DBINFO_FILENAME, DBHandler, detect_sqlcipher_version
+from rotkehlchen.db.dbhandler import DBHandler, detect_sqlcipher_version
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
@@ -57,7 +56,6 @@ from rotkehlchen.tests.utils.constants import (
     A_XMR,
     DEFAULT_TESTS_MAIN_CURRENCY,
 )
-from rotkehlchen.tests.utils.database import mock_dbhandler_update_owned_assets
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances, add_starting_nfts
 from rotkehlchen.typing import (
     ApiKey,
@@ -76,7 +74,6 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.serialization import rlk_jsondumps
 
 TABLES_AT_INIT = [
     'assets',
@@ -422,52 +419,6 @@ def test_balance_save_frequency_check(data_dir, username):
 
     last_save_ts = data.db.get_last_balance_save_time()
     assert last_save_ts == data_save_ts
-
-
-def test_upgrade_sqlcipher_v3_to_v4_without_dbinfo(user_data_dir):
-    """Test that we can upgrade from an sqlcipher v3 to v4 rotkehlchen database
-    Issue: https://github.com/rotki/rotki/issues/229
-    """
-    sqlcipher_version = detect_sqlcipher_version()
-    if sqlcipher_version != 4:
-        # nothing to test
-        return
-
-    # get the v3 database file and copy it into the user's data directory
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    copyfile(
-        os.path.join(os.path.dirname(dir_path), 'data', 'sqlcipher_v3_rotkehlchen.db'),
-        user_data_dir / 'rotkehlchen.db',
-    )
-
-    # the constructor should migrate it in-place and we should have a working DB
-    msg_aggregator = MessagesAggregator()
-    with mock_dbhandler_update_owned_assets():
-        db = DBHandler(user_data_dir, '123', msg_aggregator, None)
-        assert db.get_version() == ROTKEHLCHEN_DB_VERSION
-        del db  # explicit delete the db so update_owned_assets still runs mocked
-
-
-def test_upgrade_sqlcipher_v3_to_v4_with_dbinfo(user_data_dir):
-    sqlcipher_version = detect_sqlcipher_version()
-    if sqlcipher_version != 4:
-        # nothing to test
-        return
-
-    # get the v3 database file and copy it into the user's data directory
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    copyfile(
-        os.path.join(os.path.dirname(dir_path), 'data', 'sqlcipher_v3_rotkehlchen.db'),
-        user_data_dir / 'rotkehlchen.db',
-    )
-    dbinfo = {'sqlcipher_version': 3, 'md5_hash': '20c910c28ca42370e4a5f24d6d4a73d2'}
-    with open(os.path.join(user_data_dir, DBINFO_FILENAME), 'w') as f:
-        f.write(rlk_jsondumps(dbinfo))
-
-    # the constructor should migrate it in-place and we should have a working DB
-    msg_aggregator = MessagesAggregator()
-    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
-    assert db.get_version() == ROTKEHLCHEN_DB_VERSION
 
 
 def test_sqlcipher_detect_version():

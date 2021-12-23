@@ -1,4 +1,3 @@
-from enum import Enum
 from sqlite3 import Cursor
 from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
@@ -76,12 +75,6 @@ class Tag(NamedTuple):
 
     def serialize(self) -> Dict[str, str]:
         return self._asdict()  # pylint: disable=no-member
-
-
-class DBStartupAction(Enum):
-    NOTHING = 1
-    UPGRADE_3_4 = 2
-    STUCK_4_3 = 3
 
 
 def str_to_bool(s: str) -> bool:

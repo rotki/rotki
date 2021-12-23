@@ -5,7 +5,6 @@ import re
 import shutil
 import tempfile
 from collections import defaultdict
-from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
 
@@ -71,7 +70,6 @@ from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     BlockchainAccounts,
     DBAssetBalance,
-    DBStartupAction,
     LocationData,
     SingleDBAssetBalance,
     Tag,
@@ -122,7 +120,7 @@ from rotkehlchen.typing import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
+from rotkehlchen.utils.serialization import rlk_jsondumps
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -248,28 +246,7 @@ class DBHandler:
         self.last_write_ts: Optional[Timestamp] = None
         self.conn: sqlcipher.Connection = None  # pylint: disable=no-member
         self.conn_transient: sqlcipher.Connection = None  # pylint: disable=no-member
-        action = self.read_info_at_start()
-        if action == DBStartupAction.UPGRADE_3_4:
-            result, msg = self.upgrade_db_sqlcipher_3_to_4(password)
-            if not result:
-                log.error(
-                    'dbinfo determined we need an upgrade from sqlcipher version '
-                    '3 to version 4 but the upgrade failed.',
-                    error=msg,
-                )
-                raise AuthenticationError(msg)
-        elif action == DBStartupAction.STUCK_4_3:
-            msg = (
-                'dbinfo determined we are using sqlcipher version 3 but the '
-                'database has already been upgraded to version 4. Please find a '
-                'rotkehlchen binary that uses sqlcipher version 4 to open the '
-                'database'
-            )
-            log.error(msg)
-            raise AuthenticationError(msg)
-        else:
-            self.connect(password)
-
+        self._connect(password)
         self._run_actions_after_first_connection(password)
         if initial_settings is not None:
             self.set_settings(initial_settings)
@@ -296,7 +273,6 @@ class DBHandler:
         """Perform the actions that are needed after the first DB connection
 
         Such as:
-            - Check encryption password works
             - DB Upgrades
             - Create tables that are missing for new version
 
@@ -304,27 +280,6 @@ class DBHandler:
         - AuthenticationError if a wrong password is given or if the DB is corrupt
         - DBUpgradeError if there is a problem with DB upgrading
         """
-        # Check password is correct
-        try:
-            self.conn.executescript(PASSWORDCHECK_STATEMENT)
-        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            errstr = str(e)
-            migrated = False
-            if self.sqlcipher_version == 4:
-                migrated, errstr = self.upgrade_db_sqlcipher_3_to_4(password)
-
-            if self.sqlcipher_version != 4 or not migrated:
-                # Note this can also happen if trying to use an sqlcipher 4 version
-                # DB with sqlcipher version 3
-                log.error(
-                    f'SQLCipher version: {self.sqlcipher_version} - Error: {errstr}. '
-                    f'Wrong password while decrypting the database or not a database.',
-                )
-                del self.conn
-                raise AuthenticationError(
-                    'Wrong password or invalid/corrupt database for user',
-                ) from e
-
         # Run upgrades if needed
         fresh_db = DBUpgradeManager(self).run_upgrades()
         # create tables if needed (first run - or some new tables)
@@ -336,7 +291,7 @@ class DBHandler:
                 ('version', str(ROTKEHLCHEN_DB_VERSION)),
             )
         # set up transient connection
-        self.connect(password, conn_attribute='conn_transient')
+        self._connect(password, conn_attribute='conn_transient')
         # creating tables if necessary
         if hasattr(self, 'conn_transient') and self.conn_transient:
             self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
@@ -352,54 +307,6 @@ class DBHandler:
         if transient:
             return file_md5(self.user_data_dir / TRANSIENT_DB_NAME)
         return file_md5(self.user_data_dir / MAIN_DB_NAME)
-
-    def read_info_at_start(self) -> DBStartupAction:
-        """Read some metadata info at initialization
-
-        May raise:
-        - SystemPermissionError if there are permission errors when accessing the DB
-        """
-        dbinfo = None
-        action = DBStartupAction.NOTHING
-        filepath = self.user_data_dir / DBINFO_FILENAME
-
-        if not os.path.exists(filepath):
-            return action
-
-        with open(filepath, 'r') as f:
-            try:
-                dbinfo = jsonloads_dict(f.read())
-            except JSONDecodeError:
-                log.warning('dbinfo.json file is corrupt. Does not contain expected keys')
-                return action
-        current_md5_hash = self.get_md5hash()
-
-        if not dbinfo:
-            return action
-
-        if 'sqlcipher_version' not in dbinfo or 'md5_hash' not in dbinfo:
-            log.warning('dbinfo.json file is corrupt. Does not contain expected keys')
-            return action
-
-        if dbinfo['md5_hash'] != current_md5_hash:
-            log.warning(
-                'dbinfo.json contains an outdated hash. Was data changed outside the program?',
-            )
-            return action
-
-        if dbinfo['sqlcipher_version'] == 3 and self.sqlcipher_version == 3:
-            return DBStartupAction.NOTHING
-
-        if dbinfo['sqlcipher_version'] == 4 and self.sqlcipher_version == 4:
-            return DBStartupAction.NOTHING
-
-        if dbinfo['sqlcipher_version'] == 3 and self.sqlcipher_version == 4:
-            return DBStartupAction.UPGRADE_3_4
-
-        if dbinfo['sqlcipher_version'] == 4 and self.sqlcipher_version == 3:
-            return DBStartupAction.STUCK_4_3
-
-        raise ValueError('Unexpected values at dbinfo.json')
 
     def get_version(self) -> int:
         cursor = self.conn.cursor()
@@ -421,7 +328,7 @@ class DBHandler:
         )
         self.conn.commit()
 
-    def connect(
+    def _connect(
             self,
             password: str,
             conn_attribute: Literal['conn', 'conn_transient'] = 'conn',
@@ -431,6 +338,7 @@ class DBHandler:
         May raise:
         - SystemPermissionError if we are unable to open the DB file,
         probably due to permission errors
+        - AuthenticationError if the given password is not the right one for the DB
         """
         if conn_attribute == 'conn':
             fullpath = self.user_data_dir / MAIN_DB_NAME
@@ -448,10 +356,20 @@ class DBHandler:
         script = f'PRAGMA key="{password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
-        conn.executescript(script)
-        conn.execute('PRAGMA foreign_keys=ON')
-        # Optimizations for the combined trades view
-        conn.execute('PRAGMA cache_size = -32768')
+        try:
+            conn.executescript(script)
+            conn.execute('PRAGMA foreign_keys=ON')
+            # Optimizations for the combined trades view
+            # the following will fail with DatabaseError in case of wrong password.
+            # If this goes away at any point it needs to be replaced by something
+            # that checks the password is correct at this same point in the code
+            conn.execute('PRAGMA cache_size = -32768')
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            del self.conn
+            raise AuthenticationError(
+                'Wrong password or invalid/corrupt database for user',
+            ) from e
+
         setattr(self, conn_attribute, conn)
 
     def _change_password(
@@ -483,26 +401,6 @@ class DBHandler:
         )
         return result
 
-    def upgrade_db_sqlcipher_3_to_4(self, password: str) -> Tuple[bool, str]:
-        if hasattr(self, 'conn') and self.conn:
-            self.conn.close()
-            self.conn = None
-
-        self.connect(password)
-        success = True
-        msg = ''
-        self.conn.text_factory = str
-        password_for_sqlcipher = _protect_password_sqlcipher(password)
-        script = f'PRAGMA KEY="{password_for_sqlcipher}";PRAGMA cipher_migrate;'
-        try:
-            self.conn.executescript(script)
-            self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
-        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            msg = str(e)
-            success = False
-
-        return success, msg
-
     def disconnect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
         conn = getattr(self, conn_attribute, None)
         if conn:
@@ -522,6 +420,7 @@ class DBHandler:
         May raise:
         - DBUpgradeError if the rotki DB version is newer than the software or
         there is a DB upgrade and there is an error.
+        - AuthenticationError if the wrong password is given
         """
         self.disconnect()
         rdbpath = self.user_data_dir / MAIN_DB_NAME
@@ -549,7 +448,7 @@ class DBHandler:
             self.disconnect()
 
         try:
-            self.connect(password)
+            self._connect(password)
         except SystemPermissionError as e:
             raise AssertionError(
                 f'Permission error when reopening the DB. {str(e)}. Should never happen here',

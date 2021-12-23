@@ -12,7 +12,20 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
     is the one specified by the backend.
     """
     cursor = db.conn.cursor()
-    cursor.execute('DELETE FROM ignored_actions WHERE type="C";')
+    # Should exist -- but we are being extremely pedantic here
+    ignored_actions_exists = cursor.execute(
+        'SELECT count(*) FROM sqlite_master WHERE type="table" AND name="ignored_actions";',
+    ).fetchone()[0]
+    if ignored_actions_exists == 1:
+        cursor.execute('DELETE FROM ignored_actions WHERE type="C";')
+    else:
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS ignored_actions (
+        type CHAR(1) NOT NULL DEFAULT('A') REFERENCES action_type(type),
+        identifier TEXT,
+        PRIMARY KEY (type, identifier)
+        );
+        """)
     cursor.execute('DROP TABLE IF EXISTS eth2_deposits;')
     cursor.execute('DROP TABLE IF EXISTS eth2_daily_staking_details;')
     cursor.execute("""
