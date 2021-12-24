@@ -37,6 +37,7 @@
             :error-messages="errors['address']"
             :label="$t('asset_form.labels.address')"
             :disabled="saving || fetching"
+            @keydown.space.prevent
             @focus="delete errors['address']"
           />
         </v-col>
@@ -320,6 +321,12 @@ export default class AssetForm extends Vue {
 
   @Watch('address')
   async onAddressChange() {
+    const sanitizedAddress = this.sanitizeAddress(this.address);
+    if (this.address !== sanitizedAddress) {
+      this.address = sanitizedAddress;
+      return;
+    }
+
     if (
       this.dontAutoFetch ||
       !this.address.startsWith('0x') ||
@@ -524,6 +531,10 @@ export default class AssetForm extends Vue {
       ({ identifier } = await this.$api.assets.addAsset(asset));
     }
     return identifier;
+  }
+
+  private sanitizeAddress(address: string) {
+    return address.replace(/\s/g, '');
   }
 }
 </script>
