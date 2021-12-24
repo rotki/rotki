@@ -5,7 +5,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDailyStats
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
@@ -185,13 +185,19 @@ class DBEth2():
         """Gets all DB entries for validator daily stats according to the given filter"""
         cursor = self.db.conn.cursor()
         query, bindings = filter_query.prepare()
-        query = """
-            SELECT eth2_daily_staking_details.*, eth2_validators.ownership_proportion from
-            eth2_daily_staking_details LEFT JOIN eth2_validators ON
-            eth2_daily_staking_details.validator_index
-            = eth2_validators.validator_index """ + query
+        query = 'SELECT * from eth2_daily_staking_details ' + query
         results = cursor.execute(query, bindings)
-        return [ValidatorDailyStats.deserialize_from_db(x) for x in results]
+        daily_stats = [ValidatorDailyStats.deserialize_from_db(x) for x in results]
+        # Take into account the proportion of the validator owned
+        validators_ownership = {
+            validator.index: validator.ownership_proportion
+            for validator in self.get_validators()
+        }
+        for i, daily_stat in enumerate(daily_stats):
+            owned_proportion = validators_ownership.get(daily_stat.validator_index, FVal(1))
+            if owned_proportion != ONE:
+                daily_stats[i] = daily_stat._replace(pnl=daily_stat.pnl * owned_proportion)
+        return daily_stats
 
     def validator_exists(self, field: str, arg: Union[int, str]) -> bool:
         cursor = self.db.conn.cursor()
@@ -211,6 +217,14 @@ class DBEth2():
             [x.serialize_for_db() for x in validators],
         )
         self.db.update_last_write()
+
+    def edit_validator(self, validator_index: int, ownership_proportion: FVal) -> int:
+        cursor = self.db.conn.cursor()
+        cursor.execute(
+            'UPDATE eth2_validators SET ownership_proportion=? WHERE validator_index = ?',
+            (str(ownership_proportion), validator_index),
+        )
+        return cursor.rowcount
 
     def delete_validator(self, validator_index: Optional[int], public_key: Optional[str]) -> None:
         """Deletes the given validator from the DB. Due to marshmallow here at least one

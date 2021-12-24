@@ -1669,6 +1669,11 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         defi_events = []
         # Ask for details to detect any new validators
         eth2.get_details(addresses=self.queried_addresses_for_module('eth2'))
+        # Create a mapping of validator index to ownershipt proportion
+        validators_ownership = {
+            validator.index: validator.ownership_proportion
+            for validator in self.get_eth2_validators()
+        }
         # And now get all daily stats and create defi events for them
         stats, _, _, _ = eth2.get_validator_daily_stats(
             filter_query=Eth2DailyStatsFilterQuery.make(from_ts=from_timestamp, to_ts=to_timestamp),  # noqa: E501
@@ -1680,12 +1685,22 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             if stats_entry.pnl_balance.amount == ZERO:
                 continue
 
-            if stats_entry.pnl_balance.amount > ZERO:
+            # Take into account the validator ownership proportion if is not 100%
+            validator_ownership = validators_ownership.get(stats_entry.validator_index, FVal(1))
+            if validator_ownership != FVal(1):
+                pnl_balance = Balance(
+                    amount=stats_entry.pnl_balance.amount * validator_ownership,
+                    usd_value=stats_entry.pnl_balance.usd_value * validator_ownership,
+                )
+            else:
+                pnl_balance = stats_entry.pnl_balance
+
+            if pnl_balance.amount > ZERO:
                 got_asset = A_ETH
-                got_balance = stats_entry.pnl_balance
+                got_balance = pnl_balance
             else:  # negative
                 spent_asset = A_ETH
-                spent_balance = -stats_entry.pnl_balance
+                spent_balance = -pnl_balance
 
             defi_events.append(DefiEvent(
                 timestamp=stats_entry.timestamp,
@@ -1695,7 +1710,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
                 got_balance=got_balance,
                 spent_asset=spent_asset,
                 spent_balance=spent_balance,
-                pnl=[AssetBalance(asset=A_ETH, balance=stats_entry.pnl_balance)],
+                pnl=[AssetBalance(asset=A_ETH, balance=pnl_balance)],
                 count_spent_got_cost_basis=True,
             ))
 
@@ -1709,6 +1724,21 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if eth2 is None:
             raise ModuleInactive('Cant get eth2 validators since the eth2 module is not active')
         return DBEth2(self.database).get_validators()
+
+    def edit_eth2_validator(self, validator_index: int, ownership_proportion: FVal) -> None:
+        """Edit a validator to modify its ownership proportion. May raise:
+        - ModuleInactive if eht2 module is not active
+        - InputError if no row was affected
+        """
+        eth2 = self.get_module('eth2')
+        if eth2 is None:
+            raise ModuleInactive('Cant edit eth2 validators since the eth2 module is not active')
+        changes = DBEth2(self.database).edit_validator(
+            validator_index=validator_index,
+            ownership_proportion=ownership_proportion,
+        )
+        if changes != 1:
+            raise InputError(f'{changes} changes were made in the database.')
 
     def add_eth2_validator(
             self,

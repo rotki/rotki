@@ -248,7 +248,7 @@ def test_query_eth2_inactive(rotkehlchen_api_server, ethereum_accounts):
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
-def test_add_get_delete_eth2_validators(rotkehlchen_api_server, start_with_valid_premium):
+def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_valid_premium):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -359,19 +359,39 @@ def test_add_get_delete_eth2_validators(rotkehlchen_api_server, start_with_valid
     assert result == {'entries': [validators[1].serialize()], 'entries_limit': expected_limit, 'entries_found': 1}  # noqa: E501
 
     # Try to add validator with a custom ownership percentage
-    validator = Eth2Validator(
-        index=43948,
-        public_key='0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb',  # noqa: E501
-        ownership_proportion=FVal(0.5),
-    )
+    custom_percentage_validtors = [
+        Eth2Validator(
+            index=5235,
+            public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
+            ownership_proportion=FVal(0.4),
+        ),
+        Eth2Validator(
+            index=43948,
+            public_key='0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb',  # noqa: E501
+            ownership_proportion=FVal(0.5),
+        ),
+    ]
+
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
         ), json={
-            'validator_index': validator.index,
-            'public_key': validator.public_key,
+            'validator_index': custom_percentage_validtors[1].index,
+            'public_key': custom_percentage_validtors[1].public_key,
             'ownership_percentage': 50,
+        },
+    )
+    assert_simple_ok_response(response)
+
+    # Edit the second validor
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={
+            'validator_index': 5235,
+            'ownership_percentage': 40,
         },
     )
     assert_simple_ok_response(response)
@@ -383,7 +403,7 @@ def test_add_get_delete_eth2_validators(rotkehlchen_api_server, start_with_valid
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'entries': [validators[1].serialize(), validator.serialize()], 'entries_limit': expected_limit, 'entries_found': 2}  # noqa: E501
+    assert result == {'entries': [validator.serialize() for validator in custom_percentage_validtors], 'entries_limit': expected_limit, 'entries_found': 2}  # noqa: E501
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])

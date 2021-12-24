@@ -351,7 +351,7 @@ class DBEth2ValidatorIndicesFilter(DBFilter):
         if self.validators is None:
             return [], []
         questionmarks = '?' * len(self.validators)
-        return [f'eth2_daily_staking_details.validator_index IN ({",".join(questionmarks)})'], self.validators  # noqa: E501
+        return [f'validator_index IN ({",".join(questionmarks)})'], self.validators
 
 
 class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):

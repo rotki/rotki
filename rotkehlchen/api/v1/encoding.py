@@ -2518,6 +2518,16 @@ class Eth2ValidatorDeleteSchema(Schema):
     validators = fields.List(fields.Nested(Eth2ValidatorSchema), required=True)
 
 
+class Eth2ValidatorPatchSchema(Schema):
+    validator_index = fields.Integer(
+        validate=webargs.validate.Range(
+            min=0,
+            error='Validator index must be an integer >= 0',
+        ),
+    )
+    ownership_percentage = FloatingPercentageField()
+
+
 class Eth2DailyStatsSchema(
         AsyncQueryArgumentSchema,
         OnlyCacheQuerySchema,

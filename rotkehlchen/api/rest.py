@@ -2323,6 +2323,17 @@ class RestAPI():
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
+    def edit_eth2_validator(self, validator_index: int, ownership_proportion: FVal) -> Response:
+        try:
+            self.rotkehlchen.chain_manager.edit_eth2_validator(
+                validator_index=validator_index,
+                ownership_proportion=ownership_proportion,
+            )
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        except (InputError, ModuleInactive) as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+    @require_loggedin_user()
     def delete_eth2_validator(
             self,
             validators: List[Dict],

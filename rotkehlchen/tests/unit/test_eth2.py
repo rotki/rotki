@@ -323,7 +323,6 @@ def test_get_validators_to_query_for_stats(database):
 
     db.add_validator_daily_stats([ValidatorDailyStats(
         validator_index=1,
-        ownership_proportion=FVal(1),
         timestamp=1607126400,
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -334,7 +333,6 @@ def test_get_validators_to_query_for_stats(database):
         amount_deposited=FVal(32),
     ), ValidatorDailyStats(
         validator_index=1,
-        ownership_proportion=FVal(1),
         timestamp=1607212800,
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -347,7 +345,6 @@ def test_get_validators_to_query_for_stats(database):
     # now add a daily stats entry closer than a day in the past and see we don't query anything
     db.add_validator_daily_stats([ValidatorDailyStats(
         validator_index=1,
-        ownership_proportion=FVal(1),
         timestamp=now - 3600,
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -367,7 +364,6 @@ def test_get_validators_to_query_for_stats(database):
     ])
     db.add_validator_daily_stats([ValidatorDailyStats(
         validator_index=3,
-        ownership_proportion=FVal(1),
         timestamp=1607126400,
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -378,7 +374,6 @@ def test_get_validators_to_query_for_stats(database):
         amount_deposited=FVal(32),
     ), ValidatorDailyStats(
         validator_index=3,
-        ownership_proportion=FVal(1),
         timestamp=1617512800,
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -387,7 +382,6 @@ def test_get_validators_to_query_for_stats(database):
         end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=4,
-        ownership_proportion=FVal(1),
         timestamp=1617512800,
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -396,7 +390,6 @@ def test_get_validators_to_query_for_stats(database):
         end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=4,
-        ownership_proportion=FVal(1),
         timestamp=now - 7200,
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -421,7 +414,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
     assert len(stats) >= 81
     expected_stats = [ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1607126400,    # 2020/12/05
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -432,7 +424,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         amount_deposited=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1607212800,    # 2020/12/06
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -441,7 +432,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1607299200,    # 2020/12/07
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -450,7 +440,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1607385600,  # 2020/12/08
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -459,7 +448,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1607472000,  # 2020/12/09
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -468,7 +456,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1607558400,  # 2020/12/10
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -477,7 +464,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1607644800,  # 2020/12/11
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -486,7 +472,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1607731200,  # 2020/12/12
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -495,7 +480,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1607817600,  # 2020/12/13
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -504,7 +488,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1607904000,  # 2020/12/14
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -513,7 +496,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal(32),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1607990400,  # 2020/12/15
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -523,7 +505,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         proposed_blocks=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1608076800,  # 2020/12/16
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -532,7 +513,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal('32.03'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1608163200,  # 2020/12/17
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -542,7 +522,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         missed_attestations=126,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1608249600,  # 2020/12/18
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -551,7 +530,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal('32.04'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1608336000,  # 2020/12/19
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -560,7 +538,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal('32.05'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1608422400,  # 2020/12/20
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -571,7 +548,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         proposed_blocks=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1608508800,  # 2020/12/21
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -580,7 +556,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal('32.08'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1608595200,  # 2020/12/22
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -590,7 +565,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         missed_attestations=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1608681600,  # 2020/12/23
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -599,7 +573,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal('32.10'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1608768000,  # 2020/12/24
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -608,7 +581,6 @@ def test_validator_daily_stats(price_historian, function_scope_messages_aggregat
         end_amount=FVal('32.11'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1608854400,  # 2020/12/25
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -635,7 +607,6 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
     assert len(stats) >= 6
     expected_stats = [ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1613606400,    # 2021/02/18
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -645,7 +616,6 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         missed_attestations=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1613692800,    # 2021/02/19
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -655,7 +625,6 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         missed_attestations=19,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1613779200,    # 2021/02/20
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -664,7 +633,6 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         end_amount=FVal('32.68'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1613865600,    # 2021/02/21
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -675,7 +643,6 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         proposed_blocks=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1613952000,    # 2021/02/22
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -685,7 +652,6 @@ def test_validator_daily_stats_with_last_known_timestamp(  # pylint: disable=unu
         missed_attestations=1,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        ownership_proportion=FVal(1),
         timestamp=1614038400,    # 2021/02/23
         start_usd_price=FVal(1.55),
         end_usd_price=FVal(1.55),
@@ -737,7 +703,6 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         assert filter_total_found >= 6
         expected_stats = [ValidatorDailyStats(
             validator_index=validator_index,
-            ownership_proportion=FVal(1),
             timestamp=1613606400,    # 2021/02/18
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
@@ -747,7 +712,6 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             missed_attestations=1,
         ), ValidatorDailyStats(
             validator_index=validator_index,
-            ownership_proportion=FVal(1),
             timestamp=1613692800,    # 2021/02/19
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
@@ -757,7 +721,6 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             missed_attestations=19,
         ), ValidatorDailyStats(
             validator_index=validator_index,
-            ownership_proportion=FVal(1),
             timestamp=1613779200,    # 2021/02/20
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
@@ -766,7 +729,6 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             end_amount=FVal('32.68'),
         ), ValidatorDailyStats(
             validator_index=validator_index,
-            ownership_proportion=FVal(1),
             timestamp=1613865600,    # 2021/02/21
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
@@ -777,7 +739,6 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             proposed_blocks=1,
         ), ValidatorDailyStats(
             validator_index=validator_index,
-            ownership_proportion=FVal(1),
             timestamp=1613952000,    # 2021/02/22
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
@@ -787,7 +748,6 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             missed_attestations=1,
         ), ValidatorDailyStats(
             validator_index=validator_index,
-            ownership_proportion=FVal(1),
             timestamp=1614038400,    # 2021/02/23
             start_usd_price=FVal(1.55),
             end_usd_price=FVal(1.55),
@@ -809,83 +769,15 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         assert stats_call.call_count == 1
         assert stats[:len(expected_stats)] == expected_stats
 
-
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_with_custom_ownership(  # pylint: disable=unused-argument  # noqa: E501
-        price_historian,
-        function_scope_messages_aggregator,
-):
-    validator_index = 33710
-    stats = scrape_validator_daily_stats(
-        validator_index=validator_index,
-        last_known_timestamp=1613520000,
-        msg_aggregator=function_scope_messages_aggregator,
-        ownership_proportion=FVal(0.5),
-    )
-
-    assert len(stats) >= 6
-    expected_stats = [ValidatorDailyStats(
-        validator_index=validator_index,
-        ownership_proportion=FVal(0.5),
-        timestamp=1613606400,    # 2021/02/18
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
-        pnl=FVal('0.00784'),
-        start_amount=FVal('32.66'),
-        end_amount=FVal('32.67'),
-        missed_attestations=1,
-    ), ValidatorDailyStats(
-        validator_index=validator_index,
-        ownership_proportion=FVal(0.5),
-        timestamp=1613692800,    # 2021/02/19
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
-        pnl=FVal('0.00683'),
-        start_amount=FVal('32.67'),
-        end_amount=FVal('32.68'),
-        missed_attestations=19,
-    ), ValidatorDailyStats(
-        validator_index=validator_index,
-        ownership_proportion=FVal(0.5),
-        timestamp=1613779200,    # 2021/02/20
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
-        pnl=FVal('0.00798'),
-        start_amount=FVal('32.68'),
-        end_amount=FVal('32.68'),
-    ), ValidatorDailyStats(
-        validator_index=validator_index,
-        ownership_proportion=FVal(0.5),
-        timestamp=1613865600,    # 2021/02/21
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
-        pnl=FVal('0.01114'),
-        start_amount=FVal('32.68'),
-        end_amount=FVal('32.69'),
-        missed_attestations=3,
-        proposed_blocks=1,
-    ), ValidatorDailyStats(
-        validator_index=validator_index,
-        ownership_proportion=FVal(0.5),
-        timestamp=1613952000,    # 2021/02/22
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
-        pnl=FVal('0.00782'),
-        start_amount=FVal('32.69'),
-        end_amount=FVal('32.7'),
-        missed_attestations=1,
-    ), ValidatorDailyStats(
-        validator_index=validator_index,
-        ownership_proportion=FVal(0.5),
-        timestamp=1614038400,    # 2021/02/23
-        start_usd_price=FVal(1.55),
-        end_usd_price=FVal(1.55),
-        pnl=FVal('0.00772'),
-        start_amount=FVal('32.7'),
-        end_amount=FVal('32.71'),
-        missed_attestations=1,
-    )]
-
-    stats.reverse()
-    assert stats[:len(expected_stats)] == expected_stats
-    assert stats[-1].pnl_balance.amount == stats[-1].pnl / 2
+        # Check that changing ownership proportion works
+        dbeth2.edit_validator(
+            validator_index=validator_index,
+            ownership_proportion=FVal(0.45),
+        )
+        stats, filter_total_found = eth2.get_validator_daily_stats(
+            filter_query=filter_query,
+            only_cache=False,
+            msg_aggregator=function_scope_messages_aggregator,
+        )
+        last_stat = stats[:len(expected_stats)][-1]
+        assert last_stat.pnl_balance.amount == expected_stats[-1].pnl_balance.amount * FVal(0.45)

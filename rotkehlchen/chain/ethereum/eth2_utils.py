@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup, SoupStrainer
 
 from rotkehlchen.chain.ethereum.typing import ValidatorDailyStats
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.fval import FVal
@@ -53,7 +53,6 @@ def scrape_validator_daily_stats(
         validator_index: int,
         last_known_timestamp: Timestamp,
         msg_aggregator: MessagesAggregator,
-        ownership_proportion: FVal = ONE,
 ) -> List[ValidatorDailyStats]:
     """Scrapes the website of beaconcha.in and parses the data directly out of the data table.
 
@@ -184,7 +183,6 @@ def scrape_validator_daily_stats(
         ]
         stats.append(ValidatorDailyStats(
             validator_index=validator_index,
-            ownership_proportion=ownership_proportion,
             timestamp=timestamp,
             start_usd_price=prices[0],
             end_usd_price=prices[1],

@@ -326,7 +326,7 @@ class Eth2(EthereumModule):
         validator_index: Optional[int],
         public_key: Optional[Eth2PubKey],
         ownership_proportion: FVal,
-    ) -> None:  # noqa: E501
+    ) -> None:
         """Adds the given validator to the DB. Due to marshmallow here at least one
         of the two arguments is not None.
 
