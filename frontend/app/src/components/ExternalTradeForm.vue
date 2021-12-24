@@ -49,7 +49,7 @@
                   v-model="base"
                   outlined
                   required
-                  data-cy="base_asset"
+                  data-cy="base-asset"
                   :rules="baseRules"
                   :hint="$t('external_trade_form.base_asset.hint')"
                   :label="$t('external_trade_form.base_asset.label')"
@@ -65,7 +65,7 @@
                   v-model="quote"
                   required
                   outlined
-                  data-cy="quote_asset"
+                  data-cy="quote-asset"
                   :rules="quoteRules"
                   :hint="$t('external_trade_form.quote_asset.hint')"
                   :label="$t('external_trade_form.quote_asset.label')"
@@ -160,10 +160,10 @@
                   <strong>{{ amount }}</strong>
                 </template>
                 <template #base>
-                  <strong>{{ getAssetText(base) }}</strong>
+                  <strong>{{ getSymbol(base) }}</strong>
                 </template>
                 <template #quote>
-                  <strong>{{ getAssetText(quote) }}</strong>
+                  <strong>{{ getSymbol(quote) }}</strong>
                 </template>
                 <template #rate>
                   <strong>{{ rate }}</strong>
@@ -181,10 +181,10 @@
                   <strong>{{ amount }}</strong>
                 </template>
                 <template #base>
-                  <strong>{{ getAssetText(base) }}</strong>
+                  <strong>{{ getSymbol(base) }}</strong>
                 </template>
                 <template #quote>
-                  <strong>{{ getAssetText(quote) }}</strong>
+                  <strong>{{ getSymbol(quote) }}</strong>
                 </template>
                 <template #rate>
                   <strong>{{ rate }}</strong>
@@ -257,10 +257,11 @@ import { SupportedAsset } from '@rotki/common/lib/data';
 import { Ref } from '@vue/composition-api';
 import dayjs from 'dayjs';
 import { mapState as mapPiniaState } from 'pinia';
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { Component, Emit, Mixins, Prop, Watch } from 'vue-property-decorator';
 import { mapActions, mapState } from 'vuex';
 import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import AssetMixin from '@/mixins/asset-mixin';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { NewTrade, Trade, TradeType } from '@/services/history/types';
@@ -287,7 +288,7 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
     ...mapActions('balances', ['fetchHistoricPrice'])
   }
 })
-export default class ExternalTradeForm extends Vue {
+export default class ExternalTradeForm extends Mixins(AssetMixin) {
   @Prop({ required: false, type: Boolean, default: false })
   value!: boolean;
 
@@ -428,13 +429,6 @@ export default class ExternalTradeForm extends Vue {
         .div(new BigNumber(this.amount))
         .toString();
     }
-  }
-
-  getAssetText(asset: string): string {
-    return (
-      this.supportedAssets.find(item => item.identifier === asset)?.symbol ||
-      asset
-    );
   }
 
   async fetchPrice() {

@@ -9,6 +9,7 @@
     deletable-chips
     multiple
     clearable
+    hide-details
     prepend-inner-icon="mdi-filter-variant"
     :search-input.sync="search"
     @input="onSelectionUpdate($event)"

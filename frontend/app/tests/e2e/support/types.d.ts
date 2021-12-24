@@ -15,6 +15,20 @@ export type ExternalTrade = {
   readonly notes: string;
 };
 
+export type ExternalLedgerAction = {
+  readonly datetime: string;
+  readonly asset: string;
+  readonly asset_id: string;
+  readonly rate_asset: string;
+  readonly rate_asset_id: string;
+  readonly rate: string;
+  readonly location: string;
+  readonly amount: string;
+  readonly action_type: string;
+  readonly link: string;
+  readonly notes: string;
+};
+
 declare global {
   namespace Cypress {
     interface Chainable {

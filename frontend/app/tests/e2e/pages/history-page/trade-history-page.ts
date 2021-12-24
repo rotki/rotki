@@ -1,13 +1,11 @@
-import { ExternalTrade } from '../support/types';
-import { selectAsset } from '../support/utils';
+import { ExternalTrade } from '../../support/types';
+import { selectAsset } from '../../support/utils';
 
-export class HistoryPage {
+export class TradeHistoryPage {
   visit() {
-    cy.get('.v-app-bar__nav-icon').click();
-    cy.get('.navigation__history').click();
-    const fetchTradesAssertion = this.fetchTrades();
-    cy.get('.navigation__history-trades').click();
-    fetchTradesAssertion();
+    cy.get('.history__trades').scrollIntoView().should('be.visible').click({
+      force: true
+    });
   }
 
   fetchTrades() {
@@ -29,8 +27,8 @@ export class HistoryPage {
       .type(`{selectall}{backspace}${trade.time}`)
       .click({ force: true }); // Click is needed to hide the popup
 
-    selectAsset('[data-cy=base_asset]', trade.base, trade.base_id);
-    selectAsset('[data-cy=quote_asset]', trade.quote, trade.quote_id);
+    selectAsset('[data-cy=base-asset]', trade.base, trade.base_id);
+    selectAsset('[data-cy=quote-asset]', trade.quote, trade.quote_id);
     cy.get('[data-cy=type] input').check(trade.trade_type, {
       force: true
     });
@@ -59,43 +57,34 @@ export class HistoryPage {
     cy.get('[data-cy=trade-form]').should('not.exist');
   }
 
-  confirmDelete() {
-    cy.get('[data-cy=confirm-dialog]')
-      .find('[data-cy=dialog-title]')
-      .should('contain', 'Delete Trade');
-    const fetchTradesAssertion = this.fetchTrades();
-    cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
-    fetchTradesAssertion();
-    cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
-  }
-
   visibleEntries(visible: number) {
     cy.get('.closed-trades tbody').find('tr').should('have.length', visible);
   }
 
-  tradeIsVisible(position: number, otcTrade: ExternalTrade) {
+  tradeIsVisible(position: number, trade: ExternalTrade) {
     cy.get('.closed-trades tbody > tr').eq(position).as('row');
+
+    cy.get('@row').find('td').eq(2).should('contain', trade.trade_type);
 
     cy.get('@row')
       .find('td')
       .eq(3)
-      .find('[data-cy=trade_base]')
+      .find('[data-cy=trade-base]')
       .find('[data-cy=details-symbol]')
-      .should('contain', otcTrade.base);
+      .should('contain', trade.base);
 
     cy.get('@row')
       .find('td')
       .eq(5)
-      .find('[data-cy=trade_quote]')
+      .find('[data-cy=trade-quote]')
       .find('[data-cy=details-symbol]')
-      .should('contain', otcTrade.quote);
+      .should('contain', trade.quote);
 
     cy.get('@row')
       .find('td')
       .eq(7)
       .find('[data-cy=display-amount]')
-      .should('contain', otcTrade.amount);
-    cy.get('@row').find('td').eq(2).should('contain', otcTrade.trade_type);
+      .should('contain', trade.amount);
   }
 
   editTrade(position: number, amount: string) {
@@ -119,5 +108,15 @@ export class HistoryPage {
       .eq(position)
       .find('[data-cy=row-delete]')
       .click();
+  }
+
+  confirmDelete() {
+    cy.get('[data-cy=confirm-dialog]')
+      .find('[data-cy=dialog-title]')
+      .should('contain', 'Delete Trade');
+    const fetchTradesAssertion = this.fetchTrades();
+    cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
+    fetchTradesAssertion();
+    cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
   }
 }
