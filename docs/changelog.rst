@@ -2,8 +2,8 @@
 Changelog
 =========
 
-
-* :feature:`-` If active modules have not been set then the default active modules is now not all, but all except for: MakerDAO DSR, Adex, Yearn vaults v1.
+* :feature:`3425` Users will be able to enter multiple pairs at once for binance exchange settings.
+* :bug:`3847` Remove whitespace when inputting address in new asset form.
 * :feature:`3842` Users will now be taken directly to create account when downloading the application for the first time.
 * :feature:`-` Any ethereum transactions that were ignored for accounting will now need to be re-ignored.
 * :feature:`1242` Users will be asked first whether to activate premium feature, and enable database sync when create new account.

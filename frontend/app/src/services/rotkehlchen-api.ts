@@ -928,9 +928,13 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  queryBinanceMarkets(): Promise<string[]> {
+  queryBinanceMarkets(location: string): Promise<string[]> {
     return this.axios
-      .get<ActionResult<string[]>>('/exchanges/binance/pairs')
+      .get<ActionResult<string[]>>('/exchanges/binance/pairs', {
+        params: axiosSnakeCaseTransformer({
+          location: location
+        })
+      })
       .then(handleResponse);
   }
 

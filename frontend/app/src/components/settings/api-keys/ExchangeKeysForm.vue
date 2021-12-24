@@ -139,8 +139,8 @@
     </div>
 
     <binance-pairs-selector
-      v-if="isBinance & edit"
-      :value="binancePairs"
+      v-if="isBinance"
+      outlined
       :name="exchange.name"
       :location="exchange.location"
       @input="onUpdateExchange({ ...exchange, binanceMarkets: $event })"
