@@ -1163,5 +1163,5 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
     result = assert_proper_response_with_result(response)
     some_pairs = {'ETHUSD', 'BTCUSDC', 'BNBUSDT'}
     assert some_pairs.issubset(result)
-    assert 'ETHUSDC' not in result
+    assert 'FTTBNB' not in result
     assert binance_pairs_num > binanceus_pairs_num
