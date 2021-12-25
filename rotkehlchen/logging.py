@@ -112,7 +112,7 @@ def configure_logging(args: argparse.Namespace) -> None:
             '()': PywsgiFilter,
         },
     }
-    loggers = {
+    loggers: Dict[str, Any] = {
         '': {  # root logger
             'level': loglevel,
             'handlers': selected_handlers,
