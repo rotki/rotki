@@ -29,7 +29,7 @@ class CacheableMixIn:
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)  # type: ignore  # https://github.com/python/mypy/issues/5887  # noqa: E501
+        super().__init__(*args, **kwargs)
         self.results_cache: Dict[int, ResultCache] = {}
         # Can also be 0 which means cache is disabled.
         self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS

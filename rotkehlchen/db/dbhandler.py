@@ -378,6 +378,12 @@ class DBHandler:
             conn_attribute: Literal['conn', 'conn_transient'],
     ) -> bool:
         conn = getattr(self, conn_attribute, None)
+        if conn is None:
+            log.error(
+                f'Attempted to change password for {conn_attribute} '
+                f'database but no such DB connection exists',
+            )
+            return False
         conn.text_factory = str
         new_password_for_sqlcipher = _protect_password_sqlcipher(new_password)
         script = f'PRAGMA rekey="{new_password_for_sqlcipher}";'
