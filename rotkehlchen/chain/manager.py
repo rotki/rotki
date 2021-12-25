@@ -71,7 +71,7 @@ from rotkehlchen.constants.assets import (
     A_KSM,
     A_LQTY,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
@@ -1669,7 +1669,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         defi_events = []
         # Ask for details to detect any new validators
         eth2.get_details(addresses=self.queried_addresses_for_module('eth2'))
-        # Create a mapping of validator index to ownershipt proportion
+        # Create a mapping of validator index to ownership proportion
         validators_ownership = {
             validator.index: validator.ownership_proportion
             for validator in self.get_eth2_validators()
@@ -1687,7 +1687,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
             # Take into account the validator ownership proportion if is not 100%
             validator_ownership = validators_ownership.get(stats_entry.validator_index, FVal(1))
-            if validator_ownership != FVal(1):
+            if validator_ownership != ONE:
                 pnl_balance = Balance(
                     amount=stats_entry.pnl_balance.amount * validator_ownership,
                     usd_value=stats_entry.pnl_balance.usd_value * validator_ownership,
@@ -1727,18 +1727,16 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
 
     def edit_eth2_validator(self, validator_index: int, ownership_proportion: FVal) -> None:
         """Edit a validator to modify its ownership proportion. May raise:
-        - ModuleInactive if eht2 module is not active
+        - ModuleInactive if eth2 module is not active
         - InputError if no row was affected
         """
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant edit eth2 validators since the eth2 module is not active')
-        changes = DBEth2(self.database).edit_validator(
+        DBEth2(self.database).edit_validator(
             validator_index=validator_index,
             ownership_proportion=ownership_proportion,
         )
-        if changes != 1:
-            raise InputError(f'{changes} changes were made in the database.')
 
     def add_eth2_validator(
             self,

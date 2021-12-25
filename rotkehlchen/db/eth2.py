@@ -193,10 +193,10 @@ class DBEth2():
             validator.index: validator.ownership_proportion
             for validator in self.get_validators()
         }
-        for i, daily_stat in enumerate(daily_stats):
-            owned_proportion = validators_ownership.get(daily_stat.validator_index, FVal(1))
+        for daily_stat in daily_stats:
+            owned_proportion = validators_ownership.get(daily_stat.validator_index, ONE)
             if owned_proportion != ONE:
-                daily_stats[i] = daily_stat._replace(pnl=daily_stat.pnl * owned_proportion)
+                daily_stat.pnl = daily_stat.pnl * owned_proportion
         return daily_stats
 
     def validator_exists(self, field: str, arg: Union[int, str]) -> bool:
@@ -218,13 +218,21 @@ class DBEth2():
         )
         self.db.update_last_write()
 
-    def edit_validator(self, validator_index: int, ownership_proportion: FVal) -> int:
+    def edit_validator(self, validator_index: int, ownership_proportion: FVal) -> None:
+        """Edits the ownership proportion for a validator identified by its index.
+        May raise:
+        - InputError if we try to edit a non existing validator.
+        """
         cursor = self.db.conn.cursor()
         cursor.execute(
             'UPDATE eth2_validators SET ownership_proportion=? WHERE validator_index = ?',
             (str(ownership_proportion), validator_index),
         )
-        return cursor.rowcount
+        if cursor.rowcount == 0:
+            raise InputError(
+                f'Tried to edit validator with index {validator_index} '
+                f'that is not in the database',
+            )
 
     def delete_validator(self, validator_index: Optional[int], public_key: Optional[str]) -> None:
         """Deletes the given validator from the DB. Due to marshmallow here at least one

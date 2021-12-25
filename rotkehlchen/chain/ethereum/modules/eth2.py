@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.typing import (
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.errors import InputError, PremiumPermissionError, RemoteError
@@ -144,7 +145,7 @@ class Eth2(EthereumModule):
             tracked_validators = dbeth2.get_validators()
             tracked_pubkeys = [x.public_key for x in tracked_validators]
             new_validators = [
-                Eth2Validator(index=x.index, public_key=x.public_key, ownership_proportion=FVal(1))
+                Eth2Validator(index=x.index, public_key=x.public_key, ownership_proportion=ONE)
                 for x in validators if x.public_key not in tracked_pubkeys and x.index is not None
             ]
             dbeth2.add_validators(new_validators)
@@ -235,7 +236,7 @@ class Eth2(EthereumModule):
                 index_to_address[validator.index] = address
                 index_to_pubkey[validator.index] = validator.public_key
                 indices.append(validator.index)
-                all_validators.append(Eth2Validator(index=validator.index, public_key=validator.public_key, ownership_proportion=FVal(1)))  # noqa: E501
+                all_validators.append(Eth2Validator(index=validator.index, public_key=validator.public_key, ownership_proportion=ONE))  # noqa: E501
 
         # make sure all validators we deal with are saved in the DB
         dbeth2 = DBEth2(self.database)
@@ -327,8 +328,8 @@ class Eth2(EthereumModule):
         public_key: Optional[Eth2PubKey],
         ownership_proportion: FVal,
     ) -> None:
-        """Adds the given validator to the DB. Due to marshmallow here at least one
-        of the two arguments is not None.
+        """Adds the given validator to the DB. Due to marshmallow here at least
+        either validator_index or public key is not None.
 
         May raise:
         - RemoteError if there is a problem with querying beaconcha.in for more info

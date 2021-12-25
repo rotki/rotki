@@ -7532,7 +7532,6 @@ Getting Eth2 Staking daily stats
         "result": {
 	    "entries": [{
                   "validator_index": 15,
-                  "ownership_percentage": "100",
                   "timestamp": 1613952000,
                   "pnl": {"amount": "0.007", "usd_value": "70"},
                   "start_balance": {"amount": "32.69", "usd_value": "32690"},
@@ -7548,7 +7547,6 @@ Getting Eth2 Staking daily stats
                   "deposited_balance": {"amount": "32", "usd_value": "32000"}
               }, {
                   "validator_index": 43567,
-                  "ownership_percentage": "100",
                   "timestamp": 1613865600,
                   "pnl": {"amount": "-0.0066", "usd_value": "-6.6"},
                   "start_balance": {"amount": "32.69", "usd_value": "32690"},
@@ -7572,7 +7570,6 @@ Getting Eth2 Staking daily stats
    :resjson entries : The list of daily stats filtered by the given filter.
 
    :resjson eth_depositor string: The eth1 address that made the deposit for the validator.
-   :resjson ownership_percentage: The amount of the validator owned by the user.
    :resjson timestamp int: The timestamp of the start of the day in GMT for which this entry is.
    :resjson pnl object: The amount of ETH gained or lost in that day along with its usd value. Average price of the day is taken.
    :resjson start_balance object: The amount of ETH the day started with along with its usd value.
@@ -7751,6 +7748,42 @@ Deleting Eth2 validators
    :statuscode 200: Eth2 validator succesfully delete.
    :statuscode 409: User is not logged in. Or eth2 module is not activated.
    :statuscode 500: Internal rotki error.
+
+
+Editing an Eth2 validator
+==========================
+
+.. http:patch:: /api/(version)/blockchains/ETH2/validators
+
+   Doing a PATCH on the eth2 validators endpoint will allow to edit the ownership percentage of a validator indentified by its index.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/ETH2/validators HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson validator_index int: An integer representing the validator index of the validator to edit.
+   :resjson ownership_percentage: A float representing the amount of the validator owned by the user in the range of 0 to 100. If not provided a default value of 100 is assigned.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true
+        "message": "",
+      }
+
+   :statuscode 200: Eth2 validator succesfully edited.
+   :statuscode 409: User is not logged in, eth2 module is not activated or validator doesn't exist.
+   :statuscode 500: Internal rotki error.
+
 
 Getting tracked Eth2 validators
 ===============================

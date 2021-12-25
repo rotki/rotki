@@ -2524,8 +2524,9 @@ class Eth2ValidatorPatchSchema(Schema):
             min=0,
             error='Validator index must be an integer >= 0',
         ),
+        required=True,
     )
-    ownership_percentage = FloatingPercentageField()
+    ownership_percentage = FloatingPercentageField(required=True)
 
 
 class Eth2DailyStatsSchema(
