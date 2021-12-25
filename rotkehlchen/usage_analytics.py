@@ -1,20 +1,21 @@
 import logging
 import platform
+import shutil
 import sys
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
+from pathlib import Path
 from typing import Any, Dict, NamedTuple, Optional
 
+import maxminddb
+import miniupnpc
 import requests
 
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.errors import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_date
 from rotkehlchen.utils.misc import get_system_spec
-from rotkehlchen.utils.serialization import jsonloads_dict
-
-# A "best" geolocation API list: https://rapidapi.com/blog/ip-geolocation-api/
-
-LOCATION_DATA_QUERY_TIMEOUT = 5
-
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -22,108 +23,97 @@ log = RotkehlchenLogsAdapter(logger)
 
 class GeolocationData(NamedTuple):
     country_code: str
-    city: str
 
 
-def query_ipwhoisio() -> Optional[GeolocationData]:
-    """10,000 requests per month per IP
-    https://ipwhois.io/documentation
+def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
+    """This functions tries to get the country of the user based on the ip.
+    To do that it makes use of an open ip to country database and tries to obtain
+    the ip ussing UPnP protocol.
+
+    If UpNP fails we just return None
+
+    **IMPORTANT:** The ip never leaves the user's machine. It's all calculated locally.
     """
+    geoip_dir = data_dir / 'misc'
+    geoip_dir.mkdir(parents=True, exist_ok=True)
+    # get latest database version
+    metadata_query_failed = False
     try:
         response = requests.get(
-            'http://free.ipwhois.io/json/',
-            timeout=LOCATION_DATA_QUERY_TIMEOUT,
+            url='https://api.github.com/repos/geoacumen/geoacumen-country/branches/master',
+            timeout=DEFAULT_TIMEOUT_TUPLE,
         )
-    except requests.exceptions.RequestException:
-        return None
-
-    if response.status_code != HTTPStatus.OK:
-        return None
-
-    try:
-        json_ret = jsonloads_dict(response.text)
-    except JSONDecodeError:
-        return None
-
-    return GeolocationData(
-        country_code=json_ret.get('country_code', 'unknown'),
-        city=json_ret.get('city', 'unknown'),
-    )
-
-
-def query_ipinfo() -> Optional[GeolocationData]:
-    """
-    50,000 requests per month tied to the API Key
-    https://ipinfo.io/developers
-    """
-    try:
-        response = requests.get(
-            'https://ipinfo.io/json?token=16ab40aad9bd5b',
-            timeout=LOCATION_DATA_QUERY_TIMEOUT,
+        data = response.json()
+        date = deserialize_timestamp_from_date(
+            date=data['commit']['commit']['author']['date'],
+            formatstr='%Y-%m-%dT%H:%M:%S',
+            location='Analytics',
         )
-    except requests.exceptions.RequestException:
-        return None
+    except requests.exceptions.RequestException as e:
+        log.debug(f'Failed to get metadata information for geoip file. {str(e)}')
+        metadata_query_failed = True
+    except (DeserializationError, JSONDecodeError) as e:
+        log.debug(f'Failed to deserialize date in metadata information for geoip file. {str(e)}')
+        metadata_query_failed = True
+    except KeyError as e:
+        log.debug(f'Github response for geoip file had missing key {str(e)}')
+        metadata_query_failed = True
 
-    if response.status_code != HTTPStatus.OK:
+    if metadata_query_failed:
+        old_files = list(geoip_dir.glob('*.mmdb'))
+        if len(old_files) == 0:
+            return None
+        filename = old_files[0]
+    else:
+        filename = geoip_dir / f'geoip-{date}.mmdb'
+
+    if not filename.is_file():
+        # Remove old files
+        files = geoip_dir.glob('*.*')
+        for f in files:
+            f.unlink()
+        # Download latest version
+        try:
+            response = requests.get(
+                url='https://github.com/geoacumen/geoacumen-country/raw/master/Geoacumen-Country.mmdb',  # noqa: E501
+                timeout=DEFAULT_TIMEOUT_TUPLE,
+                stream=True,
+            )
+        except requests.exceptions.RequestException as e:
+            log.debug(f'Failed to download geoip database file. {str(e)}')
+            return None
+        with open(filename, 'wb') as outfile:
+            response.raw.decode_content = True
+            shutil.copyfileobj(response.raw, outfile)
+
+    # get user ip
+    try:
+        u = miniupnpc.UPnP()
+        u.discoverdelay = 200
+        u.discover()
+        u.selectigd()
+        user_ip = u.externalipaddress()
+    except Exception as e:  # pylint: disable=broad-except
+        # can raise base exception so we catch it
+        log.debug(f'Failed to get ip via UPnP for analytics. {str(e)}')
         return None
 
     try:
-        json_ret = jsonloads_dict(response.text)
-    except JSONDecodeError:
-        return None
-
-    return GeolocationData(
-        country_code=json_ret.get('country', 'unknown'),
-        city=json_ret.get('city', 'unknown'),
-    )
-
-
-def query_ipstack() -> Optional[GeolocationData]:
-    """
-    10,000 requests per month tied to the API Key
-    https://ipstack.com/
-    """
-    try:
-        response = requests.get(
-            'http://api.ipstack.com/check?access_key=affd920d6e1008a614900dbc31d52fa6',
-            timeout=LOCATION_DATA_QUERY_TIMEOUT,
-        )
-    except requests.exceptions.RequestException:
-        return None
-
-    if response.status_code != HTTPStatus.OK:
-        return None
-
-    try:
-        json_ret = jsonloads_dict(response.text)
-    except JSONDecodeError:
-        return None
-
-    return GeolocationData(
-        country_code=json_ret.get('country_code', 'unknown'),
-        city=json_ret.get('city', 'unknown'),
-    )
+        with maxminddb.open_database(filename) as reader:
+            data = reader.get(user_ip)
+            location = data['country']['iso_code']
+            if location == 'None':
+                return None
+            return GeolocationData(country_code=location)
+    except maxminddb.errors.InvalidDatabaseError as e:
+        filename.unlink()
+        log.debug(f'Failed to read database {str(e)}')
+    except ValueError as e:
+        log.debug(f'Wrong ip search {str(e)}')
+    return None
 
 
-def retrieve_location_data() -> Optional[GeolocationData]:
-    # First try asking the no api key service
-    location_data = query_ipwhoisio()
-    if location_data:
-        return location_data
-
-    # Then the one with the most API requests per key
-    location_data = query_ipinfo()
-    if location_data:
-        return location_data
-
-    # finally the 3rd one as backup
-    location_data = query_ipstack()
-    # Can also be None if last query also fails
-    # TODO: Add more fallbacks
-    return location_data
-
-
-def create_usage_analytics() -> Dict[str, Any]:
+def create_usage_analytics(data_dir: Path) -> Dict[str, Any]:
     analytics = {}
 
     analytics['system_os'] = platform.system()
@@ -131,17 +121,17 @@ def create_usage_analytics() -> Dict[str, Any]:
     analytics['system_version'] = platform.version()
     analytics['rotki_version'] = get_system_spec()['rotkehlchen']
 
-    location_data = retrieve_location_data()
+    location_data = retrieve_location_data(data_dir)
     if location_data is None:
-        location_data = GeolocationData('unknown', 'unknown')
+        location_data = GeolocationData('unknown')
 
     analytics['country'] = location_data.country_code
-    analytics['city'] = location_data.city
+    analytics['city'] = 'unknown'  # deprecated -- we no longer use it
 
     return analytics
 
 
-def maybe_submit_usage_analytics(should_submit: bool) -> None:
+def maybe_submit_usage_analytics(data_dir: Path, should_submit: bool) -> None:
     if not getattr(sys, 'frozen', False):
         # not packaged -- must be in develop mode. Don't submit analytics
         return None
@@ -149,7 +139,7 @@ def maybe_submit_usage_analytics(should_submit: bool) -> None:
     if should_submit is False:
         return None
 
-    analytics = create_usage_analytics()
+    analytics = create_usage_analytics(data_dir)
     try:
         response = requests.put('https://rotki.com/api/1/usage_analytics', json=analytics)
     except requests.exceptions.RequestException:

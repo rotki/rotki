@@ -460,6 +460,13 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     f'Failed to deserialize a {self.name} {case} result. '
                     f'Check logs for details. Ignoring it.',
                 )
+            except (UnknownAsset, UnsupportedAsset) as e:
+                msg = (
+                    f'Found {self.name} {case} with unknown/unsupported '
+                    f'asset {e.asset_name}'
+                )
+                log.warning(f'{msg}. raw_data={raw_result}')
+                self.msg_aggregator.add_warning(f'{msg}. Ignoring {case}')
                 continue
 
             results.append(result)  # type: ignore # type is known
@@ -478,7 +485,10 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         Timestamp is from MTS_STARTED (when the movement was created), and not
         from MTS_UPDATED (when it was completed/cancelled).
 
-        Can raise DeserializationError.
+        Can raise:
+         - DeserializationError.
+         - UnknownAsset
+         - UnsupportedAsset
 
         Schema reference in:
         https://docs.bitfinex.com/reference#rest-auth-movements
@@ -488,17 +498,10 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 f'Unexpected bitfinex movement with status: {raw_result[5]}. '
                 f'Only completed movements are processed. Raw movement: {raw_result}',
             )
-        try:
-            fee_asset = asset_from_bitfinex(
-                bitfinex_name=raw_result[1],
-                currency_map=self.currency_map,
-            )
-        except (UnknownAsset, UnsupportedAsset) as e:
-            asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
-            raise DeserializationError(
-                f'{asset_tag} {e.asset_name} found while processing movement asset '
-                f'due to: {str(e)}',
-            ) from e
+        fee_asset = asset_from_bitfinex(
+            bitfinex_name=raw_result[1],
+            currency_map=self.currency_map,
+        )
 
         amount = deserialize_asset_amount(raw_result[12])
         category = (
@@ -534,7 +537,10 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         Known pairs format: 'tETHUST', 'tETH:UST'.
 
-        Can raise DeserializationError.
+        Can raise:
+         - DeserializationError.
+         - UnknownAsset
+         - UnsupportedAsset
 
         Schema reference in:
         https://docs.bitfinex.com/reference#rest-auth-trades
@@ -549,24 +555,18 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
 
         bfx_base_asset_symbol, bfx_quote_asset_symbol = self.pair_bfx_symbols_map[bfx_pair]
-        try:
-            base_asset = asset_from_bitfinex(
-                bitfinex_name=bfx_base_asset_symbol,
-                currency_map=self.currency_map,
-            )
-            quote_asset = asset_from_bitfinex(
-                bitfinex_name=bfx_quote_asset_symbol,
-                currency_map=self.currency_map,
-            )
-            fee_asset = asset_from_bitfinex(
-                bitfinex_name=raw_result[10],
-                currency_map=self.currency_map,
-            )
-        except (UnknownAsset, UnsupportedAsset) as e:
-            asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
-            raise DeserializationError(
-                f'{asset_tag} {e.asset_name} found while processing trade pair due to: {str(e)}',
-            ) from e
+        base_asset = asset_from_bitfinex(
+            bitfinex_name=bfx_base_asset_symbol,
+            currency_map=self.currency_map,
+        )
+        quote_asset = asset_from_bitfinex(
+            bitfinex_name=bfx_quote_asset_symbol,
+            currency_map=self.currency_map,
+        )
+        fee_asset = asset_from_bitfinex(
+            bitfinex_name=raw_result[10],
+            currency_map=self.currency_map,
+        )
 
         trade = Trade(
             timestamp=Timestamp(int(raw_result[2] / 1000)),

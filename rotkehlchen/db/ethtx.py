@@ -146,6 +146,8 @@ class DBEthTx():
         tx_type = hexstr_to_int(data.get('type', '0x0'))
         cursor = self.db.conn.cursor()
         status = data.get('status', 1)  # status may be missing for older txs. Assume 1.
+        if status is None:
+            status = 1
         contract_address = deserialize_ethereum_address(data['contractAddress']) if data['contractAddress'] else None  # noqa: E501
         cursor.execute(
             'INSERT INTO ethtx_receipts (tx_hash, contract_address, status, type) '
