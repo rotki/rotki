@@ -257,6 +257,7 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, Dict]
     if result is None:
         if method == 'Balance':
             return {}
+
         raise RemoteError(f'Missing result in kraken response for {method}')
 
     return result
@@ -677,7 +678,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         Query kraken events from database and create trades from them. May raise:
         - RemoteError if the kraken pairs couldn't be queried
         """
-        self.query_kraken_ledger_actions(start_ts=start_ts, end_ts=end_ts)
+        queried_range = self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -691,7 +692,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         )
         trades_raw = self.db.get_history_events(filter_query)
         trades = self.process_kraken_trades(trades_raw)
-        queried_range = (start_ts, end_ts)
         return trades, queried_range
 
     def _query_endpoint_for_period(
@@ -717,7 +717,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
-        self.query_kraken_ledger_actions(start_ts=start_ts, end_ts=end_ts)
+        self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -807,7 +807,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self.pairs = set(self.api_query('AssetPairs').keys())
 
     def kraken_asset_to_pair(self, asset1: Asset, asset2: Asset) -> Optional[str]:
-        """Given a pair of assets find the kraken pair that has this two assets as
+        """Given a pair of assets find the kraken pair that has these two assets as
         base and quote.
         Precondition: It requires that the self.pairs list is populated to properly work.
         """
@@ -843,11 +843,11 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         - Spend
 
         A pair of receive and spend events can be a trade and kraken uses this kind of event
-        for instant trades and trades made from the phone app. What we do is verify that is a trade
-        is to check if we can find a pair with the same event id.
+        for instant trades and trades made from the phone app. What we do in order to verify
+        that it is a trade is to check if we can find a pair with the same event id.
 
         May raise:
-        - RemoteError if the paris couldn't be correctly queried
+        - RemoteError if the pairs couldn't be correctly queried
         """
         self.query_pairs_if_needed()
         trades = []
@@ -963,12 +963,16 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         return trades
 
     @protect_with_lock()
-    def query_kraken_ledger_actions(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
+    def query_kraken_ledgers(
+        self,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> Tuple[Timestamp, Timestamp]:
         """
         Query Kraken's ledger to retrieve events and transform them to our internal representation
         of history events.
         """
-        response, _ = self.query_until_finished(
+        response, with_errors = self.query_until_finished(
             endpoint='Ledgers',
             keyname='ledger',
             start_ts=start_ts,
@@ -981,12 +985,14 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raw_events_groupped[raw_event['refid']].append(raw_event)
 
         new_events = []
+        max_ts = 0
         for events in raw_events_groupped.values():
             try:
                 events = sorted(
                     events,
                     key=lambda x: deserialize_timestamp_from_kraken(x['time']),
                 )
+                max_ts = max(max_ts, deserialize_timestamp_from_kraken(events[-1]['time']))
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Failed to read timestamp in kraken event group '
@@ -1012,3 +1018,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     f'Failed to save kraken events from {start_ts} to {end_ts} '
                     f'in database. {str(e)}',
                 )
+
+        queried_range = (start_ts, Timestamp(max_ts)) if with_errors else (start_ts, end_ts)
+        return queried_range

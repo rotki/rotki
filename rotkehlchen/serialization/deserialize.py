@@ -225,7 +225,7 @@ def deserialize_fval(
     try:
         result = FVal(value)
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize value entry: {str(e)} fpr {name} during {location}') from e  # noqa: E501
+        raise DeserializationError(f'Failed to deserialize value entry: {str(e)} for {name} during {location}') from e  # noqa: E501
 
     return result
 

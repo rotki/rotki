@@ -430,24 +430,3 @@ class BinancePair(NamedTuple):
             quote_asset=asset_from_binance(entry[2]),
             location=Location.deserialize_from_db(entry[3]),
         )
-
-
-class KrakenStakingEvent(NamedTuple):
-    refid: str
-    amount: AssetBalance
-    fee: Fee
-    timestamp: Timestamp
-    eventy_type: str
-
-    def as_ledger_event(self) -> HistoryEvent:
-        return HistoryEvent(
-            identifier=self.refid,
-            event_identifier=self.refid,
-            sequence_index=0,
-            timestamp=self.timestamp,
-            location=Location.KRAKEN,
-            amount=self.amount,
-            origin_label='kraken',
-            target_label='kraken',
-            notes=f'staking event: {self.eventy_type}'
-        )

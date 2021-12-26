@@ -349,26 +349,33 @@ class HistoryBaseEntry:
 
     @classmethod
     def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE) -> 'HistoryBaseEntry':
+        """May raise DeserializationError"""
         event_subtype = None
         if entry[11] is not None:
             event_subtype = HistoryEventSubType.deserialize_from_db(entry[11])
-        return HistoryBaseEntry(
-            event_identifier=entry[1],
-            sequence_index=entry[2],
-            timestamp=Timestamp(entry[3]),
-            location=Location.deserialize_from_db(entry[4]),
-            location_label=entry[5],
-            amount=AssetBalance(
-                asset=Asset(entry[6]),
-                balance=Balance(
-                    amount=FVal(entry[7]),
-                    usd_value=FVal(entry[8]),
+        try:
+            return HistoryBaseEntry(
+                event_identifier=entry[1],
+                sequence_index=entry[2],
+                timestamp=Timestamp(entry[3]),
+                location=Location.deserialize_from_db(entry[4]),
+                location_label=entry[5],
+                amount=AssetBalance(
+                    asset=Asset(entry[6]),
+                    balance=Balance(
+                        amount=FVal(entry[7]),
+                        usd_value=FVal(entry[8]),
+                    ),
                 ),
-            ),
-            notes=entry[9],
-            event_type=HistoryEventType.deserialize_from_db(entry[10]),
-            event_subtype=event_subtype,
-        )
+                notes=entry[9],
+                event_type=HistoryEventType.deserialize_from_db(entry[10]),
+                event_subtype=event_subtype,
+            )
+        except ValueError as e:
+            raise DeserializationError(
+                f'Failed to read FVal value from database history event with '
+                f'event identifier {entry[1]}. {str(e)}',
+            ) from e
 
     @property
     def identifier(self) -> str:
