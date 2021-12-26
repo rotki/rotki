@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
+from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent, AssetSpendEvent
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -104,6 +104,95 @@ def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant):
 
     acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 0, 'only buy should have been used'
+
+
+def test_calculate_spend_cost_basis_fifo(accountant):
+
+    accountant.events.cost_basis.accounting_method = 'FIFO'
+
+    asset = A_BTC
+    asset_events = accountant.events.cost_basis.get_events(asset)
+    asset_events.acquisitions.append(
+        AssetAcquisitionEvent(
+            location=Location.EXTERNAL,
+            description='trade',
+            amount=FVal(5),
+            timestamp=1446979735,  # 08/11/2015
+            rate=FVal(270),
+            fee_rate=FVal(0.0000),
+        ),
+    )
+
+    asset_events.acquisitions.append(
+        AssetAcquisitionEvent(
+            location=Location.EXTERNAL,
+            description='trade',
+            amount=FVal(1),
+            timestamp=1446979736,  # 09/11/2015
+            rate=FVal(280),
+            fee_rate=FVal(0.0000),
+        ),
+    )
+
+    spending_amount = FVal(1)
+
+    cinfo = accountant.events.cost_basis.calculate_spend_cost_basis(
+        spending_amount=spending_amount,
+        spending_asset=asset,
+        timestamp=1467378304,  # 31/06/2016
+    )
+    assert cinfo.taxable_amount == 1, '1 out of 1 should be taxable'
+    assert cinfo.is_complete is True
+    assert cinfo.taxable_bought_cost == 270
+
+
+def test_calculate_spend_cost_basis_wac(accountant):
+
+    accountant.events.cost_basis.accounting_method = 'WAC'
+
+    asset = A_BTC
+    asset_events = accountant.events.cost_basis.get_events(asset)
+    asset_events.acquisitions.append(
+        AssetAcquisitionEvent(
+            location=Location.EXTERNAL,
+            description='trade',
+            amount=FVal(5),
+            timestamp=1446979735,  # 08/11/2015
+            rate=FVal(270),
+            fee_rate=FVal(0.0000),
+        ),
+    )
+
+    asset_events.acquisitions.append(
+        AssetAcquisitionEvent(
+            location=Location.EXTERNAL,
+            description='trade',
+            amount=FVal(1),
+            timestamp=1446979736,  # 09/11/2015
+            rate=FVal(280),
+            fee_rate=FVal(0.0000),
+        ),
+    )
+
+    asset_events.spends.append(
+        AssetSpendEvent(
+            timestamp=1446979737,  # 10/11/2015
+            location=Location.EXTERNAL,
+            amount=FVal(1),
+            rate=FVal(290),
+            fee_rate=FVal(0.0000),
+            gain=FVal(0),
+        ),
+    )
+
+    cinfo = accountant.events.cost_basis.calculate_spend_cost_basis(
+        spending_amount=0,
+        spending_asset=asset,
+        timestamp=1467378304,  # 31/06/2016
+    )
+    assert cinfo.taxable_amount == FVal(1), '1 out of 1 should be taxable'
+    assert cinfo.is_complete is True
+    assert cinfo.taxable_bought_cost.is_close(FVal((5 * 270 + 1 * 280) / 6))
 
 
 def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):

@@ -921,3 +921,58 @@ def test_fees_count_in_cost_basis(accountant):
 def test_accounting_event_schemas():
     """Test that the accounting event json schemas we use are valid"""
     jsonschema.Draft4Validator.check_schema(ACCOUNTING_EVENT_SCHEMA)
+
+
+history6 = [
+    {
+        'timestamp': 1446979735,
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
+        'trade_type': 'buy',
+        'rate': 270,
+        'fee': 0,
+        'fee_currency': 'BTC',
+        'amount': 10,
+        'location': 'external',
+    }, {
+        'timestamp': 1446979736,
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
+        'trade_type': 'buy',
+        'rate': 280,
+        'fee': 0,
+        'fee_currency': 'BTC',
+        'amount': 20,
+        'location': 'external',
+    }, {
+        'timestamp': 1473505138,
+        'base_asset': 'BTC',
+        'quote_asset': 'EUR',
+        'trade_type': 'sell',
+        'rate': 290,
+        'fee': 0,
+        'fee_currency': 'BTC',
+        'amount': 5,
+        'location': 'poloniex',
+    },
+]
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('db_settings', [{
+    'accounting_method': 'WAC',
+}])
+def test_simple_accounting_wac(accountant):
+    accounting_history_process(accountant, 1436979735, 1495751688, history6)
+    assert accountant.general_trade_pl.is_close('66.666666666666667')
+    assert accountant.taxable_trade_pl.is_close('66.666666666666667')
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('db_settings', [{
+    'accounting_method': 'FIFO',
+}])
+def test_simple_accounting_fifo(accountant):
+    accounting_history_process(accountant, 1436979735, 1495751688, history6)
+    assert accountant.general_trade_pl.is_close('100.00')
+    assert accountant.taxable_trade_pl.is_close('100.00')

@@ -1414,6 +1414,7 @@ class ModifiableSettingsSchema(Schema):
         ),
         load_default=None,
     )
+    accounting_method = fields.String(missing=None)
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use

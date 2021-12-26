@@ -18,6 +18,7 @@ from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuer
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
+    DEFAULT_ACCOUNTING_METHOD,
     DEFAULT_ACTIVE_MODULES,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_BTC_DERIVATION_GAP_LIMIT,
@@ -346,6 +347,7 @@ def test_writing_fetching_data(data_dir, username):
         'pnl_csv_have_summary': DEFAULT_PNL_CSV_HAVE_SUMMARY,
         'ssf_0graph_multiplier': DEFAULT_SSF_0GRAPH_MULTIPLIER,
         'last_data_migration': DEFAULT_LAST_DATA_MIGRATION,
+        'accounting_method': DEFAULT_ACCOUNTING_METHOD,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

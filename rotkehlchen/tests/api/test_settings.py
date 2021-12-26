@@ -96,8 +96,10 @@ def test_set_settings(rotkehlchen_api_server):
             value = ['coingecko', 'cryptocompare']
         elif setting == 'taxable_ledger_actions':
             value = ['income']
+        elif setting == 'accounting_method':
+            value = 'FIFO'
         else:
-            raise AssertionError(f'Unexpected settting {setting} encountered')
+            raise AssertionError(f'Unexpected setting {setting} encountered')
 
         new_settings[setting] = value
 

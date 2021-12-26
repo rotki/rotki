@@ -72,11 +72,15 @@ class TaxableEvents():
 
     @property
     def account_for_assets_movements(self) -> Optional[bool]:
-        return self._account_for_assets_movements
+        return self.account_for_assets_movements
 
-    @account_for_assets_movements.setter
-    def account_for_assets_movements(self, value: Optional[bool]) -> None:
-        self._account_for_assets_movements = value
+    @property
+    def accounting_method(self) -> str:
+        return self.cost_basis._accounting_method
+
+    @accounting_method.setter
+    def accounting_method(self, value: str) -> None:
+        self.cost_basis.accounting_method = value
 
     def get_rate_in_profit_currency(self, asset: Asset, timestamp: Timestamp) -> FVal:
         """Get the profit_currency price of asset in the given timestamp

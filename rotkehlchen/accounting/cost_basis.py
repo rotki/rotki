@@ -17,6 +17,26 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class AssetEvent:
+    timestamp: Timestamp
+    location: Location
+    description: str  # The description of the acquisition. Such as trade, loan etc.
+    amount: FVal  # Amount of the asset being bought
+    open_amount: FVal  # Open position quantity at that time of the event
+    rate: FVal  # Rate in profit currency for which we buy 1 unit of the buying asset
+    # Fee rate in profit currency which we paid for each unit of the buying asset
+    fee_rate: FVal
+    average_cost: FVal  # average cost of the position up until this event
+    pnl: FVal  # pnl, if any, on sell trades
+
+    def __str__(self) -> str:
+        return (
+            f'AssetEvent {self.description} in {str(self.location)} @ {self.timestamp}.'
+            f'amount: {self.amount} rate: {self.rate} fee_rate: {self.fee_rate}'
+        )
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class AssetAcquisitionEvent:
     timestamp: Timestamp
     location: Location
@@ -150,6 +170,7 @@ class CostBasisCalculator():
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self._taxfree_after_period: Optional[int] = None
+        self._accounting_method: str = 'FIFO'
         self.csv_exporter = csv_exporter
         self.msg_aggregator = msg_aggregator
         self.reset(profit_currency)
@@ -167,6 +188,14 @@ class CostBasisCalculator():
         is_valid = isinstance(value, int) or value is None
         assert is_valid, 'set taxfree_after_period should only get int or None'
         self._taxfree_after_period = value
+
+    @property
+    def accounting_method(self) -> str:
+        return self._accounting_method
+
+    @accounting_method.setter
+    def accounting_method(self, value: str) -> None:
+        self._accounting_method = value
 
     def get_events(self, asset: Asset) -> CostBasisEvents:
         """Custom getter for events so that we have common cost basis for some assets"""
@@ -294,6 +323,19 @@ class CostBasisCalculator():
             spending_asset: Asset,
             timestamp: Timestamp,
     ) -> CostBasisInfo:
+
+        if self._accounting_method == 'WAC':
+            return self.calculate_spend_cost_basis_wac(spending_amount, spending_asset, timestamp)
+
+        # return FIFO by default
+        return self.calculate_spend_cost_basis_fifo(spending_amount, spending_asset, timestamp)
+
+    def calculate_spend_cost_basis_fifo(
+        self,
+        spending_amount: FVal,
+        spending_asset: Asset,
+        timestamp: Timestamp,
+    ) -> CostBasisInfo:
         """
         When spending `spending_amount` of `spending_asset` at `timestamp` this function
         calculates using the first-in-first-out rule the corresponding buy/s from
@@ -420,6 +462,114 @@ class CostBasisCalculator():
             taxable_bought_cost=taxable_bought_cost,
             taxfree_bought_cost=taxfree_bought_cost,
             matched_acquisitions=matched_acquisitions,
+            is_complete=is_complete,
+        )
+
+    def calculate_spend_cost_basis_wac(
+            self,
+            spending_amount: FVal,
+            spending_asset: Asset,
+            timestamp: Timestamp,
+    ) -> CostBasisInfo:
+        """
+        When spending `spending_amount` of `spending_asset` at `timestamp` this function
+        calculates using the wac method the corresponding buy/s from
+        which to do profit calculation. Does NOT apply the "free after given time period"
+        rule which applies for some jurisdictions such as 1 year for Germany.
+        Returns the information in a CostBasisInfo object if enough acquisitions have
+        been found.
+        """
+        taxfree_bought_cost = ZERO
+        taxable_bought_cost = ZERO
+        taxable_amount = ZERO
+        is_complete = True
+        asset_events = self.get_events(spending_asset)
+
+        # for WAC, we need to rebuild the position up until timestamp. This is expensive.
+
+        # init a list of buy and sell we will use to build the pos
+        all_events = []
+
+        # add all buy that happened before timestamp
+        for acquisition_event in asset_events.acquisitions:
+            if acquisition_event.timestamp <= timestamp:
+                all_events.append(
+                    AssetEvent(
+                        acquisition_event.timestamp,
+                        acquisition_event.location,
+                        acquisition_event.description,
+                        acquisition_event.amount,
+                        FVal(0),
+                        acquisition_event.rate,
+                        acquisition_event.fee_rate,
+                        FVal(0),
+                        FVal(0),
+                    ),
+                )
+
+        # add all sells that happened before timestamp
+        for spend_event in asset_events.spends:
+            if spend_event.timestamp <= timestamp:
+                all_events.append(
+                    AssetEvent(
+                        spend_event.timestamp,
+                        spend_event.location,
+                        '',
+                        (-1) * spend_event.amount,  # negative amount for sell
+                        FVal(0),
+                        spend_event.rate,
+                        spend_event.fee_rate,
+                        FVal(0),
+                        FVal(0),
+                    ),
+                )
+
+        all_events = sorted(all_events, key=lambda x: timestamp)
+
+        for idx, event in enumerate(all_events):
+
+            if idx == 0:  # init average_cost with first event rate, it is assumed to be a buy
+                event.average_cost = event.rate
+                event.open_amount = event.amount
+
+            else:  # process all further events
+                event.open_amount = all_events[idx - 1].open_amount + event.amount
+
+                # only compute average cost if you have a buy and open_amount is positive
+                if event.amount > 0 and event.open_amount > 0:
+
+                    # if previous event put the pos to 0 or neg, than init again
+                    if all_events[idx - 1].open_amount <= 0:
+                        event.average_cost = event.rate
+                    else:  # else compute new average cost
+                        event.average_cost = (
+                            all_events[idx - 1].average_cost * all_events[idx - 1].open_amount +
+                            event.amount * event.rate) / event.open_amount
+
+                if event.amount < 0:
+                    # average cost doesn't change when we sell
+                    event.average_cost = all_events[idx - 1].average_cost
+                    event.pnl = abs(event.amount) * (event.rate - event.average_cost)
+
+                    # we are trying to sell something we don't have
+                    if all_events[idx - 1].open_amount < 0:
+                        is_complete = False
+
+                    # selling more than we have
+                    if event.open_amount < 0:
+                        is_complete = False
+
+                    if spending_amount > all_events[idx - 1].open_amount:
+                        is_complete = False
+
+            taxable_amount = FVal(abs(event.amount))
+            taxable_bought_cost = event.average_cost * taxable_amount
+
+        return CostBasisInfo(
+            taxable_amount=taxable_amount,
+            taxable_bought_cost=taxable_bought_cost,
+            taxfree_bought_cost=taxfree_bought_cost,
+            matched_acquisitions=[],  # empty
             is_complete=is_complete,
         )
 
