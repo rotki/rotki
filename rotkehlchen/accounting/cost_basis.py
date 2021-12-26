@@ -495,15 +495,15 @@ class CostBasisCalculator():
             if acquisition_event.timestamp <= timestamp:
                 all_events.append(
                     AssetEvent(
-                        acquisition_event.timestamp,
-                        acquisition_event.location,
-                        acquisition_event.description,
-                        acquisition_event.amount,
-                        FVal(0),
-                        acquisition_event.rate,
-                        acquisition_event.fee_rate,
-                        FVal(0),
-                        FVal(0),
+                        timestamp=acquisition_event.timestamp,
+                        location=acquisition_event.location,
+                        description=acquisition_event.description,
+                        amount=acquisition_event.amount,
+                        open_amount=FVal(0),
+                        rate=acquisition_event.rate,
+                        fee_rate=acquisition_event.fee_rate,
+                        average_cost=FVal(0),
+                        pnl=FVal(0),
                     ),
                 )
 
@@ -512,21 +512,20 @@ class CostBasisCalculator():
             if spend_event.timestamp <= timestamp:
                 all_events.append(
                     AssetEvent(
-                        spend_event.timestamp,
-                        spend_event.location,
-                        '',
-                        (-1) * spend_event.amount,  # negative amount for sell
-                        FVal(0),
-                        spend_event.rate,
-                        spend_event.fee_rate,
-                        FVal(0),
-                        FVal(0),
+                        timestamp=spend_event.timestamp,
+                        location=spend_event.location,
+                        description=spend_event.description,
+                        amount=(-1) * spend_event.amount,  # negative amount for sell
+                        open_amount=FVal(0),
+                        rate=spend_event.rate,
+                        fee_rate=spend_event.fee_rate,
+                        average_cost=FVal(0),
+                        pnl=FVal(0),
                     ),
                 )
 
         # sort all selected event by timestamp from older to newer
         all_events = sorted(all_events, key=lambda x: timestamp)
-
         for idx, event in enumerate(all_events):
 
             if idx == 0:  # init average_cost with first event rate, it is assumed to be a buy
