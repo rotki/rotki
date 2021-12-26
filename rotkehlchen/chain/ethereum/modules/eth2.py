@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.typing import (
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.ethereum import EthereumConstants
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.errors import InputError, PremiumPermissionError, RemoteError
@@ -100,6 +101,7 @@ class Eth2(EthereumModule):
                 new_validators.append(Eth2Validator(
                     index=validator.index,
                     public_key=validator.public_key,
+                    ownership_proportion=ONE,
                 ))
                 pubkeys_query_deposits.add(validator.public_key)
 
@@ -143,7 +145,7 @@ class Eth2(EthereumModule):
             tracked_validators = dbeth2.get_validators()
             tracked_pubkeys = [x.public_key for x in tracked_validators]
             new_validators = [
-                Eth2Validator(index=x.index, public_key=x.public_key)
+                Eth2Validator(index=x.index, public_key=x.public_key, ownership_proportion=ONE)
                 for x in validators if x.public_key not in tracked_pubkeys and x.index is not None
             ]
             dbeth2.add_validators(new_validators)
@@ -182,11 +184,14 @@ class Eth2(EthereumModule):
 
         pubkeys = []
         index_to_pubkey = {}
+        index_to_ownership = {}
         for validator in validators:
             # create a mapping of indices to pubkeys since the performance call returns indices
             if validator.index is not None:
                 index_to_pubkey[validator.index] = validator.public_key
                 pubkeys.append(validator.public_key)
+            if isinstance(validator, Eth2Validator):
+                index_to_ownership[validator.index] = validator.ownership_proportion
 
         # Get current balance of all validators. This may miss some balance if it's
         # in the deposit queue but it's too much work to get it right and should be
@@ -197,7 +202,8 @@ class Eth2(EthereumModule):
             if pubkey is None:
                 log.error(f'At eth2 get_balances could not find matching pubkey for validator index {validator_index}')  # noqa: E501
                 continue  # should not happen
-            amount = from_gwei(entry.balance)
+            ownership_proportion = index_to_ownership.get(validator_index, ONE)
+            amount = from_gwei(entry.balance) * ownership_proportion
             balance_mapping[pubkey] += Balance(amount, amount * usd_price)  # noqa: E501
 
         return balance_mapping
@@ -234,7 +240,7 @@ class Eth2(EthereumModule):
                 index_to_address[validator.index] = address
                 index_to_pubkey[validator.index] = validator.public_key
                 indices.append(validator.index)
-                all_validators.append(Eth2Validator(index=validator.index, public_key=validator.public_key))  # noqa: E501
+                all_validators.append(Eth2Validator(index=validator.index, public_key=validator.public_key, ownership_proportion=ONE))  # noqa: E501
 
         # make sure all validators we deal with are saved in the DB
         dbeth2 = DBEth2(self.database)
@@ -320,9 +326,14 @@ class Eth2(EthereumModule):
         dbeth2 = DBEth2(self.database)
         return dbeth2.get_validator_daily_stats_and_limit_info(filter_query=filter_query)
 
-    def add_validator(self, validator_index: Optional[int], public_key: Optional[Eth2PubKey]) -> None:  # noqa: E501
-        """Adds the given validator to the DB. Due to marshmallow here at least one
-        of the two arguments is not None.
+    def add_validator(
+        self,
+        validator_index: Optional[int],
+        public_key: Optional[Eth2PubKey],
+        ownership_proportion: FVal,
+    ) -> None:
+        """Adds the given validator to the DB. Due to marshmallow here at least
+        either validator_index or public key is not None.
 
         May raise:
         - RemoteError if there is a problem with querying beaconcha.in for more info
@@ -375,9 +386,14 @@ class Eth2(EthereumModule):
                     msg = f'Missing key entry for {msg}.'
 
                 raise RemoteError(f'Failed to query beaconcha.in for validator data due to: {msg}') from e  # noqa: E501
-
         # by now we have a valid index and pubkey. Add to DB
-        dbeth2.add_validators([Eth2Validator(index=valid_index, public_key=valid_pubkey)])
+        dbeth2.add_validators([
+            Eth2Validator(
+                index=valid_index,
+                public_key=valid_pubkey,
+                ownership_proportion=ownership_proportion,
+            ),
+        ])
 
     # -- Methods following the EthereumModule interface -- #
     def on_startup(self) -> None:

@@ -2468,6 +2468,7 @@ class Eth2ValidatorSchema(Schema):
         ),
     )
     public_key = fields.String(load_default=None)
+    ownership_percentage = FloatingPercentageField(load_default=FVal(1))
 
     @validates_schema
     def validate_eth2_validator_schema(  # pylint: disable=no-self-use
@@ -2515,6 +2516,17 @@ class Eth2ValidatorPutSchema(Eth2ValidatorSchema):
 
 class Eth2ValidatorDeleteSchema(Schema):
     validators = fields.List(fields.Nested(Eth2ValidatorSchema), required=True)
+
+
+class Eth2ValidatorPatchSchema(Schema):
+    validator_index = fields.Integer(
+        validate=webargs.validate.Range(
+            min=0,
+            error='Validator index must be an integer >= 0',
+        ),
+        required=True,
+    )
+    ownership_percentage = FloatingPercentageField(required=True)
 
 
 class Eth2DailyStatsSchema(

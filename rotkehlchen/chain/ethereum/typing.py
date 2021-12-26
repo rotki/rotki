@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, NamedTuple, Optional, Tuple
 
@@ -109,7 +110,8 @@ ValidatorDailyStatsDBTuple = Tuple[
 ]
 
 
-class ValidatorDailyStats(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class ValidatorDailyStats:
     validator_index: int  # keeping the index here so it can be shown in accounting
     timestamp: Timestamp
     start_usd_price: FVal = ZERO

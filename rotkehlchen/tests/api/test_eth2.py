@@ -8,7 +8,7 @@ import requests
 
 from rotkehlchen.chain.ethereum.modules.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
@@ -31,7 +31,7 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
     '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397',
 ]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_accounts):
     """This test uses real data and queries the eth2 details, deposits and daily stats"""
@@ -221,7 +221,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397',
 ]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_eth2_inactive(rotkehlchen_api_server, ethereum_accounts):
     """Test that quering eth2 module while it's not active properly errors"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -248,7 +248,7 @@ def test_query_eth2_inactive(rotkehlchen_api_server, ethereum_accounts):
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
-def test_add_get_delete_eth2_validators(rotkehlchen_api_server, start_with_valid_premium):
+def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_valid_premium):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -262,15 +262,19 @@ def test_add_get_delete_eth2_validators(rotkehlchen_api_server, start_with_valid
     validators = [Eth2Validator(
         index=4235,
         public_key='0xadd548bb2e6962c255ec5420e40e6e506dfc936592c700d56718ada7dcc52e4295644ff8f94f4ef898aa8a5ad81a5b84',  # noqa: E501
+        ownership_proportion=ONE,
     ), Eth2Validator(
         index=5235,
         public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
+        ownership_proportion=ONE,
     ), Eth2Validator(
         index=23948,
         public_key='0x8a569c702a5b51894a25b261960f6b792aa35f8f67d9e1d96a52b15857cf0ee4fa30670b9bfca40e9a9dba81057ba4c7',  # noqa: E501
+        ownership_proportion=ONE,
     ), Eth2Validator(
         index=43948,
         public_key='0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb',  # noqa: E501
+        ownership_proportion=ONE,
     )]
     response = requests.put(
         api_url_for(
@@ -353,6 +357,52 @@ def test_add_get_delete_eth2_validators(rotkehlchen_api_server, start_with_valid
     )
     result = assert_proper_response_with_result(response)
     assert result == {'entries': [validators[1].serialize()], 'entries_limit': expected_limit, 'entries_found': 1}  # noqa: E501
+
+    # Try to add validator with a custom ownership percentage
+    custom_percentage_validtors = [
+        Eth2Validator(
+            index=5235,
+            public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
+            ownership_proportion=FVal(0.4025),
+        ),
+        Eth2Validator(
+            index=43948,
+            public_key='0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb',  # noqa: E501
+            ownership_proportion=FVal(0.5),
+        ),
+    ]
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={
+            'validator_index': custom_percentage_validtors[1].index,
+            'public_key': custom_percentage_validtors[1].public_key,
+            'ownership_percentage': 50,
+        },
+    )
+    assert_simple_ok_response(response)
+
+    # Edit the second validator
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={
+            'validator_index': 5235,
+            'ownership_percentage': 40.25,
+        },
+    )
+    assert_simple_ok_response(response)
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == {'entries': [validator.serialize() for validator in custom_percentage_validtors], 'entries_limit': expected_limit, 'entries_found': 2}  # noqa: E501
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
@@ -504,9 +554,11 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     validators = [Eth2Validator(
         index=4235,
         public_key='0xadd548bb2e6962c255ec5420e40e6e506dfc936592c700d56718ada7dcc52e4295644ff8f94f4ef898aa8a5ad81a5b84',  # noqa: E501
+        ownership_proportion=ONE,
     ), Eth2Validator(
         index=5235,
         public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
+        ownership_proportion=FVal(0.45),
     )]
     response = requests.put(
         api_url_for(
@@ -560,7 +612,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(per_acc) == 2
     # hope they don't get slashed ;(
     amount1 = FVal('34.547410412')
-    amount2 = FVal('34.600348623')
+    amount2 = FVal('34.600348623') * FVal(0.45)
     assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= amount1
     assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount2
     totals = outcome['totals']
