@@ -709,7 +709,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
         assert_kraken_asset_movements(
             to_check_list=[x['entry'] for x in movements if x['entry']['location'] == 'kraken'],
             deserialized=True,
-            movements_to_check=(0, 1, 2),
+            movements_to_check=(0, 1, 2, 3, 4),
         )
 
     # and now query them in a specific time range excluding some asset movements
@@ -728,8 +728,8 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
     response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
     result = assert_proper_response_with_result(response)
     assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
-    assert result['entries_found'] == 4
-    assert result['entries_total'] == 8
+    assert result['entries_found'] == 6
+    assert result['entries_total'] == 10
     movements = result['entries']
     assert len(movements) == 2
     assert_kraken_asset_movements(
@@ -749,10 +749,10 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
         )
         result = assert_proper_response_with_result(response)
         assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
-        assert result['entries_total'] == 8
-        assert result['entries_found'] == 8
+        assert result['entries_total'] == 10
+        assert result['entries_found'] == 10
         desc_result = result['entries']
-        assert len(desc_result) == 8
+        assert len(desc_result) == 10
         data = {'order_by_attribute': order_by, 'ascending': True, 'only_cache': True}
         response = requests.get(
             api_url_for(
@@ -762,25 +762,25 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
         )
         result = assert_proper_response_with_result(response)
         assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
-        assert result['entries_total'] == 8
-        assert result['entries_found'] == 8
+        assert result['entries_total'] == 10
+        assert result['entries_found'] == 10
         asc_result = result['entries']
-        assert len(asc_result) == 8
+        assert len(asc_result) == 10
         return desc_result, asc_result
 
     # test order by location
     desc_result, asc_result = assert_order_by('location')
     assert all(x['entry']['location'] == 'poloniex' for x in desc_result[:4])
     assert all(x['entry']['location'] == 'kraken' for x in desc_result[4:])
-    assert all(x['entry']['location'] == 'kraken' for x in asc_result[:4])
-    assert all(x['entry']['location'] == 'poloniex' for x in asc_result[4:])
+    assert all(x['entry']['location'] == 'kraken' for x in asc_result[:6])
+    assert all(x['entry']['location'] == 'poloniex' for x in asc_result[6:])
 
     # test order by category
     desc_result, asc_result = assert_order_by('category')
-    assert all(x['entry']['category'] == 'withdrawal' for x in desc_result[:4])
-    assert all(x['entry']['category'] == 'deposit' for x in desc_result[4:])
-    assert all(x['entry']['category'] == 'deposit' for x in asc_result[:4])
-    assert all(x['entry']['category'] == 'withdrawal' for x in asc_result[4:])
+    assert all(x['entry']['category'] == 'withdrawal' for x in desc_result[:5])
+    assert all(x['entry']['category'] == 'deposit' for x in desc_result[5:])
+    assert all(x['entry']['category'] == 'deposit' for x in asc_result[:5])
+    assert all(x['entry']['category'] == 'withdrawal' for x in asc_result[5:])
 
     # test order by amount
     desc_result, asc_result = assert_order_by('amount')

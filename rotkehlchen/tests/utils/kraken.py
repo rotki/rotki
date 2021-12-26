@@ -170,6 +170,72 @@ KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE = """
 KRAKEN_GENERAL_LEDGER_RESPONSE = """
 {
     "ledger": {
+        "L12382343925": {
+            "refid": "D1",
+            "time": 1458994442,
+            "type": "deposit",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "BTC",
+            "amount": "5.0",
+            "fee": "0",
+            "balance": "10"
+        },
+        "L12382343926": {
+            "refid": "D2",
+            "time": 1448994442,
+            "type": "deposit",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "ETH",
+            "amount": "10.0000",
+            "fee": "0",
+            "balance": "100.25"
+        },
+        "L12382343927": {
+            "refid": "D3",
+            "time": 1408994442,
+            "type": "deposit",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "IDONTEXISTEITHER",
+            "amount": "10",
+            "fee": "0",
+            "balance": "100"
+        },
+        "L12382343965": {
+            "refid": "W1",
+            "time": 1428994442,
+            "type": "withdrawal",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "BTC",
+            "amount": "5.0",
+            "fee": "0.1",
+            "balance": "10"
+        },
+        "L12382343966": {
+            "refid": "W2",
+            "time": 1439994442,
+            "type": "withdrawal",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "ETH",
+            "amount": "10.0000",
+            "fee": "1.7500",
+            "balance": "100.25"
+        },
+        "L12382343967": {
+            "refid": "W3",
+            "time": 1408994442,
+            "type": "withdrawal",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "IDONTEXISTEITHER",
+            "amount": "10",
+            "fee": "0.11",
+            "balance": "100"
+        },
         "L1": {
             "refid": "AOEXXV-61T63-AKPSJ0",
             "time": 1609950165.4497,
@@ -178,8 +244,8 @@ KRAKEN_GENERAL_LEDGER_RESPONSE = """
             "aclass": "currency",
             "asset": "KFEE",
             "amount": "0.00",
-            "fee": "1.145",
-            "balance": "0.00"
+            "fee": "0.11",
+            "balance": "100"
         },
         "L2": {
             "refid": "AOEXXV-61T63-AKPSJ0",

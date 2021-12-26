@@ -148,7 +148,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert report['include_gas_costs'] is True
     assert report['taxfree_after_period'] == 31536000
     assert report['identifier'] == report_id
-    assert report['size_on_disk'] == 19004 if start_ts == 0 else 2371
+    assert report['size_on_disk'] == 18742 if start_ts == 0 else 2371
 
     assert events_result['entries_limit'] == FREE_PNL_EVENTS_LIMIT
     entries_length = 37 if start_ts == 0 else 4
@@ -163,7 +163,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     # the unsupported/unknown assets
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 13
+    assert len(warnings) == 10
     assert 'poloniex trade with unknown asset NOEXISTINGASSET' in warnings[0]
     assert 'poloniex trade with unsupported asset BALLS' in warnings[1]
     assert 'withdrawal of unknown poloniex asset IDONTEXIST' in warnings[2]
@@ -174,18 +174,17 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert 'poloniex loan with unknown asset NOTEXISTINGASSET' in warnings[7]
     assert 'bittrex trade with unsupported asset PTON' in warnings[8]
     assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[9]
-    assert 'kraken trade with unknown asset IDONTEXISTTOO' in warnings[10]
-    assert 'unknown kraken asset IDONTEXIST. Ignoring its deposit/withdrawals' in warnings[11]
-    msg = 'unknown kraken asset IDONTEXISTEITHER. Ignoring its deposit/withdrawals query'
-    assert msg in warnings[12]
 
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 5
+    assert len(errors) == 8
     assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in errors[0]
-    assert 'kraken trade with unprocessable pair IDONTEXISTZEUR' in errors[1]
-    assert 'kraken trade with unprocessable pair %$#%$#%$#%$#%$#%' in errors[2]
-    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[3]  # noqa: E501
-    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[4]  # noqa: E501
+    assert 'Failed to read ledger event from kraken' in errors[1]
+    assert 'Failed to read ledger event from kraken ' in errors[2]
+    assert 'Failed to read ledger event from kraken ' in errors[3]
+    assert 'Failed to read ledger event from kraken ' in errors[4]
+    assert 'Not enough documented acquisitions found for ETH(Ethereum) before 02/05/2017' in errors[5]  # noqa: E501
+    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[6]  # noqa: E501
+    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[7]  # noqa: E501
 
 
 @pytest.mark.parametrize(
@@ -497,8 +496,8 @@ def assert_csv_export_response(response, profit_currency, csv_dir, is_download=F
             assert 'link' in row and 'notes' in row
 
             count += 1
-    num_trades = 19
-    assert count == num_trades, 'Incorrect amount of trade CSV entries found'
+    num_trades = 18
+    assert count == num_trades, f'Incorrect amount of trade CSV entries found. {count}'
 
     with open(os.path.join(csv_dir, FILENAME_LOAN_PROFITS_CSV), newline='') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -530,8 +529,8 @@ def assert_csv_export_response(response, profit_currency, csv_dir, is_download=F
             assert row['link'] != ''
             assert row['notes'] == ''
             count += 1
-    num_asset_movements = 11
-    assert count == num_asset_movements, 'Incorrect amount of asset movement CSV entries found'
+    num_asset_movements = 13
+    assert count == num_asset_movements, f'Incorrect amount of asset movement CSV entries found {count}'  # noqa: E501
 
     with open(os.path.join(csv_dir, FILENAME_GAS_CSV), newline='') as csvfile:
         reader = csv.DictReader(csvfile)

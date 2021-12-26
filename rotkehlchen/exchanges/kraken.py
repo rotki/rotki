@@ -678,7 +678,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         Query kraken events from database and create trades from them. May raise:
         - RemoteError if the kraken pairs couldn't be queried
         """
-        queried_range = self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
+        with_errors = self.query_kraken_ledgers()
         filter_query = HistoryEventFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -691,7 +691,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             location_label=self.name,
         )
         trades_raw = self.db.get_history_events(filter_query)
-        trades = self.process_kraken_trades(trades_raw)
+        trades, max_ts = self.process_kraken_trades(trades_raw)
+        queried_range = (start_ts, Timestamp(max_ts)) if with_errors else (start_ts, end_ts)
         return trades, queried_range
 
     def _query_endpoint_for_period(
@@ -717,7 +718,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> List[AssetMovement]:
-        self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
+        self.query_kraken_ledgers()
         filter_query = HistoryEventFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
@@ -834,7 +835,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def process_kraken_trades(
         self,
         raw_data: List[HistoryBaseEntry],
-    ) -> List[Trade]:
+    ) -> Tuple[List[Trade], Timestamp]:
         """
         Given a list of history events we process them to create Trade objects. The valid
         History events type are
@@ -851,6 +852,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """
         self.query_pairs_if_needed()
         trades = []
+        max_ts = 0
         get_attr = operator.attrgetter('event_identifier')
         # Create a list of lists where each sublist has the events for the same event identifier
         grouped_events = [list(g) for k, g in itertools.groupby(sorted(raw_data, key=get_attr), get_attr)]  # noqa: E501
@@ -960,23 +962,27 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 link=exchange_uuid,
             )
             trades.append(trade)
-        return trades
+            max_ts = max(max_ts, timestamp)
+        return trades, Timestamp(max_ts)
 
     @protect_with_lock()
-    def query_kraken_ledgers(
-        self,
-        start_ts: Timestamp,
-        end_ts: Timestamp,
-    ) -> Tuple[Timestamp, Timestamp]:
+    def query_kraken_ledgers(self) -> bool:
         """
         Query Kraken's ledger to retrieve events and transform them to our internal representation
         of history events.
         """
+        range_query_name = f'{self.location}_history_events_{self.name}'
+        last_query = self.db.get_used_query_range(range_query_name)
+        now = ts_now()
+        from_ts = Timestamp(0)
+        if last_query is not None:
+            last_query_ts = last_query[1]
+            from_ts = Timestamp(last_query_ts + 1)
         response, with_errors = self.query_until_finished(
             endpoint='Ledgers',
             keyname='ledger',
-            start_ts=start_ts,
-            end_ts=end_ts,
+            start_ts=from_ts,
+            end_ts=now,
             extra_dict={},
         )
         # Group related events
@@ -985,14 +991,12 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             raw_events_groupped[raw_event['refid']].append(raw_event)
 
         new_events = []
-        max_ts = 0
         for events in raw_events_groupped.values():
             try:
                 events = sorted(
                     events,
                     key=lambda x: deserialize_timestamp_from_kraken(x['time']),
                 )
-                max_ts = max(max_ts, deserialize_timestamp_from_kraken(events[-1]['time']))
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Failed to read timestamp in kraken event group '
@@ -1015,9 +1019,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 self.db.add_history_events(new_events)
             except InputError as e:
                 self.msg_aggregator.add_error(
-                    f'Failed to save kraken events from {start_ts} to {end_ts} '
+                    f'Failed to save kraken events from {from_ts} to {now} '
                     f'in database. {str(e)}',
                 )
 
-        queried_range = (start_ts, Timestamp(max_ts)) if with_errors else (start_ts, end_ts)
-        return queried_range
+        return with_errors

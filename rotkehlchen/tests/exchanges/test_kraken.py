@@ -176,7 +176,7 @@ def test_querying_deposits_withdrawals(function_scope_kraken):
         only_cache=False,
     )
     assert isinstance(result, list)
-    assert len(result) == 2
+    assert len(result) == 5
 
 
 def test_kraken_to_world_pair(kraken):

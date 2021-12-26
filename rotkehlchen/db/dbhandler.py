@@ -142,6 +142,7 @@ DBTupleType = Literal[
     'ethereum_transaction',
     'amm_swap',
     'accounting_event',
+    'history_event',
 ]
 
 # Tuples that contain first the name of a table and then the columns that
@@ -221,6 +222,11 @@ def db_tuple_to_str(
         return (
             f'AMM swap with id {data[0]}-{data[1]} '
             f'in {Location.deserialize_from_db(data[6])} '
+        )
+    if tuple_type == 'history_event':
+        return (
+            f'History event with event identifier {data[1]} from '
+            f'{Location.deserialize_from_db(data[4])}.'
         )
 
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
@@ -2122,7 +2128,7 @@ class DBHandler:
             self,
             tuple_type: DBTupleType,
             query: str,
-            tuples: List[Tuple[Any, ...]],
+            tuples: Sequence[Tuple[Any, ...]],
     ) -> None:
         cursor = self.conn.cursor()
         try:
@@ -3436,9 +3442,8 @@ class DBHandler:
         - InputError if the events couldn't be stored in database
         """
         query_str = """INSERT INTO history_events(identifier, event_identifier, sequence_index,
-        timestamp,location, location_label, asset, amount, usd_value, notes,
+        timestamp, location, location_label, asset, amount, usd_value, notes,
         type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
-        cursor = self.conn.cursor()
         events = []
         for event in history:
             try:
@@ -3447,12 +3452,11 @@ class DBHandler:
                 self.msg_aggregator.add_error(
                     f'Failed to process kraken event for database. {str(e)}',
                 )
-        try:
-            cursor.executemany(query_str, events)
-        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            log.error(f'Failed to save history events: {history}')
-            raise InputError(f'Failed to save history events in database. {str(e)}') from e
-
+        self.write_tuples(
+            tuple_type='history_event',
+            query=query_str,
+            tuples=events,
+        )
         self.update_last_write()
 
     def delete_history_events(self, location: Location) -> None:

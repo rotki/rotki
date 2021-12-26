@@ -218,6 +218,7 @@ class Rotkehlchen():
             task_name='submit_usage_analytics',
             exception_is_error=False,
             method=maybe_submit_usage_analytics,
+            data_dir=self.data_dir,
             should_submit=settings.submit_usage_analytics,
         )
         self.etherscan = Etherscan(database=self.data.db, msg_aggregator=self.msg_aggregator)

@@ -19,7 +19,6 @@ NOT_CSV_WEBPAGE = {
 
 @pytest.fixture(name='mock_airdrop_list')
 def fixture_airdrop_list(airdrop_list):
-    print(airdrop_list)
     with patch(
         'rotkehlchen.chain.ethereum.airdrops.AIRDROPS',
         new=airdrop_list,
