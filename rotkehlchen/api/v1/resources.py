@@ -44,6 +44,7 @@ from rotkehlchen.api.v1.encoding import (
     ERC20InfoSchema,
     Eth2DailyStatsSchema,
     Eth2ValidatorDeleteSchema,
+    Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
     EthereumTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
@@ -118,6 +119,7 @@ from rotkehlchen.db.filtering import (
     ReportDataFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.typing import (
     IMPORTABLE_LOCATIONS,
@@ -1260,6 +1262,7 @@ class Eth2DailyStatsResource(BaseResource):
 
 class Eth2ValidatorsResource(BaseResource):
 
+    patch_schema = Eth2ValidatorPatchSchema()
     put_schema = Eth2ValidatorPutSchema()
     delete_schema = Eth2ValidatorDeleteSchema()
 
@@ -1271,17 +1274,26 @@ class Eth2ValidatorsResource(BaseResource):
             self,
             validator_index: Optional[int],
             public_key: Optional[Eth2PubKey],
+            ownership_percentage: FVal,
             async_query: bool,
     ) -> Response:
         return self.rest_api.add_eth2_validator(
             validator_index=validator_index,
             public_key=public_key,
+            ownership_proportion=ownership_percentage,
             async_query=async_query,
         )
 
     @use_kwargs(delete_schema, location='json')
     def delete(self, validators: List[Dict[str, Any]]) -> Response:
         return self.rest_api.delete_eth2_validator(validators)
+
+    @use_kwargs(patch_schema, location='json')
+    def patch(self, validator_index: int, ownership_percentage: FVal) -> Response:
+        return self.rest_api.edit_eth2_validator(
+            validator_index=validator_index,
+            ownership_proportion=ownership_percentage,
+        )
 
 
 class Eth2StakeDepositsResource(BaseResource):

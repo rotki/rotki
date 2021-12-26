@@ -1,26 +1,33 @@
 <template>
-  <v-form :value="value" class="ledger-action-form" @input="input">
+  <v-form
+    :value="value"
+    data-cy="ledger-action-form"
+    class="ledger-action-form"
+    @input="input"
+  >
     <location-selector
+      v-model="location"
       class="pt-1"
       required
       outlined
-      :error-messages="errors['location']"
-      :value="action.location"
+      data-cy="location"
       :rules="locationRules"
       :label="$t('ledger_action_form.location.label')"
-      @input="updateAction('location', $event)"
+      :error-messages="errorMessages['location']"
+      @focus="delete errorMessages['location']"
     />
 
     <date-time-picker
+      v-model="datetime"
       outlined
-      :error-messages="errors['timestamp']"
-      :value="action.timestamp > 0 ? convertFromTs(action.timestamp) : ''"
       :label="$t('ledger_action_form.date.label')"
       persistent-hint
       required
       seconds
+      data-cy="datetime"
       :hint="$t('ledger_action_form.date.hint')"
-      @input="onDateChange($event)"
+      :error-messages="errorMessages['timestamp']"
+      @focus="delete errorMessages['timestamp']"
     />
 
     <v-row
@@ -33,39 +40,41 @@
     >
       <v-col cols="12" md="4">
         <asset-select
+          v-model="asset"
           outlined
-          :error-messages="errors['asset']"
-          :value="action.asset"
           required
+          data-cy="asset"
           :rules="assetRules"
-          @input="updateAction('asset', $event)"
+          :error-messages="errorMessages['asset']"
+          @focus="delete errorMessages['asset']"
         />
       </v-col>
 
       <v-col cols="12" md="4">
-        <v-text-field
+        <amount-input
+          v-model="amount"
           outlined
-          :error-messages="errors['amount']"
-          :value="action.amount"
           :rules="amountRules"
-          type="number"
           required
+          data-cy="amount"
           :label="$t('ledger_action_form.amount.label')"
-          @input="updateAction('amount', $event)"
+          :error-messages="errorMessages['amount']"
+          @focus="delete errorMessages['amount']"
         />
       </v-col>
 
       <v-col cols="12" md="4">
         <v-select
+          v-model="actionType"
           outlined
-          :error-messages="errors['actionType']"
-          :value="action.actionType"
           :label="$t('ledger_action_form.type.label')"
           :items="typeData"
           item-value="identifier"
           item-text="label"
           required
-          @input="updateAction('actionType', $event)"
+          data-cy="action-type"
+          :error-messages="errorMessages['actionType']"
+          @focus="delete errorMessages['actionType']"
         />
       </v-col>
     </v-row>
@@ -78,96 +87,121 @@
       "
     >
       <v-col cols="12" md="8">
-        <v-text-field
+        <amount-input
+          v-model="rate"
           outlined
           type="number"
           persistent-hint
-          :error-messages="errors['rate']"
-          :value="action.rate"
+          data-cy="rate"
           :hint="$t('ledger_action_form.rate.hint')"
           :label="$t('ledger_action_form.rate.label')"
-          @input="updateAction('rate', $event)"
+          :error-messages="errorMessages['rate']"
+          @focus="delete errorMessages['rate']"
         />
       </v-col>
       <v-col cols="12" md="4">
         <asset-select
+          v-model="rateAsset"
           outlined
-          :error-messages="errors['rateAsset']"
-          :value="action.rateAsset"
           :label="$t('ledger_action_form.rate_asset.label')"
           :hint="$t('ledger_action_form.rate_asset.hint')"
           persistent-hint
-          @input="updateAction('rateAsset', $event)"
+          data-cy="rate-asset"
+          :error-messages="errorMessages['rateAsset']"
+          @focus="delete errorMessages['rateAsset']"
         />
       </v-col>
     </v-row>
 
     <v-text-field
+      v-model="link"
       outlined
-      :error-messages="errors['link']"
       prepend-inner-icon="mdi-link"
       persistent-hint
-      :value="action.link"
+      data-cy="link"
       :label="$t('ledger_action_form.link.label')"
       :hint="$t('ledger_action_form.link.hint')"
-      @input="updateAction('link', $event)"
+      :error-messages="errorMessages['link']"
+      @focus="delete errorMessages['link']"
     />
 
     <v-textarea
+      v-model="notes"
       prepend-inner-icon="mdi-text-box-outline"
-      :error-messages="errors['notes']"
       persistent-hint
-      :value="action.notes"
       outlined
+      data-cy="notes"
       :label="$t('ledger_action_form.notes.label')"
       :hint="$t('ledger_action_form.notes.hint')"
-      @input="updateAction('notes', $event)"
+      :error-messages="errorMessages['notes']"
+      @focus="delete errorMessages['notes']"
     />
   </v-form>
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import dayjs from 'dayjs';
+import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import { mapActions } from 'vuex';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import { ledgerActionsData } from '@/store/history/consts';
-import { LedgerAction, UnsavedAction } from '@/store/history/types';
+import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import { convertKeys } from '@/services/axios-tranformers';
+import { deserializeApiErrorMessage } from '@/services/converters';
+import {
+  LedgerAction,
+  NewLedgerAction,
+  TradeLocation
+} from '@/services/history/types';
+import { HistoryActions, ledgerActionsData } from '@/store/history/consts';
+import { ActionStatus } from '@/store/types';
+import { Writeable } from '@/types';
+import { LedgerActionType } from '@/types/ledger-actions';
+import { bigNumberify, Zero } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
-type Action = LedgerAction | UnsavedAction;
+const LAST_LOCATION = 'rotki.ledger_action.location';
+
+function setLastSelectedLocation(location: TradeLocation) {
+  localStorage.setItem(LAST_LOCATION, location);
+}
+
+function lastSelectedLocation(): TradeLocation {
+  const item = localStorage.getItem(LAST_LOCATION);
+  if (item) {
+    return item as TradeLocation;
+  }
+  return TRADE_LOCATION_EXTERNAL;
+}
 
 @Component({
-  components: { LocationSelector }
+  components: { LocationSelector },
+  methods: {
+    ...mapActions('history', [
+      HistoryActions.ADD_LEDGER_ACTION,
+      HistoryActions.EDIT_LEDGER_ACTION
+    ])
+  }
 })
 export default class LedgerActionForm extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   value!: boolean;
-  @Prop({ required: true, type: Object })
-  action!: Action;
-  @Prop({ required: true, type: Object })
-  errors!: { [key in keyof UnsavedAction]?: string };
+
+  @Prop({ required: false, default: null })
+  edit!: LedgerAction | null;
 
   @Emit()
-  input(_value: boolean) {}
+  input(_valid: boolean) {}
 
-  @Emit('action:update')
-  actionUpdate(_action: Action) {}
+  @Emit()
+  refresh() {}
 
-  onDateChange(date: string) {
-    if (!date) {
-      return;
-    }
-    this.actionUpdate({ ...this.action, timestamp: convertToTimestamp(date) });
-  }
-
-  updateAction(prop: keyof UnsavedAction, value: string | null) {
-    this.actionUpdate({ ...this.action, [prop]: value });
-  }
-
-  convertFromTs(timestamp: number) {
-    return convertFromTimestamp(timestamp, true);
-  }
-
-  datetime = '';
+  errorMessages: {
+    [field: string]: string[];
+  } = {};
+  addLedgerAction!: (ledgerAction: NewLedgerAction) => Promise<ActionStatus>;
+  editLedgerAction!: (
+    ledgerAction: Omit<LedgerAction, 'ignoredInAccounting'>
+  ) => Promise<ActionStatus>;
 
   readonly typeData = ledgerActionsData;
   readonly amountRules = [
@@ -185,6 +219,106 @@ export default class LedgerActionForm extends Vue {
       !!v ||
       this.$t('ledger_action_form.location.validation.non_empty').toString()
   ];
+
+  id: number | null = null;
+  location: string = '';
+  datetime: string = '';
+  asset: string = '';
+  amount: string = '';
+  actionType: string = '';
+  rate: string = '';
+  rateAsset: string = '';
+  link: string = '';
+  notes: string = '';
+
+  mounted() {
+    this.setEditMode();
+  }
+
+  @Watch('edit')
+  onEdit() {
+    this.setEditMode();
+  }
+
+  private setEditMode() {
+    if (!this.edit) {
+      this.reset();
+      return;
+    }
+
+    const ledgerAction: LedgerAction = this.edit;
+
+    this.location = ledgerAction.location;
+    this.datetime = convertFromTimestamp(ledgerAction.timestamp, true);
+    this.asset = ledgerAction.asset;
+    this.amount = ledgerAction.amount.toString();
+    this.actionType = ledgerAction.actionType.toString();
+    this.rate = ledgerAction.rate?.toString() ?? '';
+    this.rateAsset = ledgerAction.rateAsset ?? '';
+    this.link = ledgerAction.link ?? '';
+    this.notes = ledgerAction.notes ?? '';
+    this.id = ledgerAction.identifier;
+  }
+
+  @Watch('location')
+  onLocationUpdate(location: string) {
+    if (location) {
+      setLastSelectedLocation(location);
+    }
+  }
+
+  reset() {
+    this.id = null;
+    this.location = lastSelectedLocation();
+    this.datetime = convertFromTimestamp(dayjs().unix(), true);
+    this.asset = '';
+    this.amount = '0';
+    this.actionType = LedgerActionType.ACTION_INCOME;
+    this.rate = '';
+    this.rateAsset = '';
+    this.link = '';
+    this.notes = '';
+    this.errorMessages = {};
+  }
+
+  async save(): Promise<boolean> {
+    const amount = bigNumberify(this.amount);
+    const rate = bigNumberify(this.rate);
+
+    const ledgerActionPayload: Writeable<NewLedgerAction> = {
+      location: this.location,
+      timestamp: convertToTimestamp(this.datetime),
+      asset: this.asset,
+      amount: amount.isNaN() ? Zero : amount,
+      actionType: this.actionType as LedgerActionType,
+      rate: rate.isNaN() || rate.isZero() ? undefined : rate,
+      rateAsset: this.rateAsset ? this.rateAsset : undefined,
+      link: this.link ? this.link : undefined,
+      notes: this.notes ? this.notes : undefined
+    };
+
+    const { success, message } = !this.id
+      ? await this.addLedgerAction(ledgerActionPayload)
+      : await this.editLedgerAction({
+          ...ledgerActionPayload,
+          identifier: this.id
+        });
+
+    if (success) {
+      this.refresh();
+      this.reset();
+      return true;
+    }
+    if (message) {
+      this.errorMessages = convertKeys(
+        deserializeApiErrorMessage(message) ?? {},
+        true,
+        false
+      );
+    }
+
+    return false;
+  }
 }
 </script>
 

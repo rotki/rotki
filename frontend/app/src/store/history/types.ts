@@ -1,17 +1,13 @@
-import { BigNumber } from '@rotki/common';
 import { IgnoredActions } from '@/services/history/const';
 import {
   AssetMovement,
   EntryMeta,
   EthTransaction,
+  LedgerAction,
   Trade,
   TradeLocation
 } from '@/services/history/types';
-import { FETCH_SOURCE } from '@/store/history/consts';
-import { Nullable } from '@/types';
 import { Collection } from '@/types/collection';
-import { LedgerActionType } from '@/types/ledger-actions';
-import { TaskMeta } from '@/types/task';
 
 export type TradeEntry = Trade & EntryMeta;
 export type AssetMovementEntry = AssetMovement & EntryMeta;
@@ -27,24 +23,6 @@ export interface HistoryState {
   transactions: Collection<EthTransactionEntry>;
 }
 
-export interface LocationRequestMeta extends TaskMeta {
-  readonly location: TradeLocation;
-}
-export interface LedgerAction {
-  readonly identifier: number;
-  readonly timestamp: number;
-  readonly actionType: LedgerActionType;
-  readonly location: TradeLocation;
-  readonly amount: BigNumber;
-  readonly asset: string;
-  readonly rate?: Nullable<BigNumber>;
-  readonly rateAsset?: Nullable<string>;
-  readonly link?: Nullable<string>;
-  readonly notes?: Nullable<string>;
-}
-
-export type UnsavedAction = Omit<LedgerAction, 'identifier'>;
-
 export enum IgnoreActionType {
   TRADES = 'trade',
   MOVEMENTS = 'asset movement',
@@ -56,5 +34,3 @@ export type IgnoreActionPayload = {
   readonly actionIds: string[];
   readonly type: IgnoreActionType;
 };
-
-export type FetchSource = typeof FETCH_SOURCE[number];

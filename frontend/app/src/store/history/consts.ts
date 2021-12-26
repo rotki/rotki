@@ -69,13 +69,3 @@ export const ledgerActionsData: ActionDataEntry[] = [
     label: i18n.t('ledger_actions.actions.grant').toString()
   }
 ];
-
-export const FETCH_FROM_CACHE = 'fromCache' as const;
-export const FETCH_FROM_SOURCE = 'fromSource' as const;
-export const FETCH_REFRESH = 'refresh' as const;
-
-export const FETCH_SOURCE = [
-  FETCH_FROM_CACHE,
-  FETCH_FROM_SOURCE,
-  FETCH_REFRESH
-] as const;

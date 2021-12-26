@@ -1073,6 +1073,7 @@
     }
   },
   "ledger_actions": {
+    "clear_selection": "Clear Selection",
     "actions": {
       "airdrop": "Airdrop",
       "dividends": "Dividends Income",
@@ -1093,11 +1094,7 @@
     },
     "delete": {
       "message": "Are you sure wou want to delete this ledger action?",
-      "title": "Delete LedgerAction"
-    },
-    "delete_failure": {
-      "description": "There was an error while deleting the action: {error}",
-      "title": "Delete Failed"
+      "title": "Delete Ledger Action"
     },
     "details": {
       "link": "Link",
@@ -1111,6 +1108,10 @@
       "add": {
         "title": "Add a ledger action",
         "subtitle": "Add a manual entry of income/loss/expense etc."
+      },
+      "edit": {
+        "title": "Edit Ledger Action",
+        "subtitle": "Edit an existing ledger action"
       }
     },
     "edit_tooltip": "Edit the ledger action",
@@ -1128,6 +1129,7 @@
     "loading": "Please wait while your ledger actions are getting loaded...",
     "loading_subtitle": "The loading of ledger actions might take a while depending on the number of actions you performed.",
     "refresh_tooltip": "Refresh your ledger actions",
+    "selected": "{count} item(s) selected",
     "title": "Ledger Actions"
   },
   "ledger_action_settings": {
@@ -1624,7 +1626,7 @@
       "start_date": "filter by the start date of the trade period",
       "trade_type": "filter by the trade action (buy or sell)"
     },
-    "selected": "{count} trades selected",
+    "selected": "{count} trade(s) selected",
     "title": "Closed Orders",
     "headers": {
       "location": "Location",
@@ -1678,6 +1680,7 @@
     "label": "Filter location"
   },
   "deposits_withdrawals": {
+    "clear_selection": "Clear Selection",
     "title": "Deposits & Withdrawals",
     "headers": {
       "location": "Location",
@@ -1695,7 +1698,8 @@
       "title": "Details",
       "no_details": "No details found."
     },
-    "loading_subtitle": "The loading of asset movements might take a while depending on the amount of exchanges, and actions you performed on these exchanges."
+    "loading_subtitle": "The loading of asset movements might take a while depending on the amount of exchanges, and actions you performed on these exchanges.",
+    "selected": "{count} item(s) selected"
   },
   "ignore": {
     "no_items": {
@@ -1918,16 +1922,6 @@
           "message": "Failed to retrieve the ignored actions\": {message}",
           "title": "Querying ignored actions"
         }
-      }
-    },
-    "manual_ledger_actions": {
-      "error": {
-        "description": "Failed query for ledger actions: {error}",
-        "title": "Ledger actions"
-      },
-      "task": {
-        "description": "Retrieving manual ledger actions",
-        "title": "Ledger actions"
       }
     },
     "ledger_actions": {
@@ -2578,6 +2572,7 @@
     "transaction": "TX:"
   },
   "transactions": {
+    "clear_selection": "Clear Selection",
     "filter": {
       "label": "Filter by account"
     },
@@ -2595,7 +2590,8 @@
       "gas_fee": "Fee",
       "ignored_in_accounting": "Ignored"
     },
-    "label": "transactions"
+    "label": "transactions",
+    "selected": "{count} transaction(s) selected"
   },
   "transaction_details": {
     "title": "Transaction details",

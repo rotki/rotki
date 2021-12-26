@@ -33,6 +33,8 @@ export default class MovementLinks extends Vue {
 
   get transactionId(): string {
     const { transactionId } = this.item;
+    if (!transactionId) return '';
+
     if (this.chain !== Blockchain.ETH) {
       return transactionId;
     }

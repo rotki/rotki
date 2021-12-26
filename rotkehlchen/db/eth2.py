@@ -5,7 +5,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDailyStats
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
@@ -187,7 +187,17 @@ class DBEth2():
         query, bindings = filter_query.prepare()
         query = 'SELECT * from eth2_daily_staking_details ' + query
         results = cursor.execute(query, bindings)
-        return [ValidatorDailyStats.deserialize_from_db(x) for x in results]
+        daily_stats = [ValidatorDailyStats.deserialize_from_db(x) for x in results]
+        # Take into account the proportion of the validator owned
+        validators_ownership = {
+            validator.index: validator.ownership_proportion
+            for validator in self.get_validators()
+        }
+        for daily_stat in daily_stats:
+            owned_proportion = validators_ownership.get(daily_stat.validator_index, ONE)
+            if owned_proportion != ONE:
+                daily_stat.pnl = daily_stat.pnl * owned_proportion
+        return daily_stats
 
     def validator_exists(self, field: str, arg: Union[int, str]) -> bool:
         cursor = self.db.conn.cursor()
@@ -203,10 +213,26 @@ class DBEth2():
         cursor = self.db.conn.cursor()
         cursor.executemany(
             'INSERT OR IGNORE INTO '
-            'eth2_validators(validator_index, public_key) VALUES(?, ?)',
+            'eth2_validators(validator_index, public_key, ownership_proportion) VALUES(?, ?, ?)',
             [x.serialize_for_db() for x in validators],
         )
         self.db.update_last_write()
+
+    def edit_validator(self, validator_index: int, ownership_proportion: FVal) -> None:
+        """Edits the ownership proportion for a validator identified by its index.
+        May raise:
+        - InputError if we try to edit a non existing validator.
+        """
+        cursor = self.db.conn.cursor()
+        cursor.execute(
+            'UPDATE eth2_validators SET ownership_proportion=? WHERE validator_index = ?',
+            (str(ownership_proportion), validator_index),
+        )
+        if cursor.rowcount == 0:
+            raise InputError(
+                f'Tried to edit validator with index {validator_index} '
+                f'that is not in the database',
+            )
 
     def delete_validator(self, validator_index: Optional[int], public_key: Optional[str]) -> None:
         """Deletes the given validator from the DB. Due to marshmallow here at least one

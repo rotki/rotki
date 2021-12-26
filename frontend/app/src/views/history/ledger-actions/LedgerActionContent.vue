@@ -8,18 +8,18 @@
         right
         dark
         color="primary"
-        class="closed-trades__add-trade"
-        @click="newExternalTrade()"
+        class="ledger-actions__add"
+        @click="newLedgerAction()"
       >
-        <v-icon> mdi-plus</v-icon>
+        <v-icon> mdi-plus </v-icon>
       </v-btn>
       <template #title>
         <refresh-button
           :loading="refreshing"
-          :tooltip="$t('closed_trades.refresh_tooltip')"
+          :tooltip="$t('ledger_actions.refresh_tooltip')"
           @refresh="fetch(true)"
         />
-        {{ $t('closed_trades.title') }}
+        {{ $t('ledger_actions.title') }}
       </template>
       <template #actions>
         <v-row>
@@ -29,9 +29,9 @@
               @ignore="ignore"
             />
             <div v-if="selected.length > 0" class="mt-2 ms-1">
-              {{ $t('closed_trades.selected', { count: selected.length }) }}
+              {{ $t('ledger_actions.selected', { count: selected.length }) }}
               <v-btn small text @click="setAllSelected(false)">
-                {{ $t('closed_trades.clear_selection') }}
+                {{ $t('ledger_actions.clear_selection') }}
               </v-btn>
             </div>
           </v-col>
@@ -48,12 +48,12 @@
       <data-table
         :expanded.sync="expanded"
         :headers="tableHeaders"
-        :items="trades"
+        :items="ledgerActions"
         :loading="refreshing"
         :options="options"
         :server-items-length="itemLength"
-        class="closed-trades"
-        item-key="tradeId"
+        class="ledger_actions"
+        item-key="identifier"
         show-expand
         single-expand
         @update:options="updatePaginationHandler($event)"
@@ -70,79 +70,56 @@
           <v-simple-checkbox
             :ripple="false"
             color="primary"
-            :value="isSelected(item.tradeId)"
-            @input="selectionChanged(item.tradeId, $event)"
+            :value="isSelected(item.identifier)"
+            @input="selectionChanged(item.identifier, $event)"
           />
         </template>
         <template #item.ignoredInAccounting="{ item }">
           <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
         </template>
+        <template #item.type="{ item }">
+          <event-type-display
+            data-cy="ledger-action-type"
+            :event-type="item.actionType"
+          />
+        </template>
         <template #item.location="{ item }">
           <location-display
-            data-cy="trade-location"
+            data-cy="ledger-action-location"
             :identifier="item.location"
           />
         </template>
-        <template #item.type="{ item }">
-          <div>{{ item.tradeType }}</div>
-        </template>
-        <template #item.baseAsset="{ item }">
+        <template #item.asset="{ item }">
           <asset-details
-            data-cy="trade-base"
+            data-cy="ledger-action-asset"
             opens-details
-            hide-name
-            :asset="item.baseAsset"
-          />
-        </template>
-        <template #item.quoteAsset="{ item }">
-          <asset-details
-            hide-name
-            opens-details
-            :asset="item.quoteAsset"
-            data-cy="trade-quote"
-          />
-        </template>
-        <template #item.description="{ item }">
-          {{
-            item.tradeType === 'buy'
-              ? $t('closed_trades.description.with')
-              : $t('closed_trades.description.for')
-          }}
-        </template>
-        <template #item.rate="{ item }">
-          <amount-display
-            class="closed-trades__trade__rate"
-            :value="item.rate"
+            :asset="item.asset"
           />
         </template>
         <template #item.amount="{ item }">
-          <amount-display
-            class="closed-trades__trade__amount"
-            :value="item.amount"
+          <amount-display :value="item.amount" />
+        </template>
+        <template #item.timestamp="{ item }">
+          <date-display :timestamp="item.timestamp" />
+        </template>
+        <template #item.actions="{ item }">
+          <row-actions
+            :disabled="refreshing"
+            :edit-tooltip="$t('ledger_actions.edit_tooltip')"
+            :delete-tooltip="$t('ledger_actions.delete_tooltip')"
+            @edit-click="editLedgerActionHandler(item)"
+            @delete-click="promptForDelete(item)"
           />
         </template>
-        <template #item.time="{ item }">
-          <div class="d-flex flex-row align-center">
-            <date-display :timestamp="item.timestamp" />
-            <v-spacer v-if="item.location === 'external'" />
-            <row-actions
-              v-if="item.location === 'external'"
-              :edit-tooltip="$t('closed_trades.edit_tooltip')"
-              :delete-tooltip="$t('closed_trades.delete_tooltip')"
-              @edit-click="editTradeHandler(item)"
-              @delete-click="promptForDelete(item)"
-            />
-          </div>
-        </template>
         <template #expanded-item="{ headers, item }">
-          <trade-details :span="headers.length" :item="item" />
+          <ledger-action-details :span="headers.length" :item="item" />
         </template>
         <template v-if="showUpgradeRow" #body.prepend="{ headers }">
           <upgrade-row
             :limit="limit"
             :total="total"
             :colspan="headers.length"
-            :label="$t('closed_trades.label')"
+            :label="$t('ledger_actions.label')"
           />
         </template>
       </data-table>
@@ -151,13 +128,12 @@
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :primary-action="$t('closed_trades.dialog.save')"
+      :primary-action="$t('ledger_actions.dialog.save')"
       :action-disabled="loading || !valid"
-      :loading="loading"
       @confirm="save()"
       @cancel="clearDialog()"
     >
-      <external-trade-form
+      <ledger-action-form
         ref="form"
         v-model="valid"
         :edit="editableItem"
@@ -165,12 +141,12 @@
       />
     </big-dialog>
     <confirm-dialog
-      :display="tradeToDelete !== null"
-      :title="$t('closed_trades.confirmation.title')"
+      :display="ledgerActionToDelete !== null"
+      :title="$t('ledger_actions.delete.title')"
       confirm-type="warning"
       :message="confirmationMessage"
-      @cancel="tradeToDelete = null"
-      @confirm="deleteTradeHandler()"
+      @cancel="ledgerActionToDelete = null"
+      @confirm="deleteLedgerActionHandler()"
     />
   </fragment>
 </template>
@@ -181,7 +157,6 @@ import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import ExternalTradeForm from '@/components/ExternalTradeForm.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -192,8 +167,8 @@ import {
   SearchMatcher
 } from '@/components/history/filtering/types';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
+import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import TradeDetails from '@/components/history/TradeDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import {
   setupAssetInfoRetrieval,
@@ -203,36 +178,35 @@ import { setupStatusChecking } from '@/composables/common';
 import {
   setupAssociatedLocations,
   setupEntryLimit,
-  setupTrades
+  setupLedgerActions
 } from '@/composables/history';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import {
-  Trade,
-  TradeLocation,
-  TradeRequestPayload,
-  TradeType
+  LedgerAction,
+  LedgerActionRequestPayload,
+  TradeLocation
 } from '@/services/history/types';
 import { Section } from '@/store/const';
-import { IgnoreActionType, TradeEntry } from '@/store/history/types';
+import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
+import { LedgerActionType } from '@/types/ledger-actions';
 import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 import { setupIgnore } from '@/views/history/composables/ignore';
 import { setupSelectionMode } from '@/views/history/composables/selection';
+import LedgerActionDetails from '@/views/history/ledger-actions/LedgerActionDetails.vue';
 
-enum TradeFilterKeys {
-  BASE = 'base',
-  QUOTE = 'quote',
-  ACTION = 'action',
+enum LedgerActionFilterKeys {
+  ASSET = 'asset',
+  TYPE = 'type',
   START = 'start',
   END = 'end',
   LOCATION = 'location'
 }
 
-enum TradeFilterValueKeys {
-  BASE = 'baseAsset',
-  QUOTE = 'quoteAsset',
-  ACTION = 'tradeType',
+enum LedgerActionFilterValueKeys {
+  ASSET = 'asset',
+  TYPE = 'type',
   START = 'fromTimestamp',
   END = 'toTimestamp',
   LOCATION = 'location'
@@ -241,66 +215,54 @@ enum TradeFilterValueKeys {
 type PaginationOptions = {
   page: number;
   itemsPerPage: number;
-  sortBy: (keyof Trade)[];
+  sortBy: (keyof LedgerAction)[];
   sortDesc: boolean[];
 };
 
 const tableHeaders: DataTableHeader[] = [
   { text: '', value: 'selection', width: '34px', sortable: false },
   {
-    text: i18n.t('closed_trades.headers.location').toString(),
+    text: i18n.t('ledger_actions.headers.location').toString(),
     value: 'location',
     width: '120px',
     align: 'center'
   },
   {
-    text: i18n.t('closed_trades.headers.action').toString(),
-    value: 'type',
-    width: '90px'
+    text: i18n.t('ledger_actions.headers.type').toString(),
+    value: 'type'
   },
   {
-    text: i18n.t('closed_trades.headers.base').toString(),
-    value: 'baseAsset',
+    text: i18n.t('ledger_actions.headers.asset').toString(),
+    value: 'asset',
     sortable: false
   },
   {
-    text: '',
-    value: 'description',
-    sortable: false,
-    width: '40px'
+    text: i18n.t('ledger_actions.headers.amount').toString(),
+    value: 'amount'
   },
   {
-    text: i18n.t('closed_trades.headers.quote').toString(),
-    value: 'quoteAsset',
-    sortable: false
+    text: i18n.t('ledger_actions.headers.date').toString(),
+    value: 'timestamp'
   },
   {
-    text: i18n.t('closed_trades.headers.rate').toString(),
-    value: 'rate',
-    align: 'end'
-  },
-  {
-    text: i18n.t('closed_trades.headers.amount').toString(),
-    value: 'amount',
-    align: 'end'
-  },
-  {
-    text: i18n.t('closed_trades.headers.timestamp').toString(),
-    value: 'time'
-  },
-  {
-    text: i18n.t('closed_trades.headers.ignored').toString(),
+    text: i18n.t('ledger_actions.headers.ignored').toString(),
     value: 'ignoredInAccounting',
+    sortable: false
+  },
+  {
+    text: i18n.t('ledger_actions.headers.actions').toString(),
+    align: 'end',
+    value: 'actions',
     sortable: false
   },
   { text: '', value: 'data-table-expand', sortable: false }
 ];
 
 export default defineComponent({
-  name: 'ClosedTrades',
+  name: 'LedgerActionContent',
   components: {
     RowActions,
-    TradeDetails,
+    LedgerActionDetails,
     TableFilter,
     DataTable,
     Fragment,
@@ -309,17 +271,18 @@ export default defineComponent({
     UpgradeRow,
     DateDisplay,
     LocationDisplay,
-    ExternalTradeForm,
+    LedgerActionForm,
     ConfirmDialog,
     BigDialog
   },
   emits: ['fetch', 'update:payload'],
   setup(_, { emit }) {
     const fetch = (refresh: boolean = false) => emit('fetch', refresh);
-    const updatePayload = (payload: Partial<TradeRequestPayload>) =>
+    const updatePayload = (payload: Partial<LedgerActionRequestPayload>) =>
       emit('update:payload', payload);
 
-    const { trades, limit, found, total, deleteTrade } = setupTrades();
+    const { ledgerActions, limit, found, total, deleteLedgerAction } =
+      setupLedgerActions();
 
     const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
@@ -329,24 +292,26 @@ export default defineComponent({
     const dialogTitle: Ref<string> = ref('');
     const dialogSubtitle: Ref<string> = ref('');
     const openDialog: Ref<boolean> = ref(false);
-    const editableItem: Ref<TradeEntry | null> = ref(null);
-    const tradeToDelete: Ref<TradeEntry | null> = ref(null);
+    const editableItem: Ref<LedgerActionEntry | null> = ref(null);
+    const ledgerActionToDelete: Ref<LedgerActionEntry | null> = ref(null);
     const confirmationMessage: Ref<string> = ref('');
-    const expanded: Ref<TradeEntry[]> = ref([]);
+    const expanded: Ref<LedgerActionEntry[]> = ref([]);
     const valid: Ref<boolean> = ref(false);
-    const form = ref<ExternalTradeForm | null>(null);
+    const form = ref<LedgerActionForm | null>(null);
 
-    const newExternalTrade = () => {
-      dialogTitle.value = i18n.t('closed_trades.dialog.add.title').toString();
-      dialogSubtitle.value = '';
+    const newLedgerAction = () => {
+      dialogTitle.value = i18n.t('ledger_actions.dialog.add.title').toString();
+      dialogSubtitle.value = i18n
+        .t('ledger_actions.dialog.add.subtitle')
+        .toString();
       openDialog.value = true;
     };
 
-    const editTradeHandler = (trade: TradeEntry) => {
-      editableItem.value = trade;
-      dialogTitle.value = i18n.t('closed_trades.dialog.edit.title').toString();
+    const editLedgerActionHandler = (ledgerAction: LedgerActionEntry) => {
+      editableItem.value = ledgerAction;
+      dialogTitle.value = i18n.t('ledger_actions.dialog.edit.title').toString();
       dialogSubtitle.value = i18n
-        .t('closed_trades.dialog.edit.subtitle')
+        .t('ledger_actions.dialog.edit.subtitle')
         .toString();
       openDialog.value = true;
     };
@@ -354,37 +319,27 @@ export default defineComponent({
     const { getAssetSymbol, getAssetIdentifierForSymbol } =
       setupAssetInfoRetrieval();
 
-    const promptForDelete = (trade: TradeEntry) => {
-      const prep = (
-        trade.tradeType === 'buy'
-          ? i18n.t('closed_trades.description.with').toString()
-          : i18n.t('closed_trades.description.for').toString()
-      ).toLocaleLowerCase();
-
+    const promptForDelete = (ledgerAction: LedgerActionEntry) => {
       confirmationMessage.value = i18n
-        .t('closed_trades.confirmation.message', {
-          pair: `${getAssetSymbol(trade.baseAsset)} ${prep} ${getAssetSymbol(
-            trade.quoteAsset
-          )}`,
-          action: trade.tradeType,
-          amount: trade.amount
-        })
+        .t('ledger_actions.delete.message')
         .toString();
-      tradeToDelete.value = trade;
+      ledgerActionToDelete.value = ledgerAction;
     };
 
-    const deleteTradeHandler = async () => {
-      if (!tradeToDelete.value) {
+    const deleteLedgerActionHandler = async () => {
+      if (!ledgerActionToDelete.value) {
         return;
       }
 
-      const success: boolean = await deleteTrade(tradeToDelete.value?.tradeId);
+      const success: boolean = await deleteLedgerAction(
+        ledgerActionToDelete.value?.identifier
+      );
 
       if (!success) {
         return;
       }
 
-      tradeToDelete.value = null;
+      ledgerActionToDelete.value = null;
       confirmationMessage.value = '';
       fetch();
     };
@@ -408,7 +363,7 @@ export default defineComponent({
     const { dateInputFormat } = setupSettings();
 
     const options: Ref<PaginationOptions | null> = ref(null);
-    const filters: Ref<MatchedKeyword<TradeFilterValueKeys>> = ref({});
+    const filters: Ref<MatchedKeyword<LedgerActionFilterValueKeys>> = ref({});
 
     const { supportedAssets } = setupSupportedAssets();
     const availableAssets = computed<string[]>(() => {
@@ -423,38 +378,31 @@ export default defineComponent({
     });
 
     const matchers = computed<
-      SearchMatcher<TradeFilterKeys, TradeFilterValueKeys>[]
+      SearchMatcher<LedgerActionFilterKeys, LedgerActionFilterValueKeys>[]
     >(() => [
       {
-        key: TradeFilterKeys.BASE,
-        keyValue: TradeFilterValueKeys.BASE,
-        description: i18n.t('closed_trades.filter.base_asset').toString(),
+        key: LedgerActionFilterKeys.ASSET,
+        keyValue: LedgerActionFilterValueKeys.ASSET,
+        description: i18n.t('ledger_actions.filter.asset').toString(),
         suggestions: () => availableAssets.value,
         validate: (asset: string) => availableAssets.value.includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
       },
       {
-        key: TradeFilterKeys.QUOTE,
-        keyValue: TradeFilterValueKeys.QUOTE,
-        description: i18n.t('closed_trades.filter.quote_asset').toString(),
-        suggestions: () => availableAssets.value,
-        validate: (asset: string) => availableAssets.value.includes(asset),
-        transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
+        key: LedgerActionFilterKeys.TYPE,
+        keyValue: LedgerActionFilterValueKeys.TYPE,
+        description: i18n.t('ledger_actions.filter.action_type').toString(),
+        suggestions: () => [...Object.values(LedgerActionType)],
+        validate: type =>
+          ([...Object.values(LedgerActionType)] as string[]).includes(type)
       },
       {
-        key: TradeFilterKeys.ACTION,
-        keyValue: TradeFilterValueKeys.ACTION,
-        description: i18n.t('closed_trades.filter.trade_type').toString(),
-        suggestions: () => TradeType.options,
-        validate: type => (TradeType.options as string[]).includes(type)
-      },
-      {
-        key: TradeFilterKeys.START,
-        keyValue: TradeFilterValueKeys.START,
-        description: i18n.t('closed_trades.filter.start_date').toString(),
+        key: LedgerActionFilterKeys.START,
+        keyValue: LedgerActionFilterValueKeys.START,
+        description: i18n.t('ledger_actions.filter.start_date').toString(),
         suggestions: () => [],
         hint: i18n
-          .t('closed_trades.filter.date_hint', {
+          .t('ledger_actions.filter.date_hint', {
             format: getDateInputISOFormat(dateInputFormat.value)
           })
           .toString(),
@@ -468,12 +416,12 @@ export default defineComponent({
           convertToTimestamp(date, dateInputFormat.value).toString()
       },
       {
-        key: TradeFilterKeys.END,
-        keyValue: TradeFilterValueKeys.END,
-        description: i18n.t('closed_trades.filter.end_date').toString(),
+        key: LedgerActionFilterKeys.END,
+        keyValue: LedgerActionFilterValueKeys.END,
+        description: i18n.t('ledger_actions.filter.end_date').toString(),
         suggestions: () => [],
         hint: i18n
-          .t('closed_trades.filter.date_hint', {
+          .t('ledger_actions.filter.date_hint', {
             format: getDateInputISOFormat(dateInputFormat.value)
           })
           .toString(),
@@ -487,9 +435,9 @@ export default defineComponent({
           convertToTimestamp(date, dateInputFormat.value).toString()
       },
       {
-        key: TradeFilterKeys.LOCATION,
-        keyValue: TradeFilterValueKeys.LOCATION,
-        description: i18n.t('closed_trades.filter.location').toString(),
+        key: LedgerActionFilterKeys.LOCATION,
+        keyValue: LedgerActionFilterValueKeys.LOCATION,
+        description: i18n.t('ledger_actions.filter.location').toString(),
         suggestions: () => availableLocations.value,
         validate: location => availableLocations.value.includes(location as any)
       }
@@ -512,12 +460,12 @@ export default defineComponent({
         paginationOptions = {
           limit: itemsPerPage,
           offset,
-          orderByAttribute: sortBy.length > 0 ? sortBy[0] : 'time',
+          orderByAttribute: sortBy.length > 0 ? sortBy[0] : 'timestamp',
           ascending: !sortDesc[0]
         };
       }
 
-      const payload: Partial<TradeRequestPayload> = {
+      const payload: Partial<LedgerActionRequestPayload> = {
         ...filters.value,
         ...paginationOptions
       };
@@ -531,7 +479,7 @@ export default defineComponent({
     };
 
     const updateFilterHandler = (
-      newFilters: MatchedKeyword<TradeFilterKeys>
+      newFilters: MatchedKeyword<LedgerActionFilterKeys>
     ) => {
       filters.value = newFilters;
 
@@ -546,13 +494,16 @@ export default defineComponent({
       updatePaginationHandler(newOptions);
     };
 
-    const getId = (item: TradeEntry) => item.tradeId;
+    const getId = (item: LedgerActionEntry) => item.identifier.toString();
 
-    const selectionMode = setupSelectionMode<TradeEntry>(trades, getId);
+    const selectionMode = setupSelectionMode<LedgerActionEntry>(
+      ledgerActions,
+      getId
+    );
 
     return {
       tableHeaders,
-      trades,
+      ledgerActions,
       limit,
       found,
       total,
@@ -560,20 +511,20 @@ export default defineComponent({
       fetch,
       showUpgradeRow,
       updatePayload,
-      loading: shouldShowLoadingScreen(Section.TRADES),
-      refreshing: isSectionRefreshing(Section.TRADES),
+      loading: shouldShowLoadingScreen(Section.LEDGER_ACTIONS),
+      refreshing: isSectionRefreshing(Section.LEDGER_ACTIONS),
       dialogTitle,
       dialogSubtitle,
       openDialog,
       editableItem,
-      tradeToDelete,
+      ledgerActionToDelete,
       confirmationMessage,
       expanded,
       valid,
-      newExternalTrade,
-      editTradeHandler,
+      newLedgerAction,
+      editLedgerActionHandler,
       promptForDelete,
-      deleteTradeHandler,
+      deleteLedgerActionHandler,
       form,
       clearDialog,
       save,
@@ -583,9 +534,9 @@ export default defineComponent({
       updateFilterHandler,
       ...selectionMode,
       ...setupIgnore(
-        IgnoreActionType.TRADES,
+        IgnoreActionType.LEDGER_ACTIONS,
         selectionMode.selected,
-        trades,
+        ledgerActions,
         fetch,
         getId
       )
@@ -593,15 +544,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style scoped lang="scss">
-::v-deep {
-  th {
-    &:nth-child(2) {
-      span {
-        padding-left: 16px;
-      }
-    }
-  }
-}
-</style>

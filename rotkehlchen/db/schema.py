@@ -556,7 +556,8 @@ CREATE TABLE IF NOT EXISTS amm_events (
 DB_CREATE_ETH2_VALIDATORS = """
 CREATE TABLE IF NOT EXISTS eth2_validators (
     validator_index INTEGER NOT NULL PRIMARY KEY,
-    public_key TEXT NOT NULL UNIQUE
+    public_key TEXT NOT NULL UNIQUE,
+    ownership_proportion TEXT NOT NULL
 );
 """
 

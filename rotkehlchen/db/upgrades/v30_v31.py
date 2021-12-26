@@ -31,7 +31,8 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS eth2_validators (
     validator_index INTEGER NOT NULL PRIMARY KEY,
-    public_key TEXT NOT NULL UNIQUE
+    public_key TEXT NOT NULL UNIQUE,
+    ownership_proportion TEXT NOT NULL
     );""")
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS eth2_deposits (

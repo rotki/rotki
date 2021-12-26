@@ -7682,6 +7682,7 @@ Adding an Eth2 validator
 
    :reqjson validator_index int: An optional integer representing the validator index of the validator to track. If this is not given then the pulic key of the validator has to be given!
    :reqjson public_key str: An optional string representing the hexadecimal string of the public key of the validator to track. If this is not given the the validator index has to be given!
+   :resjson ownership_percentage: An optional string representing the amount of the validator owned by the user in the range of 0 to 100. If not provided a default value of 100 is assigned.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
    **Example Response**:
@@ -7747,6 +7748,42 @@ Deleting Eth2 validators
    :statuscode 200: Eth2 validator succesfully delete.
    :statuscode 409: User is not logged in. Or eth2 module is not activated.
    :statuscode 500: Internal rotki error.
+
+
+Editing an Eth2 validator
+==========================
+
+.. http:patch:: /api/(version)/blockchains/ETH2/validators
+
+   Doing a PATCH on the eth2 validators endpoint will allow to edit the ownership percentage of a validator indentified by its index.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/ETH2/validators HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson validator_index int: An integer representing the validator index of the validator to edit.
+   :resjson ownership_percentage: A float representing the amount of the validator owned by the user in the range of 0 to 100. If not provided a default value of 100 is assigned.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true
+        "message": "",
+      }
+
+   :statuscode 200: Eth2 validator succesfully edited.
+   :statuscode 409: User is not logged in, eth2 module is not activated or validator doesn't exist.
+   :statuscode 500: Internal rotki error.
+
 
 Getting tracked Eth2 validators
 ===============================

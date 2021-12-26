@@ -1,5 +1,5 @@
 <template>
-  <tab-navigation :tab-contents="tabs" />
+  <tab-navigation :tab-contents="tabs" data-cy="history-tab" />
 </template>
 
 <script lang="ts">

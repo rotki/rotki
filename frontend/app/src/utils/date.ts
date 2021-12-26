@@ -52,7 +52,7 @@ export function convertFromTimestamp(
   let format: string = getDateInputISOFormat(dateFormat);
   if (time.hour() !== 0 || time.minute() !== 0) {
     format += ' HH:mm';
-    if (seconds && time.second() !== 0) {
+    if (seconds) {
       format += ':ss';
     }
   }

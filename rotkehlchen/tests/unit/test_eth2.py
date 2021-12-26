@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.typing import (
     ValidatorDailyStats,
     string_to_ethereum_address,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.fval import FVal
@@ -318,7 +318,7 @@ def test_get_validators_to_query_for_stats(database):
     db = DBEth2(database)
     now = ts_now()
     assert db.get_validators_to_query_for_stats(now) == []
-    db.add_validators([Eth2Validator(index=1, public_key='0xfoo1')])
+    db.add_validators([Eth2Validator(index=1, public_key='0xfoo1', ownership_proportion=ONE)])
     assert db.get_validators_to_query_for_stats(now) == [(1, 0)]
 
     db.add_validator_daily_stats([ValidatorDailyStats(
@@ -358,9 +358,9 @@ def test_get_validators_to_query_for_stats(database):
 
     # Now add multiple validators and daily stats and assert on result
     db.add_validators([
-        Eth2Validator(index=2, public_key='0xfoo2'),
-        Eth2Validator(index=3, public_key='0xfoo3'),
-        Eth2Validator(index=4, public_key='0xfoo4'),
+        Eth2Validator(index=2, public_key='0xfoo2', ownership_proportion=ONE),
+        Eth2Validator(index=3, public_key='0xfoo3', ownership_proportion=ONE),
+        Eth2Validator(index=4, public_key='0xfoo4', ownership_proportion=ONE),
     ])
     db.add_validator_daily_stats([ValidatorDailyStats(
         validator_index=3,
@@ -680,7 +680,13 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
     validator_index = 33710
     public_key = '0x9882b4c33c0d5394205b12d62952c50fe03c6c9fe08faa36425f70afb7caac0689dcd981af35d0d03defb8286d50911d'  # noqa: E501
     dbeth2 = DBEth2(database)
-    dbeth2.add_validators([Eth2Validator(index=validator_index, public_key=public_key)])
+    dbeth2.add_validators([
+        Eth2Validator(
+            index=validator_index,
+            public_key=public_key,
+            ownership_proportion=ONE,
+        ),
+    ])
     with stats_call_patch as stats_call:
         filter_query = Eth2DailyStatsFilterQuery.make(
             validators=[validator_index],
@@ -762,3 +768,16 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         )
         assert stats_call.call_count == 1
         assert stats[:len(expected_stats)] == expected_stats
+
+        # Check that changing ownership proportion works
+        dbeth2.edit_validator(
+            validator_index=validator_index,
+            ownership_proportion=FVal(0.45),
+        )
+        stats, filter_total_found, _, _ = eth2.get_validator_daily_stats(
+            filter_query=filter_query,
+            only_cache=False,
+            msg_aggregator=function_scope_messages_aggregator,
+        )
+        last_stat = stats[:len(expected_stats)][-1]
+        assert last_stat.pnl_balance.amount == expected_stats[-1].pnl_balance.amount * FVal(0.45)

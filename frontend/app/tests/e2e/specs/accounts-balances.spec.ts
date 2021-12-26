@@ -47,7 +47,7 @@ describe('balances', () => {
   describe('blockchain balances', () => {
     let blockchainBalances: FixtureBlockchainBalance[];
     before(() => {
-      cy.fixture('blockchain-balances').then(balances => {
+      cy.fixture('account-balances/blockchain-balances').then(balances => {
         blockchainBalances = balances.map((balance: { blockchain: string }) => {
           const address = {
             [Blockchain.ETH]: Cypress.env('ETH_ADDRESS'),
@@ -141,7 +141,7 @@ describe('balances', () => {
   describe('manual balances', () => {
     let manualBalances: FixtureManualBalance[];
     before(() => {
-      cy.fixture('manual-balances').then(balances => {
+      cy.fixture('account-balances/manual-balances').then(balances => {
         manualBalances = balances;
       });
       manualBalancesPage.visit();

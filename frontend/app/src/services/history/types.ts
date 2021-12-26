@@ -1,7 +1,8 @@
-import { NumericString, BigNumber } from '@rotki/common';
+import { NumericString } from '@rotki/common';
 import { z, ZodTypeAny } from 'zod';
 import { SUPPORTED_TRADE_LOCATIONS } from '@/data/defaults';
 import { SUPPORTED_EXCHANGES } from '@/types/exchanges';
+import { LedgerActionEnum } from '@/types/ledger-actions';
 
 // Common wrapper function
 const EntryMeta = z.object({
@@ -82,21 +83,41 @@ export type TradeRequestPayload = {
 };
 
 // Asset Movements
-type MovementCategory = 'deposit' | 'withdrawal';
+export const MovementCategory = z.enum(['deposit', 'withdrawal']);
+export type MovementCategory = z.infer<typeof MovementCategory>;
 
-export interface AssetMovement {
-  readonly identifier: string;
-  readonly location: TradeLocation;
-  readonly category: MovementCategory;
-  readonly address: string;
-  readonly transactionId: string;
-  readonly timestamp: number;
-  readonly asset: string;
-  readonly amount: BigNumber;
-  readonly feeAsset: string;
-  readonly fee: BigNumber;
-  readonly link: string;
-}
+export const AssetMovement = z.object({
+  identifier: z.string(),
+  location: TradeLocation,
+  category: MovementCategory,
+  address: z.string().nullable(),
+  transactionId: z.string().nullable(),
+  timestamp: z.number(),
+  asset: z.string(),
+  amount: NumericString,
+  feeAsset: z.string(),
+  fee: NumericString,
+  link: z.string()
+});
+
+export type AssetMovement = z.infer<typeof AssetMovement>;
+
+export const AssetMovementCollectionResponse = getCollectionResponseType(
+  getEntryWithMeta(AssetMovement)
+);
+
+export type AssetMovementRequestPayload = {
+  readonly limit: number;
+  readonly offset: number;
+  readonly orderByAttribute?: string;
+  readonly ascending: boolean;
+  readonly fromTimestamp?: string | number;
+  readonly toTimestamp?: string | number;
+  readonly location?: string;
+  readonly asset?: string;
+  readonly action?: string;
+  readonly onlyCache?: boolean;
+};
 
 // ETH Transactions
 export const EthTransaction = z.object({
@@ -132,6 +153,36 @@ export type TransactionRequestPayload = {
 };
 
 // Ledger Actions
-export interface LedgerActionResult {
-  readonly identifier: number;
-}
+export const LedgerAction = z.object({
+  identifier: z.number(),
+  timestamp: z.number(),
+  actionType: LedgerActionEnum,
+  location: TradeLocation,
+  amount: NumericString,
+  asset: z.string(),
+  rate: NumericString.nullable().optional(),
+  rateAsset: z.string().nullable().optional(),
+  link: z.string().nullable().optional(),
+  notes: z.string().nullable().optional()
+});
+
+export type LedgerAction = z.infer<typeof LedgerAction>;
+
+export const LedgerActionCollectionResponse = getCollectionResponseType(
+  getEntryWithMeta(LedgerAction)
+);
+
+export type LedgerActionRequestPayload = {
+  readonly limit: number;
+  readonly offset: number;
+  readonly orderByAttribute?: string;
+  readonly ascending: boolean;
+  readonly fromTimestamp?: string | number;
+  readonly toTimestamp?: string | number;
+  readonly location?: string;
+  readonly asset?: string;
+  readonly action?: string;
+  readonly onlyCache?: boolean;
+};
+
+export type NewLedgerAction = Omit<LedgerAction, 'identifier'>;
