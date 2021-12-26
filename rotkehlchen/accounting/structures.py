@@ -324,6 +324,9 @@ class HistoryBaseEntry:
     sequence_index: int  # When this transaction was executed relative to other related events
     timestamp: Timestamp
     location: Location
+    # location_label is a string field that allows to provide more information about the location.
+    # When we use this structure in blockchains can be used to specify addresses for example.
+    # currently we use to identify the exchange name assigned by the user.
     location_label: Optional[str]
     amount: AssetBalance
     notes: Optional[str]
@@ -379,6 +382,9 @@ class HistoryBaseEntry:
 
     @property
     def identifier(self) -> str:
+        """Generate an unique identifier based on information from the base entry that is later
+        hashed. It follows the pattern that we use in other places and has similar problems.
+        """
         location_label = self.location_label if self.location_label is not None else ''
         event_subtype = self.event_subtype if self.event_subtype is not None else ''
         hashable = (
