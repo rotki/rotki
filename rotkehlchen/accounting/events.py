@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 
-from rotkehlchen.accounting.cost_basis import CostBasisCalculator
+from rotkehlchen.accounting.cost_basis import AccountingMethods, CostBasisCalculator
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import DefiEvent
 from rotkehlchen.assets.asset import Asset
@@ -75,11 +75,11 @@ class TaxableEvents():
         return self.account_for_assets_movements
 
     @property
-    def accounting_method(self) -> str:
+    def accounting_method(self) -> AccountingMethods:
         return self.cost_basis._accounting_method
 
     @accounting_method.setter
-    def accounting_method(self, value: str) -> None:
+    def accounting_method(self, value: AccountingMethods) -> None:
         self.cost_basis.accounting_method = value
 
     def get_rate_in_profit_currency(self, asset: Asset, timestamp: Timestamp) -> FVal:
@@ -314,6 +314,7 @@ class TaxableEvents():
 
         self.add_sell(
             location=location,
+            description="",
             selling_asset=paid_with_asset,
             selling_amount=sold_amount,
             receiving_asset=receiving_asset,
@@ -464,6 +465,7 @@ class TaxableEvents():
         """
         self.add_sell(
             location=location,
+            description="",
             selling_asset=selling_asset,
             selling_amount=selling_amount,
             receiving_asset=receiving_asset,
@@ -505,6 +507,7 @@ class TaxableEvents():
     def add_sell(
             self,
             location: Location,
+            description: str,
             selling_asset: Asset,
             selling_amount: FVal,
             receiving_asset: Optional[Asset],
@@ -561,6 +564,7 @@ class TaxableEvents():
 
         self.cost_basis.spend_asset(
             location=location,
+            description=description,
             timestamp=timestamp,
             asset=selling_asset,
             amount=selling_amount,

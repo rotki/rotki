@@ -197,11 +197,11 @@ class CostBasisCalculator():
         self._taxfree_after_period = value
 
     @property
-    def accounting_method(self) -> str:
+    def accounting_method(self) -> AccountingMethods:
         return self._accounting_method
 
     @accounting_method.setter
-    def accounting_method(self, value: str) -> None:
+    def accounting_method(self, value: AccountingMethods) -> None:
         self._accounting_method = value
 
     def get_events(self, asset: Asset) -> CostBasisEvents:
@@ -304,6 +304,7 @@ class CostBasisCalculator():
     def spend_asset(
             self,
             location: Location,
+            description: str,
             timestamp: Timestamp,
             asset: Asset,
             amount: FVal,
@@ -314,6 +315,7 @@ class CostBasisCalculator():
         fee_rate = ZERO if amount == ZERO else fee_in_profit_currency / amount
         event = AssetSpendEvent(
             location=location,
+            description=description,
             timestamp=timestamp,
             amount=amount,
             rate=rate,

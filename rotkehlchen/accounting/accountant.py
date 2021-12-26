@@ -270,6 +270,7 @@ class Accountant():
         else:
             self.events.add_sell(
                 location=trade.location,
+                description="",
                 selling_asset=selling_asset,
                 selling_amount=trade.amount,
                 receiving_asset=None,
@@ -693,6 +694,7 @@ class Accountant():
             selling_amount = trade.rate * trade.amount
             self.events.add_sell(
                 location=trade.location,
+                description="",
                 selling_asset=selling_asset,
                 selling_amount=selling_amount,
                 receiving_asset=None,

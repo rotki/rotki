@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict, List, NamedTuple, Optional, Union
 
+from rotkehlchen.accounting.cost_basis import AccountingMethods
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
@@ -45,7 +46,7 @@ DEFAULT_PNL_CSV_WITH_FORMULAS = True
 DEFAULT_PNL_CSV_HAVE_SUMMARY = False
 DEFAULT_SSF_0GRAPH_MULTIPLIER = 0
 DEFAULT_LAST_DATA_MIGRATION = 0
-DEFAULT_ACCOUNTING_METHOD = 'FIFO'
+DEFAULT_ACCOUNTING_METHOD = AccountingMethods.FIFO
 
 JSON_KEYS = ('current_price_oracles', 'historical_price_oracles', 'taxable_ledger_actions')
 BOOLEAN_KEYS = (
@@ -110,7 +111,7 @@ class DBSettings(NamedTuple):
     pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
     ssf_0graph_multiplier: int = DEFAULT_SSF_0GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
-    accounting_method: str = DEFAULT_ACCOUNTING_METHOD
+    accounting_method: AccountingMethods = DEFAULT_ACCOUNTING_METHOD
 
 
 class ModifiableDBSettings(NamedTuple):
