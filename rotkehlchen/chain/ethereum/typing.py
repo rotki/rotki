@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, NamedTuple, Optional, Tuple
 
@@ -119,15 +119,15 @@ class ValidatorDailyStats:
     pnl: FVal = ZERO
     start_amount: FVal = ZERO
     end_amount: FVal = ZERO
-    missed_attestations: int = field(default=0)
-    orphaned_attestations: int = field(default=0)
-    proposed_blocks: int = field(default=0)
-    missed_blocks: int = field(default=0)
-    orphaned_blocks: int = field(default=0)
-    included_attester_slashings: int = field(default=0)
-    proposer_attester_slashings: int = field(default=0)
-    deposits_number: int = field(default=0)
-    amount_deposited: FVal = field(default=ZERO)
+    missed_attestations: int = 0
+    orphaned_attestations: int = 0
+    proposed_blocks: int = 0
+    missed_blocks: int = 0
+    orphaned_blocks: int = 0
+    included_attester_slashings: int = 0
+    proposer_attester_slashings: int = 0
+    deposits_number: int = 0
+    amount_deposited: FVal = ZERO
 
     def __str__(self) -> str:
         return f'ETH2 validator {self.validator_index} daily stats'

@@ -101,7 +101,7 @@ class Eth2(EthereumModule):
                 new_validators.append(Eth2Validator(
                     index=validator.index,
                     public_key=validator.public_key,
-                    ownership_proportion=FVal(1),
+                    ownership_proportion=ONE,
                 ))
                 pubkeys_query_deposits.add(validator.public_key)
 
@@ -184,11 +184,14 @@ class Eth2(EthereumModule):
 
         pubkeys = []
         index_to_pubkey = {}
+        index_to_ownership = {}
         for validator in validators:
             # create a mapping of indices to pubkeys since the performance call returns indices
             if validator.index is not None:
                 index_to_pubkey[validator.index] = validator.public_key
                 pubkeys.append(validator.public_key)
+            if isinstance(validator, Eth2Validator):
+                index_to_ownership[validator.index] = validator.ownership_proportion
 
         # Get current balance of all validators. This may miss some balance if it's
         # in the deposit queue but it's too much work to get it right and should be
@@ -199,7 +202,8 @@ class Eth2(EthereumModule):
             if pubkey is None:
                 log.error(f'At eth2 get_balances could not find matching pubkey for validator index {validator_index}')  # noqa: E501
                 continue  # should not happen
-            amount = from_gwei(entry.balance)
+            ownership_proportion = index_to_ownership.get(validator_index, ONE)
+            amount = from_gwei(entry.balance) * ownership_proportion
             balance_mapping[pubkey] += Balance(amount, amount * usd_price)  # noqa: E501
 
         return balance_mapping

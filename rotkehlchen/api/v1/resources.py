@@ -1262,7 +1262,7 @@ class Eth2DailyStatsResource(BaseResource):
 
 class Eth2ValidatorsResource(BaseResource):
 
-    path_schema = Eth2ValidatorPatchSchema()
+    patch_schema = Eth2ValidatorPatchSchema()
     put_schema = Eth2ValidatorPutSchema()
     delete_schema = Eth2ValidatorDeleteSchema()
 
@@ -1288,7 +1288,7 @@ class Eth2ValidatorsResource(BaseResource):
     def delete(self, validators: List[Dict[str, Any]]) -> Response:
         return self.rest_api.delete_eth2_validator(validators)
 
-    @use_kwargs(path_schema, location='json')
+    @use_kwargs(patch_schema, location='json')
     def patch(self, validator_index: int, ownership_percentage: FVal) -> Response:
         return self.rest_api.edit_eth2_validator(
             validator_index=validator_index,
