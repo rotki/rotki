@@ -188,9 +188,35 @@ if ((-not ($env:VIRTUAL_ENV)) -and (-not ($Env:CI))) {
     ExitOnFailure("Failed to activate rotki VirtualEnv")
 }
 
-cd $PROJECT_DIR
-$NPM_VERSION = (npm --version) | Out-String
+if ($Env:CI) {
+    echo "::group::Fetch Miniupnpc"
+}
 
+
+echo "Fetching miniupnpc for windows"
+cd $PROJECT_DIR
+$PYTHON_LOCATION = (python -c "import os, sys; print(os.path.dirname(sys.executable))") | Out-String
+echo "Python location is $PYTHON_LOCATION"
+curl.exe -L -O "https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/miniupnpc_64bit_py37-2.2.24.zip"
+ExitOnFailure("Failed to download miniupnpc")
+echo "Downloaded miniupnpc.zip"
+Get-ChildItem -Path $PWD
+#Expand-Archive -Force -Path ".\miniupnpc_64bit_py37-2.2.24.zip" -DestinationPath "$PYTHON_LOCATION\Scripts"
+# For some reason we get Illegal characters in path. if we use $PYTHON_LOCATION\Scripts
+Expand-Archive -Force -Path ".\miniupnpc_64bit_py37-2.2.24.zip" -DestinationPath "C:\hostedtoolcache\windows\Python\3.7.9\x64\Scripts"
+ExitOnFailure("Failed to unzip miniupnpc")
+echo "Unzipped miniupnpc to $PYTHON_LOCATION\Scripts"
+#Get-ChildItem -Path $PYTHON_LOCATION\Scripts
+Get-ChildItem -Path C:\hostedtoolcache\windows\Python\3.7.9\x64\Scripts
+# For some reason we get Illegal characters in path. if we use $PYTHON_LOCATION\Scripts
+echo "Done with miniupnpc"
+
+if ($Env:CI) {
+    echo "::endgroup::"
+}
+
+
+$NPM_VERSION = (npm --version) | Out-String
 if ([version]$NPM_VERSION -lt [version]$MINIMUM_NPM_VERSION) {
     echo "Please make sure you have npm version $MINIMUM_NPM_VERSION or newer installed"
     exit 1;
