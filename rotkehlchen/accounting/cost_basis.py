@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Callable, DefaultDict, Dict, List, NamedTuple, Optional
 
 from rotkehlchen.assets.asset import Asset
@@ -14,6 +15,11 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+class AccountingMethods(Enum):
+    FIFO = 1
+    WAC = 2
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -79,6 +85,7 @@ class AssetAcquisitionEvent:
 class AssetSpendEvent:
     timestamp: Timestamp
     location: Location
+    description: str  # TODO
     amount: FVal  # Amount of the asset we sell
     rate: FVal  # Rate in 'profit_currency' for which we sell 1 unit of the sold asset
     fee_rate: FVal  # Fee rate in 'profit_currency' which we paid for each unit of the sold asset
@@ -170,7 +177,7 @@ class CostBasisCalculator():
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self._taxfree_after_period: Optional[int] = None
-        self._accounting_method: str = 'FIFO'
+        self._accounting_method = AccountingMethods.FIFO
         self.csv_exporter = csv_exporter
         self.msg_aggregator = msg_aggregator
         self.reset(profit_currency)
@@ -324,7 +331,7 @@ class CostBasisCalculator():
             timestamp: Timestamp,
     ) -> CostBasisInfo:
 
-        if self._accounting_method == 'WAC':
+        if self._accounting_method == AccountingMethods.WAC:
             return self.calculate_spend_cost_basis_wac(spending_amount, spending_asset, timestamp)
 
         # return FIFO by default
