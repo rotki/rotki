@@ -473,9 +473,10 @@ class CostBasisCalculator():
     ) -> CostBasisInfo:
         """
         When spending `spending_amount` of `spending_asset` at `timestamp` this function
-        calculates using the wac method the corresponding buy/s from
-        which to do profit calculation. Does NOT apply the "free after given time period"
-        rule which applies for some jurisdictions such as 1 year for Germany.
+        calculates using the WAC method the corresponding buy/s from which to do profit calculation.
+        WAC stands for weighted average cost which means that each spent goes proportionally against all past buys.
+        Does NOT apply the "free after given time period" rule which applies for some jurisdictions
+        such as 1 year for Germany.
         Returns the information in a CostBasisInfo object if enough acquisitions have
         been found.
         """
@@ -486,7 +487,6 @@ class CostBasisCalculator():
         asset_events = self.get_events(spending_asset)
 
         # for WAC, we need to rebuild the position up until timestamp. This is expensive.
-
         # init a list of buy and sell we will use to build the pos
         all_events = []
 
@@ -524,6 +524,7 @@ class CostBasisCalculator():
                     ),
                 )
 
+        # sort all selected event by timestamp from older to newer
         all_events = sorted(all_events, key=lambda x: timestamp)
 
         for idx, event in enumerate(all_events):
@@ -538,7 +539,7 @@ class CostBasisCalculator():
                 # only compute average cost if you have a buy and open_amount is positive
                 if event.amount > 0 and event.open_amount > 0:
 
-                    # if previous event put the pos to 0 or neg, than init again
+                    # if previous event put the pos to 0 or neg, then init again
                     if all_events[idx - 1].open_amount <= 0:
                         event.average_cost = event.rate
                     else:  # else compute new average cost

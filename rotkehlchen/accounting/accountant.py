@@ -114,9 +114,10 @@ class Accountant():
         self.events.profit_currency = settings.main_currency
         self.events.taxable_ledger_actions = settings.taxable_ledger_actions
         self.csvexporter.profit_currency = settings.main_currency
+        self.events.accounting_method = settings.accounting_method
 
-        if settings.account_for_assets_movements is not None:
-            self.events.account_for_assets_movements = settings.account_for_assets_movements
+        # if settings.account_for_assets_movements is not None:
+        # self.events.account_for_assets_movements = settings.account_for_assets_movements
 
     def get_fee_in_profit_currency(self, trade: Trade) -> Fee:
         """Get the profit_currency rate of the fee of the given trade
