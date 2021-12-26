@@ -473,8 +473,9 @@ class CostBasisCalculator():
     ) -> CostBasisInfo:
         """
         When spending `spending_amount` of `spending_asset` at `timestamp` this function
-        calculates using the WAC method the corresponding buy/s from which to do profit calculation.
-        WAC stands for weighted average cost which means that each spent goes proportionally against all past buys.
+        calculates using the WAC method the average cost of acquisition.
+        WAC stands for weighted average cost which means that each spent goes proportionally
+        against all past buys.
         Does NOT apply the "free after given time period" rule which applies for some jurisdictions
         such as 1 year for Germany.
         Returns the information in a CostBasisInfo object if enough acquisitions have
