@@ -45,7 +45,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_kusama_address,
     is_valid_polkadot_address,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     Eth2DailyStatsFilterQuery,
@@ -1057,7 +1057,7 @@ class TradesQuerySchema(
             to_ts=data['to_timestamp'],
             base_asset=data['base_asset'],
             quote_asset=data['quote_asset'],
-            trade_type=data['trade_type'],
+            trade_type=[data['trade_type']] if data['trade_type'] is not None else None,
             location=data['location'],
         )
         return {
@@ -1114,7 +1114,7 @@ class AssetMovementsQuerySchema(
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
             asset=data['asset'],
-            action=data['action'],
+            action=[data['action']] if data['action'] is not None else None,
             location=data['location'],
         )
         return {
@@ -1171,7 +1171,7 @@ class LedgerActionsQuerySchema(
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
             asset=data['asset'],
-            action_type=data['type'],
+            action_type=[data['type']] if data['type'] is not None else None,
             location=data['location'],
         )
         return {
@@ -2195,12 +2195,12 @@ class EthereumTokenSchema(Schema):
                     f'If you need to specify no underlying tokens give a null value',
                 )
             weight_sum = sum(x['weight'] for x in given_underlying_tokens)
-            if weight_sum > FVal(1):
+            if weight_sum > ONE:
                 raise ValidationError(
                     f'The sum of underlying token weights for {data["address"]} '
                     f'is {weight_sum * 100} and exceeds 100%',
                 )
-            if weight_sum < FVal(1):
+            if weight_sum < ONE:
                 raise ValidationError(
                     f'The sum of underlying token weights for {data["address"]} '
                     f'is {weight_sum * 100} and does not add up to 100%',

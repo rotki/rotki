@@ -120,6 +120,7 @@ TABLES_AT_INIT = [
     'gitcoin_tx_type',
     'gitcoin_grant_metadata',
     'nfts',
+    'history_events',
 ]
 
 

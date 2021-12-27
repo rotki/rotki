@@ -599,6 +599,23 @@ CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
 );
 """  # noqa: E501
 
+DB_CREATE_HISTORY_EVENTS = """
+CREATE TABLE IF NOT EXISTS history_events (
+    identifier TEXT NOT NULL PRIMARY KEY,
+    event_identifier TEXT NOT NULL,
+    sequence_index INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    location TEXT NOT NULL,
+    location_label TEXT,
+    asset TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    usd_value TEXT NOT NULL,
+    notes TEXT,
+    type TEXT NOT NULL,
+    subtype TEXT
+);
+"""
+
 DB_CREATE_ADEX_EVENTS = """
 CREATE TABLE IF NOT EXISTS adex_events (
     tx_hash VARCHAR[42] NOT NULL,
@@ -796,6 +813,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_ETH2_VALIDATORS}
 {DB_CREATE_ETH2_DEPOSITS}
 {DB_CREATE_ETH2_DAILY_STAKING_DETAILS}
+{DB_CREATE_HISTORY_EVENTS}
 {DB_CREATE_ADEX_EVENTS}
 {DB_CREATE_LEDGER_ACTION_TYPE}
 {DB_CREATE_LEDGER_ACTIONS}

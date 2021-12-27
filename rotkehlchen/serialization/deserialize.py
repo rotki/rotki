@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple, TypeVar, Union
 
 from eth_utils import to_checksum_address
 
+from rotkehlchen.accounting.structures import HistoryEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.constants.misc import ZERO
@@ -224,7 +225,7 @@ def deserialize_fval(
     try:
         result = FVal(value)
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize value entry: {str(e)} fpr {name} during {location}') from e  # noqa: E501
+        raise DeserializationError(f'Failed to deserialize value entry: {str(e)} for {name} during {location}') from e  # noqa: E501
 
     return result
 
@@ -330,24 +331,34 @@ def deserialize_trade_pair(pair: str) -> TradePair:
     return TradePair(pair)
 
 
-def deserialize_asset_movement_category(symbol: str) -> AssetMovementCategory:
+def deserialize_asset_movement_category(
+    value: Union[str, HistoryEventType],
+) -> AssetMovementCategory:
     """Takes a string and determines whether to accept it as an asset movement category
 
-    Can throw DeserializationError if symbol is not as expected
+    Can throw DeserializationError if value is not as expected
     """
-    if not isinstance(symbol, str):
+    if isinstance(value, str):
+        if value.lower() == 'deposit':
+            return AssetMovementCategory.DEPOSIT
+        if value.lower() in ('withdraw', 'withdrawal'):
+            return AssetMovementCategory.WITHDRAWAL
         raise DeserializationError(
-            f'Failed to deserialize asset movement category symbol from {type(symbol)} entry',
+            f'Failed to deserialize asset movement category symbol. Unknown {value}',
         )
 
-    if symbol.lower() == 'deposit':
-        return AssetMovementCategory.DEPOSIT
-    if symbol.lower() in ('withdraw', 'withdrawal'):
-        return AssetMovementCategory.WITHDRAWAL
+    if isinstance(value, HistoryEventType):
+        if value == HistoryEventType.DEPOSIT:
+            return AssetMovementCategory.DEPOSIT
+        if value == HistoryEventType.WITHDRAWAL:
+            return AssetMovementCategory.WITHDRAWAL
+        raise DeserializationError(
+            f'Failed to deserialize asset movement category from '
+            f'HistoryEventType and {value} entry',
+        )
 
-    # else
     raise DeserializationError(
-        f'Failed to deserialize asset movement category symbol. Unknown symbol {symbol}',
+        f'Failed to deserialize asset movement category from {type(value)} entry',
     )
 
 

@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union,
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import ActionType, BalanceType
+from rotkehlchen.accounting.structures import ActionType, BalanceType, HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -55,7 +55,11 @@ from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
-from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
+from rotkehlchen.db.filtering import (
+    AssetMovementsFilterQuery,
+    HistoryEventFilterQuery,
+    TradesFilterQuery,
+)
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
@@ -138,6 +142,7 @@ DBTupleType = Literal[
     'ethereum_transaction',
     'amm_swap',
     'accounting_event',
+    'history_event',
 ]
 
 # Tuples that contain first the name of a table and then the columns that
@@ -217,6 +222,11 @@ def db_tuple_to_str(
         return (
             f'AMM swap with id {data[0]}-{data[1]} '
             f'in {Location.deserialize_from_db(data[6])} '
+        )
+    if tuple_type == 'history_event':
+        return (
+            f'History event with event identifier {data[1]} from '
+            f'{Location.deserialize_from_db(data[4])}.'
         )
 
     raise AssertionError('db_tuple_to_str() called with invalid tuple_type {tuple_type}')
@@ -1290,6 +1300,7 @@ class DBHandler:
         - {exchange_location_name}_margins_{exchange_name}
         - {exchange_location_name}_asset_movements_{exchange_name}
         - {exchange_location_name}_ledger_actions_{exchange_name}
+        - {location}_history_events_{optional_label}
         - aave_events_{address}
         - yearn_vaults_events_{address}
         - yearn_vaults_v2_events_{address}
@@ -1330,6 +1341,10 @@ class DBHandler:
         )
         cursor.execute(
             'DELETE FROM asset_movements WHERE location = ?;',
+            (location.serialize_for_db(),),
+        )
+        cursor.execute(
+            'DELETE FROM history_events WHERE location = ?;',
             (location.serialize_for_db(),),
         )
         self.update_last_write()
@@ -2113,7 +2128,7 @@ class DBHandler:
             self,
             tuple_type: DBTupleType,
             query: str,
-            tuples: List[Tuple[Any, ...]],
+            tuples: Sequence[Tuple[Any, ...]],
     ) -> None:
         cursor = self.conn.cursor()
         try:
@@ -3407,7 +3422,8 @@ class DBHandler:
             'SELECT location FROM ledger_actions UNION '
             'SELECT location FROM margin_positions UNION '
             'SELECT location FROM user_credentials UNION '
-            'SELECT location FROM amm_swaps',
+            'SELECT location FROM amm_swaps UNION '
+            'SELECT location FROM history_events',
         )
         locations = {Location.deserialize_from_db(loc[0]) for loc in cursor}
         cursor.execute('SELECT DISTINCT type FROM amm_events')
@@ -3420,3 +3436,59 @@ class DBHandler:
         if cursor.fetchone()[0] >= 1:
             locations.add(Location.BALANCER)
         return locations
+
+    def add_history_events(self, history: List[HistoryBaseEntry]) -> None:
+        """Insert a list of history events in database. May raise:
+        - InputError if the events couldn't be stored in database
+        """
+        query_str = """INSERT INTO history_events(identifier, event_identifier, sequence_index,
+        timestamp, location, location_label, asset, amount, usd_value, notes,
+        type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+        events = []
+        for event in history:
+            try:
+                events.append(event.serialize_for_db())
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to process kraken event for database. {str(e)}',
+                )
+        self.write_tuples(
+            tuple_type='history_event',
+            query=query_str,
+            tuples=events,
+        )
+        self.update_last_write()
+
+    def delete_history_events(self, location: Location) -> None:
+        """
+        Deletes history entries following the criteria of the filter_query. May raise:
+        - DeserializationError if the location is not valid
+        """
+        # TODO: In the future this method should allow for more granularity in the delete query
+        query = 'DELETE FROM history_events WHERE location=?'
+        cursor = self.conn.cursor()
+        cursor.execute(query, (location.serialize_for_db(),))
+        cursor.execute(
+            f'DELETE FROM used_query_ranges WHERE name LIKE "{location}_history_events_%"',
+        )
+        self.update_last_write()
+
+    def get_history_events(self, filter_query: HistoryEventFilterQuery) -> List[HistoryBaseEntry]:
+        """
+        Get history events using the provided query filter. May raise:
+        - DeserializationError
+        """
+        query, bindings = filter_query.prepare()
+        query = 'SELECT * FROM history_events ' + query
+        cursor = self.conn.cursor()
+        cursor.execute(query, bindings)
+        result = []
+        for entry in cursor:
+            try:
+                result.append(HistoryBaseEntry.deserialize_from_db(entry))
+            except DeserializationError as e:
+                log.debug(f'Failed to deserialize history event {entry}')
+                self.msg_aggregator.add_error(
+                    f'Failed to read history event from database. {str(e)}',
+                )
+        return result

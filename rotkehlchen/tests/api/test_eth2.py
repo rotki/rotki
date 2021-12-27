@@ -359,7 +359,7 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
     assert result == {'entries': [validators[1].serialize()], 'entries_limit': expected_limit, 'entries_found': 1}  # noqa: E501
 
     # Try to add validator with a custom ownership percentage
-    custom_percentage_validtors = [
+    custom_percentage_validators = [
         Eth2Validator(
             index=5235,
             public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
@@ -376,8 +376,8 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
             rotkehlchen_api_server,
             'eth2validatorsresource',
         ), json={
-            'validator_index': custom_percentage_validtors[1].index,
-            'public_key': custom_percentage_validtors[1].public_key,
+            'validator_index': custom_percentage_validators[1].index,
+            'public_key': custom_percentage_validators[1].public_key,
             'ownership_percentage': 50,
         },
     )
@@ -402,7 +402,7 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'entries': [validator.serialize() for validator in custom_percentage_validtors], 'entries_limit': expected_limit, 'entries_found': 2}  # noqa: E501
+    assert result == {'entries': [validator.serialize() for validator in custom_percentage_validators], 'entries_limit': expected_limit, 'entries_found': 2}  # noqa: E501
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])

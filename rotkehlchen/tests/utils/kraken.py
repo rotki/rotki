@@ -1,5 +1,6 @@
 import json
 import random
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from rotkehlchen.assets.asset import WORLD_TO_KRAKEN
@@ -16,6 +17,7 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE = """{
@@ -164,6 +166,157 @@ KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE = """
             },
             "count": 3
 }"""
+
+KRAKEN_GENERAL_LEDGER_RESPONSE = """
+{
+    "ledger": {
+        "L12382343925": {
+            "refid": "D1",
+            "time": 1458994442,
+            "type": "deposit",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "BTC",
+            "amount": "5.0",
+            "fee": "0",
+            "balance": "10"
+        },
+        "L12382343926": {
+            "refid": "D2",
+            "time": 1448994442,
+            "type": "deposit",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "ETH",
+            "amount": "10.0000",
+            "fee": "0",
+            "balance": "100.25"
+        },
+        "L12382343927": {
+            "refid": "D3",
+            "time": 1408994442,
+            "type": "deposit",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "IDONTEXISTEITHER",
+            "amount": "10",
+            "fee": "0",
+            "balance": "100"
+        },
+        "L12382343965": {
+            "refid": "W1",
+            "time": 1428994442,
+            "type": "withdrawal",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "BTC",
+            "amount": "5.0",
+            "fee": "0.1",
+            "balance": "10"
+        },
+        "L12382343966": {
+            "refid": "W2",
+            "time": 1439994442,
+            "type": "withdrawal",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "ETH",
+            "amount": "10.0000",
+            "fee": "1.7500",
+            "balance": "100.25"
+        },
+        "L12382343967": {
+            "refid": "W3",
+            "time": 1408994442,
+            "type": "withdrawal",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "IDONTEXISTEITHER",
+            "amount": "10",
+            "fee": "0.11",
+            "balance": "100"
+        },
+        "L1": {
+            "refid": "AOEXXV-61T63-AKPSJ0",
+            "time": 1609950165.4497,
+            "type": "trade",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "KFEE",
+            "amount": "0.00",
+            "fee": "0.11",
+            "balance": "100"
+        },
+        "L2": {
+            "refid": "AOEXXV-61T63-AKPSJ0",
+            "time": 1609950165.4492,
+            "type": "trade",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "ZEUR",
+            "amount": "50",
+            "fee": "0.4429",
+            "balance": "500"
+        },
+        "L3": {
+            "refid": "AOEXXV-61T63-AKPSJ0",
+            "time": 1609950165.4486,
+            "type": "trade",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "XETH",
+            "amount": "-0.1",
+            "fee": "0.0000000000",
+            "balance": 1.1
+        },
+        "0": {
+            "refid": "2",
+            "time": 1439994442,
+            "type": "withdrawal",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "XETH",
+            "amount": "-1.0000000000",
+            "fee": "0.0035000000",
+            "balance": "0.0000100000"
+        },
+        "L343242342": {
+            "refid": "1",
+            "time": 1458994442.064,
+            "type": "trade",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "XXBT",
+            "amount": "1",
+            "fee": "0.0000000000",
+            "balance": "0.0437477300"
+        },
+        "L5354645643": {
+            "refid": "1",
+            "time": 1458994442.063,
+            "type": "trade",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "ZEUR",
+            "amount": "-100",
+            "fee": "0.1",
+            "balance": "200"
+        },
+        "L12382343902": {
+            "refid": "0",
+            "time": 1458994441.396,
+            "type": "deposit",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "EUR.HOLD",
+            "amount": "4000000.0000",
+            "fee": "1.7500",
+            "balance": "3999998.25"
+        }
+    },
+    "count": 4
+}
+"""
 
 
 def get_random_kraken_asset() -> str:
@@ -362,13 +515,20 @@ class MockKraken(Kraken):
                 )
             # else
             return jsonloads_dict(KRAKEN_SPECIFIC_TRADES_HISTORY_RESPONSE)
+        if method == 'AssetPairs':
+            dir_path = Path(__file__).resolve().parent.parent
+            filepath = dir_path / 'data' / 'assets_kraken.json'
+            with open(filepath) as f:
+                return jsonloads_dict(f.read())['result']
         if method == 'Ledgers':
-            assert req, 'Should have given arguments for kraken Ledgers endpoint call'
-            ledger_type = req['type']
+            if req is None:
+                req = {}
+            ledger_type: str = req.get('type', '')
             if self.random_ledgers_data:
+                assert req is not None
                 return generate_random_kraken_ledger_data(
-                    start=req['start'],
-                    end=req['end'],
+                    start=req.get('start', 0),
+                    end=req.get('end', ts_now),
                     ledger_type=ledger_type,
                 )
 
@@ -378,21 +538,21 @@ class MockKraken(Kraken):
                     KRAKEN_SPECIFIC_DEPOSITS_RESPONSE if ledger_type == 'deposit'
                     else KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE,
                 )
-                new_data: Dict[str, Any] = {'ledger': {}}
-                for key, val in data['ledger'].items():
-                    try:
-                        ts = int(val['time'])
-                    except ValueError:
-                        ts = req['start']  # can happen for tests of invalid data -- let it through
-                    if ts < req['start'] or ts > req['end']:
-                        continue
-                    new_data['ledger'][key] = val
-
-                new_data['count'] = len(new_data['ledger'])
-                response = json.dumps(new_data)
             else:
-                raise AssertionError('Unknown ledger type at kraken ledgers mock query')
+                data = json.loads(KRAKEN_GENERAL_LEDGER_RESPONSE)
+            new_data: Dict[str, Any] = {'ledger': {}}
+            for key, val in data['ledger'].items():
+                try:
+                    ts = int(val['time'])
+                except ValueError:
+                    # can happen for tests of invalid data -- let it through
+                    ts = req.get('start', 0)
+                if ts < req.get('start', 0) or ts > req.get('end', ts_now):
+                    continue
+                new_data['ledger'][key] = val
 
+            new_data['count'] = len(new_data['ledger'])
+            response = json.dumps(new_data)
             return jsonloads_dict(response)
         # else
         return super().api_query(method, req)

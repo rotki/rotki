@@ -176,6 +176,11 @@ prices = {
             1502715904: FVal(173.035),
         },
     },
+    'KFEE': {
+        'EUR': {
+            1609950165: FVal(0.1),
+        },
+    },
 }
 
 
@@ -633,51 +638,76 @@ def assert_kraken_asset_movements(
         deserialized: bool,
         movements_to_check: Optional[Tuple[int, ...]] = None,
 ):
-    expected = [AssetMovement(
-        location=Location.KRAKEN,
-        category=AssetMovementCategory.DEPOSIT,
-        address=None,
-        transaction_id=None,
-        timestamp=Timestamp(1458994442),
-        asset=A_BTC,
-        amount=FVal('5.0'),
-        fee_asset=A_BTC,
-        fee=Fee(FVal('0.1')),
-        link='1',
-    ), AssetMovement(
-        location=Location.KRAKEN,
-        address=None,
-        transaction_id=None,
-        category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1448994442),
-        asset=A_ETH,
-        amount=FVal('10.0'),
-        fee_asset=A_ETH,
-        fee=Fee(FVal('0.11')),
-        link='2',
-    ), AssetMovement(
-        location=Location.KRAKEN,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address=None,
-        transaction_id=None,
-        timestamp=Timestamp(1439994442),
-        asset=A_ETH,
-        amount=FVal('10.0'),
-        fee_asset=A_ETH,
-        fee=Fee(FVal('0.11')),
-        link='5',
-    ), AssetMovement(
-        location=Location.KRAKEN,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address=None,
-        transaction_id=None,
-        timestamp=Timestamp(1428994442),
-        asset=A_BTC,
-        amount=FVal('5.0'),
-        fee_asset=A_BTC,
-        fee=Fee(FVal('0.1')),
-        link='4',
-    )]
+    expected = [
+        AssetMovement(
+            location=Location.KRAKEN,
+            category=AssetMovementCategory.DEPOSIT,
+            address=None,
+            transaction_id=None,
+            timestamp=Timestamp(1458994442),
+            asset=A_BTC,
+            amount=FVal('5.0'),
+            fee_asset=A_BTC,
+            fee=Fee(FVal('0')),
+            link='D1',
+        ),
+        AssetMovement(
+            location=Location.KRAKEN,
+            category=AssetMovementCategory.DEPOSIT,
+            address=None,
+            transaction_id=None,
+            timestamp=Timestamp(1458994441),
+            asset=A_EUR,
+            amount=FVal('4000000.0000'),
+            fee_asset=A_EUR,
+            fee=Fee(FVal('1.7500')),
+            link='0',
+        ), AssetMovement(
+            location=Location.KRAKEN,
+            address=None,
+            transaction_id=None,
+            category=AssetMovementCategory.DEPOSIT,
+            timestamp=Timestamp(1448994442),
+            asset=A_ETH,
+            amount=FVal('10.0000'),
+            fee_asset=A_ETH,
+            fee=Fee(FVal('0')),
+            link='D2',
+        ), AssetMovement(
+            location=Location.KRAKEN,
+            category=AssetMovementCategory.WITHDRAWAL,
+            address=None,
+            transaction_id=None,
+            timestamp=Timestamp(1439994442),
+            asset=A_ETH,
+            amount=FVal('1.0000000000'),
+            fee_asset=A_ETH,
+            fee=Fee(FVal('0.0035000000')),
+            link='2',
+        ), AssetMovement(
+            location=Location.KRAKEN,
+            category=AssetMovementCategory.WITHDRAWAL,
+            address=None,
+            transaction_id=None,
+            timestamp=Timestamp(1439994442),
+            asset=A_ETH,
+            amount=FVal('10.0000'),
+            fee_asset=A_ETH,
+            fee=Fee(FVal('1.7500')),
+            link='W2',
+        ), AssetMovement(
+            location=Location.KRAKEN,
+            category=AssetMovementCategory.WITHDRAWAL,
+            address=None,
+            transaction_id=None,
+            timestamp=Timestamp(1428994442),
+            asset=A_BTC,
+            amount=FVal('5.0'),
+            fee_asset=A_BTC,
+            fee=Fee(FVal('0.1')),
+            link='W1',
+        )]
+
     assert_asset_movements(expected, to_check_list, deserialized, movements_to_check)
 
 
@@ -720,66 +750,63 @@ def mock_history_processing(
         # the events to be. It's super brittle right now
         limited_range_test = False
         expected_trades_num = 11
-        expected_asset_movements_num = 11
+        expected_asset_movements_num = 13
         if end_ts == 1539713238:
             limited_range_test = True
+            expected_trades_num = 9
+            expected_asset_movements_num = 12
+        if end_ts == 1601040361:
             expected_trades_num = 10
-            expected_asset_movements_num = 10
 
         # TODO: Add more assertions/check for each action
         # OR instead do it in tests for conversion of actions(trades, loans, deposits e.t.c.)
         # from exchange to our format for each exchange
-        assert len(trade_history) == expected_trades_num
+        assert len(trade_history) == expected_trades_num, f'Expected {len(trade_history)} during history creation check from {start_ts} to {end_ts}'  # noqa: E501
         assert isinstance(trade_history[0], Trade)
         assert trade_history[0].location == Location.KRAKEN
-        assert trade_history[0].base_asset == A_ETH
+        assert trade_history[0].base_asset == A_BTC
         assert trade_history[0].quote_asset == A_EUR
         assert trade_history[0].trade_type == TradeType.BUY
         assert isinstance(trade_history[1], Trade)
-        assert trade_history[1].location == Location.KRAKEN
-        assert trade_history[1].base_asset == A_BTC
-        assert trade_history[1].quote_asset == A_EUR
+        assert trade_history[1].location == Location.BITTREX
+        assert trade_history[1].base_asset == A_LTC
+        assert trade_history[1].quote_asset == A_BTC
         assert trade_history[1].trade_type == TradeType.BUY
         assert isinstance(trade_history[2], Trade)
         assert trade_history[2].location == Location.BITTREX
         assert trade_history[2].base_asset == A_LTC
-        assert trade_history[2].quote_asset == A_BTC
-        assert trade_history[2].trade_type == TradeType.BUY
-        assert isinstance(trade_history[3], Trade)
-        assert trade_history[3].location == Location.BITTREX
-        assert trade_history[3].base_asset == A_LTC
-        assert trade_history[3].quote_asset == A_ETH
-        assert trade_history[3].trade_type == TradeType.SELL
-        assert isinstance(trade_history[4], MarginPosition)
-        assert trade_history[4].profit_loss == FVal('0.05')
+        assert trade_history[2].quote_asset == A_ETH
+        assert trade_history[2].trade_type == TradeType.SELL
+        assert isinstance(trade_history[3], MarginPosition)
+        assert trade_history[3].profit_loss == FVal('0.05')
+        assert isinstance(trade_history[4], Trade)
+        assert trade_history[4].location == Location.BINANCE
+        assert trade_history[4].base_asset == A_ETH
+        assert trade_history[4].quote_asset == A_BTC
+        assert trade_history[4].trade_type == TradeType.BUY
         assert isinstance(trade_history[5], Trade)
         assert trade_history[5].location == Location.BINANCE
-        assert trade_history[5].base_asset == A_ETH
-        assert trade_history[5].quote_asset == A_BTC
-        assert trade_history[5].trade_type == TradeType.BUY
+        assert trade_history[5].base_asset == A_RDN
+        assert trade_history[5].quote_asset == A_ETH
+        assert trade_history[5].trade_type == TradeType.SELL
         assert isinstance(trade_history[6], Trade)
-        assert trade_history[6].location == Location.BINANCE
-        assert trade_history[6].base_asset == A_RDN
-        assert trade_history[6].quote_asset == A_ETH
+        assert trade_history[6].location == Location.POLONIEX
+        assert trade_history[6].base_asset == A_ETH
+        assert trade_history[6].quote_asset == A_BTC
         assert trade_history[6].trade_type == TradeType.SELL
         assert isinstance(trade_history[7], Trade)
         assert trade_history[7].location == Location.POLONIEX
         assert trade_history[7].base_asset == A_ETH
         assert trade_history[7].quote_asset == A_BTC
-        assert trade_history[7].trade_type == TradeType.SELL
+        assert trade_history[7].trade_type == TradeType.BUY
         assert isinstance(trade_history[8], Trade)
         assert trade_history[8].location == Location.POLONIEX
-        assert trade_history[8].base_asset == A_ETH
-        assert trade_history[8].quote_asset == A_BTC
+        assert trade_history[8].base_asset == A_XMR
+        assert trade_history[8].quote_asset == A_ETH
         assert trade_history[8].trade_type == TradeType.BUY
-        assert isinstance(trade_history[9], Trade)
-        assert trade_history[9].location == Location.POLONIEX
-        assert trade_history[9].base_asset == A_XMR
-        assert trade_history[9].quote_asset == A_ETH
-        assert trade_history[9].trade_type == TradeType.BUY
         if not limited_range_test:
-            assert isinstance(trade_history[10], MarginPosition)
-            assert trade_history[10].profit_loss == FVal('5E-9')
+            assert isinstance(trade_history[9], MarginPosition)
+            assert trade_history[9].profit_loss == FVal('5E-9')
 
         assert len(loan_history) == 2
         assert loan_history[0].currency == A_ETH
@@ -787,7 +814,7 @@ def mock_history_processing(
         assert loan_history[1].currency == A_BTC
         assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
 
-        assert len(asset_movements) == expected_asset_movements_num
+        assert len(asset_movements) == expected_asset_movements_num, len(asset_movements)
         if not limited_range_test:
             assert asset_movements[0].location == Location.POLONIEX
             assert asset_movements[0].category == AssetMovementCategory.WITHDRAWAL
@@ -812,15 +839,15 @@ def mock_history_processing(
             assert asset_movements[6].asset == A_BTC
             assert asset_movements[7].location == Location.KRAKEN
             assert asset_movements[7].category == AssetMovementCategory.DEPOSIT
-            assert asset_movements[7].asset == A_BTC
+            assert asset_movements[7].asset == A_EUR
             assert asset_movements[8].location == Location.KRAKEN
-            assert asset_movements[8].category == AssetMovementCategory.DEPOSIT
+            assert asset_movements[8].category == AssetMovementCategory.WITHDRAWAL
             assert asset_movements[8].asset == A_ETH
             assert asset_movements[9].location == Location.KRAKEN
-            assert asset_movements[9].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[9].category == AssetMovementCategory.DEPOSIT
             assert asset_movements[9].asset == A_BTC
             assert asset_movements[10].location == Location.KRAKEN
-            assert asset_movements[10].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[10].category == AssetMovementCategory.DEPOSIT
             assert asset_movements[10].asset == A_ETH
 
         # The history creation for these is not yet tested
