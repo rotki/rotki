@@ -2339,6 +2339,7 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
 
     - Upgrades the ETH2 tables
     - Deletes ignored ethereum transactions ids
+    - Deletes kraken trades and used query ranges
     """
     msg_aggregator = MessagesAggregator()
     # Check we have data in the eth2 tables before the DB upgrade
@@ -2355,6 +2356,17 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
     assert result.fetchone()[0] == 356
     result = cursor.execute('SELECT * FROM ignored_actions;')
     assert result.fetchall() == [('C', '0x1'), ('C', '0x2'), ('A', '0x3'), ('B', '0x4')]
+    result = cursor.execute('SELECT COUNT(*) FROM trades;')
+    assert result.fetchone()[0] == 2
+    result = cursor.execute('SELECT COUNT(*) FROM asset_movements;')
+    assert result.fetchone()[0] == 1
+    result = cursor.execute('SELECT * FROM used_query_ranges;')
+    assert result.fetchall() == [
+        ('ethtxs_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
+        ('eth2_deposits_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 1602667372, 1637575118),
+        ('kraken_trades_kraken1', 0, 1634850532),
+        ('kraken_asset_movements_kraken1', 0, 1634850532),
+    ]
 
     if db_with_set_version:
         db_name = 'v30_rotkehlchen.db'
@@ -2378,6 +2390,16 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
     assert result.fetchone()[0] == 0
     result = cursor.execute('SELECT * FROM ignored_actions;')
     assert result.fetchall() == [('A', '0x3'), ('B', '0x4')]
+    result = cursor.execute('SELECT COUNT(*) FROM trades;')
+    assert result.fetchone()[0] == 0
+    result = cursor.execute('SELECT COUNT(*) FROM asset_movements;')
+    assert result.fetchone()[0] == 1
+    result = cursor.execute('SELECT * FROM used_query_ranges;')
+    assert result.fetchall() == [
+        ('ethtxs_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
+        ('eth2_deposits_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 1602667372, 1637575118),
+        ('kraken_asset_movements_kraken1', 0, 1634850532),
+    ]
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

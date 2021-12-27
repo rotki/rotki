@@ -10,12 +10,15 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
     - Add the new eth2 validator table and upgrade the old ones to have foreign key relationships.
     - Delete all ignored ethereum transaction ids as now the identifier
     is the one specified by the backend.
+    - Delete all kraken trades and their used query ranges since we can now also fetch app trades
+    and insta trades which are only visible through the kraken ledger query.
     """
     cursor = db.conn.cursor()
     # Should exist -- but we are being extremely pedantic here
     ignored_actions_exists = cursor.execute(
         'SELECT count(*) FROM sqlite_master WHERE type="table" AND name="ignored_actions";',
     ).fetchone()[0]
+    # Delete all ignored ethereum transaction ids
     if ignored_actions_exists == 1:
         cursor.execute('DELETE FROM ignored_actions WHERE type="C";')
     else:
@@ -26,6 +29,12 @@ def upgrade_v30_to_v31(db: 'DBHandler') -> None:
         PRIMARY KEY (type, identifier)
         );
         """)
+
+    # Delete kraken trades so they can be requeried
+    cursor.execute('DELETE FROM trades WHERE location="B";')
+    cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "kraken_trades_%";')
+
+    # Add all new tables
     cursor.execute('DROP TABLE IF EXISTS eth2_deposits;')
     cursor.execute('DROP TABLE IF EXISTS eth2_daily_staking_details;')
     cursor.execute("""
