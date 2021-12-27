@@ -28,9 +28,15 @@
           <v-card-text>
             <v-form v-model="premiumFormValid">
               <v-alert text color="primary">
-                <div>
-                  {{ $t('create_account.premium.premium_question') }}
-                </div>
+                <i18n tag="div" path="create_account.premium.premium_question">
+                  <template #premiumLink>
+                    <b>
+                      <external-link url="https://rotki.com/products">
+                        {{ $t('create_account.premium.premium_link_text') }}
+                      </external-link>
+                    </b>
+                  </template>
+                </i18n>
                 <div class="d-flex mt-4 justify-center">
                   <v-btn
                     depressed
@@ -255,11 +261,12 @@
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { CreateAccountPayload } from '@/types/login';
 
 @Component({
-  components: { RevealableInput, PremiumCredentials },
+  components: { ExternalLink, RevealableInput, PremiumCredentials },
   computed: {
     ...mapState(['newUser'])
   }

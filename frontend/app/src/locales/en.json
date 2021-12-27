@@ -281,7 +281,8 @@
     "title": "Create Account",
     "premium": {
       "title": "Enable Premium",
-      "premium_question": "Do you want to enable premium features? (This is needed if you want to sync your Rotki database from another device)",
+      "premium_question": "Are you already a rotki premium user and want to enable premium features? This is needed if you want to sync your rotki database from another device at account creation. You can buy premium {premiumLink}",
+      "premium_link_text": "here.",
       "button_premium_reject": "No",
       "button_premium_approve": "Yes, enable premium",
       "button_cancel": "Cancel",
