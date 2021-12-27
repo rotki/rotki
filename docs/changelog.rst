@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` ShapeShift CSV includes minerFee in rate, but outputAmount does not include minerFee.  Fix to account for the true transacted base amount.
 * :bug:`-` Bitfinex users that used Spankchain in the exchange will now be able to see it properly in their trades, deposits/withdrawals and balances.
 * :bug:`-` Users connected to Alchemy as a node will be able to properly retrieve old ethereum transactions.
 * :bug:`-` Users whose only interaction with a yearn vault was a deposit will no longer see the entire deposit as loss in the PnL.
