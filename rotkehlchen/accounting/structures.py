@@ -320,6 +320,14 @@ HISTORY_EVENT_DB_TUPLE = Tuple[
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class HistoryBaseEntry:
+    """
+    TODO: At the moment in the places where this data structure is used (kraken) we don't query
+    for the USD value of the assets. The reason is that querying that will slow the requests or
+    processing of the information. The intention of adding the USD value was to provide all the
+    information to replay the history of the user without having to depend on external
+    information. A good approach could be a task in the backend that goes row by row and fetch
+    the needed price. This needs more consideration and discussion.
+    """
     event_identifier: str  # identifier shared between related events
     sequence_index: int  # When this transaction was executed relative to other related events
     timestamp: Timestamp
@@ -328,15 +336,14 @@ class HistoryBaseEntry:
     # When we use this structure in blockchains can be used to specify addresses for example.
     # currently we use to identify the exchange name assigned by the user.
     location_label: Optional[str]
-    amount: AssetBalance
+    asset_balance: AssetBalance
     notes: Optional[str]
     event_type: HistoryEventType
     event_subtype: Optional[HistoryEventSubType]
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE:
         event_subtype = None
-        if self.event_subtype is not None:
-            event_subtype = self.event_subtype.serialize_for_db()
+        event_subtype = None if self.event_subtype is None else self.event_subtype.serialize_for_db()  # noqa: E501
         return (
             self.identifier,
             self.event_identifier,
@@ -344,7 +351,7 @@ class HistoryBaseEntry:
             int(self.timestamp),
             self.location.serialize_for_db(),
             self.location_label,
-            *self.amount.serialize_for_db(),
+            *self.asset_balance.serialize_for_db(),
             self.notes,
             self.event_type.serialize_for_db(),
             event_subtype,
@@ -363,7 +370,7 @@ class HistoryBaseEntry:
                 timestamp=Timestamp(entry[3]),
                 location=Location.deserialize_from_db(entry[4]),
                 location_label=entry[5],
-                amount=AssetBalance(
+                asset_balance=AssetBalance(
                     asset=Asset(entry[6]),
                     balance=Balance(
                         amount=FVal(entry[7]),
@@ -393,7 +400,7 @@ class HistoryBaseEntry:
             self.event_identifier +
             str(self.sequence_index) +
             location_label +
-            str(self.amount) +
+            str(self.asset_balance) +
             str(self.event_type) +
             str(event_subtype)
         )

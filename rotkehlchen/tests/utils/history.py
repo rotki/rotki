@@ -749,17 +749,19 @@ def mock_history_processing(
         # This whole function needs better thinking also on the order it expects
         # the events to be. It's super brittle right now
         limited_range_test = False
-        expected_trades_num = 10
+        expected_trades_num = 11
         expected_asset_movements_num = 13
         if end_ts == 1539713238:
             limited_range_test = True
             expected_trades_num = 9
             expected_asset_movements_num = 12
+        if end_ts == 1601040361:
+            expected_trades_num = 10
 
         # TODO: Add more assertions/check for each action
         # OR instead do it in tests for conversion of actions(trades, loans, deposits e.t.c.)
         # from exchange to our format for each exchange
-        assert len(trade_history) == expected_trades_num
+        assert len(trade_history) == expected_trades_num, f'Expected {len(trade_history)} during history creation check from {start_ts} to {end_ts}'  # noqa: E501
         assert isinstance(trade_history[0], Trade)
         assert trade_history[0].location == Location.KRAKEN
         assert trade_history[0].base_asset == A_BTC

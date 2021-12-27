@@ -165,4 +165,18 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
    UNION ALL /* using union all as there can be no duplicates so no need to handle them */
    SELECT * from trades
 ;""")  # noqa: E501
+    cursor.execute("""CREATE TABLE IF NOT EXISTS history_events (
+    identifier TEXT NOT NULL PRIMARY KEY,
+    event_identifier TEXT NOT NULL,
+    sequence_index INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    location TEXT NOT NULL,
+    location_label TEXT,
+    asset TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    usd_value TEXT NOT NULL,
+    notes TEXT,
+    type TEXT NOT NULL,
+    subtype TEXT
+    );""")
     db.conn.commit()

@@ -29,6 +29,7 @@ Changelog
 * :feature:`3685` Users will now be able to correctly read more transaction types in CSV files imported from crypto.com.
 * :feature:`3497` Users will now be able to add ETH2 validators via index or public key.
 * :feature:`3725` Users can now see if any of their addresses have SDL available to claim from the SDL airdrop.
+* :feature:`3708` Users will now be able to see trades from kraken made from their phone APP and in the kraken's swap UI.
 * :feature:`3549` Users will now be able to select whether to include or not NFT total value in total net worth and graphs.
 * :feature:`3712` Users will now be able to choose a custom date format while importing CSV files.
 * :bug:`3767` The module selector will now properly clear after selecting a module by clicking.

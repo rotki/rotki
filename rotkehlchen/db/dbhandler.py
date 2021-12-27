@@ -3478,7 +3478,7 @@ class DBHandler:
         Get history events using the provided query filter. May raise:
         - DeserializationError
         """
-        query, bindings = filter_query.prepare(with_pagination=False)
+        query, bindings = filter_query.prepare()
         query = 'SELECT * FROM history_events ' + query
         cursor = self.conn.cursor()
         cursor.execute(query, bindings)
