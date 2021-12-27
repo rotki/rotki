@@ -1,9 +1,9 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Callable, DefaultDict, Dict, List, NamedTuple, Optional
 
+from rotkehlchen.accounting.accounting_methods import AccountingMethods
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.misc import ZERO
@@ -15,11 +15,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-class AccountingMethods(Enum):
-    FIFO = 1
-    WAC = 2
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

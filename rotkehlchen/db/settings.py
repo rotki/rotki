@@ -75,7 +75,6 @@ STRING_KEYS = (
     'dot_rpc_endpoint',
     'date_display_format',
     'frontend_settings',
-    'accounting_method',
 )
 TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')
 
