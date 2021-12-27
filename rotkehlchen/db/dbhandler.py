@@ -1970,6 +1970,12 @@ class DBHandler:
             try:
                 exchange_name = new_name if new_name is not None else name
                 self.set_binance_pairs(exchange_name, binance_markets, location)
+                # Also delete used query ranges to allow fetching missing trades
+                # from the possible new pairs
+                cursor.execute(
+                    'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+                    (f'{str(location)}\\_trades_%', '\\'),
+                )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 self.conn.rollback()
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501

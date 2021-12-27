@@ -580,7 +580,7 @@ class DataImporter():
                     base_amount_bought = deserialize_asset_amount(
                         credited_row['Amount'],
                     ) * part_of_total
-                    rate = Price(abs(base_amount_bought / quote_amount_sold))
+                    rate = Price(abs(quote_amount_sold / base_amount_bought))
 
                     trade = Trade(
                         timestamp=timestamp,
