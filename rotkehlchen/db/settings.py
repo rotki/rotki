@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict, List, NamedTuple, Optional, Union
 
-from rotkehlchen.accounting.cost_basis import AccountingMethods
+from rotkehlchen.accounting.accounting_methods import AccountingMethods
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
