@@ -177,6 +177,7 @@ def test_calculate_spend_cost_basis_wac(accountant):
     asset_events.spends.append(
         AssetSpendEvent(
             timestamp=1446979737,  # 10/11/2015
+            description="",
             location=Location.EXTERNAL,
             amount=FVal(1),
             rate=FVal(290),
