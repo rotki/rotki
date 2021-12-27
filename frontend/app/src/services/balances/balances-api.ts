@@ -296,4 +296,20 @@ export class BalancesApi {
     );
     return handleResponse(response);
   }
+
+  async editEth2Validator({
+    ownershipPercentage,
+    validatorIndex
+  }: Eth2Validator) {
+    const response = await this.axios.patch<ActionResult<boolean>>(
+      '/blockchains/ETH2/validators',
+      axiosSnakeCaseTransformer({ ownershipPercentage, validatorIndex }),
+      {
+        transformResponse: basicAxiosTransformer,
+        validateStatus: validWithSessionAndExternalService
+      }
+    );
+
+    return handleResponse(response);
+  }
 }

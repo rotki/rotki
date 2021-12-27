@@ -137,7 +137,11 @@ export const getters: Getters<
     eth2Validators
   }: BalanceState): BlockchainAccountWithBalance[] {
     const balances: BlockchainAccountWithBalance[] = [];
-    for (const { publicKey, validatorIndex } of eth2Validators.entries) {
+    for (const {
+      publicKey,
+      validatorIndex,
+      ownershipPercentage
+    } of eth2Validators.entries) {
       const validatorBalances = eth2[publicKey];
       let balance: Balance = { amount: Zero, usdValue: Zero };
       if (validatorBalances && validatorBalances.assets) {
@@ -152,7 +156,8 @@ export const getters: Getters<
         chain: Blockchain.ETH2,
         balance,
         label: validatorIndex.toString() ?? '',
-        tags: []
+        tags: [],
+        ownershipPercentage
       });
     }
     return balances;

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Balance } from "../../index";
+import { Balance, Percentage } from "../../index";
 
 export const Eth2Deposit = z.object({
   fromAddress: z.string(),
@@ -73,7 +73,8 @@ export type Eth2DailyStatsPayload = {
 
 const Validator = z.object({
   validatorIndex: z.number(),
-  publicKey: z.string()
+  publicKey: z.string(),
+  ownershipPercentage: Percentage
 });
 
 export type Eth2ValidatorEntry = z.infer<typeof Validator>;

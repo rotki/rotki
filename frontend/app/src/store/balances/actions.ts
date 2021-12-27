@@ -1522,6 +1522,43 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       return false;
     }
   },
+  async editEth2Validator(
+    { dispatch, rootState: { session } },
+    payload: Eth2Validator
+  ) {
+    assert(session);
+    const { activeModules } = session.generalSettings;
+    if (!activeModules.includes(Module.ETH2)) {
+      return;
+    }
+
+    const id = payload.validatorIndex;
+    try {
+      const success = await api.balances.editEth2Validator(payload);
+
+      if (success) {
+        await dispatch('fetchBlockchainBalances', {
+          blockchain: Blockchain.ETH2
+        });
+      }
+
+      return success;
+    } catch (e: any) {
+      logger.error(e);
+      const message: Message = {
+        description: i18n
+          .t('actions.edit_eth2_validator.error.description', {
+            id,
+            message: e.message
+          })
+          .toString(),
+        title: i18n.t('actions.edit_eth2_validator.error.title').toString(),
+        success: false
+      };
+      await dispatch('setMessage', message, { root: true });
+      return false;
+    }
+  },
   async deleteEth2Validators({ dispatch, state, commit }, validators: string) {
     try {
       const entries = [...state.eth2Validators.entries];

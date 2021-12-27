@@ -52,7 +52,10 @@
           :loading="loading"
         />
       </template>
-      <template v-if="!isEth2 && !loopring" #item.actions="{ item }">
+      <template v-if="isEth2" #item.ownershipPercentage="{ item }">
+        <percentage-display :value="item.ownershipPercentage" />
+      </template>
+      <template v-if="!loopring" #item.actions="{ item }">
         <row-actions
           class="account-balance-table__actions"
           :no-delete="true"
@@ -373,15 +376,22 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
       }
     ];
 
-    if (!this.isEth2) {
+    if (this.isEth2) {
       headers.push({
-        text: this.$tc('account_balances.headers.actions'),
-        value: 'actions',
-        align: 'center',
-        sortable: false,
+        text: this.$t('account_balances.headers.ownership').toString(),
+        value: 'ownershipPercentage',
+        align: 'end',
         width: '28'
       });
     }
+
+    headers.push({
+      text: this.$tc('account_balances.headers.actions'),
+      value: 'actions',
+      align: 'center',
+      sortable: false,
+      width: '28'
+    });
 
     if (this.blockchain !== Blockchain.BTC) {
       headers.push({
