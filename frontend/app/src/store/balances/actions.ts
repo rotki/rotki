@@ -338,6 +338,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         location: exchange.location,
         ignoreCache: false
       } as ExchangeBalancePayload);
+      dispatch('history/purgeHistoryLocation', exchange.location);
     }
   },
 
@@ -1048,6 +1049,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           } as ExchangeBalancePayload);
         }
       }
+
+      dispatch('history/purgeHistoryLocation', exchange.location);
+
       return success;
     } catch (e: any) {
       showError(

@@ -17,10 +17,10 @@ export type EthTransactionEntry = EthTransaction & EntryMeta;
 export interface HistoryState {
   ignored: IgnoredActions;
   associatedLocations: TradeLocation[];
-  ledgerActions: Collection<LedgerActionEntry>;
   trades: Collection<TradeEntry>;
   assetMovements: Collection<AssetMovementEntry>;
   transactions: Collection<EthTransactionEntry>;
+  ledgerActions: Collection<LedgerActionEntry>;
 }
 
 export enum IgnoreActionType {

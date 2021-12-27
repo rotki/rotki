@@ -5,7 +5,7 @@
         {{ $t('defi_wizard.steps.setup.title') }}
       </v-stepper-step>
       <v-stepper-content step="1">
-        <card class="mb-12" outlined>
+        <card class="mb-8" outlined>
           <template #title>
             {{ $t('defi_wizard.steps.setup.subtitle') }}
           </template>
@@ -19,22 +19,24 @@
             {{ $t('defi_wizard.steps.setup.description_line_three') }}
           </p>
         </card>
-        <v-btn text class="defi-wizard__use-default" @click="done">
-          {{ $t('defi_wizard.steps.setup.used_default') }}
-        </v-btn>
-        <v-btn
-          color="primary"
-          class="defi-wizard__select-modules"
-          @click="step = 2"
-        >
-          {{ $t('defi_wizard.steps.setup.continue') }}
-        </v-btn>
+        <div class="pb-4">
+          <v-btn text class="defi-wizard__use-default" @click="done">
+            {{ $t('defi_wizard.steps.setup.used_default') }}
+          </v-btn>
+          <v-btn
+            color="primary"
+            class="defi-wizard__select-modules ml-4"
+            @click="step = 2"
+          >
+            {{ $t('defi_wizard.steps.setup.continue') }}
+          </v-btn>
+        </div>
       </v-stepper-content>
       <v-stepper-step :complete="step > 2" step="2">
         {{ $t('defi_wizard.steps.select_modules.title') }}
       </v-stepper-step>
       <v-stepper-content step="2">
-        <card outlined class="mb-12">
+        <card outlined class="mb-8">
           <template #title>
             {{ $t('defi_wizard.steps.select_modules.subtitle') }}
           </template>
@@ -47,22 +49,24 @@
             </v-col>
           </v-row>
         </card>
-        <v-btn text @click="step = 1">
-          {{ $t('defi_wizard.steps.select_modules.back') }}
-        </v-btn>
-        <v-btn
-          color="primary"
-          class="defi-wizard__select-accounts"
-          @click="step = 3"
-        >
-          {{ $t('defi_wizard.steps.select_modules.continue') }}
-        </v-btn>
+        <div class="pb-4">
+          <v-btn text @click="step = 1">
+            {{ $t('defi_wizard.steps.select_modules.back') }}
+          </v-btn>
+          <v-btn
+            color="primary"
+            class="defi-wizard__select-accounts ml-4"
+            @click="step = 3"
+          >
+            {{ $t('defi_wizard.steps.select_modules.continue') }}
+          </v-btn>
+        </div>
       </v-stepper-content>
       <v-stepper-step :complete="step > 3" step="3">
         {{ $t('defi_wizard.steps.select_accounts.title') }}
       </v-stepper-step>
       <v-stepper-content step="3">
-        <card outlined class="mb-12">
+        <card outlined class="mb-8">
           <template #title>
             {{ $t('defi_wizard.steps.select_accounts.subtitle') }}
           </template>
@@ -71,12 +75,14 @@
           </template>
           <module-address-selector class="defi-wizard__address-selector" />
         </card>
-        <v-btn text @click="step = 2">
-          {{ $t('defi_wizard.steps.select_accounts.back') }}
-        </v-btn>
-        <v-btn color="primary" class="defi-wizard__done" @click="done()">
-          {{ $t('defi_wizard.steps.select_accounts.continue') }}
-        </v-btn>
+        <div class="pb-4">
+          <v-btn text @click="step = 2">
+            {{ $t('defi_wizard.steps.select_accounts.back') }}
+          </v-btn>
+          <v-btn color="primary" class="defi-wizard__done ml-4" @click="done()">
+            {{ $t('defi_wizard.steps.select_accounts.continue') }}
+          </v-btn>
+        </div>
       </v-stepper-content>
     </v-stepper>
   </v-card>

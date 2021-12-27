@@ -24,6 +24,7 @@ import {
   onUnmounted,
   ref
 } from '@vue/composition-api';
+import isEqual from 'lodash/isEqual';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import OpenTrades from '@/components/history/OpenTrades.vue';
@@ -67,14 +68,16 @@ export default defineComponent({
     };
 
     const onFilterUpdate = (newPayload: TradeRequestPayload) => {
-      payload.value = newPayload;
-      fetchTradesHandler().then();
+      if (!isEqual(payload.value, newPayload)) {
+        payload.value = newPayload;
+        fetchTradesHandler().then();
+      }
     };
 
     const refreshInterval = ref<any>(null);
 
     onBeforeMount(async () => {
-      fetchAssociatedLocations().then();
+      await fetchAssociatedLocations();
       fetchTradesHandler().then();
 
       const period = refreshPeriod.value * 60 * 1000;

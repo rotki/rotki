@@ -97,6 +97,7 @@ export default class SummaryCard extends Vue {
 
   &__refresh-icon {
     filter: grayscale(100%);
+    padding: 1rem;
 
     &:hover {
       filter: grayscale(0);

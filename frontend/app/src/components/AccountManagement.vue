@@ -6,7 +6,7 @@
       }"
     />
     <div v-if="!premiumVisible">
-      <v-card class="account-management__card pb-6" :width="width" light>
+      <v-card class="account-management__card pb-4" :width="width" light>
         <div
           class="
             pt-6

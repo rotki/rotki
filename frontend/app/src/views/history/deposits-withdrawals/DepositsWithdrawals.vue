@@ -16,6 +16,7 @@
 
 <script lang="ts">
 import { defineComponent, onBeforeMount, ref } from '@vue/composition-api';
+import isEqual from 'lodash/isEqual';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
 import {
@@ -53,13 +54,15 @@ export default defineComponent({
     };
 
     const onFilterUpdate = (newPayload: AssetMovementRequestPayload) => {
-      payload.value = newPayload;
-      fetchMovementsHandler().then();
+      if (!isEqual(payload.value, newPayload)) {
+        payload.value = newPayload;
+        fetchMovementsHandler().then();
+      }
     };
 
     onBeforeMount(async () => {
-      fetchAssociatedLocations().then();
-      fetchMovementsHandler().then();
+      await fetchAssociatedLocations();
+      await fetchMovementsHandler();
     });
 
     const { shouldShowLoadingScreen } = setupStatusChecking();

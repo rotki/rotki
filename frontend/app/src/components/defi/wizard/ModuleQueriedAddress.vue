@@ -1,5 +1,6 @@
 <template>
   <blockchain-account-selector
+    no-padding
     outlined
     :value="selectedAccounts"
     flat

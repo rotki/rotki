@@ -68,7 +68,6 @@ export default class DataManagement extends Vue {
   confirm: boolean = false;
   pending: boolean = false;
   sourceLabel: string = '';
-  removeExchangeTrades!: (location: SupportedExchange) => Promise<void>;
   [ACTION_PURGE_CACHED_DATA]: (purgeable: Purgeable) => Promise<void>;
 
   showConfirmation(source: PurgeParams) {

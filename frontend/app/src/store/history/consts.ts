@@ -4,33 +4,34 @@ import { LedgerActionType } from '@/types/ledger-actions';
 export enum HistoryActions {
   FETCH_ASSOCIATED_LOCATIONS = 'fetchAssociatedLocations',
   FETCH_TRADES = 'fetchTrades',
+  PURGE_TRADES = 'purgeTrades',
   ADD_EXTERNAL_TRADE = 'addExternalTrade',
   FETCH_LEDGER_ACTIONS = 'fetchLedgerActions',
+  PURGE_LEDGER_ACTIONS = 'purgeLedgerActions',
   ADD_LEDGER_ACTION = 'addLedgerAction',
   EDIT_LEDGER_ACTION = 'editLedgerAction',
   DELETE_LEDGER_ACTION = 'deleteLedgerAction',
   PURGE_EXCHANGE = 'purgeExchange',
-  REMOVE_EXCHANGE_TRADES = 'removeExchangeTrades',
-  REMOVE_EXCHANGE_MOVEMENTS = 'removeExchangeMovements',
   FETCH_TRANSACTIONS = 'fetchTransactions',
   FETCH_MOVEMENTS = 'fetchMovements',
+  PURGE_MOVEMENTS = 'purgeMovements',
   EDIT_EXTERNAL_TRADE = 'editExternalTrade',
   DELETE_EXTERNAL_TRADE = 'deleteExternalTrade',
   IGNORE_ACTIONS = 'ignoreActions',
   UNIGNORE_ACTION = 'unignoreActions',
   FETCH_IGNORED = 'fetchIgnored',
-  FETCH_GITCOIN_GRANT = 'fetchGitcoinGrant'
+  FETCH_GITCOIN_GRANT = 'fetchGitcoinGrant',
+  PURGE_HISTORY_LOCATION = 'purgeHistoryLocation'
 }
 
 export enum HistoryMutations {
   SET_ASSOCIATED_LOCATIONS = 'setAssociatedLocations',
-  ADD_LEDGER_ACTION = 'addLedgerAction',
-  SET_LEDGER_ACTIONS = 'setLedgerActions',
-  RESET = 'reset',
-  SET_TRANSACTIONS = 'setTransactions',
-  SET_MOVEMENTS = 'setMovements',
   SET_TRADES = 'setTrades',
-  SET_IGNORED = 'setIgnored'
+  SET_MOVEMENTS = 'setMovements',
+  SET_TRANSACTIONS = 'setTransactions',
+  SET_LEDGER_ACTIONS = 'setLedgerActions',
+  SET_IGNORED = 'setIgnored',
+  RESET = 'reset'
 }
 
 type ActionDataEntry = { readonly identifier: string; readonly label: string };
