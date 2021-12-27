@@ -321,12 +321,8 @@ HISTORY_EVENT_DB_TUPLE = Tuple[
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class HistoryBaseEntry:
     """
-    TODO: At the moment in the places where this data structure is used (kraken) we don't query
-    for the USD value of the assets. The reason is that querying that will slow the requests or
-    processing of the information. The intention of adding the USD value was to provide all the
-    information to replay the history of the user without having to depend on external
-    information. A good approach could be a task in the backend that goes row by row and fetch
-    the needed price. This needs more consideration and discussion.
+    Intended to be the base unit of any type of accounting. All trades, deposits,
+    swaps etc. are going to be made up of multiple HistoryBaseEntry
     """
     event_identifier: str  # identifier shared between related events
     sequence_index: int  # When this transaction was executed relative to other related events
@@ -336,7 +332,7 @@ class HistoryBaseEntry:
     # When we use this structure in blockchains can be used to specify addresses for example.
     # currently we use to identify the exchange name assigned by the user.
     location_label: Optional[str]
-    asset_balance: AssetBalance
+    asset_balance: AssetBalance  # usd value starts 0: https://github.com/rotki/rotki/issues/3865
     notes: Optional[str]
     event_type: HistoryEventType
     event_subtype: Optional[HistoryEventSubType]
