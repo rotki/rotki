@@ -48,6 +48,7 @@ AVAILABLE_MODULES_MAP = {
     'pickle_finance': 'Pickle Finance',
     'nfts': 'NFTs',
 }
+DEFAULT_OFF_MODULES = {'makerdao_dsr', 'yearn_vaults', 'adex'}
 
 
 IMPORTABLE_LOCATIONS = Literal[
