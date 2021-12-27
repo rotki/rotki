@@ -16,6 +16,7 @@
       :eth2-details="details"
       :eth2-deposits="deposits"
       :eth2-stats="stats"
+      :ownership="ownership"
       @refresh="refresh"
       @update:stats-pagination="updatePagination"
     >
@@ -79,6 +80,7 @@ import { Eth2Staking } from '@/premium/premium';
 import { Section } from '@/store/const';
 import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
+import { assert } from '@/utils/assertions';
 
 const Eth2Page = defineComponent({
   name: 'Eth2Page',
@@ -133,6 +135,17 @@ const Eth2Page = defineComponent({
       await store.dispatch('staking/fetchDailyStats', payload);
     };
 
+    const ownership = computed(() => {
+      const balances = store.state.balances;
+      const ownership: Record<string, string> = {};
+      assert(balances);
+      for (const { validatorIndex, ownershipPercentage } of balances
+        .eth2Validators.entries) {
+        ownership[validatorIndex] = ownershipPercentage;
+      }
+      return ownership;
+    });
+
     return {
       selection,
       loading,
@@ -144,6 +157,7 @@ const Eth2Page = defineComponent({
       deposits,
       details,
       stats,
+      ownership,
       refresh,
       updatePagination,
       chains: [Blockchain.ETH],

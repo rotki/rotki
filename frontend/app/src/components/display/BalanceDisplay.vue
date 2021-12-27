@@ -7,9 +7,8 @@
       [$style.loss]: mode === 'loss'
     }"
   >
-    <asset-link icon :asset="asset">
+    <asset-link v-if="!noIcon" icon :asset="asset">
       <asset-icon
-        v-if="!noIcon"
         :identifier="asset"
         :symbol="getSymbol(asset)"
         size="24px"
