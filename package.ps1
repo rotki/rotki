@@ -188,9 +188,48 @@ if ((-not ($env:VIRTUAL_ENV)) -and (-not ($Env:CI))) {
     ExitOnFailure("Failed to activate rotki VirtualEnv")
 }
 
-cd $PROJECT_DIR
-$NPM_VERSION = (npm --version) | Out-String
+if ($Env:CI) {
+    echo "::group::Fetch Miniupnpc"
+}
 
+
+echo "Fetching miniupnpc for windows"
+$PYTHON_LOCATION = ((python -c "import os, sys; print(os.path.dirname(sys.executable))") | Out-String).trim()
+$PYTHON_DIRECTORY = Split-Path -Path $PYTHON_LOCATION -Leaf
+
+if (-not ($PYTHON_DIRECTORY -match 'Scripts')) {
+    $PYTHON_LOCATION = (Join-Path $PYTHON_LOCATION "Scripts")
+}
+
+$DLL_PATH = (Join-Path $PYTHON_LOCATION "miniupnpc.dll")
+$MINIUPNPC_ZIP = "miniupnpc_64bit_py37-2.2.24.zip"
+$ZIP_PATH = (Join-Path $BUILD_DEPS_DIR $MINIUPNPC_ZIP)
+
+if (-not ((Test-Path $ZIP_PATH -PathType Leaf) -and (Test-Path $DLL_PATH -PathType Leaf))) {
+    echo "miniupnpc.dll will be installled in $PYTHON_LOCATION"
+
+    cd $BUILD_DEPS_DIR
+    curl.exe -L -O "https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/$MINIUPNPC_ZIP"
+    ExitOnFailure("Failed to download miniupnpc")
+
+    echo "Downloaded miniupnpc.zip"
+
+    Expand-Archive -Force -Path ".\$MINIUPNPC_ZIP" -DestinationPath $PYTHON_LOCATION
+
+    ExitOnFailure("Failed to unzip miniupnpc")
+    echo "Unzipped miniupnpc to $PYTHON_LOCATION"
+    echo "Done with miniupnpc"    
+} else {
+    echo "miniupnpc.dll already installled in $PYTHON_LOCATION. skipping"
+}
+
+if ($Env:CI) {
+    echo "::endgroup::"
+}
+
+cd $PROJECT_DIR
+
+$NPM_VERSION = (npm --version) | Out-String
 if ([version]$NPM_VERSION -lt [version]$MINIMUM_NPM_VERSION) {
     echo "Please make sure you have npm version $MINIMUM_NPM_VERSION or newer installed"
     exit 1;
