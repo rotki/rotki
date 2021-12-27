@@ -466,6 +466,7 @@ export default class Login extends Vue {
 .login {
   &__actions {
     padding: 16px !important;
+
     &__footer {
       font-size: 0.9em;
     }
