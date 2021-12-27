@@ -978,8 +978,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         of history events. Internally we look for the query range that needs to be queried in the
         range (start_ts, end_ts) to avoid double quering the kraken API when this method is called
         for deposits/withdrawals and trades. The events queried are then stored in the database.
-        Returns:
-        - any_had_errors: True if any query to the kraken API was not successful
+
+        Returns true if any query to the kraken API was not successful
         """
         ranges = DBQueryRanges(self.db)
         range_query_name = f'{self.location}_history_events_{self.name}'
@@ -988,9 +988,9 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             start_ts=start_ts,
             end_ts=end_ts,
         )
-        any_had_errors = False
+        with_errors = False
         for query_start_ts, query_end_ts in ranges_to_query:
-            log.debug(f'Quering kraken ledger actions from {query_start_ts} to {query_end_ts}')
+            log.debug(f'Querying kraken ledger entries from {query_start_ts} to {query_end_ts}')
             response, with_errors = self.query_until_finished(
                 endpoint='Ledgers',
                 keyname='ledger',
@@ -998,8 +998,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 end_ts=query_end_ts,
                 extra_dict={},
             )
-            if with_errors is True:
-                any_had_errors = with_errors
+
             # Group related events
             raw_events_groupped = defaultdict(list)
             for raw_event in response:
@@ -1038,4 +1037,14 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         f'in database. {str(e)}',
                     )
 
-        return any_had_errors
+                ranges.update_used_query_range(
+                    location_string=range_query_name,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    ranges_to_query=[(query_start_ts, query_end_ts)],
+                )
+
+            if with_errors is True:
+                return True  # we had errors so stop any further queries and quit
+
+        return False  # no errors
