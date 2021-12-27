@@ -335,7 +335,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             data_directory: Path,
             beaconchain: 'BeaconChain',
             btc_derivation_gap_limit: int,
-            eth_modules: Optional[List[ModuleName]] = None,
+            eth_modules: List[ModuleName],
     ):
         log.debug('Initializing ChainManager')
         super().__init__()
@@ -369,9 +369,8 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.greenlet_manager = greenlet_manager
         # TODO: Turn this mapping into a typed dict once we upgrade to python 3.8
         self.eth_modules: Dict[ModuleName, Union[EthereumModule]] = {}
-        if eth_modules:
-            for given_module in eth_modules:
-                self.activate_module(given_module)
+        for given_module in eth_modules:
+            self.activate_module(given_module)
 
         self.defichad = DefiChad(
             ethereum_manager=self.ethereum,

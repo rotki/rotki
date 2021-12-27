@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :bug:`3847` Remove whitespace when inputting address in new asset form.
+
+* :feature:`-` If active modules have not been set then the default active modules is now not all, but all except for: MakerDAO DSR, Adex, Yearn vaults v1.
 * :feature:`3842` Users will now be taken directly to create account when downloading the application for the first time.
 * :feature:`-` Any ethereum transactions that were ignored for accounting will now need to be re-ignored.
 * :feature:`1242` Users will be asked first whether to activate premium feature, and enable database sync when create new account.
@@ -39,6 +40,7 @@ Changelog
 * :bug:`-` Users connected to Alchemy as a node will be able to properly retrieve old ethereum transactions.
 * :bug:`-` Users whose only interaction with a yearn vault was a deposit will no longer see the entire deposit as loss in the PnL.
 * :bug:`3804` Bitpanda users should now be able to see their crypto deposits and withdrawals.
+* :bug:`3847` Inputting an address in the asset form with extra whitespace will now work properly thanks to trimming.
 
 * :release:`1.22.2 <2021-11-30>`
 * :feature:`-` rotki will now detect locked SRM balances in FTX.
