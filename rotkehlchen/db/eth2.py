@@ -233,6 +233,7 @@ class DBEth2():
                 f'Tried to edit validator with index {validator_index} '
                 f'that is not in the database',
             )
+        self.db.update_last_write()
 
     def delete_validator(self, validator_index: Optional[int], public_key: Optional[str]) -> None:
         """Deletes the given validator from the DB. Due to marshmallow here at least one
