@@ -17,6 +17,7 @@
 
 <script lang="ts">
 import { defineComponent, onBeforeMount, ref } from '@vue/composition-api';
+import isEqual from 'lodash/isEqual';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
 import {
@@ -54,13 +55,15 @@ export default defineComponent({
     };
 
     const onFilterUpdate = (newPayload: LedgerActionRequestPayload) => {
-      payload.value = newPayload;
-      fetchLedgerActionsHandler().then();
+      if (!isEqual(payload.value, newPayload)) {
+        payload.value = newPayload;
+        fetchLedgerActionsHandler().then();
+      }
     };
 
     onBeforeMount(async () => {
-      fetchAssociatedLocations().then();
-      fetchLedgerActionsHandler().then();
+      await fetchAssociatedLocations();
+      await fetchLedgerActionsHandler();
     });
 
     const { shouldShowLoadingScreen } = setupStatusChecking();

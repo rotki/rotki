@@ -78,6 +78,7 @@
               <v-switch
                 v-model="sync"
                 class="premium-settings__sync"
+                hide-details
                 :label="$t('premium_settings.actions.sync')"
                 @change="onSyncChange()"
               />
@@ -233,6 +234,8 @@ export default class PremiumSettings extends Vue {
 .premium-settings {
   &__sync {
     margin-left: 20px;
+    margin-top: 0;
+    padding-top: 0;
   }
 
   &__premium-active {

@@ -5,13 +5,17 @@
       :value="true"
       persistent
       max-width="500"
+      class="confirm-dialog"
       @keydown.esc.stop="cancel()"
     >
       <v-card data-cy="confirm-dialog">
-        <v-card-title class="text-h5" data-cy="dialog-title">
+        <v-card-title
+          class="confirm-dialog__title text-h5"
+          data-cy="dialog-title"
+        >
           {{ title }}
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="confirm-dialog__text">
           <v-row align="center">
             <v-col cols="auto" class="text-center">
               <v-icon :color="color" x-large>
@@ -25,7 +29,7 @@
           </v-row>
         </v-card-text>
 
-        <v-card-actions>
+        <v-card-actions class="confirm-dialog__actions">
           <v-spacer />
           <v-btn
             v-if="!singleAction"
@@ -97,3 +101,10 @@ const ConfirmDialog = defineComponent({
 
 export default ConfirmDialog;
 </script>
+<style scoped lang="scss">
+.confirm-dialog {
+  &__actions {
+    padding: 16px !important;
+  }
+}
+</style>

@@ -1926,6 +1926,7 @@
       }
     },
     "ledger_actions": {
+      "all_exchanges": "all exchanges",
       "task": {
         "title": "Ledger actions",
         "description": "Retrieving ledger actions for {exchange}"
@@ -1947,6 +1948,7 @@
       }
     },
     "asset_movements": {
+      "all_exchanges": "all exchanges",
       "task": {
         "title": "Deposits & withdrawals",
         "description": "Retrieving deposits & withdrawals for {exchange}"
@@ -2008,6 +2010,7 @@
       }
     },
     "trades": {
+      "all_exchanges": "all exchanges",
       "task": {
         "title": "Trades",
         "description": "Retrieving trades for {exchange}"

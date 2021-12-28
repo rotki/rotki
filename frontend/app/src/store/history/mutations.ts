@@ -48,21 +48,10 @@ export const mutations: MutationTree<HistoryState> = {
     state.ledgerActions = actions;
   },
 
-  [HistoryMutations.ADD_LEDGER_ACTION](
-    state: HistoryState,
-    action: LedgerActionEntry
-  ) {
-    const ledgerActions = state.ledgerActions;
-    state.ledgerActions = {
-      data: [...ledgerActions.data, action],
-      limit: ledgerActions.limit,
-      found: ledgerActions.found + 1,
-      total: ledgerActions.total
-    };
-  },
   [HistoryMutations.SET_IGNORED](state: HistoryState, ignored: IgnoredActions) {
     state.ignored = ignored;
   },
+
   [HistoryMutations.RESET](state: HistoryState) {
     Object.assign(state, defaultState());
   }

@@ -41,6 +41,8 @@
               v-model="rememberUser"
               :disabled="customBackendDisplay"
               color="primary"
+              hide-details
+              class="mt-0"
               :label="$t('login.remember_me')"
             />
           </v-col>
@@ -210,7 +212,7 @@
           {{ $t('login.button_signin') }}
         </v-btn>
       </span>
-      <v-divider class="my-3" />
+      <v-divider class="my-4" />
       <span class="login__actions__footer">
         <a
           class="login__button__new-account font-weight-bold secondary--text"
@@ -463,6 +465,8 @@ export default class Login extends Vue {
 <style scoped lang="scss">
 .login {
   &__actions {
+    padding: 16px !important;
+
     &__footer {
       font-size: 0.9em;
     }

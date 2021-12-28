@@ -41,7 +41,7 @@
         </v-col>
       </v-row>
     </v-card-text>
-    <v-card-actions>
+    <v-card-actions class="service-key__buttons">
       <v-btn
         class="service-key__buttons__save"
         depressed
@@ -149,6 +149,10 @@ export default class ServiceKey extends Vue {
 
 <style scoped lang="scss">
 .service-key {
+  &__buttons {
+    padding: 16px !important;
+  }
+
   &__content {
     ::v-deep {
       .v-input {

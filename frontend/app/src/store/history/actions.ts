@@ -5,7 +5,6 @@ import {
 } from '@rotki/common/lib/gitcoin';
 import { ActionContext, ActionTree } from 'vuex';
 import { exchangeName } from '@/components/history/consts';
-import { DECENTRALIZED_EXCHANGES } from '@/data/defaults';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
 import {
@@ -31,7 +30,6 @@ import { ALL_CENTRALIZED_EXCHANGES } from '@/services/session/consts';
 import { mapCollectionResponse } from '@/services/utils';
 import { Section, Status } from '@/store/const';
 import { HistoryActions, HistoryMutations } from '@/store/history/consts';
-import { defaultHistoricState } from '@/store/history/state';
 import {
   AssetMovementEntry,
   EthTransactionEntry,
@@ -44,7 +42,7 @@ import { mapCollectionEntriesWithMeta } from '@/store/history/utils';
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
-import { getStatusUpdater } from '@/store/utils';
+import { getStatusUpdater, setStatus } from '@/store/utils';
 import { Collection, CollectionResponse } from '@/types/collection';
 import { SupportedExchange } from '@/types/exchanges';
 import { TaskMeta } from '@/types/task';
@@ -103,7 +101,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   },
 
   async [HistoryActions.FETCH_TRADES](
-    { commit, rootGetters: { status }, getters: { associatedLocations } },
+    { commit, rootGetters: { status } },
     payload: Partial<TradeRequestPayload>
   ): Promise<void> {
     const { awaitTask, isTaskRunning } = useTasks();
@@ -135,10 +133,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
       const { taskId } = await api.history.tradesTask(params);
       const location = parameters?.location ?? '';
+      const exchange = location
+        ? exchangeName(location as TradeLocation)
+        : i18n.tc('actions.trades.all_exchanges');
       const taskMeta = {
         title: i18n.tc('actions.trades.task.title'),
         description: i18n.tc('actions.trades.task.description', undefined, {
-          exchange: exchangeName(location as TradeLocation)
+          exchange
         }),
         location,
         numericKeys: []
@@ -175,39 +176,25 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       if (!onlyCache) {
         setStatus(Status.REFRESHING);
         const { notify } = useNotifications();
-        const refreshLocationTrades: Promise<any>[] = [];
 
-        associatedLocations.forEach((location: TradeLocation) => {
-          if (!DECENTRALIZED_EXCHANGES.includes(location)) return;
+        const exchange = i18n.tc('actions.trades.all_exchanges');
 
-          const exchange = exchangeName(location);
-          refreshLocationTrades.push(
-            fetchTrades({ location }).catch(error => {
-              notify({
-                title: i18n.tc('actions.trades.error.title', undefined, {
-                  exchange
-                }),
-                message: i18n.tc(
-                  'actions.trades.error.description',
-                  undefined,
-                  {
-                    exchange,
-                    error
-                  }
-                ),
-                display: true
-              });
-            })
-          );
+        await fetchTrades({ onlyCache: false }).catch(error => {
+          notify({
+            title: i18n.tc('actions.trades.error.title', undefined, {
+              exchange
+            }),
+            message: i18n.tc('actions.trades.error.description', undefined, {
+              exchange,
+              error
+            }),
+            display: true
+          });
         });
 
-        await Promise.all(refreshLocationTrades);
-
-        if (!firstLoad) {
-          const cacheParams = { ...payload, onlyCache: true };
-          const data = await fetchTrades(cacheParams);
-          commit(HistoryMutations.SET_TRADES, data);
-        }
+        const cacheParams = { ...payload, onlyCache: true };
+        const data = await fetchTrades(cacheParams);
+        commit(HistoryMutations.SET_TRADES, data);
       }
 
       setStatus(
@@ -217,6 +204,22 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       logger.error(e);
       setStatus(Status.NONE);
     }
+  },
+
+  async [HistoryActions.PURGE_TRADES](
+    _,
+    location: SupportedExchange
+  ): Promise<void> {
+    const params = {
+      location,
+      limit: 1,
+      offset: 0,
+      ascending: false,
+      orderByAttribute: 'time',
+      onlyCache: false
+    };
+
+    await api.history.trades(params);
   },
 
   async [HistoryActions.ADD_EXTERNAL_TRADE](
@@ -264,7 +267,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   },
 
   async [HistoryActions.FETCH_MOVEMENTS](
-    { commit, rootGetters: { status }, getters: { associatedLocations } },
+    { commit, rootGetters: { status } },
     payload: Partial<AssetMovementRequestPayload>
   ): Promise<void> {
     const { awaitTask, isTaskRunning } = useTasks();
@@ -299,13 +302,16 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
       const { taskId } = await api.history.assetMovementsTask(params);
       const location = parameters?.location ?? '';
+      const exchange = location
+        ? exchangeName(location as TradeLocation)
+        : i18n.tc('actions.asset_movements.all_exchanges');
       const taskMeta = {
         title: i18n.tc('actions.asset_movements.task.title'),
         description: i18n.tc(
           'actions.asset_movements.task.description',
           undefined,
           {
-            exchange: exchangeName(location as TradeLocation)
+            exchange
           }
         ),
         location,
@@ -343,43 +349,29 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       if (!onlyCache) {
         setStatus(Status.REFRESHING);
         const { notify } = useNotifications();
-        const refreshLocationTrades: Promise<any>[] = [];
 
-        associatedLocations.forEach((location: TradeLocation) => {
-          if (!DECENTRALIZED_EXCHANGES.includes(location)) return;
+        const exchange = i18n.tc('actions.asset_movements.all_exchanges');
 
-          const exchange = exchangeName(location);
-          refreshLocationTrades.push(
-            fetchAssetMovements({ location }).catch(error => {
-              notify({
-                title: i18n.tc(
-                  'actions.asset_movements.error.title',
-                  undefined,
-                  {
-                    exchange
-                  }
-                ),
-                message: i18n.tc(
-                  'actions.asset_movements.error.description',
-                  undefined,
-                  {
-                    exchange,
-                    error
-                  }
-                ),
-                display: true
-              });
-            })
-          );
+        await fetchAssetMovements({ onlyCache: false }).catch(error => {
+          notify({
+            title: i18n.tc('actions.asset_movements.error.title', undefined, {
+              exchange
+            }),
+            message: i18n.tc(
+              'actions.asset_movements.error.description',
+              undefined,
+              {
+                exchange,
+                error
+              }
+            ),
+            display: true
+          });
         });
 
-        await Promise.all(refreshLocationTrades);
-
-        if (!firstLoad) {
-          const cacheParams = { ...payload, onlyCache: true };
-          const data = await fetchAssetMovements(cacheParams);
-          commit(HistoryMutations.SET_MOVEMENTS, data);
-        }
+        const cacheParams = { ...payload, onlyCache: true };
+        const data = await fetchAssetMovements(cacheParams);
+        commit(HistoryMutations.SET_MOVEMENTS, data);
       }
 
       setStatus(
@@ -389,6 +381,22 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       logger.error(e);
       setStatus(Status.NONE);
     }
+  },
+
+  async [HistoryActions.PURGE_MOVEMENTS](
+    _,
+    location: SupportedExchange
+  ): Promise<void> {
+    const params = {
+      location,
+      limit: 1,
+      offset: 0,
+      ascending: false,
+      orderByAttribute: 'time',
+      onlyCache: false
+    };
+
+    await api.history.assetMovements(params);
   },
 
   async [HistoryActions.FETCH_TRANSACTIONS](
@@ -472,7 +480,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         setStatus(Status.REFRESHING);
         const { notify } = useNotifications();
         const refreshAddressTxs = ethAddresses.map((address: string) =>
-          fetchTransactions({ address }).catch(error => {
+          fetchTransactions({ address, onlyCache: false }).catch(error => {
             notify({
               title: i18n.t('actions.transactions.error.title').toString(),
               message: i18n
@@ -487,11 +495,9 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         );
         await Promise.all(refreshAddressTxs);
 
-        if (!firstLoad) {
-          const cacheParams = { ...payload, onlyCache: true };
-          const data = await fetchTransactions(cacheParams);
-          commit(HistoryMutations.SET_TRANSACTIONS, data);
-        }
+        const cacheParams = { ...payload, onlyCache: true };
+        const data = await fetchTransactions(cacheParams);
+        commit(HistoryMutations.SET_TRANSACTIONS, data);
       }
 
       setStatus(
@@ -504,7 +510,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   },
 
   async [HistoryActions.FETCH_LEDGER_ACTIONS](
-    { commit, rootGetters: { status }, getters: { associatedLocations } },
+    { commit, rootGetters: { status } },
     payload: Partial<LedgerActionRequestPayload>
   ): Promise<void> {
     const { awaitTask, isTaskRunning } = useTasks();
@@ -539,13 +545,16 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
       const { taskId } = await api.history.ledgerActionsTask(params);
       const location = parameters?.location ?? '';
+      const exchange = location
+        ? exchangeName(location as TradeLocation)
+        : i18n.tc('actions.trades.all_exchanges');
       const taskMeta = {
         title: i18n.tc('actions.ledger_actions.task.title'),
         description: i18n.tc(
           'actions.ledger_actions.task.description',
           undefined,
           {
-            exchange: exchangeName(location as TradeLocation)
+            exchange
           }
         ),
         location,
@@ -583,43 +592,29 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       if (!onlyCache) {
         setStatus(Status.REFRESHING);
         const { notify } = useNotifications();
-        const refreshLocationTrades: Promise<any>[] = [];
 
-        associatedLocations.forEach((location: TradeLocation) => {
-          if (!DECENTRALIZED_EXCHANGES.includes(location)) return;
+        const exchange = i18n.tc('actions.ledger_actions.all_exchanges');
 
-          const exchange = exchangeName(location);
-          refreshLocationTrades.push(
-            fetchLedgerActions({ location }).catch(error => {
-              notify({
-                title: i18n.tc(
-                  'actions.ledger_actions.error.title',
-                  undefined,
-                  {
-                    exchange
-                  }
-                ),
-                message: i18n.tc(
-                  'actions.ledger_actions.error.description',
-                  undefined,
-                  {
-                    exchange,
-                    error
-                  }
-                ),
-                display: true
-              });
-            })
-          );
+        await fetchLedgerActions({ onlyCache: false }).catch(error => {
+          notify({
+            title: i18n.tc('actions.ledger_actions.error.title', undefined, {
+              exchange
+            }),
+            message: i18n.tc(
+              'actions.ledger_actions.error.description',
+              undefined,
+              {
+                exchange,
+                error
+              }
+            ),
+            display: true
+          });
         });
 
-        await Promise.all(refreshLocationTrades);
-
-        if (!firstLoad) {
-          const cacheParams = { ...payload, onlyCache: true };
-          const data = await fetchLedgerActions(cacheParams);
-          commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
-        }
+        const cacheParams = { ...payload, onlyCache: true };
+        const data = await fetchLedgerActions(cacheParams);
+        commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
       }
 
       setStatus(
@@ -629,6 +624,22 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       logger.error(e);
       setStatus(Status.NONE);
     }
+  },
+
+  async [HistoryActions.PURGE_LEDGER_ACTIONS](
+    _,
+    location: SupportedExchange
+  ): Promise<void> {
+    const params = {
+      location,
+      limit: 1,
+      offset: 0,
+      ascending: false,
+      orderByAttribute: 'timestamp',
+      onlyCache: false
+    };
+
+    await api.history.ledgerActions(params);
   },
 
   async [HistoryActions.ADD_LEDGER_ACTION](
@@ -681,6 +692,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   ): Promise<ActionStatus> {
     return ignoreInAccounting(context, payload, true);
   },
+
   async [HistoryActions.UNIGNORE_ACTION](
     context,
     payload: IgnoreActionPayload
@@ -688,48 +700,31 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     return ignoreInAccounting(context, payload, false);
   },
 
-  async [HistoryActions.REMOVE_EXCHANGE_TRADES](
-    { commit, state },
-    location: SupportedExchange
-  ) {
-    const data = state.trades.data;
-    const withoutLocation = data.filter(entry => entry.location !== location);
-    const trades: Collection<TradeEntry> = {
-      data: withoutLocation,
-      found: state.trades.found - withoutLocation.length,
-      limit: state.trades.limit,
-      total: state.trades.total - withoutLocation.length
-    };
-
-    commit(HistoryMutations.SET_TRADES, trades);
-  },
-  async [HistoryActions.REMOVE_EXCHANGE_MOVEMENTS](
-    { commit, state: { assetMovements } },
-    location: SupportedExchange
-  ) {
-    const data = assetMovements.data;
-    const withoutLocation = data.filter(entry => entry.location !== location);
-    const trades: Collection<AssetMovementEntry> = {
-      data: withoutLocation,
-      found: assetMovements.found - withoutLocation.length,
-      limit: assetMovements.limit,
-      total: assetMovements.total - withoutLocation.length
-    };
-
-    commit(HistoryMutations.SET_MOVEMENTS, trades);
-  },
   async [HistoryActions.PURGE_EXCHANGE](
-    { commit, dispatch },
+    { commit, dispatch, rootGetters: { status } },
     exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
   ) {
+    function resetStatus(section: Section) {
+      setStatus(Status.NONE, section, status, commit);
+    }
     if (exchange === ALL_CENTRALIZED_EXCHANGES) {
-      commit(HistoryMutations.SET_TRADES, defaultHistoricState());
-      commit(HistoryMutations.SET_MOVEMENTS, defaultHistoricState());
+      resetStatus(Section.TRADES);
+      resetStatus(Section.ASSET_MOVEMENT);
+      resetStatus(Section.LEDGER_ACTIONS);
     } else {
-      await dispatch(HistoryActions.REMOVE_EXCHANGE_TRADES, exchange);
-      await dispatch(HistoryActions.REMOVE_EXCHANGE_MOVEMENTS, exchange);
+      dispatch(HistoryActions.PURGE_HISTORY_LOCATION, exchange);
     }
   },
+
+  async [HistoryActions.PURGE_HISTORY_LOCATION](
+    { dispatch },
+    exchange: SupportedExchange
+  ) {
+    dispatch(HistoryActions.PURGE_TRADES, exchange);
+    dispatch(HistoryActions.PURGE_MOVEMENTS, exchange);
+    dispatch(HistoryActions.PURGE_LEDGER_ACTIONS, exchange);
+  },
+
   async [HistoryActions.FETCH_GITCOIN_GRANT](
     _,
     payload: GitcoinGrantEventsPayload
