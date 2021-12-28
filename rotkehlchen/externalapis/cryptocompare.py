@@ -3,7 +3,7 @@ import os
 from collections import deque
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Deque, Dict, Iterable, Iterator, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Deque, Dict, List, NamedTuple, Optional
 
 import gevent
 import requests
@@ -55,7 +55,7 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ExternalService, Price, Timestamp
-from rotkehlchen.utils.misc import timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import pairwise, timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -182,12 +182,6 @@ CRYPTOCOMPARE_SPECIAL_HISTOHOUR_CASES: Dict[Asset, HistoHourAssetData] = {
 def _multiply_str_nums(a: str, b: str) -> str:
     """Multiplies two string numbers and returns the result as a string"""
     return str(FVal(a) * FVal(b))
-
-
-def pairwise(iterable: Iterable[Any]) -> Iterator:
-    "s -> (s0, s1), (s2, s3), (s4, s5), ..."
-    a = iter(iterable)
-    return zip(a, a)
 
 
 def _check_hourly_data_sanity(

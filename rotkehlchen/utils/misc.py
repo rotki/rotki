@@ -6,7 +6,18 @@ import platform
 import re
 import sys
 import time
-from typing import Any, Callable, DefaultDict, Dict, Iterator, List, TypeVar, Union, overload
+from typing import (
+    Any,
+    Callable,
+    DefaultDict,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import pkg_resources
 from eth_utils.address import to_checksum_address
@@ -315,3 +326,9 @@ def rgetattr(obj: Any, attr: str, *args: Any) -> Any:
     def _getattr(obj: Any, attr: str) -> Any:
         return getattr(obj, attr, *args)
     return functools.reduce(_getattr, [obj] + attr.split('.'))
+
+
+def pairwise(iterable: Iterable[Any]) -> Iterator:
+    "s -> (s0, s1), (s2, s3), (s4, s5), ..."
+    a = iter(iterable)
+    return zip(a, a)

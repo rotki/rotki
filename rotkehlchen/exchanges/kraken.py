@@ -9,8 +9,7 @@ import logging
 import operator
 import time
 from collections import defaultdict
-from itertools import permutations
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union
 from urllib.parse import urlencode
 
 import gevent
@@ -26,7 +25,7 @@ from rotkehlchen.accounting.structures import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, WORLD_TO_KRAKEN, asset_from_kraken
+from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE
 from rotkehlchen.constants.misc import ZERO
@@ -42,12 +41,12 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_movement_category,
-    deserialize_timestamp_from_kraken,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -60,7 +59,7 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import pairwise, ts_now
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
@@ -142,12 +141,13 @@ def history_event_from_kraken(
     found_unknown_event = False
     for idx, raw_event in enumerate(events):
         try:
-            timestamp = deserialize_timestamp_from_kraken(raw_event['time'])
+            timestamp = Timestamp((FVal(raw_event['time']) * 10000).to_int(exact=False))
             identifier = raw_event['refid']
             event_type = HistoryEventType.from_string(raw_event['type'])
             asset = asset_from_kraken(raw_event['asset'])
             event_subtype = None
-            amount = abs(deserialize_asset_amount(raw_event['amount']))
+            notes = None
+            raw_amount = deserialize_asset_amount(raw_event['amount'])
             # If we don't know how to handle an event atm or we find an unsupported
             # event type the logic will be to store it as unknown and if in the future
             # we need some information from it we can take actions to process them
@@ -164,11 +164,16 @@ def history_event_from_kraken(
                 elif raw_event['subtype'] == 'spotfromstaking':
                     event_type = HistoryEventType.UNSTAKING
                     event_subtype = HistoryEventSubType.STAKING_RECEIVE_ASSET
+            elif event_type == HistoryEventType.ADJUSTMENT:
+                if raw_amount < ZERO:
+                    event_subtype = HistoryEventSubType.SPEND
+                else:
+                    event_subtype = HistoryEventSubType.RECEIVE
             elif event_type == HistoryEventType.UNKNOWN:
                 found_unknown_event = True
-                msg_aggregator.add_warning(
-                    f'Encountered unknown kraken historic event type {raw_event["type"]}. Event '
-                    f'will be stored but not processed.',
+                notes = raw_event['type']
+                logger.warning(
+                    f'Encountered kraken historic event type we do not process. {raw_event}',
                 )
             fee_amount = deserialize_asset_amount(raw_event['fee'])
 
@@ -181,11 +186,11 @@ def history_event_from_kraken(
                 asset_balance=AssetBalance(
                     asset=asset,
                     balance=Balance(
-                        amount=amount,
+                        amount=raw_amount,
                         usd_value=ZERO,
                     ),
                 ),
-                notes=None,
+                notes=notes,
                 event_type=event_type,
                 event_subtype=event_subtype,
             ))
@@ -203,7 +208,7 @@ def history_event_from_kraken(
                             usd_value=ZERO,
                         ),
                     ),
-                    notes=None,
+                    notes=notes,
                     event_type=event_type,
                     event_subtype=HistoryEventSubType.FEE,
                 ))
@@ -295,7 +300,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.set_account_type(kraken_account_type)
         self.call_counter = 0
         self.last_query_ts = 0
-        self.pairs: Set[str] = set()
 
     def set_account_type(self, account_type: Optional[KrakenAccountType]) -> None:
         if account_type is None:
@@ -681,12 +685,13 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """
         with_errors = self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
-            from_ts=start_ts,
-            to_ts=end_ts,
+            from_ts=Timestamp(start_ts * 10000),
+            to_ts=Timestamp(end_ts * 10000),
             event_type=[
                 HistoryEventType.TRADE,
                 HistoryEventType.RECEIVE,
                 HistoryEventType.SPEND,
+                HistoryEventType.ADJUSTMENT,
             ],
             location=Location.KRAKEN,
             location_label=self.name,
@@ -721,8 +726,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[AssetMovement]:
         self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
-            from_ts=start_ts,
-            to_ts=end_ts,
+            from_ts=Timestamp(start_ts * 10000),
+            to_ts=Timestamp(end_ts * 10000),
             event_type=[
                 HistoryEventType.DEPOSIT,
                 HistoryEventType.WITHDRAWAL,
@@ -758,7 +763,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 movements.append(AssetMovement(
                     location=Location.KRAKEN,
                     category=deserialize_asset_movement_category(movement_type),
-                    timestamp=movement.timestamp,
+                    timestamp=Timestamp(int(movement.timestamp / 1000)),
                     address=None,  # no data from kraken ledger endpoint
                     transaction_id=None,  # no data from kraken ledger endpoint
                     asset=asset,
@@ -804,34 +809,133 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[LedgerAction]:
         return []  # noop for kraken
 
-    def query_pairs_if_needed(self) -> None:
-        if len(self.pairs) == 0:
-            self.pairs = set(self.api_query('AssetPairs').keys())
+    def process_kraken_events_for_trade(
+            self,
+            trade_parts: List[HistoryBaseEntry],
+            adjustments: List[HistoryBaseEntry],
+    ) -> Optional[Trade]:
+        """Processes events from trade parts to a trade. If it's an adjustment
+        adds it to a separate list"""
+        if trade_parts[0].event_type == HistoryEventType.ADJUSTMENT:
+            adjustments.append(trade_parts[0])
+            return None  # skip as they don't have same refid
 
-    def kraken_asset_to_pair(self, asset1: Asset, asset2: Asset) -> Optional[str]:
-        """Given a pair of assets find the kraken pair that has these two assets as
-        base and quote.
-        Precondition: It requires that the self.pairs list is populated to properly work.
-        """
-        asset1_symbol, asset2_symbol = asset1.symbol, asset2.symbol
-        asset1_kraken_tr = WORLD_TO_KRAKEN.get(asset1_symbol, asset1_symbol)
-        asset2_kraken_tr = WORLD_TO_KRAKEN.get(asset2_symbol, asset2_symbol)
+        event_id = trade_parts[0].event_identifier
+        is_spend_receive = False
+        trade_assets = []
+        spend_part, receive_part, fee_part, kfee_part = None, None, None, None
 
-        for a, b in permutations(
-            [
-                ('a', asset1_symbol),
-                ('b', asset2_symbol),
-                ('a', asset1_kraken_tr),
-                ('b', asset2_kraken_tr),
-            ],
-            2,
-        ):
-            if a[0] == b[0]:
-                continue
-            pair_candidate = a[1] + b[1]
-            if pair_candidate in self.pairs:
-                return pair_candidate
-        return None
+        for trade_part in trade_parts:
+            if trade_part.event_type == HistoryEventType.RECEIVE:
+                is_spend_receive = True
+                receive_part = trade_part
+            elif trade_part.event_type == HistoryEventType.SPEND:
+                is_spend_receive = True
+                spend_part = trade_part
+            elif trade_part.event_type == HistoryEventType.TRADE:
+                if trade_part.event_subtype == HistoryEventSubType.FEE:
+                    fee_part = trade_part
+                elif trade_part.asset_balance.asset == A_KFEE:
+                    kfee_part = trade_part
+                elif trade_part.asset_balance.balance.amount < ZERO:
+                    spend_part = trade_part
+                else:
+                    receive_part = trade_part
+
+            if (
+                trade_part.asset_balance.balance.amount != ZERO and
+                trade_part.event_subtype != HistoryEventSubType.FEE
+            ):
+                trade_assets.append(trade_part.asset_balance.asset)
+
+        if is_spend_receive and len(trade_parts) < 2:
+            logger.warning(
+                f'Found kraken spend/receive events {event_id} with '
+                f'less than 2 parts. {trade_parts}',
+            )
+            self.msg_aggregator.add_warning(
+                f'Found kraken spend/receive events {event_id} with '
+                f'less than 2 parts. Skipping...',
+            )
+            return None
+
+        if len(trade_assets) != 2:
+            # This can happen some times (for lefters 5 times since start of kraken usage)
+            # when the other part of a trade is so small it's 0. So it's either a
+            # receive event with no counterpart or a spend event with no counterpart.
+            # This happens for really really small amounts. To make things add up we
+            # should account for those but for now just skipping.
+            log.warning(f'Found historic trade entries with no counterpart {trade_parts}')
+            return None
+
+        if spend_part is None or receive_part is None:
+            log.error(
+                f'Failed to process {event_id}. Couldnt find spend/receive parts {trade_parts}',
+            )
+            self.msg_aggregator.add_error(
+                f'Failed to read trades for event {event_id}. '
+                f'More details are available at the logs',
+            )
+            return None
+
+        timestamp = Timestamp(int(trade_parts[0].timestamp / 10000))
+        spend_asset = spend_part.asset_balance.asset
+        receive_asset = receive_part.asset_balance.asset
+        if spend_asset.is_fiat() or trade_parts[0] == receive_part:
+            trade_type = TradeType.BUY
+            base_asset = receive_asset
+            quote_asset = spend_asset
+            amount = receive_part.asset_balance.balance.amount
+            if amount == ZERO:
+                self.msg_aggregator.add_warning(
+                    f'Rate for kraken trade couldnt be calculated. Base amount is ZERO '
+                    f'for event {event_id}. Skipping event',
+                )
+                return None
+
+            rate = Price((spend_part.asset_balance.balance.amount / amount) * -1)
+        else:
+            trade_type = TradeType.SELL
+            base_asset = spend_asset
+            quote_asset = receive_asset
+            amount = -1 * spend_part.asset_balance.balance.amount
+            if amount == ZERO:
+                self.msg_aggregator.add_warning(
+                    f'Rate for kraken trade couldnt be calculated. Base amount is ZERO '
+                    f'for event {event_id}. Skipping event',
+                )
+                return None
+
+            rate = Price((receive_part.asset_balance.balance.amount / amount))
+
+        exchange_uuid = (
+            str(event_id) +
+            str(timestamp)
+        )
+        # If kfee was found we use it as the fee for the trade
+        if kfee_part is not None and fee_part is None:
+            fee = Fee(kfee_part.asset_balance.balance.amount)
+            fee_asset = A_KFEE
+        elif (None, None) == (fee_part, kfee_part):
+            fee = None
+            fee_asset = None
+        elif fee_part is not None:
+            fee = Fee(fee_part.asset_balance.balance.amount)
+            fee_asset = fee_part.asset_balance.asset
+
+        trade = Trade(
+            timestamp=timestamp,
+            location=Location.KRAKEN,
+            base_asset=base_asset,
+            quote_asset=quote_asset,
+            trade_type=trade_type,
+            amount=AssetAmount(amount),
+            rate=rate,
+            fee=fee,
+            fee_currency=fee_asset,
+            link=exchange_uuid,
+        )
+        return trade
 
     def process_kraken_trades(
         self,
@@ -843,10 +947,14 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         - Trade
         - Receive
         - Spend
+        - Adjustment
 
         A pair of receive and spend events can be a trade and kraken uses this kind of event
         for instant trades and trades made from the phone app. What we do in order to verify
         that it is a trade is to check if we can find a pair with the same event id.
+
+        Also in some rare occasions Kraken may forcibly adjust something for you.
+        Example would be delisting of DAO token and forcible exchange to ETH.
 
         Returns:
         - The list of trades processed
@@ -855,119 +963,60 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         May raise:
         - RemoteError if the pairs couldn't be correctly queried
         """
-        self.query_pairs_if_needed()
         trades = []
         max_ts = 0
         get_attr = operator.attrgetter('event_identifier')
+        adjustments: List[HistoryBaseEntry] = []
         # Create a list of lists where each sublist has the events for the same event identifier
         grouped_events = [list(g) for k, g in itertools.groupby(sorted(raw_data, key=get_attr), get_attr)]  # noqa: E501
         for trade_parts in grouped_events:
-            event_id = trade_parts[0].event_identifier
-            is_spend_receive = False
-            trade_assets = []
-
-            for trade_part in trade_parts:
-                if trade_part.event_type == HistoryEventType.RECEIVE:
-                    is_spend_receive = True
-                if (
-                    trade_part.asset_balance.balance.amount != ZERO and
-                    trade_part.event_subtype != HistoryEventSubType.FEE
-                ):
-                    trade_assets.append(trade_part.asset_balance.asset)
-
-            if is_spend_receive and len(trade_parts) < 2:
+            trade = self.process_kraken_events_for_trade(trade_parts, adjustments)
+            if trade is None:
                 continue
 
-            if len(trade_assets) != 2:
-                self.msg_aggregator.add_error(
-                    f'Found kraken trade event {event_id} with more '
-                    f'than two assets involved. Skipping...',
-                )
-                continue
-
-            pair = self.kraken_asset_to_pair(trade_assets[0], trade_assets[1])
-            if pair is None:
-                self.msg_aggregator.add_error(
-                    f'Couldnt find Kraken pair for assets {trade_assets} and '
-                    f'trade id {event_id}. Skipping trade',
-                )
-                continue
-
-            base_asset, quote_asset = kraken_to_world_pair(pair)
-            timestamp = trade_parts[0].timestamp
-            # Now in the parts in which we break the events we try to find the
-            # base/quote parts and the fee. It might be possible that kfee was used
-            # so we also search for it
-            base_trade, quote_trade, fee_part, kfee_part = None, None, None, None
-            for trade_part in trade_parts:
-                part_asset = trade_part.asset_balance.asset
-                if trade_part.event_subtype == HistoryEventSubType.FEE:
-                    fee_part = trade_part
-                elif trade_part.asset_balance.asset == A_KFEE:
-                    kfee_part = trade_part
-                elif part_asset == base_asset:
-                    base_trade = trade_part
-                elif part_asset == quote_asset:
-                    quote_trade = trade_part
-
-            if base_trade is None or quote_trade is None:
-                log.error(f'Failed to process {event_id} with parts {trade_parts}')
-                self.msg_aggregator.add_error(
-                    f'Failed to read trades for event {event_id}. '
-                    f'More details are available at the logs',
-                )
-                continue
-
-            base_amount = base_trade.asset_balance.balance.amount
-            quote_amount = quote_trade.asset_balance.balance.amount
-
-            if quote_amount < 0:
-                trade_type = TradeType.SELL
-                amount = base_amount
-                received_asset = quote_trade.asset_balance.asset
-            else:
-                trade_type = TradeType.BUY
-                amount = quote_amount
-                received_asset = base_trade.asset_balance.asset
-
-            if base_amount != ZERO:
-                rate = Price(quote_amount / base_amount)
-            else:
-                self.msg_aggregator.add_error(
-                    f'Rate for kraken trade couldnt be calculated. Base amount is ZERO '
-                    f'for event {event_id}',
-                )
-                continue
-
-            exchange_uuid = (
-                str(event_id) +
-                str(timestamp)
-            )
-            # If kfee was found we use it as the fee for the trade
-            if kfee_part is not None:
-                fee = Fee(kfee_part.asset_balance.balance.amount)
-                fee_asset = A_KFEE
-            elif (None, None) == (fee_part, kfee_part):
-                fee = Fee(ZERO)
-                fee_asset = received_asset
-            elif fee_part is not None:
-                fee = Fee(fee_part.asset_balance.balance.amount)
-                fee_asset = fee_part.asset_balance.asset
-
-            trade = Trade(
-                timestamp=timestamp,
-                location=Location.KRAKEN,
-                base_asset=base_asset,
-                quote_asset=quote_asset,
-                trade_type=trade_type,
-                amount=AssetAmount(amount),
-                rate=rate,
-                fee=fee,
-                fee_currency=fee_asset,
-                link=exchange_uuid,
-            )
             trades.append(trade)
-            max_ts = max(max_ts, timestamp)
+            max_ts = max(max_ts, trade.timestamp)
+
+        adjustments.sort(key=lambda x: x.timestamp)
+        if len(adjustments) % 2 == 0:
+            for a1, a2 in pairwise(adjustments):
+                if a1.event_subtype is None or a2.event_subtype is None:
+                    logger.warning(
+                        f'Found two kraken adjustment entries without a subtype: {a1} {a2}',
+                    )
+                    continue
+
+                if a1.event_subtype == HistoryEventSubType.SPEND and a2.event_subtype == HistoryEventSubType.RECEIVE:  # noqa: E501
+                    spend_event = a1
+                    receive_event = a2
+                elif a2.event_subtype == HistoryEventSubType.SPEND and a2.event_subtype == HistoryEventSubType.RECEIVE:  # noqa: E501
+                    spend_event = a2
+                    receive_event = a1
+                else:
+                    logger.warning(
+                        f'Found two kraken adjustment with unmatching subtype {a1} {a2}',
+                    )
+                    continue
+
+                rate = Price(spend_event.asset_balance.balance.amount / receive_event.asset_balance.balance.amount)  # noqa: E501
+                trade = Trade(
+                    timestamp=a1.timestamp,
+                    location=Location.KRAKEN,
+                    base_asset=receive_event.asset_balance.asset,
+                    quote_asset=spend_event.asset_balance.asset,
+                    trade_type=TradeType.BUY,
+                    amount=AssetAmount(receive_event.asset_balance.balance.amount),
+                    rate=rate,
+                    fee=None,
+                    fee_currency=None,
+                    link='adjustment' + a1.event_identifier + a2.event_identifier,
+                )
+
+        else:
+            logger.warning(
+                f'Got even number of kraken adjustment historic entries. '
+                f'Skipping reading them. {adjustments}',
+            )
 
         return trades, Timestamp(max_ts)
 
@@ -981,6 +1030,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         Returns true if any query to the kraken API was not successful
         """
+        # end_ts = 1485935275
         ranges = DBQueryRanges(self.db)
         range_query_name = f'{self.location}_history_events_{self.name}'
         ranges_to_query = ranges.get_location_query_ranges(
@@ -1009,7 +1059,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 try:
                     events = sorted(
                         events,
-                        key=lambda x: deserialize_timestamp_from_kraken(x['time']),
+                        # key=lambda x: deserialize_timestamp_from_kraken(x['time']),
+                        key=lambda x: FVal(x['time']) * 1000,
                     )
                 except DeserializationError as e:
                     self.msg_aggregator.add_error(

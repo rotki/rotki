@@ -12,7 +12,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 
 class BalanceType(DBEnumMixIn):
@@ -275,7 +274,7 @@ class ActionType(DBEnumMixIn):
     LEDGER_ACTION = 4
 
 
-class HistoryEventType(DBEnumMixIn, SerializableEnumMixin):
+class HistoryEventType(DBEnumMixIn):
     TRADE = 1
     STAKING = 2
     UNSTAKING = 3
@@ -284,7 +283,10 @@ class HistoryEventType(DBEnumMixIn, SerializableEnumMixin):
     TRANSFER = 6
     SPEND = 7
     RECEIVE = 8
-    UNKNOWN = 9
+    # forced adjustments of a system, like a CEX. For example having DAO in Kraken
+    # and Kraken delisting them and exchanging them for ETH for you
+    ADJUSTMENT = 9
+    UNKNOWN = 10
 
     @classmethod
     def from_string(cls, value: str) -> 'HistoryEventType':
@@ -300,6 +302,8 @@ class HistoryEventSubType(DBEnumMixIn):
     STAKING_REMOVE_ASSET = 3
     STAKING_RECEIVE_ASSET = 4
     FEE = 5
+    SPEND = 6
+    RECEIVE = 7
 
 
 HISTORY_EVENT_DB_TUPLE = Tuple[
