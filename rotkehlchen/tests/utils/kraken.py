@@ -314,7 +314,7 @@ KRAKEN_GENERAL_LEDGER_RESPONSE = """
             "balance": "3999998.25"
         }
     },
-    "count": 4
+    "count": 13
 }
 """
 

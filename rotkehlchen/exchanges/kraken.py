@@ -868,7 +868,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             return None
 
         if len(trade_assets) != 2:
-            # This can happen some times (for lefters 5 times since start of kraken usage)
+            # This can happen some times (for lefteris 5 times since start of kraken usage)
             # when the other part of a trade is so small it's 0. So it's either a
             # receive event with no counterpart or a spend event with no counterpart.
             # This happens for really really small amounts. To make things add up we
