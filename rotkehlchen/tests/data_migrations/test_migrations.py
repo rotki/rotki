@@ -13,6 +13,7 @@ from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, Tra
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
 @pytest.mark.parametrize('data_migration_version', [None])
 @pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 def test_migration_1(rotkehlchen_api_server):
     """
     Test that the first data migration for rotki works. This migration removes information about
@@ -49,7 +50,6 @@ def test_migration_1(rotkehlchen_api_server):
         'SELECT COUNT(*) from used_query_ranges WHERE name="bittrex_trades"',
     )
     assert result.fetchone()[0] == 0
-
     assert rotki.data.db.get_settings().last_data_migration == 1
 
     # Migration shouldn't execute and information should stay in database
