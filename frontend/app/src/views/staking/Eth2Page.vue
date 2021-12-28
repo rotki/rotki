@@ -128,7 +128,7 @@ const Eth2Page = defineComponent({
     );
 
     const refresh = async () => {
-      await store.dispatch('staking/fetchStakingDetails');
+      await store.dispatch('staking/fetchStakingDetails', true);
     };
 
     const updatePagination = async (payload: Eth2DailyStatsPayload) => {

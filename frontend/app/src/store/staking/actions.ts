@@ -155,8 +155,10 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
       const { taskId } = await api.eth2StatsTask(defaults);
 
       const taskMeta: TaskMeta = {
-        title: 'Eth2 daily stats',
-        description: 'Querying your Eth2 daily stats',
+        title: i18n.t('actions.eth2_staking_stats.task.title').toString(),
+        description: i18n
+          .t('actions.eth2_staking_stats.task.description')
+          .toString(),
         numericKeys: []
       };
 
@@ -169,6 +171,12 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
       return Eth2DailyStats.parse(result);
     };
 
+    async function loadPage(payload: Eth2DailyStatsPayload) {
+      const cacheParams = { ...payload, onlyCache: true };
+      const data = await fetchStats(cacheParams);
+      commit(ETH2_DAILY_STATS, data);
+    }
+
     try {
       const firstLoad = isFirstLoad();
       const onlyCache = firstLoad ? false : payload.onlyCache;
@@ -178,27 +186,27 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
 
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
 
-      const cacheParams = { ...payload, onlyCache: true };
-      const data = await fetchStats(cacheParams);
-      commit('eth2DailyStats', data);
-
       if (!onlyCache) {
+        if (firstLoad) {
+          await loadPage(payload);
+        }
         setStatus(Status.REFRESHING);
         await fetchStats();
-
-        if (!firstLoad) {
-          const cacheParams = { ...payload, onlyCache: true };
-          const data = await fetchStats(cacheParams);
-          commit(ETH2_DAILY_STATS, data);
-        }
       }
+      await loadPage(payload);
+
+      setStatus(
+        isTaskRunning(taskType).value ? Status.REFRESHING : Status.LOADED
+      );
     } catch (e: any) {
       logger.error(e);
       setStatus(Status.NONE);
       const { notify } = useNotifications();
       notify({
-        title: 'Querying Eth2 daily stats',
-        message: 'Query failed with the following error: {error}',
+        title: i18n.t('actions.eth2_staking_stats.error.title').toString(),
+        message: i18n
+          .t('actions.eth2_staking_stats.error.message', { message: e.message })
+          .toString(),
         display: true
       });
     }
