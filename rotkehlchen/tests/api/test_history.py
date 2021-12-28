@@ -148,7 +148,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert report['include_gas_costs'] is True
     assert report['taxfree_after_period'] == 31536000
     assert report['identifier'] == report_id
-    assert report['size_on_disk'] == 18742 if start_ts == 0 else 2371
+    assert report['size_on_disk'] == 18712 if start_ts == 0 else 2371
 
     assert events_result['entries_limit'] == FREE_PNL_EVENTS_LIMIT
     entries_length = 37 if start_ts == 0 else 4
@@ -176,15 +176,13 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[9]
 
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 8
+    assert len(errors) == 6
     assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in errors[0]
     assert 'Failed to read ledger event from kraken' in errors[1]
     assert 'Failed to read ledger event from kraken ' in errors[2]
-    assert 'Failed to read ledger event from kraken ' in errors[3]
-    assert 'Failed to read ledger event from kraken ' in errors[4]
-    assert 'Not enough documented acquisitions found for ETH(Ethereum) before 02/05/2017' in errors[5]  # noqa: E501
-    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[6]  # noqa: E501
-    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[7]  # noqa: E501
+    assert 'Not enough documented acquisitions found for ETH(Ethereum) before 02/05/2017' in errors[3]  # noqa: E501
+    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[4]  # noqa: E501
+    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[5]  # noqa: E501
 
 
 @pytest.mark.parametrize(

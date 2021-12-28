@@ -7813,15 +7813,18 @@ Getting tracked Eth2 validators
           "entries":[
             {
               "index":1,
-              "public_key":"0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c"
+              "public_key":"0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c",
+	      "ownership_percentage": "100"
             },
             {
               "index":1532,
-              "public_key":"0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed"
+              "public_key":"0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed",
+	      "ownership_percentage": "50"
             },
             {
               "index":5421,
-              "public_key":"0xa64722f93f37c7da8da67ee36fd2a763103897efc274e3accb4cd172382f7a170f064b81552ae77cdbe440208a1b897e"
+              "public_key":"0xa64722f93f37c7da8da67ee36fd2a763103897efc274e3accb4cd172382f7a170f064b81552ae77cdbe440208a1b897e",
+	      "ownership_percentage": "25.75"
             }
           ],
           "entries_found":3,
@@ -7829,6 +7832,11 @@ Getting tracked Eth2 validators
         },
         "message":""
       }
+
+   :resjson object entries: The resulting entries list
+   :resjson integer index: The index of the validator
+   :resjson string public_key: The public key of the validator
+   :resjson string ownership_percentage: The ownership percentage of the validator
 
    :statuscode 200: Eth2 validator defaults successfully returned.
    :statuscode 409: User is not logged in. Or eth2 module is not activated.

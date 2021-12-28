@@ -9,6 +9,7 @@ import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.args import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.settings import LAST_DATA_MIGRATION, DBSettings
+from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
@@ -103,6 +104,12 @@ def fixture_perform_migrations_at_unlock():
     return True
 
 
+@pytest.fixture(name='perform_upgrades_at_unlock')
+def fixture_perform_upgrades_at_unlock():
+    """Perform user DB upgrades as normal during user unlock"""
+    return True
+
+
 def initialize_mock_rotkehlchen_instance(
         rotki,
         start_with_logged_in_user,
@@ -132,6 +139,7 @@ def initialize_mock_rotkehlchen_instance(
         use_custom_database,
         user_data_dir,
         perform_migrations_at_unlock,
+        perform_upgrades_at_unlock,
 ):
     if not start_with_logged_in_user:
         return
@@ -178,6 +186,7 @@ def initialize_mock_rotkehlchen_instance(
         stack.enter_context(ksm_connect_on_startup_patch)
         stack.enter_context(size_patch)
         stack.enter_context(sleep_patch)
+
         if perform_migrations_at_unlock is False:
             migrations_patch = patch.object(
                 DataMigrationManager,
@@ -185,6 +194,14 @@ def initialize_mock_rotkehlchen_instance(
                 side_effect=lambda *args: None,
             )
             stack.enter_context(migrations_patch)
+
+        if perform_upgrades_at_unlock is False:
+            upgrades_patch = patch.object(
+                DBUpgradeManager,
+                'run_upgrades',
+                side_effect=lambda *args: None,
+            )
+            stack.enter_context(upgrades_patch)
 
         rotki.unlock_user(
             user=username,
@@ -286,6 +303,7 @@ def fixture_rotkehlchen_api_server(
         use_custom_database,
         user_data_dir,
         perform_migrations_at_unlock,
+        perform_upgrades_at_unlock,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -324,6 +342,7 @@ def fixture_rotkehlchen_api_server(
         use_custom_database=use_custom_database,
         user_data_dir=user_data_dir,
         perform_migrations_at_unlock=perform_migrations_at_unlock,
+        perform_upgrades_at_unlock=perform_upgrades_at_unlock,
     )
     yield api_server
     api_server.stop()
@@ -359,6 +378,7 @@ def rotkehlchen_instance(
         use_custom_database,
         user_data_dir,
         perform_migrations_at_unlock,
+        perform_upgrades_at_unlock,
 ):
     """A partially mocked rotkehlchen instance"""
 
@@ -391,6 +411,7 @@ def rotkehlchen_instance(
         use_custom_database=use_custom_database,
         user_data_dir=user_data_dir,
         perform_migrations_at_unlock=perform_migrations_at_unlock,
+        perform_upgrades_at_unlock=perform_upgrades_at_unlock,
     )
     return uninitialized_rotkehlchen
 

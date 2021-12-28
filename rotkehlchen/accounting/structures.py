@@ -275,7 +275,7 @@ class ActionType(DBEnumMixIn):
     LEDGER_ACTION = 4
 
 
-class HistoryEventType(DBEnumMixIn, SerializableEnumMixin):
+class HistoryEventType(SerializableEnumMixin):
     TRADE = 1
     STAKING = 2
     UNSTAKING = 3
@@ -284,7 +284,10 @@ class HistoryEventType(DBEnumMixIn, SerializableEnumMixin):
     TRANSFER = 6
     SPEND = 7
     RECEIVE = 8
-    UNKNOWN = 9
+    # forced adjustments of a system, like a CEX. For example having DAO in Kraken
+    # and Kraken delisting them and exchanging them for ETH for you
+    ADJUSTMENT = 9
+    UNKNOWN = 10
 
     @classmethod
     def from_string(cls, value: str) -> 'HistoryEventType':
@@ -294,12 +297,14 @@ class HistoryEventType(DBEnumMixIn, SerializableEnumMixin):
             return HistoryEventType.UNKNOWN
 
 
-class HistoryEventSubType(DBEnumMixIn):
+class HistoryEventSubType(SerializableEnumMixin):
     REWARD = 1
     STAKING_DEPOSIT_ASSET = 2
     STAKING_REMOVE_ASSET = 3
     STAKING_RECEIVE_ASSET = 4
     FEE = 5
+    SPEND = 6
+    RECEIVE = 7
 
 
 HISTORY_EVENT_DB_TUPLE = Tuple[
@@ -321,12 +326,8 @@ HISTORY_EVENT_DB_TUPLE = Tuple[
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class HistoryBaseEntry:
     """
-    TODO: At the moment in the places where this data structure is used (kraken) we don't query
-    for the USD value of the assets. The reason is that querying that will slow the requests or
-    processing of the information. The intention of adding the USD value was to provide all the
-    information to replay the history of the user without having to depend on external
-    information. A good approach could be a task in the backend that goes row by row and fetch
-    the needed price. This needs more consideration and discussion.
+    Intended to be the base unit of any type of accounting. All trades, deposits,
+    swaps etc. are going to be made up of multiple HistoryBaseEntry
     """
     event_identifier: str  # identifier shared between related events
     sequence_index: int  # When this transaction was executed relative to other related events
@@ -336,14 +337,14 @@ class HistoryBaseEntry:
     # When we use this structure in blockchains can be used to specify addresses for example.
     # currently we use to identify the exchange name assigned by the user.
     location_label: Optional[str]
-    asset_balance: AssetBalance
+    asset_balance: AssetBalance  # usd value starts 0: https://github.com/rotki/rotki/issues/3865
     notes: Optional[str]
     event_type: HistoryEventType
     event_subtype: Optional[HistoryEventSubType]
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE:
         event_subtype = None
-        event_subtype = None if self.event_subtype is None else self.event_subtype.serialize_for_db()  # noqa: E501
+        event_subtype = None if self.event_subtype is None else self.event_subtype.serialize()
         return (
             self.identifier,
             self.event_identifier,
@@ -353,7 +354,7 @@ class HistoryBaseEntry:
             self.location_label,
             *self.asset_balance.serialize_for_db(),
             self.notes,
-            self.event_type.serialize_for_db(),
+            self.event_type.serialize(),
             event_subtype,
         )
 
@@ -362,7 +363,7 @@ class HistoryBaseEntry:
         """May raise DeserializationError"""
         event_subtype = None
         if entry[11] is not None:
-            event_subtype = HistoryEventSubType.deserialize_from_db(entry[11])
+            event_subtype = HistoryEventSubType.deserialize(entry[11])
         try:
             return HistoryBaseEntry(
                 event_identifier=entry[1],
@@ -378,7 +379,7 @@ class HistoryBaseEntry:
                     ),
                 ),
                 notes=entry[9],
-                event_type=HistoryEventType.deserialize_from_db(entry[10]),
+                event_type=HistoryEventType.deserialize(entry[10]),
                 event_subtype=event_subtype,
             )
         except ValueError as e:

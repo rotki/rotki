@@ -571,7 +571,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'public_key': validators[1].public_key},
+        ), json={'public_key': validators[1].public_key, 'ownership_percentage': '45'},
     )
     assert_simple_ok_response(response)
 

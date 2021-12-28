@@ -519,4 +519,8 @@ class Eth2Validator:
         )
 
     def serialize(self) -> Dict[str, Any]:
-        return {'validator_index': self.index, 'public_key': self.public_key}
+        return {
+            'validator_index': self.index,
+            'public_key': self.public_key,
+            'ownership_percentage': (self.ownership_proportion * 100).to_percentage(),
+        }
