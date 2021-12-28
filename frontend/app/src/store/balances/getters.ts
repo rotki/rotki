@@ -129,7 +129,7 @@ export const getters: Getters<
         tags.push(ReadOnlyTag.LOOPRING);
       }
 
-      return { ...ethAccount, tags: [...new Set(tags)] };
+      return { ...ethAccount, tags: tags.filter(uniqueStrings) };
     });
   },
   eth2Balances({
@@ -260,7 +260,7 @@ export const getters: Getters<
         balance,
         chain: Blockchain.ETH,
         label: '',
-        tags: [...new Set([...tags, ReadOnlyTag.LOOPRING])]
+        tags: [...tags, ReadOnlyTag.LOOPRING].filter(uniqueStrings)
       });
     }
     return accounts;

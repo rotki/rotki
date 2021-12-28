@@ -17,6 +17,7 @@ export class TradeHistoryPage {
     return () => {
       // Wait for response.status to be 200
       cy.wait('@apiCall').its('response.statusCode').should('equal', 200);
+      cy.wait(500);
     };
   }
 
