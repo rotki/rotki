@@ -1019,6 +1019,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     fee_currency=None,
                     link='adjustment' + a1.event_identifier + a2.event_identifier,
                 )
+                trades.append(trade)
 
         else:
             log.warning(
