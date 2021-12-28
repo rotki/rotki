@@ -10,6 +10,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.eth2_utils import ValidatorBalance
 from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorID, ValidatorPerformance
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT, QUERY_RETRY_TIMES
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -259,7 +260,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                 )
         except KeyError as e:
             raise RemoteError(
-                f'Beaconchai.in performance response processing error. Missing key entry {str(e)}',
+                f'Beaconcha.in performance response processing error. Missing key entry {str(e)}',
             ) from e
 
         return performance
@@ -287,11 +288,12 @@ class BeaconChain(ExternalServiceWithApiKey):
                 ValidatorID(
                     index=x['validatorindex'],
                     public_key=x['publickey'],
+                    ownership_proportion=ONE,
                 ) for x in data
             ]
         except KeyError as e:
             raise RemoteError(
-                f'Beaconchai.in eth1 response processing error. Missing key entry {str(e)}',
+                f'Beaconcha.in eth1 response processing error. Missing key entry {str(e)}',
             ) from e
         return validators
 

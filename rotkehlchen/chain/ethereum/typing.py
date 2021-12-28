@@ -85,6 +85,7 @@ class ValidatorID(NamedTuple):
     # not using index due to : https://github.com/python/mypy/issues/9043
     index: Optional[int]  # type: ignore  # may be null if the index is not yet determined
     public_key: Eth2PubKey
+    ownership_proportion: FVal
 
     def __hash__(self) -> int:
         return hash(self.public_key)

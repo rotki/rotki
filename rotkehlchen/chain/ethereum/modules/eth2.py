@@ -153,7 +153,13 @@ class Eth2(EthereumModule):
 
         for x in dbeth2.get_validators():
             if x.public_key not in pubkeys:
-                all_validators.append(ValidatorID(index=x.index, public_key=x.public_key))  # noqa: E501
+                all_validators.append(
+                    ValidatorID(
+                        index=x.index,
+                        public_key=x.public_key,
+                        ownership_proportion=x.ownership_proportion,
+                    ),
+                )
 
         return all_validators
 
@@ -190,8 +196,7 @@ class Eth2(EthereumModule):
             if validator.index is not None:
                 index_to_pubkey[validator.index] = validator.public_key
                 pubkeys.append(validator.public_key)
-            if isinstance(validator, Eth2Validator):
-                index_to_ownership[validator.index] = validator.ownership_proportion
+            index_to_ownership[validator.index] = validator.ownership_proportion
 
         # Get current balance of all validators. This may miss some balance if it's
         # in the deposit queue but it's too much work to get it right and should be

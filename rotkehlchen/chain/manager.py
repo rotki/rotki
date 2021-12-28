@@ -1736,6 +1736,9 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             validator_index=validator_index,
             ownership_proportion=ownership_proportion,
         )
+        self.flush_cache('query_ethereum_beaconchain_balances')
+        self.flush_cache('query_balances')
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
 
     def add_eth2_validator(
             self,
