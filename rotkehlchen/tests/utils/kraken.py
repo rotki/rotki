@@ -210,7 +210,7 @@ KRAKEN_GENERAL_LEDGER_RESPONSE = """
             "subtype": "",
             "aclass": "currency",
             "asset": "BTC",
-            "amount": "5.0",
+            "amount": "-5.0",
             "fee": "0.1",
             "balance": "10"
         },
@@ -221,7 +221,7 @@ KRAKEN_GENERAL_LEDGER_RESPONSE = """
             "subtype": "",
             "aclass": "currency",
             "asset": "ETH",
-            "amount": "10.0000",
+            "amount": "-10.0000",
             "fee": "1.7500",
             "balance": "100.25"
         },
@@ -232,7 +232,7 @@ KRAKEN_GENERAL_LEDGER_RESPONSE = """
             "subtype": "",
             "aclass": "currency",
             "asset": "IDONTEXISTEITHER",
-            "amount": "10",
+            "amount": "-10",
             "fee": "0.11",
             "balance": "100"
         },

@@ -41,12 +41,12 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_movement_category,
+    deserialize_fval,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -142,7 +142,9 @@ def history_event_from_kraken(
     found_unknown_event = False
     for idx, raw_event in enumerate(events):
         try:
-            timestamp = Timestamp((FVal(raw_event['time']) * KRAKEN_TS_MULTIPLIER).to_int(exact=False))  # noqa: E501
+            timestamp = Timestamp((deserialize_fval(
+                value=raw_event['time'], name='time', location='kraken ledger processing',
+            ) * KRAKEN_TS_MULTIPLIER).to_int(exact=False))
             identifier = raw_event['refid']
             event_type = HistoryEventType.from_string(raw_event['type'])
             asset = asset_from_kraken(raw_event['asset'])
@@ -173,7 +175,7 @@ def history_event_from_kraken(
             elif event_type == HistoryEventType.UNKNOWN:
                 found_unknown_event = True
                 notes = raw_event['type']
-                logger.warning(
+                log.warning(
                     f'Encountered kraken historic event type we do not process. {raw_event}',
                 )
             fee_amount = deserialize_asset_amount(raw_event['fee'])
@@ -855,7 +857,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 trade_assets.append(trade_part.asset_balance.asset)
 
         if is_spend_receive and len(trade_parts) < 2:
-            logger.warning(
+            log.warning(
                 f'Found kraken spend/receive events {event_id} with '
                 f'less than 2 parts. {trade_parts}',
             )
@@ -987,7 +989,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         if len(adjustments) % 2 == 0:
             for a1, a2 in pairwise(adjustments):
                 if a1.event_subtype is None or a2.event_subtype is None:
-                    logger.warning(
+                    log.warning(
                         f'Found two kraken adjustment entries without a subtype: {a1} {a2}',
                     )
                     continue
@@ -999,7 +1001,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     spend_event = a2
                     receive_event = a1
                 else:
-                    logger.warning(
+                    log.warning(
                         f'Found two kraken adjustment with unmatching subtype {a1} {a2}',
                     )
                     continue
@@ -1019,7 +1021,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
 
         else:
-            logger.warning(
+            log.warning(
                 f'Got even number of kraken adjustment historic entries. '
                 f'Skipping reading them. {adjustments}',
             )
@@ -1036,7 +1038,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         Returns true if any query to the kraken API was not successful
         """
-        # end_ts = 1485935275
         ranges = DBQueryRanges(self.db)
         range_query_name = f'{self.location}_history_events_{self.name}'
         ranges_to_query = ranges.get_location_query_ranges(
@@ -1065,8 +1066,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 try:
                     events = sorted(
                         events,
-                        # key=lambda x: deserialize_timestamp_from_kraken(x['time']),
-                        key=lambda x: FVal(x['time']) * 1000,
+                        key=lambda x: deserialize_fval(x['time'], 'time', 'kraken ledgers') * 1000,
                     )
                 except DeserializationError as e:
                     self.msg_aggregator.add_error(
