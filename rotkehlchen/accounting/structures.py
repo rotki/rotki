@@ -12,6 +12,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 
 class BalanceType(DBEnumMixIn):
@@ -274,7 +275,7 @@ class ActionType(DBEnumMixIn):
     LEDGER_ACTION = 4
 
 
-class HistoryEventType(DBEnumMixIn):
+class HistoryEventType(SerializableEnumMixin):
     TRADE = 1
     STAKING = 2
     UNSTAKING = 3
@@ -296,7 +297,7 @@ class HistoryEventType(DBEnumMixIn):
             return HistoryEventType.UNKNOWN
 
 
-class HistoryEventSubType(DBEnumMixIn):
+class HistoryEventSubType(SerializableEnumMixin):
     REWARD = 1
     STAKING_DEPOSIT_ASSET = 2
     STAKING_REMOVE_ASSET = 3
@@ -343,7 +344,7 @@ class HistoryBaseEntry:
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE:
         event_subtype = None
-        event_subtype = None if self.event_subtype is None else self.event_subtype.serialize_for_db()  # noqa: E501
+        event_subtype = None if self.event_subtype is None else self.event_subtype.serialize()
         return (
             self.identifier,
             self.event_identifier,
@@ -353,7 +354,7 @@ class HistoryBaseEntry:
             self.location_label,
             *self.asset_balance.serialize_for_db(),
             self.notes,
-            self.event_type.serialize_for_db(),
+            self.event_type.serialize(),
             event_subtype,
         )
 
@@ -362,7 +363,7 @@ class HistoryBaseEntry:
         """May raise DeserializationError"""
         event_subtype = None
         if entry[11] is not None:
-            event_subtype = HistoryEventSubType.deserialize_from_db(entry[11])
+            event_subtype = HistoryEventSubType.deserialize(entry[11])
         try:
             return HistoryBaseEntry(
                 event_identifier=entry[1],
@@ -378,7 +379,7 @@ class HistoryBaseEntry:
                     ),
                 ),
                 notes=entry[9],
-                event_type=HistoryEventType.deserialize_from_db(entry[10]),
+                event_type=HistoryEventType.deserialize(entry[10]),
                 event_subtype=event_subtype,
             )
         except ValueError as e:

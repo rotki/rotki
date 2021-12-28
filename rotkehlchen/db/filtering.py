@@ -352,8 +352,6 @@ class DBTypeFilter(DBFilter):
         List[TradeType],
         List[AssetMovementCategory],
         List[LedgerActionType],
-        List[HistoryEventType],
-        List[HistoryEventSubType],
     ]
     type_key: Literal['type', 'subtype', 'category']
 
@@ -361,7 +359,7 @@ class DBTypeFilter(DBFilter):
         if len(self.filter_types) == 1:
             return [f'{self.type_key}=?'], [self.filter_types[0].serialize_for_db()]
         return (
-            [f'{self.type_key} in ({", ".join(["?"] * len(self.filter_types))})'],
+            [f'{self.type_key} IN ({", ".join(["?"] * len(self.filter_types))})'],
             [entry.serialize_for_db() for entry in self.filter_types],
         )
 
@@ -374,6 +372,19 @@ class DBStringFilter(DBFilter):
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
         return [f'{self.column}=?'], [self.value]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBMultiStringFilter(DBFilter):
+    """Filter a column having a string value out of a selection of values"""
+    column: str
+    values: List[str]
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        return (
+            [f'{self.column} IN ({", ".join(["?"] * len(self.values))})'],
+            self.values,
+        )
 
 
 class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
@@ -644,11 +655,17 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
         if asset is not None:
             filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
         if event_type is not None:
-            filters.append(DBTypeFilter(and_op=True, type_key='type', filter_types=event_type))
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='type',
+                values=[x.serialize() for x in event_type],
+            ))
         if event_subtype is not None:
-            filters.append(
-                DBTypeFilter(and_op=True, type_key='subtype', filter_types=event_subtype),
-            )
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='subtype',
+                values=[x.serialize() for x in event_subtype],
+            ))
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
