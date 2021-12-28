@@ -77,6 +77,7 @@ KRAKEN_PUBLIC_METHODS = ('AssetPairs', 'Assets')
 KRAKEN_QUERY_TRIES = 8
 KRAKEN_BACKOFF_DIVIDEND = 15
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
+KRAKEN_TS_MULTIPLIER = 10000  # Kraken TS is seconds float with up to 4 digits precision
 
 
 def kraken_to_world_pair(pair: str) -> Tuple[Asset, Asset]:
@@ -141,7 +142,7 @@ def history_event_from_kraken(
     found_unknown_event = False
     for idx, raw_event in enumerate(events):
         try:
-            timestamp = Timestamp((FVal(raw_event['time']) * 10000).to_int(exact=False))
+            timestamp = Timestamp((FVal(raw_event['time']) * KRAKEN_TS_MULTIPLIER).to_int(exact=False))  # noqa: E501
             identifier = raw_event['refid']
             event_type = HistoryEventType.from_string(raw_event['type'])
             asset = asset_from_kraken(raw_event['asset'])
@@ -685,8 +686,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """
         with_errors = self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
-            from_ts=Timestamp(start_ts * 10000),
-            to_ts=Timestamp(end_ts * 10000),
+            from_ts=Timestamp(start_ts * KRAKEN_TS_MULTIPLIER),
+            to_ts=Timestamp(end_ts * KRAKEN_TS_MULTIPLIER),
             event_type=[
                 HistoryEventType.TRADE,
                 HistoryEventType.RECEIVE,
@@ -726,8 +727,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[AssetMovement]:
         self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
-            from_ts=Timestamp(start_ts * 10000),
-            to_ts=Timestamp(end_ts * 10000),
+            from_ts=Timestamp(start_ts * KRAKEN_TS_MULTIPLIER),
+            to_ts=Timestamp(end_ts * KRAKEN_TS_MULTIPLIER),
             event_type=[
                 HistoryEventType.DEPOSIT,
                 HistoryEventType.WITHDRAWAL,
@@ -757,17 +758,22 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             else:
                 movement = movement_events[0]
                 fee = Fee(ZERO)
+
+            amount = movement.asset_balance.balance.amount
+            if movement.event_type == HistoryEventType.WITHDRAWAL:
+                amount = amount * -1
+
             try:
                 asset = movement.asset_balance.asset
                 movement_type = movement.event_type
                 movements.append(AssetMovement(
                     location=Location.KRAKEN,
                     category=deserialize_asset_movement_category(movement_type),
-                    timestamp=Timestamp(int(movement.timestamp / 1000)),
+                    timestamp=Timestamp(int(movement.timestamp / KRAKEN_TS_MULTIPLIER)),
                     address=None,  # no data from kraken ledger endpoint
                     transaction_id=None,  # no data from kraken ledger endpoint
                     asset=asset,
-                    amount=movement.asset_balance.balance.amount,
+                    amount=amount,
                     fee_asset=asset,
                     fee=fee,
                     link=movement.event_identifier,
@@ -783,7 +789,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if isinstance(e, KeyError):
                     msg = f'Missing key entry for {msg}.'
                 self.msg_aggregator.add_error(
-                    'Failed to deserialize a kraken deposit/withdrawals. '
+                    'Failed to deserialize a kraken deposit/withdrawal. '
                     'Check logs for details. Ignoring it.',
                 )
                 log.error(
@@ -878,7 +884,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             return None
 
-        timestamp = Timestamp(int(trade_parts[0].timestamp / 10000))
+        timestamp = Timestamp(int(trade_parts[0].timestamp / KRAKEN_TS_MULTIPLIER))
         spend_asset = spend_part.asset_balance.asset
         receive_asset = receive_part.asset_balance.asset
         if spend_asset.is_fiat() or trade_parts[0] == receive_part:
