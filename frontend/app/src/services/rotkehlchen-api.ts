@@ -903,19 +903,14 @@ export class RotkehlchenApi {
     payload: any,
     asyncQuery: boolean
   ): Promise<T> {
-    let validators = undefined;
-    if (payload.validators) {
-      validators = payload.validators.join(',');
-    }
-    const response = await this.axios.get<ActionResult<T>>(
+    const response = await this.axios.post<ActionResult<T>>(
       '/blockchains/ETH2/stake/dailystats',
+      axiosSnakeCaseTransformer({
+        asyncQuery,
+        ...payload,
+        orderByAttribute: getUpdatedKey(payload.orderByAttribute, false)
+      }),
       {
-        params: axiosSnakeCaseTransformer({
-          asyncQuery,
-          ...payload,
-          validators,
-          orderByAttribute: getUpdatedKey(payload.orderByAttribute, false)
-        }),
         validateStatus: validWithSessionAndExternalService,
         transformResponse: basicAxiosTransformer
       }
