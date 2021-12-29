@@ -522,5 +522,5 @@ class Eth2Validator:
         return {
             'validator_index': self.index,
             'public_key': self.public_key,
-            'ownership_percentage': (self.ownership_proportion * 100).to_percentage(),
+            'ownership_percentage': (self.ownership_proportion).to_percentage(precision=2),
         }
