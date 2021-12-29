@@ -1736,6 +1736,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             validator_index=validator_index,
             ownership_proportion=ownership_proportion,
         )
+        self.flush_cache('get_eth2_daily_stats')
         self.flush_cache('query_ethereum_beaconchain_balances')
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
@@ -1754,14 +1755,18 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant add eth2 validator since eth2 module is not active')
-        self.flush_cache('query_ethereum_beaconchain_balances')
-        self.flush_cache('query_balances')
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
-        return eth2.add_validator(
+        eth2.add_validator(
             validator_index=validator_index,
             public_key=public_key,
             ownership_proportion=ownership_proportion,
         )
+        self.flush_cache('get_eth2_staking_deposits')
+        self.flush_cache('get_eth2_staking_details')
+        self.flush_cache('get_eth2_history_events')
+        self.flush_cache('get_eth2_daily_stats')
+        self.flush_cache('query_ethereum_beaconchain_balances')
+        self.flush_cache('query_balances')
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
 
     def delete_eth2_validator(
             self,
