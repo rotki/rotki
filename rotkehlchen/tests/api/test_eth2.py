@@ -148,13 +148,13 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     assert len(details) == 3
     assert details[0]['index'] == 9  # already checked above
     assert details[1]['index'] == new_index_2
-    assert details[1]['depositor'] == '0x234EE9e35f8e9749A002fc42970D570DB716453B'
+    assert details[1]['eth1_depositor'] == '0x234EE9e35f8e9749A002fc42970D570DB716453B'
     assert details[2]['index'] == new_index_1
-    assert details[2]['depositor'] == '0xc2288B408Dc872A1546F13E6eBFA9c94998316a2'
+    assert details[2]['eth1_depositor'] == '0xc2288B408Dc872A1546F13E6eBFA9c94998316a2'
 
     # query daily stats, first without cache -- requesting all
     json = {'only_cache': False}
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'eth2dailystatsresource',
@@ -177,7 +177,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     # filter by validator_index
     queried_validators = [new_index_1, 9]
     json = {'only_cache': True, 'validators': queried_validators}
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'eth2dailystatsresource',
@@ -193,7 +193,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     from_ts = 1613779200
     to_ts = 1632182400
     json = {'only_cache': True, 'validators': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts}  # noqa: E501
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'eth2dailystatsresource',
@@ -227,7 +227,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
 
     # filter by validator_index and timestamp and add pagination
     json = {'only_cache': True, 'validators': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts, 'limit': 5, 'offset': 5}  # noqa: E501
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'eth2dailystatsresource',

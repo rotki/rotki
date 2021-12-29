@@ -1244,10 +1244,10 @@ class DataImportResource(BaseResource):
 
 
 class Eth2DailyStatsResource(BaseResource):
-    get_schema = Eth2DailyStatsSchema()
+    post_schema = Eth2DailyStatsSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
             self,
             filter_query: Eth2DailyStatsFilterQuery,
             async_query: bool,
