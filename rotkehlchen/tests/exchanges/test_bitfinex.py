@@ -94,8 +94,8 @@ def test_assets_are_known(mock_bitfinex):
             assert symbol in unsupported_assets
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
-                f'Found unknown asset {e.asset_name} in {mock_bitfinex.name}. '
-                f'Support for it has to be added',
+                f'Found unknown asset {e.asset_name} with symbol {symbol} in '
+                f'{mock_bitfinex.name}. Support for it has to be added',
             ))
 
 

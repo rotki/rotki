@@ -166,6 +166,13 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0x9e6C59321CEB205d5d3BC6c539c017aF6159B16c'),  # noqa: E501 # Mindcell but another MDC in CC
         'TIME',  # Wonderland but another TIME in CC
         'STARS',  # StarLaunch but another STARS in CC
+        ethaddress_to_identifier('0x60EF10EDfF6D600cD91caeCA04caED2a2e605Fe5'),  # noqa: E501 # Mochi inu but MOCHI SWAP in CC
+        ethaddress_to_identifier('0x3496B523e5C00a4b4150D6721320CdDb234c3079'),  # noqa: E501 # numbers protocol but another NUM in CC
+        ethaddress_to_identifier('0x8dB253a1943DdDf1AF9bcF8706ac9A0Ce939d922'),  # noqa: E501 # unbound protocol but another UNB in CC
+        'GODZ',  # gozilla but another GODZ in CC
+        'DFL',  # Defi land but another DFL in CC
+        'CDEX',  # Codex but another CDEX in CC
+        'MIMO',  # mimosa but another MIMO in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -380,6 +387,14 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x5F53f7A8075614b699Baad0bC2c899f4bAd8FBBF'),
         # Sp8de (SPX) but another SPX in coingecko
         ethaddress_to_identifier('0x05aAaA829Afa407D83315cDED1d45EB16025910c'),
+        # marginless but another MRS in coingecko
+        ethaddress_to_identifier('0x1254E59712e6e727dC71E0E3121Ae952b2c4c3b6'),
+        # oyster (PRL) but another PRL in coingecko
+        ethaddress_to_identifier('0x1844b21593262668B7248d0f57a220CaaBA46ab9'),
+        # oyster shell but another SHL in coingecko
+        ethaddress_to_identifier('0x8542325B72C6D9fC0aD2Ca965A78435413a915A0'),
+        # dorado but another DOR in coingecko
+        ethaddress_to_identifier('0x906b3f8b7845840188Eab53c3f5AD348A787752f'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

@@ -497,6 +497,11 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'UBER',
     'USO',
     'ZM',
+    '1ECO',
+    'CWC',
+    'GIGX',
+    'GPX',
+    'IQO',
 )
 
 
@@ -603,6 +608,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'AAVE3L',  # no cryptocompare/coingecko data
     'AAVE3S',  # no cryptocompare/coingecko data
     'AI',  # no cryptocompare/coingecko data
+    'AVAX3L',  # no cryptocompare/coingecko data
+    'AVAX3S',  # no cryptocompare/coingecko data
     'AXE',  # delisted
     'BCH3L',  # no cryptocompare/coingecko data
     'BCH3S',  # no cryptocompare/coingecko data
@@ -641,6 +648,8 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'LSS',  # no cryptocompare/coingecko data
     'LTC3L',  # no cryptocompare/coingecko data
     'LTC3S',  # no cryptocompare/coingecko data
+    'MANA3L',  # no cryptocompare/coingecko data
+    'MANA3S',  # no cryptocompare/coingecko data
     'MATIC3L',  # no cryptocompare/coingecko data
     'MATIC3S',  # no cryptocompare/coingecko data
     'MAP2',  # delisted
@@ -687,6 +696,9 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'FTM3S',  # no cryptocompare/coingecko data
     'AXS3L',  # no cryptocompare/coingecko data
     'AXS3S',  # no cryptocompare/coingecko data
+    'GALAX3L',  # no cryptocompare/coingecko data
+    'GALAX3S',  # no cryptocompare/coingecko data
+    'KDON',  # no cryptocompare/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
@@ -707,6 +719,7 @@ UNSUPPORTED_GEMINI_ASSETS = (
     'LHKD',  # no information about this asset
     'LCAD',  # no information about this asset
     'LAUD',  # no information about this asset
+    'SPEL',  # Spell moon (SPEL). No information about this token
 )
 
 # Exchange symbols that are clearly for testing purposes. They appear in all

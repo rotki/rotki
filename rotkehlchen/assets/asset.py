@@ -96,12 +96,18 @@ WORLD_TO_BITTREX = {
     strethaddress_to_identifier('0x13339fD07934CD674269726EdF3B5ccEE9DD93de'): 'CURIO',
     'YCE': 'MYCE',
     strethaddress_to_identifier('0xF56b164efd3CFc02BA739b719B6526A6FA1cA32a'): 'CGT',
+    strethaddress_to_identifier('0x9b5161a41B58498Eb9c5FEBf89d60714089d2253'): 'MF1',
+    strethaddress_to_identifier('0x765f0C16D1Ddc279295c1a7C24B0883F62d33F75'): 'DTX',
+    strethaddress_to_identifier('0xfa5B75a9e13Df9775cf5b996A049D9cc07c15731'): 'VCK',
+    strethaddress_to_identifier('0x653430560bE843C4a3D143d0110e896c2Ab8ac0D'): '_MOF',
 }
 
 WORLD_TO_BITSTAMP = {
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
     strethaddress_to_identifier('0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85'): 'FET',
+    strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
+    strethaddress_to_identifier('0xC581b735A1688071A1746c968e0798D642EDE491'): 'EURT',
 }
 
 WORLD_TO_FTX = {
@@ -114,6 +120,8 @@ WORLD_TO_FTX = {
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
     'MER-2': 'MER',
     strethaddress_to_identifier('0x476c5E26a75bd202a9683ffD34359C0CC15be0fF'): 'SRM',
+    strethaddress_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF'): 'IMX',
+    'GENE': 'GENE',
 }
 
 WORLD_TO_POLONIEX = {
@@ -164,6 +172,10 @@ WORLD_TO_POLONIEX = {
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
     strethaddress_to_identifier('0xfB7B4564402E5500dB5bB6d63Ae671302777C75a'): 'DEXT',
     strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
+    'SOL-2': 'SOL',
+    strethaddress_to_identifier('0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85'): 'FET',
+    strethaddress_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF'): 'IMX',
+    strethaddress_to_identifier('0xba5BDe662c17e2aDFF1075610382B9B691296350'): 'RARE',
 }
 
 WORLD_TO_KRAKEN = {
@@ -277,6 +289,10 @@ WORLD_TO_KRAKEN = {
     'RAY': 'RAY',
     strethaddress_to_identifier('0x6c5bA91642F10282b576d91922Ae6448C9d52f4E'): 'PHA',
     'BNC': 'BNC',
+    strethaddress_to_identifier('0xd2877702675e6cEb975b4A1dFf9fb7BAF4C91ea9'): 'LUNA',
+    strethaddress_to_identifier('0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE'): 'SHIB',
+    'AVAX': 'AVAX',
+    'KILT': 'KILT',
 }
 
 WORLD_TO_BINANCE = {
@@ -360,6 +376,7 @@ WORLD_TO_BITFINEX = {
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
     # Spankchain is SPK in bitfinex
     strethaddress_to_identifier('0x42d6622deCe394b54999Fbd73D108123806f6a18'): 'SPK',
+    strethaddress_to_identifier('0xC581b735A1688071A1746c968e0798D642EDE491'): 'EUT',
 }
 
 WORLD_TO_KUCOIN = {
@@ -400,6 +417,10 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0x8f693ca8D21b157107184d29D398A8D082b38b76'): 'DATA',
     strethaddress_to_identifier('0xAA2ce7Ae64066175E0B90497CE7d9c190c315DB4'): 'SUTER',
     'RMRK': 'RMRK',
+    strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',
+    strethaddress_to_identifier('0xADE00C28244d5CE17D72E40330B1c318cD12B7c3'): 'ADX',
+    strethaddress_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF'): 'IMX',
+    strethaddress_to_identifier('0x3106a0a076BeDAE847652F42ef07FD58589E001f'): 'ADS',
 }
 
 WORLD_TO_ICONOMI = {
@@ -438,6 +459,7 @@ WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
     strethaddress_to_identifier('0x0391D2021f89DC339F60Fff84546EA23E337750f'): 'BOND',
     strethaddress_to_identifier('0x2565ae0385659badCada1031DB704442E1b69982'): 'ASM',
+    strethaddress_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF'): 'IMX',
 }
 
 WORLD_TO_COINBASE = {
@@ -502,6 +524,10 @@ WORLD_TO_UPHOLD = {
 WORLD_TO_GEMINI = {
     strethaddress_to_identifier('0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b'): 'AXS',
     strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
+    strethaddress_to_identifier('0xba5BDe662c17e2aDFF1075610382B9B691296350'): 'RARE',
+    strethaddress_to_identifier('0x18aAA7115705e8be94bfFEBDE57Af9BFc265B998'): 'AUDIO',
+    strethaddress_to_identifier('0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85'): 'FET',
+    strethaddress_to_identifier('0xd2877702675e6cEb975b4A1dFf9fb7BAF4C91ea9'): 'LUNA',
 }
 
 WORLD_TO_NEXO = {
