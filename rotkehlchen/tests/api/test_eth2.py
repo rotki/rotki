@@ -271,7 +271,7 @@ def test_eth2_add_eth1_account(rotkehlchen_api_server):
         assert result['entries'][0] == {
             'validator_index': 227858,
             'public_key': validator_pubkey,
-            'ownership_percentage': '100.00%',
+            'ownership_percentage': '100.00',
         }
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
@@ -611,6 +611,7 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('query_all_balances', [False, True])
 def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
+    ownership_proportion = FVal(0.45)
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -627,7 +628,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     ), Eth2Validator(
         index=5235,
         public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
-        ownership_proportion=FVal(0.45),
+        ownership_proportion=ownership_proportion,
     )]
     response = requests.put(
         api_url_for(
@@ -681,7 +682,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(per_acc) == 2
     # hope they don't get slashed ;(
     amount1 = FVal('34.547410412')
-    amount2 = FVal('34.600348623') * FVal(0.45)
+    amount2 = FVal('34.600348623') * ownership_proportion
     assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= amount1
     assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount2
     totals = outcome['totals']
@@ -711,7 +712,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(per_acc) == 3
     amount1 = FVal('34.596290288')
     amount2 = FVal('34.547410412')
-    amount3 = FVal('34.600348623')
+    amount3 = FVal('34.600348623') * ownership_proportion
     assert FVal(per_acc[v0_pubkey]['assets']['ETH2']['amount']) >= amount1
     assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= amount2
     assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount3

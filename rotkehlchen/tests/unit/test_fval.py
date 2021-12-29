@@ -133,9 +133,12 @@ def test_conversion():
 
 def test_to_percentage():
     assert FVal('0.5').to_percentage() == '50.0000%'
+    assert FVal('0.5').to_percentage(with_perc_sign=False) == '50.0000'
     assert FVal('0.2345').to_percentage() == '23.4500%'
-    assert FVal('0.2345').to_percentage(2) == '23.45%'
-    assert FVal('0.2345').to_percentage(0) == '23%'
+    assert FVal('0.2345').to_percentage(precision=2) == '23.45%'
+    assert FVal('0.2345').to_percentage(precision=0) == '23%'
+    assert FVal('0.5324').to_percentage(precision=1, with_perc_sign=False) == '53.2'
+    assert FVal('0.2345').to_percentage(precision=0, with_perc_sign=False) == '23'
     assert FVal('1.5321').to_percentage() == '153.2100%'
 
 
