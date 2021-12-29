@@ -106,23 +106,55 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
         assert FVal(performance['usd_value']) is not None
 
     # for daily stats let's have 3 validators
+    new_index_1 = 43948
+    new_index_2 = 23948
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validator_index': 43948},
+        ), json={'validator_index': new_index_1},
     )
     assert_simple_ok_response(response)
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'eth2validatorsresource',
-        ), json={'validator_index': 23948},
+        ), json={'validator_index': new_index_2},
     )
     assert_simple_ok_response(response)
+
+    # Now query eth2 details also including manually input validators to see they work
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'eth2stakedetailsresource',
+            ), json={'async_query': async_query},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(
+                rotkehlchen_api_server,
+                task_id,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
+            )
+            assert outcome['message'] == ''
+            details = outcome['result']
+        else:
+            details = assert_proper_response_with_result(response)
+
+    # The 2 new validators along with their depositor details should be there
+    assert len(details) == 3
+    assert details[0]['index'] == 9  # already checked above
+    assert details[1]['index'] == new_index_2
+    assert details[1]['eth1_depositor'] == '0x234EE9e35f8e9749A002fc42970D570DB716453B'
+    assert details[2]['index'] == new_index_1
+    assert details[2]['eth1_depositor'] == '0xc2288B408Dc872A1546F13E6eBFA9c94998316a2'
+
     # query daily stats, first without cache -- requesting all
     json = {'only_cache': False}
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'eth2dailystatsresource',
@@ -143,9 +175,9 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     assert full_sum_usd_value.is_close(calculated_sum_usd_value)
 
     # filter by validator_index
-    queried_validators = [43948, 9]
+    queried_validators = [new_index_1, 9]
     json = {'only_cache': True, 'validators': queried_validators}
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'eth2dailystatsresource',
@@ -157,11 +189,11 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     assert all(x['validator_index'] in queried_validators for x in result['entries'])
 
     # filter by validator_index and timestamp
-    queried_validators = [43948, 9]
+    queried_validators = [new_index_1, 9]
     from_ts = 1613779200
     to_ts = 1632182400
     json = {'only_cache': True, 'validators': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts}  # noqa: E501
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'eth2dailystatsresource',
@@ -195,7 +227,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
 
     # filter by validator_index and timestamp and add pagination
     json = {'only_cache': True, 'validators': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts, 'limit': 5, 'offset': 5}  # noqa: E501
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'eth2dailystatsresource',

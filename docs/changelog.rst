@@ -43,6 +43,7 @@ Changelog
 * :bug:`-` Users whose only interaction with a yearn vault was a deposit will no longer see the entire deposit as loss in the PnL.
 * :bug:`3804` Bitpanda users should now be able to see their crypto deposits and withdrawals.
 * :bug:`3847` Inputting an address in the asset form with extra whitespace will now work properly thanks to trimming.
+* :bug:`3859` Trades imported from crypto.com CSV should now have the correct rate imported.
 
 * :release:`1.22.2 <2021-11-30>`
 * :feature:`-` rotki will now detect locked SRM balances in FTX.

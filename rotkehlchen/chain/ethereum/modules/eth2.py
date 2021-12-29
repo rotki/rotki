@@ -67,6 +67,15 @@ class Eth2(EthereumModule):
         self.last_stats_query_ts = 0
         self.validator_stats_queried = 0
 
+    def _query_and_save_deposits(
+            self,
+            dbeth2: DBEth2,
+            indices_or_pubkeys: Union[List[int], List[Eth2PubKey]],
+    ) -> List[Eth2Deposit]:
+        new_deposits = self.beaconchain.get_validator_deposits(indices_or_pubkeys)
+        dbeth2.add_eth2_deposits(new_deposits)
+        return new_deposits
+
     def get_staking_deposits(
             self,
             addresses: List[ChecksumEthAddress],
@@ -111,8 +120,7 @@ class Eth2(EthereumModule):
             if saved_validator.public_key not in saved_deposits_pubkeys:
                 pubkeys_query_deposits.add(saved_validator.public_key)
 
-        new_deposits = self.beaconchain.get_validator_deposits(list(pubkeys_query_deposits))
-        dbeth2.add_eth2_deposits(new_deposits)
+        new_deposits = self._query_and_save_deposits(dbeth2, list(pubkeys_query_deposits))
         result_deposits = saved_deposits + new_deposits
         result_deposits.sort(key=lambda deposit: (deposit.timestamp, deposit.tx_index))
         return result_deposits
@@ -218,15 +226,18 @@ class Eth2(EthereumModule):
             addresses: List[ChecksumEthAddress],
     ) -> List[ValidatorDetails]:
         """Go through the list of eth1 addresses and find all eth2 validators associated
-        with them along with their details. Also returns the daily stats for each validator.
+        with them along with their details.
+
+
 
         May raise RemoteError due to beaconcha.in API"""
         indices = []
         index_to_address = {}
         index_to_pubkey = {}
+        pubkey_to_index = {}
         result = []
         assert self.beaconchain.db is not None, 'Beaconchain db should be populated'
-        all_validators = []
+        address_validators = []
 
         for address in addresses:
             validators = self.beaconchain.get_eth1_address_validators(address)
@@ -243,30 +254,72 @@ class Eth2(EthereumModule):
                     continue
 
                 index_to_address[validator.index] = address
-                index_to_pubkey[validator.index] = validator.public_key
-                indices.append(validator.index)
-                all_validators.append(Eth2Validator(index=validator.index, public_key=validator.public_key, ownership_proportion=ONE))  # noqa: E501
+                address_validators.append(Eth2Validator(index=validator.index, public_key=validator.public_key, ownership_proportion=ONE))  # noqa: E501
 
         # make sure all validators we deal with are saved in the DB
         dbeth2 = DBEth2(self.database)
-        dbeth2.add_validators(all_validators)
+        dbeth2.add_validators(address_validators)
+
+        # Also get all manually input validators
+        all_validators = dbeth2.get_validators()
+        saved_deposits = dbeth2.get_eth2_deposits()
+        pubkey_to_deposit = {x.pubkey: x for x in saved_deposits}
+        validators_to_query_for_deposits = []
+        for v in all_validators:
+            index_to_pubkey[v.index] = v.public_key
+            pubkey_to_index[v.public_key] = v.index
+            indices.append(v.index)
+            depositor = index_to_address.get(v.index)
+            if depositor is None:
+                if v.public_key not in pubkey_to_deposit:
+                    validators_to_query_for_deposits.append(v.public_key)
+
+        # Get new deposits if needed, and populate index_to_address
+        new_deposits = self._query_and_save_deposits(dbeth2, validators_to_query_for_deposits)
+        for deposit in saved_deposits + new_deposits:
+            index = pubkey_to_index.get(Eth2PubKey(deposit.pubkey))
+            if index is None:  # should never happen, unless returned data is off
+                log.error(
+                    f'At eth2 staking details could not find index for pubkey '
+                    f'{deposit.pubkey} at deposit {deposit}.',
+                )
+                continue
+
+            index_to_address[index] = deposit.from_address
+
         # Get current balance of all validator indices
-        performance_result = self.beaconchain.get_performance(list(indices))
+        performance_result = self.beaconchain.get_performance(indices)
         for validator_index, entry in performance_result.items():
+            depositor = index_to_address.get(validator_index)
+            if depositor is None:  # should never happen, unless returned data is off
+                log.error(
+                    f'At eth2 staking details could not find depositor for index '
+                    f'{validator_index} at index_to_address',
+                )
+                continue
+
             result.append(ValidatorDetails(
                 validator_index=validator_index,
                 public_key=index_to_pubkey[validator_index],
-                eth1_depositor=index_to_address[validator_index],
+                eth1_depositor=depositor,
                 performance=entry,
             ))
 
         # Performance call does not return validators that are not active and are still depositing
         depositing_indices = set(index_to_address.keys()) - set(performance_result.keys())
         for index in depositing_indices:
+            depositor = index_to_address.get(index)
+            if depositor is None:  # should never happen, unless returned data is off
+                log.error(
+                    f'At eth2 staking details could not find depositor for index '
+                    f'{index} at index_to_address for depositing indices',
+                )
+                continue
+
             result.append(ValidatorDetails(
                 validator_index=index,
                 public_key=index_to_pubkey[index],
-                eth1_depositor=index_to_address[index],
+                eth1_depositor=depositor,
                 performance=DEPOSITING_VALIDATOR_PERFORMANCE,
             ))
 

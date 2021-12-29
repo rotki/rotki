@@ -7491,9 +7491,9 @@ Getting Eth2 Staking details
 Getting Eth2 Staking daily stats
 =====================================
 
-.. http:get:: /api/(version)/blockchains/ETH2/stake/dailystats
+.. http:post:: /api/(version)/blockchains/ETH2/stake/dailystats
 
-   Doing a GET on the ETH2 stake daily stats endpoint will return daily stats for your ETH2 validators filtered and paginated by the given parameters
+   Doing a POST on the ETH2 stake daily stats endpoint will return daily stats for your ETH2 validators filtered and paginated by the given parameters
 
    .. note::
       This endpoint is only available for premium users
@@ -7505,7 +7505,7 @@ Getting Eth2 Staking daily stats
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH2/stake/dailystats HTTP/1.1
+      POST /api/1/blockchains/ETH2/stake/dailystats HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
