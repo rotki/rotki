@@ -84,7 +84,7 @@
       </template>
       <template v-if="visibleBalances.length > 0" #body.append="{ isMobile }">
         <tr :class="$style.total">
-          <td :colspan="isMobile ? 1 : 3">
+          <td :colspan="isMobile ? 1 : 4">
             {{ $t('manual_balances_table.rows.total') }}
           </td>
           <td class="text-end">

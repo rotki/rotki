@@ -338,7 +338,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         location: exchange.location,
         ignoreCache: false
       } as ExchangeBalancePayload);
-      dispatch('history/purgeHistoryLocation', exchange.location);
+      dispatch('history/purgeHistoryLocation', exchange.location, {
+        root: true
+      });
     }
   },
 
@@ -1050,7 +1052,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         }
       }
 
-      dispatch('history/purgeHistoryLocation', exchange.location);
+      dispatch('history/purgeHistoryLocation', exchange.location, {
+        root: true
+      });
 
       return success;
     } catch (e: any) {

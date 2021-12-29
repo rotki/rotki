@@ -21,7 +21,7 @@
       />
     </div>
     <div class="stat-card__content flex-grow-1">
-      <v-card-title class="py-2">
+      <v-card-title class="pt-4 pb-1">
         <span v-if="title">
           <card-title>{{ title }}</card-title>
         </span>
