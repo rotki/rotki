@@ -43,7 +43,7 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp
+from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp, TradeType
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -338,7 +338,7 @@ def test_kraken_trade_with_spend_receive(function_scope_kraken):
                 "amount": "1",
                 "fee": "0.0000000000",
                 "balance": "1001"
-                },
+            },
             "L1": {
                 "refid": "1",
                 "time": 1636406000.8654,
@@ -362,6 +362,13 @@ def test_kraken_trade_with_spend_receive(function_scope_kraken):
         )
 
     assert len(trades) == 1
+    trade = trades[0]
+    assert trade.amount == FVal(1)
+    assert trade.trade_type == TradeType.BUY
+    assert trade.rate == FVal(100)
+    assert trade.base_asset == A_ETH
+    assert trade.quote_asset == A_EUR
+    assert trade.fee == FVal(0.45)
     errors = kraken.msg_aggregator.consume_errors()
     warnings = kraken.msg_aggregator.consume_warnings()
     assert len(errors) == 0
