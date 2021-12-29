@@ -167,6 +167,10 @@ export const setupBlockchainAccounts = () => {
     return await dispatch('balances/addEth2Validator', payload);
   };
 
+  const editEth2Validator = async (payload: Eth2Validator) => {
+    return await dispatch('balances/editEth2Validator', payload);
+  };
+
   const eth2Validators = computed(() => state.balances?.eth2Validators.entries);
 
   return {
@@ -176,6 +180,7 @@ export const setupBlockchainAccounts = () => {
     editAccount,
     addAccounts,
     addEth2Validator,
+    editEth2Validator,
     eth2Validators
   };
 };

@@ -50,7 +50,12 @@ import {
   RotkehlchenState,
   StatusPayload
 } from '@/store/types';
-import { isLoading, setStatus, showError } from '@/store/utils';
+import {
+  getStatusUpdater,
+  isLoading,
+  setStatus,
+  showError
+} from '@/store/utils';
 import { Writeable } from '@/types';
 import { Eth2Validator } from '@/types/balances';
 import { Exchange } from '@/types/exchanges';
@@ -338,7 +343,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         location: exchange.location,
         ignoreCache: false
       } as ExchangeBalancePayload);
-      dispatch('history/purgeHistoryLocation', exchange.location);
+      dispatch('history/purgeHistoryLocation', exchange.location, {
+        root: true
+      });
     }
   },
 
@@ -1050,7 +1057,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         }
       }
 
-      dispatch('history/purgeHistoryLocation', exchange.location);
+      dispatch('history/purgeHistoryLocation', exchange.location, {
+        root: true
+      });
 
       return success;
     } catch (e: any) {
@@ -1478,7 +1487,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
   async addEth2Validator(
-    { dispatch, rootState: { session } },
+    { commit, dispatch, rootState: { session }, rootGetters: { status } },
     payload: Eth2Validator
   ) {
     assert(session);
@@ -1487,7 +1496,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     if (!activeModules.includes(Module.ETH2)) {
       return;
     }
-
     const id = payload.publicKey || payload.validatorIndex;
     try {
       const taskType = TaskType.ADD_ETH2_VALIDATOR;
@@ -1500,9 +1508,18 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         numericKeys: []
       });
       if (result) {
+        const { setStatus } = getStatusUpdater(
+          commit,
+          Section.STAKING_ETH2,
+          status
+        );
         await dispatch('fetchBlockchainBalances', {
-          blockchain: Blockchain.ETH2
+          blockchain: Blockchain.ETH2,
+          ignoreCache: true
         });
+        setStatus(Status.NONE);
+        setStatus(Status.NONE, Section.STAKING_ETH2_DEPOSITS);
+        setStatus(Status.NONE, Section.STAKING_ETH2_STATS);
       }
 
       return result;
@@ -1516,6 +1533,52 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           })
           .toString(),
         title: i18n.t('actions.add_eth2_validator.error.title').toString(),
+        success: false
+      };
+      await dispatch('setMessage', message, { root: true });
+      return false;
+    }
+  },
+  async editEth2Validator(
+    { commit, dispatch, rootState: { session }, rootGetters: { status } },
+    payload: Eth2Validator
+  ) {
+    assert(session);
+    const { activeModules } = session.generalSettings;
+    if (!activeModules.includes(Module.ETH2)) {
+      return;
+    }
+
+    const id = payload.validatorIndex;
+    try {
+      const success = await api.balances.editEth2Validator(payload);
+
+      if (success) {
+        const { setStatus } = getStatusUpdater(
+          commit,
+          Section.STAKING_ETH2,
+          status
+        );
+        await dispatch('fetchBlockchainBalances', {
+          blockchain: Blockchain.ETH2,
+          ignoreCache: true
+        });
+        setStatus(Status.NONE);
+        setStatus(Status.NONE, Section.STAKING_ETH2_DEPOSITS);
+        setStatus(Status.NONE, Section.STAKING_ETH2_STATS);
+      }
+
+      return success;
+    } catch (e: any) {
+      logger.error(e);
+      const message: Message = {
+        description: i18n
+          .t('actions.edit_eth2_validator.error.description', {
+            id,
+            message: e.message
+          })
+          .toString(),
+        title: i18n.t('actions.edit_eth2_validator.error.title').toString(),
         success: false
       };
       await dispatch('setMessage', message, { root: true });

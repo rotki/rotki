@@ -145,7 +145,7 @@ export type BlockchainAccount = GeneralAccount | XpubAccount;
 
 export type BlockchainAccountWithBalance =
   | XpubAccountWithBalance
-  | AccountWithBalance;
+  | (AccountWithBalance & { ownershipPercentage?: string });
 
 export type AddAccountsPayload = {
   readonly blockchain: Blockchain;

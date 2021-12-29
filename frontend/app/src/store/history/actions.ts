@@ -712,7 +712,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       resetStatus(Section.ASSET_MOVEMENT);
       resetStatus(Section.LEDGER_ACTIONS);
     } else {
-      dispatch(HistoryActions.PURGE_HISTORY_LOCATION, exchange);
+      dispatch(HistoryActions.PURGE_HISTORY_LOCATION, exchange, { root: true });
     }
   },
 

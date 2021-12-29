@@ -519,8 +519,9 @@ class Eth2Validator:
         )
 
     def serialize(self) -> Dict[str, Any]:
+        percentage_value = self.ownership_proportion.to_percentage(precision=2, with_perc_sign=False)  # noqa: E501
         return {
             'validator_index': self.index,
             'public_key': self.public_key,
-            'ownership_percentage': (self.ownership_proportion * 100).to_percentage(),
+            'ownership_percentage': percentage_value,
         }

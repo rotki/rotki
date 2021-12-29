@@ -1,5 +1,10 @@
 import { AdexBalances, AdexHistory } from '@rotki/common/lib/staking/adex';
-import { Eth2Deposit, Eth2Detail } from '@rotki/common/lib/staking/eth2';
+import {
+  Eth2DailyStats,
+  Eth2DailyStatsPayload,
+  Eth2Deposits,
+  Eth2Details
+} from '@rotki/common/lib/staking/eth2';
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
@@ -11,16 +16,18 @@ import {
   ACTION_PURGE_DATA,
   ADEX_BALANCES,
   ADEX_HISTORY,
+  ETH2_DAILY_STATS,
   ETH2_DEPOSITS,
   ETH2_DETAILS
 } from '@/store/staking/consts';
 import { StakingState } from '@/store/staking/types';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
-import { isLoading, setStatus } from '@/store/utils';
+import { getStatusUpdater, isLoading, setStatus } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
 
 export const actions: ActionTree<StakingState, RotkehlchenState> = {
   async fetchStakingDetails(
@@ -49,17 +56,18 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
       try {
         const taskType = TaskType.STAKING_ETH2;
         const { taskId } = await api.eth2StakingDetails();
-        const { result } = await awaitTask<Eth2Detail[], TaskMeta>(
+        const { result } = await awaitTask<Eth2Details, TaskMeta>(
           taskId,
           taskType,
           {
             title: i18n.tc('actions.staking.eth2.task.title'),
-            numericKeys: balanceKeys
+            numericKeys: []
           }
         );
 
-        commit(ETH2_DETAILS, result);
+        commit(ETH2_DETAILS, Eth2Details.parse(result));
       } catch (e: any) {
+        logger.error(e);
         const { notify } = useNotifications();
         notify({
           title: i18n.tc('actions.staking.eth2.error.title'),
@@ -84,17 +92,18 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
       try {
         const taskType = TaskType.STAKING_ETH2_DEPOSITS;
         const { taskId } = await api.eth2StakingDeposits();
-        const { result } = await awaitTask<Eth2Deposit[], TaskMeta>(
+        const { result } = await awaitTask<Eth2Deposits, TaskMeta>(
           taskId,
           taskType,
           {
             title: `${i18n.t('actions.staking.eth2_deposits.task.title')}`,
-            numericKeys: balanceKeys
+            numericKeys: []
           }
         );
 
-        commit(ETH2_DEPOSITS, result);
+        commit(ETH2_DEPOSITS, Eth2Deposits.parse(result));
       } catch (e: any) {
+        logger.error(e);
         const { notify } = useNotifications();
         notify({
           title: `${i18n.t('actions.staking.eth2_deposits.error.title')}`,
@@ -110,7 +119,97 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
       setStatus(Status.LOADED, secondarySection, status, commit);
     }
 
-    await Promise.all([fetchDetails(), fetchDeposits()]);
+    await Promise.allSettled([fetchDetails(), fetchDeposits()]);
+  },
+
+  async fetchDailyStats(
+    { commit, rootGetters: { status }, rootState: { session } },
+    payload: Eth2DailyStatsPayload
+  ) {
+    if (!session?.premium) {
+      return;
+    }
+
+    const taskType = TaskType.STAKING_ETH2_STATS;
+    const { awaitTask, isTaskRunning } = useTasks();
+    const { setStatus, loading, isFirstLoad } = getStatusUpdater(
+      commit,
+      Section.STAKING_ETH2_STATS,
+      status
+    );
+
+    const fetchStats = async (parameters?: Partial<Eth2DailyStatsPayload>) => {
+      const defaults: Eth2DailyStatsPayload = {
+        limit: 0,
+        offset: 0,
+        ascending: false,
+        orderByAttribute: 'timestamp'
+      };
+
+      const params = Object.assign(defaults, parameters);
+
+      if (params.onlyCache) {
+        return await api.eth2Stats(params);
+      }
+
+      const { taskId } = await api.eth2StatsTask(defaults);
+
+      const taskMeta: TaskMeta = {
+        title: i18n.t('actions.eth2_staking_stats.task.title').toString(),
+        description: i18n
+          .t('actions.eth2_staking_stats.task.description')
+          .toString(),
+        numericKeys: []
+      };
+
+      const { result } = await awaitTask<Eth2DailyStats, TaskMeta>(
+        taskId,
+        taskType,
+        taskMeta,
+        true
+      );
+      return Eth2DailyStats.parse(result);
+    };
+
+    async function loadPage(payload: Eth2DailyStatsPayload) {
+      const cacheParams = { ...payload, onlyCache: true };
+      const data = await fetchStats(cacheParams);
+      commit(ETH2_DAILY_STATS, data);
+    }
+
+    try {
+      const firstLoad = isFirstLoad();
+      const onlyCache = firstLoad ? false : payload.onlyCache;
+      if (isTaskRunning(taskType).value || (loading() && !onlyCache)) {
+        return;
+      }
+
+      setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
+
+      if (!onlyCache) {
+        if (firstLoad) {
+          await loadPage(payload);
+        }
+        setStatus(Status.REFRESHING);
+        await fetchStats();
+      }
+      await loadPage(payload);
+
+      setStatus(
+        isTaskRunning(taskType).value ? Status.REFRESHING : Status.LOADED
+      );
+    } catch (e: any) {
+      logger.error(e);
+      setStatus(Status.NONE);
+      const { notify } = useNotifications();
+      notify({
+        title: i18n.t('actions.eth2_staking_stats.error.title').toString(),
+        message: i18n
+          .t('actions.eth2_staking_stats.error.message', { message: e.message })
+          .toString(),
+        display: true
+      });
+    }
   },
 
   async fetchAdex(

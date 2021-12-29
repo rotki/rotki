@@ -104,12 +104,12 @@ export const getStatusUpdater = (
   section: Section,
   getStatus: (section: Section) => Status
 ) => {
-  const setStatus = (status: Status) => {
+  const setStatus = (status: Status, otherSection?: Section) => {
     if (getStatus(section) === status) {
       return;
     }
     const payload: StatusPayload = {
-      section: section,
+      section: otherSection ?? section,
       status: status
     };
     commit('setStatus', payload, { root: true });

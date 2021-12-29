@@ -42,6 +42,7 @@
     <eth2-input
       v-if="isEth2"
       :validator="validator"
+      :disabled="loading || !!edit"
       @update:validator="validator = $event"
     />
     <div v-else>
@@ -101,8 +102,8 @@ import i18n from '@/i18n';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import {
   AccountPayload,
-  BlockchainAccount,
   BlockchainAccountPayload,
+  BlockchainAccountWithBalance,
   XpubPayload
 } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
@@ -143,7 +144,7 @@ const AccountForm = defineComponent({
     edit: {
       required: false,
       default: null,
-      type: Object as PropType<BlockchainAccount | null>
+      type: Object as PropType<BlockchainAccountWithBalance | null>
     },
     context: { required: true, type: String as PropType<Blockchain> }
   },
@@ -221,6 +222,15 @@ const AccountForm = defineComponent({
         return;
       }
 
+      if (account.chain === Blockchain.ETH2) {
+        assert('ownershipPercentage' in account);
+        validator.value = {
+          publicKey: account.address,
+          ownershipPercentage: account.ownershipPercentage,
+          validatorIndex: account.label
+        };
+      }
+
       addresses.value = [account.address];
       blockchain.value = account.chain;
       label.value = account.label;
@@ -278,8 +288,13 @@ const AccountForm = defineComponent({
         isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES).value
     );
 
-    const { addAccount, addAccounts, editAccount, addEth2Validator } =
-      setupBlockchainAccounts();
+    const {
+      addAccount,
+      addAccounts,
+      editAccount,
+      addEth2Validator,
+      editEth2Validator
+    } = setupBlockchainAccounts();
 
     const metamaskImport = async () => {
       const interop = useInterop();
@@ -394,7 +409,9 @@ const AccountForm = defineComponent({
       } else if (unref(isEth2)) {
         const payload = unref(validator);
         assert(payload);
-        result = await addEth2Validator(payload);
+        result = await (edit.value
+          ? editEth2Validator(payload)
+          : addEth2Validator(payload));
       } else {
         result = await manualAdd();
       }

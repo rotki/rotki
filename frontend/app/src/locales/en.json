@@ -431,6 +431,15 @@
       "end_date": "filter by the ending date of the period"
     }
   },
+  "eth2_input": {
+    "ownership": {
+      "hint": "*Optional: By default it is 100%",
+      "validation": "The value should be 0-100%"
+    },
+    "ownership_percentage": "Ownership Percentage",
+    "public_key": "Public Key",
+    "validator_index": "Validator Index"
+  },
   "eth2_page": {
     "toggle": {
       "depositor": "Depositor",
@@ -939,7 +948,7 @@
   "external_services": {
     "beaconchain": {
       "delete_tooltip": "Deletes the Beaconcha.in API key",
-      "description": "rotki uses Beaconchai.in to obtain information about eth2 staking in your portfolio. An API key is only needed if you are being rate-limited.",
+      "description": "rotki uses Beaconcha.in to obtain information about eth2 staking in your portfolio. An API key is only needed if you are being rate-limited.",
       "hint": "Enter your Beaconcha.in API key",
       "label": "API key",
       "title": "Beaconcha.in"
@@ -1911,6 +1920,22 @@
         "title": "Deleting Eth2 validators"
       }
     },
+    "edit_eth2_validator": {
+      "error": {
+        "description": "There was an error while editing the Eth2 validator {id}: {message}",
+        "title": "Editing ETH2 validator"
+      }
+    },
+    "eth2_staking_stats": {
+      "error": {
+        "message": "Query failed with the following error: {message}",
+        "title": "Querying Eth2 daily stats"
+      },
+      "task": {
+        "description": "Querying your Eth2 daily stats",
+        "title": "Eth2 daily stats"
+      }
+    },
     "get_accounts": {
       "error": {
         "description": "Failed to query accounts for {blockchain}: {message}",
@@ -2672,6 +2697,7 @@
     "headers": {
       "account": "Account",
       "actions": "Actions",
+      "ownership": "Ownership",
       "usd_value_eth": "Total {symbol} value of account's assets",
       "usd_value": "{symbol} value",
       "validator": "Validator Index | Public Key"

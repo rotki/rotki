@@ -1,11 +1,16 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { ActionResult } from '@rotki/common/lib/data';
+import {
+  Eth2DailyStats,
+  Eth2DailyStatsPayload
+} from '@rotki/common/lib/staking/eth2';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { SupportedCurrency } from '@/data/currencies';
 import { AssetApi } from '@/services/assets/asset-api';
 import {
   axiosNoRootCamelCaseTransformer,
   axiosSnakeCaseTransformer,
+  getUpdatedKey,
   setupTransformer
 } from '@/services/axios-tranformers';
 import { BackupApi } from '@/services/backup/backup-api';
@@ -867,27 +872,64 @@ export class RotkehlchenApi {
   }
 
   async eth2StakingDetails(): Promise<PendingTask> {
-    return this.axios
-      .get<ActionResult<PendingTask>>('/blockchains/ETH2/stake/details', {
+    const response = await this.axios.get<ActionResult<PendingTask>>(
+      '/blockchains/ETH2/stake/details',
+      {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true
         }),
         validateStatus: validWithSessionAndExternalService,
         transformResponse: basicAxiosTransformer
-      })
-      .then(handleResponse);
+      }
+    );
+    return handleResponse(response);
   }
 
   async eth2StakingDeposits(): Promise<PendingTask> {
-    return this.axios
-      .get<ActionResult<PendingTask>>('/blockchains/ETH2/stake/deposits', {
+    const response = await this.axios.get<ActionResult<PendingTask>>(
+      '/blockchains/ETH2/stake/deposits',
+      {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true
         }),
         validateStatus: validWithSessionAndExternalService,
         transformResponse: basicAxiosTransformer
-      })
-      .then(handleResponse);
+      }
+    );
+    return handleResponse(response);
+  }
+
+  private async internalEth2Stats<T>(
+    payload: any,
+    asyncQuery: boolean
+  ): Promise<T> {
+    let validators = undefined;
+    if (payload.validators) {
+      validators = payload.validators.join(',');
+    }
+    const response = await this.axios.get<ActionResult<T>>(
+      '/blockchains/ETH2/stake/dailystats',
+      {
+        params: axiosSnakeCaseTransformer({
+          asyncQuery,
+          ...payload,
+          validators,
+          orderByAttribute: getUpdatedKey(payload.orderByAttribute, false)
+        }),
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return handleResponse(response);
+  }
+
+  async eth2StatsTask(payload: Eth2DailyStatsPayload): Promise<PendingTask> {
+    return this.internalEth2Stats(payload, true);
+  }
+
+  async eth2Stats(payload: Eth2DailyStatsPayload): Promise<Eth2DailyStats> {
+    const stats = await this.internalEth2Stats<Eth2DailyStats>(payload, false);
+    return Eth2DailyStats.parse(stats);
   }
 
   async adexBalances(): Promise<PendingTask> {

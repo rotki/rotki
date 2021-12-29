@@ -217,6 +217,75 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
             assert time == next_page_times[idx]
 
 
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='SLOW TEST -- run locally from time to time',
+)
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+def test_eth2_add_eth1_account(rotkehlchen_api_server):
+    """This test uses real data and tests that adding an ETH1 address with
+    ETH2 deposits properly detects validators"""
+    new_account = '0xa966B0eabCD717fa28Bd165F1cE160E7057FA369'
+    async_query = random.choice([False, True])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(
+        rotki,
+        ethereum_accounts=[new_account],
+        btc_accounts=[],
+        original_queries=['logs', 'transactions', 'blocknobytime', 'beaconchain'],
+    )
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        data = {'accounts': [{'address': new_account}], 'async_query': async_query}
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'blockchainsaccountsresource',
+            blockchain='ETH',
+        ), json=data)
+
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            result = wait_for_async_task_with_result(
+                rotkehlchen_api_server,
+                task_id,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 4,
+            )
+        else:
+            result = assert_proper_response_with_result(response)
+
+        # now get all detected validators
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'eth2validatorsresource',
+            ),
+        )
+        result = assert_proper_response_with_result(response)
+        # That address has only 1 validator. If that changes in the future this
+        # test will fail and we will need to adjust the test
+        validator_pubkey = '0x800199f8f3af15a22c42ccd7185948870eceeba2d06199ea30e7e28eb976a69284e393ba2f401e8983d011534b303a57'  # noqa: E501
+        assert len(result['entries']) == 1
+        assert result['entries'][0] == {
+            'validator_index': 227858,
+            'public_key': validator_pubkey,
+            'ownership_percentage': '100.00',
+        }
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            'blockchainbalancesresource',
+        ), json={'blockchain': 'eth2'})
+        result = assert_proper_response_with_result(response)
+        per_acc = result['per_account']
+        assert FVal(per_acc['ETH'][new_account]['assets']['ETH']['amount']) > ZERO
+        assert FVal(per_acc['ETH2'][validator_pubkey]['assets']['ETH2']['amount']) > FVal('32.54')
+        totals = result['totals']['assets']
+        assert FVal(totals['ETH']['amount']) > ZERO
+        assert FVal(totals['ETH2']['amount']) > FVal('32.54')
+
+
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397',
 ]])
@@ -542,6 +611,7 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('query_all_balances', [False, True])
 def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
+    ownership_proportion = FVal(0.45)
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -558,7 +628,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     ), Eth2Validator(
         index=5235,
         public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
-        ownership_proportion=FVal(0.45),
+        ownership_proportion=ownership_proportion,
     )]
     response = requests.put(
         api_url_for(
@@ -612,7 +682,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(per_acc) == 2
     # hope they don't get slashed ;(
     amount1 = FVal('34.547410412')
-    amount2 = FVal('34.600348623') * FVal(0.45)
+    amount2 = FVal('34.600348623') * ownership_proportion
     assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= amount1
     assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount2
     totals = outcome['totals']
@@ -642,7 +712,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(per_acc) == 3
     amount1 = FVal('34.596290288')
     amount2 = FVal('34.547410412')
-    amount3 = FVal('34.600348623')
+    amount3 = FVal('34.600348623') * ownership_proportion
     assert FVal(per_acc[v0_pubkey]['assets']['ETH2']['amount']) >= amount1
     assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= amount2
     assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount3
