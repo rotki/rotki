@@ -75,7 +75,10 @@ def gemini_symbol_to_base_quote(symbol: str) -> Tuple[Asset, Asset]:
     - Case raise UnknownAsset if any of the pair assets are not known to rotki
     """
     five_letter_assets = ('sushi', '1inch', 'storj', 'matic', 'audio')
-    if len(symbol) == 6:
+    if len(symbol) == 5:
+        base_asset = asset_from_gemini(symbol[:2].upper())
+        quote_asset = asset_from_gemini(symbol[2:].upper())
+    elif len(symbol) == 6:
         base_asset = asset_from_gemini(symbol[:3].upper())
         quote_asset = asset_from_gemini(symbol[3:].upper())
     elif len(symbol) == 7:

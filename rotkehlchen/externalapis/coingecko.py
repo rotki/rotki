@@ -207,6 +207,18 @@ DELISTED_ASSETS = [
     'BAY',
     'UNITY',
     strethaddress_to_identifier('0x8d80de8A78198396329dfA769aD54d24bF90E7aa'),
+    strethaddress_to_identifier('0x5bEaBAEBB3146685Dd74176f68a0721F91297D37'),
+    strethaddress_to_identifier('0x82f4dED9Cec9B5750FBFf5C2185AEe35AfC16587'),
+    strethaddress_to_identifier('0x74CEDa77281b339142A36817Fa5F9E29412bAb85'),
+    strethaddress_to_identifier('0xDDe12a12A6f67156e0DA672be05c374e1B0a3e57'),
+    strethaddress_to_identifier('0x2bDC0D42996017fCe214b21607a515DA41A9E0C5'),
+    strethaddress_to_identifier('0x1c79ab32C66aCAa1e9E81952B8AAa581B43e54E7'),
+    strethaddress_to_identifier('0xD3C00772B24D997A812249ca637a921e81357701'),
+    'DCT',
+    'NOTE',
+    'SLR',
+    'SXC',
+    strethaddress_to_identifier('0x6fFF3806Bbac52A20e0d79BC538d527f6a22c96b'),
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

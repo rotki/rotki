@@ -497,6 +497,11 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'UBER',
     'USO',
     'ZM',
+    '1ECO',
+    'CWC',
+    'GIGX',
+    'GPX',
+    'IQO',
 )
 
 
@@ -691,6 +696,9 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'FTM3S',  # no cryptocompare/coingecko data
     'AXS3L',  # no cryptocompare/coingecko data
     'AXS3S',  # no cryptocompare/coingecko data
+    'GALAX3L',  # no cryptocompare/coingecko data
+    'GALAX3S',  # no cryptocompare/coingecko data
+    'KDON',  # no cryptocompare/coingecko data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets
