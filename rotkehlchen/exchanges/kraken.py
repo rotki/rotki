@@ -838,8 +838,11 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 is_spend_receive = True
                 receive_part = trade_part
             elif trade_part.event_type == HistoryEventType.SPEND:
-                is_spend_receive = True
-                spend_part = trade_part
+                if trade_part.event_subtype == HistoryEventSubType.FEE:
+                    fee_part = trade_part
+                else:
+                    is_spend_receive = True
+                    spend_part = trade_part
             elif trade_part.event_type == HistoryEventType.TRADE:
                 if trade_part.event_subtype == HistoryEventSubType.FEE:
                     fee_part = trade_part
