@@ -905,7 +905,7 @@ export class RotkehlchenApi {
   ): Promise<T> {
     let validators = undefined;
     if (payload.validators) {
-      validators = payload.validators.join(',');
+      validators = '[' + payload.validators.join(',') + ']';
     }
     const response = await this.axios.get<ActionResult<T>>(
       '/blockchains/ETH2/stake/dailystats',
