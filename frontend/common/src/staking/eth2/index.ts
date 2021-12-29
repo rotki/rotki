@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Balance, Percentage } from "../../index";
+import { Balance, NumericString, Percentage } from "../../index";
 
 export const Eth2Deposit = z.object({
   fromAddress: z.string(),
@@ -39,6 +39,8 @@ export const Eth2DailyStats = z.object({
   entries: z.array(Eth2DailyStat),
   entriesFound: z.number().nonnegative(),
   entriesTotal: z.number().nonnegative(),
+  sumPnl: NumericString,
+  sumUsdValue: NumericString
 })
 
 export type Eth2DailyStats = z.infer<typeof Eth2DailyStats>
