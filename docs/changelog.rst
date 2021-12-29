@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3324` Users will be able to set the percentage of ownership for jointly held eth2 validators.
 * :feature:`3425` Users will be able to enter multiple pairs at once for binance exchange settings.
 * :bug:`3847` Remove whitespace when inputting address in new asset form.
 * :feature:`3842` Users will now be taken directly to create account when downloading the application for the first time.

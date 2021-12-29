@@ -10,8 +10,8 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "preinstall": "node ../check-versions.js",
-    "build": "rimraf lib && tsc",
-    "watch": "tsc -w",
+    "build": "rimraf lib && tsc -m es6",
+    "watch": "tsc -w -m es6",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint:fix": "eslint --fix . --ext .js,.jsx,.ts,.tsx",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
