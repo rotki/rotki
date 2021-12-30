@@ -9,9 +9,8 @@
       <template #title>{{ $t('non_fungible_balance_edit.title') }}</template>
       <template #subtitle> {{ value.name }}</template>
       <asset-select v-model="asset" outlined />
-      <v-text-field
+      <amount-input
         v-model="price"
-        type="number"
         :label="$t('non_fungible_balance_edit.price')"
         outlined
         single-line
