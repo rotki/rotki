@@ -133,7 +133,7 @@ class DBAccountingReports():
         prefixes which are not taken into account.
         """
         cursor = self.db.conn_transient.cursor()
-        return cursor.execute(
+        result = cursor.execute(
             """SELECT SUM(row_size) FROM (SELECT
             8 + /*identifier - assume biggest int size */
             8 + /*report_id  - assume biggest int size */
@@ -142,6 +142,7 @@ class DBAccountingReports():
             length(data) AS row_size FROM pnl_events WHERE report_id=?)""",
             (report_id,),
         ).fetchone()[0]
+        return 0 if result is None else result
 
     def get_reports(
             self,

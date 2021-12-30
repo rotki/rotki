@@ -360,7 +360,7 @@ class Accountant():
 
         prev_time = Timestamp(0)
         count = 0
-        last_event_ts = 0
+        last_event_ts = Timestamp(0)
         ignored_actionids_mapping = self.db.get_ignored_action_ids(action_type=None)
         for action in actions:
             try:
