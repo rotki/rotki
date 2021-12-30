@@ -188,7 +188,6 @@ class Rotkehlchen():
         self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)
         # set the DB in the external services instances that need it
         self.cryptocompare.set_database(self.data.db)
-        DataMigrationManager(self).maybe_migrate_data()
 
         # Anything that was set above here has to be cleaned in case of failure in the next step
         # by reset_after_failed_account_creation_or_login()
@@ -316,6 +315,7 @@ class Rotkehlchen():
             chain_manager=self.chain_manager,
             exchange_manager=self.exchange_manager,
         )
+        DataMigrationManager(self).maybe_migrate_data()
         self.greenlet_manager.spawn_and_track(
             after_seconds=5,
             task_name='periodically_query_icons_until_all_cached',
