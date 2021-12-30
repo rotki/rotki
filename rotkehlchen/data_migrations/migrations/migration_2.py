@@ -1,17 +1,11 @@
-import logging
 from typing import TYPE_CHECKING
 
 import gevent
 
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.mixins.common import function_sig_key
 
 if TYPE_CHECKING:
     from rotkehlchen.rotkehlchen import Rotkehlchen
-
-
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
 
 
 def _do_query_validator_data(rotki: 'Rotkehlchen') -> None:
