@@ -12,7 +12,7 @@
         }"
       />
       <v-img
-        v-if="!isVideo"
+        v-else
         :src="imageUrl"
         contain
         aspect-ratio="1"
@@ -109,11 +109,16 @@ export default defineComponent({
     const name = computed(() =>
       item.value.name ? item.value.name : item.value.collection.name
     );
+
     const imageUrl = computed(() => {
       return item.value.imageUrl ?? require('@/assets/images/placeholder.svg');
     });
 
-    return { name, imageUrl, isVideo: isVideo(item.value.imageUrl) };
+    const isMediaVideo = computed(() => {
+      return isVideo(item.value.imageUrl);
+    });
+
+    return { name, imageUrl, isVideo: isMediaVideo };
   }
 });
 </script>
