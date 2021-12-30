@@ -27,7 +27,7 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -870,14 +870,41 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             return None
 
+        timestamp = Timestamp(int(trade_parts[0].timestamp / KRAKEN_TS_MULTIPLIER))
+        exchange_uuid = (
+            str(event_id) +
+            str(timestamp)
+        )
         if len(trade_assets) != 2:
             # This can happen some times (for lefteris 5 times since start of kraken usage)
             # when the other part of a trade is so small it's 0. So it's either a
             # receive event with no counterpart or a spend event with no counterpart.
-            # This happens for really really small amounts. To make things add up we
-            # should account for those but for now just skipping.
-            log.warning(f'Found historic trade entries with no counterpart {trade_parts}')
-            return None
+            # This happens for really really small amounts. So we add rate 0 trades
+            if spend_part is not None:
+                base_asset = spend_part.asset_balance.asset
+                trade_type = TradeType.SELL
+                amount = spend_part.asset_balance.balance.amount * -1
+            elif receive_part is not None:
+                base_asset = receive_part.asset_balance.asset
+                trade_type = TradeType.BUY
+                amount = receive_part.asset_balance.balance.amount
+            else:
+                log.warning(f'Found historic trade entries with no counterpart {trade_parts}')
+                return None
+
+            trade = Trade(
+                timestamp=timestamp,
+                location=Location.KRAKEN,
+                base_asset=base_asset,
+                quote_asset=A_USD,  # whatever
+                trade_type=trade_type,
+                amount=AssetAmount(amount),
+                rate=Price(ZERO),
+                fee=None,
+                fee_currency=None,
+                link=exchange_uuid,
+            )
+            return trade
 
         if spend_part is None or receive_part is None:
             log.error(
@@ -889,7 +916,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             return None
 
-        timestamp = Timestamp(int(trade_parts[0].timestamp / KRAKEN_TS_MULTIPLIER))
         spend_asset = spend_part.asset_balance.asset
         receive_asset = receive_part.asset_balance.asset
         if spend_asset.is_fiat() or trade_parts[0] == receive_part:
@@ -919,10 +945,6 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             rate = Price((receive_part.asset_balance.balance.amount / amount))
 
-        exchange_uuid = (
-            str(event_id) +
-            str(timestamp)
-        )
         # If kfee was found we use it as the fee for the trade
         if kfee_part is not None and fee_part is None:
             fee = Fee(kfee_part.asset_balance.balance.amount)
@@ -1009,9 +1031,9 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                rate = Price(spend_event.asset_balance.balance.amount / receive_event.asset_balance.balance.amount)  # noqa: E501
+                rate = Price(abs(receive_event.asset_balance.balance.amount / spend_event.asset_balance.balance.amount))  # noqa: E501
                 trade = Trade(
-                    timestamp=a1.timestamp,
+                    timestamp=Timestamp(int(a1.timestamp / KRAKEN_TS_MULTIPLIER)),
                     location=Location.KRAKEN,
                     base_asset=receive_event.asset_balance.asset,
                     quote_asset=spend_event.asset_balance.asset,
