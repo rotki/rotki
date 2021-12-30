@@ -90,7 +90,6 @@
         <amount-input
           v-model="rate"
           outlined
-          type="number"
           persistent-hint
           data-cy="rate"
           :hint="$t('ledger_action_form.rate.hint')"

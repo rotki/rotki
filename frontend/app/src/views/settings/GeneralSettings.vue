@@ -203,7 +203,7 @@
             class="general-settings__fields__thousand-separator"
             :label="$t('general_settings.amount.label.thousand_separator')"
             type="text"
-            :rules="thousandSeparatorRules"
+            :rules="thousandSeparatorRules()"
             :success-messages="settingsMessages[THOUSAND_SEPARATOR].success"
             :error-messages="settingsMessages[THOUSAND_SEPARATOR].error"
             @change="onThousandSeparatorChange($event)"
@@ -215,7 +215,7 @@
             class="general-settings__fields__decimal-separator"
             :label="$t('general_settings.amount.label.decimal_separator')"
             type="text"
-            :rules="decimalSeparatorRules"
+            :rules="decimalSeparatorRules()"
             :success-messages="settingsMessages[DECIMAL_SEPARATOR].success"
             :error-messages="settingsMessages[DECIMAL_SEPARATOR].error"
             @change="onDecimalSeparatorChange($event)"
@@ -581,21 +581,31 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     return result;
   }
 
-  readonly thousandSeparatorRules = [
-    (v: string) => {
-      if (!v) {
-        return this.$t('general_settings.thousand_separator.validation.empty');
+  private thousandSeparatorRules() {
+    return [
+      (v: string) => {
+        if (!v) {
+          return this.$t(
+            'general_settings.thousand_separator.validation.empty'
+          );
+        }
+        if (v === this.decimalSeparator) {
+          return this.$t(
+            'general_settings.thousand_separator.validation.cannot_be_the_same'
+          ).toString();
+        }
+        return true;
       }
-      if (v === this.decimalSeparator) {
-        return this.$t(
-          'general_settings.thousand_separator.validation.cannot_be_the_same'
-        ).toString();
-      }
-      return true;
-    }
-  ];
+    ];
+  }
 
   async onThousandSeparatorChange(thousandSeparator: string) {
+    if (thousandSeparator === this.decimalSeparator) {
+      const state = this.$store.state;
+      this.thousandSeparator = state.settings![THOUSAND_SEPARATOR];
+      return;
+    }
+
     const messages = makeMessage(
       this.$t(
         'general_settings.validation.thousand_separator.error'
@@ -612,21 +622,29 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     );
   }
 
-  readonly decimalSeparatorRules = [
-    (v: string) => {
-      if (!v) {
-        return this.$t('general_settings.decimal_separator.validation.empty');
+  private decimalSeparatorRules() {
+    return [
+      (v: string) => {
+        if (!v) {
+          return this.$t('general_settings.decimal_separator.validation.empty');
+        }
+        if (v === this.thousandSeparator) {
+          return this.$t(
+            'general_settings.decimal_separator.validation.cannot_be_the_same'
+          ).toString();
+        }
+        return true;
       }
-      if (v === this.decimalSeparator) {
-        return this.$t(
-          'general_settings.decimal_separator.validation.cannot_be_the_same'
-        ).toString();
-      }
-      return true;
-    }
-  ];
+    ];
+  }
 
   async onDecimalSeparatorChange(decimalSeparator: string) {
+    if (decimalSeparator === this.thousandSeparator) {
+      const state = this.$store.state;
+      this.decimalSeparator = state.settings![DECIMAL_SEPARATOR];
+      return;
+    }
+
     const message = makeMessage(
       `${this.$t('general_settings.validation.decimal_separator.error')}`,
       this.$t('general_settings.validation.decimal_separator.success', {
