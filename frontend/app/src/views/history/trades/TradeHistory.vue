@@ -61,6 +61,9 @@ export default defineComponent({
     });
 
     const fetchTradesHandler = async (refresh: boolean = false) => {
+      if (refresh) {
+        fetchAssociatedLocations().then();
+      }
       await fetchTrades({
         ...payload.value,
         onlyCache: !refresh
@@ -77,7 +80,7 @@ export default defineComponent({
     const refreshInterval = ref<any>(null);
 
     onBeforeMount(async () => {
-      await fetchAssociatedLocations();
+      fetchAssociatedLocations().then();
       fetchTradesHandler().then();
 
       const period = refreshPeriod.value * 60 * 1000;
