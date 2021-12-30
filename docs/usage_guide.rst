@@ -711,6 +711,16 @@ You can filter the tables by a combination of tags.
 
 Simply add the tags you wish to filter by in the filter textbox above the tables.
 
+
+Loopring balances
+=================
+
+From the balances section you can quickly get an overview of the accounts having balances in Loopring and what assets this accounts hold.
+
+.. image:: images/loopring_balances_detailed.png
+   :alt: Loopring balances detailed per address
+   :align: center
+
 NFTs
 =====================
 Rotki provides an NFT gallery where you can view the NFTs owned by your accounts.
