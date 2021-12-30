@@ -43,6 +43,7 @@
 
     <account-balances
       v-if="ethAccounts.length > 0"
+      id="blockchain-balances-ETH"
       v-intersect="{
         handler: observers.ETH,
         options: {
@@ -59,6 +60,7 @@
 
     <account-balances
       v-if="eth2Balances.length > 0"
+      id="blockchain-balances-ETH2"
       v-intersect="{
         handler: observers.ETH2,
         options: {
@@ -75,6 +77,7 @@
 
     <account-balances
       v-if="btcAccounts.length > 0"
+      id="blockchain-balances-BTC"
       v-intersect="{
         handler: observers.BTC,
         options: {
@@ -91,6 +94,7 @@
 
     <account-balances
       v-if="kusamaBalances.length > 0"
+      id="blockchain-balances-KSM"
       v-intersect="{
         handler: observers.KSM,
         options: {
@@ -107,6 +111,7 @@
 
     <account-balances
       v-if="polkadotBalances.length > 0"
+      id="blockchain-balances-DOT"
       v-intersect="{
         handler: observers.DOT,
         options: {
@@ -123,6 +128,7 @@
 
     <account-balances
       v-if="avaxAccounts.length > 0"
+      id="blockchain-balances-AVAX"
       v-intersect="{
         handler: observers.AVAX,
         options: {
@@ -139,12 +145,13 @@
 
     <account-balances
       v-if="loopringAccounts.length > 0"
+      id="blockchain-balances-LRC"
       loopring
       class="mt-8"
       :title="$t('blockchain_balances.balances.loopring')"
       blockchain="ETH"
       :balances="loopringAccounts"
-      data-cy="blockchain-balances-LOOPRING"
+      data-cy="blockchain-balances-LRC"
     />
   </div>
 </template>

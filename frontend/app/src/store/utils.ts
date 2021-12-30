@@ -102,7 +102,8 @@ export const setStatus: (
 export const getStatusUpdater = (
   commit: Commit,
   section: Section,
-  getStatus: (section: Section) => Status
+  getStatus: (section: Section) => Status,
+  ignore: boolean = false
 ) => {
   const setStatus = (status: Status, otherSection?: Section) => {
     if (getStatus(section) === status) {
@@ -112,7 +113,9 @@ export const getStatusUpdater = (
       section: otherSection ?? section,
       status: status
     };
-    commit('setStatus', payload, { root: true });
+    if (!ignore) {
+      commit('setStatus', payload, { root: true });
+    }
   };
 
   const loading = () => isLoading(getStatus(section));

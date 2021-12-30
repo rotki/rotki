@@ -28,7 +28,7 @@ export default defineComponent({
   name: 'AmountInput',
   inheritAttrs: false,
   props: {
-    value: { required: true, type: String }
+    value: { required: false, type: String, default: '' }
   },
   emits: ['input'],
   setup(props, { emit }) {
