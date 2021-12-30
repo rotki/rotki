@@ -27,7 +27,7 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -1031,9 +1031,9 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                rate = Price(spend_event.asset_balance.balance.amount / receive_event.asset_balance.balance.amount)  # noqa: E501
+                rate = Price(abs(receive_event.asset_balance.balance.amount / spend_event.asset_balance.balance.amount))  # noqa: E501
                 trade = Trade(
-                    timestamp=a1.timestamp,
+                    timestamp=Timestamp(int(a1.timestamp / KRAKEN_TS_MULTIPLIER)),
                     location=Location.KRAKEN,
                     base_asset=receive_event.asset_balance.asset,
                     quote_asset=spend_event.asset_balance.asset,

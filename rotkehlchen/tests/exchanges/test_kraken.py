@@ -378,6 +378,63 @@ def test_kraken_trade_with_spend_receive(function_scope_kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_trade_with_adjustment(function_scope_kraken):
+    """Test that trades based on adjustment events are processed"""
+    kraken = function_scope_kraken
+    kraken.random_trade_data = False
+    kraken.random_ledgers_data = False
+    kraken.cache_ttl_secs = 0
+
+    test_trades = """{
+        "ledger": {
+            "L1": {
+                "refid": "1",
+                "time": 1636406000.8555,
+                "type": "adjustment",
+                "subtype": "",
+                "aclass": "currency",
+                "asset": "XDAO",
+                "amount": "-0.0008854800",
+                "fee": "0.0000000000",
+                "balance": "1"
+            },
+            "L2": {
+                "refid": "2",
+                "time": 1636406000.8654,
+                "type": "adjustment",
+                "subtype": "",
+                "aclass": "currency",
+                "asset": "XETH",
+                "amount": "0.0000088548",
+                "fee": "0",
+                "balance": "1"
+            }
+        },
+        "count": 2
+    }"""
+
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
+    with patch(target, new=test_trades):
+        trades, _ = kraken.query_online_trade_history(
+            start_ts=0,
+            end_ts=Timestamp(1637406000.8555),
+        )
+
+    assert len(trades) == 1
+    trade = trades[0]
+    assert trade.amount == FVal('0.0000088548')
+    assert trade.trade_type == TradeType.BUY
+    assert trade.rate == FVal('0.01')
+    assert trade.base_asset == A_ETH
+    assert trade.quote_asset == A_DAO
+    assert trade.fee is None
+    errors = kraken.msg_aggregator.consume_errors()
+    warnings = kraken.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_kraken_trade_no_counterpart(function_scope_kraken):
     """Test that trades with no counterpart are processed properly"""
     kraken = function_scope_kraken
