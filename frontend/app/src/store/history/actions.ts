@@ -223,7 +223,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   },
 
   async [HistoryActions.ADD_EXTERNAL_TRADE](
-    _,
+    { dispatch },
     trade: NewTrade
   ): Promise<ActionStatus> {
     let success = false;
@@ -234,11 +234,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 
   async [HistoryActions.EDIT_EXTERNAL_TRADE](
-    _,
+    { dispatch },
     trade: TradeEntry
   ): Promise<ActionStatus> {
     let success = false;
@@ -249,11 +251,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 
   async [HistoryActions.DELETE_EXTERNAL_TRADE](
-    _,
+    { dispatch },
     tradeId: string
   ): Promise<ActionStatus> {
     let success = false;
@@ -263,6 +267,8 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 
@@ -643,7 +649,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
   },
 
   async [HistoryActions.ADD_LEDGER_ACTION](
-    _,
+    { dispatch },
     ledgerAction: NewLedgerAction
   ): Promise<ActionStatus> {
     let success = false;
@@ -654,11 +660,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 
   async [HistoryActions.EDIT_LEDGER_ACTION](
-    _,
+    { dispatch },
     ledgerAction: LedgerAction
   ): Promise<ActionStatus> {
     let success = false;
@@ -669,11 +677,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 
   async [HistoryActions.DELETE_LEDGER_ACTION](
-    _,
+    { dispatch },
     identifier: number
   ): Promise<ActionStatus> {
     let success = false;
@@ -683,6 +693,8 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 

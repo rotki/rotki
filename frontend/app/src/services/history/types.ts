@@ -33,7 +33,12 @@ function getCollectionResponseType(obj: ZodTypeAny) {
 }
 
 // Trades
-export const TradeType = z.enum(['buy', 'sell']);
+export const TradeType = z.enum([
+  'buy',
+  'sell',
+  'settlement buy',
+  'settlement sell'
+]);
 export type TradeType = z.infer<typeof TradeType>;
 
 // @ts-ignore

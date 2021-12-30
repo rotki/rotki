@@ -47,6 +47,9 @@ export default defineComponent({
     });
 
     const fetchMovementsHandler = async (refresh: boolean = false) => {
+      if (refresh) {
+        fetchAssociatedLocations().then();
+      }
       await fetchAssetMovements({
         ...payload.value,
         onlyCache: !refresh
@@ -61,7 +64,7 @@ export default defineComponent({
     };
 
     onBeforeMount(async () => {
-      await fetchAssociatedLocations();
+      fetchAssociatedLocations().then();
       await fetchMovementsHandler();
     });
 
