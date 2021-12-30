@@ -9,6 +9,7 @@ import pytest
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_ADA,
     A_BCH,
@@ -30,6 +31,7 @@ from rotkehlchen.tests.utils.constants import (
     A_AUD,
     A_CAD,
     A_CHF,
+    A_DAO,
     A_DASH,
     A_EUR,
     A_EWT,
@@ -369,6 +371,72 @@ def test_kraken_trade_with_spend_receive(function_scope_kraken):
     assert trade.base_asset == A_ETH
     assert trade.quote_asset == A_EUR
     assert trade.fee == FVal(0.45)
+    errors = kraken.msg_aggregator.consume_errors()
+    warnings = kraken.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_trade_no_counterpart(function_scope_kraken):
+    """Test that trades with no counterpart are processed properly"""
+    kraken = function_scope_kraken
+    kraken.random_trade_data = False
+    kraken.random_ledgers_data = False
+    kraken.cache_ttl_secs = 0
+
+    test_trades = """{
+        "ledger": {
+            "L1": {
+                "refid": "1",
+                "time": 1636406000.8555,
+                "type": "trade",
+                "subtype": "",
+                "aclass": "currency",
+                "asset": "XETH",
+                "amount": "-0.000001",
+                "fee": "0.0000000000",
+                "balance": "1"
+            },
+            "L2": {
+                "refid": "2",
+                "time": 1636406000.8654,
+                "type": "trade",
+                "subtype": "",
+                "aclass": "currency",
+                "asset": "XXBT",
+                "amount": "0.0000001",
+                "fee": "0",
+                "balance": "1"
+            }
+        },
+        "count": 2
+    }"""
+
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
+    with patch(target, new=test_trades):
+        trades, _ = kraken.query_online_trade_history(
+            start_ts=0,
+            end_ts=Timestamp(1637406000.8555),
+        )
+
+    assert len(trades) == 2
+    trade = trades[0]
+    assert trade.amount == FVal('0.000001')
+    assert trade.trade_type == TradeType.SELL
+    assert trade.rate == ZERO
+    assert trade.base_asset == A_ETH
+    assert trade.quote_asset == A_USD
+    assert trade.fee is None
+    assert trade.fee_currency is None
+    trade = trades[1]
+    assert trade.amount == FVal('0.0000001')
+    assert trade.trade_type == TradeType.BUY
+    assert trade.rate == ZERO
+    assert trade.base_asset == A_BTC
+    assert trade.quote_asset == A_USD
+    assert trade.fee is None
+    assert trade.fee_currency is None
     errors = kraken.msg_aggregator.consume_errors()
     warnings = kraken.msg_aggregator.consume_warnings()
     assert len(errors) == 0
