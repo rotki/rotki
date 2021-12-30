@@ -97,8 +97,8 @@
     </v-row>
     <v-row v-else>
       <v-col
-        v-for="(item, index) in visibleNfts"
-        :key="index"
+        v-for="item in visibleNfts"
+        :key="item.tokenIdentifier"
         cols="12"
         sm="6"
         md="6"
