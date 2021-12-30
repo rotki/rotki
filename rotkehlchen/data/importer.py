@@ -1084,6 +1084,7 @@ class DataImporter():
         sold_amount = deserialize_asset_amount(csv_row['inputAmount'])
         rate = deserialize_asset_amount(csv_row['rate'])
         fee = deserialize_fee(csv_row['minerFee'])
+        gross_amount = AssetAmount(buy_amount + fee)
         in_addr = csv_row['inputAddress']
         out_addr = csv_row['outputAddress']
         notes = f"""
@@ -1111,13 +1112,14 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             log.warning(f'shapeshift csv entry has negative or zero rate. Ignoring. {csv_row}')
             return
 
+        # Fix the rate correctly (1 / rate) * (fee + buy_amount) = sell_amount
         trade = Trade(
             timestamp=timestamp,
             location=Location.SHAPESHIFT,
             base_asset=buy_asset,
             quote_asset=sold_asset,
             trade_type=TradeType.BUY,
-            amount=buy_amount,
+            amount=gross_amount,
             rate=Price(1 / rate),
             fee=Fee(fee),
             fee_currency=buy_asset,  # Assumption that minerFee is denominated in outputCurrency
