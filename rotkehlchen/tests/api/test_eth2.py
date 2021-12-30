@@ -123,6 +123,33 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     )
     assert_simple_ok_response(response)
 
+    # Query deposits again after including manually input validator
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'eth2stakedepositsresource',
+            ), json={'async_query': async_query},
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(
+                rotkehlchen_api_server,
+                task_id,
+                timeout=ASYNC_TASK_WAIT_TIMEOUT * 10,
+            )
+            assert outcome['message'] == ''
+            deposits = outcome['result']
+        else:
+            deposits = assert_proper_response_with_result(response)
+
+    assert len(deposits) == 3
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
+
     # Now query eth2 details also including manually input validators to see they work
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)
@@ -151,6 +178,11 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     assert details[1]['eth1_depositor'] == '0x234EE9e35f8e9749A002fc42970D570DB716453B'
     assert details[2]['index'] == new_index_1
     assert details[2]['eth1_depositor'] == '0xc2288B408Dc872A1546F13E6eBFA9c94998316a2'
+
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(warnings) == 0
+    assert len(errors) == 0
 
     # query daily stats, first without cache -- requesting all
     json = {'only_cache': False}

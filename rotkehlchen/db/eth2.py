@@ -53,7 +53,7 @@ class DBEth2():
         """Inserts a list of Eth2Deposit"""
         query = (
             """
-            INSERT INTO eth2_deposits (
+            INSERT OR IGNORE INTO eth2_deposits (
                 tx_hash,
                 tx_index,
                 from_address,
