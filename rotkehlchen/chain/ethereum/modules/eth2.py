@@ -125,7 +125,7 @@ class Eth2(EthereumModule):
         result_deposits.sort(key=lambda deposit: (deposit.timestamp, deposit.tx_index))
         return result_deposits
 
-    def _fetch_eth1_validator_data(
+    def fetch_eth1_validator_data(
             self,
             addresses: List[ChecksumEthAddress],
     ) -> List[ValidatorID]:
@@ -189,7 +189,7 @@ class Eth2(EthereumModule):
         balance_mapping: Dict[Eth2PubKey, Balance] = defaultdict(Balance)
         validators: Union[List[ValidatorID], List[Eth2Validator]]
         if fetch_validators_for_eth1:
-            validators = self._fetch_eth1_validator_data(addresses)
+            validators = self.fetch_eth1_validator_data(addresses)
         else:
             validators = dbeth2.get_validators()
 

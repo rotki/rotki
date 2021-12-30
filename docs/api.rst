@@ -9713,7 +9713,7 @@ Gitcoin report
 
       {
           "result": {
-	      "profit_currencty": "EUR",
+	      "profit_currency": "EUR",
 	      "reports": {
 		  "149": {
 		      "per_asset": {

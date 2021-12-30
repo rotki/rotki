@@ -3,7 +3,11 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.data_migrations.manager import DataMigrationManager, MigrationRecord
+from rotkehlchen.data_migrations.manager import (
+    MIGRATION_LIST,
+    DataMigrationManager,
+    MigrationRecord,
+)
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
@@ -37,7 +41,12 @@ def test_migration_1(rotkehlchen_api_server):
         )
         assert result.fetchone()[0] == 1
 
-    DataMigrationManager(rotki).maybe_migrate_data()
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=MIGRATION_LIST[:1],
+    )
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
     errors = rotki.msg_aggregator.consume_errors()
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(errors) == 0
@@ -71,7 +80,8 @@ def test_migration_1(rotkehlchen_api_server):
         db.update_used_query_range(name=f'{str(exchange_location)}_margins_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
         db.update_used_query_range(name=f'{str(exchange_location)}_asset_movements_{str(exchange_location)}', start_ts=0, end_ts=9999)  # noqa: E501
 
-    DataMigrationManager(rotki).maybe_migrate_data()
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
     errors = rotki.msg_aggregator.consume_errors()
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(errors) == 0
