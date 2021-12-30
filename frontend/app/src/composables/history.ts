@@ -49,10 +49,9 @@ export const setupTrades = () => {
   });
 
   const fetchTrades = async (payload: Partial<TradeRequestPayload>) => {
-    return await store.dispatch(
-      `history/${HistoryActions.FETCH_TRADES}`,
+    return await store.dispatch(`history/${HistoryActions.FETCH_TRADES}`, {
       payload
-    );
+    });
   };
 
   const addTrade = async (trade: NewTrade) => {
@@ -107,10 +106,9 @@ export const setupAssetMovements = () => {
   const fetchAssetMovements = async (
     payload: Partial<AssetMovementRequestPayload>
   ) => {
-    return await store.dispatch(
-      `history/${HistoryActions.FETCH_MOVEMENTS}`,
+    return await store.dispatch(`history/${HistoryActions.FETCH_MOVEMENTS}`, {
       payload
-    );
+    });
   };
 
   return {
@@ -177,7 +175,7 @@ export const setupLedgerActions = () => {
   ) => {
     return await store.dispatch(
       `history/${HistoryActions.FETCH_LEDGER_ACTIONS}`,
-      payload
+      { payload }
     );
   };
 
