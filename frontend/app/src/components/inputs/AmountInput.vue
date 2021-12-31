@@ -3,7 +3,7 @@
     ref="textInput"
     v-model="currentValue"
     v-bind="$attrs"
-    v-on="$listeners"
+    v-on="filteredListeners($listeners)"
   />
 </template>
 
@@ -84,10 +84,15 @@ export default defineComponent({
       }
     };
 
+    const filteredListeners = (listeners: any) => {
+      return { ...listeners, input: () => {} };
+    };
+
     return {
       focus,
       currentValue,
-      textInput
+      textInput,
+      filteredListeners
     };
   }
 });
