@@ -56,6 +56,9 @@ export const Report = z
   .object({
     identifier: z.number(),
     firstProcessedTimestamp: z.number(),
+    lastProcessedTimestamp: z.number(),
+    processedActions: z.number(),
+    totalActions: z.number(),
     startTs: z.number(),
     endTs: z.number(),
     sizeOnDisk: z.number(),
@@ -98,6 +101,9 @@ export type SelectedReport = {
   entries: ProfitLossEvents;
   entriesLimit: number;
   entriesFound: number;
+  lastProcessedTimestamp: number;
+  processedActions: number;
+  totalActions: number;
   start: number;
   end: number;
   firstProcessedTimestamp: number;
