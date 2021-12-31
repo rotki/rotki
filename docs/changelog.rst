@@ -17,7 +17,7 @@ Changelog
 * :feature:`2265` Users will now be able to see a hint for the trade rate when adding an external trade.
 * :feature:`2848` Users will now get taken to the top of the table automatically when changing a page.
 * :feature:`2121` Users can now select a different timezone when selecting a date to input.
-* :feature:`1875` Users can now enable or disable specific time frames in the graph timeframe
+* :feature:`1875` Users can now enable or disable specific time frames in the PnL report.
 * :feature:`2446` Users can now switch between adding an external trade using quote asset amount or trade rate.
 * :feature:`2297` The application will now perform an update check every 24h (user-configurable) while the application is running.
 * :feature:`3470` Users can now customize the date input format.

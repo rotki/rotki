@@ -432,7 +432,7 @@ class CSVExporter():
         }
         log.debug('csv event', **entry)
         self.all_events.append(entry)
-        if self.cached is False:
+        if self.cached is not True:
             dbpnl = DBAccountingReports(self.database)
             schema_event_type = SchemaEventType.ACCOUNTING_EVENT
             event = NamedJson.deserialize(

@@ -59,10 +59,9 @@ class DBAccountingReports():
         INSERT INTO pnl_reports(
             timestamp, start_ts, end_ts, first_processed_timestamp,
             profit_currency, taxfree_after_period, include_crypto2crypto,
-            calculate_past_cost_basis, include_gas_costs, account_for_assets_movements,
-            last_processed_timestamp, processed_actions, total_actions
+            calculate_past_cost_basis, include_gas_costs, account_for_assets_movements
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         cursor.execute(
             query,
             (timestamp, start_ts, end_ts, first_processed_timestamp,
@@ -71,7 +70,6 @@ class DBAccountingReports():
              int(settings.calculate_past_cost_basis),
              int(settings.include_gas_costs),
              int(settings.account_for_assets_movements),
-             0, 0, 0,  # will be set later
              ),
         )
         identifier = cursor.lastrowid
@@ -81,9 +79,6 @@ class DBAccountingReports():
     def add_report_overview(
             self,
             report_id: int,
-            last_processed_timestamp: Timestamp,
-            processed_actions: int,
-            total_actions: int,
             ledger_actions_profit_loss: str,
             defi_profit_loss: str,
             loan_profit: str,
@@ -106,15 +101,13 @@ class DBAccountingReports():
             'UPDATE pnl_reports SET ledger_actions_profit_loss=?, defi_profit_loss=?, '
             'loan_profit=?, margin_positions_profit_loss=?, settlement_losses=?, '
             'ethereum_transaction_gas_costs=?, asset_movement_fees=?, general_trade_profit_loss=?,'
-            ' taxable_trade_profit_loss=?, total_taxable_profit_loss=?, total_profit_loss=?,'
-            ' last_processed_timestamp=?, processed_actions=?, total_actions=? '
+            ' taxable_trade_profit_loss=?, total_taxable_profit_loss=?, total_profit_loss=? '
             ' WHERE identifier=?',
             (ledger_actions_profit_loss, defi_profit_loss, loan_profit,
              margin_positions_profit_loss, settlement_losses,
              ethereum_transaction_gas_costs, asset_movement_fees,
              general_trade_profit_loss, taxable_trade_profit_loss,
-             total_taxable_profit_loss, total_profit_loss,
-             last_processed_timestamp, processed_actions, total_actions, report_id),
+             total_taxable_profit_loss, total_profit_loss, report_id),
         )
         if cursor.rowcount != 1:
             raise InputError(
@@ -133,7 +126,7 @@ class DBAccountingReports():
         prefixes which are not taken into account.
         """
         cursor = self.db.conn_transient.cursor()
-        result = cursor.execute(
+        return cursor.execute(
             """SELECT SUM(row_size) FROM (SELECT
             8 + /*identifier - assume biggest int size */
             8 + /*report_id  - assume biggest int size */
@@ -142,7 +135,6 @@ class DBAccountingReports():
             length(data) AS row_size FROM pnl_events WHERE report_id=?)""",
             (report_id,),
         ).fetchone()[0]
-        return 0 if result is None else result
 
     def get_reports(
             self,
@@ -183,15 +175,12 @@ class DBAccountingReports():
                 'taxable_trade_profit_loss': report[13],
                 'total_taxable_profit_loss': report[14],
                 'total_profit_loss': report[15],
-                'last_processed_timestamp': report[16],
-                'processed_actions': report[17],
-                'total_actions': report[18],
-                'profit_currency': report[19],
-                'taxfree_after_period': report[20],
-                'include_crypto2crypto': bool(report[21]),
-                'calculate_past_cost_basis': bool(report[22]),
-                'include_gas_costs': bool(report[23]),
-                'account_for_assets_movements': bool(report[24]),
+                'profit_currency': report[16],
+                'taxfree_after_period': report[17],
+                'include_crypto2crypto': bool(report[18]),
+                'calculate_past_cost_basis': bool(report[19]),
+                'include_gas_costs': bool(report[20]),
+                'account_for_assets_movements': bool(report[21]),
             })
 
         if report_id is not None:

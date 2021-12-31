@@ -360,7 +360,6 @@ class Accountant():
 
         prev_time = Timestamp(0)
         count = 0
-        last_event_ts = Timestamp(0)
         ignored_actionids_mapping = self.db.get_ignored_action_ids(action_type=None)
         for action in actions:
             try:
@@ -387,7 +386,6 @@ class Accountant():
                     f'Skipping action {str(action)} during history processing due to '
                     f'cryptocompare not supporting an involved asset: {str(e)}',
                 )
-                count += 1
                 continue
             except NoPriceForGivenTimestamp as e:
                 ts = action_get_timestamp(action)
@@ -401,7 +399,6 @@ class Accountant():
                     f'Skipping action {str(action)} during history processing due to '
                     f'inability to query a price at that time: {str(e)}',
                 )
-                count += 1
                 continue
             except RemoteError as e:
                 ts = action_get_timestamp(action)
@@ -415,12 +412,9 @@ class Accountant():
                     f'Skipping action {str(action)} during history processing due to '
                     f'inability to reach an external service at that time: {str(e)}',
                 )
-                count += 1
                 continue
 
-            last_event_ts = action_get_timestamp(action)
             if not should_continue:
-                count += 1
                 break
 
             if count % 500 == 0:
@@ -429,11 +423,11 @@ class Accountant():
                 # API may time out
                 gevent.sleep(0.5)
             count += 1
-            if not active_premium and count >= FREE_PNL_EVENTS_LIMIT:
+            if not active_premium and count > FREE_PNL_EVENTS_LIMIT:
                 log.debug(
                     f'PnL reports event processing has hit the event limit of {events_limit}. '
                     f'Processing stopped and the results will not '
-                    f'take into account subsequent events. Total events were {len(actions)}',
+                    f'take into account subsequent events.',
                 )
                 break
 
@@ -475,13 +469,7 @@ class Accountant():
             ),
         }
         dbpnl = DBAccountingReports(self.csvexporter.database)
-        dbpnl.add_report_overview(
-            report_id=report_id,
-            last_processed_timestamp=last_event_ts,
-            processed_actions=count,
-            total_actions=len(actions),
-            **profit_loss_overview,
-        )
+        dbpnl.add_report_overview(report_id=report_id, **profit_loss_overview)
 
         return report_id
 
