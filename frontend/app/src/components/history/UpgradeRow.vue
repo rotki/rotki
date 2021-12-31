@@ -26,6 +26,9 @@
             :href="$interop.premiumURL"
           />
         </template>
+        <template #time>
+          <date-display class="ms-1" :timestamp="time" />
+        </template>
       </i18n>
       <i18n
         v-else
@@ -73,6 +76,8 @@ export default class UpgradeRow extends Vue {
   limit!: number;
   @Prop({ required: false, type: Boolean, default: false })
   events!: boolean;
+  @Prop({ required: false, type: Number, default: 0 })
+  time!: number;
 }
 </script>
 

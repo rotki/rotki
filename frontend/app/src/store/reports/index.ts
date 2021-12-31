@@ -62,6 +62,9 @@ const defaultReport = (): SelectedReport => ({
   start: 0,
   end: 0,
   firstProcessedTimestamp: 0,
+  lastProcessedTimestamp: 0,
+  processedActions: 0,
+  totalActions: 0,
   currency: 'USD',
   settings: {
     taxfreeAfterPeriod: 0,
@@ -171,6 +174,9 @@ export const useReports = defineStore('reports', () => {
         start: selectedReport.startTs,
         end: selectedReport.endTs,
         firstProcessedTimestamp: selectedReport.firstProcessedTimestamp,
+        lastProcessedTimestamp: selectedReport.lastProcessedTimestamp,
+        totalActions: selectedReport.totalActions,
+        processedActions: selectedReport.processedActions,
         currency: selectedReport.profitCurrency
       };
       loaded.value = true;

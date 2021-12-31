@@ -88,8 +88,9 @@
       <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
         <upgrade-row
           events
-          :total="report.entriesFound"
-          :limit="report.entriesLimit"
+          :total="report.totalActions"
+          :limit="report.processedActions"
+          :time="report.lastProcessedTimestamp"
           :colspan="headers.length"
           :label="$t('profit_loss_events.title')"
         />
@@ -265,9 +266,7 @@ export default defineComponent({
     });
 
     const showUpgradeMessage = computed(
-      () =>
-        report.value.entriesLimit > 0 &&
-        report.value.entriesLimit < report.value.entriesFound
+      () => report.value.totalActions > report.value.processedActions
     );
 
     const updatePagination = async (options: PaginationOptions | null) => {

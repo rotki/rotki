@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional
 
 from rotkehlchen.data_migrations.migrations.migration_1 import data_migration_1
+from rotkehlchen.data_migrations.migrations.migration_2 import data_migration_2
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -19,6 +20,7 @@ class MigrationRecord(NamedTuple):
 
 MIGRATION_LIST = [
     MigrationRecord(version=1, function=data_migration_1),
+    MigrationRecord(version=2, function=data_migration_2),
 ]
 
 

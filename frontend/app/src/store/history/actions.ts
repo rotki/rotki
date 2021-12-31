@@ -102,13 +102,20 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
   async [HistoryActions.FETCH_TRADES](
     { commit, rootGetters: { status } },
-    payload: Partial<TradeRequestPayload>
+    {
+      payload,
+      onlyLocation
+    }: {
+      payload: Partial<TradeRequestPayload>;
+      onlyLocation?: SupportedExchange;
+    }
   ): Promise<void> {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad } = getStatusUpdater(
       commit,
       Section.TRADES,
-      status
+      status,
+      !!onlyLocation
     );
     const taskType = TaskType.TRADES;
 
@@ -167,34 +174,40 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         return;
       }
 
-      setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
-
-      const cacheParams = { ...payload, onlyCache: true };
-      const data = await fetchTrades(cacheParams);
-      commit(HistoryMutations.SET_TRADES, data);
-
-      if (!onlyCache) {
-        setStatus(Status.REFRESHING);
-        const { notify } = useNotifications();
-
-        const exchange = i18n.tc('actions.trades.all_exchanges');
-
-        await fetchTrades({ onlyCache: false }).catch(error => {
-          notify({
-            title: i18n.tc('actions.trades.error.title', undefined, {
-              exchange
-            }),
-            message: i18n.tc('actions.trades.error.description', undefined, {
-              exchange,
-              error
-            }),
-            display: true
-          });
-        });
-
+      const fetchOnlyCache = async () => {
         const cacheParams = { ...payload, onlyCache: true };
         const data = await fetchTrades(cacheParams);
         commit(HistoryMutations.SET_TRADES, data);
+      };
+
+      setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
+
+      if (!onlyLocation) await fetchOnlyCache();
+
+      if (!onlyCache || onlyLocation) {
+        setStatus(Status.REFRESHING);
+        const { notify } = useNotifications();
+
+        const exchange = onlyLocation
+          ? exchangeName(onlyLocation as TradeLocation)
+          : i18n.tc('actions.trades.all_exchanges');
+
+        await fetchTrades({ location: onlyLocation, onlyCache: false }).catch(
+          error => {
+            notify({
+              title: i18n.tc('actions.trades.error.title', undefined, {
+                exchange
+              }),
+              message: i18n.tc('actions.trades.error.description', undefined, {
+                exchange,
+                error
+              }),
+              display: true
+            });
+          }
+        );
+
+        if (!onlyLocation) await fetchOnlyCache();
       }
 
       setStatus(
@@ -206,24 +219,8 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     }
   },
 
-  async [HistoryActions.PURGE_TRADES](
-    _,
-    location: SupportedExchange
-  ): Promise<void> {
-    const params = {
-      location,
-      limit: 1,
-      offset: 0,
-      ascending: false,
-      orderByAttribute: 'time',
-      onlyCache: false
-    };
-
-    await api.history.trades(params);
-  },
-
   async [HistoryActions.ADD_EXTERNAL_TRADE](
-    _,
+    { dispatch },
     trade: NewTrade
   ): Promise<ActionStatus> {
     let success = false;
@@ -234,11 +231,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 
   async [HistoryActions.EDIT_EXTERNAL_TRADE](
-    _,
+    { dispatch },
     trade: TradeEntry
   ): Promise<ActionStatus> {
     let success = false;
@@ -249,11 +248,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 
   async [HistoryActions.DELETE_EXTERNAL_TRADE](
-    _,
+    { dispatch },
     tradeId: string
   ): Promise<ActionStatus> {
     let success = false;
@@ -263,18 +264,27 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 
   async [HistoryActions.FETCH_MOVEMENTS](
     { commit, rootGetters: { status } },
-    payload: Partial<AssetMovementRequestPayload>
+    {
+      payload,
+      onlyLocation
+    }: {
+      payload: Partial<AssetMovementRequestPayload>;
+      onlyLocation?: SupportedExchange;
+    }
   ): Promise<void> {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad } = getStatusUpdater(
       commit,
       Section.ASSET_MOVEMENT,
-      status
+      status,
+      !!onlyLocation
     );
     const taskType = TaskType.MOVEMENTS;
 
@@ -340,19 +350,28 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         return;
       }
 
+      const fetchOnlyCache = async () => {
+        const cacheParams = { ...payload, onlyCache: true };
+        const data = await fetchAssetMovements(cacheParams);
+        commit(HistoryMutations.SET_MOVEMENTS, data);
+      };
+
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
 
-      const cacheParams = { ...payload, onlyCache: true };
-      const data = await fetchAssetMovements(cacheParams);
-      commit(HistoryMutations.SET_MOVEMENTS, data);
+      if (!onlyLocation) await fetchOnlyCache();
 
-      if (!onlyCache) {
+      if (!onlyCache || onlyLocation) {
         setStatus(Status.REFRESHING);
         const { notify } = useNotifications();
 
-        const exchange = i18n.tc('actions.asset_movements.all_exchanges');
+        const exchange = onlyLocation
+          ? exchangeName(onlyLocation as TradeLocation)
+          : i18n.tc('actions.asset_movements.all_exchanges');
 
-        await fetchAssetMovements({ onlyCache: false }).catch(error => {
+        await fetchAssetMovements({
+          location: onlyLocation,
+          onlyCache: false
+        }).catch(error => {
           notify({
             title: i18n.tc('actions.asset_movements.error.title', undefined, {
               exchange
@@ -369,9 +388,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           });
         });
 
-        const cacheParams = { ...payload, onlyCache: true };
-        const data = await fetchAssetMovements(cacheParams);
-        commit(HistoryMutations.SET_MOVEMENTS, data);
+        if (!onlyLocation) await fetchOnlyCache();
       }
 
       setStatus(
@@ -381,22 +398,6 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       logger.error(e);
       setStatus(Status.NONE);
     }
-  },
-
-  async [HistoryActions.PURGE_MOVEMENTS](
-    _,
-    location: SupportedExchange
-  ): Promise<void> {
-    const params = {
-      location,
-      limit: 1,
-      offset: 0,
-      ascending: false,
-      orderByAttribute: 'time',
-      onlyCache: false
-    };
-
-    await api.history.assetMovements(params);
   },
 
   async [HistoryActions.FETCH_TRANSACTIONS](
@@ -511,13 +512,20 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
 
   async [HistoryActions.FETCH_LEDGER_ACTIONS](
     { commit, rootGetters: { status } },
-    payload: Partial<LedgerActionRequestPayload>
+    {
+      payload,
+      onlyLocation
+    }: {
+      payload: Partial<LedgerActionRequestPayload>;
+      onlyLocation?: SupportedExchange;
+    }
   ): Promise<void> {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad } = getStatusUpdater(
       commit,
       Section.LEDGER_ACTIONS,
-      status
+      status,
+      !!onlyLocation
     );
     const taskType = TaskType.LEDGER_ACTIONS;
 
@@ -583,19 +591,28 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
         return;
       }
 
+      const fetchOnlyCache = async () => {
+        const cacheParams = { ...payload, onlyCache: true };
+        const data = await fetchLedgerActions(cacheParams);
+        commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
+      };
+
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
 
-      const cacheParams = { ...payload, onlyCache: true };
-      const data = await fetchLedgerActions(cacheParams);
-      commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
+      if (!onlyLocation) await fetchOnlyCache();
 
-      if (!onlyCache) {
+      if (!onlyCache || onlyLocation) {
         setStatus(Status.REFRESHING);
         const { notify } = useNotifications();
 
-        const exchange = i18n.tc('actions.ledger_actions.all_exchanges');
+        const exchange = onlyLocation
+          ? exchangeName(onlyLocation as TradeLocation)
+          : i18n.tc('actions.ledger_actions.all_exchanges');
 
-        await fetchLedgerActions({ onlyCache: false }).catch(error => {
+        await fetchLedgerActions({
+          location: onlyLocation,
+          onlyCache: false
+        }).catch(error => {
           notify({
             title: i18n.tc('actions.ledger_actions.error.title', undefined, {
               exchange
@@ -612,9 +629,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
           });
         });
 
-        const cacheParams = { ...payload, onlyCache: true };
-        const data = await fetchLedgerActions(cacheParams);
-        commit(HistoryMutations.SET_LEDGER_ACTIONS, data);
+        if (!onlyLocation) await fetchOnlyCache();
       }
 
       setStatus(
@@ -626,24 +641,8 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     }
   },
 
-  async [HistoryActions.PURGE_LEDGER_ACTIONS](
-    _,
-    location: SupportedExchange
-  ): Promise<void> {
-    const params = {
-      location,
-      limit: 1,
-      offset: 0,
-      ascending: false,
-      orderByAttribute: 'timestamp',
-      onlyCache: false
-    };
-
-    await api.history.ledgerActions(params);
-  },
-
   async [HistoryActions.ADD_LEDGER_ACTION](
-    _,
+    { dispatch },
     ledgerAction: NewLedgerAction
   ): Promise<ActionStatus> {
     let success = false;
@@ -654,11 +653,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 
   async [HistoryActions.EDIT_LEDGER_ACTION](
-    _,
+    { dispatch },
     ledgerAction: LedgerAction
   ): Promise<ActionStatus> {
     let success = false;
@@ -669,11 +670,13 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 
   async [HistoryActions.DELETE_LEDGER_ACTION](
-    _,
+    { dispatch },
     identifier: number
   ): Promise<ActionStatus> {
     let success = false;
@@ -683,6 +686,8 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     } catch (e: any) {
       message = e.message;
     }
+
+    dispatch(HistoryActions.FETCH_ASSOCIATED_LOCATIONS);
     return { success, message };
   },
 
@@ -712,7 +717,7 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
       resetStatus(Section.ASSET_MOVEMENT);
       resetStatus(Section.LEDGER_ACTIONS);
     } else {
-      dispatch(HistoryActions.PURGE_HISTORY_LOCATION, exchange, { root: true });
+      dispatch(HistoryActions.PURGE_HISTORY_LOCATION, exchange);
     }
   },
 
@@ -720,9 +725,20 @@ export const actions: ActionTree<HistoryState, RotkehlchenState> = {
     { dispatch },
     exchange: SupportedExchange
   ) {
-    dispatch(HistoryActions.PURGE_TRADES, exchange);
-    dispatch(HistoryActions.PURGE_MOVEMENTS, exchange);
-    dispatch(HistoryActions.PURGE_LEDGER_ACTIONS, exchange);
+    dispatch(HistoryActions.FETCH_TRADES, {
+      payload: { onlyCache: false },
+      onlyLocation: exchange
+    });
+
+    dispatch(HistoryActions.FETCH_MOVEMENTS, {
+      payload: { onlyCache: false },
+      onlyLocation: exchange
+    });
+
+    dispatch(HistoryActions.FETCH_LEDGER_ACTIONS, {
+      payload: { onlyCache: false },
+      onlyLocation: exchange
+    });
   },
 
   async [HistoryActions.FETCH_GITCOIN_GRANT](

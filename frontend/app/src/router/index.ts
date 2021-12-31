@@ -9,6 +9,21 @@ Vue.use(Router);
 export default new Router({
   mode: 'history',
   base: '/',
+  scrollBehavior: (to, from, savedPosition) => {
+    if (to.hash) {
+      setTimeout(() => {
+        const element = document.getElementById(to.hash.replace(/#/, ''));
+        if (element && element.scrollIntoView) {
+          element.scrollIntoView({ block: 'end', behavior: 'smooth' });
+        }
+      }, 500);
+
+      return { selector: to.hash };
+    } else if (savedPosition) {
+      return savedPosition;
+    }
+    return { x: 0, y: 0 };
+  },
   routes: [
     {
       path: '*',

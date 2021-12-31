@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS pnl_reports (
     total_taxable_profit_loss TEXT,
     total_profit_loss TEXT,
     /* PnL currency and settings*/
+    last_processed_timestamp INTEGER NOT NULL,
+    processed_actions INTEGER NOT NULL,
+    total_actions INTEGER NOT NULL,
     profit_currency TEXT NOT NULL,
     taxfree_after_period INTEGER,
     include_crypto2crypto INTEGER NOT NULL CHECK (include_crypto2crypto IN (0, 1)),

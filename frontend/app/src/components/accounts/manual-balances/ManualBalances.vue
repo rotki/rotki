@@ -159,8 +159,10 @@ const ManualBalances = defineComponent({
     const router = useRouter();
     onMounted(() => {
       const { currentRoute } = router;
-      const { openDialog } = dialog;
-      openDialog.value = !!currentRoute.query.add;
+      const { add } = dialog;
+      if (currentRoute.query.add) {
+        add();
+      }
     });
 
     const intersections = ref({

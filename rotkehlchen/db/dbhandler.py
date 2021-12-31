@@ -2061,11 +2061,14 @@ class DBHandler:
         )
         extras = {}
         for entry in result:
-            if entry[0] != 'kraken_account_type':
+            if entry[0] not in ('kraken_account_type', 'PAIRS'):
                 log.error(
                     f'Unknown credential setting {entry[0]} found in the DB. Skipping.',
                 )
                 continue
+
+            if entry[0] == 'PAIRS':
+                continue  # TODO: https://github.com/rotki/rotki/issues/3886
 
             try:
                 extras['kraken_account_type'] = KrakenAccountType.deserialize(entry[1])

@@ -4,7 +4,7 @@
       :id="`${name}_box`"
       :data-cy="`blockchain-balance-box__item__${name}`"
       class="blockchain-balance-box__item"
-      to="/accounts-balances/blockchain-balances"
+      :to="`/accounts-balances/blockchain-balances#blockchain-balances-${total.chain}`"
     >
       <v-list-item-avatar tile class="blockchain-balance-box__icon">
         <asset-icon size="24px" :identifier="chain" />
@@ -31,7 +31,7 @@
         :id="`${l2.protocol}_box`"
         :key="l2.protocol"
         class="d-flex flex-row blockchain-balance-box__item sub-item"
-        to="/accounts-balances/blockchain-balances"
+        :to="`/accounts-balances/blockchain-balances#blockchain-balances-${l2.protocol}`"
       >
         <v-list-item-avatar
           tile
