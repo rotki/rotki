@@ -711,6 +711,16 @@ You can filter the tables by a combination of tags.
 
 Simply add the tags you wish to filter by in the filter textbox above the tables.
 
+
+Loopring balances
+=================
+
+From the balances section you can quickly get an overview of the accounts having balances in Loopring and what assets this accounts hold.
+
+.. image:: images/loopring_balances_detailed.png
+   :alt: Loopring balances detailed per address
+   :align: center
+
 NFTs
 =====================
 Rotki provides an NFT gallery where you can view the NFTs owned by your accounts.
@@ -739,7 +749,8 @@ ETH2 Staking
 There are two ways to track ETH2 Staking. The first is by adding tracking the account of an ETH account that deposited
 the ETH for the validator. This will auto-detect any associated validators with the ETH1 address and it will start
 tracking them. The second way is by adding a validator using the add ``(+)`` button in the ``Blockchain Balances`` tab
-under ``Accounts & Balances``.
+under ``Accounts & Balances``. It can be added using its public key, its index or both of them for a faster query. Finally it
+is also possible to customize the proportion of the validator owned for users who share one validator with more people.
 
 .. image:: images/rotki_eth2_add_validator.png
    :alt: Track an ETH2 validator
@@ -800,6 +811,7 @@ The list of currently supported airdrops is:
 - Curve
 - ENS
 - ParaSwap
+- Saddle finance
 
 Snapshots
 =========
@@ -1210,6 +1222,12 @@ Following are definitions for the all_event document's columns
 .. note::
    To learn more about `profit_currency` or to adjust it, see the section :ref:`change_profit_currency`
 
+Results from past profit and loss reports are saved so the user can later review them without the need to run a new execution.
+
+.. image:: images/pnl_report_saved.png
+   :alt: Profit and loss reports from past executions
+   :align: center
+
 
 Cost basis
 =============
@@ -1302,7 +1320,7 @@ Furthermore you can see a piechart of the distribution of your netvalue across d
    :alt: Distribution of networth by location
    :align: center
 
-Finally you can see a piechart of the distribution of your netvalue across all of the assets you own. This is an important analytics tool as it can help you determine your exposure on each asset and if some rebalancing of your portfolio is in order.
+Moreover you can see a piechart of the distribution of your netvalue across all of the assets you own. This is an important analytics tool as it can help you determine your exposure on each asset and if some rebalancing of your portfolio is in order.
 
 .. image:: images/sc_stats_distribution_asset.png
    :alt: Distribution of networth by asset
