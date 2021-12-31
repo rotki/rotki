@@ -1788,7 +1788,7 @@
   },
   "upgrade_row": {
     "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
-    "events": "Processed {limit} {label}. To view more please upgrade to {link}",
+    "events": "Processed {limit} out of {total} {label} until {time}. To view more please upgrade to {link}",
     "rotki_premium": "rotki Premium"
   },
   "external_trade_form": {
