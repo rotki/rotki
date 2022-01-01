@@ -380,7 +380,9 @@ class HistoryBaseEntry:
     # When we use this structure in blockchains can be used to specify addresses for example.
     # currently we use to identify the exchange name assigned by the user.
     location_label: Optional[str]
-    asset_balance: AssetBalance  # usd value starts 0: https://github.com/rotki/rotki/issues/3865
+    asset: Asset
+    amount: FVal
+    usd_value: FVal  # https://github.com/rotki/rotki/issues/3865
     notes: Optional[str]
     event_type: HistoryEventType
     event_subtype: Optional[HistoryEventSubType]
@@ -395,7 +397,9 @@ class HistoryBaseEntry:
             int(self.timestamp),
             self.location.serialize_for_db(),
             self.location_label,
-            *self.asset_balance.serialize_for_db(),
+            self.asset.identifier,
+            str(self.amount),
+            str(self.usd_value),
             self.notes,
             self.event_type.serialize(),
             event_subtype,
@@ -414,13 +418,9 @@ class HistoryBaseEntry:
                 timestamp=Timestamp(entry[3]),
                 location=Location.deserialize_from_db(entry[4]),
                 location_label=entry[5],
-                asset_balance=AssetBalance(
-                    asset=Asset(entry[6]),
-                    balance=Balance(
-                        amount=FVal(entry[7]),
-                        usd_value=FVal(entry[8]),
-                    ),
-                ),
+                asset=Asset(entry[6]),
+                amount=FVal(entry[7]),
+                usd_value=FVal(entry[8]),
                 notes=entry[9],
                 event_type=HistoryEventType.deserialize(entry[10]),
                 event_subtype=event_subtype,
@@ -444,7 +444,8 @@ class HistoryBaseEntry:
             self.event_identifier +
             str(self.sequence_index) +
             location_label +
-            str(self.asset_balance) +
+            str(self.asset) +
+            str(self.amount) +
             str(self.event_type) +
             str(event_subtype)
         )

@@ -18,7 +18,6 @@ from requests import Response
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import (
-    AssetBalance,
     Balance,
     HistoryBaseEntry,
     HistoryEventSubType,
@@ -187,13 +186,9 @@ def history_event_from_kraken(
                 timestamp=timestamp,
                 location=Location.KRAKEN,
                 location_label=name,
-                asset_balance=AssetBalance(
-                    asset=asset,
-                    balance=Balance(
-                        amount=raw_amount,
-                        usd_value=ZERO,
-                    ),
-                ),
+                asset=asset,
+                amount=raw_amount,
+                usd_value=ZERO,
                 notes=notes,
                 event_type=event_type,
                 event_subtype=event_subtype,
@@ -205,13 +200,9 @@ def history_event_from_kraken(
                     timestamp=timestamp,
                     location=Location.KRAKEN,
                     location_label=name,
-                    asset_balance=AssetBalance(
-                        asset=asset,
-                        balance=Balance(
-                            amount=fee_amount,
-                            usd_value=ZERO,
-                        ),
-                    ),
+                    asset=asset,
+                    amount=fee_amount,
+                    usd_value=ZERO,
                     notes=notes,
                     event_type=event_type,
                     event_subtype=HistoryEventSubType.FEE,
@@ -755,10 +746,10 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         for movement_events in grouped_events:
             if len(movement_events) == 2:
                 if movement_events[0].event_subtype == HistoryEventSubType.FEE:
-                    fee = Fee(movement_events[0].asset_balance.balance.amount)
+                    fee = Fee(movement_events[0].amount)
                     movement = movement_events[1]
                 elif movement_events[1].event_subtype == HistoryEventSubType.FEE:
-                    fee = Fee(movement_events[1].asset_balance.balance.amount)
+                    fee = Fee(movement_events[1].amount)
                     movement = movement_events[0]
                 else:
                     self.msg_aggregator.add_error(
@@ -769,12 +760,12 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 movement = movement_events[0]
                 fee = Fee(ZERO)
 
-            amount = movement.asset_balance.balance.amount
+            amount = movement.amount
             if movement.event_type == HistoryEventType.WITHDRAWAL:
                 amount = amount * -1
 
             try:
-                asset = movement.asset_balance.asset
+                asset = movement.asset
                 movement_type = movement.event_type
                 movements.append(AssetMovement(
                     location=Location.KRAKEN,
@@ -854,18 +845,18 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             elif trade_part.event_type == HistoryEventType.TRADE:
                 if trade_part.event_subtype == HistoryEventSubType.FEE:
                     fee_part = trade_part
-                elif trade_part.asset_balance.asset == A_KFEE:
+                elif trade_part.asset == A_KFEE:
                     kfee_part = trade_part
-                elif trade_part.asset_balance.balance.amount < ZERO:
+                elif trade_part.amount < ZERO:
                     spend_part = trade_part
                 else:
                     receive_part = trade_part
 
             if (
-                trade_part.asset_balance.balance.amount != ZERO and
+                trade_part.amount != ZERO and
                 trade_part.event_subtype != HistoryEventSubType.FEE
             ):
-                trade_assets.append(trade_part.asset_balance.asset)
+                trade_assets.append(trade_part.asset)
 
         if is_spend_receive and len(trade_parts) < 2:
             log.warning(
@@ -889,13 +880,13 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             # receive event with no counterpart or a spend event with no counterpart.
             # This happens for really really small amounts. So we add rate 0 trades
             if spend_part is not None:
-                base_asset = spend_part.asset_balance.asset
+                base_asset = spend_part.asset
                 trade_type = TradeType.SELL
-                amount = spend_part.asset_balance.balance.amount * -1
+                amount = spend_part.amount * -1
             elif receive_part is not None:
-                base_asset = receive_part.asset_balance.asset
+                base_asset = receive_part.asset
                 trade_type = TradeType.BUY
-                amount = receive_part.asset_balance.balance.amount
+                amount = receive_part.amount
             else:
                 log.warning(f'Found historic trade entries with no counterpart {trade_parts}')
                 return None
@@ -924,13 +915,13 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             return None
 
-        spend_asset = spend_part.asset_balance.asset
-        receive_asset = receive_part.asset_balance.asset
+        spend_asset = spend_part.asset
+        receive_asset = receive_part.asset
         if spend_asset.is_fiat() or trade_parts[0] == receive_part:
             trade_type = TradeType.BUY
             base_asset = receive_asset
             quote_asset = spend_asset
-            amount = receive_part.asset_balance.balance.amount
+            amount = receive_part.amount
             if amount == ZERO:
                 self.msg_aggregator.add_warning(
                     f'Rate for kraken trade couldnt be calculated. Base amount is ZERO '
@@ -938,12 +929,12 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 return None
 
-            rate = Price((spend_part.asset_balance.balance.amount / amount) * -1)
+            rate = Price((spend_part.amount / amount) * -1)
         else:
             trade_type = TradeType.SELL
             base_asset = spend_asset
             quote_asset = receive_asset
-            amount = -1 * spend_part.asset_balance.balance.amount
+            amount = -1 * spend_part.amount
             if amount == ZERO:
                 self.msg_aggregator.add_warning(
                     f'Rate for kraken trade couldnt be calculated. Base amount is ZERO '
@@ -951,18 +942,18 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 return None
 
-            rate = Price((receive_part.asset_balance.balance.amount / amount))
+            rate = Price((receive_part.amount / amount))
 
         # If kfee was found we use it as the fee for the trade
         if kfee_part is not None and fee_part is None:
-            fee = Fee(kfee_part.asset_balance.balance.amount)
+            fee = Fee(kfee_part.amount)
             fee_asset = A_KFEE
         elif (None, None) == (fee_part, kfee_part):
             fee = None
             fee_asset = None
         elif fee_part is not None:
-            fee = Fee(fee_part.asset_balance.balance.amount)
-            fee_asset = fee_part.asset_balance.asset
+            fee = Fee(fee_part.amount)
+            fee_asset = fee_part.asset
 
         trade = Trade(
             timestamp=timestamp,
@@ -1039,14 +1030,14 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                rate = Price(abs(receive_event.asset_balance.balance.amount / spend_event.asset_balance.balance.amount))  # noqa: E501
+                rate = Price(abs(receive_event.amount / spend_event.amount))
                 trade = Trade(
                     timestamp=Timestamp(int(a1.timestamp / KRAKEN_TS_MULTIPLIER)),
                     location=Location.KRAKEN,
-                    base_asset=receive_event.asset_balance.asset,
-                    quote_asset=spend_event.asset_balance.asset,
+                    base_asset=receive_event.asset,
+                    quote_asset=spend_event.asset,
                     trade_type=TradeType.BUY,
-                    amount=AssetAmount(receive_event.asset_balance.balance.amount),
+                    amount=AssetAmount(receive_event.amount),
                     rate=rate,
                     fee=None,
                     fee_currency=None,

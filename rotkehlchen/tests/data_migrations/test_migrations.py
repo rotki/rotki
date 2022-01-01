@@ -119,3 +119,30 @@ def test_failed_migration(rotkehlchen_api_server):
     assert len(warnings) == 0
     assert len(errors) == 1
     assert errors[0] == 'Failed to run soft data migration to version 1 due to ngmi'
+
+
+@pytest.mark.parametrize('use_custom_database', ['data_migration_v3.db'])
+@pytest.mark.parametrize('data_migration_version', [2])
+@pytest.mark.parametrize('perform_migrations_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+def test_migration_3(rotkehlchen_api_server):
+    """
+    Test that the ids at the history_events table are correctly updated after
+    changing how they are generated
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    cursor = db.conn.cursor()
+    result = cursor.execute(
+        'SELECT identifier from history_events',
+    )
+    old_ids = result.fetchall()
+    assert len(old_ids) == 3
+    DataMigrationManager(rotki).maybe_migrate_data()
+    result = cursor.execute(
+        'SELECT identifier from history_events',
+    )
+    new_ids = result.fetchall()
+    assert len(new_ids) == 3
+    for new_id in new_ids:
+        assert new_id not in old_ids
