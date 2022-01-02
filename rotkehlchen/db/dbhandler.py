@@ -903,7 +903,7 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM adex_events;')
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name LIKE "{ADEX_EVENTS_PREFIX}%";',
+            'DELETE FROM used_query_ranges WHERE name LIKE ?', (f'{ADEX_EVENTS_PREFIX}%',),
         )
         self.update_last_write()
 
@@ -992,10 +992,12 @@ class DBHandler:
         """Delete all historical Balancer trades data"""
         cursor = self.conn.cursor()
         cursor.execute(
-            f'DELETE FROM amm_swaps WHERE location="{Location.BALANCER.serialize_for_db()}";',  # pylint: disable=no-member  # noqa: E501
+            'DELETE FROM amm_swaps WHERE location=?',
+            (Location.BALANCER.serialize_for_db(),),  # pylint: disable=no-member
         )
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_TRADES_PREFIX}%";',
+            'DELETE FROM used_query_ranges WHERE name LIKE ?',
+            (f'{BALANCER_TRADES_PREFIX}%',),
         )
         self.update_last_write()
 
@@ -1004,7 +1006,8 @@ class DBHandler:
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM balancer_events;')
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_EVENTS_PREFIX}%";',
+            'DELETE FROM used_query_ranges WHERE name LIKE ?',
+            (f'{BALANCER_EVENTS_PREFIX}%',),
         )
         self.update_last_write()
 
@@ -1012,7 +1015,10 @@ class DBHandler:
         """Delete all historical ETH2 eth2_deposits data"""
         cursor = self.conn.cursor()
         cursor.execute('DELETE FROM eth2_deposits;')
-        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{ETH2_DEPOSITS_PREFIX}%";')
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ?',
+            (f'{ETH2_DEPOSITS_PREFIX}%',),
+        )
         self.update_last_write()
 
     def delete_eth2_daily_stats(self) -> None:
@@ -1146,24 +1152,25 @@ class DBHandler:
         """Delete all historical Uniswap trades data"""
         cursor = self.conn.cursor()
         cursor.execute(
-            f'DELETE FROM amm_swaps WHERE location="{Location.UNISWAP.serialize_for_db()}";',  # pylint: disable=no-member  # noqa: E501
+            'DELETE FROM amm_swaps WHERE location=?',
+            (Location.UNISWAP.serialize_for_db(),),  # pylint: disable=no-member
         )
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_TRADES_PREFIX}%";',
+            'DELETE FROM used_query_ranges WHERE name LIKE ?',
+            (f'{UNISWAP_TRADES_PREFIX}%',),
         )
         self.update_last_write()
 
     def delete_uniswap_events_data(self) -> None:
         """Delete all historical Uniswap events data"""
         cursor = self.conn.cursor()
-        mint_uniswap = EventType.serialize_for_db(EventType.MINT_UNISWAP)
-        burn_uniswap = EventType.serialize_for_db(EventType.BURN_UNISWAP)
-        uniswap_types = f'"{mint_uniswap}", "{burn_uniswap}"'
         cursor.execute(
-            f'DELETE FROM amm_events WHERE amm_events.type IN ({uniswap_types});',
+            'DELETE FROM amm_events WHERE amm_events.type IN (?, ?);',
+            (EventType.serialize_for_db(EventType.MINT_UNISWAP), EventType.serialize_for_db(EventType.BURN_UNISWAP)),  # noqa: E501
         )
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_EVENTS_PREFIX}%";',
+            'DELETE FROM used_query_ranges WHERE name LIKE ?',
+            (f'{UNISWAP_EVENTS_PREFIX}%',),
         )
         self.update_last_write()
 
@@ -1171,24 +1178,25 @@ class DBHandler:
         """Delete all historical Sushiswap trades data"""
         cursor = self.conn.cursor()
         cursor.execute(
-            f'DELETE FROM amm_swaps WHERE location="{Location.SUSHISWAP.serialize_for_db()}";',  # pylint: disable=no-member  # noqa: E501
+            'DELETE FROM amm_swaps WHERE location=?',
+            (Location.SUSHISWAP.serialize_for_db(),),  # pylint: disable=no-member
         )
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_TRADES_PREFIX}%";',
+            'DELETE FROM used_query_ranges WHERE name LIKE ?',
+            (f'{SUSHISWAP_TRADES_PREFIX}%',),
         )
         self.update_last_write()
 
     def delete_sushiswap_events_data(self) -> None:
         """Delete all historical Sushiswap events data"""
         cursor = self.conn.cursor()
-        mint_sushiswap = EventType.serialize_for_db(EventType.MINT_SUSHISWAP)
-        burn_sushiswap = EventType.serialize_for_db(EventType.BURN_SUSHISWAP)
-        sushiswap_types = f'"{mint_sushiswap}", "{burn_sushiswap}"'
         cursor.execute(
-            f'DELETE FROM amm_events WHERE amm_events.type IN ({sushiswap_types});',
+            'DELETE FROM amm_events WHERE amm_events.type IN (?, ?)',
+            (EventType.serialize_for_db(EventType.MINT_SUSHISWAP), EventType.serialize_for_db(EventType.BURN_SUSHISWAP)),  # noqa: E501
         )
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name LIKE "{SUSHISWAP_EVENTS_PREFIX}%";',
+            'DELETE FROM used_query_ranges WHERE name LIKE ?',
+            (f'{SUSHISWAP_EVENTS_PREFIX}%',),
         )
         self.update_last_write()
 
@@ -1281,8 +1289,8 @@ class DBHandler:
         if version == 2:
             prefix = YEARN_VAULTS_V2_PREFIX
         cursor = self.conn.cursor()
-        cursor.execute(f'DELETE FROM yearn_vaults_events WHERE version={version};')
-        cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{prefix}%";')
+        cursor.execute('DELETE FROM yearn_vaults_events WHERE version=?', (version,))
+        cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE ?', (f'{prefix}%',))
         self.update_last_write()
         return None
 
@@ -1306,9 +1314,7 @@ class DBHandler:
         - yearn_vaults_v2_events_{address}
         """
         cursor = self.conn.cursor()
-        query = cursor.execute(
-            f'SELECT start_ts, end_ts from used_query_ranges WHERE name="{name}";',
-        )
+        query = cursor.execute('SELECT start_ts, end_ts from used_query_ranges WHERE name=?', (name,))  # noqa: E501
         query = query.fetchall()
         if len(query) == 0 or query[0][0] is None:
             return None
@@ -1989,8 +1995,10 @@ class DBHandler:
 
         if new_name is not None:
             exchange_re = re.compile(r'(.*?)_(trades|margins|asset_movements|ledger_actions).*')
-            used_ranges_query = f'SELECT * from used_query_ranges WHERE name LIKE "{str(location)}_%_{name}"'  # noqa: E501
-            used_ranges = cursor.execute(used_ranges_query)
+            used_ranges = cursor.execute(
+                'SELECT * from used_query_ranges WHERE name LIKE ?',
+                (f'{str(location)}_%_{name}',),
+            )
             entry_types = set()
             for used_range in used_ranges:
                 range_name = used_range[0]
@@ -2374,25 +2382,31 @@ class DBHandler:
             other_eth_accounts.remove(address)
 
         cursor = self.conn.cursor()
-        cursor.execute(f'DELETE FROM used_query_ranges WHERE name="ethtxs_{address}";')
-        cursor.execute(f'DELETE FROM used_query_ranges WHERE name="aave_events_{address}";')
+        cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'ethtxs_{address}',))
+        cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name="{ADEX_EVENTS_PREFIX}_{address}";',
+            'DELETE FROM used_query_ranges WHERE name = ?',
+            (f'{ADEX_EVENTS_PREFIX}_{address}',),
         )
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name="{BALANCER_EVENTS_PREFIX}_{address}";',
+            'DELETE FROM used_query_ranges WHERE name = ?',
+            (f'{BALANCER_EVENTS_PREFIX}_{address}',),
         )
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name="{BALANCER_TRADES_PREFIX}_{address}";',
+            'DELETE FROM used_query_ranges WHERE name = ?',
+            (f'{BALANCER_TRADES_PREFIX}_{address}',),
         )
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name="{UNISWAP_EVENTS_PREFIX}_{address}";',
+            'DELETE FROM used_query_ranges WHERE name = ?',
+            (f'{UNISWAP_EVENTS_PREFIX}_{address}',),
         )
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name="{UNISWAP_TRADES_PREFIX}_{address}";',
+            'DELETE FROM used_query_ranges WHERE name = ?',
+            (f'{UNISWAP_TRADES_PREFIX}_{address}',),
         )
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name="{ETH2_DEPOSITS_PREFIX}_{address}";',
+            'DELETE FROM used_query_ranges WHERE name = ?',
+            (f'{ETH2_DEPOSITS_PREFIX}_{address}',),
         )
         cursor.execute('DELETE FROM ethereum_accounts_details WHERE account = ?', (address,))
         cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
@@ -2697,15 +2711,16 @@ class DBHandler:
         cursor = self.conn.cursor()
         # Get the total location ("H") entries in ascending time
         query = cursor.execute(
-            f'SELECT time, usd_value FROM timed_location_data '
-            f'WHERE location="H" AND time >= {from_ts} ORDER BY time ASC;',
+            'SELECT time, usd_value FROM timed_location_data '
+            'WHERE location="H" AND time >= ? ORDER BY time ASC;',
+            (from_ts,),
         )
         if not include_nfts:
             nft_cursor = self.conn.cursor()
             nft_balances = nft_cursor.execute(
-                f'SELECT time, SUM(usd_value) FROM timed_balances WHERE time >= ? '
-                f'AND currency LIKE "{NFT_DIRECTIVE}%" GROUP BY time',
-                (from_ts,),
+                'SELECT time, SUM(usd_value) FROM timed_balances WHERE time >= ? '
+                'AND currency LIKE ? GROUP BY time',
+                (from_ts, f'{NFT_DIRECTIVE}%'),
             )
             nft_values = {time: value for time, value in nft_balances}
 
@@ -2738,15 +2753,17 @@ class DBHandler:
         settings = self.get_settings()
 
         querystr = (
-            f'SELECT time, amount, usd_value, category FROM timed_balances '
-            f'WHERE time BETWEEN {from_ts} AND {to_ts} AND currency="{asset.identifier}"'
+            'SELECT time, amount, usd_value, category FROM timed_balances '
+            'WHERE time BETWEEN ? AND ? AND currency=?'
         )
+        bindings = [from_ts, to_ts, asset.identifier]
         if balance_type is not None:
-            querystr += f' AND category="{balance_type.serialize_for_db()}"'
+            querystr += ' AND category=?'
+            bindings.append(balance_type.serialize_for_db())
         querystr += ' ORDER BY time ASC;'
 
         cursor = self.conn.cursor()
-        results = cursor.execute(querystr)
+        results = cursor.execute(querystr, bindings)
         results = results.fetchall()
         balances = []
         results_length = len(results)
@@ -2950,10 +2967,10 @@ class DBHandler:
         """
         cursor = self.conn.cursor()
         results = cursor.execute(
-            f'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '  # pylint: disable=no-member  # noqa: E501
-            f'time=(SELECT MAX(time) from timed_balances) AND '
-            f'category="{BalanceType.ASSET.serialize_for_db()}" ORDER BY '
-            f'CAST(usd_value AS REAL) DESC;',
+            'SELECT time, currency, amount, usd_value, category FROM timed_balances WHERE '
+            'time=(SELECT MAX(time) from timed_balances) AND category = ? ORDER BY '
+            'CAST(usd_value AS REAL) DESC;',
+            (BalanceType.ASSET.serialize_for_db(),),  # pylint: disable=no-member
         )
         results = results.fetchall()
         asset_balances = []
@@ -3474,11 +3491,14 @@ class DBHandler:
         - DeserializationError if the location is not valid
         """
         # TODO: In the future this method should allow for more granularity in the delete query
-        query = 'DELETE FROM history_events WHERE location=?'
         cursor = self.conn.cursor()
-        cursor.execute(query, (location.serialize_for_db(),))
         cursor.execute(
-            f'DELETE FROM used_query_ranges WHERE name LIKE "{location}_history_events_%"',
+            'DELETE FROM history_events WHERE location=?',
+            (location.serialize_for_db(),),
+        )
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ?',
+            (f'{location}_history_events_%',),
         )
         self.update_last_write()
 

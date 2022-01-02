@@ -449,10 +449,12 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     # Firstly let's clear tables we can easily repopulate with new data
     cursor.execute('DELETE FROM amm_swaps;')
     cursor.execute(
-        f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_TRADES_PREFIX}%";',
+        'DELETE FROM used_query_ranges WHERE name LIKE ?',
+        (f'{BALANCER_TRADES_PREFIX}%',),
     )
     cursor.execute(
-        f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_TRADES_PREFIX}%";',
+        'DELETE FROM used_query_ranges WHERE name LIKE ?',
+        (f'{UNISWAP_TRADES_PREFIX}%',),
     )
     cursor.execute('DELETE FROM balancer_events;')
     have_balancer_pools = cursor.execute(
@@ -461,20 +463,25 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     if have_balancer_pools:
         cursor.execute('DELETE FROM balancer_pools;')
     cursor.execute(
-        f'DELETE FROM used_query_ranges WHERE name LIKE "{BALANCER_EVENTS_PREFIX}%";',
+        'DELETE FROM used_query_ranges WHERE name LIKE ?',
+        (f'{BALANCER_EVENTS_PREFIX}%',),
     )
     cursor.execute('DELETE FROM uniswap_events;')
     cursor.execute(
-        f'DELETE FROM used_query_ranges WHERE name LIKE "{UNISWAP_EVENTS_PREFIX}%";',
+        'DELETE FROM used_query_ranges WHERE name LIKE ?',
+        (f'{UNISWAP_EVENTS_PREFIX}%',),
     )
     cursor.execute('DELETE FROM adex_events;')
     cursor.execute(
-        f'DELETE FROM used_query_ranges WHERE name LIKE "{ADEX_EVENTS_PREFIX}%";',
+        'DELETE FROM used_query_ranges WHERE name LIKE ?', (f'{ADEX_EVENTS_PREFIX}%',),
     )
     cursor.execute('DELETE FROM aave_events;')
     cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
     cursor.execute('DELETE FROM yearn_vaults_events;')
-    cursor.execute(f'DELETE FROM used_query_ranges WHERE name LIKE "{YEARN_VAULTS_PREFIX}%";')
+    cursor.execute(
+        'DELETE FROM used_query_ranges WHERE name LIKE ?',
+        (f'{YEARN_VAULTS_PREFIX}%',),
+    )
     cursor.execute('DELETE FROM ethereum_accounts_details;')
     # Purge coinbase, coinbasepro exchange data
     cursor.execute('DELETE from trades where location IN ("G", "K");')

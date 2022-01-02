@@ -83,12 +83,13 @@ def upgrade_v22_to_v23(db: 'DBHandler') -> None:
     populated again with the right `fee_asset`.
     - Delete all cryptocompare price cache files. Move forex price cache to price_history directory
     """
-    settings = ('"thousand_separator"', '"decimal_separator"', '"currency_location"')
+    settings = ('thousand_separator', 'decimal_separator', 'currency_location')
     cursor = db.conn.cursor()
     # Get the settings and put them in a dict
     setting_value_map = dict(
         cursor.execute(
-            f'SELECT name, value FROM settings WHERE name IN ({",".join(settings)});',
+            'SELECT name, value FROM settings WHERE name IN (?, ?, ?)',
+            settings,
         ).fetchall(),
     )
     # If the settings exist, migrate them into the 'frontend_settings' entry
@@ -105,7 +106,7 @@ def upgrade_v22_to_v23(db: 'DBHandler') -> None:
             ('frontend_settings', json.dumps(setting_value_map)),
         )
     # Delete the settings
-    cursor.execute(f'DELETE FROM settings WHERE name IN ({",".join(settings)});')
+    cursor.execute('DELETE FROM settings WHERE name IN (?, ?, ?)', settings)
     # Delete Bitfinex used_query_ranges
     cursor.execute('DELETE FROM used_query_ranges WHERE name = "bitfinex_trades";')
     # Delete Bitfinex trades
