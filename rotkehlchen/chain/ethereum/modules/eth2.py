@@ -409,10 +409,9 @@ class Eth2(EthereumModule):
                 )
 
         if validator_index is not None and public_key is not None:
-            field = 'validator_index'
             valid_index = validator_index
             valid_pubkey = public_key
-            if dbeth2.validator_exists(field=field, arg=valid_index):
+            if dbeth2.validator_exists(field='validator_index', arg=valid_index):
                 raise InputError(f'Validator {valid_index} already exists in the DB')
         else:  # we are missing one of the 2
             if validator_index is None:

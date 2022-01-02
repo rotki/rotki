@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, List, Optional, Sequence
 
 from pysqlcipher3 import dbapi2 as sqlcipher
+from typing_extensions import Literal
 
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDailyStats
@@ -199,7 +200,11 @@ class DBEth2():
                 daily_stat.pnl = daily_stat.pnl * owned_proportion
         return daily_stats
 
-    def validator_exists(self, field: str, arg: Union[int, str]) -> bool:
+    def validator_exists(
+            self,
+            field: Literal['validator_index', 'public_key'],
+            arg: Union[int, str],
+    ) -> bool:
         cursor = self.db.conn.cursor()
         result = cursor.execute(f'SELECT COUNT(*) from eth2_validators WHERE {field}=?', (arg,))
         return result.fetchone()[0] == 1

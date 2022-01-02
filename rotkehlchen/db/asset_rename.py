@@ -19,7 +19,7 @@ def rename_asset_in_timed_balances_before_v21(
     """
 
     query = cursor.execute(
-        f'SELECT COUNT(*) FROM timed_balances WHERE currency="{to_name}"',
+        'SELECT COUNT(*) FROM timed_balances WHERE currency=?', (to_name,),
     )
     if query.fetchone()[0] == 0:
         # We are in luck, this means no possibility of merging so executemany
@@ -34,7 +34,8 @@ def rename_asset_in_timed_balances_before_v21(
     # from here and on treat merging of old and new named balances
     to_balances = []
     query = cursor.execute(
-        f'SELECT time, amount, usd_value FROM timed_balances WHERE currency="{to_name}"',
+        'SELECT time, amount, usd_value FROM timed_balances WHERE currency=?',
+        (to_name,),
     )
     for entry in query:
         to_balances.append((
@@ -45,7 +46,8 @@ def rename_asset_in_timed_balances_before_v21(
 
     from_balances = []
     query = cursor.execute(
-        f'SELECT time, amount, usd_value  FROM timed_balances WHERE currency="{from_name}"',  # noqa: E501
+        'SELECT time, amount, usd_value  FROM timed_balances WHERE currency=?',
+        (from_name,),
     )
     for entry in query:
         from_balances.append((
@@ -90,8 +92,8 @@ def rename_asset_in_timed_balances_before_v21(
         ))
 
     # now delete all the current DB entries
-    cursor.execute(f'DELETE FROM timed_balances WHERE currency="{from_name}"')
-    cursor.execute(f'DELETE FROM timed_balances WHERE currency="{to_name}"')
+    cursor.execute('DELETE FROM timed_balances WHERE currency=?', (from_name,))
+    cursor.execute('DELETE FROM timed_balances WHERE currency=?', (to_name,))
     # and replace with the final merged balances
     cursor.executemany(
         'INSERT INTO timed_balances(time, currency, amount, usd_value) VALUES (?, ?, ?, ?)',  # noqa: E501
