@@ -12,7 +12,7 @@ from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.csv_exporter import CSVExporter
-from rotkehlchen.db.cache_handler import DBAccountingReports
+from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import (
     NoPriceForGivenTimestamp,
