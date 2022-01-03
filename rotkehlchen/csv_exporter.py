@@ -23,7 +23,7 @@ from rotkehlchen.constants import (
     ZERO,
 )
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.cache_handler import DBAccountingReports
+from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter

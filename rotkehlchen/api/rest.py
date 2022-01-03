@@ -58,7 +58,6 @@ from rotkehlchen.constants.limits import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.db.cache_handler import DBAccountingReports
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -70,6 +69,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
+from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors import (

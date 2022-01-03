@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Sequence, Tuple, Union
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import DefiEvent
-from rotkehlchen.db.cache_handler import DBAccountingReports, ReportDataFilterQuery
+from rotkehlchen.db.reports import DBAccountingReports, ReportDataFilterQuery
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     MarginPosition,
