@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union, cast
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.accounting.structures import StakingEvent
 from rotkehlchen.chain.ethereum.graph import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
@@ -10,6 +11,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     ETHTransactionsFilterQuery,
+    HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     TradesFilterQuery,
 )
@@ -23,7 +25,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import EXTERNAL_LOCATION, EthereumTransaction, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.accounting import action_get_timestamp
-from rotkehlchen.utils.misc import timestamp_to_date
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures import DefiEvent
@@ -536,3 +538,24 @@ class EventsHistorian():
             defi_events,
             ledger_actions,
         )
+
+    def query_kraken_staking_events(
+            self,
+            filter_query: HistoryEventFilterQuery,
+            only_cache: bool,
+    ) -> List[StakingEvent]:
+        """Queries staking events for kraken.
+        If only_cache is given then only trades cached in the DB are returned.
+        No service is queried.
+        """
+        exchanges_list = self.exchange_manager.connected_exchanges.get(Location.KRAKEN)
+        if exchanges_list is None:
+            return []
+
+        if only_cache is not True:
+            for kraken_instance in exchanges_list:
+                kraken_instance.query_kraken_ledgers(start_ts=Timestamp(0), end_ts=ts_now())  # type: ignore  # noqa: E501
+
+        events_raw = self.db.get_history_events(filter_query)
+        events = [StakingEvent.from_history_base_entry(event) for event in events_raw]
+        return events

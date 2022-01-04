@@ -29,7 +29,7 @@ from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, KRAKEN_TS_MULTIPLIER
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import (
@@ -77,7 +77,6 @@ KRAKEN_PUBLIC_METHODS = ('AssetPairs', 'Assets')
 KRAKEN_QUERY_TRIES = 8
 KRAKEN_BACKOFF_DIVIDEND = 15
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
-KRAKEN_TS_MULTIPLIER = 10000  # Kraken TS is seconds float with up to 4 digits precision
 
 
 def kraken_to_world_pair(pair: str) -> Tuple[Asset, Asset]:
@@ -688,8 +687,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """
         with_errors = self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
-            from_ts=Timestamp(start_ts * KRAKEN_TS_MULTIPLIER),
-            to_ts=Timestamp(end_ts * KRAKEN_TS_MULTIPLIER),
+            from_ts=Timestamp(start_ts),
+            to_ts=Timestamp(end_ts),
             event_type=[
                 HistoryEventType.TRADE,
                 HistoryEventType.RECEIVE,
@@ -729,8 +728,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[AssetMovement]:
         self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
-            from_ts=Timestamp(start_ts * KRAKEN_TS_MULTIPLIER),
-            to_ts=Timestamp(end_ts * KRAKEN_TS_MULTIPLIER),
+            from_ts=Timestamp(start_ts),
+            to_ts=Timestamp(end_ts),
             event_type=[
                 HistoryEventType.DEPOSIT,
                 HistoryEventType.WITHDRAWAL,

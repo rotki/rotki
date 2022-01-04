@@ -63,6 +63,7 @@ from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
+    HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
@@ -3906,3 +3907,36 @@ class RestAPI():
             result=_wrap_in_ok_result([str(location) for location in locations]),
             status_code=HTTPStatus.OK,
         )
+
+    def _query_kraken_staking_events(
+        self,
+        only_cache: bool,
+        filter_query: HistoryEventFilterQuery,
+    ) -> Dict[str, Any]:
+        events = self.rotkehlchen.events_historian.query_kraken_staking_events(
+            filter_query=filter_query,
+            only_cache=only_cache,
+        )
+        return {'result': events, 'message': '', 'status_code': HTTPStatus.OK}
+
+    @require_loggedin_user()
+    def query_kraken_staking_events(
+            self,
+            filter_query: HistoryEventFilterQuery,
+            only_cache: bool,
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_query_kraken_staking_events',
+                only_cache=only_cache,
+                filter_query=filter_query,
+            )
+
+        response = self._query_kraken_staking_events(
+            only_cache=only_cache,
+            filter_query=filter_query,
+        )
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=status_code)

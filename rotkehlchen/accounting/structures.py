@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple
 
+from typing_extensions import Literal
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.crypto import sha3
@@ -406,3 +408,38 @@ class HistoryBaseEntry:
             str(event_subtype)
         )
         return sha3(hashable.encode()).hex()
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class StakingEvent:
+    event_type: Literal[
+        'staking_deposit_asset',
+        'staking_receive_asset',
+        'staking_remove_asset',
+        'receive',
+    ]
+    asset: Asset
+    balance: Balance
+    timestamp: Timestamp
+    location: Location
+
+    @classmethod
+    def from_history_base_entry(cls, event: HistoryBaseEntry) -> 'StakingEvent':
+        event_type = str(event.event_subtype) if event.event_subtype is not None else 'receive'
+        return StakingEvent(
+            event_type=event_type,  # type: ignore
+            asset=event.asset_balance.asset,
+            balance=event.asset_balance.balance,
+            timestamp=event.timestamp,
+            location=event.location,
+        )
+
+    def serialize(self) -> Dict[str, Any]:
+        data = {
+            'event_type': self.event_type,
+            'asset': self.asset.identifier,
+            'timestamp': self.timestamp,
+            'location': str(self.location),
+        }
+        balance = self.balance.serialize()
+        return {**data, **balance}

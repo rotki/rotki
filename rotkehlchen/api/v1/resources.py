@@ -86,6 +86,7 @@ from rotkehlchen.api.v1.encoding import (
     RequiredEthereumAddressSchema,
     SingleAssetIdentifierSchema,
     SingleFileSchema,
+    StakingQuerySchema,
     StatisticsAssetBalanceSchema,
     StatisticsNetValueSchema,
     StatisticsValueDistributionSchema,
@@ -2075,3 +2076,20 @@ class LimitsCounterResetResource(BaseResource):
     @use_kwargs(post_schema, location='view_args')
     def post(self, location: str) -> Response:
         return self.rest_api.reset_limits_counter(location)
+
+
+class StakingResource(BaseResource):
+    get_schema = StakingQuerySchema
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            only_cache: bool,
+            filter_query: StakingQuerySchema,
+    ) -> Response:
+        return self.rest_api.query_kraken_staking_events(
+            async_query=async_query,
+            only_cache=only_cache,
+            filter_query=filter_query,
+        )

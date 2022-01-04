@@ -22,7 +22,7 @@ from typing_extensions import Literal
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.accounting.structures import ActionType, BalanceType
+from rotkehlchen.accounting.structures import ActionType, BalanceType, HistoryEventType
 from rotkehlchen.accounting.typing import SchemaEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetType
@@ -50,6 +50,7 @@ from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
+    HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
@@ -1059,6 +1060,43 @@ class TradesQuerySchema(
             quote_asset=data['quote_asset'],
             trade_type=[data['trade_type']] if data['trade_type'] is not None else None,
             location=data['location'],
+        )
+        return {
+            'async_query': data['async_query'],
+            'only_cache': data['only_cache'],
+            'filter_query': filter_query,
+        }
+
+
+class StakingQuerySchema(
+    AsyncQueryArgumentSchema,
+    OnlyCacheQuerySchema,
+    DBPaginationSchema,
+    DBOrderBySchema,
+):
+    location = LocationField(load_default=None)
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+
+    @post_load
+    def make_trades_query(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
+        filter_query = HistoryEventFilterQuery.make(
+            order_by_attribute=order_by_attribute,
+            order_ascending=data['ascending'],
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            location=data['location'],
+            event_type=[
+                HistoryEventType.STAKING,
+                HistoryEventType.UNSTAKING,
+            ],
         )
         return {
             'async_query': data['async_query'],

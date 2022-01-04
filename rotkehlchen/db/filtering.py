@@ -8,6 +8,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.typing import SchemaEventType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
@@ -673,6 +674,12 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             filters.append(
                 DBStringFilter(and_op=True, column='location_label', value=location_label),
             )
+
+        if location == Location.KRAKEN:
+            if from_ts is not None:
+                from_ts = Timestamp(from_ts * KRAKEN_TS_MULTIPLIER)
+            if to_ts is not None:
+                to_ts = Timestamp(to_ts * KRAKEN_TS_MULTIPLIER)
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,

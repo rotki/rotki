@@ -1165,3 +1165,76 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
     assert some_pairs.issubset(result)
     assert 'FTTBNB' not in result
     assert binance_pairs_num > binanceus_pairs_num
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
+def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
+    """Test that the binance endpoint returns some market pairs"""
+    server = rotkehlchen_api_server_with_exchanges
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    input_ledger = """
+    {
+    "ledger":{
+        "AAA": {
+            "refid": "XXXXXX",
+            "time": 1640493374.4008,
+            "type": "staking",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "ETH2",
+            "amount": "0.0000538620",
+            "fee": "0.0000000000",
+            "balance": "0.0003349820"
+        },
+        "BBB": {
+            "refid": "YYYYYYYY",
+            "time": 1636740198.9674,
+            "type": "transfer",
+            "subtype": "stakingfromspot",
+            "aclass": "currency",
+            "asset": "ETH2.S",
+            "amount": "0.0600000000",
+            "fee": "0.0000000000",
+            "balance": "0.0600000000"
+        },
+        "CCC": {
+            "refid": "ZZZZZZZZZ",
+            "time": 1636738550.7562,
+            "type": "transfer",
+            "subtype": "spottostaking",
+            "aclass": "currency",
+            "asset": "XETH",
+            "amount": "-0.0600000000",
+            "fee": "0.0000000000",
+            "balance": "0.0250477300"
+        }
+    },
+    "count": 3
+    }
+    """
+    rotki.data.db.purge_exchange_data(Location.KRAKEN)
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
+    kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    kraken.random_ledgers_data = False
+    with patch(target, new=input_ledger):
+        kraken.query_kraken_ledgers(
+            start_ts=1408994442,
+            end_ts=1736738550,
+        )
+
+    response = requests.get(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        params={'location': Location.KRAKEN},
+    )
+
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 3
+    assert result[0]['event_type'] == 'receive'
+    assert result[1]['event_type'] == 'staking receive asset'
+    assert result[2]['event_type'] == 'staking deposit asset'
+    assert result[0]['asset'] == 'ETH2'
+    assert result[1]['asset'] == 'ETH2'
+    assert result[2]['asset'] == 'ETH'

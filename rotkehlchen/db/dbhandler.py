@@ -3504,8 +3504,7 @@ class DBHandler:
 
     def get_history_events(self, filter_query: HistoryEventFilterQuery) -> List[HistoryBaseEntry]:
         """
-        Get history events using the provided query filter. May raise:
-        - DeserializationError
+        Get history events using the provided query filter
         """
         query, bindings = filter_query.prepare()
         query = 'SELECT * FROM history_events ' + query
