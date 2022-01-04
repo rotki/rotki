@@ -38,14 +38,14 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
       - name: npm cache persistence
         uses: actions/cache@v2
         with:
           path: |
             ~/.npm
             ~/cache/Cypress
-          key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
+          key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
       - name: Setup SQLCipher
         run: |
           sudo apt-get update
@@ -83,7 +83,7 @@ jobs:
     environment: macos_sign
     strategy:
       matrix:
-        os: [ macos-latest ]
+        os: [ macos-10.15 ]
         python-version: [ 3.7 ]
         node-version: [ 14.x ]
     runs-on: ${{ matrix.os }}
@@ -101,14 +101,14 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/Library/Caches/pip
-          key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
       - name: npm cache persistence
         uses: actions/cache@v2
         with:
           path: |
             ~/.npm
             ~/Library/Caches/Cypress
-          key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
+          key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
       - name: Setup SQLCipher
         run: |
           cd "$(brew --repo homebrew/core)"
@@ -175,7 +175,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~\AppData\Local\pip\Cache
-          key: ${{ runner.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ matrix.os }}-pip-packaging-${{ hashFiles('**/requirements.txt') }}
       - name: Get npm cache directory
         id: npm-cache
         run: |
@@ -186,14 +186,14 @@ jobs:
           path: |
             ${{ steps.npm-cache.outputs.dir }}
             ~\AppData\Local\Cypress
-          key: ${{ runner.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
+          key: ${{ matrix.os }}-node--packaging-${{ hashFiles('**/app/package-lock.json') }}
       - name: Persist Build Dependencies
         uses: actions/cache@v2
         with:
           path: |
             ~\${{ env.BUILD_DEPENDENCIES }}\
             ~\AppData\Local\Temp\chocolatey\
-          key: ${{ runner.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
+          key: ${{ matrix.os }}-build-dependencies-${{ env.SQLCIPHER_VERSION }}-${{ env.PYSQLCIPHER3_VERSION }}
       - name: Build rotki
         id: packaging
         run: |

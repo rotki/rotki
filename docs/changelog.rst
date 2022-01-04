@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :bug:`-` Restores arm64 docker images.
+* :bug:`3903` The application should now run on macOS 10.14 (Mojave) without errors.
+
 * :release:`1.23.0 <2021-12-31>`
 * :feature:`3324` Users will be able to set the percentage of ownership for jointly held eth2 validators.
 * :feature:`3425` Users will be able to enter multiple pairs at once for binance exchange settings.

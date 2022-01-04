@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-18.04, macos-latest ]
+        os: [ ubuntu-18.04, macos-10.15 ]
         python-version: [ 3.7 ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -27,7 +27,7 @@ jobs:
             ./install_deps.sh
             sudo ldconfig
           fi
-          if [ ${{ matrix.os }} == 'macos-latest' ];
+          if [ ${{ matrix.os }} == 'macos-10.15' ];
           then
             brew install sqlcipher
           fi
@@ -61,7 +61,7 @@ jobs:
       - name: Run Test
         run: |
           COVERAGE_ARGS='--cov=./'
-          if [ ${{ matrix.os }} == 'macos-latest' ];
+          if [ ${{ matrix.os }} == 'macos-10.15' ];
           then
             COVERAGE_ARGS=''
           fi
