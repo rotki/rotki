@@ -1,7 +1,7 @@
 import { computed, getCurrentInstance } from '@vue/composition-api';
 import { Section, Status } from '@/store/const';
-import { Message } from '@/store/types';
-import { useStore } from '@/store/utils';
+import { useMainStore } from '@/store/store';
+import { getStatus } from '@/store/utils';
 import { assert } from '@/utils/assertions';
 
 export const useProxy = () => {
@@ -43,11 +43,9 @@ export const setupThemeCheck = () => {
 };
 
 export const setupStatusChecking = () => {
-  const store = useStore();
-
   const isSectionRefreshing = (section: Section) =>
     computed(() => {
-      const status = store.getters['status'](section);
+      const status = getStatus(section);
       return (
         status === Status.LOADING ||
         status === Status.REFRESHING ||
@@ -57,7 +55,7 @@ export const setupStatusChecking = () => {
 
   const shouldShowLoadingScreen = (section: Section) => {
     return computed(() => {
-      const status = store.getters['status'](section);
+      const status = getStatus(section);
       return (
         status !== Status.LOADED &&
         status !== Status.PARTIALLY_LOADED &&
@@ -72,18 +70,14 @@ export const setupStatusChecking = () => {
 };
 
 export const isSectionLoading = (section: Section) => {
-  const store = useStore();
   return computed(() => {
-    const status = store.getters['status'](section);
+    const status = getStatus(section);
     return status !== Status.LOADED && status !== Status.PARTIALLY_LOADED;
   });
 };
 
 export const setupMessages = () => {
-  const store = useStore();
-  const setMessage = async (message: Message) => {
-    await store.dispatch('setMessage', message);
-  };
+  const { setMessage } = useMainStore();
   return {
     setMessage
   };

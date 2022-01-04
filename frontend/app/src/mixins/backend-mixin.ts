@@ -1,5 +1,6 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { BackendOptions } from '@/electron-main/ipc';
+import { useMainStore } from '@/store/store';
 import { Writeable } from '@/types';
 import { CRITICAL, DEBUG, ERROR, Level, LOG_LEVEL } from '@/utils/log-level';
 import { logger } from '@/utils/logging';
@@ -50,9 +51,10 @@ export default class BackendMixin extends Vue {
   }
 
   async restartBackendWithOptions(options: Partial<BackendOptions>) {
-    await this.$store.commit('setConnected', false);
+    const { setConnected, connect } = useMainStore();
+    await setConnected(false);
     await this.$interop.restartBackend(options);
-    await this.$store.dispatch('connect');
+    await connect();
   }
 
   async mounted() {

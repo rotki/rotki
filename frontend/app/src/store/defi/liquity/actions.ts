@@ -72,9 +72,9 @@ export const actions: ActionTree<LiquityState, RotkehlchenState> = {
       }
     });
   },
-  async purge({ commit, rootGetters: { status } }) {
+  async purge({ commit }) {
     function resetStatus(section: Section) {
-      setStatus(Status.NONE, section, status, commit);
+      setStatus(Status.NONE, section);
     }
 
     commit(LiquityMutations.SET_BALANCES, {});
@@ -140,9 +140,9 @@ export const actions: ActionTree<LiquityState, RotkehlchenState> = {
       }
     });
   },
-  async clearStaking({ commit, rootGetters: { status } }) {
+  async clearStaking({ commit }) {
     function resetStatus(section: Section) {
-      setStatus(Status.NONE, section, status, commit);
+      setStatus(Status.NONE, section);
     }
 
     commit(LiquityMutations.SET_STAKING, {});

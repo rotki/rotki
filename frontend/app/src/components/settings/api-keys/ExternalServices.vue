@@ -133,7 +133,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import { Message } from '@/store/types';
+import { useMainStore } from '@/store/store';
 import { Module } from '@/types/modules';
 import {
   ExternalServiceKey,
@@ -188,6 +188,7 @@ export default class ExternalServices extends Vue {
   }
 
   async save(serviceName: ExternalServiceName, key: string) {
+    const { setMessage } = useMainStore();
     const keys: ExternalServiceKey[] = [
       { name: serviceName, apiKey: key.trim() }
     ];
@@ -195,23 +196,24 @@ export default class ExternalServices extends Vue {
     try {
       this.loading = true;
       this.updateKeys(await this.$api.setExternalServices(keys));
-      this.$store.commit('setMessage', {
+      setMessage({
         title: this.$t('external_services.set.success.title').toString(),
         description: this.$t('external_services.set.success.message', {
           serviceName
         }).toString(),
         success: true
-      } as Message);
+      });
       if (serviceName === 'loopring') {
         await this.fetchLoopringBalances(true);
       }
     } catch (e: any) {
-      this.$store.commit('setMessage', {
+      setMessage({
         title: this.$t('external_services.set.error.title').toString(),
         description: this.$t('external_services.set.error.message', {
           error: e.message
-        }).toString()
-      } as Message);
+        }).toString(),
+        success: false
+      });
     }
     this.loading = false;
   }
@@ -225,18 +227,20 @@ export default class ExternalServices extends Vue {
     if (!this.serviceToDelete) {
       return;
     }
+    const { setMessage } = useMainStore();
     try {
       this.loading = true;
       this.updateKeys(
         await this.$api.deleteExternalServices(this.serviceToDelete)
       );
     } catch (e: any) {
-      this.$store.commit('setMessage', {
+      setMessage({
         title: this.$t('external_services.delete_error.title').toString(),
         description: this.$t('external_services.delete_error.description', {
           message: e.message
-        }).toString()
-      } as Message);
+        }).toString(),
+        success: false
+      });
     }
     this.loading = false;
     this.serviceToDelete = '';

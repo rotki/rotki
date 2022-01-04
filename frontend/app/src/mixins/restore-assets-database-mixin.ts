@@ -3,6 +3,7 @@ import { mapActions } from 'vuex';
 import BackendMixin from '@/mixins/backend-mixin';
 import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
+import { useMainStore } from '@/store/store';
 
 @Component({
   methods: {
@@ -50,12 +51,13 @@ export default class RestoreAssetsDatabaseMixin extends Mixins(BackendMixin) {
   }
 
   async updateComplete() {
+    const { connect, setConnected } = useMainStore();
     await this.logout();
-    this.$store.commit('setConnected', false);
+    setConnected(false);
     if (this.$interop.isPackaged) {
       await this.restartBackend();
     }
-    await this.$store.dispatch('connect');
+    await connect();
   }
 
   async confirmHardReset() {

@@ -81,8 +81,9 @@
 </template>
 
 <script lang="ts">
+import { mapState as mapPiniaState } from 'pinia';
 import { Component, Emit, Mixins, Prop, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
+import { mapActions, mapState } from 'vuex';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';
@@ -97,6 +98,7 @@ import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
 import BackendMixin from '@/mixins/backend-mixin';
 import { SyncConflict } from '@/store/session/types';
+import { useMainStore } from '@/store/store';
 import { ActionStatus, Message } from '@/store/types';
 import { CreateAccountPayload, LoginCredentials } from '@/types/login';
 
@@ -111,14 +113,18 @@ import { CreateAccountPayload, LoginCredentials } from '@/types/login';
     CreateAccount
   },
   computed: {
-    ...mapState(['connectionFailure', 'newUser']),
-    ...mapState('session', ['syncConflict', 'premium']),
-    ...mapState(['message', 'connected']),
-    ...mapGetters(['updateNeeded', 'message'])
+    ...mapPiniaState(useMainStore, [
+      'connectionFailure',
+      'newUser',
+      'message',
+      'connected',
+      'updateNeeded'
+    ]),
+    ...mapState('session', ['syncConflict', 'premium'])
   },
   methods: {
     ...mapActions('session', ['login', 'createAccount']),
-    ...mapMutations(['setMessage'])
+    ...mapPiniaState(useMainStore, ['setMessage', 'setConnected', 'connect'])
   }
 })
 export default class AccountManagement extends Mixins(BackendMixin) {
@@ -132,6 +138,8 @@ export default class AccountManagement extends Mixins(BackendMixin) {
   login!: (payload: LoginCredentials) => Promise<ActionStatus>;
   createAccount!: (payload: CreateAccountPayload) => Promise<ActionStatus>;
   setMessage!: (message: Message) => void;
+  setConnected!: (isConnected: boolean) => void;
+  connect!: (url?: string | null) => Promise<void>;
   errors: string[] = [];
   accountCreationError: string = '';
 
@@ -199,11 +207,11 @@ export default class AccountManagement extends Mixins(BackendMixin) {
   }
 
   async backendChanged(url: string | null) {
-    await this.$store.commit('setConnected', false);
+    this.setConnected(false);
     if (!url) {
       await this.restartBackend();
     }
-    await this.$store.dispatch('connect', url);
+    await this.connect(url);
   }
 
   async userLogin(credentials: LoginCredentials) {

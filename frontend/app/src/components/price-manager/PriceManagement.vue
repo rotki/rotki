@@ -55,15 +55,13 @@
 
 <script lang="ts">
 import { defineComponent, reactive, Ref, ref } from '@vue/composition-api';
-import { Store } from 'vuex';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceForm from '@/components/price-manager/PriceFrom.vue';
 import PriceTable from '@/components/price-manager/PriceTable.vue';
 import i18n from '@/i18n';
 import { HistoricalPrice } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
-import { Message, RotkehlchenState } from '@/store/types';
-import { useStore } from '@/store/utils';
+import { useMainStore } from '@/store/store';
 import { Nullable } from '@/types';
 import { Zero } from '@/utils/bignumbers';
 
@@ -74,11 +72,8 @@ const emptyPrice: () => HistoricalPrice = () => ({
   timestamp: 0
 });
 
-const managePrice = (
-  showForm: Ref<Boolean>,
-  refresh: Ref<Boolean>,
-  store: Store<RotkehlchenState>
-) => {
+const managePrice = (showForm: Ref<Boolean>, refresh: Ref<Boolean>) => {
+  const { setMessage } = useMainStore();
   const managePrice = async (price: HistoricalPrice, edit: boolean) => {
     try {
       if (edit) {
@@ -99,12 +94,11 @@ const managePrice = (
       const description = edit
         ? i18n.t('price_management.edit.error.description', values)
         : i18n.t('price_management.add.error.description', values);
-      const message: Message = {
+      setMessage({
         title: title.toString(),
         description: description.toString(),
         success: false
-      };
-      store.commit('setMessage', message);
+      });
     }
   };
 
@@ -117,7 +111,6 @@ export default defineComponent({
   name: 'PriceManagement',
   components: { PriceTable, PriceForm, BigDialog },
   setup() {
-    const store = useStore();
     const refresh = ref(false);
     const price = ref(emptyPrice());
     const showForm = ref(false);
@@ -149,7 +142,7 @@ export default defineComponent({
     };
 
     return {
-      ...managePrice(showForm, refresh, store),
+      ...managePrice(showForm, refresh),
       refresh,
       filter,
       openForm,

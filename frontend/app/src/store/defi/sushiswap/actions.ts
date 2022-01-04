@@ -108,9 +108,9 @@ export const actions: ActionTree<SushiswapState, RotkehlchenState> = {
       root: true
     });
   },
-  async purge({ commit, rootGetters: { status } }) {
+  async purge({ commit }) {
     function resetStatus(section: Section) {
-      setStatus(Status.NONE, section, status, commit);
+      setStatus(Status.NONE, section);
     }
 
     commit(SushiswapMutations.SET_BALANCES, {});

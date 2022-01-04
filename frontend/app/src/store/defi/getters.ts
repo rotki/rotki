@@ -84,7 +84,7 @@ import { useHistory } from '@/store/history';
 import { SettingsState } from '@/store/settings/state';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
-import { filterAddresses } from '@/store/utils';
+import { filterAddresses, getStatus } from '@/store/utils';
 import { Writeable } from '@/types';
 import { assert } from '@/utils/assertions';
 import { Zero } from '@/utils/bignumbers';
@@ -1123,12 +1123,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       return sortBy(defiLendingHistory, 'timestamp').reverse();
     },
 
-  defiOverview: (
-    { allProtocols },
-    { loanSummary, totalLendingDeposit },
-    _,
-    { status }
-  ) => {
+  defiOverview: ({ allProtocols }, { loanSummary, totalLendingDeposit }, _) => {
     function shouldDisplay(summary: DefiProtocolSummary) {
       const lending = summary.totalLendingDepositUsd.gt(0);
       const debt = summary.totalDebtUsd.gt(0);
@@ -1144,7 +1139,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       noLiabilities?: boolean,
       noDeposits?: boolean
     ): DefiProtocolSummary | undefined => {
-      const currentStatus = status(section);
+      const currentStatus = getStatus(section);
       if (
         currentStatus !== Status.LOADED &&
         currentStatus !== Status.REFRESHING
@@ -1293,7 +1288,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
     }
 
-    const overviewStatus = status(Section.DEFI_OVERVIEW);
+    const overviewStatus = getStatus(Section.DEFI_OVERVIEW);
     if (
       overviewStatus === Status.LOADED ||
       overviewStatus === Status.REFRESHING

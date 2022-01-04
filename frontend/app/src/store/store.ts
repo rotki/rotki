@@ -1,7 +1,8 @@
-﻿import Vue from 'vue';
+﻿import { computed, ref, unref } from '@vue/composition-api';
+import { acceptHMRUpdate, defineStore } from 'pinia';
+import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
-import { BackendVersion } from '@/services/types-api';
 import { assets } from '@/store/assets';
 import { balances } from '@/store/balances';
 import { defiSections, Section, Status } from '@/store/const';
@@ -19,10 +20,175 @@ import {
 } from '@/store/types';
 import { isLoading } from '@/store/utils';
 import { Nullable } from '@/types';
+import { logger } from '@/utils/logging';
 
 Vue.use(Vuex);
 
 let intervalId: any = null;
+
+export const useMainStore = defineStore('main', () => {
+  const newUser = ref(false);
+  const message = ref(emptyMessage());
+  const version = ref(defaultVersion());
+  const connected = ref(false);
+  const connectionFailure = ref(false);
+  const status = ref<Partial<Record<Section, Status>>>({});
+  const dataDirectory = ref('');
+
+  const updateNeeded = computed(() => {
+    const { version: appVersion, downloadUrl } = version.value;
+    return appVersion.indexOf('dev') >= 0 ? false : !!downloadUrl;
+  });
+
+  const detailsLoading = computed(() => {
+    return (
+      isLoading(unref(getStatus(Section.BLOCKCHAIN_ETH))) ||
+      isLoading(unref(getStatus(Section.BLOCKCHAIN_BTC))) ||
+      isLoading(unref(getStatus(Section.BLOCKCHAIN_KSM))) ||
+      isLoading(unref(getStatus(Section.BLOCKCHAIN_AVAX))) ||
+      isLoading(unref(getStatus(Section.EXCHANGES))) ||
+      isLoading(unref(getStatus(Section.MANUAL_BALANCES)))
+    );
+  });
+
+  const showMessage = computed(() => message.value.title.length > 0);
+
+  const appVersion = computed(() => {
+    const { version: appVersion } = version.value;
+    const indexOfDev = appVersion.indexOf('dev');
+    return indexOfDev > 0
+      ? appVersion.substring(0, indexOfDev + 3)
+      : appVersion;
+  });
+
+  const getVersion = async (): Promise<void> => {
+    const { version: appVersion, dataDirectory: appDataDirectory } =
+      await api.info();
+    if (appVersion) {
+      version.value = {
+        version: appVersion.ourVersion || '',
+        latestVersion: appVersion.latestVersion || '',
+        downloadUrl: appVersion.downloadUrl || ''
+      };
+      dataDirectory.value = appDataDirectory;
+    }
+  };
+
+  const connect = async (payload?: string): Promise<void> => {
+    let count = 0;
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
+
+    function updateApi(payload?: Nullable<string>) {
+      const interopServerUrl = window.interop?.serverUrl();
+      let backend = process.env.VUE_APP_BACKEND_URL!;
+      if (payload) {
+        backend = payload;
+      } else if (interopServerUrl) {
+        backend = interopServerUrl;
+      }
+      api.setup(backend);
+    }
+
+    const attemptConnect = async function () {
+      try {
+        updateApi(payload);
+
+        const isConnected = !!(await api.ping());
+        if (isConnected) {
+          const accounts = await api.users();
+          if (accounts.length === 0) {
+            newUser.value = true;
+          }
+          clearInterval(intervalId);
+          connected.value = isConnected;
+
+          await getVersion();
+        }
+      } catch (e: any) {
+        logger.error(e);
+      } finally {
+        count++;
+        if (count > 20) {
+          clearInterval(intervalId);
+          connectionFailure.value = true;
+        }
+      }
+    };
+    intervalId = setInterval(attemptConnect, 2000);
+    connectionFailure.value = false;
+  };
+
+  const setMessage = (msg: Message = emptyMessage()) => {
+    message.value = msg;
+  };
+
+  const resetDefiStatus = () => {
+    const newStatus = Status.NONE;
+    defiSections.forEach(section => {
+      status.value[section] = newStatus;
+    });
+  };
+
+  const setStatus = ({ section, status: newStatus }: StatusPayload) => {
+    const statuses = status.value;
+    if (statuses[section] === newStatus) {
+      return;
+    }
+    status.value = { ...statuses, [section]: newStatus };
+  };
+
+  const getStatus = (section: Section) =>
+    computed<Status>(() => {
+      return status.value[section] ?? Status.NONE;
+    });
+
+  const setConnected = (isConnected: boolean) => {
+    connected.value = isConnected;
+  };
+
+  const setNewUser = (isNew: boolean) => {
+    newUser.value = isNew;
+  };
+
+  const setConnectionFailure = (failed: boolean) => {
+    connectionFailure.value = failed;
+  };
+
+  const reset = () => {
+    newUser.value = false;
+    message.value = emptyMessage();
+    version.value = defaultVersion();
+    connectionFailure.value = false;
+    status.value = {};
+    dataDirectory.value = '';
+  };
+
+  return {
+    newUser,
+    message,
+    version,
+    appVersion,
+    connected,
+    connectionFailure,
+    status,
+    dataDirectory,
+    updateNeeded,
+    detailsLoading,
+    showMessage,
+    connect,
+    getVersion,
+    setMessage,
+    setStatus,
+    getStatus,
+    setConnected,
+    setConnectionFailure,
+    setNewUser,
+    resetDefiStatus,
+    reset
+  };
+});
 
 const emptyMessage = (): Message => ({
   title: '',
@@ -37,151 +203,7 @@ const defaultVersion = () =>
     downloadUrl: ''
   } as Version);
 
-const defaultState = (): RotkehlchenState => ({
-  newUser: false,
-  message: emptyMessage(),
-  version: defaultVersion(),
-  connected: false,
-  connectionFailure: false,
-  status: {},
-  dataDirectory: ''
-});
-
 const store: StoreOptions<RotkehlchenState> = {
-  state: defaultState(),
-  mutations: {
-    setMessage: (state: RotkehlchenState, message: Message) => {
-      state.message = message;
-    },
-    resetMessage: (state: RotkehlchenState) => {
-      state.message = emptyMessage();
-    },
-    versions: (state: RotkehlchenState, version: BackendVersion) => {
-      state.version = {
-        version: version.ourVersion || '',
-        latestVersion: version.latestVersion || '',
-        downloadUrl: version.downloadUrl || ''
-      };
-    },
-    dataDirectory(state: RotkehlchenState, directory: string) {
-      state.dataDirectory = directory;
-    },
-    setConnected: (state: RotkehlchenState, connected: boolean) => {
-      state.connected = connected;
-    },
-    setStatus: (state: RotkehlchenState, status: StatusPayload) => {
-      state.status = { ...state.status, [status.section]: status.status };
-    },
-    connectionFailure: (
-      state: RotkehlchenState,
-      connectionFailure: boolean
-    ) => {
-      state.connectionFailure = connectionFailure;
-    },
-    newUser: (state: RotkehlchenState, newUser: boolean) => {
-      state.newUser = newUser;
-    },
-    reset: (state: RotkehlchenState) => {
-      Object.assign(state, defaultState(), {
-        version: state.version,
-        connected: state.connected
-      });
-    }
-  },
-  actions: {
-    async version({ commit }): Promise<void> {
-      const { version, dataDirectory } = await api.info();
-      if (version) {
-        commit('versions', version);
-        commit('dataDirectory', dataDirectory);
-      }
-    },
-    async connect({ commit, dispatch }, payload: string | null): Promise<void> {
-      let count = 0;
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-
-      function updateApi(payload?: Nullable<string>) {
-        const interopServerUrl = window.interop?.serverUrl();
-        let backend = process.env.VUE_APP_BACKEND_URL!;
-        if (payload) {
-          backend = payload;
-        } else if (interopServerUrl) {
-          backend = interopServerUrl;
-        }
-        api.setup(backend);
-      }
-
-      const attemptConnect = async function () {
-        try {
-          updateApi(payload);
-
-          const connected = await api.ping();
-          if (connected) {
-            const accounts = await api.users();
-            if (accounts.length === 0) {
-              commit('newUser', true);
-            }
-            clearInterval(intervalId);
-            commit('setConnected', connected);
-            await dispatch('version');
-          }
-          // eslint-disable-next-line no-empty
-        } catch (e: any) {
-        } finally {
-          count++;
-          if (count > 20) {
-            clearInterval(intervalId);
-            commit('connectionFailure', true);
-          }
-        }
-      };
-      intervalId = setInterval(attemptConnect, 2000);
-      commit('connectionFailure', false);
-    },
-    async resetDefiStatus({ commit }): Promise<void> {
-      const status = Status.NONE;
-      defiSections.forEach(section => {
-        commit('setStatus', {
-          status,
-          section
-        });
-      });
-    },
-    async setMessage({ commit }, message: Message) {
-      commit('setMessage', message);
-    }
-  },
-  getters: {
-    updateNeeded: (state: RotkehlchenState) => {
-      const { version, downloadUrl } = state.version;
-      return version.indexOf('dev') >= 0 ? false : !!downloadUrl;
-    },
-    version: (state: RotkehlchenState) => {
-      const { version } = state.version;
-      const indexOfDev = version.indexOf('dev');
-      return indexOfDev > 0 ? version.substring(0, indexOfDev + 3) : version;
-    },
-    message: (state: RotkehlchenState) => {
-      return state.message.title.length > 0;
-    },
-    status:
-      (state: RotkehlchenState) =>
-      (section: Section): Status => {
-        return state.status[section] ?? Status.NONE;
-      },
-    detailsLoading: (state: RotkehlchenState) => {
-      return (
-        isLoading(state.status[Section.BLOCKCHAIN_ETH]) ||
-        isLoading(state.status[Section.BLOCKCHAIN_BTC]) ||
-        isLoading(state.status[Section.BLOCKCHAIN_KSM]) ||
-        isLoading(state.status[Section.BLOCKCHAIN_AVAX]) ||
-        isLoading(state.status[Section.EXCHANGES]) ||
-        isLoading(state.status[Section.MANUAL_BALANCES])
-      );
-    }
-  },
   modules: {
     balances,
     defi,
@@ -194,3 +216,7 @@ const store: StoreOptions<RotkehlchenState> = {
   plugins: storePlugins()
 };
 export default new Vuex.Store(store);
+
+if (module.hot) {
+  module.hot.accept(acceptHMRUpdate(useMainStore, module.hot));
+}

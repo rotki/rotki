@@ -121,6 +121,7 @@ import {
   AssetUpdateCheckResult,
   AssetUpdateConflictResult
 } from '@/store/assets/types';
+import { useMainStore } from '@/store/store';
 
 const SKIP_ASSET_DB_VERSION = 'rotki_skip_asset_db_version';
 
@@ -230,11 +231,12 @@ export default class AssetUpdate extends Mixins(BackendMixin) {
 
   async updateComplete() {
     await this.logout();
-    this.$store.commit('setConnected', false);
+    const { connect, setConnected } = useMainStore();
+    setConnected(false);
     if (this.$interop.isPackaged) {
       await this.restartBackend();
     }
-    await this.$store.dispatch('connect');
+    await connect();
   }
 }
 </script>

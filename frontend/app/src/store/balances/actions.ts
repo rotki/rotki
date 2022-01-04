@@ -44,14 +44,11 @@ import { Section, Status } from '@/store/const';
 import { useHistory } from '@/store/history';
 import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
+import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
+import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
 import {
-  ActionStatus,
-  Message,
-  RotkehlchenState,
-  StatusPayload
-} from '@/store/types';
-import {
+  getStatus,
   getStatusUpdater,
   isLoading,
   setStatus,
@@ -163,11 +160,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async fetchExchangeBalances(
-    { commit, rootGetters },
+    { commit },
     payload: ExchangeBalancePayload
   ): Promise<void> {
     const { location, ignoreCache } = payload;
-    const status = rootGetters['status'];
     const taskType = TaskType.QUERY_EXCHANGE_BALANCES;
 
     const { awaitTask, isTaskRunning, metadata } = useTasks();
@@ -177,11 +173,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       return;
     }
 
-    const currentStatus: Status = status(Section.EXCHANGES);
+    const currentStatus: Status = getStatus(Section.EXCHANGES);
     const section = Section.EXCHANGES;
     const newStatus =
       currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
 
     try {
       const { taskId } = await api.queryExchangeBalances(location, ignoreCache);
@@ -225,7 +221,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         display: true
       });
     } finally {
-      setStatus(Status.LOADED, section, status, commit);
+      setStatus(Status.LOADED, section);
     }
   },
   async fetchExchangeRates({ commit }): Promise<void> {
@@ -261,7 +257,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
   async fetchBlockchainBalances(
-    { commit, rootGetters: { status }, dispatch },
+    { dispatch },
     payload: BlockchainBalancePayload = {
       ignoreCache: false
     }
@@ -280,7 +276,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       chain: Blockchain
     ) => {
       const section = chainSection[chain];
-      const currentStatus = status(section);
+      const currentStatus = getStatus(section);
 
       if (isLoading(currentStatus)) {
         return;
@@ -288,7 +284,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       const newStatus =
         currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
-      setStatus(newStatus, section, status, commit);
+      setStatus(newStatus, section);
 
       const { taskId } = await api.balances.queryBlockchainBalances(
         ignoreCache,
@@ -313,7 +309,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         chain,
         balances
       });
-      setStatus(Status.LOADED, section, status, commit);
+      setStatus(Status.LOADED, section);
     };
     try {
       await Promise.all(chains.map(fetch));
@@ -890,13 +886,13 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async fetchManualBalances({ commit, rootGetters: { status } }) {
+  async fetchManualBalances({ commit }) {
     const { awaitTask } = useTasks();
-    const currentStatus: Status = status(Section.MANUAL_BALANCES);
+    const currentStatus: Status = getStatus(Section.MANUAL_BALANCES);
     const section = Section.MANUAL_BALANCES;
     const newStatus =
       currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
 
     try {
       const taskType = TaskType.MANUAL_BALANCES;
@@ -925,7 +921,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         display: true
       });
     } finally {
-      setStatus(Status.LOADED, section, status, commit);
+      setStatus(Status.LOADED, section);
     }
   },
 
@@ -1239,28 +1235,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async refreshPrices(
-    { commit, dispatch, state },
+    { dispatch, state },
     payload: FetchPricePayload
   ): Promise<void> {
-    commit(
-      'setStatus',
-      {
-        section: Section.PRICES,
-        status: Status.LOADING
-      } as StatusPayload,
-      { root: true }
-    );
+    setStatus(Status.LOADING, Section.PRICES);
     await dispatch('fetchExchangeRates');
     await dispatch('fetchPrices', payload);
     await dispatch('updatePrices', state.prices);
-    commit(
-      'setStatus',
-      {
-        section: Section.PRICES,
-        status: Status.LOADED
-      } as StatusPayload,
-      { root: true }
-    );
+    setStatus(Status.LOADED, Section.PRICES);
   },
 
   async createOracleCache(
@@ -1360,7 +1342,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async fetchLoopringBalances(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     refresh: boolean
   ) {
     const { activeModules } = session!.generalSettings;
@@ -1369,7 +1351,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
 
     const section = Section.L2_LOOPRING_BALANCES;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -1379,7 +1361,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.L2_LOOPRING;
@@ -1406,7 +1388,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
   async fetchTokenDetails(_, address: string): Promise<ERC20Token> {
@@ -1443,7 +1425,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async [BalanceActions.FETCH_NF_BALANCES](
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     payload?: { ignoreCache: boolean }
   ): Promise<void> {
     const { awaitTask } = useTasks();
@@ -1453,7 +1435,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
     const section = Section.NON_FUNGIBLE_BALANCES;
     try {
-      setStatus(Status.LOADING, section, status, commit);
+      setStatus(Status.LOADING, section);
       const taskType = TaskType.NF_BALANCES;
       const { taskId } = await api.balances.fetchNfBalances(payload);
       const { result } = await awaitTask<NonFungibleBalances, TaskMeta>(
@@ -1469,7 +1451,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         BalanceMutations.UPDATE_NF_BALANCES,
         NonFungibleBalances.parse(result)
       );
-      setStatus(Status.LOADED, section, status, commit);
+      setStatus(Status.LOADED, section);
     } catch (e: any) {
       logger.error(e);
       const { notify } = useNotifications();
@@ -1482,11 +1464,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           .toString(),
         display: true
       });
-      setStatus(Status.NONE, section, status, commit);
+      setStatus(Status.NONE, section);
     }
   },
   async addEth2Validator(
-    { commit, dispatch, rootState: { session }, rootGetters: { status } },
+    { dispatch, rootState: { session } },
     payload: Eth2Validator
   ) {
     assert(session);
@@ -1507,11 +1489,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         numericKeys: []
       });
       if (result) {
-        const { setStatus } = getStatusUpdater(
-          commit,
-          Section.STAKING_ETH2,
-          status
-        );
+        const { setStatus } = getStatusUpdater(Section.STAKING_ETH2);
         await dispatch('fetchBlockchainBalances', {
           blockchain: Blockchain.ETH2,
           ignoreCache: true
@@ -1524,7 +1502,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       return result;
     } catch (e: any) {
       logger.error(e);
-      const message: Message = {
+      const { setMessage } = useMainStore();
+      setMessage({
         description: i18n
           .t('actions.add_eth2_validator.error.description', {
             id,
@@ -1533,13 +1512,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           .toString(),
         title: i18n.t('actions.add_eth2_validator.error.title').toString(),
         success: false
-      };
-      await dispatch('setMessage', message, { root: true });
+      });
       return false;
     }
   },
   async editEth2Validator(
-    { commit, dispatch, rootState: { session }, rootGetters: { status } },
+    { dispatch, rootState: { session } },
     payload: Eth2Validator
   ) {
     assert(session);
@@ -1553,11 +1531,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const success = await api.balances.editEth2Validator(payload);
 
       if (success) {
-        const { setStatus } = getStatusUpdater(
-          commit,
-          Section.STAKING_ETH2,
-          status
-        );
+        const { setStatus } = getStatusUpdater(Section.STAKING_ETH2);
         await dispatch('fetchBlockchainBalances', {
           blockchain: Blockchain.ETH2,
           ignoreCache: true
@@ -1569,6 +1543,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       return success;
     } catch (e: any) {
+      const { setMessage } = useMainStore();
       logger.error(e);
       const message: Message = {
         description: i18n
@@ -1580,11 +1555,12 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         title: i18n.t('actions.edit_eth2_validator.error.title').toString(),
         success: false
       };
-      await dispatch('setMessage', message, { root: true });
+      await setMessage(message);
       return false;
     }
   },
-  async deleteEth2Validators({ dispatch, state, commit }, validators: string) {
+  async deleteEth2Validators({ state, commit }, validators: string) {
+    const { setMessage } = useMainStore();
     try {
       const entries = [...state.eth2Validators.entries];
       const eth2Validators = entries.filter(({ publicKey }) =>
@@ -1610,7 +1586,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       return success;
     } catch (e: any) {
       logger.error(e);
-      const message: Message = {
+      setMessage({
         description: i18n
           .t('actions.delete_eth2_validator.error.description', {
             message: e.message
@@ -1618,8 +1594,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           .toString(),
         title: i18n.t('actions.delete_eth2_validator.error.title').toString(),
         success: false
-      };
-      await dispatch('setMessage', message, { root: true });
+      });
       return false;
     }
   }

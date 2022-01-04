@@ -42,9 +42,9 @@ import {
 } from '@/store/history/types';
 import { mapCollectionEntriesWithMeta } from '@/store/history/utils';
 import { useNotifications } from '@/store/notifications';
-import store from '@/store/store';
+import store, { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus, Message } from '@/store/types';
+import { ActionStatus } from '@/store/types';
 import { getStatusUpdater, setStatus } from '@/store/utils';
 import { Collection, CollectionResponse } from '@/types/collection';
 import { SupportedExchange } from '@/types/exchanges';
@@ -103,6 +103,8 @@ export const useHistory = defineStore('history', () => {
     }
   };
 
+  const { setMessage } = useMainStore();
+
   const ignoreInAccounting = async (
     { actionIds, type }: IgnoreActionPayload,
     ignore: boolean
@@ -130,15 +132,11 @@ export const useHistory = defineStore('history', () => {
           .t('actions.unignore.error.description', { error: e.message })
           .toString();
       }
-      store.commit(
-        'setMessage',
-        {
-          success: false,
-          title,
-          description
-        } as Message,
-        { root: true }
-      );
+      setMessage({
+        success: false,
+        title,
+        description
+      });
       return { success: false };
     }
 
@@ -156,7 +154,7 @@ export const useHistory = defineStore('history', () => {
     exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
   ) => {
     function resetStatus(section: Section) {
-      setStatus(Status.NONE, section, store.getters['status'], store.commit);
+      setStatus(Status.NONE, section);
     }
     if (exchange === ALL_CENTRALIZED_EXCHANGES) {
       resetStatus(Section.TRADES);
@@ -236,9 +234,7 @@ export const useTrades = defineStore('history/trade', () => {
   ) => {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad } = getStatusUpdater(
-      store.commit,
       Section.TRADES,
-      store.getters['status'],
       !!onlyLocation
     );
     const taskType = TaskType.TRADES;
@@ -436,9 +432,7 @@ export const useAssetMovements = defineStore('history/assetMovement', () => {
   ) => {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad } = getStatusUpdater(
-      store.commit,
       Section.ASSET_MOVEMENT,
-      store.getters['status'],
       !!onlyLocation
     );
     const taskType = TaskType.MOVEMENTS;
@@ -596,11 +590,7 @@ export const useTransactions = defineStore('history/transaction', () => {
     });
 
     const { awaitTask, isTaskRunning } = useTasks();
-    const { setStatus, loading, isFirstLoad } = getStatusUpdater(
-      store.commit,
-      Section.TX,
-      store.getters['status']
-    );
+    const { setStatus, loading, isFirstLoad } = getStatusUpdater(Section.TX);
     const taskType = TaskType.TX;
 
     const fetchTransactionsHandler = async (
@@ -742,9 +732,7 @@ export const useLedgerActions = defineStore('history/ledgerAction', () => {
   ) => {
     const { awaitTask, isTaskRunning } = useTasks();
     const { setStatus, loading, isFirstLoad } = getStatusUpdater(
-      store.commit,
       Section.LEDGER_ACTIONS,
-      store.getters['status'],
       !!onlyLocation
     );
     const taskType = TaskType.LEDGER_ACTIONS;
