@@ -642,26 +642,24 @@ export const getters: Getters<
     return balances.map(value => value.label);
   },
 
-  assetInfo:
-    ({ supportedAssets, nonFungibleBalances }: BalanceState) =>
-    (identifier: string) => {
-      if (identifier.startsWith('_nft_')) {
-        for (const address in nonFungibleBalances) {
-          const nfb = nonFungibleBalances[address];
-          for (const balance of nfb) {
-            if (balance.id === identifier) {
-              return {
-                identifier: balance.id,
-                symbol: balance.name,
-                name: balance.name,
-                assetType: 'ethereum_token'
-              } as SupportedAsset;
-            }
+  assetInfo: (asset: BalanceState) => (identifier: string) => {
+    if (identifier.startsWith('_nft_')) {
+      for (const address in asset.nonFungibleBalances) {
+        const nfb = asset.nonFungibleBalances[address];
+        for (const balance of nfb) {
+          if (balance.id === identifier) {
+            return {
+              identifier: balance.id,
+              symbol: balance.name,
+              name: balance.name,
+              assetType: 'ethereum_token'
+            } as SupportedAsset;
           }
         }
       }
-      return supportedAssets.find(asset => asset.identifier === identifier);
-    },
+    }
+    return asset.supportedAssets.find(asset => asset.identifier === identifier);
+  },
 
   accounts: (
     _,
