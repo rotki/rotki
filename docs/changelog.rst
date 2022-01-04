@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3895` Popup for successful forced sync operation should shows correct icon.
 * :bug:`-` Restores arm64 docker images.
 * :bug:`3903` The application should now run on macOS 10.14 (Mojave) without errors.
 * :bug:`3901` Coinbase accounts with intenal subaccount movements will now display the Coinbase withdrawals properly.
