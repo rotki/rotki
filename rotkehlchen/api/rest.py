@@ -31,7 +31,7 @@ from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType
+from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType, StakingEvent
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
@@ -3913,10 +3913,22 @@ class RestAPI():
         only_cache: bool,
         filter_query: HistoryEventFilterQuery,
     ) -> Dict[str, Any]:
-        events = self.rotkehlchen.events_historian.query_kraken_staking_events(
-            filter_query=filter_query,
-            only_cache=only_cache,
+        exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(
+            Location.KRAKEN,
         )
+        if exchanges_list is None:
+            events = []
+        else:
+            if only_cache is False:
+                for kraken_instance in exchanges_list:
+                    kraken_instance.query_kraken_ledgers(   # type: ignore
+                        start_ts=filter_query.from_ts,
+                        end_ts=filter_query.to_ts,
+                    )
+
+            events_raw = self.rotkehlchen.data.db.get_history_events(filter_query)
+            events = [StakingEvent.from_history_base_entry(event) for event in events_raw]
+
         return {'result': events, 'message': '', 'status_code': HTTPStatus.OK}
 
     @require_loggedin_user()

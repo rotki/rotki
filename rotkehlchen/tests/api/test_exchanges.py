@@ -1169,7 +1169,7 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
-    """Test that the binance endpoint returns some market pairs"""
+    """Test that kraken staking events are processed correctly"""
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     input_ledger = """
@@ -1227,7 +1227,6 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
             server,
             'stakingresource',
         ),
-        params={'location': Location.KRAKEN},
     )
 
     result = assert_proper_response_with_result(response)

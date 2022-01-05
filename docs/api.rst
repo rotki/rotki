@@ -10130,7 +10130,7 @@ Get associated locations
 Staking events
 ==============
 
-.. http:get:: /api/(version)/staking
+.. http:get:: /api/(version)/staking/kraken
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -10145,11 +10145,11 @@ Staking events
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/trades HTTP/1.1
+      GET /api/1/staking/kraken HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "kraken", "only_cache": false}
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "only_cache": false}
 
    :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
@@ -10157,10 +10157,7 @@ Staking events
    :reqjson bool ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
    :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
    :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
-   :reqjson string location: A valid location name has to be provided. If missing location filtering does not happen.
    :reqjson bool only_cache: Optional.If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
-
-   .. _trades_schema_section:
 
    **Example Response**:
 
@@ -10199,8 +10196,8 @@ Staking events
           "message": ""
       }
 
-   :resjsonarr int timestamp: The timestamp at which the trade occured
-   :resjsonarr string location: A valid location at which the trade happened
+   :resjsonarr int timestamp: The timestamp at which the event occured
+   :resjsonarr string location: A valid location at which the event happened
    :resjsonarr string amount: The amount related to the event
    :resjsonarr string asset: Asset involved in the event
    :resjsonarr string event_type: Type of event. Can be `income`, `staking receive asset`, `staking deposit asset` or `staking remove asset` 

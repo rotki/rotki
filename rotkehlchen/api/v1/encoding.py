@@ -1074,7 +1074,6 @@ class StakingQuerySchema(
     DBPaginationSchema,
     DBOrderBySchema,
 ):
-    location = LocationField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
 
@@ -1092,7 +1091,7 @@ class StakingQuerySchema(
             offset=data['offset'],
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
-            location=data['location'],
+            location=Location.KRAKEN,
             event_type=[
                 HistoryEventType.STAKING,
                 HistoryEventType.UNSTAKING,

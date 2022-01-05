@@ -269,7 +269,7 @@ URLS_V1: URLS = [
     ('/database/info', DatabaseInfoResource),
     ('/database/backups', DatabaseBackupsResource),
     ('/locations/associated', AssociatedLocations),
-    ('/staking/', StakingResource),
+    ('/staking/kraken', StakingResource),
 ]
 
 logger = logging.getLogger(__name__)

@@ -425,6 +425,8 @@ class StakingEvent:
 
     @classmethod
     def from_history_base_entry(cls, event: HistoryBaseEntry) -> 'StakingEvent':
+        # TODO: We forgot to add a subtype for staking rewards. This needs to be changed
+        # in a database upgrade
         event_type = str(event.event_subtype) if event.event_subtype is not None else 'receive'
         return StakingEvent(
             event_type=event_type,  # type: ignore
