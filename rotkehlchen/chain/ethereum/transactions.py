@@ -108,7 +108,7 @@ class EthTransactions(LockableQueryMixIn):
 
         # add new transactions to the DB
         if new_transactions != []:
-            dbethtx.add_ethereum_transactions(new_transactions)
+            dbethtx.add_ethereum_transactions(new_transactions, relevant_address=address)
 
         # and now internal transactions, after normal ones so they are already in DB
         new_internal_txs = []
@@ -144,10 +144,10 @@ class EthTransactions(LockableQueryMixIn):
                 if transaction is None:
                     continue  # hash does not correspond to a transaction
                 # add the parent transaction to the DB
-                dbethtx.add_ethereum_transactions([transaction])
+                dbethtx.add_ethereum_transactions([transaction], relevant_address=address)
 
             # add all new internal txs to the DB
-            dbethtx.add_ethereum_internal_transactions(new_internal_txs)
+            dbethtx.add_ethereum_internal_transactions(new_internal_txs, relevant_address=address)
 
         # and now detect ERC20 events thanks to etherscan and get their transactions
         erc20_tx_hashes = set()
@@ -180,7 +180,7 @@ class EthTransactions(LockableQueryMixIn):
             if transaction is None:
                 continue  # hash does not correspond to a transaction
 
-            dbethtx.add_ethereum_transactions([transaction])
+            dbethtx.add_ethereum_transactions([transaction], relevant_address=address)
 
         # finally also set the last queried timestamps for the address
         ranges.update_used_query_range(
@@ -247,7 +247,7 @@ class EthTransactions(LockableQueryMixIn):
             tx_hash: str,
     ) -> Optional['EthereumTxReceipt']:
         """
-        Gets the receipt from the DB if it exist. If not queries the chain for it,
+        Gets the receipt from the DB if it exists. If not queries the chain for it,
         saves it in the DB and then returns it.
 
         Also if the actual transaction does not exist in the DB it queries it and saves it there.
@@ -266,7 +266,7 @@ class EthTransactions(LockableQueryMixIn):
             if transaction is None:
                 return None  # hash does not correspond to a transaction
 
-            dbethtx.add_ethereum_transactions([transaction])
+            dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
 
         tx_receipt = dbethtx.get_receipt(tx_hash_b)
         if tx_receipt is not None:

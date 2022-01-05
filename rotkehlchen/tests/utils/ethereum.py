@@ -12,7 +12,12 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import EthereumTransaction, Timestamp
+from rotkehlchen.typing import (
+    BlockchainAccountData,
+    EthereumTransaction,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 NODE_CONNECTION_TIMEOUT = 10
@@ -146,11 +151,20 @@ def setup_ethereum_transactions_test(
     dbethtx = DBEthTx(database)
     tx_hash1 = '0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda'
     tx_hash1_b = hexstring_to_bytes(tx_hash1)
+    addr1 = string_to_ethereum_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
+    addr2 = string_to_ethereum_address('0x442068F934BE670aDAb81242C87144a851d56d16')
+    database.add_blockchain_accounts(
+        blockchain=SupportedBlockchain.ETHEREUM,
+        account_data=[
+            BlockchainAccountData(address=addr1),
+            BlockchainAccountData(address=addr2),
+        ],
+    )
     transaction1 = EthereumTransaction(
         tx_hash=tx_hash1_b,
         timestamp=Timestamp(1630532276),
         block_number=13142218,
-        from_address=string_to_ethereum_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea'),
+        from_address=addr1,
         to_address=string_to_ethereum_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         value=int(10 * 10**18),
         gas=194928,
@@ -165,7 +179,7 @@ def setup_ethereum_transactions_test(
         tx_hash=tx_hash2_b,
         timestamp=Timestamp(1631013757),
         block_number=13178342,
-        from_address=string_to_ethereum_address('0x442068F934BE670aDAb81242C87144a851d56d16'),
+        from_address=addr2,
         to_address=string_to_ethereum_address('0xEaDD9B69F96140283F9fF75DA5FD33bcF54E6296'),
         value=0,
         gas=77373,
@@ -176,7 +190,8 @@ def setup_ethereum_transactions_test(
     )
     transactions = [transaction1, transaction2]
     if transaction_already_queried is True:
-        dbethtx.add_ethereum_transactions(ethereum_transactions=transactions)
+        dbethtx.add_ethereum_transactions(ethereum_transactions=[transaction1], relevant_address=addr1)  # noqa: E501
+        dbethtx.add_ethereum_transactions(ethereum_transactions=[transaction2], relevant_address=addr2)  # noqa: E501
         result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make())
         assert result == transactions
 

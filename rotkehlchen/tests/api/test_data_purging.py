@@ -10,7 +10,12 @@ from rotkehlchen.tests.utils.exchanges import (
     mock_exchange_data_in_db,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import EthereumTransaction, Location
+from rotkehlchen.typing import (
+    BlockchainAccountData,
+    EthereumTransaction,
+    Location,
+    SupportedBlockchain,
+)
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
@@ -49,13 +54,20 @@ def test_purge_single_exchange_data(rotkehlchen_api_server_with_exchanges, added
 
 def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    addr1 = make_ethereum_address()
+    rotki.data.db.add_blockchain_accounts(
+        blockchain=SupportedBlockchain.ETHEREUM,
+        account_data=[
+            BlockchainAccountData(address=addr1),
+        ],
+    )
     db = DBEthTx(rotki.data.db)
     db.add_ethereum_transactions(
         [EthereumTransaction(
             tx_hash=bytes(),
             timestamp=1,
             block_number=1,
-            from_address=make_ethereum_address(),
+            from_address=addr1,
             to_address=make_ethereum_address(),
             value=FVal(1),
             gas=FVal(1),
@@ -64,6 +76,7 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
             input_data=bytes(),
             nonce=1,
         )],
+        relevant_address=addr1,
     )
     filter_ = ETHTransactionsFilterQuery.make()
 
@@ -73,7 +86,7 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "ethereumtransactionsresource",
+            'ethereumtransactionsresource',
         ),
     )
     assert_simple_ok_response(response)

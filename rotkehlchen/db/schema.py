@@ -513,6 +513,18 @@ CREATE TABLE IF NOT EXISTS ethtx_receipt_log_topics (
 );
 """  # noqa: E501
 
+
+DB_CREATE_ETHTX_ADDRESS_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS ethx_address_mappings (
+    address TEXT NOT NULL,
+    tx_hash BLOB NOT NULL,
+    blockchain TEXT,
+    FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
+    FOREIGN KEY(tx_hash) references ethereum_transactions(tx_hash) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (address, tx_hash, blockchain)
+);
+"""  # noqa: E501
+
 DB_CREATE_USED_QUERY_RANGES = """
 CREATE TABLE IF NOT EXISTS used_query_ranges (
     name VARCHAR[24] NOT NULL PRIMARY KEY,
@@ -814,6 +826,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_ETHTX_RECEIPTS}
 {DB_CREATE_ETHTX_RECEIPT_LOGS}
 {DB_CREATE_ETHTX_RECEIPT_LOG_TOPICS}
+{DB_CREATE_ETHTX_ADDRESS_MAPPINGS}
 {DB_CREATE_MARGIN}
 {DB_CREATE_ASSET_MOVEMENTS}
 {DB_CREATE_USED_QUERY_RANGES}

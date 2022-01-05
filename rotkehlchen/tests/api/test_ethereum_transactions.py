@@ -1,3 +1,4 @@
+import os
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
@@ -223,7 +224,10 @@ def test_query_transactions(rotkehlchen_api_server):
     assert all(x['ignored_in_accounting'] is True for x in result['entries']), msg
 
 
-# TODO: This is a super slow test. Would make sense to run it sparingly
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='SLOW TEST -- run locally from time to time',
+)
 @pytest.mark.parametrize('ethereum_accounts', [['0xe62193Bc1c340EF2205C0Bd71691Fad5e5072253']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_query_over_10k_transactions(rotkehlchen_api_server):
@@ -251,10 +255,10 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
 
     assert rresult[1]['tx_hash'] == '0xec72748b8b784380ff6fcca9b897d649a0992eaa63b6c025ecbec885f64d2ac9'  # noqa: E501
     assert rresult[1]['nonce'] == 0
-    assert rresult[11201]['tx_hash'] == '0x118edf91d6d47fcc6bc9c7ceefe2ee2344e0ff3b5a1805a804fa9c9448efb746'  # noqa: E501
-    assert rresult[11201]['nonce'] == 11198
-    assert rresult[16172]['tx_hash'] == '0x92baec6dbf3351a1aea2371453bfcb5af898ffc8172fcf9577ca2e5335df4c71'  # noqa: E501
-    assert rresult[16172]['nonce'] == 16169
+    assert rresult[11201]['tx_hash'] == '0xa79e6c331ab180f18fe44225af28b0b4fe0e6e2fcb18e6d303722b77dc941f47'  # noqa: E501
+    assert rresult[11201]['nonce'] == 11196
+    assert rresult[16172]['tx_hash'] == '0x7cd0d2f75c53aeeefcb505cc16513840b883ebd0698bc9f5dffb65490ba910bc'  # noqa: E501
+    assert rresult[16172]['nonce'] == 16167
 
 
 def test_query_transactions_errors(rotkehlchen_api_server):
@@ -340,7 +344,7 @@ def test_query_transactions_over_limit(
         input_data=x.to_bytes(2, byteorder='little'),
         nonce=x,
     ) for x in range(FREE_ETH_TX_LIMIT - 10)]
-    transactions.extend([EthereumTransaction(
+    extra_transactions = [EthereumTransaction(
         tx_hash=(x + 500).to_bytes(2, byteorder='little'),
         timestamp=x,
         block_number=x,
@@ -352,10 +356,11 @@ def test_query_transactions_over_limit(
         gas_used=x,
         input_data=x.to_bytes(2, byteorder='little'),
         nonce=x,
-    ) for x in range(60)])
+    ) for x in range(60)]
 
     dbethtx = DBEthTx(db)
-    dbethtx.add_ethereum_transactions(transactions)
+    dbethtx.add_ethereum_transactions(transactions, relevant_address=ethereum_accounts[0])
+    dbethtx.add_ethereum_transactions(extra_transactions, relevant_address=ethereum_accounts[1])
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -447,7 +452,8 @@ def test_query_transactions_from_to_address(
         nonce=55,
     )]
     dbethtx = DBEthTx(db)
-    dbethtx.add_ethereum_transactions(transactions)
+    dbethtx.add_ethereum_transactions(transactions, relevant_address=ethereum_accounts[0])
+    dbethtx.add_ethereum_transactions([transactions[1]], relevant_address=ethereum_accounts[1])
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -546,7 +552,8 @@ def test_query_transactions_removed_address(
         nonce=0,
     )]
     dbethtx = DBEthTx(db)
-    dbethtx.add_ethereum_transactions(transactions)
+    dbethtx.add_ethereum_transactions(transactions[0:2] + transactions[3:], relevant_address=ethereum_accounts[0])  # noqa: E501
+    dbethtx.add_ethereum_transactions(transactions[2:], relevant_address=ethereum_accounts[1])  # noqa: E501
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -591,7 +598,7 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
 ):
     """Make sure that if we track two addresses and they send one transaction
     to each other it's not counted as duplicate in the DB but is returned
-    every by both addresses"""
+    every time by both addresses"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     def mock_etherscan_transaction_response(etherscan: Etherscan, eth_accounts):
@@ -601,6 +608,9 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
             addr2_txs = f"""{addr1_tx}, {{"blockNumber":"2","timeStamp":"2","hash":"0x1c81f54c29ff0226f835cd0a2a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"1","blockHash":"0xd1cabad2adab0b56ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[1]}","to":"{make_ethereum_address()}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
             if '=txlistinternal&' in url:
                 # don't return any internal transactions
+                payload = '{"status":"1","message":"OK","result":[]}'
+            elif 'action=tokentx&' in url:
+                # don't return any token transactions
                 payload = '{"status":"1","message":"OK","result":[]}'
             elif '=txlist&' in url:
                 if eth_accounts[0] in url:
@@ -615,6 +625,8 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
             elif '=getblocknobytime&' in url:
                 # we don't really care about this so just return whatever
                 payload = '{"status":"1","message":"OK","result": "1"}'
+            else:
+                raise AssertionError('Got in unexpected section during test')
 
             return MockResponse(200, payload)
 

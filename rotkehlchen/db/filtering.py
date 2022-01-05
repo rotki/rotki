@@ -82,28 +82,18 @@ class DBTimestampFilter(DBFilter):
 class DBETHTransactionAddressFilter(DBFilter):
     """Find transactions involving any of the addresses. Including in an internal.
 
-    This is a bit complicated query since it tries to get all transactions that involve
-    any of the given addresses, either as from/to or internal transaction from/to.
-
-    But this is not enough! We also need to somehow mark all transactions we have
-    where the given address makes an appearance.
+    This uses the mappings we create in the DB at transaction addition to signify
+    relevant addresses for a transaction.
     """
-    addresses: Optional[List[ChecksumEthAddress]] = None
+    addresses: List[ChecksumEthAddress]
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
-        filters = []
-        bindings = []
-        if self.addresses is not None:
-            questionmarks = '?' * len(self.addresses)
-            filters = [
-                f'tx_hash IN (SELECT tx_hash FROM ethereum_transactions WHERE '
-                f'from_address IN ({",".join(questionmarks)}) OR '
-                f'to_address IN ({",".join(questionmarks)}) UNION '
-                f'SELECT parent_tx_hash FROM ethereum_internal_transactions WHERE '
-                f'from_address IN ({",".join(questionmarks)}) OR '
-                f'to_address IN ({",".join(questionmarks)}))',
-            ]
-            bindings = [*self.addresses, *self.addresses, *self.addresses, *self.addresses]
+        questionmarks = '?' * len(self.addresses)
+        filters = [
+            f'AS A LEFT OUTER JOIN ethx_address_mappings AS B WHERE '
+            f'A.tx_hash=b.tx_hash AND B.address IN ({",".join(questionmarks)})',
+        ]
+        bindings = self.addresses
 
         return filters, bindings
 
@@ -180,6 +170,7 @@ class DBLocationFilter(DBFilter):
 class DBFilterQuery():
     and_op: bool
     filters: List[DBFilter]
+    join_clause: Optional[DBFilter] = None
     order_by: Optional[DBFilterOrder] = None
     pagination: Optional[DBFilterPagination] = None
 
@@ -187,6 +178,11 @@ class DBFilterQuery():
         query_parts = []
         bindings = []
         filterstrings = []
+
+        if self.join_clause is not None:
+            join_querystr, single_bindings = self.join_clause.prepare()
+            query_parts.append(join_querystr[0])
+            bindings.extend(single_bindings)
 
         for fil in self.filters:
             filters, single_bindings = fil.prepare()
@@ -199,8 +195,8 @@ class DBFilterQuery():
 
         if len(filterstrings) != 0:
             operator = ' AND ' if self.and_op else ' OR '
-            where_query = 'WHERE ' + operator.join(filterstrings)
-            query_parts.append(where_query)
+            filter_query = f'{"WHERE " if self.join_clause is None else "AND"}{operator.join(filterstrings)}'  # noqa: E501
+            query_parts.append(filter_query)
 
         if self.order_by is not None:
             orderby_query = self.order_by.prepare()
@@ -285,24 +281,12 @@ class FilterWithLocation():
 class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
-    def address_filter(self) -> Optional[DBETHTransactionAddressFilter]:
-        if len(self.filters) >= 1 and isinstance(self.filters[0], DBETHTransactionAddressFilter):
-            return self.filters[0]
-        return None
-
-    @property
     def addresses(self) -> Optional[List[ChecksumEthAddress]]:
-        address_filter = self.address_filter
-        if address_filter is None:
+        if self.join_clause is None:
             return None
-        return address_filter.addresses
 
-    @addresses.setter
-    def addresses(self, addresses: Optional[List[ChecksumEthAddress]]) -> None:
-        address_filter = self.address_filter
-        if address_filter is None:
-            return
-        address_filter.addresses = addresses
+        ethaddress_filter = cast('DBETHTransactionAddressFilter', self.join_clause)
+        return ethaddress_filter.addresses
 
     @classmethod
     def make(
@@ -326,10 +310,11 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         )
         filter_query = cast('ETHTransactionsFilterQuery', filter_query)
         filters: List[DBFilter] = []
-        if tx_hash:  # tx_hash means single result so make it as single filter
+        if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBETHTransactionHashFilter(and_op=False, tx_hash=tx_hash))
         else:
-            filters.append(DBETHTransactionAddressFilter(and_op=False, addresses=addresses))
+            if addresses is not None:
+                filter_query.join_clause = DBETHTransactionAddressFilter(and_op=False, addresses=addresses)  # noqa: E501
 
             filter_query.timestamp_filter = DBTimestampFilter(
                 and_op=True,

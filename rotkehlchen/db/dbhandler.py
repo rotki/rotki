@@ -2145,10 +2145,19 @@ class DBHandler:
             tuple_type: DBTupleType,
             query: str,
             tuples: Sequence[Tuple[Any, ...]],
+            **kwargs: Optional[ChecksumEthAddress],
     ) -> None:
         cursor = self.conn.cursor()
+        relevant_address = kwargs.get('relevant_address')
         try:
             cursor.executemany(query, tuples)
+            if relevant_address is not None:
+                mapping_tuples = [(relevant_address, x[0], 'ETH') for x in tuples]
+                cursor.executemany(
+                    'INSERT OR IGNORE INTO ethx_address_mappings(address, tx_hash, blockchain) '
+                    'VALUES(?, ?, ?)',
+                    mapping_tuples,
+                )
         except sqlcipher.IntegrityError:  # pylint: disable=no-member
             # That means that one of the tuples hit a constraint, most probably
             # already existing in the DB, in which case we resort to writing them
@@ -2156,6 +2165,12 @@ class DBHandler:
             for entry in tuples:
                 try:
                     cursor.execute(query, entry)
+                    if relevant_address is not None:
+                        cursor.execute(
+                            'INSERT OR IGNORE INTO ethx_address_mappings '
+                            '(address, tx_hash, blockchain) VALUES(?, ?, ?)',
+                            (relevant_address, entry[0], 'ETH'),
+                        )
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                     if tuple_type == 'ethereum_transaction':
                         # if we reach here it means the transaction is already in the DB
@@ -2164,9 +2179,15 @@ class DBHandler:
                         # time range, so duplicate addition attempts can happen.
                         # Also if we have transactions of one account sending to the
                         # other and both accounts are being tracked.
+                        if relevant_address is not None:
+                            cursor.execute(
+                                'INSERT OR IGNORE INTO ethx_address_mappings '
+                                '(address, tx_hash, blockchain) VALUES(?, ?, ?)',
+                                (relevant_address, entry[0], 'ETH'),
+                            )
                         string_repr = db_tuple_to_str(entry, tuple_type)
                         log.debug(
-                            f'Did not add "{string_repr}" to the DB due to "{str(e)}".'
+                            f'Did not add "{string_repr}" to the DB due to "{str(e)}". '
                             f'Either it already exists or some constraint was hit.',
                         )
                         continue
