@@ -3520,3 +3520,22 @@ class DBHandler:
                     f'Failed to read history event from database. {str(e)}',
                 )
         return result
+
+    def get_rows_missing_prices_in_base_entries(
+        self,
+        filter_query: HistoryEventFilterQuery,
+    ) -> sqlcipher.Cursor:  # pylint: disable=no-member
+        """
+        Get missing prices for history base entries based on filter query
+        """
+        query, bindings = filter_query.prepare()
+        query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
+        cursor = self.conn.cursor()
+        return cursor.execute(query, bindings)
+
+    def update_base_entries_prices(self, updates: List[Tuple[str, str]]) -> None:
+        """Updates usd value of history base entires"""
+        query = 'UPDATE history_events SET usd_value=? WHERE identifier=?'
+        cursor = self.conn.cursor()
+        cursor.executemany(query, updates)
+        self.update_last_write()

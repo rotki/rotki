@@ -8,6 +8,7 @@ from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
@@ -432,7 +433,7 @@ class StakingEvent:
             event_type=event_type,  # type: ignore
             asset=event.asset_balance.asset,
             balance=event.asset_balance.balance,
-            timestamp=event.timestamp,
+            timestamp=Timestamp(int(event.timestamp / KRAKEN_TS_MULTIPLIER)),
             location=event.location,
         )
 

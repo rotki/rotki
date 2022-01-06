@@ -1073,13 +1073,20 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         with_errors = False
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying kraken ledger entries from {query_start_ts} to {query_end_ts}')
-            response, with_errors = self.query_until_finished(
-                endpoint='Ledgers',
-                keyname='ledger',
-                start_ts=query_start_ts,
-                end_ts=query_end_ts,
-                extra_dict={},
-            )
+            try:
+                response, with_errors = self.query_until_finished(
+                    endpoint='Ledgers',
+                    keyname='ledger',
+                    start_ts=query_start_ts,
+                    end_ts=query_end_ts,
+                    extra_dict={},
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to query kraken ledger between {query_start_ts} and '
+                    f'{query_end_ts}. {str(e)}',
+                )
+                return True
 
             # Group related events
             raw_events_groupped = defaultdict(list)

@@ -58,6 +58,7 @@ from rotkehlchen.constants.limits import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -3916,20 +3917,25 @@ class RestAPI():
         exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(
             Location.KRAKEN,
         )
+        message = ''
         if exchanges_list is None:
             events = []
         else:
             if only_cache is False:
                 for kraken_instance in exchanges_list:
-                    kraken_instance.query_kraken_ledgers(   # type: ignore
-                        start_ts=filter_query.from_ts,
-                        end_ts=filter_query.to_ts,
+                    with_errors = kraken_instance.query_kraken_ledgers(   # type: ignore
+                        start_ts=filter_query.from_ts / KRAKEN_TS_MULTIPLIER,
+                        end_ts=filter_query.to_ts / KRAKEN_TS_MULTIPLIER,
                     )
-
+                    if with_errors:
+                        message = 'Failed to query some new events from the Kraken exchange. '
+            # Query missing prices
+            self.rotkehlchen.query_missing_prices(filter_query)
+            # Query events from database
             events_raw = self.rotkehlchen.data.db.get_history_events(filter_query)
             events = [StakingEvent.from_history_base_entry(event) for event in events_raw]
 
-        return {'result': events, 'message': '', 'status_code': HTTPStatus.OK}
+        return {'result': events, 'message': message, 'status_code': HTTPStatus.OK}
 
     @require_loggedin_user()
     def query_kraken_staking_events(

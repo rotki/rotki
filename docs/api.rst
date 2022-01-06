@@ -10139,7 +10139,8 @@ Staking events
       This endpoint also accepts parameters as query arguments.
 
    Doing a GET on this endpoint will return all staking events for the desired location. At the moment
-   the only valid location is kraken.
+   the only valid location is kraken. If the retrieval of new information fails the information at the
+   database will be returned
 
    **Example Request**:
 
@@ -10171,26 +10172,26 @@ Staking events
               {
                   "event_type": "income",
                   "asset": "ETH2",
-                  "timestamp": 16368645884914,
+                  "timestamp": 1636864588,
                   "location": "kraken",
                   "amount": "0.0000103220",
-                  "usd_value": "0"
+                  "usd_value": "0.0478582110500"
               },
               {
                   "event_type": "staking receive asset",
                   "asset": "ETH2",
-                  "timestamp": 16367401989674,
+                  "timestamp": 1636740198,
                   "location": "kraken",
                   "amount": "0.0600000000",
-                  "usd_value": "0"
+                  "usd_value": "278.7345000000000"
               },
               {
                   "event_type": "staking deposit asset",
                   "asset": "ETH",
-                  "timestamp": 16367385507562,
+                  "timestamp": 1636738550,
                   "location": "kraken",
                   "amount": "-0.0600000000",
-                  "usd_value": "0"
+                  "usd_value": "-278.7345000000000"
               }
           ],
           "message": ""
@@ -10201,6 +10202,7 @@ Staking events
    :resjsonarr string amount: The amount related to the event
    :resjsonarr string asset: Asset involved in the event
    :resjsonarr string event_type: Type of event. Can be `income`, `staking receive asset`, `staking deposit asset` or `staking remove asset` 
+   :resjsonarr string message: It won't be empty if the query to external services fails for some reason. 
    :statuscode 200: Events are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.

@@ -43,6 +43,7 @@ from rotkehlchen.tests.utils.history import (
     assert_poloniex_trades_result,
     mock_history_processing_and_exchanges,
     prepare_rotki_for_history_processing_test,
+    prices,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp, TradeType
@@ -1168,6 +1169,7 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
     """Test that kraken staking events are processed correctly"""
     server = rotkehlchen_api_server_with_exchanges
@@ -1212,6 +1214,16 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
     "count": 3
     }
     """
+    # Test that before populating we don't have any event
+    response = requests.get(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result) == 0
+
     rotki.data.db.purge_exchange_data(Location.KRAKEN)
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
@@ -1237,3 +1249,6 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
     assert result[0]['asset'] == 'ETH2'
     assert result[1]['asset'] == 'ETH2'
     assert result[2]['asset'] == 'ETH'
+    assert result[0]['usd_value'] == '0.219353533620'
+    assert result[1]['usd_value'] == '242.570400000000'
+    assert result[2]['usd_value'] == '-242.570400000000'

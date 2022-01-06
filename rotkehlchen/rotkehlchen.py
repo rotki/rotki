@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import copy
 import logging.config
 import os
 import time
@@ -34,17 +35,22 @@ from rotkehlchen.chain.substrate.utils import (
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
 from rotkehlchen.config import default_data_directory
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
+from rotkehlchen.db.filtering import DBStringFilter, HistoryEventFilterQuery
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors import (
+    DeserializationError,
     EthSyncError,
     InputError,
     PremiumAuthenticationError,
     RemoteError,
     SystemPermissionError,
+    UnknownAsset,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -64,6 +70,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter, configure_logging
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
+from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.typing import (
     ApiKey,
@@ -903,3 +910,44 @@ class Rotkehlchen():
             return  # only for cryptocompare for now
 
         self.cryptocompare.create_cache(from_asset, to_asset, purge_old)
+
+    def query_missing_prices(
+        self,
+        filter_query: HistoryEventFilterQuery,
+    ) -> None:
+        """Queries missing prices for HistoryBaseEntry in database based
+        on the query filter used"""
+        # Use a deepcopy to avoid mutations in the filter query if it is used later
+        new_filter_query = copy.deepcopy(filter_query)
+        new_filter_query.filters.append(DBStringFilter(and_op=True, column='usd_value', value='0'))
+        assets_missing_assets = self.data.db.get_rows_missing_prices_in_base_entries(
+            filter_query=new_filter_query,
+        )
+        inquirer = PriceHistorian()
+        updates = []
+        for identifier, amount, asset_name, timestamp in assets_missing_assets:
+            try:
+                # Shouldn't raise DeserializationError since data comes from the database
+                amount = deserialize_fval(
+                    value=amount,
+                    name='historic base entry usd_value query',
+                    location='query_missing_prices',
+                )
+                price = inquirer.query_historical_price(
+                    from_asset=Asset(asset_name),
+                    to_asset=A_USD,
+                    timestamp=Timestamp(int(timestamp / KRAKEN_TS_MULTIPLIER)),
+                )
+                usd_value = amount * price
+                updates.append((str(usd_value), identifier))
+            except DeserializationError as e:
+                self.msg_aggregator.add_warning(
+                    f'Failed to read amount from historic base entry {identifier} '
+                    f'with amount {amount}. {str(e)}',
+                )
+            except UnknownAsset as e:
+                self.msg_aggregator.add_warning(
+                    f'Failed to read asset from historic base entry {identifier} '
+                    f'with asset identifier {asset_name}. {str(e)}',
+                )
+        self.data.db.update_base_entries_prices(updates)
