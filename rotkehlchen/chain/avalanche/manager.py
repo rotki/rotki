@@ -60,16 +60,11 @@ class AvalancheManager():
         if result is None:
             balance = from_wei(FVal(self.w3.eth.get_balance(account)))
         else:
-            def filter_avax(value: Dict) -> bool:
-                if 'contract_address' in value:
-                    return value['contract_address'] in (AVAX_ADDRESS, COVALENT_AVAX_ADDRESS)
-                return False
-
-            avax_coin = list(filter(filter_avax, result))
-            if len(avax_coin) != 0:
-                balance = from_wei(FVal(avax_coin[0]['balance']))
-            else:
-                return ZERO
+            balance = ZERO
+            for entry in result:
+                if entry.get('contract_address') in (AVAX_ADDRESS, COVALENT_AVAX_ADDRESS):
+                    balance = from_wei(FVal(entry.get('balance', 0)))
+                    break
         return FVal(balance)
 
     def get_multiavax_balance(
