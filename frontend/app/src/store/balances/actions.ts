@@ -482,9 +482,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
       const balances = BlockchainBalances.parse(result);
 
-      await dispatch('updateBalances', { chain: blockchain, balances });
       commit('defi/reset', undefined, { root: true });
+      dispatch(BalanceActions.FETCH_NF_BALANCES);
+      await dispatch('updateBalances', { chain: blockchain, balances });
       await dispatch('resetDefiStatus', {}, { root: true });
+      await dispatch('refreshPrices', { ignoreCache: false });
     } catch (e: any) {
       logger.error(e);
       const title = i18n.tc(
@@ -611,9 +613,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         });
       }
       commit('defi/reset', undefined, options);
+      dispatch(BalanceActions.FETCH_NF_BALANCES);
       await dispatch('resetDefiStatus', {}, options);
       await dispatch('refreshPrices', { ignoreCache: false });
-      await dispatch(BalanceActions.FETCH_NF_BALANCES);
     } catch (e: any) {
       logger.error(e);
       const title = i18n.tc(
@@ -689,10 +691,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           blockchain: Blockchain.ETH2
         });
       }
-      await commit('defi/reset', undefined, { root: true });
+      commit('defi/reset', undefined, { root: true });
+      dispatch(BalanceActions.FETCH_NF_BALANCES);
       await dispatch('resetDefiStatus', {}, { root: true });
       await dispatch('refreshPrices', { ignoreCache: false });
-      await dispatch(BalanceActions.FETCH_NF_BALANCES);
     } catch (e: any) {
       logger.error(e);
       const title = i18n.tc(
