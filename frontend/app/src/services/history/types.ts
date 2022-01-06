@@ -130,7 +130,7 @@ export const EthTransaction = z.object({
   timestamp: z.number(),
   blockNumber: z.number(),
   fromAddress: z.string(),
-  toAddress: z.string(),
+  toAddress: z.string().nullable().optional(),
   value: NumericString,
   gas: NumericString,
   gasPrice: NumericString,

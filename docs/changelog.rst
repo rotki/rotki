@@ -1,6 +1,7 @@
 =========
 Changelog
 =========
+* :bug:`3916` Users with ethereum transactions that deploy contracts will now be able to load the transactions view properly.
 * :bug:`-` Fix coinbase/pro detection for GTC, TRU and FARM.
 * :bug:`3896` Fix dashboard balance search that does not show ethereum tokens.
 * :bug:`3895` Popup for successful forced sync operation should shows correct icon.
