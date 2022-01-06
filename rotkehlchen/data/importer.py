@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Tuple
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.assets.converters import asset_from_nexo, asset_from_uphold
+from rotkehlchen.assets.converters import asset_from_cryptocom, asset_from_nexo, asset_from_uphold
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_BSQ, A_BTC, A_DAI, A_SAI, A_USD
 from rotkehlchen.constants.misc import ZERO
@@ -117,11 +117,11 @@ class DataImporter():
         fee_currency = A_USD  # whatever (used only if there is no fee)
         if csv_row['Fee'] != '':
             fee = deserialize_fee(csv_row['Fee'])
-            fee_currency = symbol_to_asset_or_token(csv_row['Cur.Fee'])
+            fee_currency = asset_from_cryptocom(csv_row['Cur.Fee'])
 
         if row_type in ('Gift/Tip', 'Trade', 'Income'):
-            base_asset = symbol_to_asset_or_token(csv_row['Cur.Buy'])
-            quote_asset = None if csv_row['Cur.Sell'] == '' else symbol_to_asset_or_token(csv_row['Cur.Sell'])  # noqa: E501
+            base_asset = asset_from_cryptocom(csv_row['Cur.Buy'])
+            quote_asset = None if csv_row['Cur.Sell'] == '' else asset_from_cryptocom(csv_row['Cur.Sell'])  # noqa: E501
             if quote_asset is None and row_type not in ('Gift/Tip', 'Income'):
                 raise DeserializationError('Got a trade entry with an empty quote asset')
 
@@ -153,10 +153,10 @@ class DataImporter():
             category = deserialize_asset_movement_category(row_type.lower())
             if category == AssetMovementCategory.DEPOSIT:
                 amount = deserialize_asset_amount(csv_row['Buy'])
-                asset = symbol_to_asset_or_token(csv_row['Cur.Buy'])
+                asset = asset_from_cryptocom(csv_row['Cur.Buy'])
             else:
                 amount = deserialize_asset_amount_force_positive(csv_row['Sell'])
-                asset = symbol_to_asset_or_token(csv_row['Cur.Sell'])
+                asset = asset_from_cryptocom(csv_row['Cur.Sell'])
 
             asset_movement = AssetMovement(
                 location=location,
@@ -248,6 +248,7 @@ class DataImporter():
             'reimbursement',
             'viban_purchase',
             'crypto_viban_exchange',
+            'recurring_buy_order',
         ):
             # variable mapping to raw data
             currency = csv_row['Currency']
@@ -259,17 +260,17 @@ class DataImporter():
 
             trade_type = TradeType.BUY if to_currency != native_currency else TradeType.SELL
 
-            if row_type in ('crypto_exchange', 'crypto_viban_exchange'):
+            if row_type in ('crypto_exchange', 'crypto_viban_exchange', 'recurring_buy_order'):
                 # trades crypto to crypto
-                base_asset = symbol_to_asset_or_token(to_currency)
-                quote_asset = symbol_to_asset_or_token(currency)
+                base_asset = asset_from_cryptocom(to_currency)
+                quote_asset = asset_from_cryptocom(currency)
                 if quote_asset is None:
                     raise DeserializationError('Got a trade entry with an empty quote asset')
                 base_amount_bought = deserialize_asset_amount(to_amount)
                 quote_amount_sold = deserialize_asset_amount(amount)
             else:
-                base_asset = symbol_to_asset_or_token(currency)
-                quote_asset = symbol_to_asset_or_token(native_currency)
+                base_asset = asset_from_cryptocom(currency)
+                quote_asset = asset_from_cryptocom(native_currency)
                 base_amount_bought = deserialize_asset_amount(amount)
                 quote_amount_sold = deserialize_asset_amount(native_amount)
 
@@ -302,7 +303,7 @@ class DataImporter():
                 category = AssetMovementCategory.DEPOSIT
                 amount = deserialize_asset_amount(csv_row['Amount'])
 
-            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            asset = asset_from_cryptocom(csv_row['Currency'])
             asset_movement = AssetMovement(
                 location=Location.CRYPTOCOM,
                 category=category,
@@ -323,11 +324,11 @@ class DataImporter():
             'pay_checkout_reward'
             'transfer_cashback',
             'rewards_platform_deposit_credited',
-            'reinbursment',
             'pay_checkout_reward',
             'transfer_cashback',
+            'supercharger_reward_to_app_credited',
         ):
-            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
@@ -343,7 +344,7 @@ class DataImporter():
             )
             self.db_ledger.add_ledger_action(action)
         elif row_type in ('crypto_payment', 'reimbursement_reverted'):
-            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            asset = asset_from_cryptocom(csv_row['Currency'])
             amount = abs(deserialize_asset_amount(csv_row['Amount']))
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
@@ -359,7 +360,7 @@ class DataImporter():
             )
             self.db_ledger.add_ledger_action(action)
         elif row_type == 'invest_deposit':
-            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
             asset_movement = AssetMovement(
                 location=Location.CRYPTOCOM,
@@ -375,7 +376,7 @@ class DataImporter():
             )
             self.db.add_asset_movements([asset_movement])
         elif row_type == 'invest_withdrawal':
-            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
             asset_movement = AssetMovement(
                 location=Location.CRYPTOCOM,
@@ -391,7 +392,7 @@ class DataImporter():
             )
             self.db.add_asset_movements([asset_movement])
         elif row_type == 'crypto_transfer':
-            asset = symbol_to_asset_or_token(csv_row['Currency'])
+            asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
             if amount < 0:
                 action_type = LedgerActionType.EXPENSE

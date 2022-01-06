@@ -1,4 +1,5 @@
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.assets.converters import asset_from_cryptocom
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import (
     A_BAT,
@@ -438,6 +439,17 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
     assert len(warnings) == 0
 
     expected_actions = [LedgerAction(
+        identifier=6,
+        timestamp=Timestamp(1635390997),
+        action_type=LedgerActionType.INCOME,
+        location=Location.CRYPTOCOM,
+        amount=AssetAmount(FVal('0.00356292')),
+        asset=asset_from_cryptocom('AXS'),
+        rate=None,
+        rate_asset=None,
+        link=None,
+        notes=get_cryptocom_note('Supercharger Reward'),
+    ), LedgerAction(
         identifier=5,
         timestamp=Timestamp(1609884000),
         action_type=LedgerActionType.INCOME,
