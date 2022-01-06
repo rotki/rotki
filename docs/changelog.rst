@@ -1,6 +1,7 @@
 =========
 Changelog
 =========
+* :bug:`-` Fix coinbase/pro detection for GTC, TRU and FARM.
 * :bug:`3896` Fix dashboard balance search that does not show ethereum tokens.
 * :bug:`3895` Popup for successful forced sync operation should shows correct icon.
 * :bug:`3899` Crypto.com users will now be able to import supercharger events and recurring buy orders.
