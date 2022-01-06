@@ -121,7 +121,7 @@ import ActiveModules from '@/components/defi/ActiveModules.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
 import { isSectionLoading } from '@/composables/common';
-import { currency } from '@/composables/session';
+import { setupGeneralSettings } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { BalanceActions } from '@/store/balances/action-types';
@@ -245,6 +245,8 @@ export default defineComponent({
       return store.getters['balances/nfBalances'];
     });
 
+    const { currencySymbol } = setupGeneralSettings();
+
     const setupRefresh = (ignoreCache: boolean = false) => {
       const payload = ignoreCache ? { ignoreCache: true } : undefined;
       return async () =>
@@ -281,8 +283,8 @@ export default defineComponent({
       ...setupEdit(refreshBalances),
       refresh,
       mappedBalances,
-      currency,
-      tableHeaders: tableHeaders(currency),
+      currency: currencySymbol,
+      tableHeaders: tableHeaders(currencySymbol),
       total,
       getAsset: (price: NonFungibleBalance | null) => {
         if (!price) {

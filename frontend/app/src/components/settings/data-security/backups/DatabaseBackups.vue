@@ -78,7 +78,7 @@ import {
 import { DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
 import { getFilepath } from '@/components/settings/data-security/backups/utils';
-import { dateDisplayFormat } from '@/composables/session';
+import { setupGeneralSettings } from '@/composables/session';
 import { displayDateFormatter } from '@/data/date_formatter';
 import i18n from '@/i18n';
 import { UserDbBackup } from '@/services/backup/types';
@@ -114,6 +114,8 @@ export default defineComponent({
   setup(props, { emit }) {
     const { items, directory } = toRefs(props);
     const pendingDeletion = ref<UserDbBackup | null>(null);
+
+    const { dateDisplayFormat } = setupGeneralSettings();
 
     const messageInfo = computed(() => {
       const db = pendingDeletion.value;

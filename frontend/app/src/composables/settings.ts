@@ -1,3 +1,4 @@
+import { BigNumber } from '@rotki/common';
 import { computed } from '@vue/composition-api';
 import { useStore } from '@/store/utils';
 import { DateFormat } from '@/types/date-format';
@@ -5,6 +6,7 @@ import {
   DashboardTablesVisibleColumns,
   FrontendSettingsPayload
 } from '@/types/frontend-settings';
+import RoundingMode = BigNumber.RoundingMode;
 
 export const setupSettings = () => {
   const store = useStore();
@@ -25,6 +27,26 @@ export const setupSettings = () => {
     () => store.state.settings!.refreshPeriod
   );
 
+  const thousandSeparator = computed<string>(
+    () => store.getters['settings/thousandSeparator']
+  );
+
+  const decimalSeparator = computed<string>(
+    () => store.getters['settings/decimalSeparator']
+  );
+
+  const currencyLocation = computed<string>(
+    () => store.getters['settings/currencyLocation']
+  );
+
+  const amountRoundingMode = computed<RoundingMode>(
+    () => store.state.settings!.amountRoundingMode
+  );
+
+  const valueRoundingMode = computed<RoundingMode>(
+    () => store.state.settings!.valueRoundingMode
+  );
+
   const updateSetting = async (
     settings: FrontendSettingsPayload
   ): Promise<void> => {
@@ -36,6 +58,11 @@ export const setupSettings = () => {
     dashboardTablesVisibleColumns,
     itemsPerPage,
     refreshPeriod,
+    thousandSeparator,
+    decimalSeparator,
+    currencyLocation,
+    amountRoundingMode,
+    valueRoundingMode,
     updateSetting
   };
 };

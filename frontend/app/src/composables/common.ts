@@ -88,3 +88,14 @@ export const setupMessages = () => {
     setMessage
   };
 };
+
+export const setupNewUser = () => {
+  const store = useStore();
+  const newUser = computed(() => {
+    return store.state.newUser;
+  });
+
+  return {
+    newUser
+  };
+};

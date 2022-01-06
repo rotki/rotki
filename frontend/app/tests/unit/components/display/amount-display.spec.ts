@@ -18,6 +18,9 @@ function createWrapper(
   const vuetify = new Vuetify();
   return mount(AmountDisplay, {
     store,
+    provide: {
+      'vuex-store': store
+    },
     vuetify,
     stubs: {
       VTooltip: {
@@ -37,7 +40,7 @@ function createWrapper(
 }
 
 describe('AmountDisplay.vue', () => {
-  let wrapper: Wrapper<AmountDisplay>;
+  let wrapper: Wrapper<any>;
 
   beforeEach(async () => {
     store.commit('session/generalSettings', {

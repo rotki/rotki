@@ -223,7 +223,7 @@
     "validation": {
       "empty_confirmation": "Please provide a password confirmation",
       "empty_password": "Please provide a password",
-      "password_missmatch": "The password confirmation does not match the provided password"
+      "password_mismatch": "The password confirmation does not match the provided password"
     }
   },
   "collapsed_pending_tasks": {
@@ -302,7 +302,7 @@
         "valid_username": "A username must contain only alphanumeric characters and have no spaces",
         "non_empty_password": "Please provide a password",
         "non_empty_password_confirmation": "Please provide a password confirmation",
-        "password_confirmation_missmatch": "The password confirmation does not match the provided password"
+        "password_confirmation_mismatch": "The password confirmation does not match the provided password"
       }
     },
     "usage_analytics": {

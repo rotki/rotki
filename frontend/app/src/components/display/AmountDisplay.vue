@@ -15,7 +15,7 @@
       type="text"
     >
       <amount-currency
-        v-if="!renderValue.isNaN() && currencyLocation === 'before'"
+        v-if="!isRenderValueNaN && currencyLocation === 'before'"
         class="mr-1 ml-1"
         :show-currency="shownCurrency"
         :currency="currency"
@@ -27,7 +27,7 @@
           open-delay="400ms"
           :disabled="
             ((!!fiatCurrency ||
-              renderValue.decimalPlaces() <= floatingPrecision) &&
+              renderValueDecimalPlaces <= floatingPrecision) &&
               !tooltip) ||
             isPriceAsset
           "
@@ -48,7 +48,7 @@
         </v-tooltip>
       </span>
       <amount-currency
-        v-if="!renderValue.isNaN() && currencyLocation === 'after'"
+        v-if="!isRenderValueNaN && currencyLocation === 'after'"
         class="ml-1 amount-display__currency"
         :asset-padding="assetPadding"
         :show-currency="shownCurrency"
@@ -61,193 +61,217 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { mapGetters, mapState } from 'vuex';
-import AmountCurrency from '@/components/display/AmountCurrency.vue';
-import { displayAmountFormatter } from '@/data/amount_formatter';
-import AssetMixin from '@/mixins/asset-mixin';
-import { ExchangeRateGetter } from '@/store/balances/types';
-import { Currency } from '@/types/currency';
-import { CurrencyLocation } from '@/types/currency-location';
 import {
-  AMOUNT_ROUNDING_MODE,
-  VALUE_ROUNDING_MODE
-} from '@/types/frontend-settings';
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import AmountCurrency from '@/components/display/AmountCurrency.vue';
+import {
+  setupAssetInfoRetrieval,
+  setupExchangeRateGetter
+} from '@/composables/balances';
+import { setupDisplayData, setupGeneralSettings } from '@/composables/session';
+import { setupSettings } from '@/composables/settings';
+import { displayAmountFormatter } from '@/data/amount_formatter';
 import { bigNumberify } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
 
-type ShownCurrency = 'none' | 'ticker' | 'symbol' | 'name';
+const shownCurrency = ['none', 'ticker', 'symbol', 'name'] as const;
+type ShownCurrency = typeof shownCurrency[number];
 
-@Component({
+export default defineComponent({
   components: {
     AmountCurrency
   },
-  computed: {
-    ...mapGetters('session', ['floatingPrecision', 'currency']),
-    ...mapGetters('settings', [
-      'thousandSeparator',
-      'decimalSeparator',
-      'currencyLocation'
-    ]),
-    ...mapState('settings', [AMOUNT_ROUNDING_MODE, VALUE_ROUNDING_MODE]),
-    ...mapState('session', ['scrambleData']),
-    ...mapGetters('session', ['shouldShowAmount']),
-    ...mapGetters('balances', ['exchangeRate'])
-  }
-})
-export default class AmountDisplay extends Mixins(AssetMixin) {
-  @Prop({ required: true })
-  value!: BigNumber;
-  @Prop({ required: false, type: Boolean, default: false })
-  loading!: boolean;
-  @Prop({ required: false })
-  amount!: BigNumber;
-  @Prop({ required: false, default: null, type: String })
-  fiatCurrency!: string | null;
-  @Prop({
-    required: false,
-    default: 'none',
-    validator: showCurrency => {
-      return ['none', 'ticker', 'symbol', 'name'].indexOf(showCurrency) > -1;
-    }
-  })
-  showCurrency!: ShownCurrency;
-  @Prop({ required: false, default: '' })
-  asset!: string;
-  @Prop({ required: false, type: String, default: '' })
-  priceAsset!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  integer!: boolean;
-  @Prop({
-    required: false,
-    type: Number,
-    default: 0,
-    validator: chars => chars >= 0 && chars <= 5
-  })
-  assetPadding!: number;
-  @Prop({ required: false, type: Boolean, default: false })
-  pnl!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  tooltip!: boolean;
+  props: {
+    value: { required: true, type: Object as PropType<BigNumber> },
+    loading: { required: false, type: Boolean, default: false },
+    amount: {
+      required: false,
+      type: Object as PropType<BigNumber>,
+      default: null
+    },
+    fiatCurrency: { required: false, type: String, default: null },
+    showCurrency: {
+      required: false,
+      default: 'none',
+      type: String as PropType<ShownCurrency>,
+      validator: (showCurrency: ShownCurrency) => {
+        return shownCurrency.indexOf(showCurrency) > -1;
+      }
+    },
+    asset: { required: false, type: String, default: '' },
+    priceAsset: { required: false, type: String, default: '' },
+    integer: { required: false, type: Boolean, default: false },
+    assetPadding: {
+      required: false,
+      type: Number,
+      default: 0,
+      validator: (chars: number) => chars >= 0 && chars <= 5
+    },
+    pnl: { required: false, type: Boolean, default: false },
+    tooltip: { required: false, type: Boolean, default: false }
+  },
+  setup(props) {
+    const {
+      amount,
+      value,
+      asset,
+      fiatCurrency,
+      showCurrency,
+      priceAsset,
+      integer
+    } = toRefs(props);
+    const { currency, currencySymbol, floatingPrecision } =
+      setupGeneralSettings();
 
-  currency!: Currency;
-  shouldShowAmount!: boolean;
-  scrambleData!: boolean;
-  floatingPrecision!: number;
-  thousandSeparator!: string;
-  decimalSeparator!: string;
-  currencyLocation!: CurrencyLocation;
-  exchangeRate!: ExchangeRateGetter;
-  amountRoundingMode!: RoundingMode;
-  valueRoundingMode!: RoundingMode;
+    const { scrambleData, shouldShowAmount } = setupDisplayData();
 
-  get symbol(): string {
-    if (!this.asset) {
-      return '';
-    }
-    return this.getSymbol(this.asset);
-  }
+    const exchangeRate = setupExchangeRateGetter();
 
-  get shownCurrency(): ShownCurrency {
-    return this.showCurrency === 'none' && !!this.fiatCurrency
-      ? 'symbol'
-      : this.showCurrency;
-  }
+    const {
+      thousandSeparator,
+      decimalSeparator,
+      currencyLocation,
+      amountRoundingMode,
+      valueRoundingMode
+    } = setupSettings();
 
-  get isPriceAsset(): boolean {
-    return this.currency.tickerSymbol === this.priceAsset;
-  }
+    const { getAssetSymbol } = setupAssetInfoRetrieval();
 
-  get renderValue(): BigNumber {
-    const multiplier = [10, 100, 1000];
-    let valueToRender;
+    const symbol = computed<string>(() => {
+      if (!asset.value) {
+        return '';
+      }
 
-    // return a random number if scrambeData is on
-    if (this.scrambleData) {
-      return BigNumber.random()
-        .multipliedBy(multiplier[Math.floor(Math.random() * multiplier.length)])
-        .plus(BigNumber.random(2));
-    }
+      return getAssetSymbol(asset.value);
+    });
 
-    if (this.amount && this.fiatCurrency === this.currency.tickerSymbol) {
-      valueToRender = this.amount;
-    } else {
-      valueToRender = this.value;
-    }
+    const shownCurrency = computed<ShownCurrency>(() => {
+      return showCurrency.value === 'none' && !!fiatCurrency.value
+        ? 'symbol'
+        : showCurrency.value;
+    });
 
-    // in certain cases where what is passed as a value is a string and not BigNumber, convert it
-    if (typeof valueToRender === 'string') {
-      return bigNumberify(valueToRender);
-    }
-    return valueToRender;
-  }
+    const isPriceAsset = computed<boolean>(() => {
+      return currencySymbol.value === priceAsset.value;
+    });
 
-  get convertFiat(): boolean {
-    const { tickerSymbol } = this.currency;
-    return !!this.fiatCurrency && this.fiatCurrency !== tickerSymbol;
-  }
+    const renderValue = computed<BigNumber>(() => {
+      const multiplier = [10, 100, 1000];
+      let valueToRender;
 
-  get formattedValue(): string {
-    if (this.isPriceAsset) {
-      return bigNumberify(1).toFormat(this.floatingPrecision);
-    }
-    return this.formatValue(this.renderValue);
-  }
+      // return a random number if scrambeData is on
+      if (scrambleData.value) {
+        return BigNumber.random()
+          .multipliedBy(
+            multiplier[Math.floor(Math.random() * multiplier.length)]
+          )
+          .plus(BigNumber.random(2));
+      }
 
-  get fullValue(): string {
-    const value = this.convertFiat
-      ? this.convertValue(this.renderValue)
-      : this.renderValue;
-    return value.toFormat(value.decimalPlaces());
-  }
+      if (amount.value && fiatCurrency.value === currencySymbol.value) {
+        valueToRender = amount.value;
+      } else {
+        valueToRender = value.value;
+      }
 
-  get rounding(): RoundingMode | undefined {
-    const { tickerSymbol } = this.currency;
-    const isValue = this.fiatCurrency === tickerSymbol;
-    let rounding: BigNumber.RoundingMode | undefined = undefined;
-    if (isValue) {
-      rounding = this.valueRoundingMode;
-    } else if (!this.convertFiat) {
-      rounding = this.amountRoundingMode;
-    }
-    return rounding;
-  }
+      // in certain cases where what is passed as a value is a string and not BigNumber, convert it
+      if (typeof valueToRender === 'string') {
+        return bigNumberify(valueToRender);
+      }
+      return valueToRender;
+    });
 
-  private convertValue(value: BigNumber): BigNumber {
-    const { tickerSymbol } = this.currency;
-    const rate = this.exchangeRate(tickerSymbol);
-    return rate ? value.multipliedBy(rate) : value;
-  }
+    const isRenderValueNaN = computed<boolean>(() => renderValue.value.isNaN());
 
-  formatValue(value: BigNumber): string {
-    const floatingPrecision = this.integer ? 0 : this.floatingPrecision;
-    const price = this.convertFiat ? this.convertValue(value) : value;
-
-    if (price.isNaN()) {
-      return '-';
-    }
-
-    const formattedValue = displayAmountFormatter.format(
-      price,
-      floatingPrecision,
-      this.thousandSeparator,
-      this.decimalSeparator,
-      this.rounding
+    const renderValueDecimalPlaces = computed<number>(() =>
+      renderValue.value.decimalPlaces()
     );
 
-    const hiddenDecimals = price.decimalPlaces() > floatingPrecision;
-    if (hiddenDecimals && this.rounding === BigNumber.ROUND_UP) {
-      return `< ${formattedValue}`;
-    } else if (
-      price.lt(1) &&
-      hiddenDecimals &&
-      this.rounding === BigNumber.ROUND_DOWN
-    ) {
-      return `> ${formattedValue}`;
-    }
-    return formattedValue;
+    const convertFiat = computed<boolean>(() => {
+      return (
+        !!fiatCurrency.value && fiatCurrency.value !== currencySymbol.value
+      );
+    });
+
+    const formatValue = (value: BigNumber): string => {
+      const floatingPrecisionUsed = integer.value ? 0 : floatingPrecision.value;
+      const price = convertFiat.value ? convertValue(value) : value;
+
+      if (price.isNaN()) {
+        return '-';
+      }
+
+      const formattedValue = displayAmountFormatter.format(
+        price,
+        floatingPrecisionUsed,
+        thousandSeparator.value,
+        decimalSeparator.value,
+        rounding.value
+      );
+
+      const hiddenDecimals = price.decimalPlaces() > floatingPrecisionUsed;
+      if (hiddenDecimals && rounding.value === BigNumber.ROUND_UP) {
+        return `< ${formattedValue}`;
+      } else if (
+        price.lt(1) &&
+        hiddenDecimals &&
+        rounding.value === BigNumber.ROUND_DOWN
+      ) {
+        return `> ${formattedValue}`;
+      }
+      return formattedValue;
+    };
+
+    const formattedValue = computed(() => {
+      if (isPriceAsset.value) {
+        return bigNumberify(1).toFormat(floatingPrecision.value);
+      }
+      return formatValue(renderValue.value);
+    });
+
+    const convertValue = (value: BigNumber): BigNumber => {
+      const rate = exchangeRate(currencySymbol.value);
+      return rate ? value.multipliedBy(rate) : value;
+    };
+
+    const fullValue = computed<string>(() => {
+      const value = convertFiat.value
+        ? convertValue(renderValue.value)
+        : renderValue.value;
+
+      return value.toFormat(value.decimalPlaces());
+    });
+
+    const rounding = computed<RoundingMode | undefined>(() => {
+      const isValue = fiatCurrency.value === currencySymbol.value;
+      let rounding: RoundingMode | undefined = undefined;
+      if (isValue) {
+        rounding = valueRoundingMode.value;
+      } else if (!convertFiat.value) {
+        rounding = amountRoundingMode.value;
+      }
+      return rounding;
+    });
+
+    return {
+      currency,
+      shouldShowAmount,
+      isRenderValueNaN,
+      renderValueDecimalPlaces,
+      currencyLocation,
+      shownCurrency,
+      symbol,
+      floatingPrecision,
+      isPriceAsset,
+      formattedValue,
+      fullValue
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">
