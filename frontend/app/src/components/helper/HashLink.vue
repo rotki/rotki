@@ -82,7 +82,7 @@ import { randomHex } from '@/utils/data';
   }
 })
 export default class HashLink extends Mixins(ScrambleMixin, ThemeMixin) {
-  @Prop({ required: true, type: String })
+  @Prop({ required: false, type: String, default: '' })
   text!: string;
   @Prop({ required: false, type: Boolean, default: false })
   fullAddress!: boolean;
