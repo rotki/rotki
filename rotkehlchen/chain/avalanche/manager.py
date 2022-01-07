@@ -7,6 +7,7 @@ from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.graph import Graph
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import BlockchainQueryError, DeserializationError, RemoteError
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.fval import FVal
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 AVAX_ADDRESS = '0x9debca6ea3af87bf422cea9ac955618ceb56efb4'
+COVALENT_AVAX_ADDRESS = '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
 
 
@@ -58,13 +60,11 @@ class AvalancheManager():
         if result is None:
             balance = from_wei(FVal(self.w3.eth.get_balance(account)))
         else:
-            def filter_avax(value: Dict) -> bool:
-                if 'contract_address' in value:
-                    return value['contract_address'] == AVAX_ADDRESS
-                return False
-
-            avax_coin = list(filter(filter_avax, result))
-            balance = from_wei(FVal(avax_coin[0]['balance']))
+            balance = ZERO
+            for entry in result:
+                if entry.get('contract_address') in (AVAX_ADDRESS, COVALENT_AVAX_ADDRESS):
+                    balance = from_wei(FVal(entry.get('balance', 0)))
+                    break
         return FVal(balance)
 
     def get_multiavax_balance(

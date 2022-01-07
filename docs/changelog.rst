@@ -6,6 +6,7 @@ Changelog
 * :bug:`3895` Popup for successful forced sync operation should shows correct icon.
 * :bug:`3899` Crypto.com users will now be able to import supercharger events and recurring buy orders.
 * :bug:`-` Restores arm64 docker images.
+* :bug:`-` AVAX balances should now be always correctly queried.
 * :bug:`3903` The application should now run on macOS 10.14 (Mojave) without errors.
 * :bug:`3901` Coinbase accounts with intenal subaccount movements will now display the Coinbase withdrawals properly.
 
