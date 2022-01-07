@@ -1,6 +1,7 @@
 =========
 Changelog
 =========
+* :bug:`3913` NFT Balances table at dashboard should be updated when users remove an ethereum account.
 * :bug:`3916` Users with ethereum transactions that deploy contracts will now be able to load the transactions view properly.
 * :bug:`-` Fix coinbase/pro detection for GTC, TRU and FARM.
 * :bug:`3896` Fix dashboard balance search that does not show ethereum tokens.
