@@ -141,7 +141,6 @@
 <script lang="ts">
 import dayjs from 'dayjs';
 import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { convertKeys } from '@/services/axios-tranformers';
@@ -151,7 +150,8 @@ import {
   NewLedgerAction,
   TradeLocation
 } from '@/services/history/types';
-import { HistoryActions, ledgerActionsData } from '@/store/history/consts';
+import { ledgerActionsData } from '@/store/history/consts';
+import { LedgerActionEntry } from '@/store/history/types';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
 import { LedgerActionType } from '@/types/ledger-actions';
@@ -173,13 +173,7 @@ function lastSelectedLocation(): TradeLocation {
 }
 
 @Component({
-  components: { LocationSelector },
-  methods: {
-    ...mapActions('history', [
-      HistoryActions.ADD_LEDGER_ACTION,
-      HistoryActions.EDIT_LEDGER_ACTION
-    ])
-  }
+  components: { LocationSelector }
 })
 export default class LedgerActionForm extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
@@ -187,6 +181,11 @@ export default class LedgerActionForm extends Vue {
 
   @Prop({ required: false, default: null })
   edit!: LedgerAction | null;
+
+  @Prop({ required: true, type: Function })
+  saveData!: (
+    trade: NewLedgerAction | LedgerActionEntry
+  ) => Promise<ActionStatus>;
 
   @Emit()
   input(_valid: boolean) {}
@@ -197,10 +196,6 @@ export default class LedgerActionForm extends Vue {
   errorMessages: {
     [field: string]: string[];
   } = {};
-  addLedgerAction!: (ledgerAction: NewLedgerAction) => Promise<ActionStatus>;
-  editLedgerAction!: (
-    ledgerAction: Omit<LedgerAction, 'ignoredInAccounting'>
-  ) => Promise<ActionStatus>;
 
   readonly typeData = ledgerActionsData;
   readonly amountRules = [
@@ -297,11 +292,8 @@ export default class LedgerActionForm extends Vue {
     };
 
     const { success, message } = !this.id
-      ? await this.addLedgerAction(ledgerActionPayload)
-      : await this.editLedgerAction({
-          ...ledgerActionPayload,
-          identifier: this.id
-        });
+      ? await this.saveData(ledgerActionPayload)
+      : await this.saveData({ ...ledgerActionPayload, identifier: this.id });
 
     if (success) {
       this.refresh();

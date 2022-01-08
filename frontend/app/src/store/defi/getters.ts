@@ -24,6 +24,7 @@ import {
   XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
 import sortBy from 'lodash/sortBy';
+import { storeToRefs } from 'pinia';
 import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress } from '@/filters';
 import i18n from '@/i18n';
@@ -79,6 +80,7 @@ import {
   getPoolProfit,
   getPools
 } from '@/store/defi/xswap-utils';
+import { useHistory } from '@/store/history';
 import { SettingsState } from '@/store/settings/state';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
@@ -1535,9 +1537,12 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       return getBalances(uniswapBalances, addresses);
     },
   basicDexTrades:
-    ({ uniswapTrades, balancerTrades, sushiswap }, _r, { settings, history }) =>
+    ({ uniswapTrades, balancerTrades, sushiswap }, _r, { settings }) =>
     (addresses): Trade[] => {
-      const ignoredTrades = history!.ignored.trades ?? [];
+      const historyStore = useHistory();
+      const { ignored } = storeToRefs(historyStore);
+      const ignoredTrades = ignored.value.trades ?? [];
+
       const {
         explorers: { ETH }
       }: SettingsState = settings!;

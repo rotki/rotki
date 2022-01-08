@@ -23,7 +23,7 @@ import {
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
 import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
-import { HistoryActions } from '@/store/history/consts';
+import { useHistory } from '@/store/history';
 import { useNotifications } from '@/store/notifications';
 import { useReports } from '@/store/reports';
 import {
@@ -74,8 +74,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     const options = {
       root: true
     };
+
+    const { fetchIgnored } = useHistory();
     const async = [
-      dispatch(`history/${HistoryActions.FETCH_IGNORED}`, null, options),
+      fetchIgnored,
       dispatch('fetchIgnoredAssets'),
       dispatch('session/fetchWatchers', null, options),
       dispatch('balances/fetchManualBalances', null, options),
@@ -284,10 +286,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('balances/reset', payload, opts);
     commit('defi/reset', payload, opts);
     commit('settings/reset', payload, opts);
-    commit('history/reset', payload, opts);
     commit('statistics/reset', payload, opts);
     commit('staking/reset', payload, opts);
     commit('reset', payload, opts);
+    useHistory().reset();
     useNotifications().reset();
     useReports().reset();
     useTasks().reset();
@@ -650,34 +652,28 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       });
     }
   },
-  async [ACTION_PURGE_CACHED_DATA]({ dispatch }, purgable: Purgeable) {
+  async [ACTION_PURGE_CACHED_DATA]({ dispatch }, purgeable: Purgeable) {
     const opts = { root: true };
-    if (purgable === ALL_CENTRALIZED_EXCHANGES) {
-      await dispatch(
-        `history/${HistoryActions.PURGE_EXCHANGE}`,
-        ALL_CENTRALIZED_EXCHANGES,
-        opts
-      );
-    } else if (purgable === ALL_DECENTRALIZED_EXCHANGES) {
+    const { purgeExchange } = useHistory();
+
+    if (purgeable === ALL_CENTRALIZED_EXCHANGES) {
+      await purgeExchange(ALL_CENTRALIZED_EXCHANGES);
+    } else if (purgeable === ALL_DECENTRALIZED_EXCHANGES) {
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.UNISWAP, opts);
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, Module.BALANCER, opts);
-    } else if (purgable === ALL_MODULES) {
+    } else if (purgeable === ALL_MODULES) {
       await dispatch(`staking/${ACTION_PURGE_DATA}`, ALL_MODULES, opts);
       await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, ALL_MODULES, opts);
     } else if (
-      SUPPORTED_EXCHANGES.includes(purgable as SupportedExchange) ||
-      EXTERNAL_EXCHANGES.includes(purgable as SupportedExternalExchanges)
+      SUPPORTED_EXCHANGES.includes(purgeable as SupportedExchange) ||
+      EXTERNAL_EXCHANGES.includes(purgeable as SupportedExternalExchanges)
     ) {
-      await dispatch(
-        `history/${HistoryActions.PURGE_EXCHANGE}`,
-        purgable,
-        opts
-      );
-    } else if (Object.values(Module).includes(purgable as Module)) {
-      if ([Module.ETH2, Module.ADEX].includes(purgable as Module)) {
-        await dispatch(`staking/${ACTION_PURGE_DATA}`, purgable, opts);
+      await purgeExchange(purgeable as SupportedExchange);
+    } else if (Object.values(Module).includes(purgeable as Module)) {
+      if ([Module.ETH2, Module.ADEX].includes(purgeable as Module)) {
+        await dispatch(`staking/${ACTION_PURGE_DATA}`, purgeable, opts);
       } else {
-        await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, purgable, opts);
+        await dispatch(`defi/${ACTION_PURGE_PROTOCOL}`, purgeable, opts);
       }
     }
   },

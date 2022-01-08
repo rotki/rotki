@@ -37,7 +37,7 @@
     <data-table
       :expanded.sync="expanded"
       :headers="tableHeaders"
-      :items="assetMovements"
+      :items="data"
       :loading="refreshing"
       :options="options"
       :server-items-length="itemLength"
@@ -105,6 +105,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, Ref, ref } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -124,9 +125,10 @@ import {
 } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
 import {
-  setupAssetMovements,
-  setupAssociatedLocations,
-  setupEntryLimit
+  getCollectionData,
+  setupEntryLimit,
+  setupIgnore,
+  setupSelectionMode
 } from '@/composables/history';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
@@ -137,15 +139,15 @@ import {
   TradeLocation
 } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { useAssetMovements, useHistory } from '@/store/history';
 import {
   AssetMovementEntry,
   IgnoreActionType,
   TradeEntry
 } from '@/store/history/types';
+import { Collection } from '@/types/collection';
 import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
-import { setupIgnore } from '@/views/history/composables/ignore';
-import { setupSelectionMode } from '@/views/history/composables/selection';
 import DepositWithdrawalDetails from '@/views/history/deposits-withdrawals/DepositWithdrawalDetails.vue';
 
 enum AssetMovementFilterKeys {
@@ -225,10 +227,18 @@ export default defineComponent({
   },
   setup(_, { emit }) {
     const fetch = (refresh: boolean = false) => emit('fetch', refresh);
-    const updatePayload = (payload: Partial<AssetMovementRequestPayload>) =>
-      emit('update:payload', payload);
 
-    const { assetMovements, limit, found, total } = setupAssetMovements();
+    const historyStore = useHistory();
+    const assetMovementStore = useAssetMovements();
+
+    const { associatedLocations } = storeToRefs(historyStore);
+    const { assetMovements } = storeToRefs(assetMovementStore);
+
+    const { updateAssetMovementsPayload } = assetMovementStore;
+
+    const { data, limit, found, total } = getCollectionData<AssetMovementEntry>(
+      assetMovements as Ref<Collection<AssetMovementEntry>>
+    );
 
     const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
@@ -252,7 +262,6 @@ export default defineComponent({
         .filter(uniqueStrings);
     });
 
-    const { associatedLocations } = setupAssociatedLocations();
     const availableLocations = computed<TradeLocation[]>(() => {
       return associatedLocations.value;
     });
@@ -349,7 +358,7 @@ export default defineComponent({
         ...paginationOptions
       };
 
-      updatePayload(payload);
+      updateAssetMovementsPayload(payload);
     };
 
     const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
@@ -375,21 +384,17 @@ export default defineComponent({
 
     const getId = (item: AssetMovementEntry) => item.identifier;
 
-    const selectionMode = setupSelectionMode<AssetMovementEntry>(
-      assetMovements,
-      getId
-    );
+    const selectionMode = setupSelectionMode<AssetMovementEntry>(data, getId);
 
     return {
       tableHeaders,
-      assetMovements,
+      data,
       limit,
       found,
       total,
       itemLength,
       fetch,
       showUpgradeRow,
-      updatePayload,
       loading: shouldShowLoadingScreen(Section.ASSET_MOVEMENT),
       refreshing: isSectionRefreshing(Section.ASSET_MOVEMENT),
       expanded,
@@ -401,7 +406,7 @@ export default defineComponent({
       ...setupIgnore(
         IgnoreActionType.MOVEMENTS,
         selectionMode.selected,
-        assetMovements,
+        data,
         fetch,
         getId
       )

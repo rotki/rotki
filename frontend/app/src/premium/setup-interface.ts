@@ -23,7 +23,7 @@ import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { registerComponents } from '@/premium/register-components';
 import { statisticsApi } from '@/premium/statistics-api';
 import { api } from '@/services/rotkehlchen-api';
-import { HistoryActions } from '@/store/history/consts';
+import { useHistory } from '@/store/history';
 import store from '@/store/store';
 import { FrontendSettingsPayload } from '@/types/frontend-settings';
 
@@ -69,10 +69,8 @@ const data: DataUtilities = {
       return api.history.deleteGitcoinGrantEvents(grantId);
     },
     fetchGrantEvents(payload: GitcoinGrantEventsPayload) {
-      return store.dispatch(
-        `history/${HistoryActions.FETCH_GITCOIN_GRANT}`,
-        payload
-      );
+      const { fetchGitcoinGrant } = useHistory();
+      return fetchGitcoinGrant(payload);
     }
   },
   statistics: statisticsApi
