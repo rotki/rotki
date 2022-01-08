@@ -692,28 +692,21 @@ class RestAPI():
             if blockchain == SupportedBlockchain.ETHEREUM:
                 result['per_account'].pop('BTC', None)
                 result['per_account'].pop('KSM', None)
+                result['per_account'].pop('DOT', None)
+                result['per_account'].pop('AVAX', None)
+                result['per_account'].pop('ETH2', None)
                 result['totals']['assets'].pop('BTC', None)
                 result['totals']['assets'].pop('KSM', None)
-            elif blockchain == SupportedBlockchain.BITCOIN:
-                val = result['per_account'].get('BTC', None)
-                per_account = {'BTC': val} if val else {}
-                val = result['totals']['assets'].get('BTC', None)
+                result['totals']['assets'].pop('DOT', None)
+                result['totals']['assets'].pop('AVAX', None)
+                result['totals']['assets'].pop('ETH2', None)
+            elif blockchain is not None:
+                native_token = blockchain.value
+                val = result['per_account'].get(native_token, None)
+                per_account = {native_token: val} if val else {}
+                val = result['totals']['assets'].get(native_token, None)
                 if val:
-                    totals['assets'] = {'BTC': val}
-                result = {'per_account': per_account, 'totals': totals}
-            elif blockchain == SupportedBlockchain.KUSAMA:
-                val = result['per_account'].get('KSM', None)
-                per_account = {'KSM': val} if val else {}
-                val = result['totals']['assets'].get('KSM', None)
-                if val:
-                    totals['assets'] = {'KSM': val}
-                result = {'per_account': per_account, 'totals': totals}
-            elif blockchain == SupportedBlockchain.POLKADOT:
-                val = result['per_account'].get('DOT', None)
-                per_account = {'DOT': val} if val else {}
-                val = result['totals']['assets'].get('DOT', None)
-                if val:
-                    totals['assets'] = {'DOT': val}
+                    totals['assets'] = {native_token: val}
                 result = {'per_account': per_account, 'totals': totals}
 
         return {'result': result, 'message': msg, 'status_code': status_code}
