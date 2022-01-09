@@ -1,11 +1,13 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, Tuple, TypeVar, Union
 
 from eth_utils import to_checksum_address
+from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures import HistoryEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.errors import (
     ConversionError,
     DeserializationError,
@@ -25,6 +27,7 @@ from rotkehlchen.typing import (
     Timestamp,
     TradePair,
 )
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
 
 if TYPE_CHECKING:
@@ -548,3 +551,45 @@ def deserialize_ethereum_transaction(
         raise DeserializationError(
             f'ethereum transaction from {source} missing expected key {str(e)}',
         ) from e
+
+
+def adjust_timestamp_lazy(
+    cursor: sqlcipher.Cursor,  # pylint: disable=no-member
+    msg_aggregator: MessagesAggregator,
+) -> Iterator[Tuple[str, FVal, Asset, Timestamp]]:
+    """
+    This function assumes the format returned by the query at
+    get_rows_missing_prices_in_base_entries.
+
+    What this does is deserialize information from the history_events table by:
+    - Getting the right asset
+    - Deserializing the amount value
+    - Chaning resolution of the timestamp field
+
+    The functions returns a generator to use the properties of the sqlite cursors
+    and avoid having in memory huge amount of data.
+    """
+    for identifier, amount_raw, asset_name, timestamp in cursor:
+        try:
+            amount = deserialize_fval(
+                value=amount_raw,
+                name='historic base entry usd_value query',
+                location='query_missing_prices',
+            )
+            high_precision_timestamp = deserialize_timestamp(timestamp)
+            yield (
+                identifier,
+                amount,
+                Asset(asset_name),
+                Timestamp(int(high_precision_timestamp / KRAKEN_TS_MULTIPLIER)),
+            )
+        except DeserializationError as e:
+            msg_aggregator.add_warning(
+                f'Failed to read value from historic base entry {identifier} '
+                f'with amount. {str(e)}',
+            )
+        except UnknownAsset as e:
+            msg_aggregator.add_warning(
+                f'Failed to read asset from historic base entry {identifier} '
+                f'with asset identifier {asset_name}. {str(e)}',
+            )

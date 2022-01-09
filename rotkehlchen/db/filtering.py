@@ -10,6 +10,7 @@ from rotkehlchen.accounting.typing import SchemaEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.errors import DeserializationError
+from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     AssetMovementCategory,
@@ -58,16 +59,23 @@ class DBTimestampFilter(DBFilter):
     timestamp_attribute: str = 'timestamp'
     from_ts: Optional[Timestamp] = None
     to_ts: Optional[Timestamp] = None
+    scaling_factor: Optional[FVal] = None
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
         filters = []
         bindings = []
         if self.from_ts is not None:
             filters.append(f'{self.timestamp_attribute} >= ?')
-            bindings.append(self.from_ts)
+            from_ts = self.from_ts
+            if self.scaling_factor is not None:
+                from_ts = Timestamp((from_ts * self.scaling_factor).to_int(exact=False))
+            bindings.append(from_ts)
         if self.to_ts is not None:
             filters.append(f'{self.timestamp_attribute} <= ?')
-            bindings.append(self.to_ts)
+            to_ts = self.to_ts
+            if self.scaling_factor is not None:
+                to_ts = Timestamp((to_ts * self.scaling_factor).to_int(exact=False))
+            bindings.append(to_ts)
 
         return filters, bindings
 
@@ -675,17 +683,12 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
                 DBStringFilter(and_op=True, column='location_label', value=location_label),
             )
 
-        if location == Location.KRAKEN:
-            if from_ts is not None:
-                from_ts = Timestamp(from_ts * KRAKEN_TS_MULTIPLIER)
-            if to_ts is not None:
-                to_ts = Timestamp(to_ts * KRAKEN_TS_MULTIPLIER)
-
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
             from_ts=from_ts,
             to_ts=to_ts,
             timestamp_attribute='timestamp',
+            scaling_factor=FVal(KRAKEN_TS_MULTIPLIER),
         )
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters

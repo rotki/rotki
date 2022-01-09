@@ -69,6 +69,9 @@ class Balance:
     def __neg__(self) -> 'Balance':
         return Balance(amount=-self.amount, usd_value=-self.usd_value)
 
+    def __abs__(self) -> 'Balance':
+        return Balance(amount=abs(self.amount), usd_value=abs(self.usd_value))
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class AssetBalance:
@@ -444,5 +447,5 @@ class StakingEvent:
             'timestamp': self.timestamp,
             'location': str(self.location),
         }
-        balance = self.balance.serialize()
+        balance = abs(self.balance).serialize()
         return {**data, **balance}

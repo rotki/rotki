@@ -37,20 +37,17 @@ from rotkehlchen.chain.substrate.utils import (
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.filtering import DBStringFilter, HistoryEventFilterQuery
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors import (
-    DeserializationError,
     EthSyncError,
     InputError,
     PremiumAuthenticationError,
     RemoteError,
     SystemPermissionError,
-    UnknownAsset,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -70,7 +67,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter, configure_logging
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.typing import (
     ApiKey,
@@ -97,6 +93,8 @@ MAIN_LOOP_SECS_DELAY = 10
 
 ICONS_BATCH_SIZE = 3
 ICONS_QUERY_SLEEP = 60
+
+BASE_ENTRY_PRICE_QUERY_SLEEP = 300
 
 
 class Rotkehlchen():
@@ -330,6 +328,13 @@ class Rotkehlchen():
             method=self.icon_manager.periodically_query_icons_until_all_cached,
             batch_size=ICONS_BATCH_SIZE,
             sleep_time_secs=ICONS_QUERY_SLEEP,
+        )
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=5,
+            task_name='periodically_query_history_events_prices',
+            exception_is_error=False,
+            method=self.periodically_query_history_events_prices,
+            sleep_time_secs=BASE_ENTRY_PRICE_QUERY_SLEEP,
         )
         self.user_is_logged_in = True
         log.debug('User unlocking complete')
@@ -920,34 +925,28 @@ class Rotkehlchen():
         # Use a deepcopy to avoid mutations in the filter query if it is used later
         new_filter_query = copy.deepcopy(filter_query)
         new_filter_query.filters.append(DBStringFilter(and_op=True, column='usd_value', value='0'))
-        assets_missing_assets = self.data.db.get_rows_missing_prices_in_base_entries(
+        entries_missing_prices = self.data.db.get_rows_missing_prices_in_base_entries(
             filter_query=new_filter_query,
         )
         inquirer = PriceHistorian()
         updates = []
-        for identifier, amount, asset_name, timestamp in assets_missing_assets:
-            try:
-                # Shouldn't raise DeserializationError since data comes from the database
-                amount = deserialize_fval(
-                    value=amount,
-                    name='historic base entry usd_value query',
-                    location='query_missing_prices',
-                )
-                price = inquirer.query_historical_price(
-                    from_asset=Asset(asset_name),
-                    to_asset=A_USD,
-                    timestamp=Timestamp(int(timestamp / KRAKEN_TS_MULTIPLIER)),
-                )
-                usd_value = amount * price
-                updates.append((str(usd_value), identifier))
-            except DeserializationError as e:
-                self.msg_aggregator.add_warning(
-                    f'Failed to read amount from historic base entry {identifier} '
-                    f'with amount {amount}. {str(e)}',
-                )
-            except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Failed to read asset from historic base entry {identifier} '
-                    f'with asset identifier {asset_name}. {str(e)}',
-                )
+        for identifier, amount, asset, timestamp in entries_missing_prices:
+            price = inquirer.query_historical_price(
+                from_asset=asset,
+                to_asset=A_USD,
+                timestamp=timestamp,
+            )
+            usd_value = amount * price
+            updates.append((str(usd_value), identifier))
+
         self.data.db.update_base_entries_prices(updates)
+
+    def periodically_query_history_events_prices(self, sleep_time_secs: int) -> None:
+        """
+        Query periodically the history_events table to find entries missing a proper
+        usd_value column value.
+        """
+        query = HistoryEventFilterQuery.make()
+        while True:
+            self.query_missing_prices(filter_query=query)
+            gevent.sleep(sleep_time_secs)

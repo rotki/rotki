@@ -1251,4 +1251,4 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
     assert result[2]['asset'] == 'ETH'
     assert result[0]['usd_value'] == '0.219353533620'
     assert result[1]['usd_value'] == '242.570400000000'
-    assert result[2]['usd_value'] == '-242.570400000000'
+    assert result[2]['usd_value'] == '242.570400000000'

@@ -10190,8 +10190,8 @@ Staking events
                   "asset": "ETH",
                   "timestamp": 1636738550,
                   "location": "kraken",
-                  "amount": "-0.0600000000",
-                  "usd_value": "-278.7345000000000"
+                  "amount": "0.0600000000",
+                  "usd_value": "278.7345000000000"
               }
           ],
           "message": ""

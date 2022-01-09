@@ -58,7 +58,6 @@ from rotkehlchen.constants.limits import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -3924,12 +3923,13 @@ class RestAPI():
             if only_cache is False:
                 for kraken_instance in exchanges_list:
                     with_errors = kraken_instance.query_kraken_ledgers(   # type: ignore
-                        start_ts=filter_query.from_ts / KRAKEN_TS_MULTIPLIER,
-                        end_ts=filter_query.to_ts / KRAKEN_TS_MULTIPLIER,
+                        start_ts=filter_query.from_ts,
+                        end_ts=filter_query.to_ts,
                     )
                     if with_errors:
                         message = 'Failed to query some new events from the Kraken exchange. '
-            # Query missing prices
+            # After 3865 we should have a recurring tasks that queries for missing prices but
+            # we make sure that the returned values have their correct value calculated
             self.rotkehlchen.query_missing_prices(filter_query)
             # Query events from database
             events_raw = self.rotkehlchen.data.db.get_history_events(filter_query)

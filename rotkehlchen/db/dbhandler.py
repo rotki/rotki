@@ -6,7 +6,7 @@ import shutil
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, Tuple, Type, Union, cast
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
@@ -102,7 +102,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.serialization.deserialize import deserialize_hex_color_code
+from rotkehlchen.serialization.deserialize import adjust_timestamp_lazy, deserialize_hex_color_code
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -3524,14 +3524,17 @@ class DBHandler:
     def get_rows_missing_prices_in_base_entries(
         self,
         filter_query: HistoryEventFilterQuery,
-    ) -> sqlcipher.Cursor:  # pylint: disable=no-member
+    ) -> Iterator[Tuple[str, FVal, Asset, Timestamp]]:
         """
         Get missing prices for history base entries based on filter query
         """
         query, bindings = filter_query.prepare()
         query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
         cursor = self.conn.cursor()
-        return cursor.execute(query, bindings)
+        return adjust_timestamp_lazy(
+            cursor=cursor.execute(query, bindings),
+            msg_aggregator=self.msg_aggregator,
+        )
 
     def update_base_entries_prices(self, updates: List[Tuple[str, str]]) -> None:
         """Updates usd value of history base entires"""
