@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-import copy
 import logging.config
 import os
 import time
@@ -35,12 +34,10 @@ from rotkehlchen.chain.substrate.utils import (
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
 from rotkehlchen.config import default_data_directory
-from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
-from rotkehlchen.db.filtering import DBStringFilter, HistoryEventFilterQuery
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.errors import (
     EthSyncError,
@@ -93,8 +90,6 @@ MAIN_LOOP_SECS_DELAY = 10
 
 ICONS_BATCH_SIZE = 3
 ICONS_QUERY_SLEEP = 60
-
-BASE_ENTRY_PRICE_QUERY_SLEEP = 300
 
 
 class Rotkehlchen():
@@ -328,13 +323,6 @@ class Rotkehlchen():
             method=self.icon_manager.periodically_query_icons_until_all_cached,
             batch_size=ICONS_BATCH_SIZE,
             sleep_time_secs=ICONS_QUERY_SLEEP,
-        )
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=5,
-            task_name='periodically_query_history_events_prices',
-            exception_is_error=False,
-            method=self.periodically_query_history_events_prices,
-            sleep_time_secs=BASE_ENTRY_PRICE_QUERY_SLEEP,
         )
         self.user_is_logged_in = True
         log.debug('User unlocking complete')
@@ -915,38 +903,3 @@ class Rotkehlchen():
             return  # only for cryptocompare for now
 
         self.cryptocompare.create_cache(from_asset, to_asset, purge_old)
-
-    def query_missing_prices(
-        self,
-        filter_query: HistoryEventFilterQuery,
-    ) -> None:
-        """Queries missing prices for HistoryBaseEntry in database based
-        on the query filter used"""
-        # Use a deepcopy to avoid mutations in the filter query if it is used later
-        new_filter_query = copy.deepcopy(filter_query)
-        new_filter_query.filters.append(DBStringFilter(and_op=True, column='usd_value', value='0'))
-        entries_missing_prices = self.data.db.get_rows_missing_prices_in_base_entries(
-            filter_query=new_filter_query,
-        )
-        inquirer = PriceHistorian()
-        updates = []
-        for identifier, amount, asset, timestamp in entries_missing_prices:
-            price = inquirer.query_historical_price(
-                from_asset=asset,
-                to_asset=A_USD,
-                timestamp=timestamp,
-            )
-            usd_value = amount * price
-            updates.append((str(usd_value), identifier))
-
-        self.data.db.update_base_entries_prices(updates)
-
-    def periodically_query_history_events_prices(self, sleep_time_secs: int) -> None:
-        """
-        Query periodically the history_events table to find entries missing a proper
-        usd_value column value.
-        """
-        query = HistoryEventFilterQuery.make()
-        while True:
-            self.query_missing_prices(filter_query=query)
-            gevent.sleep(sleep_time_secs)

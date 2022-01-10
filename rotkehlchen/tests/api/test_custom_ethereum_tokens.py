@@ -142,7 +142,7 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
         status_code=HTTPStatus.CONFLICT,
     )
 
-    # also test that the addition of underlying tokens has created proper asset entires for them
+    # also test that the addition of underlying tokens has created proper asset entries for them
     cursor = GlobalDBHandler()._conn.cursor()
     result = cursor.execute(
         'SELECT COUNT(*) from assets WHERE identifier IN (?, ?, ?, ?)',

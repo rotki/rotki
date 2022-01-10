@@ -105,6 +105,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
+from rotkehlchen.tasks.history_base_entries import query_missing_prices
 from rotkehlchen.typing import (
     AVAILABLE_MODULES_MAP,
     IMPORTABLE_LOCATIONS,
@@ -3921,16 +3922,20 @@ class RestAPI():
             events = []
         else:
             if only_cache is False:
+                kraken_names = []
                 for kraken_instance in exchanges_list:
                     with_errors = kraken_instance.query_kraken_ledgers(   # type: ignore
                         start_ts=filter_query.from_ts,
                         end_ts=filter_query.to_ts,
                     )
                     if with_errors:
-                        message = 'Failed to query some new events from the Kraken exchange. '
+                        kraken_names.append(kraken_instance.name)
+                if len(kraken_names) != 0:
+                    message = f'Failed to query some events from Kraken exchanges {",".join(kraken_names)}'  # noqa: E501
+
             # After 3865 we should have a recurring tasks that queries for missing prices but
             # we make sure that the returned values have their correct value calculated
-            self.rotkehlchen.query_missing_prices(filter_query)
+            query_missing_prices(filter_query=filter_query, db=self.rotkehlchen.data.db)
             # Query events from database
             events_raw = self.rotkehlchen.data.db.get_history_events(filter_query)
             events = [StakingEvent.from_history_base_entry(event) for event in events_raw]

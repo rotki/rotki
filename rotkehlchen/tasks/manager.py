@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -18,6 +19,7 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.sync import PremiumSyncManager
+from rotkehlchen.tasks.history_base_entries import query_missing_prices
 from rotkehlchen.typing import ChecksumEthAddress, Location
 from rotkehlchen.utils.misc import ts_now
 
@@ -86,6 +88,7 @@ class TaskManager():
             self._maybe_query_ethereum_transactions,
             self._maybe_schedule_exchange_history_query,
             self._maybe_schedule_ethereum_txreceipts,
+            self._maybe_query_missing_prices,
         ]
         self.schedule_lock = gevent.lock.Semaphore()
 
@@ -278,6 +281,19 @@ class TaskManager():
             fail_callback=exchange_fail_cb,
         )
         self.last_exchange_query_ts[exchange.location_id()] = now
+
+    def _maybe_query_missing_prices(self) -> None:
+        query = HistoryEventFilterQuery.make()
+        task_name = 'Periodically query history events prices'
+        log.debug(f'Scheduling task to {task_name}')
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name=task_name,
+            exception_is_error=True,
+            method=query_missing_prices,
+            filter_query=query,
+            db=self.database,
+        )
 
     def _schedule(self) -> None:
         """Schedules background tasks"""

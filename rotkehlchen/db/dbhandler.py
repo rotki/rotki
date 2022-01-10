@@ -102,7 +102,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.serialization.deserialize import adjust_timestamp_lazy, deserialize_hex_color_code
+from rotkehlchen.serialization.deserialize import (
+    deserialize_hex_color_code,
+    iterate_deserialize_timestamps,
+)
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -3521,7 +3524,7 @@ class DBHandler:
                 )
         return result
 
-    def get_rows_missing_prices_in_base_entries(
+    def iterate_rows_missing_prices_in_base_entries(
         self,
         filter_query: HistoryEventFilterQuery,
     ) -> Iterator[Tuple[str, FVal, Asset, Timestamp]]:
@@ -3531,14 +3534,6 @@ class DBHandler:
         query, bindings = filter_query.prepare()
         query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
         cursor = self.conn.cursor()
-        return adjust_timestamp_lazy(
+        return iterate_deserialize_timestamps(
             cursor=cursor.execute(query, bindings),
-            msg_aggregator=self.msg_aggregator,
         )
-
-    def update_base_entries_prices(self, updates: List[Tuple[str, str]]) -> None:
-        """Updates usd value of history base entires"""
-        query = 'UPDATE history_events SET usd_value=? WHERE identifier=?'
-        cursor = self.conn.cursor()
-        cursor.executemany(query, updates)
-        self.update_last_write()
