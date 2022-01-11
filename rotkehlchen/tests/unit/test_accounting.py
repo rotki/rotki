@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, 
 from rotkehlchen.accounting.typing import ACCOUNTING_EVENT_SCHEMA
 from rotkehlchen.chain.ethereum.structures import AaveInterestEvent
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH, A_WBTC, A_USDT
+from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH, A_USDT, A_WBTC
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
@@ -918,8 +918,13 @@ def test_fees_count_in_cost_basis(accountant):
     errors = accountant.msg_aggregator.consume_errors()
     assert errors == [error]
 
+
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_fees_counted_in_pnl(accountant):
+def test_fees_in_received_asset(accountant):
+    """
+    Test the sell trade where the fee is nominated in the asset received. We had a bug
+    where the PnL report said that there was no documented adquisition.
+    """
     history = [
         {
             'timestamp': 1609537953,
@@ -936,7 +941,7 @@ def test_fees_counted_in_pnl(accountant):
     ledger_actions_list = [
         LedgerAction(
             identifier=0,
-            timestamp=Timestamp(1624395186),
+            timestamp=Timestamp(1539713238),
             action_type=LedgerActionType.INCOME,
             location=Location.BINANCE,
             amount=FVal(1),
@@ -949,7 +954,7 @@ def test_fees_counted_in_pnl(accountant):
     ]
     report, _ = accounting_history_process(
         accountant,
-        start_ts=1609537953,
+        start_ts=1539713238,
         end_ts=1624395187,
         history_list=history,
         ledger_actions_list=ledger_actions_list,
@@ -958,6 +963,11 @@ def test_fees_counted_in_pnl(accountant):
     assert len(warnings) == 0
     errors = accountant.msg_aggregator.consume_errors()
     assert len(errors) == 0
+    assert accountant.events.cost_basis.get_calculated_asset_amount(A_USDT.identifier).is_close('19.90')  # noqa: E501
+    # The ethereum income doesn't count for the income as the 1
+    # year rule is applied. Only the sell is computed.
+    assert FVal(report['total_profit_loss']) == FVal(14.13870)
+
 
 def test_accounting_event_schemas():
     """Test that the accounting event json schemas we use are valid"""

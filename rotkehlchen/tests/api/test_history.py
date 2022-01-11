@@ -176,13 +176,12 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[9]
 
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 6
+    assert len(errors) == 5
     assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in errors[0]
     assert 'Failed to read ledger event from kraken' in errors[1]
     assert 'Failed to read ledger event from kraken ' in errors[2]
-    assert 'Not enough documented acquisitions found for ETH(Ethereum) before 02/05/2017' in errors[3]  # noqa: E501
+    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[3]  # noqa: E501
     assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[4]  # noqa: E501
-    assert 'No documented acquisition found for RDN(0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6) before' in errors[5]  # noqa: E501
 
 
 @pytest.mark.parametrize(

@@ -458,6 +458,19 @@ class TaxableEvents():
         - RemoteError if there is a problem reaching the price oracle server
         or with reading the response returned by the server
         """
+        # In the case where the fee asset is nominated in the asset that we receive
+        # take care that the fee is processed once we have the received asset in possesion.
+        if receiving_asset == fee_currency:
+            buy_fee_asset = fee_currency
+            buy_fee_amount: Optional[Fee] = fee_amount
+            sell_fee_asset = None
+            sell_fee_amount: Optional[Fee] = Fee(ZERO)
+        else:
+            buy_fee_asset = None
+            buy_fee_amount = Fee(ZERO)
+            sell_fee_asset = fee_currency
+            sell_fee_amount = fee_amount
+
         self.add_sell(
             location=location,
             selling_asset=selling_asset,
@@ -466,8 +479,8 @@ class TaxableEvents():
             receiving_amount=receiving_amount,
             gain_in_profit_currency=gain_in_profit_currency,
             total_fee_in_profit_currency=total_fee_in_profit_currency,
-            fee_currency=fee_currency,
-            fee_amount=fee_amount,
+            fee_currency=sell_fee_asset,
+            fee_amount=sell_fee_amount,
             rate_in_profit_currency=rate_in_profit_currency,
             timestamp=timestamp,
             is_virtual=False,
@@ -490,8 +503,8 @@ class TaxableEvents():
             paid_with_asset=selling_asset,
             trade_rate=1 / trade_rate,
             fee_in_profit_currency=Fee(ZERO),  # do not count fee twice
-            fee_currency=None,
-            fee_amount=Fee(ZERO),
+            fee_currency=buy_fee_asset,
+            fee_amount=buy_fee_amount,
             timestamp=timestamp,
             is_virtual=True,
             link=link,
