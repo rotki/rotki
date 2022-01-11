@@ -1,8 +1,10 @@
 import { computed } from '@vue/composition-api';
 import { SupportedCurrency } from '@/data/currencies';
 import { SessionState } from '@/store/session/types';
+import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Currency } from '@/types/currency';
+import { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import { Module } from '@/types/modules';
 import { assert } from '@/utils/assertions';
 
@@ -22,6 +24,25 @@ export const setupModuleEnabled = () => {
         return activeModules.includes(module);
       });
     }
+  };
+};
+
+export const setupSession = () => {
+  const store = useStore();
+  const state = getSessionState();
+  const syncConflict = computed(() => state.syncConflict);
+  const login = (payload: LoginCredentials): Promise<ActionStatus> => {
+    return store.dispatch('session/login', payload);
+  };
+  const createAccount = (
+    payload: CreateAccountPayload
+  ): Promise<ActionStatus> => {
+    return store.dispatch('session/createAccount', payload);
+  };
+  return {
+    syncConflict,
+    createAccount,
+    login
   };
 };
 

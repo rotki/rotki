@@ -1,4 +1,4 @@
-import { computed, getCurrentInstance } from '@vue/composition-api';
+import { computed, getCurrentInstance, toRefs } from '@vue/composition-api';
 import { Section, Status } from '@/store/const';
 import { useMainStore } from '@/store/store';
 import { getStatus } from '@/store/utils';
@@ -84,11 +84,8 @@ export const setupMessages = () => {
 };
 
 export const setupNewUser = () => {
-  const store = useStore();
-  const newUser = computed(() => {
-    return store.state.newUser;
-  });
-
+  const store = useMainStore();
+  const { newUser } = toRefs(store);
   return {
     newUser
   };

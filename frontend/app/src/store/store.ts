@@ -74,7 +74,7 @@ export const useMainStore = defineStore('main', () => {
     }
   };
 
-  const connect = async (payload?: string): Promise<void> => {
+  const connect = async (payload?: string | null): Promise<void> => {
     let count = 0;
     if (intervalId) {
       clearInterval(intervalId);

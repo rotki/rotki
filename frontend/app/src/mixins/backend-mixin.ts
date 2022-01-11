@@ -1,37 +1,9 @@
 import { Component, Vue } from 'vue-property-decorator';
+import { loadUserOptions, saveUserOptions } from '@/composables/backend';
 import { BackendOptions } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/store';
-import { Writeable } from '@/types';
-import { CRITICAL, DEBUG, ERROR, Level, LOG_LEVEL } from '@/utils/log-level';
+import { CRITICAL, DEBUG, ERROR, Level } from '@/utils/log-level';
 import { logger } from '@/utils/logging';
-
-const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
-
-const loadUserOptions: () => Partial<BackendOptions> = () => {
-  const defaultConfig: Partial<BackendOptions> = {
-    loglevel: process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL
-  };
-  try {
-    const opts = localStorage.getItem(BACKEND_OPTIONS);
-    const options: Writeable<Partial<BackendOptions>> = opts
-      ? JSON.parse(opts)
-      : defaultConfig;
-    const loglevel = localStorage.getItem(LOG_LEVEL);
-    if (loglevel) {
-      options.loglevel = loglevel as Level;
-      saveUserOptions(options);
-      localStorage.removeItem(LOG_LEVEL);
-    }
-    return options;
-  } catch (e) {
-    return defaultConfig;
-  }
-};
-
-const saveUserOptions = (config: Partial<BackendOptions>) => {
-  const options = JSON.stringify(config);
-  localStorage.setItem(BACKEND_OPTIONS, options);
-};
 
 @Component({
   name: 'BackendMixin'
