@@ -1,11 +1,12 @@
 import jsonschema
 import pytest
 
+from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.accounting.typing import ACCOUNTING_EVENT_SCHEMA
 from rotkehlchen.chain.ethereum.structures import AaveInterestEvent
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH, A_WBTC
+from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH, A_WBTC, A_USDT
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
@@ -917,6 +918,46 @@ def test_fees_count_in_cost_basis(accountant):
     errors = accountant.msg_aggregator.consume_errors()
     assert errors == [error]
 
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_fees_counted_in_pnl(accountant):
+    history = [
+        {
+            'timestamp': 1609537953,
+            'base_asset': 'ETH',
+            'quote_asset': A_USDT.identifier,
+            'trade_type': 'sell',
+            'rate': 1000,
+            'fee': '0.10',
+            'fee_currency': A_USDT.identifier,
+            'amount': 0.02,
+            'location': 'binance',
+        },
+    ]
+    ledger_actions_list = [
+        LedgerAction(
+            identifier=0,
+            timestamp=Timestamp(1624395186),
+            action_type=LedgerActionType.INCOME,
+            location=Location.BINANCE,
+            amount=FVal(1),
+            asset=A_ETH,
+            rate=None,
+            rate_asset=None,
+            link=None,
+            notes='',
+        ),
+    ]
+    report, _ = accounting_history_process(
+        accountant,
+        start_ts=1609537953,
+        end_ts=1624395187,
+        history_list=history,
+        ledger_actions_list=ledger_actions_list,
+    )
+    warnings = accountant.msg_aggregator.consume_warnings()
+    assert len(warnings) == 0
+    errors = accountant.msg_aggregator.consume_errors()
+    assert len(errors) == 0
 
 def test_accounting_event_schemas():
     """Test that the accounting event json schemas we use are valid"""
