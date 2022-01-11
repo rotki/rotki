@@ -1,3 +1,4 @@
+import copy
 import logging
 import random
 from collections import defaultdict
@@ -9,18 +10,21 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.manager import ChainManager
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.filtering import DBStringFilter, HistoryEventFilterQuery
+from rotkehlchen.errors import NoPriceForGivenTimestamp, RemoteError
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets import GreenletManager
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.tasks.history_base_entries import query_missing_prices
-from rotkehlchen.typing import ChecksumEthAddress, Location
+from rotkehlchen.typing import ChecksumEthAddress, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -73,6 +77,7 @@ class TaskManager():
         self.last_xpub_derivation_ts = 0
         self.last_eth_tx_query_ts: DefaultDict[ChecksumEthAddress, int] = defaultdict(int)
         self.last_exchange_query_ts: DefaultDict[Tuple[str, Location], int] = defaultdict(int)
+        self.base_entries_ignore_set: Set[str] = set()
         self.prepared_cryptocompare_query = False
         self.greenlet_manager.spawn_and_track(  # Needs to run in greenlet, is slow
             after_seconds=None,
@@ -283,17 +288,68 @@ class TaskManager():
         self.last_exchange_query_ts[exchange.location_id()] = now
 
     def _maybe_query_missing_prices(self) -> None:
-        query = HistoryEventFilterQuery.make()
-        task_name = 'Periodically query history events prices'
-        log.debug(f'Scheduling task to {task_name}')
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name=task_name,
-            exception_is_error=True,
-            method=query_missing_prices,
-            filter_query=query,
-            db=self.database,
+        query_filter = HistoryEventFilterQuery.make(limit=100)
+        entries = self.get_base_entries_missing_prices(query_filter)
+        if len(entries) > 0:
+            task_name = 'Periodically query history events prices'
+            log.debug(f'Scheduling task to {task_name}')
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=task_name,
+                exception_is_error=True,
+                method=self.query_missing_prices_of_base_entries,
+                entries_missing_prices=entries,
+            )
+
+    def get_base_entries_missing_prices(
+        self,
+        query_filter: HistoryEventFilterQuery,
+    ) -> List[Tuple[str, FVal, Asset, Timestamp]]:
+        """
+        Searches base entries missing usd prices that have not previosly been checked in
+        this session.
+        """
+        # Use a deepcopy to avoid mutations in the filter query if it is used later
+        new_query_filter = copy.deepcopy(query_filter)
+        new_query_filter.filters.append(
+            DBStringFilter(and_op=True, column='usd_value', value='0'),
         )
+        return self.database.rows_missing_prices_in_base_entries(
+            filter_query=new_query_filter,
+            ignored_ids=self.base_entries_ignore_set,
+        )
+
+    def query_missing_prices_of_base_entries(
+        self,
+        entries_missing_prices: List[Tuple[str, FVal, Asset, Timestamp]],
+    ) -> None:
+        """Queries missing prices for HistoryBaseEntry in database updating
+        the price if it is found. Otherwise we add the id to the ignore list
+        for this session.
+        """
+        inquirer = PriceHistorian()
+        updates = []
+        for identifier, amount, asset, timestamp in entries_missing_prices:
+            try:
+                price = inquirer.query_historical_price(
+                    from_asset=asset,
+                    to_asset=A_USD,
+                    timestamp=timestamp,
+                )
+            except (NoPriceForGivenTimestamp, RemoteError) as e:
+                log.error(
+                    f'Failed to find price for {asset} at {timestamp} in base '
+                    f'entry {identifier}. {str(e)}.',
+                )
+                self.base_entries_ignore_set.add(identifier)
+                continue
+            usd_value = amount * price
+            updates.append((str(usd_value), identifier))
+
+        query = 'UPDATE history_events SET usd_value=? WHERE identifier=?'
+        cursor = self.database.conn.cursor()
+        cursor.executemany(query, updates)
+        self.database.update_last_write()
 
     def _schedule(self) -> None:
         """Schedules background tasks"""

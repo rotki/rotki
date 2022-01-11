@@ -1,14 +1,12 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple, TypeVar, Union
 
 from eth_utils import to_checksum_address
-from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures import HistoryEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.errors import (
     ConversionError,
     DeserializationError,
@@ -556,42 +554,3 @@ def deserialize_ethereum_transaction(
         raise DeserializationError(
             f'ethereum transaction from {source} missing expected key {str(e)}',
         ) from e
-
-
-def iterate_deserialize_timestamps(cursor: sqlcipher.Cursor) -> Iterator[Tuple[str, FVal, Asset, Timestamp]]:  # pylint: disable=no-member # noqa: E501
-    """
-    This function assumes the cursor contains the result of a query of the form
-    `SELECT identifier, amount, asset, timestamp FROM history_events`
-
-    What this does is deserialize information from the history_events table by:
-    - Getting the right asset
-    - Deserializing the amount value
-    - Changing resolution of the timestamp field
-
-    The functions returns a generator to use the properties of the sqlite cursors
-    and avoid having in memory huge amount of data.
-    """
-    for identifier, amount_raw, asset_name, timestamp in cursor:
-        try:
-            amount = deserialize_fval(
-                value=amount_raw,
-                name='historic base entry usd_value query',
-                location='query_missing_prices',
-            )
-            high_precision_timestamp = deserialize_timestamp(timestamp)
-            yield (
-                identifier,
-                amount,
-                Asset(asset_name),
-                Timestamp(int(high_precision_timestamp / KRAKEN_TS_MULTIPLIER)),
-            )
-        except DeserializationError as e:
-            log.error(
-                f'Failed to read value from historic base entry {identifier} '
-                f'with amount. {str(e)}',
-            )
-        except UnknownAsset as e:
-            log.error(
-                f'Failed to read asset from historic base entry {identifier} '
-                f'with asset identifier {asset_name}. {str(e)}',
-            )

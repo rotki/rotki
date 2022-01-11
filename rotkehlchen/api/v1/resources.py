@@ -2086,10 +2086,10 @@ class StakingResource(BaseResource):
             self,
             async_query: bool,
             only_cache: bool,
-            filter_query: StakingQuerySchema,
+            query_filter: StakingQuerySchema,
     ) -> Response:
         return self.rest_api.query_kraken_staking_events(
             async_query=async_query,
             only_cache=only_cache,
-            filter_query=filter_query,
+            query_filter=query_filter,
         )

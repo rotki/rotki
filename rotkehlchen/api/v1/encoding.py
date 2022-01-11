@@ -1084,7 +1084,7 @@ class StakingQuerySchema(
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
-        filter_query = HistoryEventFilterQuery.make(
+        query_filter = HistoryEventFilterQuery.make(
             order_by_attribute=order_by_attribute,
             order_ascending=data['ascending'],
             limit=data['limit'],
@@ -1100,7 +1100,7 @@ class StakingQuerySchema(
         return {
             'async_query': data['async_query'],
             'only_cache': data['only_cache'],
-            'filter_query': filter_query,
+            'query_filter': query_filter,
         }
 
 

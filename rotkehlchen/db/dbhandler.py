@@ -6,7 +6,7 @@ import shutil
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, Tuple, Type, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
@@ -53,7 +53,7 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
-from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS, KRAKEN_TS_MULTIPLIER
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -103,8 +103,9 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import (
+    deserialize_fval,
     deserialize_hex_color_code,
-    iterate_deserialize_timestamps,
+    deserialize_timestamp,
 )
 from rotkehlchen.typing import (
     ApiKey,
@@ -3524,16 +3525,44 @@ class DBHandler:
                 )
         return result
 
-    def iterate_rows_missing_prices_in_base_entries(
+    def rows_missing_prices_in_base_entries(
         self,
         filter_query: HistoryEventFilterQuery,
-    ) -> Iterator[Tuple[str, FVal, Asset, Timestamp]]:
+        ignored_ids: Set[str],
+    ) -> List[Tuple[str, FVal, Asset, Timestamp]]:
         """
         Get missing prices for history base entries based on filter query
         """
         query, bindings = filter_query.prepare()
         query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
         cursor = self.conn.cursor()
-        return iterate_deserialize_timestamps(
-            cursor=cursor.execute(query, bindings),
-        )
+        result = []
+        for identifier, amount_raw, asset_name, timestamp in cursor.execute(query, bindings):
+            if identifier in ignored_ids:
+                continue
+            try:
+                amount = deserialize_fval(
+                    value=amount_raw,
+                    name='historic base entry usd_value query',
+                    location='query_missing_prices',
+                )
+                high_precision_timestamp = deserialize_timestamp(timestamp)
+                result.append(
+                    (
+                        identifier,
+                        amount,
+                        Asset(asset_name),
+                        Timestamp(int(high_precision_timestamp / KRAKEN_TS_MULTIPLIER)),
+                    ),
+                )
+            except DeserializationError as e:
+                log.error(
+                    f'Failed to read value from historic base entry {identifier} '
+                    f'with amount. {str(e)}',
+                )
+            except UnknownAsset as e:
+                log.error(
+                    f'Failed to read asset from historic base entry {identifier} '
+                    f'with asset identifier {asset_name}. {str(e)}',
+                )
+        return result
