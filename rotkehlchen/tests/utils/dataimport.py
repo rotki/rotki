@@ -316,6 +316,18 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         fee_currency=A_USD,
         link='',
         notes=get_cryptocom_note('DOGE -> EUR'),
+    ), Trade(
+        timestamp=Timestamp(1626720960),
+        location=Location.CRYPTOCOM,
+        base_asset=A_BTC,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('0.003')),
+        rate=Price(FVal('26003.33333333333333333333333')),
+        fee=Fee(ZERO),
+        fee_currency=A_USD,
+        link='',
+        notes=get_cryptocom_note('EUR -> BTC'),
     )]
     assert expected_trades == trades
 

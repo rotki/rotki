@@ -29,6 +29,7 @@
 2020-07-29 09:12:07,Crypto Earn Deposit,ETH,-1.0,,,EUR,-275.55,-326.2925325,crypto_earn_program_created
 2020-07-28 09:12:07,Crypto Earn Withdrawal,ETH,-1.0,,,EUR,-275.55,-326.2925325,crypto_earn_program_withdrawn
 2020-07-27 06:59:55,Buy ETH,ETH,1.0,,,EUR,281.14,332.911931,crypto_purchase
+2021-07-19 18:56:00,EUR -> BTC,EUR,-78.01,BTC,0.003,EUR,79.03,98.39247273,viban_purchase
 2021-05-05 05:34:27,DOGE -> EUR,DOGE,-750.0,EUR,406.22,EUR,406.22,470.713883898,crypto_viban_exchange
 2021-03-25 11:00:41,Refund from Merchant XXX,CRO,15.31,,,EUR,2.63,3.047554317,crypto_payment_refund
 2021-03-25 10:52:28,Pay Rewards,CRO,0.3076,,,EUR,0.05,0.057938295,pay_checkout_reward
