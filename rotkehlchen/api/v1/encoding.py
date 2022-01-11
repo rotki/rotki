@@ -1078,7 +1078,7 @@ class StakingQuerySchema(
     to_timestamp = TimestampField(load_default=ts_now)
 
     @post_load
-    def make_trades_query(  # pylint: disable=no-self-use
+    def make_staking_query(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,

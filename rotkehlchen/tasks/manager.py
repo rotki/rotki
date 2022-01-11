@@ -13,7 +13,7 @@ from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.db.filtering import DBStringFilter, HistoryEventFilterQuery
+from rotkehlchen.db.filtering import DBIgnoreValuesFilter, DBStringFilter, HistoryEventFilterQuery
 from rotkehlchen.errors import NoPriceForGivenTimestamp, RemoteError
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -306,7 +306,7 @@ class TaskManager():
         query_filter: HistoryEventFilterQuery,
     ) -> List[Tuple[str, FVal, Asset, Timestamp]]:
         """
-        Searches base entries missing usd prices that have not previosly been checked in
+        Searches base entries missing usd prices that have not previously been checked in
         this session.
         """
         # Use a deepcopy to avoid mutations in the filter query if it is used later
@@ -314,10 +314,14 @@ class TaskManager():
         new_query_filter.filters.append(
             DBStringFilter(and_op=True, column='usd_value', value='0'),
         )
-        return self.database.rows_missing_prices_in_base_entries(
-            filter_query=new_query_filter,
-            ignored_ids=self.base_entries_ignore_set,
+        new_query_filter.filters.append(
+            DBIgnoreValuesFilter(
+                and_op=True,
+                column='identifier',
+                values=list(self.base_entries_ignore_set),
+            ),
         )
+        return self.database.rows_missing_prices_in_base_entries(filter_query=new_query_filter)
 
     def query_missing_prices_of_base_entries(
         self,
@@ -343,6 +347,7 @@ class TaskManager():
                 )
                 self.base_entries_ignore_set.add(identifier)
                 continue
+
             usd_value = amount * price
             updates.append((str(usd_value), identifier))
 

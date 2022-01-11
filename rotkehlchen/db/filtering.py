@@ -343,6 +343,17 @@ class DBAssetFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBIgnoreValuesFilter(DBFilter):
+    column: str
+    values: List[Any]
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        if len(self.values) == 0:
+            return [], []
+        return [f'{self.column} NOT IN ({", ".join(["?"] * len(self.values))})'], [self.values]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEth2ValidatorIndicesFilter(DBFilter):
     """A filter for Eth2 validator indices"""
     validators: Optional[List[int]]
@@ -651,6 +662,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             event_subtype: Optional[List[HistoryEventSubType]] = None,
             location: Optional[Location] = None,
             location_label: Optional[str] = None,
+            ignored_ids: Optional[List[str]] = None,
     ) -> 'HistoryEventFilterQuery':
         filter_query = cls.create(
             and_op=and_op,
@@ -681,6 +693,14 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
         if location_label is not None:
             filters.append(
                 DBStringFilter(and_op=True, column='location_label', value=location_label),
+            )
+        if ignored_ids is not None:
+            filters.append(
+                DBIgnoreValuesFilter(
+                    and_op=True,
+                    column='identifier',
+                    values=ignored_ids,
+                ),
             )
 
         filter_query.timestamp_filter = DBTimestampFilter(

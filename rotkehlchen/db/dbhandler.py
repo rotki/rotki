@@ -3528,18 +3528,16 @@ class DBHandler:
     def rows_missing_prices_in_base_entries(
         self,
         filter_query: HistoryEventFilterQuery,
-        ignored_ids: Set[str],
     ) -> List[Tuple[str, FVal, Asset, Timestamp]]:
         """
         Get missing prices for history base entries based on filter query
         """
         query, bindings = filter_query.prepare()
         query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
-        cursor = self.conn.cursor()
         result = []
-        for identifier, amount_raw, asset_name, timestamp in cursor.execute(query, bindings):
-            if identifier in ignored_ids:
-                continue
+        cursor = self.conn.cursor()
+        cursor.execute(query, bindings)
+        for identifier, amount_raw, asset_name, timestamp in cursor:
             try:
                 amount = deserialize_fval(
                     value=amount_raw,
