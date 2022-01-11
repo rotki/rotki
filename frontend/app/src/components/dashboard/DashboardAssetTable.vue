@@ -141,7 +141,7 @@ import {
   setupAssetInfoRetrieval,
   setupExchangeRateGetter
 } from '@/composables/balances';
-import { currency } from '@/composables/session';
+import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import { totalNetWorthUsd } from '@/composables/statistics';
 import { aggregateTotal } from '@/filters';
@@ -252,7 +252,8 @@ const DashboardAssetTable = defineComponent({
     const { balances, title, tableType } = toRefs(props);
     const search = ref('');
 
-    const currencySymbol = currency;
+    const { currencySymbol } = setupGeneralSettings();
+
     const exchangeRate = setupExchangeRateGetter();
     const totalInUsd = computed(() => {
       return aggregateTotal(balances.value, 'USD', new BigNumber(1));

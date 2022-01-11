@@ -96,7 +96,7 @@ export default class ChangePassword extends Vue {
       return;
     }
     this.errorMessages.push(
-      this.$t('change_password.validation.password_missmatch').toString()
+      this.$t('change_password.validation.password_mismatch').toString()
     );
   }
 

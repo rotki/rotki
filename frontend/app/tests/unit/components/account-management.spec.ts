@@ -25,6 +25,9 @@ describe('AccountManagement.vue', () => {
     const vuetify = new Vuetify();
     wrapper = mount(AccountManagement, {
       store,
+      provide: {
+        'vuex-store': store
+      },
       vuetify,
       stubs: {
         VDialog: {

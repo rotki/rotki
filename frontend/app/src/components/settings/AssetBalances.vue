@@ -94,7 +94,7 @@ import { IVueI18n } from 'vue-i18n';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import { setupAssetInfoRetrieval } from '@/composables/balances';
-import { currency } from '@/composables/session';
+import { setupGeneralSettings } from '@/composables/session';
 import { balanceSum } from '@/filters';
 import i18n from '@/i18n';
 import { useTasks } from '@/store/tasks';
@@ -147,6 +147,8 @@ const AssetBalancesTable = defineComponent({
       return balanceSum(balances.value.map(({ usdValue }) => usdValue));
     });
 
+    const { currencySymbol } = setupGeneralSettings();
+
     const { isTaskRunning } = useTasks();
     const { getAssetInfo } = setupAssetInfoRetrieval();
     return {
@@ -154,7 +156,7 @@ const AssetBalancesTable = defineComponent({
       tableHeaders: tableHeaders(i18n),
       loading: isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
       sortItems: getSortItems(getAssetInfo),
-      currency
+      currency: currencySymbol
     };
   }
 });

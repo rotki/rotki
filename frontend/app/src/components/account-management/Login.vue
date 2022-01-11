@@ -6,7 +6,7 @@
     <v-card-text>
       <v-form ref="form" v-model="valid">
         <v-text-field
-          ref="username"
+          ref="usernameRef"
           v-model="username"
           class="login__fields__username"
           color="secondary"
@@ -21,7 +21,7 @@
         />
 
         <revealable-input
-          ref="password"
+          ref="passwordRef"
           v-model="password"
           outlined
           :rules="passwordRules"
@@ -225,241 +225,254 @@
   </div>
 </template>
 <script lang="ts">
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  nextTick,
+  onMounted,
+  PropType,
+  ref,
+  Ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
 import {
   deleteBackendUrl,
   getBackendUrl,
   saveBackendUrl
 } from '@/components/account-management/utils';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import i18n from '@/i18n';
 import { SyncConflict } from '@/store/session/types';
-import { ActionStatus } from '@/store/types';
+import { useStore } from '@/store/utils';
 import { LoginCredentials, SyncApproval } from '@/types/login';
+
+const setupLogout = () => {
+  const store = useStore();
+  const logoutRemoteSession = () => store.dispatch('logoutRemoteSession');
+
+  return {
+    logoutRemoteSession
+  };
+};
 
 const KEY_REMEMBER = 'rotki.remember';
 const KEY_USERNAME = 'rotki.username';
 
-@Component({
+const customBackendRules = [
+  (v: string) =>
+    !!v || i18n.t('login.custom_backend.validation.non_empty').toString(),
+  (v: string) =>
+    (v &&
+      v.length < 300 &&
+      /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/.test(
+        v
+      )) ||
+    i18n.t('login.custom_backend.validation.url').toString()
+];
+
+const usernameRules = [
+  (v: string) => !!v || i18n.t('login.validation.non_empty_username'),
+  (v: string) =>
+    (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
+    i18n.t('login.validation.valid_username').toString()
+];
+
+const passwordRules = [
+  (v: string) => !!v || i18n.t('login.validation.non_empty_password').toString()
+];
+
+export default defineComponent({
+  name: 'Login',
   components: { RevealableInput },
-  methods: {
-    ...mapActions('session', ['logoutRemoteSession'])
-  }
-})
-export default class Login extends Vue {
-  @Prop({ required: true })
-  displayed!: boolean;
+  props: {
+    displayed: { required: true, type: Boolean },
+    loading: { required: true, type: Boolean },
+    syncConflict: { required: true, type: Object as PropType<SyncConflict> },
+    errors: { required: false, type: Array, default: () => [] }
+  },
+  setup(props, { emit }) {
+    const { displayed, syncConflict, errors } = toRefs(props);
 
-  @Prop({ required: true, type: Boolean })
-  loading!: boolean;
+    const touched = () => emit('touched');
+    const newAccount = () => emit('new-account');
+    const backendChanged = (url: string | null) => emit('backend-changed', url);
 
-  @Prop({ required: true })
-  syncConflict!: SyncConflict;
+    const { logoutRemoteSession } = setupLogout();
 
-  @Prop({ required: false, type: Array, default: () => [] })
-  errors!: string[];
+    const username: Ref<string> = ref('');
+    const password: Ref<string> = ref('');
+    const rememberUser: Ref<boolean> = ref(false);
+    const customBackendDisplay: Ref<boolean> = ref(false);
+    const customBackendUrl: Ref<string> = ref('');
+    const customBackendSessionOnly: Ref<boolean> = ref(false);
+    const customBackendSaved: Ref<boolean> = ref(false);
+    const valid: Ref<boolean> = ref(false);
 
-  logoutRemoteSession!: () => Promise<ActionStatus>;
+    const form: Ref<any> = ref(null);
+    const usernameRef: Ref<any> = ref(null);
+    const passwordRef: Ref<any> = ref(null);
 
-  @Watch('username')
-  onUsernameChange() {
-    this.touched();
-  }
-
-  @Watch('password')
-  onPasswordChange() {
-    this.touched();
-  }
-
-  get isLoggedInError(): boolean {
-    return !!this.errors.find(error => error.includes('is already logged in'));
-  }
-
-  async logout() {
-    const { success } = await this.logoutRemoteSession();
-    if (success) {
-      this.touched();
-    }
-  }
-
-  get localLastModified(): number {
-    const payload = this.syncConflict.payload;
-    return payload?.localLastModified ?? 0;
-  }
-
-  get remoteLastModified(): number {
-    const payload = this.syncConflict.payload;
-    return payload?.remoteLastModified ?? 0;
-  }
-
-  get localSize(): string {
-    return this.syncConflict.payload?.localSize ?? '';
-  }
-
-  get remoteSize(): string {
-    return this.syncConflict.payload?.remoteSize ?? '';
-  }
-
-  get serverColor(): string | null {
-    if (this.customBackendSessionOnly) {
-      return 'primary';
-    } else if (this.customBackendSaved) {
-      return 'success';
-    }
-
-    return null;
-  }
-
-  @Watch('displayed')
-  onDisplayChange() {
-    this.username = '';
-    this.password = '';
-    const form = this.$refs.form as any;
-
-    if (form) {
-      form.reset();
-    }
-    this.loadSettings();
-    this.updateFocus();
-  }
-
-  getRef(prop: 'password' | 'username'): Promise<any> {
-    return new Promise<any>(resolve => {
-      let count = 0;
-      const interval = setInterval(() => {
-        count++;
-        if (count > 10) {
-          clearInterval(interval);
-          return;
-        }
-
-        const $ref = this.$refs[prop];
-        if (!$ref) {
-          return;
-        }
-        clearInterval(interval);
-        resolve($ref);
-      }, 500);
+    watch(username, () => {
+      touched();
     });
-  }
 
-  private updateFocus() {
-    const ref = this.getRef(this.username ? 'password' : 'username');
-    ref.then(value => {
-      this.focusElement(value);
+    watch(password, () => {
+      touched();
     });
-  }
 
-  username: string = '';
-  password: string = '';
-  rememberUser: boolean = false;
-  customBackendDisplay: boolean = false;
-  customBackendUrl: string = '';
-  customBackendSessionOnly: boolean = false;
-  customBackendSaved: boolean = false;
-
-  valid = false;
-
-  readonly customBackendRules = [
-    (v: string) =>
-      !!v || this.$t('login.custom_backend.validation.non_empty').toString(),
-    (v: string) =>
-      (v &&
-        v.length < 300 &&
-        /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)$/.test(
-          v
-        )) ||
-      this.$t('login.custom_backend.validation.url')
-  ];
-
-  readonly usernameRules = [
-    (v: string) => !!v || this.$t('login.validation.non_empty_username'),
-    (v: string) =>
-      (v && /^[0-9a-zA-Z_.-]+$/.test(v)) ||
-      this.$t('login.validation.valid_username')
-  ];
-
-  readonly passwordRules = [
-    (v: string) => !!v || this.$t('login.validation.non_empty_password')
-  ];
-
-  mounted() {
-    this.loadSettings();
-    this.updateFocus();
-  }
-
-  private focusElement(element: any) {
-    requestAnimationFrame(() => {
-      const input = element.$el.querySelector(
-        'input:not([type=hidden])'
-      ) as HTMLInputElement;
-      input.focus();
+    const isLoggedInError = computed<boolean>(() => {
+      return !!(errors.value as string[]).find(error =>
+        error.includes('is already logged in')
+      );
     });
-  }
 
-  private saveCustomBackend() {
-    saveBackendUrl({
-      url: this.customBackendUrl,
-      sessionOnly: this.customBackendSessionOnly
-    });
-    this.backendChanged(this.customBackendUrl);
-    this.customBackendSaved = true;
-    this.customBackendDisplay = false;
-  }
-
-  private clearCustomBackend() {
-    this.customBackendUrl = '';
-    this.customBackendSessionOnly = false;
-    deleteBackendUrl();
-    this.backendChanged(null);
-    this.customBackendSaved = false;
-    this.customBackendDisplay = false;
-  }
-
-  private loadSettings() {
-    this.rememberUser = !!localStorage.getItem(KEY_REMEMBER);
-    this.username = localStorage.getItem(KEY_USERNAME) ?? '';
-    const { sessionOnly, url } = getBackendUrl();
-    this.customBackendUrl = url;
-    this.customBackendSessionOnly = sessionOnly;
-    this.customBackendSaved = !!url;
-  }
-
-  @Watch('rememberUser')
-  onRememberChange(remember: boolean, previous: boolean) {
-    if (remember === previous) {
-      return;
-    }
-
-    if (!remember) {
-      localStorage.removeItem(KEY_REMEMBER);
-      localStorage.removeItem(KEY_USERNAME);
-    } else {
-      localStorage.setItem(KEY_REMEMBER, `${true}`);
-    }
-  }
-
-  login(syncApproval: SyncApproval = 'unknown') {
-    const credentials: LoginCredentials = {
-      username: this.username,
-      password: this.password,
-      syncApproval
+    const logout = async () => {
+      const { success } = await logoutRemoteSession();
+      if (success) {
+        touched();
+      }
     };
-    this.$emit('login', credentials);
-    if (this.rememberUser) {
-      localStorage.setItem(KEY_USERNAME, this.username);
-    }
+
+    const localLastModified = computed<number>(() => {
+      return syncConflict.value.payload?.localLastModified ?? 0;
+    });
+
+    const remoteLastModified = computed<number>(() => {
+      return syncConflict.value.payload?.remoteLastModified ?? 0;
+    });
+
+    const localSize = computed<string>(() => {
+      return syncConflict.value.payload?.localSize ?? '';
+    });
+
+    const remoteSize = computed<string>(() => {
+      return syncConflict.value.payload?.remoteSize ?? '';
+    });
+
+    const serverColor = computed<string | null>(() => {
+      if (customBackendSessionOnly.value) {
+        return 'primary';
+      } else if (customBackendSaved.value) {
+        return 'success';
+      }
+
+      return null;
+    });
+
+    const focusElement = (element: any) => {
+      if (element) {
+        const input = element.$el.querySelector(
+          'input:not([type=hidden])'
+        ) as HTMLInputElement;
+        input.focus();
+      }
+    };
+
+    const updateFocus = () => {
+      nextTick(() => {
+        focusElement(username.value ? passwordRef.value : usernameRef.value);
+      });
+    };
+
+    const saveCustomBackend = () => {
+      saveBackendUrl({
+        url: customBackendUrl.value,
+        sessionOnly: customBackendSessionOnly.value
+      });
+      backendChanged(customBackendUrl.value);
+      customBackendSaved.value = true;
+      customBackendDisplay.value = false;
+    };
+
+    const clearCustomBackend = () => {
+      customBackendUrl.value = '';
+      customBackendSessionOnly.value = false;
+      deleteBackendUrl();
+      backendChanged(null);
+      customBackendSaved.value = false;
+      customBackendDisplay.value = false;
+    };
+
+    const loadSettings = () => {
+      rememberUser.value = !!localStorage.getItem(KEY_REMEMBER);
+      username.value = localStorage.getItem(KEY_USERNAME) ?? '';
+      const { sessionOnly, url } = getBackendUrl();
+      customBackendUrl.value = url;
+      customBackendSessionOnly.value = sessionOnly;
+      customBackendSaved.value = !!url;
+    };
+
+    onMounted(() => {
+      loadSettings();
+      updateFocus();
+    });
+
+    watch(displayed, () => {
+      username.value = '';
+      password.value = '';
+
+      form.value?.reset();
+
+      loadSettings();
+      updateFocus();
+    });
+
+    watch(rememberUser, (remember: boolean, previous: boolean) => {
+      if (remember === previous) {
+        return;
+      }
+
+      if (!remember) {
+        localStorage.removeItem(KEY_REMEMBER);
+        localStorage.removeItem(KEY_USERNAME);
+      } else {
+        localStorage.setItem(KEY_REMEMBER, `${true}`);
+      }
+    });
+
+    const login = (syncApproval: SyncApproval = 'unknown') => {
+      const credentials: LoginCredentials = {
+        username: username.value,
+        password: password.value,
+        syncApproval
+      };
+      emit('login', credentials);
+      if (rememberUser.value) {
+        localStorage.setItem(KEY_USERNAME, username.value);
+      }
+    };
+
+    return {
+      logoutRemoteSession,
+      customBackendRules,
+      usernameRules,
+      passwordRules,
+      username,
+      password,
+      rememberUser,
+      customBackendDisplay,
+      customBackendUrl,
+      customBackendSessionOnly,
+      customBackendSaved,
+      valid,
+      form,
+      passwordRef,
+      usernameRef,
+      newAccount,
+      login,
+      logout,
+      isLoggedInError,
+      localLastModified,
+      remoteLastModified,
+      localSize,
+      remoteSize,
+      serverColor,
+      saveCustomBackend,
+      clearCustomBackend
+    };
   }
-
-  @Emit()
-  newAccount() {}
-
-  @Emit()
-  touched() {}
-
-  @Emit()
-  backendChanged(_url: string | null) {}
-}
+});
 </script>
 
 <style scoped lang="scss">

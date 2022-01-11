@@ -27,6 +27,9 @@ describe('UserSecuritySettings.vue', () => {
     return mount(UserSecuritySettings, {
       store,
       pinia,
+      provide: {
+        'vuex-store': store
+      },
       vuetify,
       stubs: [
         'v-tooltip',

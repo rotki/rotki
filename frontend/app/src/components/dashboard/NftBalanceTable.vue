@@ -119,7 +119,7 @@ import { computed, defineComponent, Ref } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { currency } from '@/composables/session';
+import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
@@ -211,6 +211,8 @@ export default defineComponent({
       () => store.getters['statistics/totalNetWorthUsd']
     );
 
+    const { currencySymbol } = setupGeneralSettings();
+
     const calculatePercentage = (value: BigNumber, divider: BigNumber) => {
       const percentage = divider.isZero()
         ? 0
@@ -255,8 +257,8 @@ export default defineComponent({
 
     return {
       mappedBalances,
-      tableHeaders: tableHeaders(currency, dashboardTablesVisibleColumns),
-      currency,
+      tableHeaders: tableHeaders(currencySymbol, dashboardTablesVisibleColumns),
+      currency: currencySymbol,
       refresh,
       total,
       nonFungibleRoute: Routes.NON_FUNGIBLE,

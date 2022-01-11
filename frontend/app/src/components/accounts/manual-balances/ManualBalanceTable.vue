@@ -128,7 +128,7 @@ import {
   setupExchangeRateGetter,
   setupManualBalances
 } from '@/composables/balances';
-import { currency } from '@/composables/session';
+import { setupGeneralSettings } from '@/composables/session';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { ManualBalance } from '@/services/balances/types';
@@ -196,6 +196,7 @@ const ManualBalanceTable = defineComponent({
       emit('edit', balance);
     };
 
+    const { currencySymbol } = setupGeneralSettings();
     const { deleteManualBalance } = setupManualBalances();
 
     const deleteBalance = async () => {
@@ -223,8 +224,8 @@ const ManualBalanceTable = defineComponent({
     const total = computed(() => {
       return aggregateTotal(
         visibleBalances.value,
-        currency.value,
-        exchangeRate(currency.value) ?? new BigNumber(1)
+        currencySymbol.value,
+        exchangeRate(currencySymbol.value) ?? new BigNumber(1)
       );
     });
 
@@ -236,10 +237,10 @@ const ManualBalanceTable = defineComponent({
       refresh,
       edit,
       deleteBalance,
-      headers: setupHeaders(i18n, currency),
+      headers: setupHeaders(i18n, currencySymbol),
       onlyTags,
       total,
-      currency,
+      currency: currencySymbol,
       visibleBalances,
       getRowClass,
       pendingDeletion
