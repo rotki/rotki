@@ -260,8 +260,13 @@ class DataImporter():
 
             trade_type = TradeType.BUY if to_currency != native_currency else TradeType.SELL
 
-            if row_type in ('crypto_exchange', 'crypto_viban_exchange', 'recurring_buy_order'):
-                # trades crypto to crypto
+            if row_type in (
+                'crypto_exchange',
+                'crypto_viban_exchange',
+                'recurring_buy_order',
+                'viban_purchase',
+            ):
+                # trades (fiat, crypto) to (crypto, fiat)
                 base_asset = asset_from_cryptocom(to_currency)
                 quote_asset = asset_from_cryptocom(currency)
                 if quote_asset is None:
