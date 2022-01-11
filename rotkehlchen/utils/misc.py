@@ -286,7 +286,7 @@ def hex_or_bytes_to_str(value: Union[bytes, str]) -> str:
     if isinstance(value, bytes):
         hexstr = value.hex()
     else:
-        hexstr = value
+        hexstr = value.lstrip('0x')
 
     return hexstr
 
@@ -302,7 +302,7 @@ def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
         hexstr = hex_or_bytes_to_str(value)
     except ConversionError as e:
         raise DeserializationError(f'Could not turn {value!r} to an ethereum address') from e
-    return ChecksumEthAddress(to_checksum_address('0x' + hexstr[26:]))
+    return ChecksumEthAddress(to_checksum_address('0x' + hexstr[24:]))
 
 
 def address_to_bytes32(address: ChecksumEthAddress) -> str:

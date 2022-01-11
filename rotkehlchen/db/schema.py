@@ -513,7 +513,6 @@ CREATE TABLE IF NOT EXISTS ethtx_receipt_log_topics (
 );
 """  # noqa: E501
 
-
 DB_CREATE_ETHTX_ADDRESS_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS ethx_address_mappings (
     address TEXT NOT NULL,
@@ -530,6 +529,12 @@ CREATE TABLE IF NOT EXISTS used_query_ranges (
     name VARCHAR[24] NOT NULL PRIMARY KEY,
     start_ts INTEGER,
     end_ts INTEGER
+);
+"""
+
+DB_CREATE_USED_QUERIES = """
+CREATE TABLE IF NOT EXISTS used_queries (
+    name TEXT NOT NULL PRIMARY KEY
 );
 """
 
@@ -639,7 +644,8 @@ CREATE TABLE IF NOT EXISTS history_events (
     usd_value TEXT NOT NULL,
     notes TEXT,
     type TEXT NOT NULL,
-    subtype TEXT
+    subtype TEXT,
+    counterparty TEXT
 );
 """
 
@@ -830,6 +836,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_MARGIN}
 {DB_CREATE_ASSET_MOVEMENTS}
 {DB_CREATE_USED_QUERY_RANGES}
+{DB_CREATE_USED_QUERIES}
 {DB_CREATE_SETTINGS}
 {DB_CREATE_TAGS_TABLE}
 {DB_CREATE_TAG_MAPPINGS}

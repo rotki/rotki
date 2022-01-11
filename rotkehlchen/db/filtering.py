@@ -672,6 +672,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             location_label: Optional[str] = None,
             ignored_ids: Optional[List[str]] = None,
             null_columns: Optional[List[str]] = None,
+            event_identifier: Optional[str] = None,
     ) -> 'HistoryEventFilterQuery':
         filter_query = cls.create(
             and_op=and_op,
@@ -725,6 +726,10 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
                     and_op=True,
                     columns=null_columns,
                 ),
+            )
+        if event_identifier is not None:
+            filters.append(
+                DBStringFilter(and_op=True, column='event_identifier', value=event_identifier),
             )
 
         filter_query.timestamp_filter = DBTimestampFilter(

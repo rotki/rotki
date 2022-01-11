@@ -291,6 +291,7 @@ class HistoryEventType(SerializableEnumMixin):
     # and Kraken delisting them and exchanging them for ETH for you
     ADJUSTMENT = 9
     UNKNOWN = 10
+    INFORMATIONAL = 11
 
     @classmethod
     def from_string(cls, value: str) -> 'HistoryEventType':
@@ -308,6 +309,7 @@ class HistoryEventSubType(SerializableEnumMixin):
     FEE = 5
     SPEND = 6
     RECEIVE = 7
+    APPROVE = 8
 
     def serialize_event_subtype(self) -> str:
         """Serialize event subtype to a readable string
@@ -376,6 +378,7 @@ HISTORY_EVENT_DB_TUPLE_WRITE = Tuple[
     Optional[str],  # notes
     str,            # type
     Optional[str],  # subtype
+    Optional[str],  # counterparty
 ]
 
 
@@ -389,16 +392,18 @@ class HistoryBaseEntry:
     sequence_index: int  # When this transaction was executed relative to other related events
     timestamp: Timestamp
     location: Location
+    event_type: HistoryEventType
+    asset: Asset
+    balance: Balance
     # location_label is a string field that allows to provide more information about the location.
     # When we use this structure in blockchains can be used to specify addresses for example.
     # currently we use to identify the exchange name assigned by the user.
-    location_label: Optional[str]
-    asset: Asset
-    balance: Balance
-    notes: Optional[str]
-    event_type: HistoryEventType
-    event_subtype: Optional[HistoryEventSubType]
+    location_label: Optional[str] = None
+    notes: Optional[str] = None
+    event_subtype: Optional[HistoryEventSubType] = None
+    counterparty: Optional[str] = None  # identifier for counterparty. Source/destination etc.
     identifier: Optional[int] = None
+
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
         event_subtype = None
@@ -415,6 +420,7 @@ class HistoryBaseEntry:
             self.notes,
             self.event_type.serialize(),
             event_subtype,
+            self.counterparty,
         )
 
     @classmethod
