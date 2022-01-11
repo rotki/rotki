@@ -1,11 +1,7 @@
 <template>
-  <td
-    v-if="visible"
-    class="table-expand-container"
-    :colspan="$vuetify.breakpoint.xsOnly ? 2 : colspan"
-  >
+  <td v-if="visible" class="table-expand-container" :colspan="colspan">
     <div class="py-4">
-      <div class="text-h6 mb-4">
+      <div v-if="$scopedSlots.title" class="text-h6 mb-4">
         <slot name="title" />
       </div>
       <v-sheet outlined rounded :class="padded ? 'pa-4' : null">

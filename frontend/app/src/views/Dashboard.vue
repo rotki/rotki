@@ -1,121 +1,150 @@
 <template>
-  <v-container>
-    <v-row>
-      <v-col cols="12">
-        <overall-balances />
-      </v-col>
-    </v-row>
-    <v-row justify="center">
-      <v-col cols="12" md="4" lg="4">
-        <summary-card
-          :name="$t('dashboard.exchange_balances.title')"
-          can-refresh
-          :is-loading="exchangeIsLoading"
-          navigates-to="/accounts-balances/exchange-balances/"
-          @refresh="refreshBalance($event)"
-        >
-          <div slot="tooltip">
-            {{ $t('dashboard.exchange_balances.tooltip') }}
-          </div>
-          <div v-if="exchanges.length < 1">
-            <v-card-actions>
-              <v-btn text color="primary" to="/settings/api-keys/exchanges">
-                {{ $t('dashboard.exchange_balances.add') }}
-              </v-btn>
-            </v-card-actions>
-          </div>
-          <div v-else>
-            <exchange-box
-              v-for="exchange in exchanges"
-              :key="exchange.location"
-              :location="exchange.location"
-              :amount="exchange.total"
-            />
-          </div>
-        </summary-card>
-      </v-col>
-      <v-col cols="12" md="4" lg="4">
-        <summary-card
-          :name="$t('dashboard.blockchain_balances.title')"
-          :is-loading="blockchainIsLoading"
-          can-refresh
-          navigates-to="/accounts-balances/"
-          @refresh="refreshBalance($event)"
-        >
-          <div slot="tooltip">
-            {{ $t('dashboard.blockchain_balances.tooltip') }}
-          </div>
-          <div v-if="blockchainTotals.length === 0">
-            <v-card-actions>
-              <v-btn text color="primary" to="/accounts-balances/?add=true">
-                {{ $t('dashboard.blockchain_balances.add') }}
-              </v-btn>
-            </v-card-actions>
-          </div>
-          <div v-else>
-            <blockchain-balance-card-list
-              v-for="total in blockchainTotals"
-              :key="total.chain"
-              :total="total"
-            />
-          </div>
-        </summary-card>
-      </v-col>
-      <v-col cols="12" md="4" lg="4">
-        <summary-card
-          :name="$t('dashboard.manual_balances.title')"
-          :tooltip="$t('dashboard.manual_balances.card_tooltip')"
-          :is-loading="manualBalancesLoading"
-          can-refresh
-          navigates-to="/accounts-balances/manual-balances/"
-          @refresh="fetchManualBalances"
-        >
-          <div slot="tooltip">
-            {{ $t('dashboard.manual_balances.tooltip') }}
-          </div>
-          <div v-if="manualBalanceByLocation.length < 1">
-            <v-card-actions>
-              <v-btn
-                text
-                color="primary"
-                to="/accounts-balances/manual-balances/?add=true"
-              >
-                {{ $t('dashboard.manual_balances.add') }}
-              </v-btn>
-            </v-card-actions>
-          </div>
-          <div v-else>
-            <manual-balance-card-list
-              v-for="manualBalance in manualBalanceByLocation"
-              :key="manualBalance.location"
-              :name="manualBalance.location"
-              :amount="manualBalance.usdValue"
-            />
-          </div>
-        </summary-card>
-      </v-col>
-    </v-row>
-    <v-row justify="end" class="ma-4">
-      <v-col cols="auto">
-        <price-refresh />
-      </v-col>
-    </v-row>
-    <dashboard-asset-table
-      :title="$t('dashboard.per_asset_balances.title')"
-      table-type="ASSETS"
-      :loading="anyIsLoading"
-      :balances="aggregatedBalances"
-    />
-    <dashboard-asset-table
-      v-if="liabilities.length > 0"
-      class="mt-8"
-      table-type="LIABILITIES"
-      :title="$t('dashboard.liabilities.title')"
-      :loading="anyIsLoading"
-      :balances="liabilities"
-    />
-    <nft-balance-table data-cy="nft-balance-table" class="mt-8" />
-  </v-container>
+  <div class="pb-6">
+    <v-container>
+      <v-row>
+        <v-col cols="12">
+          <overall-balances />
+        </v-col>
+        <v-col cols="12" md="4" lg="4">
+          <summary-card
+            :name="$t('dashboard.exchange_balances.title')"
+            can-refresh
+            :is-loading="exchangeIsLoading"
+            navigates-to="/accounts-balances/exchange-balances/"
+            @refresh="refreshBalance($event)"
+          >
+            <div slot="tooltip">
+              {{ $t('dashboard.exchange_balances.tooltip') }}
+            </div>
+            <div v-if="exchanges.length < 1">
+              <v-card-actions class="px-4">
+                <v-btn
+                  text
+                  block
+                  color="primary"
+                  to="/settings/api-keys/exchanges/?add=true"
+                  class="py-8"
+                >
+                  <div class="d-flex flex-column align-center">
+                    <v-icon class="mb-2">mdi-plus-circle-outline</v-icon>
+                    <span>
+                      {{ $t('dashboard.exchange_balances.add') }}
+                    </span>
+                  </div>
+                </v-btn>
+              </v-card-actions>
+            </div>
+            <div v-else>
+              <exchange-box
+                v-for="exchange in exchanges"
+                :key="exchange.location"
+                :location="exchange.location"
+                :amount="exchange.total"
+              />
+            </div>
+          </summary-card>
+        </v-col>
+        <v-col cols="12" md="4" lg="4">
+          <summary-card
+            :name="$t('dashboard.blockchain_balances.title')"
+            :is-loading="blockchainIsLoading"
+            can-refresh
+            navigates-to="/accounts-balances/"
+            @refresh="refreshBalance($event)"
+          >
+            <div slot="tooltip">
+              {{ $t('dashboard.blockchain_balances.tooltip') }}
+            </div>
+            <div v-if="blockchainTotals.length === 0">
+              <v-card-actions class="px-4">
+                <v-btn
+                  text
+                  block
+                  color="primary"
+                  to="/accounts-balances/?add=true"
+                  class="py-8"
+                >
+                  <div class="d-flex flex-column align-center">
+                    <v-icon class="mb-2">mdi-plus-circle-outline</v-icon>
+                    <span>
+                      {{ $t('dashboard.blockchain_balances.add') }}
+                    </span>
+                  </div>
+                </v-btn>
+              </v-card-actions>
+            </div>
+            <div v-else>
+              <blockchain-balance-card-list
+                v-for="total in blockchainTotals"
+                :key="total.chain"
+                :total="total"
+              />
+            </div>
+          </summary-card>
+        </v-col>
+        <v-col cols="12" md="4" lg="4">
+          <summary-card
+            :name="$t('dashboard.manual_balances.title')"
+            :tooltip="$t('dashboard.manual_balances.card_tooltip')"
+            :is-loading="manualBalancesLoading"
+            can-refresh
+            navigates-to="/accounts-balances/manual-balances/"
+            @refresh="fetchManualBalances"
+          >
+            <div slot="tooltip">
+              {{ $t('dashboard.manual_balances.tooltip') }}
+            </div>
+            <div v-if="manualBalanceByLocation.length < 1">
+              <v-card-actions class="px-4">
+                <v-btn
+                  text
+                  block
+                  color="primary"
+                  to="/accounts-balances/manual-balances/?add=true"
+                  class="py-8"
+                >
+                  <div class="d-flex flex-column align-center">
+                    <v-icon class="mb-2">mdi-plus-circle-outline</v-icon>
+                    <span>
+                      {{ $t('dashboard.manual_balances.add') }}
+                    </span>
+                  </div>
+                </v-btn>
+              </v-card-actions>
+            </div>
+            <div v-else>
+              <manual-balance-card-list
+                v-for="manualBalance in manualBalanceByLocation"
+                :key="manualBalance.location"
+                :name="manualBalance.location"
+                :amount="manualBalance.usdValue"
+              />
+            </div>
+          </summary-card>
+        </v-col>
+      </v-row>
+      <v-row justify="end" class="my-4">
+        <v-col cols="auto">
+          <price-refresh />
+        </v-col>
+      </v-row>
+      <dashboard-asset-table
+        :title="$t('dashboard.per_asset_balances.title')"
+        table-type="ASSETS"
+        :loading="anyIsLoading"
+        :balances="aggregatedBalances"
+      />
+      <dashboard-asset-table
+        v-if="liabilities.length > 0"
+        class="mt-8"
+        table-type="LIABILITIES"
+        :title="$t('dashboard.liabilities.title')"
+        :loading="anyIsLoading"
+        :balances="liabilities"
+      />
+      <nft-balance-table data-cy="nft-balance-table" class="mt-8" />
+    </v-container>
+  </div>
 </template>
 
 <script lang="ts">

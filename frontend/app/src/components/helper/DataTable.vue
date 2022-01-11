@@ -2,16 +2,16 @@
   <v-data-table
     ref="table"
     v-bind="$attrs"
-    :sort-desc="sortDesc"
     must-sort
+    :sort-desc="sortDesc"
     :items="items"
     :item-class="itemClass"
     :headers="headers"
     :expanded="expanded"
     :footer-props="footerProps"
     :items-per-page="itemsPerPage"
-    @update:items-per-page="onSelectionChange($event)"
     v-on="$listeners"
+    @update:items-per-page="onSelectionChange($event)"
     @update:page="scrollToTop"
   >
     <!-- Pass on all named slots -->
@@ -79,3 +79,22 @@ export default class DataTable extends Mixins(SettingsMixin) {
   }
 }
 </script>
+
+<style scoped lang="scss">
+/* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+.v-data-table--mobile {
+  ::v-deep {
+    .v-data-table__wrapper {
+      tbody {
+        .v-data-table__expanded__content,
+        .table-expand-container {
+          height: auto !important;
+          display: block;
+        }
+      }
+    }
+  }
+}
+/* stylelint-enable selector-class-pattern,selector-nested-pattern */
+</style>

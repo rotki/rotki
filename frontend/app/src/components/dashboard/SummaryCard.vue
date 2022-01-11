@@ -2,13 +2,15 @@
   <v-card
     :loading="isLoading"
     :class="`dashboard__summary-card__${name}`"
-    class="pb-3"
+    class="pb-1"
   >
     <v-card-title
       class="
         font-weight-medium
         text-capitalize
-        pa-3
+        px-4
+        pt-3
+        pb-0
         secondary--text
         summary-card__header
       "

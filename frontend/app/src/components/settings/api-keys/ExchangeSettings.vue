@@ -131,6 +131,13 @@ export default class ExchangeSettings extends Vue {
   pending: boolean = false;
   binancePairs: string[] = [];
 
+  mounted() {
+    const { currentRoute } = this.$router;
+    if (currentRoute.query.add) {
+      this.addExchange();
+    }
+  }
+
   get dialogTitle(): string {
     return this.edit
       ? this.$t('exchange_settings.dialog.edit.title').toString()
