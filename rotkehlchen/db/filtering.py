@@ -8,7 +8,9 @@ from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.typing import SchemaEventType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.errors import DeserializationError
+from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     AssetMovementCategory,
@@ -57,16 +59,23 @@ class DBTimestampFilter(DBFilter):
     timestamp_attribute: str = 'timestamp'
     from_ts: Optional[Timestamp] = None
     to_ts: Optional[Timestamp] = None
+    scaling_factor: Optional[FVal] = None
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
         filters = []
         bindings = []
         if self.from_ts is not None:
             filters.append(f'{self.timestamp_attribute} >= ?')
-            bindings.append(self.from_ts)
+            from_ts = self.from_ts
+            if self.scaling_factor is not None:
+                from_ts = Timestamp((from_ts * self.scaling_factor).to_int(exact=False))
+            bindings.append(from_ts)
         if self.to_ts is not None:
             filters.append(f'{self.timestamp_attribute} <= ?')
-            bindings.append(self.to_ts)
+            to_ts = self.to_ts
+            if self.scaling_factor is not None:
+                to_ts = Timestamp((to_ts * self.scaling_factor).to_int(exact=False))
+            bindings.append(to_ts)
 
         return filters, bindings
 
@@ -331,6 +340,17 @@ class DBAssetFilter(DBFilter):
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
         return [f'{self.asset_key}=?'], [self.asset.identifier]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBIgnoreValuesFilter(DBFilter):
+    column: str
+    values: List[Any]
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        if len(self.values) == 0:
+            return [], []
+        return [f'{self.column} NOT IN ({", ".join(["?"] * len(self.values))})'], [self.values]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -642,6 +662,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             event_subtype: Optional[List[HistoryEventSubType]] = None,
             location: Optional[Location] = None,
             location_label: Optional[str] = None,
+            ignored_ids: Optional[List[str]] = None,
     ) -> 'HistoryEventFilterQuery':
         filter_query = cls.create(
             and_op=and_op,
@@ -673,12 +694,21 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             filters.append(
                 DBStringFilter(and_op=True, column='location_label', value=location_label),
             )
+        if ignored_ids is not None:
+            filters.append(
+                DBIgnoreValuesFilter(
+                    and_op=True,
+                    column='identifier',
+                    values=ignored_ids,
+                ),
+            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
             from_ts=from_ts,
             to_ts=to_ts,
             timestamp_attribute='timestamp',
+            scaling_factor=FVal(KRAKEN_TS_MULTIPLIER),
         )
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters

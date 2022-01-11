@@ -53,7 +53,7 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
-from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS, KRAKEN_TS_MULTIPLIER
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -102,7 +102,11 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.serialization.deserialize import deserialize_hex_color_code
+from rotkehlchen.serialization.deserialize import (
+    deserialize_fval,
+    deserialize_hex_color_code,
+    deserialize_timestamp,
+)
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -3504,8 +3508,7 @@ class DBHandler:
 
     def get_history_events(self, filter_query: HistoryEventFilterQuery) -> List[HistoryBaseEntry]:
         """
-        Get history events using the provided query filter. May raise:
-        - DeserializationError
+        Get history events using the provided query filter
         """
         query, bindings = filter_query.prepare()
         query = 'SELECT * FROM history_events ' + query
@@ -3519,5 +3522,45 @@ class DBHandler:
                 log.debug(f'Failed to deserialize history event {entry}')
                 self.msg_aggregator.add_error(
                     f'Failed to read history event from database. {str(e)}',
+                )
+        return result
+
+    def rows_missing_prices_in_base_entries(
+        self,
+        filter_query: HistoryEventFilterQuery,
+    ) -> List[Tuple[str, FVal, Asset, Timestamp]]:
+        """
+        Get missing prices for history base entries based on filter query
+        """
+        query, bindings = filter_query.prepare()
+        query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
+        result = []
+        cursor = self.conn.cursor()
+        cursor.execute(query, bindings)
+        for identifier, amount_raw, asset_name, timestamp in cursor:
+            try:
+                amount = deserialize_fval(
+                    value=amount_raw,
+                    name='historic base entry usd_value query',
+                    location='query_missing_prices',
+                )
+                high_precision_timestamp = deserialize_timestamp(timestamp)
+                result.append(
+                    (
+                        identifier,
+                        amount,
+                        Asset(asset_name),
+                        Timestamp(int(high_precision_timestamp / KRAKEN_TS_MULTIPLIER)),
+                    ),
+                )
+            except DeserializationError as e:
+                log.error(
+                    f'Failed to read value from historic base entry {identifier} '
+                    f'with amount. {str(e)}',
+                )
+            except UnknownAsset as e:
+                log.error(
+                    f'Failed to read asset from historic base entry {identifier} '
+                    f'with asset identifier {asset_name}. {str(e)}',
                 )
         return result

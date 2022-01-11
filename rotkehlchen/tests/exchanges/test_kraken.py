@@ -360,7 +360,7 @@ def test_kraken_trade_with_spend_receive(function_scope_kraken):
     with patch(target, new=test_trades):
         trades, _ = kraken.query_online_trade_history(
             start_ts=0,
-            end_ts=Timestamp(1637406000.8555),
+            end_ts=Timestamp(1637406001),
         )
 
     assert len(trades) == 1
@@ -417,7 +417,7 @@ def test_kraken_trade_with_adjustment(function_scope_kraken):
     with patch(target, new=test_trades):
         trades, _ = kraken.query_online_trade_history(
             start_ts=0,
-            end_ts=Timestamp(1637406000.8555),
+            end_ts=Timestamp(1637406001),
         )
 
     assert len(trades) == 1
@@ -474,7 +474,7 @@ def test_kraken_trade_no_counterpart(function_scope_kraken):
     with patch(target, new=test_trades):
         trades, _ = kraken.query_online_trade_history(
             start_ts=0,
-            end_ts=Timestamp(1637406000.8555),
+            end_ts=Timestamp(1637406001),
         )
 
     assert len(trades) == 2

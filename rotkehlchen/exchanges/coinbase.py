@@ -60,7 +60,7 @@ def trade_from_coinbase(raw_trade: Dict[str, Any]) -> Optional[Trade]:
     Mary raise:
         - UnknownAsset due to Asset instantiation
         - DeserializationError due to unexpected format of dict entries
-        - KeyError due to dict entires missing an expected entry
+        - KeyError due to dict entries missing an expected entry
     """
 
     if raw_trade['status'] != 'completed':
@@ -108,7 +108,7 @@ def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> O
     Mary raise:
     - UnknownAsset due to Asset instantiation
     - DeserializationError due to unexpected format of dict entries
-    - KeyError due to dict entires missing an expected entry
+    - KeyError due to dict entries missing an expected entry
     """
     # Check that the status is complete
     if trade_a['status'] != 'completed':

@@ -10126,3 +10126,84 @@ Get associated locations
    :statuscode 200: Locations succesfully queried.
    :statuscode 409: User is not logged in. Check error message for details.
    :statuscode 500: Internal Rotki error
+
+Staking events
+==============
+
+.. http:get:: /api/(version)/staking/kraken
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on this endpoint will return all staking events for the desired location. At the moment
+   the only valid location is kraken. If the retrieval of new information fails the information at the
+   database will be returned
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/staking/kraken HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "only_cache": false}
+
+   :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+   :reqjson string order_by_attribute: Optional. This is the attribute of the history by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'location', 'amount'].
+   :reqjson bool ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
+   :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
+   :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
+   :reqjson bool only_cache: Optional.If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              {
+                  "event_type": "income",
+                  "asset": "ETH2",
+                  "timestamp": 1636864588,
+                  "location": "kraken",
+                  "amount": "0.0000103220",
+                  "usd_value": "0.0478582110500"
+              },
+              {
+                  "event_type": "staking receive asset",
+                  "asset": "ETH2",
+                  "timestamp": 1636740198,
+                  "location": "kraken",
+                  "amount": "0.0600000000",
+                  "usd_value": "278.7345000000000"
+              },
+              {
+                  "event_type": "staking deposit asset",
+                  "asset": "ETH",
+                  "timestamp": 1636738550,
+                  "location": "kraken",
+                  "amount": "0.0600000000",
+                  "usd_value": "278.7345000000000"
+              }
+          ],
+          "message": ""
+      }
+
+   :resjsonarr int timestamp: The timestamp at which the event occured
+   :resjsonarr string location: A valid location at which the event happened
+   :resjsonarr string amount: The amount related to the event
+   :resjsonarr string asset: Asset involved in the event
+   :resjsonarr string event_type: Type of event. Can be `income`, `staking receive asset`, `staking deposit asset` or `staking remove asset` 
+   :resjsonarr string message: It won't be empty if the query to external services fails for some reason. 
+   :statuscode 200: Events are succesfully returned
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in.
+   :statuscode 500: Internal rotki error

@@ -29,7 +29,7 @@ from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, KRAKEN_TS_MULTIPLIER
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import (
@@ -77,7 +77,6 @@ KRAKEN_PUBLIC_METHODS = ('AssetPairs', 'Assets')
 KRAKEN_QUERY_TRIES = 8
 KRAKEN_BACKOFF_DIVIDEND = 15
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
-KRAKEN_TS_MULTIPLIER = 10000  # Kraken TS is seconds float with up to 4 digits precision
 
 
 def kraken_to_world_pair(pair: str) -> Tuple[Asset, Asset]:
@@ -688,8 +687,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         """
         with_errors = self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
-            from_ts=Timestamp(start_ts * KRAKEN_TS_MULTIPLIER),
-            to_ts=Timestamp(end_ts * KRAKEN_TS_MULTIPLIER),
+            from_ts=Timestamp(start_ts),
+            to_ts=Timestamp(end_ts),
             event_type=[
                 HistoryEventType.TRADE,
                 HistoryEventType.RECEIVE,
@@ -729,8 +728,8 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> List[AssetMovement]:
         self.query_kraken_ledgers(start_ts=start_ts, end_ts=end_ts)
         filter_query = HistoryEventFilterQuery.make(
-            from_ts=Timestamp(start_ts * KRAKEN_TS_MULTIPLIER),
-            to_ts=Timestamp(end_ts * KRAKEN_TS_MULTIPLIER),
+            from_ts=Timestamp(start_ts),
+            to_ts=Timestamp(end_ts),
             event_type=[
                 HistoryEventType.DEPOSIT,
                 HistoryEventType.WITHDRAWAL,
@@ -1074,13 +1073,20 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         with_errors = False
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying kraken ledger entries from {query_start_ts} to {query_end_ts}')
-            response, with_errors = self.query_until_finished(
-                endpoint='Ledgers',
-                keyname='ledger',
-                start_ts=query_start_ts,
-                end_ts=query_end_ts,
-                extra_dict={},
-            )
+            try:
+                response, with_errors = self.query_until_finished(
+                    endpoint='Ledgers',
+                    keyname='ledger',
+                    start_ts=query_start_ts,
+                    end_ts=query_end_ts,
+                    extra_dict={},
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to query kraken ledger between {query_start_ts} and '
+                    f'{query_end_ts}. {str(e)}',
+                )
+                return True
 
             # Group related events
             raw_events_groupped = defaultdict(list)

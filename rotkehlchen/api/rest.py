@@ -31,7 +31,7 @@ from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType
+from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType, StakingEvent
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
@@ -63,6 +63,7 @@ from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     Eth2DailyStatsFilterQuery,
     ETHTransactionsFilterQuery,
+    HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
@@ -3899,3 +3900,63 @@ class RestAPI():
             result=_wrap_in_ok_result([str(location) for location in locations]),
             status_code=HTTPStatus.OK,
         )
+
+    def _query_kraken_staking_events(
+        self,
+        only_cache: bool,
+        query_filter: HistoryEventFilterQuery,
+    ) -> Dict[str, Any]:
+        exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(
+            Location.KRAKEN,
+        )
+        message = ''
+        if exchanges_list is None:
+            events = []
+        else:
+            if only_cache is False:
+                kraken_names = []
+                for kraken_instance in exchanges_list:
+                    with_errors = kraken_instance.query_kraken_ledgers(   # type: ignore
+                        start_ts=query_filter.from_ts,
+                        end_ts=query_filter.to_ts,
+                    )
+                    if with_errors:
+                        kraken_names.append(kraken_instance.name)
+                if len(kraken_names) != 0:
+                    message = f'Failed to query some events from Kraken exchanges {",".join(kraken_names)}'  # noqa: E501
+
+            # After 3865 we have a recurring task that queries for missing prices but
+            # we make sure that the returned values have their correct value calculated
+            task_manager = self.rotkehlchen.task_manager
+            if task_manager is not None:
+                entries = task_manager.get_base_entries_missing_prices(query_filter)
+                task_manager.query_missing_prices_of_base_entries(
+                    entries_missing_prices=entries,
+                )
+            # Query events from database
+            events_raw = self.rotkehlchen.data.db.get_history_events(query_filter)
+            events = [StakingEvent.from_history_base_entry(event) for event in events_raw]
+
+        return {'result': events, 'message': message, 'status_code': HTTPStatus.OK}
+
+    @require_loggedin_user()
+    def query_kraken_staking_events(
+            self,
+            query_filter: HistoryEventFilterQuery,
+            only_cache: bool,
+            async_query: bool,
+    ) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_query_kraken_staking_events',
+                only_cache=only_cache,
+                query_filter=query_filter,
+            )
+
+        response = self._query_kraken_staking_events(
+            only_cache=only_cache,
+            query_filter=query_filter,
+        )
+        status_code = _get_status_code_from_async_response(response)
+        result_dict = {'result': response['result'], 'message': response['message']}
+        return api_response(process_result(result_dict), status_code=status_code)

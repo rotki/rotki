@@ -203,7 +203,7 @@ class EventsHistorian():
         May raise:
         - RemoteError: If there are problems connecting to any of the remote exchanges
         """
-        if only_cache is not True:
+        if only_cache is False:
             self._query_services_for_trades(filter_query=filter_query)
 
         has_premium = self.chain_manager.premium is not None
@@ -292,7 +292,7 @@ class EventsHistorian():
         May raise:
         - RemoteError: If there are problems connecting to any of the remote exchanges
         """
-        if only_cache is not True:
+        if only_cache is False:
             self._query_services_for_asset_movements(filter_query=filter_query)
 
         has_premium = self.chain_manager.premium is not None

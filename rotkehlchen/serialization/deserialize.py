@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple, TypeVar, Union
 
 from eth_utils import to_checksum_address
@@ -14,6 +15,7 @@ from rotkehlchen.errors import (
 )
 from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
@@ -29,6 +31,10 @@ from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_t
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def deserialize_fee(fee: Optional[str]) -> Fee:
