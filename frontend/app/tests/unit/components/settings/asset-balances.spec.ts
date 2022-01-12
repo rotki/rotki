@@ -1,5 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, PiniaVuePlugin } from 'pinia';
+import { createPinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AssetBalances from '@/components/settings/AssetBalances.vue';
@@ -9,7 +9,6 @@ import { TaskType } from '@/types/task-type';
 import '../../i18n';
 
 Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 describe('AssetBalances.vue', () => {
   let wrapper: Wrapper<any>;

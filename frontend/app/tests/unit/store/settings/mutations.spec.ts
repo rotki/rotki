@@ -9,7 +9,6 @@ import { SettingsState } from '@/store/settings/state';
 import store from '@/store/store';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
-import { TableColumn } from '@/types/table-column';
 import {
   AMOUNT_ROUNDING_MODE,
   CURRENCY_LOCATION,
@@ -32,7 +31,8 @@ import {
   VALUE_ROUNDING_MODE,
   VERSION_UPDATE_CHECK_FREQUENCY,
   VISIBLE_TIMEFRAMES
-} from '../../../../src/types/frontend-settings';
+} from '@/types/frontend-settings';
+import { TableColumn } from '@/types/table-column';
 
 describe('settings:mutations', () => {
   test('restore', async () => {

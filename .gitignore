@@ -25,3 +25,4 @@ chromedriverlog.txt
 .vscode/settings.json
 sqlcipher.dll
 libcrypto-1_1-x64.dll
+/.run/

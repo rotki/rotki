@@ -5,7 +5,7 @@ import {
 } from '@rotki/common/lib/gitcoin';
 import { computed, Ref, ref } from '@vue/composition-api';
 import isEqual from 'lodash/isEqual';
-import { defineStore } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { exchangeName } from '@/components/history/consts';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
@@ -217,7 +217,7 @@ export const useHistory = defineStore('history', () => {
   };
 });
 
-export const useTrades = defineStore('history/trade', () => {
+export const useTrades = defineStore('history/trades', () => {
   const { fetchAssociatedLocations } = useHistory();
 
   const trades = ref(defaultHistoricState<TradeEntry>()) as Ref<
@@ -415,7 +415,7 @@ export const useTrades = defineStore('history/trade', () => {
   };
 });
 
-export const useAssetMovements = defineStore('history/assetMovement', () => {
+export const useAssetMovements = defineStore('history/assetMovements', () => {
   const { fetchAssociatedLocations } = useHistory();
 
   const assetMovements = ref(defaultHistoricState<AssetMovementEntry>()) as Ref<
@@ -574,7 +574,7 @@ export const useAssetMovements = defineStore('history/assetMovement', () => {
   };
 });
 
-export const useTransactions = defineStore('history/transaction', () => {
+export const useTransactions = defineStore('history/transactions', () => {
   // ETH Transactions
   const transactions = ref(defaultHistoricState<EthTransactionEntry>()) as Ref<
     Collection<EthTransactionEntry>
@@ -715,7 +715,7 @@ export const useTransactions = defineStore('history/transaction', () => {
   };
 });
 
-export const useLedgerActions = defineStore('history/ledgerAction', () => {
+export const useLedgerActions = defineStore('history/ledgerActions', () => {
   const { fetchAssociatedLocations } = useHistory();
 
   const ledgerActions = ref(defaultHistoricState<LedgerActionEntry>()) as Ref<
@@ -923,3 +923,11 @@ export const useLedgerActions = defineStore('history/ledgerAction', () => {
     reset
   };
 });
+
+if (module.hot) {
+  module.hot.accept(acceptHMRUpdate(useHistory, module.hot));
+  module.hot.accept(acceptHMRUpdate(useTrades, module.hot));
+  module.hot.accept(acceptHMRUpdate(useTransactions, module.hot));
+  module.hot.accept(acceptHMRUpdate(useLedgerActions, module.hot));
+  module.hot.accept(acceptHMRUpdate(useAssetMovements, module.hot));
+}

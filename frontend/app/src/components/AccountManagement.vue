@@ -2,11 +2,18 @@
   <v-overlay opacity="1" color="grey lighten-4">
     <div
       :class="{
-        [$style.loading]: !isMobile
+        [$style.loading]: !xsOnly
       }"
+      data-cy="account-management__loading"
     />
     <div v-if="!premiumVisible">
-      <v-card class="pb-4" :class="$style.card" :width="width" light>
+      <v-card
+        class="pb-4"
+        :class="$style.card"
+        :width="width"
+        light
+        data-cy="account-management"
+      >
         <div
           class="pt-6 pb-3 text-h2 font-weight-black white--text"
           :class="$style.title"
@@ -147,8 +154,9 @@ export default defineComponent({
       emit('login-complete');
     };
 
-    const { isMobile } = setupThemeCheck();
-    const width = computed(() => (isMobile.value ? '100%' : '500px'));
+    const { currentBreakpoint } = setupThemeCheck();
+    const xsOnly = computed(() => currentBreakpoint.value.xsOnly);
+    const width = computed(() => (xsOnly.value ? '100%' : '500px'));
     const premium = getPremium();
 
     const displayPremium = computed(
@@ -263,7 +271,7 @@ export default defineComponent({
     };
 
     return {
-      isMobile,
+      xsOnly,
       width,
       updateNeeded,
       autolog,

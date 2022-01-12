@@ -262,6 +262,11 @@ export default defineComponent({
       if (isDevelopment && logged.value) {
         monitor.start();
       }
+      const search = window.location.search;
+      const skipUpdate = search.indexOf('skip_update') >= 0;
+      if (skipUpdate) {
+        sessionStorage.setItem('skip_update', '1');
+      }
     });
 
     watch(overall, overall => {

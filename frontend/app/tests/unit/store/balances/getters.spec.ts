@@ -238,7 +238,14 @@ describe('balances:getters', () => {
     store.commit('balances/btcAccounts', accounts);
     store.commit('balances/updateBtc', balances);
 
-    expect(store.getters['balances/btcAccounts']).toEqual([
+    const btcAccounts = getters.btcAccounts(
+      store.state.balances!!,
+      getters as any as BalanceGetters,
+      stub<RotkehlchenState>(),
+      null
+    );
+
+    expect(btcAccounts).toEqual([
       {
         address: '123',
         balance: {

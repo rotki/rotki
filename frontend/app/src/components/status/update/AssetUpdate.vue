@@ -168,9 +168,11 @@ export default class AssetUpdate extends Mixins(BackendMixin) {
   }
 
   async mounted() {
-    if (this.$route.query.skip_update) {
+    const skipUpdate = sessionStorage.getItem('skip_update');
+    if (skipUpdate) {
       return;
     }
+
     if (this.auto) {
       await this.check();
     }

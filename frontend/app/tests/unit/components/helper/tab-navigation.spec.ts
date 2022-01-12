@@ -1,5 +1,5 @@
-import VueCompositionAPI from '@vue/composition-api';
 import { mount, ThisTypedMountOptions, Wrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import Vuex from 'vuex';
@@ -8,7 +8,6 @@ import store from '@/store/store';
 
 Vue.use(Vuetify);
 Vue.use(Vuex);
-Vue.use(VueCompositionAPI);
 
 describe('TabNavigation.vue', () => {
   let wrapper: Wrapper<any>;
@@ -17,7 +16,10 @@ describe('TabNavigation.vue', () => {
 
   function createWrapper(options: ThisTypedMountOptions<any> = {}) {
     const vuetify = new Vuetify();
+    const pinia = createPinia();
+    setActivePinia(pinia);
     return mount(TabNavigation, {
+      pinia,
       store,
       vuetify,
       ...options
