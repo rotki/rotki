@@ -73,19 +73,22 @@ export const TradeCollectionResponse = getCollectionResponseType(
 
 export type NewTrade = Omit<Trade, 'tradeId' | 'ignoredInAccounting'>;
 
-export type TradeRequestPayload = {
+export type HistoryRequestPayload = {
   readonly limit: number;
   readonly offset: number;
   readonly orderByAttribute?: string;
   readonly ascending: boolean;
+  readonly onlyCache?: boolean;
+};
+
+export type TradeRequestPayload = {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
   readonly location?: string;
   readonly baseAsset?: string;
   readonly quoteAsset?: string;
   readonly tradeType?: string;
-  readonly onlyCache?: boolean;
-};
+} & HistoryRequestPayload;
 
 // Asset Movements
 export const MovementCategory = z.enum(['deposit', 'withdrawal']);
@@ -112,17 +115,12 @@ export const AssetMovementCollectionResponse = getCollectionResponseType(
 );
 
 export type AssetMovementRequestPayload = {
-  readonly limit: number;
-  readonly offset: number;
-  readonly orderByAttribute?: string;
-  readonly ascending: boolean;
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
   readonly location?: string;
   readonly asset?: string;
   readonly action?: string;
-  readonly onlyCache?: boolean;
-};
+} & HistoryRequestPayload;
 
 // ETH Transactions
 export const EthTransaction = z.object({
@@ -147,15 +145,10 @@ export const EthTransactionCollectionResponse = getCollectionResponseType(
 );
 
 export type TransactionRequestPayload = {
-  readonly limit: number;
-  readonly offset: number;
-  readonly orderByAttribute: keyof EthTransaction;
-  readonly ascending: boolean;
   readonly fromTimestamp?: number;
   readonly toTimestamp?: number;
-  readonly onlyCache?: boolean;
   readonly address?: string;
-};
+} & HistoryRequestPayload;
 
 // Ledger Actions
 export const LedgerAction = z.object({
@@ -178,16 +171,11 @@ export const LedgerActionCollectionResponse = getCollectionResponseType(
 );
 
 export type LedgerActionRequestPayload = {
-  readonly limit: number;
-  readonly offset: number;
-  readonly orderByAttribute?: string;
-  readonly ascending: boolean;
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
   readonly location?: string;
   readonly asset?: string;
   readonly action?: string;
-  readonly onlyCache?: boolean;
-};
+} & HistoryRequestPayload;
 
 export type NewLedgerAction = Omit<LedgerAction, 'identifier'>;

@@ -6,21 +6,16 @@
     {{ $t('transactions.loading_subtitle') }}
   </progress-screen>
   <div v-else>
-    <transaction-content
-      @fetch="fetchTransactionsHandler"
-      @update:payload="onFilterUpdate($event)"
-    />
+    <transaction-content @fetch="fetchTransactions" />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, ref } from '@vue/composition-api';
+import { defineComponent, onBeforeMount } from '@vue/composition-api';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
-import { setupTransactions } from '@/composables/history';
-import { setupSettings } from '@/composables/settings';
-import { TransactionRequestPayload } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { useTransactions } from '@/store/history';
 import TransactionContent from '@/views/history/transactions/TransactionContent.vue';
 
 export default defineComponent({
@@ -30,38 +25,16 @@ export default defineComponent({
     TransactionContent
   },
   setup() {
-    const { itemsPerPage } = setupSettings();
-
-    const { fetchTransactions } = setupTransactions();
-
-    const payload = ref<TransactionRequestPayload>({
-      limit: itemsPerPage.value,
-      offset: 0,
-      orderByAttribute: 'timestamp',
-      ascending: false
-    });
-
-    const fetchTransactionsHandler = async (refresh: boolean = false) => {
-      await fetchTransactions({
-        ...payload.value,
-        onlyCache: !refresh
-      });
-    };
-
-    const onFilterUpdate = (newPayload: TransactionRequestPayload) => {
-      payload.value = newPayload;
-      fetchTransactionsHandler().then();
-    };
+    const { fetchTransactions } = useTransactions();
 
     onBeforeMount(async () => {
-      fetchTransactionsHandler().then();
+      await fetchTransactions();
     });
 
     const { shouldShowLoadingScreen } = setupStatusChecking();
 
     return {
-      fetchTransactionsHandler,
-      onFilterUpdate,
+      fetchTransactions,
       loading: shouldShowLoadingScreen(Section.TX)
     };
   }

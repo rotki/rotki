@@ -41,6 +41,7 @@ import {
   XpubPayload
 } from '@/store/balances/types';
 import { Section, Status } from '@/store/const';
+import { useHistory } from '@/store/history';
 import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
 import { useTasks } from '@/store/tasks';
@@ -343,9 +344,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         location: exchange.location,
         ignoreCache: false
       } as ExchangeBalancePayload);
-      dispatch('history/purgeHistoryLocation', exchange.location, {
-        root: true
-      });
+      const { purgeHistoryLocation } = useHistory();
+      purgeHistoryLocation(exchange.location).then();
     }
   },
 
@@ -1057,9 +1057,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         }
       }
 
-      dispatch('history/purgeHistoryLocation', exchange.location, {
-        root: true
-      });
+      const { purgeHistoryLocation } = useHistory();
+      await purgeHistoryLocation(exchange.location);
 
       return success;
     } catch (e: any) {

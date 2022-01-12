@@ -168,7 +168,7 @@ export class HistoryApi {
         params: axiosSnakeCaseTransformer({
           asyncQuery: async,
           ...data,
-          orderByAttribute: getUpdatedKey(payload.orderByAttribute, false)
+          orderByAttribute: getUpdatedKey(payload.orderByAttribute ?? '', false)
         }),
         validateStatus: validWithParamsSessionAndExternalService,
         transformResponse: basicAxiosTransformer

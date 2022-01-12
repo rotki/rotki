@@ -1,214 +1,30 @@
-import { computed, Ref } from '@vue/composition-api';
-import {
-  AssetMovementRequestPayload,
-  LedgerActionRequestPayload,
-  NewLedgerAction,
-  NewTrade,
-  TradeLocation,
-  TradeRequestPayload,
-  TransactionRequestPayload
-} from '@/services/history/types';
-import { HistoryActions } from '@/store/history/consts';
-import {
-  AssetMovementEntry,
-  EthTransactionEntry,
-  LedgerActionEntry,
-  TradeEntry
-} from '@/store/history/types';
+import { computed, ref, Ref } from '@vue/composition-api';
+import isEqual from 'lodash/isEqual';
+import sortBy from 'lodash/sortBy';
+import * as logger from 'loglevel';
+import i18n from '@/i18n';
+import { EntryMeta } from '@/services/history/types';
+import { useHistory } from '@/store/history';
+import { IgnoreActionPayload, IgnoreActionType } from '@/store/history/types';
+import store from '@/store/store';
+import { ActionStatus, Message } from '@/store/types';
 import { useStore } from '@/store/utils';
+import { Collection } from '@/types/collection';
+import { uniqueStrings } from '@/utils/data';
 
-export const setupAssociatedLocations = () => {
-  const store = useStore();
-  const associatedLocations = computed<TradeLocation[]>(() => {
-    return store.getters['history/associatedLocations'];
+export const getCollectionData = <T>(collection: Ref<Collection<T>>) => {
+  const data = computed<T[]>(() => {
+    return collection.value.data as T[];
   });
-
-  const fetchAssociatedLocations = async () => {
-    return await store.dispatch(
-      `history/${HistoryActions.FETCH_ASSOCIATED_LOCATIONS}`
-    );
-  };
-
-  return { associatedLocations, fetchAssociatedLocations };
-};
-
-export const setupTrades = () => {
-  const store = useStore();
-
-  const trades = computed<TradeEntry[]>(() => {
-    return store.getters['history/trades'];
-  });
-  const limit = computed<number>(() => {
-    return store.getters['history/tradesLimit'];
-  });
-  const found = computed<number>(() => {
-    return store.getters['history/tradesFound'];
-  });
-  const total = computed<number>(() => {
-    return store.getters['history/tradesTotal'];
-  });
-
-  const fetchTrades = async (payload: Partial<TradeRequestPayload>) => {
-    return await store.dispatch(`history/${HistoryActions.FETCH_TRADES}`, {
-      payload
-    });
-  };
-
-  const addTrade = async (trade: NewTrade) => {
-    return await store.dispatch(
-      `history/${HistoryActions.ADD_EXTERNAL_TRADE}`,
-      trade
-    );
-  };
-
-  const editTrade = async (trade: TradeEntry) => {
-    return await store.dispatch(
-      `history/${HistoryActions.EDIT_EXTERNAL_TRADE}`,
-      trade
-    );
-  };
-
-  const deleteTrade = async (tradeId: string) => {
-    return await store.dispatch(
-      `history/${HistoryActions.DELETE_EXTERNAL_TRADE}`,
-      tradeId
-    );
-  };
+  const limit = computed<number>(() => collection.value.limit);
+  const found = computed<number>(() => collection.value.found);
+  const total = computed<number>(() => collection.value.total);
 
   return {
-    trades,
+    data,
     limit,
     found,
-    total,
-    fetchTrades,
-    addTrade,
-    editTrade,
-    deleteTrade
-  };
-};
-
-export const setupAssetMovements = () => {
-  const store = useStore();
-
-  const assetMovements = computed<AssetMovementEntry[]>(() => {
-    return store.getters['history/assetMovements'];
-  });
-  const limit = computed<number>(() => {
-    return store.getters['history/assetMovementsLimit'];
-  });
-  const found = computed<number>(() => {
-    return store.getters['history/assetMovementsFound'];
-  });
-  const total = computed<number>(() => {
-    return store.getters['history/assetMovementsTotal'];
-  });
-
-  const fetchAssetMovements = async (
-    payload: Partial<AssetMovementRequestPayload>
-  ) => {
-    return await store.dispatch(`history/${HistoryActions.FETCH_MOVEMENTS}`, {
-      payload
-    });
-  };
-
-  return {
-    assetMovements,
-    limit,
-    found,
-    total,
-    fetchAssetMovements
-  };
-};
-
-export const setupTransactions = () => {
-  const store = useStore();
-
-  const transactions = computed<EthTransactionEntry[]>(() => {
-    return store.getters['history/transactions'];
-  });
-  const limit = computed<number>(() => {
-    return store.getters['history/transactionsLimit'];
-  });
-  const found = computed<number>(() => {
-    return store.getters['history/transactionsFound'];
-  });
-  const total = computed<number>(() => {
-    return store.getters['history/transactionsTotal'];
-  });
-
-  const fetchTransactions = async (
-    payload: Partial<TransactionRequestPayload>
-  ) => {
-    return await store.dispatch(
-      `history/${HistoryActions.FETCH_TRANSACTIONS}`,
-      payload
-    );
-  };
-
-  return {
-    transactions,
-    limit,
-    found,
-    total,
-    fetchTransactions
-  };
-};
-
-export const setupLedgerActions = () => {
-  const store = useStore();
-
-  const ledgerActions = computed<LedgerActionEntry[]>(() => {
-    return store.getters['history/ledgerActions'];
-  });
-  const limit = computed<number>(() => {
-    return store.getters['history/ledgerActionsLimit'];
-  });
-  const found = computed<number>(() => {
-    return store.getters['history/ledgerActionsFound'];
-  });
-  const total = computed<number>(() => {
-    return store.getters['history/ledgerActionsTotal'];
-  });
-
-  const fetchLedgerActions = async (
-    payload: Partial<LedgerActionRequestPayload>
-  ) => {
-    return await store.dispatch(
-      `history/${HistoryActions.FETCH_LEDGER_ACTIONS}`,
-      { payload }
-    );
-  };
-
-  const addLedgerAction = async (ledgerAction: NewLedgerAction) => {
-    return await store.dispatch(
-      `history/${HistoryActions.ADD_LEDGER_ACTION}`,
-      ledgerAction
-    );
-  };
-
-  const editLedgerAction = async (ledgerAction: LedgerActionEntry) => {
-    return await store.dispatch(
-      `history/${HistoryActions.EDIT_LEDGER_ACTION}`,
-      ledgerAction
-    );
-  };
-
-  const deleteLedgerAction = async (identifier: number) => {
-    return await store.dispatch(
-      `history/${HistoryActions.DELETE_LEDGER_ACTION}`,
-      identifier
-    );
-  };
-
-  return {
-    ledgerActions,
-    limit,
-    found,
-    total,
-    fetchLedgerActions,
-    addLedgerAction,
-    editLedgerAction,
-    deleteLedgerAction
+    total
   };
 };
 
@@ -241,5 +57,137 @@ export const setupEntryLimit = (
   return {
     itemLength,
     showUpgradeRow
+  };
+};
+
+export const setupIgnore = <T extends EntryMeta>(
+  type: IgnoreActionType,
+  selected: Ref<string[]>,
+  items: Ref<T[]>,
+  refresh: () => any,
+  getIdentifier: (item: T) => string
+) => {
+  const setMessage = (message: Message) => {
+    store.commit('setMessage', message);
+  };
+
+  const { ignoreInAccounting } = useHistory();
+
+  const ignoreActions = async (
+    payload: IgnoreActionPayload
+  ): Promise<ActionStatus> => {
+    return await ignoreInAccounting(payload, true);
+  };
+
+  const unignoreActions = async (
+    payload: IgnoreActionPayload
+  ): Promise<ActionStatus> => {
+    return await ignoreInAccounting(payload, false);
+  };
+
+  const ignore = async (ignored: boolean) => {
+    const ids = items.value
+      .filter(item => {
+        const { ignoredInAccounting } = item;
+        const identifier = getIdentifier(item);
+        return (
+          (ignored ? !ignoredInAccounting : ignoredInAccounting) &&
+          selected.value.includes(identifier)
+        );
+      })
+      .map(item => getIdentifier(item))
+      .filter(uniqueStrings);
+
+    let status: ActionStatus;
+
+    if (ids.length === 0) {
+      const choice = ignored ? 1 : 2;
+      setMessage({
+        success: false,
+        title: i18n.tc('ignore.no_items.title', choice).toString(),
+        description: i18n.tc('ignore.no_items.description', choice).toString()
+      });
+      return;
+    }
+    const payload: IgnoreActionPayload = {
+      actionIds: ids,
+      type: type
+    };
+    if (ignored) {
+      status = await ignoreActions(payload);
+    } else {
+      status = await unignoreActions(payload);
+    }
+
+    if (status.success) {
+      refresh();
+      selected.value = [];
+    }
+  };
+
+  return {
+    ignore
+  };
+};
+
+type IdType = string | number;
+
+type GetId<T> = (item: T) => string | undefined;
+export const setupSelectionMode = function <T>(
+  data: Ref<Array<T>>,
+  getId: GetId<T>
+) {
+  const selected = ref<string[]>([]);
+
+  const isSelected = (id: IdType) => {
+    return selected.value.includes(id.toString());
+  };
+
+  const selectionChanged = (id: IdType, select: boolean) => {
+    const idString = id.toString();
+    const selection = [...selected.value];
+    if (!select) {
+      const index = selection.indexOf(idString);
+      if (index >= 0) {
+        selection.splice(index, 1);
+      }
+    } else if (idString && !selection.includes(idString)) {
+      selection.push(idString);
+    }
+    selected.value = selection;
+  };
+
+  const setAllSelected = (selectAll: boolean) => {
+    const selection: string[] = [];
+    if (selectAll) {
+      for (const item of data.value) {
+        const id = getId(item);
+        const idString = id?.toString() ?? '';
+        if (!idString || selection.includes(idString)) {
+          logger.warn(
+            'A problematic item has been detected, possible duplicate id',
+            item
+          );
+        } else {
+          selection.push(idString);
+        }
+      }
+    }
+    selected.value = selection;
+  };
+
+  const isAllSelected = computed(() => {
+    const strings = data.value.map(getId);
+    return (
+      strings.length > 0 && isEqual(sortBy(strings), sortBy(selected.value))
+    );
+  });
+
+  return {
+    selected,
+    isSelected,
+    selectionChanged,
+    setAllSelected,
+    isAllSelected
   };
 };

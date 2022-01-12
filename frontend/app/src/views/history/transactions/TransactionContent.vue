@@ -42,7 +42,7 @@
       class="table"
       :expanded.sync="expanded"
       :headers="tableHeaders"
-      :items="transactions"
+      :items="data"
       :loading="refreshing"
       :options="options"
       :server-items-length="itemLength"
@@ -117,6 +117,7 @@
 import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { defineComponent, Ref, ref, watch } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -124,17 +125,22 @@ import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import TransactionsDetails from '@/components/history/TransactionsDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { setupStatusChecking } from '@/composables/common';
-import { setupEntryLimit, setupTransactions } from '@/composables/history';
+import {
+  getCollectionData,
+  setupEntryLimit,
+  setupIgnore,
+  setupSelectionMode
+} from '@/composables/history';
 import i18n from '@/i18n';
 import {
   EthTransaction,
   TransactionRequestPayload
 } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { useTransactions } from '@/store/history';
 import { EthTransactionEntry, IgnoreActionType } from '@/store/history/types';
+import { Collection } from '@/types/collection';
 import { toUnit, Unit } from '@/utils/calculation';
-import { setupIgnore } from '@/views/history/composables/ignore';
-import { setupSelectionMode } from '@/views/history/composables/selection';
 
 type PaginationOptions = {
   page: number;
@@ -215,11 +221,15 @@ export default defineComponent({
   emits: ['fetch', 'update:payload'],
   setup(_, { emit }) {
     const fetch = (refresh: boolean = false) => emit('fetch', refresh);
-    const updatePayload = (payload: Partial<TransactionRequestPayload>) =>
-      emit('update:payload', payload);
 
-    const { transactions, limit, found, total } = setupTransactions();
+    const transactionStore = useTransactions();
+    const { transactions } = storeToRefs(transactionStore);
+    const { updateTransactionsPayload } = transactionStore;
 
+    const { data, limit, found, total } =
+      getCollectionData<EthTransactionEntry>(
+        transactions as Ref<Collection<EthTransactionEntry>>
+      );
     const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
     const { isSectionRefreshing, shouldShowLoadingScreen } =
@@ -263,7 +273,7 @@ export default defineComponent({
         ...paginationOptions
       };
 
-      updatePayload(payload);
+      updateTransactionsPayload(payload);
     };
 
     const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
@@ -285,10 +295,7 @@ export default defineComponent({
 
     const getId = (item: EthTransactionEntry) => item.identifier;
 
-    const selectionMode = setupSelectionMode<EthTransactionEntry>(
-      transactions,
-      getId
-    );
+    const selectionMode = setupSelectionMode<EthTransactionEntry>(data, getId);
 
     const gasFee = (tx: EthTransaction) =>
       toUnit(tx.gasPrice.multipliedBy(tx.gasUsed), Unit.ETH);
@@ -297,14 +304,13 @@ export default defineComponent({
     return {
       account,
       tableHeaders,
-      transactions,
+      data,
       limit,
       found,
       total,
       itemLength,
       fetch,
       showUpgradeRow,
-      updatePayload,
       loading: shouldShowLoadingScreen(Section.TX),
       refreshing: isSectionRefreshing(Section.TX),
       expanded,
@@ -316,7 +322,7 @@ export default defineComponent({
       ...setupIgnore(
         IgnoreActionType.ETH_TRANSACTIONS,
         selectionMode.selected,
-        transactions,
+        data,
         fetch,
         getId
       )

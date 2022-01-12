@@ -7,26 +7,17 @@
   </progress-screen>
   <div v-else>
     <div class="mt-8">
-      <ledger-action-content
-        @fetch="fetchLedgerActionsHandler"
-        @update:payload="onFilterUpdate($event)"
-      />
+      <ledger-action-content @fetch="fetchLedgerActions" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, ref } from '@vue/composition-api';
-import isEqual from 'lodash/isEqual';
+import { defineComponent, onBeforeMount } from '@vue/composition-api';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { setupStatusChecking } from '@/composables/common';
-import {
-  setupAssociatedLocations,
-  setupLedgerActions
-} from '@/composables/history';
-import { setupSettings } from '@/composables/settings';
-import { LedgerActionRequestPayload } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { useLedgerActions } from '@/store/history';
 import LedgerActionContent from '@/views/history/ledger-actions/LedgerActionContent.vue';
 
 export default defineComponent({
@@ -36,44 +27,16 @@ export default defineComponent({
     LedgerActionContent
   },
   setup() {
-    const { itemsPerPage } = setupSettings();
-    const { fetchLedgerActions } = setupLedgerActions();
-    const { fetchAssociatedLocations } = setupAssociatedLocations();
-
-    const payload = ref<LedgerActionRequestPayload>({
-      limit: itemsPerPage.value,
-      offset: 0,
-      orderByAttribute: 'timestamp',
-      ascending: false
-    });
-
-    const fetchLedgerActionsHandler = async (refresh: boolean = false) => {
-      if (refresh) {
-        fetchAssociatedLocations().then();
-      }
-      await fetchLedgerActions({
-        ...payload.value,
-        onlyCache: !refresh
-      });
-    };
-
-    const onFilterUpdate = (newPayload: LedgerActionRequestPayload) => {
-      if (!isEqual(payload.value, newPayload)) {
-        payload.value = newPayload;
-        fetchLedgerActionsHandler().then();
-      }
-    };
+    const { fetchLedgerActions } = useLedgerActions();
 
     onBeforeMount(async () => {
-      fetchAssociatedLocations().then();
-      await fetchLedgerActionsHandler();
+      await fetchLedgerActions();
     });
 
     const { shouldShowLoadingScreen } = setupStatusChecking();
 
     return {
-      fetchLedgerActionsHandler,
-      onFilterUpdate,
+      fetchLedgerActions,
       loading: shouldShowLoadingScreen(Section.LEDGER_ACTIONS)
     };
   }

@@ -7,7 +7,6 @@ import { balances } from '@/store/balances';
 import { defiSections, Section, Status } from '@/store/const';
 import { storePlugins } from '@/store/debug';
 import { defi } from '@/store/defi';
-import { history } from '@/store/history';
 import { session } from '@/store/session';
 import { settings } from '@/store/settings';
 import { staking } from '@/store/staking';
@@ -186,7 +185,6 @@ const store: StoreOptions<RotkehlchenState> = {
   modules: {
     balances,
     defi,
-    history,
     session,
     settings,
     statistics,

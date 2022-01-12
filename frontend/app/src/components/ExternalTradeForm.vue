@@ -157,7 +157,9 @@
                   <strong>{{ $t('external_trade_form.summary.label') }}</strong>
                 </template>
                 <template #amount>
-                  <strong>{{ amount }}</strong>
+                  <strong>
+                    <amount-display :value="amount" :tooltip="false" />
+                  </strong>
                 </template>
                 <template #base>
                   <strong>{{ getSymbol(base) }}</strong>
@@ -166,7 +168,9 @@
                   <strong>{{ getSymbol(quote) }}</strong>
                 </template>
                 <template #rate>
-                  <strong>{{ rate }}</strong>
+                  <strong>
+                    <amount-display :value="rate" :tooltip="false" />
+                  </strong>
                 </template>
               </i18n>
               <i18n
@@ -178,7 +182,9 @@
                   <strong>{{ $t('external_trade_form.summary.label') }}</strong>
                 </template>
                 <template #amount>
-                  <strong>{{ amount }}</strong>
+                  <strong>
+                    <amount-display :value="amount" :tooltip="false" />
+                  </strong>
                 </template>
                 <template #base>
                   <strong>{{ getSymbol(base) }}</strong>
@@ -187,7 +193,9 @@
                   <strong>{{ getSymbol(quote) }}</strong>
                 </template>
                 <template #rate>
-                  <strong>{{ rate }}</strong>
+                  <strong>
+                    <amount-display :value="rate" :tooltip="false" />
+                  </strong>
                 </template>
               </i18n>
             </div>
@@ -266,7 +274,7 @@ import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { NewTrade, Trade, TradeType } from '@/services/history/types';
 import { HistoricPricePayload } from '@/store/balances/types';
-import { HistoryActions } from '@/store/history/consts';
+import { TradeEntry } from '@/store/history/types';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
@@ -281,10 +289,6 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
     ...mapState('balances', ['supportedAssets'])
   },
   methods: {
-    ...mapActions('history', [
-      HistoryActions.ADD_EXTERNAL_TRADE,
-      HistoryActions.EDIT_EXTERNAL_TRADE
-    ]),
     ...mapActions('balances', ['fetchHistoricPrice'])
   }
 })
@@ -295,21 +299,17 @@ export default class ExternalTradeForm extends Mixins(AssetMixin) {
   @Prop({ required: false, default: null })
   edit!: Trade | null;
 
+  @Prop({ required: true, type: Function })
+  saveData!: (trade: NewTrade | TradeEntry) => Promise<ActionStatus>;
+
   supportedAssets!: SupportedAsset[];
 
   @Emit()
   input(_valid: boolean) {}
 
-  @Emit()
-  refresh() {}
-
   errorMessages: {
     [field: string]: string[];
   } = {};
-  addExternalTrade!: (trade: NewTrade) => Promise<ActionStatus>;
-  editExternalTrade!: (
-    trade: Omit<Trade, 'ignoredInAccounting'>
-  ) => Promise<ActionStatus>;
   isTaskRunning!: (type: TaskType) => Ref<boolean>;
   fetchHistoricPrice!: (payload: HistoricPricePayload) => Promise<BigNumber>;
 
@@ -517,14 +517,14 @@ export default class ExternalTradeForm extends Mixins(AssetMixin) {
     };
 
     const { success, message } = !this.id
-      ? await this.addExternalTrade(tradePayload)
-      : await this.editExternalTrade({ ...tradePayload, tradeId: this.id });
+      ? await this.saveData(tradePayload)
+      : await this.saveData({ ...tradePayload, tradeId: this.id });
 
     if (success) {
-      this.refresh();
       this.reset();
       return true;
     }
+
     if (message) {
       this.errorMessages = convertKeys(
         deserializeApiErrorMessage(message) ?? {},

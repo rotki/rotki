@@ -48,7 +48,7 @@
       <data-table
         :expanded.sync="expanded"
         :headers="tableHeaders"
-        :items="ledgerActions"
+        :items="data"
         :loading="refreshing"
         :options="options"
         :server-items-length="itemLength"
@@ -130,14 +130,14 @@
       :subtitle="dialogSubtitle"
       :primary-action="$t('ledger_actions.dialog.save')"
       :action-disabled="loading || !valid"
-      @confirm="save()"
+      @confirm="confirmSave()"
       @cancel="clearDialog()"
     >
       <ledger-action-form
         ref="form"
         v-model="valid"
         :edit="editableItem"
-        @refresh="fetch"
+        :save-data="saveData"
       />
     </big-dialog>
     <confirm-dialog
@@ -153,6 +153,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, Ref, ref } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -176,24 +177,26 @@ import {
 } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
 import {
-  setupAssociatedLocations,
+  getCollectionData,
   setupEntryLimit,
-  setupLedgerActions
+  setupIgnore,
+  setupSelectionMode
 } from '@/composables/history';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import {
   LedgerAction,
   LedgerActionRequestPayload,
+  NewLedgerAction,
   TradeLocation
 } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { useHistory, useLedgerActions } from '@/store/history';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
+import { Collection } from '@/types/collection';
 import { LedgerActionType } from '@/types/ledger-actions';
 import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
-import { setupIgnore } from '@/views/history/composables/ignore';
-import { setupSelectionMode } from '@/views/history/composables/selection';
 import LedgerActionDetails from '@/views/history/ledger-actions/LedgerActionDetails.vue';
 
 enum LedgerActionFilterKeys {
@@ -278,11 +281,22 @@ export default defineComponent({
   emits: ['fetch', 'update:payload'],
   setup(_, { emit }) {
     const fetch = (refresh: boolean = false) => emit('fetch', refresh);
-    const updatePayload = (payload: Partial<LedgerActionRequestPayload>) =>
-      emit('update:payload', payload);
 
-    const { ledgerActions, limit, found, total, deleteLedgerAction } =
-      setupLedgerActions();
+    const historyStore = useHistory();
+    const ledgerActionStore = useLedgerActions();
+
+    const { associatedLocations } = storeToRefs(historyStore);
+    const { ledgerActions } = storeToRefs(ledgerActionStore);
+    const {
+      addLedgerAction,
+      editLedgerAction,
+      deleteLedgerAction,
+      updateLedgerActionsPayload
+    } = ledgerActionStore;
+
+    const { data, limit, found, total } = getCollectionData<LedgerActionEntry>(
+      ledgerActions as Ref<Collection<LedgerActionEntry>>
+    );
 
     const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
@@ -331,7 +345,7 @@ export default defineComponent({
         return;
       }
 
-      const success: boolean = await deleteLedgerAction(
+      const { success } = await deleteLedgerAction(
         ledgerActionToDelete.value?.identifier
       );
 
@@ -351,13 +365,22 @@ export default defineComponent({
       editableItem.value = null;
     };
 
-    const save = async () => {
+    const confirmSave = async () => {
       if (form.value) {
         const success = await form.value?.save();
         if (success) {
           clearDialog();
         }
       }
+    };
+
+    const saveData = async (
+      ledgerAction: NewLedgerAction | LedgerActionEntry
+    ) => {
+      if ((<LedgerActionEntry>ledgerAction).identifier) {
+        return await editLedgerAction(ledgerAction as LedgerActionEntry);
+      }
+      return await addLedgerAction(ledgerAction as NewLedgerAction);
     };
 
     const { dateInputFormat } = setupSettings();
@@ -372,7 +395,6 @@ export default defineComponent({
         .filter(uniqueStrings);
     });
 
-    const { associatedLocations } = setupAssociatedLocations();
     const availableLocations = computed<TradeLocation[]>(() => {
       return associatedLocations.value;
     });
@@ -470,7 +492,7 @@ export default defineComponent({
         ...paginationOptions
       };
 
-      updatePayload(payload);
+      updateLedgerActionsPayload(payload);
     };
 
     const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
@@ -496,21 +518,17 @@ export default defineComponent({
 
     const getId = (item: LedgerActionEntry) => item.identifier.toString();
 
-    const selectionMode = setupSelectionMode<LedgerActionEntry>(
-      ledgerActions,
-      getId
-    );
+    const selectionMode = setupSelectionMode<LedgerActionEntry>(data, getId);
 
     return {
       tableHeaders,
-      ledgerActions,
+      data,
       limit,
       found,
       total,
       itemLength,
       fetch,
       showUpgradeRow,
-      updatePayload,
       loading: shouldShowLoadingScreen(Section.LEDGER_ACTIONS),
       refreshing: isSectionRefreshing(Section.LEDGER_ACTIONS),
       dialogTitle,
@@ -527,7 +545,8 @@ export default defineComponent({
       deleteLedgerActionHandler,
       form,
       clearDialog,
-      save,
+      confirmSave,
+      saveData,
       options,
       matchers,
       updatePaginationHandler,
@@ -536,7 +555,7 @@ export default defineComponent({
       ...setupIgnore(
         IgnoreActionType.LEDGER_ACTIONS,
         selectionMode.selected,
-        ledgerActions,
+        data,
         fetch,
         getId
       )

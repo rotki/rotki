@@ -48,7 +48,7 @@
       <data-table
         :expanded.sync="expanded"
         :headers="tableHeaders"
-        :items="trades"
+        :items="data"
         :loading="refreshing"
         :options="options"
         :server-items-length="itemLength"
@@ -154,14 +154,14 @@
       :primary-action="$t('closed_trades.dialog.save')"
       :action-disabled="loading || !valid"
       :loading="loading"
-      @confirm="save()"
+      @confirm="confirmSave()"
       @cancel="clearDialog()"
     >
       <external-trade-form
         ref="form"
         v-model="valid"
         :edit="editableItem"
-        @refresh="fetch"
+        :save-data="saveData"
       />
     </big-dialog>
     <confirm-dialog
@@ -177,6 +177,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, Ref, ref } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -201,24 +202,26 @@ import {
 } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
 import {
-  setupAssociatedLocations,
+  getCollectionData,
   setupEntryLimit,
-  setupTrades
+  setupIgnore,
+  setupSelectionMode
 } from '@/composables/history';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import {
+  NewTrade,
   Trade,
   TradeLocation,
   TradeRequestPayload,
   TradeType
 } from '@/services/history/types';
 import { Section } from '@/store/const';
+import { useHistory, useTrades } from '@/store/history';
 import { IgnoreActionType, TradeEntry } from '@/store/history/types';
+import { Collection } from '@/types/collection';
 import { uniqueStrings } from '@/utils/data';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
-import { setupIgnore } from '@/views/history/composables/ignore';
-import { setupSelectionMode } from '@/views/history/composables/selection';
 
 enum TradeFilterKeys {
   BASE = 'base',
@@ -316,10 +319,23 @@ export default defineComponent({
   emits: ['fetch', 'update:payload'],
   setup(_, { emit }) {
     const fetch = (refresh: boolean = false) => emit('fetch', refresh);
-    const updatePayload = (payload: Partial<TradeRequestPayload>) =>
-      emit('update:payload', payload);
 
-    const { trades, limit, found, total, deleteTrade } = setupTrades();
+    const historyStore = useHistory();
+    const tradeStore = useTrades();
+
+    const { associatedLocations } = storeToRefs(historyStore);
+    const { trades } = storeToRefs(tradeStore);
+
+    const {
+      addExternalTrade,
+      editExternalTrade,
+      deleteExternalTrade,
+      updateTradesPayload
+    } = tradeStore;
+
+    const { data, limit, found, total } = getCollectionData<TradeEntry>(
+      trades as Ref<Collection<TradeEntry>>
+    );
 
     const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
@@ -378,7 +394,9 @@ export default defineComponent({
         return;
       }
 
-      const success: boolean = await deleteTrade(tradeToDelete.value?.tradeId);
+      const { success } = await deleteExternalTrade(
+        tradeToDelete.value?.tradeId
+      );
 
       if (!success) {
         return;
@@ -386,7 +404,6 @@ export default defineComponent({
 
       tradeToDelete.value = null;
       confirmationMessage.value = '';
-      fetch();
     };
 
     const clearDialog = () => {
@@ -396,13 +413,20 @@ export default defineComponent({
       editableItem.value = null;
     };
 
-    const save = async () => {
+    const confirmSave = async () => {
       if (form.value) {
         const success = await form.value?.save();
         if (success) {
           clearDialog();
         }
       }
+    };
+
+    const saveData = async (trade: NewTrade | TradeEntry) => {
+      if ((<TradeEntry>trade).tradeId) {
+        return await editExternalTrade(trade as TradeEntry);
+      }
+      return await addExternalTrade(trade as NewTrade);
     };
 
     const { dateInputFormat } = setupSettings();
@@ -417,7 +441,6 @@ export default defineComponent({
         .filter(uniqueStrings);
     });
 
-    const { associatedLocations } = setupAssociatedLocations();
     const availableLocations = computed<TradeLocation[]>(() => {
       return associatedLocations.value;
     });
@@ -522,7 +545,7 @@ export default defineComponent({
         ...paginationOptions
       };
 
-      updatePayload(payload);
+      updateTradesPayload(payload);
     };
 
     const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
@@ -548,18 +571,17 @@ export default defineComponent({
 
     const getId = (item: TradeEntry) => item.tradeId;
 
-    const selectionMode = setupSelectionMode<TradeEntry>(trades, getId);
+    const selectionMode = setupSelectionMode<TradeEntry>(data, getId);
 
     return {
       tableHeaders,
-      trades,
+      data,
       limit,
       found,
       total,
       itemLength,
       fetch,
       showUpgradeRow,
-      updatePayload,
       loading: shouldShowLoadingScreen(Section.TRADES),
       refreshing: isSectionRefreshing(Section.TRADES),
       dialogTitle,
@@ -576,7 +598,8 @@ export default defineComponent({
       deleteTradeHandler,
       form,
       clearDialog,
-      save,
+      confirmSave,
+      saveData,
       options,
       matchers,
       updatePaginationHandler,
@@ -585,7 +608,7 @@ export default defineComponent({
       ...setupIgnore(
         IgnoreActionType.TRADES,
         selectionMode.selected,
-        trades,
+        data,
         fetch,
         getId
       )
