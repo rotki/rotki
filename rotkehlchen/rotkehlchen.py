@@ -821,7 +821,7 @@ class Rotkehlchen():
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
             kraken_account_type: Optional['KrakenAccountType'] = None,
-            binance_markets: Optional[List[str]] = None,
+            PAIRS: Optional[List[str]] = None,  # noqa: N803
             ftx_subaccount_name: Optional[str] = None,
     ) -> Tuple[bool, str]:
         """
@@ -835,6 +835,7 @@ class Rotkehlchen():
             database=self.data.db,
             passphrase=passphrase,
             ftx_subaccount_name=ftx_subaccount_name,
+            PAIRS=PAIRS,
         )
 
         if is_success:
@@ -846,7 +847,7 @@ class Rotkehlchen():
                 api_secret=api_secret,
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
-                binance_markets=binance_markets,
+                PAIRS=PAIRS,
                 ftx_subaccount_name=ftx_subaccount_name,
             )
         return is_success, msg

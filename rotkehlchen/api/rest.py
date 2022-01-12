@@ -528,7 +528,7 @@ class RestAPI():
             api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
-            binance_markets=binance_markets,
+            PAIRS=binance_markets,
             ftx_subaccount_name=ftx_subaccount_name,
         )
         if not result:
@@ -562,7 +562,7 @@ class RestAPI():
                 api_secret=api_secret,
                 passphrase=passphrase,
                 kraken_account_type=kraken_account_type,
-                binance_markets=binance_markets,
+                PAIRS=binance_markets,
                 ftx_subaccount_name=ftx_subaccount_name,
             )
         except InputError as e:

@@ -30,6 +30,7 @@ from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import (
@@ -347,7 +348,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         if success is False:
             return success, msg
 
-        account_type = kwargs.get('kraken_account_type')
+        account_type = kwargs.get(KRAKEN_ACCOUNT_TYPE_KEY)
         if account_type is None:
             return success, msg
 

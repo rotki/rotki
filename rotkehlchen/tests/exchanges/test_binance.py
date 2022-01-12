@@ -322,11 +322,11 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
             'rotkehlchen.tests.exchanges.test_binance.BINANCE_MYTRADES_RESPONSE',
             new=input_trade_str,
         )
+        binance.selected_pairs = query_specific_markets
         with patch_get, patch_response:
             trades, _ = binance.query_online_trade_history(
                 start_ts=0,
                 end_ts=1564301134,
-                markets=query_specific_markets,
             )
 
         assert len(trades) == 0
@@ -358,7 +358,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     query_binance_and_test(
         input_str,
         expected_warnings_num=0,
-        expected_errors_num=1,
+        expected_errors_num=0,
         query_specific_markets=['doesnotexist'],
     )
 
@@ -873,8 +873,7 @@ def test_binance_query_trade_history_custom_markets(function_scope_binance, user
     binance = function_scope_binance
 
     markets = ['ETHBTC', 'BNBBTC', 'BTCUSDC']
-    db.set_binance_pairs('binance', markets, Location.BINANCE)
-
+    binance.edit_exchange(name=None, api_key=None, api_secret=None, PAIRS=markets)
     count = 0
     p = re.compile(r'symbol=[A-Z]*')
     seen = set()

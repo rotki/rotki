@@ -54,6 +54,11 @@ from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
+from rotkehlchen.db.constants import (
+    BINANCE_MARKETS_KEY,
+    KRAKEN_ACCOUNT_TYPE_KEY,
+    USER_CREDENTIAL_MAPPING_KEYS,
+)
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -93,7 +98,6 @@ from rotkehlchen.errors import (
     UnknownAsset,
     UnsupportedAsset,
 )
-from rotkehlchen.exchanges.binance import BINANCE_MARKETS_KEY
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.ftx import FTX_SUBACCOUNT_DB_SETTING
 from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -1874,7 +1878,7 @@ class DBHandler:
             api_secret: ApiSecret,
             passphrase: Optional[str] = None,
             kraken_account_type: Optional[KrakenAccountType] = None,
-            binance_markets: Optional[List[str]] = None,
+            PAIRS: Optional[List[str]] = None,  # noqa: N803
             ftx_subaccount_name: Optional[str] = None,
     ) -> None:
         if location not in SUPPORTED_EXCHANGES:
@@ -1892,11 +1896,11 @@ class DBHandler:
                 'INSERT INTO user_credentials_mappings '
                 '(credential_name, credential_location, setting_name, setting_value) '
                 'VALUES (?, ?, ?, ?)',
-                (name, location.serialize_for_db(), 'kraken_account_type', kraken_account_type.serialize()),  # noqa: E501
+                (name, location.serialize_for_db(), KRAKEN_ACCOUNT_TYPE_KEY, kraken_account_type.serialize()),  # noqa: E501
             )
 
-        if location in (Location.BINANCE, Location.BINANCEUS) and binance_markets is not None:
-            self.set_binance_pairs(name, binance_markets, location)
+        if location in (Location.BINANCE, Location.BINANCEUS) and PAIRS is not None:
+            self.set_binance_pairs(name=name, pairs=PAIRS, location=location)
 
         if location == Location.FTX and ftx_subaccount_name is not None:
             self.set_ftx_subaccount(name, ftx_subaccount_name)
@@ -1912,7 +1916,7 @@ class DBHandler:
             api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
-            binance_markets: Optional[List[str]],
+            PAIRS: Optional[List[str]],  # noqa: N803
             ftx_subaccount_name: Optional[str],
             should_commit: bool = False,
     ) -> None:
@@ -1957,7 +1961,7 @@ class DBHandler:
                     (
                         new_name if new_name is not None else name,
                         location.serialize_for_db(),
-                        'kraken_account_type',
+                        KRAKEN_ACCOUNT_TYPE_KEY,
                         kraken_account_type.serialize(),
                     ),
                 )
@@ -1966,10 +1970,10 @@ class DBHandler:
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
 
         location_is_binance = location in (Location.BINANCE, Location.BINANCEUS)
-        if location_is_binance and binance_markets is not None:
+        if location_is_binance and PAIRS is not None:
             try:
                 exchange_name = new_name if new_name is not None else name
-                self.set_binance_pairs(exchange_name, binance_markets, location)
+                self.set_binance_pairs(name=exchange_name, pairs=PAIRS, location=location)
                 # Also delete used query ranges to allow fetching missing trades
                 # from the possible new pairs
                 cursor.execute(
@@ -2061,20 +2065,21 @@ class DBHandler:
         )
         extras = {}
         for entry in result:
-            if entry[0] not in ('kraken_account_type', 'PAIRS'):
+            if entry[0] not in USER_CREDENTIAL_MAPPING_KEYS:
                 log.error(
                     f'Unknown credential setting {entry[0]} found in the DB. Skipping.',
                 )
                 continue
 
-            if entry[0] == 'PAIRS':
-                continue  # TODO: https://github.com/rotki/rotki/issues/3886
-
-            try:
-                extras['kraken_account_type'] = KrakenAccountType.deserialize(entry[1])
-            except DeserializationError as e:
-                log.error(f'Couldnt deserialize kraken account type from DB. {str(e)}')
-                continue
+            key = entry[0]
+            if key == KRAKEN_ACCOUNT_TYPE_KEY:
+                try:
+                    extras[key] = KrakenAccountType.deserialize(entry[1])
+                except DeserializationError as e:
+                    log.error(f'Couldnt deserialize kraken account type from DB. {str(e)}')
+                    continue
+            else:
+                extras[key] = entry[1]
 
         return extras
 
