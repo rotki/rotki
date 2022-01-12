@@ -44,7 +44,13 @@ import {
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
-import { fetchAsync, getStatus, isLoading, setStatus } from '@/store/utils';
+import {
+  fetchAsync,
+  getStatus,
+  getStatusUpdater,
+  isLoading,
+  setStatus
+} from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -1182,9 +1188,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     { commit, dispatch },
     module: Module | typeof ALL_MODULES
   ) {
-    function resetStatus(section: Section) {
-      setStatus(Status.NONE, section);
-    }
+    const { resetStatus } = getStatusUpdater(Section.DEFI_DSR_BALANCES);
 
     function clearDSRState() {
       commit('dsrBalances', {

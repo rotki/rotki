@@ -137,7 +137,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
 
     const taskType = TaskType.STAKING_ETH2_STATS;
     const { awaitTask, isTaskRunning } = useTasks();
-    const { setStatus, loading, isFirstLoad } = getStatusUpdater(
+    const { setStatus, loading, isFirstLoad, resetStatus } = getStatusUpdater(
       Section.STAKING_ETH2_STATS
     );
 
@@ -203,7 +203,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
       );
     } catch (e: any) {
       logger.error(e);
-      setStatus(Status.NONE);
+      resetStatus();
       const { notify } = useNotifications();
       notify({
         title: i18n.t('actions.eth2_staking_stats.error.title').toString(),

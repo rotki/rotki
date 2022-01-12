@@ -99,7 +99,7 @@
       :message="startupErrorMessage"
       fatal
     />
-    <mac-os-version-unsupported v-if="isUnsupportedMacOs" />
+    <mac-os-version-unsupported v-if="isMacOsVersionUnsupported" />
     <v-fade-transition>
       <account-management
         v-if="startupErrorMessage.length === 0 && !loginIn"
@@ -196,7 +196,7 @@ export default defineComponent({
     const showDrawer = ref(false);
     const isMini = ref(false);
     const startupErrorMessage = ref('');
-    const isUnsupportedMacOs = ref(false);
+    const isMacOsVersionUnsupported = ref(false);
 
     const { navigateToRotki, onError, onAbout, updateTray } = useInterop();
     const openSite = navigateToRotki;
@@ -251,7 +251,7 @@ export default defineComponent({
         if (code === BackendCode.TERMINATED) {
           startupErrorMessage.value = backendOutput;
         } else if (code === BackendCode.MACOS_VERSION) {
-          isUnsupportedMacOs.value = true;
+          isMacOsVersionUnsupported.value = true;
         } else {
           logger.error(backendOutput, code);
         }
@@ -304,7 +304,7 @@ export default defineComponent({
       showHelpBar,
       isMini,
       startupErrorMessage,
-      isUnsupportedMacOs,
+      isMacOsVersionUnsupported,
       isMobile,
       appBarColor,
       canNavigateBack,

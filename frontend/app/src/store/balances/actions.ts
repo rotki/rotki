@@ -1489,14 +1489,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         numericKeys: []
       });
       if (result) {
-        const { setStatus } = getStatusUpdater(Section.STAKING_ETH2);
+        const { resetStatus } = getStatusUpdater(Section.STAKING_ETH2);
         await dispatch('fetchBlockchainBalances', {
           blockchain: Blockchain.ETH2,
           ignoreCache: true
         });
-        setStatus(Status.NONE);
-        setStatus(Status.NONE, Section.STAKING_ETH2_DEPOSITS);
-        setStatus(Status.NONE, Section.STAKING_ETH2_STATS);
+        resetStatus();
+        resetStatus(Section.STAKING_ETH2_DEPOSITS);
+        resetStatus(Section.STAKING_ETH2_STATS);
       }
 
       return result;
@@ -1531,14 +1531,14 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const success = await api.balances.editEth2Validator(payload);
 
       if (success) {
-        const { setStatus } = getStatusUpdater(Section.STAKING_ETH2);
+        const { resetStatus } = getStatusUpdater(Section.STAKING_ETH2);
         await dispatch('fetchBlockchainBalances', {
           blockchain: Blockchain.ETH2,
           ignoreCache: true
         });
-        setStatus(Status.NONE);
-        setStatus(Status.NONE, Section.STAKING_ETH2_DEPOSITS);
-        setStatus(Status.NONE, Section.STAKING_ETH2_STATS);
+        resetStatus();
+        resetStatus(Section.STAKING_ETH2_DEPOSITS);
+        resetStatus(Section.STAKING_ETH2_STATS);
       }
 
       return success;

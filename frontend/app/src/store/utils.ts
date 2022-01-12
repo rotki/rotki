@@ -112,12 +112,20 @@ export const getStatusUpdater = (section: Section, ignore: boolean = false) => {
     });
   };
 
+  const resetStatus = (otherSection?: Section) => {
+    setStatus({
+      section: otherSection ?? section,
+      status: Status.NONE
+    });
+  };
+
   const loading = () => isLoading(unref(getStatus(section)));
   const isFirstLoad = () => unref(getStatus(section)) === Status.NONE;
   return {
     loading,
     isFirstLoad,
-    setStatus: updateStatus
+    setStatus: updateStatus,
+    resetStatus
   };
 };
 

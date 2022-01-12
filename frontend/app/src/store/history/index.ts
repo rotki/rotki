@@ -45,7 +45,7 @@ import { useNotifications } from '@/store/notifications';
 import store, { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
-import { getStatusUpdater, setStatus } from '@/store/utils';
+import { getStatusUpdater } from '@/store/utils';
 import { Collection, CollectionResponse } from '@/types/collection';
 import { SupportedExchange } from '@/types/exchanges';
 import { TaskMeta } from '@/types/task';
@@ -153,11 +153,10 @@ export const useHistory = defineStore('history', () => {
   const purgeExchange = async (
     exchange: SupportedExchange | typeof ALL_CENTRALIZED_EXCHANGES
   ) => {
-    function resetStatus(section: Section) {
-      setStatus(Status.NONE, section);
-    }
+    const { resetStatus } = getStatusUpdater(Section.TRADES);
+
     if (exchange === ALL_CENTRALIZED_EXCHANGES) {
-      resetStatus(Section.TRADES);
+      resetStatus();
       resetStatus(Section.ASSET_MOVEMENT);
       resetStatus(Section.LEDGER_ACTIONS);
     } else {
@@ -233,7 +232,7 @@ export const useTrades = defineStore('history/trades', () => {
     onlyLocation?: SupportedExchange
   ) => {
     const { awaitTask, isTaskRunning } = useTasks();
-    const { setStatus, loading, isFirstLoad } = getStatusUpdater(
+    const { setStatus, loading, isFirstLoad, resetStatus } = getStatusUpdater(
       Section.TRADES,
       !!onlyLocation
     );
@@ -342,7 +341,7 @@ export const useTrades = defineStore('history/trades', () => {
       );
     } catch (e) {
       logger.error(e);
-      setStatus(Status.NONE);
+      resetStatus();
     }
   };
 
@@ -431,7 +430,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
     onlyLocation?: SupportedExchange
   ) => {
     const { awaitTask, isTaskRunning } = useTasks();
-    const { setStatus, loading, isFirstLoad } = getStatusUpdater(
+    const { setStatus, loading, isFirstLoad, resetStatus } = getStatusUpdater(
       Section.ASSET_MOVEMENT,
       !!onlyLocation
     );
@@ -548,7 +547,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
       );
     } catch (e) {
       logger.error(e);
-      setStatus(Status.NONE);
+      resetStatus();
     }
   };
 
@@ -590,7 +589,9 @@ export const useTransactions = defineStore('history/transactions', () => {
     });
 
     const { awaitTask, isTaskRunning } = useTasks();
-    const { setStatus, loading, isFirstLoad } = getStatusUpdater(Section.TX);
+    const { setStatus, loading, isFirstLoad, resetStatus } = getStatusUpdater(
+      Section.TX
+    );
     const taskType = TaskType.TX;
 
     const fetchTransactionsHandler = async (
@@ -689,7 +690,7 @@ export const useTransactions = defineStore('history/transactions', () => {
       );
     } catch (e) {
       logger.error(e);
-      setStatus(Status.NONE);
+      resetStatus();
     }
   };
 
@@ -731,7 +732,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
     onlyLocation?: SupportedExchange
   ) => {
     const { awaitTask, isTaskRunning } = useTasks();
-    const { setStatus, loading, isFirstLoad } = getStatusUpdater(
+    const { setStatus, loading, isFirstLoad, resetStatus } = getStatusUpdater(
       Section.LEDGER_ACTIONS,
       !!onlyLocation
     );
@@ -848,7 +849,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
       );
     } catch (e) {
       logger.error(e);
-      setStatus(Status.NONE);
+      resetStatus();
     }
   };
 
