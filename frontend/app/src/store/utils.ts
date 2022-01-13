@@ -121,10 +121,14 @@ export const getStatusUpdater = (section: Section, ignore: boolean = false) => {
 
   const loading = () => isLoading(unref(getStatus(section)));
   const isFirstLoad = () => unref(getStatus(section)) === Status.NONE;
+  const getSectionStatus = (otherSection?: Section) => {
+    return unref(getStatus(otherSection ?? section));
+  };
   return {
     loading,
     isFirstLoad,
     setStatus: updateStatus,
+    getStatus: getSectionStatus,
     resetStatus
   };
 };
