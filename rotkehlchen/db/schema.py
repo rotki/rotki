@@ -517,7 +517,7 @@ DB_CREATE_ETHTX_ADDRESS_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS ethx_address_mappings (
     address TEXT NOT NULL,
     tx_hash BLOB NOT NULL,
-    blockchain TEXT,
+    blockchain TEXT NOT NULL,
     FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
     FOREIGN KEY(tx_hash) references ethereum_transactions(tx_hash) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (address, tx_hash, blockchain)
@@ -532,11 +532,15 @@ CREATE TABLE IF NOT EXISTS used_query_ranges (
 );
 """
 
-DB_CREATE_USED_QUERIES = """
-CREATE TABLE IF NOT EXISTS used_queries (
-    name TEXT NOT NULL PRIMARY KEY
+DB_CREATE_EVM_TX_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS evm_tx_mappings (
+    tx_hash BLOB NOT NULL,
+    blockchain TEXT NOT NULL,
+    value TEXT NOT NULL,
+    FOREIGN KEY(tx_hash) references ethereum_transactions(tx_hash) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (tx_hash, value)
 );
-"""
+"""  # noqa: E501
 
 DB_CREATE_SETTINGS = """
 CREATE TABLE IF NOT EXISTS settings (
@@ -836,7 +840,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_MARGIN}
 {DB_CREATE_ASSET_MOVEMENTS}
 {DB_CREATE_USED_QUERY_RANGES}
-{DB_CREATE_USED_QUERIES}
+{DB_CREATE_EVM_TX_MAPPINGS}
 {DB_CREATE_SETTINGS}
 {DB_CREATE_TAGS_TABLE}
 {DB_CREATE_TAG_MAPPINGS}

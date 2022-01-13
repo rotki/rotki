@@ -8,6 +8,7 @@ import gevent
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.chain.ethereum.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.constants.assets import A_USD
@@ -93,6 +94,7 @@ class TaskManager():
             self._maybe_schedule_exchange_history_query,
             self._maybe_schedule_ethereum_txreceipts,
             self._maybe_query_missing_prices,
+            self._maybe_decode_evm_transactions,
         ]
         if premium_sync_manager is not None:
             self.potential_tasks.append(premium_sync_manager.maybe_upload_data_to_server)
@@ -357,6 +359,24 @@ class TaskManager():
         cursor = self.database.conn.cursor()
         cursor.executemany(query, updates)
         self.database.update_last_write()
+
+    def _maybe_decode_evm_transactions(self) -> None:
+        cursor = self.database.conn.cursor()
+        cursor.execute(
+            'SELECT A.tx_hash from ethtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B '
+            'ON A.tx_hash=B.tx_hash WHERE B.tx_hash is NULL LIMIT 200',
+        )
+        hashes = cursor.fetchall()
+        if len(hashes) > 0:
+            task_name = 'Periodically decode evm trasactions'
+            log.debug(f'Scheduling task to {task_name}')
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=task_name,
+                exception_is_error=True,
+                method=EVMTransactionDecoder(self.database).decode_transaction_hashes,
+                hashes=hashes,
+            )
 
     def _schedule(self) -> None:
         """Schedules background tasks"""

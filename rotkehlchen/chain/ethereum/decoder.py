@@ -10,7 +10,8 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.typing import EthereumTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
@@ -59,8 +60,8 @@ class EVMTransactionDecoder():
         tx_hex = '0x' + transaction.tx_hash.hex()
         cursor.execute('DELETE FROM history_events WHERE event_identifier=?', (tx_hex,))
         cursor.execute(
-            'DELETE FROM used_queries WHERE name=?',
-            (f'{tx_hex}_decoded_events',),
+            'DELETE FROM evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
+            (transaction.tx_hash, 'ETH', 'decoded'),
         )
         events = []
         for tx_log in tx_receipt.logs:
@@ -71,11 +72,26 @@ class EVMTransactionDecoder():
 
         self.database.add_history_events(events)
         cursor.execute(
-            'INSERT INTO used_queries(name) VALUES(?)',
-            (f'{tx_hex}_decoded_events',),
+            'INSERT INTO evm_tx_mappings(tx_hash, blockchain, value) VALUES(?, ?, ?)',
+            (transaction.tx_hash, 'ETH', 'decoded'),
         )
         self.database.update_last_write()
         return events
+
+    def decode_transaction_hashes(self, hashes: List[bytes]) -> None:
+        """Runs the decoding logic for a number of transaction hashes
+
+        Caller must make sure that:
+        - The transaction hashes must exist in the DB for transactions
+        - The transaction hashes must also have the corresponding receipts in the DB
+        """
+        # TODO: Change this if transaction filter query can accept multiple hashes
+        dbethtx = DBEthTx(self.database)
+        for tx_hash in hashes:
+            txs, _ = dbethtx.get_ethereum_transactions(filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash))  # noqa: E501
+            tx_receipt = dbethtx.get_receipt(tx_hash)
+            assert tx_receipt, 'The transaction receipt for {tx_hash.hex()} should be in the DB'
+            self.decode_transaction(transaction=txs[0], tx_receipt=tx_receipt)
 
     def get_or_decode_transaction_events(
             self,
@@ -84,7 +100,10 @@ class EVMTransactionDecoder():
     ) -> List[HistoryBaseEntry]:
         tx_hex = '0x' + transaction.tx_hash.hex()
         cursor = self.database.conn.cursor()
-        results = cursor.execute('SELECT COUNT(*) from used_queries WHERE name=?', (f'{tx_hex}_decoded_events',))  # noqa: E501
+        results = cursor.execute(
+            'SELECT COUNT(*) from evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
+            (transaction.tx_hash, 'ETH', 'decoded'),
+        )
         if results.fetchone()[0] != 0:  # already decoded and in the DB
             events = self.database.get_history_events(
                 filter_query=HistoryEventFilterQuery.make(
