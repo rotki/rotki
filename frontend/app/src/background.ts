@@ -13,12 +13,15 @@ import { assert } from './utils/assertions';
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 let trayManager: Nullable<TrayManager> = null;
+let forceQuit: boolean = false;
 
 const onActivate = async () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (win === null) {
     await createWindow();
+  } else {
+    win?.show();
   }
 };
 
@@ -81,12 +84,19 @@ if (!lock) {
   });
 
   // Quit when all windows are closed.
-  app.on('window-all-closed', () => app.quit());
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
   app.on('activate', onActivate);
   app.on('ready', onReady);
   app.on('will-quit', async e => {
     e.preventDefault();
     await closeApp();
+  });
+  app.on('before-quit', () => {
+    forceQuit = true;
   });
 }
 
@@ -160,8 +170,21 @@ async function createWindow() {
   // Register and deregister listeners to window events (resize, move, close) so that window state is saved
   mainWindowState.manage(win);
 
+  win.on('close', e => {
+    if (process.platform === 'darwin' && !forceQuit) {
+      e.preventDefault();
+      win?.hide();
+    } else {
+      closeApp();
+    }
+  });
+
   win.on('closed', async () => {
-    win = null;
+    if (process.platform !== 'darwin') {
+      win = null;
+    } else {
+      win?.hide();
+    }
   });
   return win;
 }
