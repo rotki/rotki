@@ -8,6 +8,7 @@ import requests
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
+from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
@@ -128,7 +129,7 @@ def test_setup_exchange(rotkehlchen_api_server):
     # and check that kraken is now registered
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     result = assert_proper_response_with_result(response)
-    assert result == [{'location': 'kraken', 'name': 'my_kraken', 'kraken_account_type': 'starter'}]  # noqa: E501
+    assert result == [{'location': 'kraken', 'name': 'my_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'}]  # noqa: E501
 
     # Check that we get an error if we try to re-setup an already setup exchange
     data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}  # noqa: E501
@@ -154,8 +155,8 @@ def test_setup_exchange(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     result = assert_proper_response_with_result(response)
     assert result == [
-        {'location': 'kraken', 'name': 'my_kraken', 'kraken_account_type': 'starter'},
-        {'location': 'kraken', 'name': 'my_other_kraken', 'kraken_account_type': 'starter'},
+        {'location': 'kraken', 'name': 'my_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'},
+        {'location': 'kraken', 'name': 'my_other_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'},
     ]
 
     # Check that giving a passphrase is fine
@@ -169,8 +170,8 @@ def test_setup_exchange(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     result = assert_proper_response_with_result(response)
     assert result == [
-        {'location': 'kraken', 'name': 'my_kraken', 'kraken_account_type': 'starter'},
-        {'location': 'kraken', 'name': 'my_other_kraken', 'kraken_account_type': 'starter'},
+        {'location': 'kraken', 'name': 'my_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'},
+        {'location': 'kraken', 'name': 'my_other_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'},
         {'location': 'coinbasepro', 'name': 'my_coinbasepro'},
     ]
 
@@ -250,7 +251,7 @@ def test_setup_exchange_does_not_stay_in_mapping_after_500_error(rotkehlchen_api
     # and check that kraken is now registered
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     result = assert_proper_response_with_result(response)
-    assert result == [{'location': 'kraken', 'name': 'my_kraken', 'kraken_account_type': 'starter'}]  # noqa: E501
+    assert result == [{'location': 'kraken', 'name': 'my_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'}]  # noqa: E501
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -1046,7 +1047,7 @@ def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges
     assert kraken.call_limit == 15
     assert kraken.reduction_every_secs == 3
 
-    data = {'name': 'mockkraken', 'location': 'kraken', 'kraken_account_type': 'intermediate'}
+    data = {'name': 'mockkraken', 'location': 'kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'intermediate'}
     response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
     result = assert_proper_response_with_result(response)
     assert result is True
@@ -1057,7 +1058,7 @@ def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges
     assert kraken.reduction_every_secs == 2
 
     # at second edit, also change name
-    data = {'name': 'mockkraken', 'new_name': 'lolkraken', 'location': 'kraken', 'kraken_account_type': 'pro'}  # noqa: E501
+    data = {'name': 'mockkraken', 'new_name': 'lolkraken', 'location': 'kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'pro'}  # noqa: E501
     response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
     result = assert_proper_response_with_result(response)
     assert result is True
@@ -1068,7 +1069,7 @@ def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges
     assert kraken.reduction_every_secs == 1
 
     # Make sure invalid type is caught
-    data = {'name': 'lolkraken', 'location': 'kraken', 'kraken_account_type': 'pleb'}
+    data = {'name': 'lolkraken', 'location': 'kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'pleb'}
     response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
     assert_error_response(
         response=response,
