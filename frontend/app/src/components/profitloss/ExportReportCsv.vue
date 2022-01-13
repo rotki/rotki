@@ -43,8 +43,7 @@ import { useInterop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useReports } from '@/store/reports';
-import { Message } from '@/store/types';
-import { useStore } from '@/store/utils';
+import { useMainStore } from '@/store/store';
 
 export default defineComponent({
   name: 'ExportReportCsv',
@@ -57,13 +56,14 @@ export default defineComponent({
   },
   setup() {
     const { createCsv } = useReports();
-    const store = useStore();
+    const { setMessage } = useMainStore();
 
     const showMessage = (description: string) => {
-      store.commit('setMessage', {
+      setMessage({
         title: i18n.t('profit_loss_report.csv_export_error').toString(),
-        description: description
-      } as Message);
+        description: description,
+        success: false
+      });
     };
 
     const exportCSV = async () => {

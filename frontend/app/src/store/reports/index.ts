@@ -3,7 +3,7 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
-import store from '@/store/store';
+import store, { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { Message } from '@/store/types';
 import {
@@ -92,6 +92,8 @@ export const useReports = defineStore('reports', () => {
   const reportError = ref(emptyError());
   const generatedReport = ref(false);
 
+  const { setMessage } = useMainStore();
+
   const createCsv = async (path: string) => {
     let message: Message;
     try {
@@ -110,7 +112,7 @@ export const useReports = defineStore('reports', () => {
         success: false
       };
     }
-    store.commit('setMessage', message, { root: true });
+    setMessage(message);
   };
 
   const deleteReport = async (reportId: number) => {

@@ -23,7 +23,12 @@ import {
 import { StakingState } from '@/store/staking/types';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
-import { getStatusUpdater, isLoading, setStatus } from '@/store/utils';
+import {
+  getStatus,
+  getStatusUpdater,
+  isLoading,
+  setStatus
+} from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -31,7 +36,7 @@ import { logger } from '@/utils/logging';
 
 export const actions: ActionTree<StakingState, RotkehlchenState> = {
   async fetchStakingDetails(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     refresh: boolean
   ) {
     if (!session?.premium) {
@@ -39,7 +44,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
     }
 
     const section = Section.STAKING_ETH2;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -51,7 +56,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
 
     async function fetchDetails() {
-      setStatus(newStatus, section, status, commit);
+      setStatus(newStatus, section);
       const { awaitTask } = useTasks();
       try {
         const taskType = TaskType.STAKING_ETH2;
@@ -81,12 +86,12 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
           display: true
         });
       }
-      setStatus(Status.LOADED, section, status, commit);
+      setStatus(Status.LOADED, section);
     }
 
     async function fetchDeposits() {
       const secondarySection = Section.STAKING_ETH2_DEPOSITS;
-      setStatus(newStatus, secondarySection, status, commit);
+      setStatus(newStatus, secondarySection);
       const { awaitTask } = useTasks();
 
       try {
@@ -116,14 +121,14 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
           display: true
         });
       }
-      setStatus(Status.LOADED, secondarySection, status, commit);
+      setStatus(Status.LOADED, secondarySection);
     }
 
     await Promise.allSettled([fetchDetails(), fetchDeposits()]);
   },
 
   async fetchDailyStats(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     payload: Eth2DailyStatsPayload
   ) {
     if (!session?.premium) {
@@ -132,10 +137,8 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
 
     const taskType = TaskType.STAKING_ETH2_STATS;
     const { awaitTask, isTaskRunning } = useTasks();
-    const { setStatus, loading, isFirstLoad } = getStatusUpdater(
-      commit,
-      Section.STAKING_ETH2_STATS,
-      status
+    const { setStatus, loading, isFirstLoad, resetStatus } = getStatusUpdater(
+      Section.STAKING_ETH2_STATS
     );
 
     const fetchStats = async (parameters?: Partial<Eth2DailyStatsPayload>) => {
@@ -200,7 +203,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
       );
     } catch (e: any) {
       logger.error(e);
-      setStatus(Status.NONE);
+      resetStatus();
       const { notify } = useNotifications();
       notify({
         title: i18n.t('actions.eth2_staking_stats.error.title').toString(),
@@ -212,16 +215,13 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
     }
   },
 
-  async fetchAdex(
-    { commit, rootGetters: { status }, rootState: { session } },
-    refresh: boolean
-  ) {
+  async fetchAdex({ commit, rootState: { session } }, refresh: boolean) {
     if (!session?.premium) {
       return;
     }
 
     const section = Section.STAKING_ADEX;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -231,7 +231,7 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     const { awaitTask } = useTasks();
 
     try {
@@ -257,10 +257,10 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
 
     const secondarySection = Section.STAKING_ADEX_HISTORY;
-    setStatus(newStatus, secondarySection, status, commit);
+    setStatus(newStatus, secondarySection);
 
     try {
       const taskType = TaskType.STAKING_ADEX_HISTORY;
@@ -285,24 +285,24 @@ export const actions: ActionTree<StakingState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, secondarySection, status, commit);
+    setStatus(Status.LOADED, secondarySection);
   },
   async [ACTION_PURGE_DATA](
-    { commit, rootGetters: { status } },
+    { commit },
     module: typeof Module.ETH2 | typeof Module.ADEX | typeof ALL_MODULES
   ) {
     function clearEth2() {
       commit(ETH2_DETAILS, []);
       commit(ETH2_DEPOSITS, []);
-      setStatus(Status.NONE, Section.STAKING_ETH2, status, commit);
-      setStatus(Status.NONE, Section.STAKING_ETH2_DEPOSITS, status, commit);
+      setStatus(Status.NONE, Section.STAKING_ETH2);
+      setStatus(Status.NONE, Section.STAKING_ETH2_DEPOSITS);
     }
 
     function clearAdex() {
       commit(ADEX_HISTORY, {});
       commit(ADEX_BALANCES, {});
-      setStatus(Status.NONE, Section.STAKING_ADEX, status, commit);
-      setStatus(Status.NONE, Section.STAKING_ADEX_HISTORY, status, commit);
+      setStatus(Status.NONE, Section.STAKING_ADEX);
+      setStatus(Status.NONE, Section.STAKING_ADEX_HISTORY);
     }
 
     if (module === Module.ETH2) {

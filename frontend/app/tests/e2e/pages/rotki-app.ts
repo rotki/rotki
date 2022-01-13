@@ -7,7 +7,7 @@ export class RotkiApp {
     cy.logout();
     // simulate high scaling / low res by making a very small viewpoirt
     cy.get('.connection-loading__content').should('not.exist');
-    cy.get('.account-management__card').then($body => {
+    cy.get('[data-cy=account-management]').then($body => {
       const button = $body.find('.login__button__new-account');
       if (button.length > 0) {
         cy.get('.login__button__new-account').click();
@@ -21,7 +21,7 @@ export class RotkiApp {
     cy.get('.create-account__boxes__user-prompted').click();
     cy.get('.create-account__credentials__button__continue').click();
     cy.get('.create-account__analytics__button__confirm').click();
-    cy.get('.account-management__loading').should('not.exist');
+    cy.get('[data-cy=account-management__loading]').should('not.exist');
     cy.updateAssets();
   }
 

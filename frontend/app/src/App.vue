@@ -6,28 +6,28 @@
       <notification-popup />
       <v-navigation-drawer
         v-if="loginComplete"
-        v-model="drawer"
+        v-model="showDrawer"
         width="300"
         class="app__navigation-drawer"
         fixed
-        :mini-variant="mini"
+        :mini-variant="isMini"
         :color="appBarColor"
         clipped
         app
       >
-        <div v-if="!mini" class="text-center app__logo" />
+        <div v-if="!isMini" class="text-center app__logo" />
         <div v-else class="app__logo-mini">
           {{ $t('app.name') }}
         </div>
-        <navigation-menu :show-tooltips="mini" />
+        <navigation-menu :show-tooltips="isMini" />
         <v-spacer />
         <div
-          v-if="!mini"
+          v-if="!isMini"
           class="my-2 text-center px-2 app__navigation-drawer__version"
         >
           <span class="text-overline">
             <v-divider class="mx-3 my-1" />
-            {{ version }}
+            {{ appVersion }}
           </span>
         </div>
       </v-navigation-drawer>
@@ -44,7 +44,7 @@
           class="secondary--text text--lighten-2"
           @click="toggleDrawer()"
         />
-        <node-status-indicator v-if="!xsOnly" />
+        <node-status-indicator v-if="!isMobile" />
         <balance-saved-indicator />
         <back-button :can-navigate-back="canNavigateBack" />
         <v-spacer />
@@ -55,32 +55,32 @@
         <theme-switch v-if="premium" />
         <theme-switch-lock v-else />
         <notification-indicator
-          :visible="notifications"
+          :visible="showNotificationBar"
           class="app__app-bar__button"
-          @click="notifications = !notifications"
+          @click="showNotificationBar = !showNotificationBar"
         />
         <currency-drop-down class="red--text app__app-bar__button" />
         <user-dropdown class="app__app-bar__button" />
         <help-indicator
-          v-if="!xsOnly"
-          :visible="help"
-          @visible:update="help = $event"
+          v-if="!isMobile"
+          :visible="showHelpBar"
+          @visible:update="showHelpBar = $event"
         />
       </v-app-bar>
       <notification-sidebar
-        :visible="notifications"
-        @close="notifications = false"
+        :visible="showNotificationBar"
+        @close="showNotificationBar = false"
       />
       <help-sidebar
-        :visible="help"
-        @visible:update="help = $event"
+        :visible="showHelpBar"
+        @visible:update="showHelpBar = $event"
         @about="showAbout = true"
       />
       <div
         class="app-main"
         :class="{
-          small: drawer && mini,
-          expanded: drawer && !mini && !xsOnly
+          small: showDrawer && isMini,
+          expanded: showDrawer && !isMini && !isMobile
         }"
       >
         <v-main>
@@ -92,17 +92,17 @@
       :title="message.title"
       :message="message.description"
       :success="message.success"
-      @dismiss="dismiss()"
+      @dismiss="dismissMessage()"
     />
     <startup-error-screen
-      v-if="startupError.length > 0"
-      :message="startupError"
+      v-if="startupErrorMessage.length > 0"
+      :message="startupErrorMessage"
       fatal
     />
-    <mac-os-version-unsupported v-if="macosUnsupported" />
+    <mac-os-version-unsupported v-if="isMacOsVersionUnsupported" />
     <v-fade-transition>
       <account-management
-        v-if="startupError.length === 0 && !loginIn"
+        v-if="startupErrorMessage.length === 0 && !loginIn"
         :logged="logged"
         @login-complete="completeLogin(true)"
         @about="showAbout = true"
@@ -117,13 +117,18 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins, Watch } from 'vue-property-decorator';
-import { mapGetters, mapMutations, mapState } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  onBeforeMount,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
 import About from '@/components/About.vue';
 import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import MacOsVersionUnsupported from '@/components/error/MacOsVersionUnsupported.vue';
 import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
 import HelpIndicator from '@/components/help/HelpIndicator.vue';
@@ -141,16 +146,20 @@ import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import AppUpdatePopup from '@/components/status/update/AppUpdatePopup.vue';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
+import { setupThemeCheck, useRoute, useRouter } from '@/composables/common';
+import { getPremium } from '@/composables/session';
 import DevApp from '@/DevApp.vue';
+import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
-import PremiumMixin from '@/mixins/premium-mixin';
-import ThemeMixin from '@/mixins/theme-mixin';
 import { ThemeSwitch } from '@/premium/premium';
 import { monitor } from '@/services/monitoring';
 import { OverallPerformance } from '@/store/statistics/types';
-import { Message } from '@/store/types';
+import { useMainStore } from '@/store/store';
+import { useStore } from '@/store/utils';
+import { logger } from '@/utils/logging';
 
-@Component({
+export default defineComponent({
+  name: 'App',
   components: {
     FrontendUpdateNotifier,
     About,
@@ -166,7 +175,6 @@ import { Message } from '@/store/types';
     DevApp,
     NotificationPopup,
     NotificationSidebar,
-    ErrorScreen,
     AccountManagement,
     AppUpdateIndicator,
     NotificationIndicator,
@@ -177,119 +185,138 @@ import { Message } from '@/store/types';
     NavigationMenu,
     UserDropdown
   },
-  computed: {
-    ...mapState(['message']),
-    ...mapState('session', ['logged', 'username', 'loginComplete']),
-    ...mapGetters(['version'])
-  },
-  methods: {
-    ...mapMutations('session', ['completeLogin'])
-  }
-})
-export default class App extends Mixins(PremiumMixin, ThemeMixin) {
-  logged!: boolean;
-  message!: Message;
-  version!: string;
+  setup() {
+    const store = useMainStore();
+    const { appVersion, message } = toRefs(store);
+    const { setMessage, connect } = store;
 
-  loginComplete!: boolean;
-  completeLogin!: (complete: boolean) => void;
+    const showNotificationBar = ref(false);
+    const showHelpBar = ref(false);
+    const showAbout = ref(false);
+    const showDrawer = ref(false);
+    const isMini = ref(false);
+    const startupErrorMessage = ref('');
+    const isMacOsVersionUnsupported = ref(false);
 
-  notifications: boolean = false;
-  help: boolean = false;
-  showAbout: boolean = false;
-
-  get xsOnly(): boolean {
-    return this.$vuetify.breakpoint.xsOnly;
-  }
-
-  get canNavigateBack(): boolean {
-    const canNavigateBack = this.$route.meta?.canNavigateBack ?? false;
-    return canNavigateBack && window.history.length > 1;
-  }
-
-  get loginIn(): boolean {
-    return this.logged && this.loginComplete;
-  }
-
-  @Watch('logged')
-  onLoggedChange() {
-    if (!this.logged) {
-      this.completeLogin(false);
-    } else {
-      this.drawer = !this.$vuetify.breakpoint.mobile;
-    }
-
-    if (this.$route.name !== 'dashboard') {
-      this.$router.push({ name: 'dashboard' });
-    }
-  }
-
-  drawer = false;
-  mini = false;
-
-  startupError: string = '';
-  macosUnsupported: boolean = false;
-
-  openSite() {
-    this.$interop.navigateToRotki();
-  }
-
-  dismiss() {
-    this.$store.commit('resetMessage');
-  }
-
-  toggleDrawer() {
-    if (!this.drawer) {
-      this.drawer = !this.drawer;
-      this.mini = false;
-    } else {
-      this.mini = !this.mini;
-    }
-  }
-
-  get isDevelopment(): boolean {
-    return process.env.NODE_ENV === 'development';
-  }
-
-  async created(): Promise<void> {
-    this.$interop.onError((backendOutput: string, code: BackendCode) => {
-      if (code === BackendCode.TERMINATED) {
-        this.startupError = backendOutput;
-      } else if (code === BackendCode.MACOS_VERSION) {
-        this.macosUnsupported = true;
+    const { navigateToRotki, onError, onAbout, updateTray } = useInterop();
+    const openSite = navigateToRotki;
+    const dismissMessage = () => setMessage();
+    const toggleDrawer = () => {
+      if (!showDrawer.value) {
+        showDrawer.value = !showDrawer.value;
+        isMini.value = false;
       } else {
-        // eslint-disable-next-line no-console
-        console.error(backendOutput, code);
+        isMini.value = !isMini.value;
       }
-    });
-    this.$interop.onAbout(() => {
-      this.showAbout = true;
+    };
+
+    const { isMobile, dark } = setupThemeCheck();
+
+    const route = useRoute();
+    const router = useRouter();
+
+    const canNavigateBack = computed(() => {
+      const canNavigateBack = route.value.meta?.canNavigateBack ?? false;
+      return canNavigateBack && window.history.length > 1;
     });
 
-    await this.$store.dispatch('connect');
-    if (this.isDevelopment && this.logged) {
-      monitor.start();
-    }
-    this.$store.watch(
-      (state, getters) => {
-        return getters['statistics/overall'];
-      },
-      (value: OverallPerformance) => {
-        if (value.percentage === '-') {
-          return;
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const isPlayground = computed(() => {
+      return isDevelopment && route.value.name === 'playground';
+    });
+
+    const appBarColor = computed(() => {
+      if (!dark.value) {
+        return 'white';
+      }
+      return null;
+    });
+
+    const { commit, state, getters } = useStore();
+
+    const logged = computed(() => state.session?.logged ?? false);
+    const username = computed(() => state.session?.username ?? '');
+    const loginComplete = computed(() => state.session?.loginComplete ?? false);
+    const loginIn = computed(() => logged.value && loginComplete.value);
+    const overall = computed<OverallPerformance>(
+      () => getters['statistics/overall']
+    );
+
+    const completeLogin = async (complete: boolean) => {
+      await commit('session/completeLogin', complete, { root: true });
+    };
+
+    onBeforeMount(async () => {
+      onError((backendOutput: string, code: BackendCode) => {
+        if (code === BackendCode.TERMINATED) {
+          startupErrorMessage.value = backendOutput;
+        } else if (code === BackendCode.MACOS_VERSION) {
+          isMacOsVersionUnsupported.value = true;
+        } else {
+          logger.error(backendOutput, code);
         }
-        this.$interop.updateTray(value);
-      }
-    );
-  }
+      });
+      onAbout(() => (showAbout.value = true));
 
-  get isPlayground(): boolean {
-    return (
-      process.env.NODE_ENV === 'development' &&
-      this.$route.name === 'playground'
-    );
+      await connect();
+      if (isDevelopment && logged.value) {
+        monitor.start();
+      }
+      const search = window.location.search;
+      const skipUpdate = search.indexOf('skip_update') >= 0;
+      if (skipUpdate) {
+        sessionStorage.setItem('skip_update', '1');
+      }
+    });
+
+    watch(overall, overall => {
+      if (overall.percentage === '-') {
+        return;
+      }
+      updateTray(overall);
+    });
+
+    watch(logged, async logged => {
+      if (!logged) {
+        await completeLogin(false);
+      } else {
+        showDrawer.value = !isMobile.value;
+      }
+
+      if (route.value.name !== 'dashboard') {
+        router.push({ name: 'dashboard' });
+      }
+    });
+
+    const premium = getPremium();
+
+    return {
+      username,
+      premium,
+      loginIn,
+      logged,
+      loginComplete,
+      appVersion,
+      message,
+      showDrawer,
+      showNotificationBar,
+      showAbout,
+      showHelpBar,
+      isMini,
+      startupErrorMessage,
+      isMacOsVersionUnsupported,
+      isMobile,
+      appBarColor,
+      canNavigateBack,
+      isDevelopment,
+      isPlayground,
+      dismissMessage,
+      completeLogin,
+      openSite,
+      toggleDrawer
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

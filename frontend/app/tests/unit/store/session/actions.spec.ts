@@ -1,15 +1,19 @@
+import { createPinia, setActivePinia } from 'pinia';
 import { api } from '@/services/rotkehlchen-api';
 import {
   QueriedAddresses,
   QueriedAddressPayload
 } from '@/services/session/types';
-import store from '@/store/store';
+import store, { useMainStore } from '@/store/store';
 import { Module } from '@/types/modules';
 
 jest.mock('@/services/rotkehlchen-api');
 
 describe('session:actions', () => {
   beforeEach(() => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+
     (api.session as any) = jest.mock('@/services/session/session-api');
     store.dispatch('session/logout');
   });
@@ -33,7 +37,7 @@ describe('session:actions', () => {
     await store.dispatch('session/fetchQueriedAddresses');
     expect(api.session.queriedAddresses).toHaveBeenCalledTimes(1);
     expect(store.state.session!.queriedAddresses).toMatchObject({});
-    expect(store.state.message.description).toBeTruthy();
+    expect(useMainStore().message.description).toBeTruthy();
   });
 
   test('addQueriedAddress', async () => {
@@ -64,7 +68,7 @@ describe('session:actions', () => {
     await store.dispatch('session/addQueriedAddress', payload);
     expect(api.session.addQueriedAddress).toHaveBeenCalledWith(payload);
     expect(store.state.session!.queriedAddresses).toMatchObject({});
-    expect(store.state.message.description).toBeTruthy();
+    expect(useMainStore().message.description).toBeTruthy();
   });
 
   test('deletedQueriedAddress', async () => {
@@ -101,6 +105,6 @@ describe('session:actions', () => {
     await store.dispatch('session/deleteQueriedAddress', payload);
     expect(api.session.deleteQueriedAddress).toHaveBeenCalledWith(payload);
     expect(store.state.session!.queriedAddresses).toMatchObject(originalState);
-    expect(store.state.message.description).toBeTruthy();
+    expect(useMainStore().message.description).toBeTruthy();
   });
 });

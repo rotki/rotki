@@ -1,18 +1,13 @@
 import { Component, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
 import { Section, Status } from '@/store/const';
+import { getStatus } from '@/store/utils';
 import { assert } from '@/utils/assertions';
 
-@Component({
-  computed: {
-    ...mapGetters(['status'])
-  }
-})
+@Component({})
 export default class StatusMixin extends Vue {
   // The default value of the mixing. Implementers are required to set that.
   section: Section = Section.NONE;
   secondSection: Section = Section.NONE;
-  status!: (section: Section) => Status;
 
   get loading(): boolean {
     return this.isLoading(this.section);
@@ -40,7 +35,7 @@ export default class StatusMixin extends Vue {
 
   isLoading(section: Section): boolean {
     assert(section !== Section.NONE);
-    const status = this.status(section);
+    const status = getStatus(section);
     return !(
       status === Status.LOADED ||
       status === Status.PARTIALLY_LOADED ||
@@ -50,7 +45,7 @@ export default class StatusMixin extends Vue {
 
   isRefreshing(section: Section): boolean {
     assert(section !== Section.NONE);
-    const status = this.status(section);
+    const status = getStatus(section);
     return (
       status === Status.LOADING ||
       status === Status.REFRESHING ||

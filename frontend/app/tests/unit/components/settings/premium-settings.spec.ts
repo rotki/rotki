@@ -1,5 +1,6 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import Card from '@/components/helper/Card.vue';
@@ -23,7 +24,10 @@ describe('PremiumSettings.vue', () => {
 
   function createWrapper() {
     const vuetify = new Vuetify();
+    const pinia = createPinia();
+    setActivePinia(pinia);
     return mount(PremiumSettings, {
+      pinia,
       store,
       vuetify,
       components: {

@@ -7,11 +7,11 @@ import {
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { Section, Status } from '@/store/const';
+import { Section } from '@/store/const';
 import { LiquityMutations } from '@/store/defi/liquity/mutation-types';
 import { LiquityState } from '@/store/defi/liquity/types';
 import { RotkehlchenState } from '@/store/types';
-import { fetchAsync, setStatus } from '@/store/utils';
+import { fetchAsync, getStatusUpdater } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -72,14 +72,12 @@ export const actions: ActionTree<LiquityState, RotkehlchenState> = {
       }
     });
   },
-  async purge({ commit, rootGetters: { status } }) {
-    function resetStatus(section: Section) {
-      setStatus(Status.NONE, section, status, commit);
-    }
+  async purge({ commit }) {
+    const { resetStatus } = getStatusUpdater(Section.DEFI_LIQUITY_BALANCES);
 
     commit(LiquityMutations.SET_BALANCES, {});
     commit(LiquityMutations.SET_EVENTS, {});
-    resetStatus(Section.DEFI_LIQUITY_BALANCES);
+    resetStatus();
     resetStatus(Section.DEFI_LIQUITY_EVENTS);
   },
   async fetchStaking(context, refresh: boolean = false) {
@@ -140,14 +138,11 @@ export const actions: ActionTree<LiquityState, RotkehlchenState> = {
       }
     });
   },
-  async clearStaking({ commit, rootGetters: { status } }) {
-    function resetStatus(section: Section) {
-      setStatus(Status.NONE, section, status, commit);
-    }
-
+  async clearStaking({ commit }) {
+    const { resetStatus } = getStatusUpdater(Section.DEFI_LIQUITY_STAKING);
     commit(LiquityMutations.SET_STAKING, {});
     commit(LiquityMutations.SET_STAKING_EVENTS, {});
-    resetStatus(Section.DEFI_LIQUITY_STAKING);
+    resetStatus();
     resetStatus(Section.DEFI_LIQUITY_STAKING_EVENTS);
   }
 };

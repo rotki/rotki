@@ -1,12 +1,13 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountManagement from '@/components/AccountManagement.vue';
-import { interop } from '@/electron-interop';
+import { interop, useInterop } from '@/electron-interop';
 import { Api } from '@/plugins/api';
 import { Interop } from '@/plugins/interop';
-import store from '@/store/store';
+import store, { useMainStore } from '@/store/store';
 import '../i18n';
 
 jest.mock('@/electron-interop');
@@ -17,14 +18,22 @@ Vue.use(Api);
 Vue.use(Interop);
 
 describe('AccountManagement.vue', () => {
-  let wrapper: Wrapper<AccountManagement>;
+  let wrapper: Wrapper<any>;
 
   beforeEach(() => {
     document.body.setAttribute('data-app', 'true');
-    store.commit('setConnected', true);
     const vuetify = new Vuetify();
+    const pinia = createPinia();
+    setActivePinia(pinia);
+
+    (useInterop as jest.Mock).mockImplementation(() => interop);
+    interop.premiumUserLoggedIn = jest.fn();
+
+    useMainStore().setConnected(true);
+
     wrapper = mount(AccountManagement, {
       store,
+      pinia,
       provide: {
         'vuex-store': store
       },
@@ -49,7 +58,6 @@ describe('AccountManagement.vue', () => {
 
   describe('existing account', () => {
     test('non premium users should see the premium dialog', async () => {
-      interop.premiumUserLoggedIn = jest.fn();
       store.dispatch = jest.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
@@ -69,7 +77,6 @@ describe('AccountManagement.vue', () => {
     });
 
     test('premium users should not see the premium dialog', async () => {
-      interop.premiumUserLoggedIn = jest.fn();
       store.commit('session/premium', true);
       store.dispatch = jest.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
@@ -88,7 +95,6 @@ describe('AccountManagement.vue', () => {
 
   describe('new account', () => {
     test('non premium users should only see menu', async () => {
-      interop.premiumUserLoggedIn = jest.fn();
       store.dispatch = jest.fn().mockResolvedValue({ success: true });
       expect.assertions(4);
       // @ts-ignore
@@ -103,7 +109,6 @@ describe('AccountManagement.vue', () => {
 
     test('premium users should not see the premium menu entry', async () => {
       expect.assertions(4);
-      interop.premiumUserLoggedIn = jest.fn();
       store.dispatch = jest.fn().mockResolvedValue({ success: true });
 
       store.commit('session/premium', true);

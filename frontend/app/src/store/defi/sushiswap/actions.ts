@@ -1,7 +1,7 @@
 import { ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
-import { Section, Status } from '@/store/const';
+import { Section } from '@/store/const';
 import {
   dexTradeNumericKeys,
   uniswapEventsNumericKeys,
@@ -10,7 +10,7 @@ import {
 import { SushiswapMutations } from '@/store/defi/sushiswap/mutation-types';
 import { SushiswapState } from '@/store/defi/sushiswap/types';
 import { RotkehlchenState } from '@/store/types';
-import { fetchAsync, setStatus } from '@/store/utils';
+import { fetchAsync, getStatusUpdater } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -108,14 +108,12 @@ export const actions: ActionTree<SushiswapState, RotkehlchenState> = {
       root: true
     });
   },
-  async purge({ commit, rootGetters: { status } }) {
-    function resetStatus(section: Section) {
-      setStatus(Status.NONE, section, status, commit);
-    }
+  async purge({ commit }) {
+    const { resetStatus } = getStatusUpdater(Section.DEFI_SUSHISWAP_BALANCES);
 
     commit(SushiswapMutations.SET_BALANCES, {});
     commit(SushiswapMutations.SET_EVENTS, {});
-    resetStatus(Section.DEFI_SUSHISWAP_BALANCES);
+    resetStatus();
     resetStatus(Section.DEFI_SUSHISWAP_EVENTS);
   }
 };

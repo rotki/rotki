@@ -44,7 +44,13 @@ import {
 import { useNotifications } from '@/store/notifications';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
-import { fetchAsync, isLoading, setStatus } from '@/store/utils';
+import {
+  fetchAsync,
+  getStatus,
+  getStatusUpdater,
+  isLoading,
+  setStatus
+} from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -52,7 +58,7 @@ import { Zero } from '@/utils/bignumbers';
 
 export const actions: ActionTree<DefiState, RotkehlchenState> = {
   async fetchDSRBalances(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -60,7 +66,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
     const section = Section.DEFI_DSR_BALANCES;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -70,7 +76,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
 
     const { awaitTask } = useTasks();
 
@@ -103,11 +109,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       });
     }
 
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
   async fetchDSRHistory(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -115,7 +121,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
     const section = Section.DEFI_DSR_HISTORY;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -125,7 +131,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     const { awaitTask } = useTasks();
 
     try {
@@ -157,11 +163,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
   async fetchMakerDAOVaults(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -169,7 +175,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
     const section = Section.DEFI_MAKERDAO_VAULTS;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -179,7 +185,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.MAKEDAO_VAULTS;
@@ -210,11 +216,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
   async fetchMakerDAOVaultDetails(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -222,7 +228,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
     const section = Section.DEFI_MAKERDAO_VAULT_DETAILS;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -232,7 +238,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
 
     const { awaitTask } = useTasks();
 
@@ -263,11 +269,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       });
     }
 
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
   async fetchAaveBalances(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -275,7 +281,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
     const section = Section.DEFI_AAVE_BALANCES;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -285,7 +291,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     const { awaitTask } = useTasks();
 
     try {
@@ -318,11 +324,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       });
     }
 
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
   async fetchAaveHistory(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     payload: { refresh?: boolean; reset?: boolean }
   ) {
     const { activeModules } = session!.generalSettings;
@@ -330,7 +336,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
     const section = Section.DEFI_AAVE_HISTORY;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
     const refresh = payload?.refresh;
     const reset = payload?.reset;
 
@@ -342,7 +348,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     const { awaitTask } = useTasks();
 
     try {
@@ -373,15 +379,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       });
     }
 
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
-  async fetchDefiBalances(
-    { commit, rootGetters: { status } },
-    refresh: boolean
-  ) {
+  async fetchDefiBalances({ commit }, refresh: boolean) {
     const section = Section.DEFI_BALANCES;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -390,7 +393,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
 
-    setStatus(Status.LOADING, section, status, commit);
+    setStatus(Status.LOADING, section);
 
     const { awaitTask } = useTasks();
     try {
@@ -420,15 +423,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
-  async fetchAllDefi(
-    { commit, dispatch, rootGetters: { status } },
-    refresh: boolean = false
-  ) {
+  async fetchAllDefi({ dispatch }, refresh: boolean = false) {
     const section = Section.DEFI_OVERVIEW;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
     if (
       isLoading(currentStatus) ||
       (currentStatus === Status.LOADED && !refresh)
@@ -437,9 +437,9 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     await dispatch('fetchDefiBalances', refresh);
-    setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+    setStatus(Status.PARTIALLY_LOADED, section);
 
     await Promise.all([
       dispatch('fetchAaveBalances', refresh),
@@ -457,17 +457,14 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('liquity/fetchBalances', refresh)
     ]);
 
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
-  async fetchLending(
-    { commit, dispatch, rootState: { session }, rootGetters: { status } },
-    refresh?: boolean
-  ) {
+  async fetchLending({ dispatch, rootState: { session } }, refresh?: boolean) {
     const premium = session?.premium;
     const section = Section.DEFI_LENDING;
     const premiumSection = Section.DEFI_LENDING_HISTORY;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
 
@@ -475,36 +472,36 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       !isLoading(currentStatus) ||
       (currentStatus === Status.LOADED && refresh)
     ) {
-      setStatus(newStatus, section, status, commit);
+      setStatus(newStatus, section);
 
       await Promise.all([
         dispatch('fetchDSRBalances', refresh).then(() => {
-          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+          setStatus(Status.PARTIALLY_LOADED, section);
         }),
         dispatch('fetchAaveBalances', refresh).then(() => {
-          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+          setStatus(Status.PARTIALLY_LOADED, section);
         }),
         dispatch('fetchCompoundBalances', refresh).then(() => {
-          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+          setStatus(Status.PARTIALLY_LOADED, section);
         }),
         dispatch('fetchYearnVaultBalances', {
           refresh,
           version: ProtocolVersion.V1
         }).then(() => {
-          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+          setStatus(Status.PARTIALLY_LOADED, section);
         }),
         dispatch('fetchYearnVaultBalances', {
           refresh,
           version: ProtocolVersion.V2
         }).then(() => {
-          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+          setStatus(Status.PARTIALLY_LOADED, section);
         })
       ]);
 
-      setStatus(Status.LOADED, section, status, commit);
+      setStatus(Status.LOADED, section);
     }
 
-    const currentPremiumStatus = status(premiumSection);
+    const currentPremiumStatus = getStatus(premiumSection);
 
     if (
       !premium ||
@@ -514,7 +511,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
 
-    setStatus(newStatus, premiumSection, status, commit);
+    setStatus(newStatus, premiumSection);
 
     await Promise.all([
       dispatch('fetchDSRHistory', refresh),
@@ -530,22 +527,22 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       })
     ]);
 
-    setStatus(Status.LOADED, premiumSection, status, commit);
+    setStatus(Status.LOADED, premiumSection);
   },
 
   async resetDB(
-    { commit, dispatch, rootState: { session }, rootGetters: { status } },
+    { dispatch, rootState: { session } },
     protocols: DefiProtocol[]
   ) {
     const premiumSection = Section.DEFI_LENDING_HISTORY;
-    const currentPremiumStatus = status(premiumSection);
+    const currentPremiumStatus = getStatus(premiumSection);
     const premium = session!.premium;
 
     if (!premium || isLoading(currentPremiumStatus)) {
       return;
     }
 
-    setStatus(Status.REFRESHING, premiumSection, status, commit);
+    setStatus(Status.REFRESHING, premiumSection);
 
     const toReset: Promise<void>[] = [];
     if (protocols.includes(DefiProtocol.YEARN_VAULTS)) {
@@ -576,43 +573,43 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
 
     await Promise.all(toReset);
 
-    setStatus(Status.LOADED, premiumSection, status, commit);
+    setStatus(Status.LOADED, premiumSection);
   },
 
   async fetchBorrowing(
-    { commit, dispatch, rootState: { session }, rootGetters: { status } },
+    { dispatch, rootState: { session } },
     refresh: boolean = false
   ) {
     const premium = session?.premium;
     const section = Section.DEFI_BORROWING;
     const premiumSection = Section.DEFI_BORROWING_HISTORY;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
 
     if (
       !isLoading(currentStatus) ||
       (currentStatus === Status.LOADED && refresh)
     ) {
-      setStatus(newStatus, section, status, commit);
+      setStatus(newStatus, section);
       await Promise.all([
         dispatch('fetchMakerDAOVaults', refresh).then(() => {
-          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+          setStatus(Status.PARTIALLY_LOADED, section);
         }),
         dispatch('fetchCompoundBalances', refresh).then(() => {
-          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+          setStatus(Status.PARTIALLY_LOADED, section);
         }),
         dispatch('fetchAaveBalances', refresh).then(() => {
-          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+          setStatus(Status.PARTIALLY_LOADED, section);
         }),
         dispatch('liquity/fetchBalances', refresh).then(() => {
-          setStatus(Status.PARTIALLY_LOADED, section, status, commit);
+          setStatus(Status.PARTIALLY_LOADED, section);
         })
       ]);
 
-      setStatus(Status.LOADED, section, status, commit);
+      setStatus(Status.LOADED, section);
     }
 
-    const currentPremiumStatus = status(premiumSection);
+    const currentPremiumStatus = getStatus(premiumSection);
 
     if (
       !premium ||
@@ -622,7 +619,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       return;
     }
 
-    setStatus(newStatus, premiumSection, status, commit);
+    setStatus(newStatus, premiumSection);
 
     await Promise.all([
       dispatch('fetchMakerDAOVaultDetails', refresh),
@@ -631,11 +628,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('liquity/fetchEvents', refresh)
     ]);
 
-    setStatus(Status.LOADED, premiumSection, status, commit);
+    setStatus(Status.LOADED, premiumSection);
   },
 
   async fetchCompoundBalances(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -644,7 +641,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const section = Section.DEFI_COMPOUND_BALANCES;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -654,7 +651,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
 
     const { awaitTask } = useTasks();
     try {
@@ -679,11 +676,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
   async fetchCompoundHistory(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -693,7 +690,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const section = Section.DEFI_COMPOUND_HISTORY;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -703,7 +700,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
 
     const { awaitTask } = useTasks();
     try {
@@ -733,11 +730,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
   async fetchYearnVaultBalances(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     { refresh, version }: { refresh: boolean; version: ProtocolVersion } = {
       refresh: false,
       version: ProtocolVersion.V1
@@ -757,7 +754,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const section = isV1
       ? Section.DEFI_YEARN_VAULTS_BALANCES
       : Section.DEFI_YEARN_VAULTS_V2_BALANCES;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -767,7 +764,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     const { awaitTask } = useTasks();
     try {
       const taskType = isV1
@@ -806,11 +803,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
   async fetchYearnVaultsHistory(
-    { commit, rootGetters: { status }, rootState: { session } },
+    { commit, rootState: { session } },
     payload: { refresh?: boolean; reset?: boolean; version: ProtocolVersion }
   ) {
     const refresh = payload?.refresh;
@@ -830,7 +827,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const section = isV1
       ? Section.DEFI_YEARN_VAULTS_HISTORY
       : Section.DEFI_YEARN_VAULTS_V2_HISTORY;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -840,7 +837,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     const { awaitTask } = useTasks();
     try {
       const taskType = isV1
@@ -886,11 +883,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
 
   async fetchUniswapBalances(
-    { dispatch, commit, rootGetters: { status }, rootState: { session } },
+    { dispatch, commit, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -899,7 +896,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const section = Section.DEFI_UNISWAP_BALANCES;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -909,7 +906,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_UNISWAP_BALANCES;
@@ -934,12 +931,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
     await dispatch('balances/fetchSupportedAssets', true, { root: true });
   },
 
   async fetchUniswapTrades(
-    { dispatch, commit, rootGetters: { status }, rootState: { session } },
+    { dispatch, commit, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -948,7 +945,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const section = Section.DEFI_UNISWAP_TRADES;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -958,7 +955,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     const { awaitTask } = useTasks();
     try {
       const taskType = TaskType.DEFI_UNISWAP_TRADES;
@@ -987,12 +984,12 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
     await dispatch('balances/fetchSupportedAssets', true, { root: true });
   },
 
   async fetchUniswapEvents(
-    { dispatch, commit, rootGetters: { status }, rootState: { session } },
+    { dispatch, commit, rootState: { session } },
     refresh: boolean = false
   ) {
     const { activeModules } = session!.generalSettings;
@@ -1001,7 +998,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const section = Section.DEFI_UNISWAP_EVENTS;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -1011,7 +1008,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
 
     const { awaitTask } = useTasks();
     try {
@@ -1041,16 +1038,13 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
     await dispatch('balances/fetchSupportedAssets', true, { root: true });
   },
 
-  async fetchAirdrops(
-    { commit, rootGetters: { status } },
-    refresh: boolean = false
-  ) {
+  async fetchAirdrops({ commit }, refresh: boolean = false) {
     const section = Section.DEFI_AIRDROPS;
-    const currentStatus = status(section);
+    const currentStatus = getStatus(section);
 
     if (
       isLoading(currentStatus) ||
@@ -1060,7 +1054,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     }
 
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section, status, commit);
+    setStatus(newStatus, section);
     const { awaitTask } = useTasks();
 
     try {
@@ -1087,7 +1081,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         display: true
       });
     }
-    setStatus(Status.LOADED, section, status, commit);
+    setStatus(Status.LOADED, section);
   },
   async fetchBalancerBalances(
     context: ActionContext<DefiState, RotkehlchenState>,
@@ -1191,12 +1185,10 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     });
   },
   async [ACTION_PURGE_PROTOCOL](
-    { commit, rootGetters: { status }, dispatch },
+    { commit, dispatch },
     module: Module | typeof ALL_MODULES
   ) {
-    function resetStatus(section: Section) {
-      setStatus(Status.NONE, section, status, commit);
-    }
+    const { resetStatus } = getStatusUpdater(Section.DEFI_DSR_BALANCES);
 
     function clearDSRState() {
       commit('dsrBalances', {

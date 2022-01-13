@@ -1,16 +1,15 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia, PiniaVuePlugin } from 'pinia';
+import { createPinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Section, Status } from '@/store/const';
-import store from '@/store/store';
+import store, { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import '../../i18n';
 
 Vue.use(Vuetify);
-Vue.use(PiniaVuePlugin);
 
 describe('AccountBalances.vue', () => {
   let wrapper: Wrapper<AccountBalances>;
@@ -45,10 +44,11 @@ describe('AccountBalances.vue', () => {
       time: 0
     });
 
-    store.commit('setStatus', {
+    useMainStore().setStatus({
       section: Section.BLOCKCHAIN_ETH,
       status: Status.LOADING
     });
+
     await wrapper.vm.$nextTick();
 
     expect(
@@ -64,7 +64,7 @@ describe('AccountBalances.vue', () => {
     );
 
     remove(1);
-    store.commit('setStatus', {
+    useMainStore().setStatus({
       section: Section.BLOCKCHAIN_ETH,
       status: Status.LOADED
     });

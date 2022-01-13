@@ -37,8 +37,9 @@ import {
   SessionState
 } from '@/store/session/types';
 import { ACTION_PURGE_DATA } from '@/store/staking/consts';
+import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
+import { ActionStatus, RotkehlchenState } from '@/store/types';
 import { getStatusUpdater, showError, showMessage } from '@/store/utils';
 import {
   Exchange,
@@ -92,7 +93,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   },
 
   async unlock(
-    { commit, dispatch, rootState, rootGetters: { status } },
+    { commit, dispatch, rootState },
     { settings, exchanges, newAccount, sync, username }: UnlockPayload
   ): Promise<ActionStatus> {
     try {
@@ -124,16 +125,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       if (!newAccount || sync) {
         await dispatch('refreshData', exchanges);
       } else {
-        const ethUpdater = getStatusUpdater(
-          commit,
-          Section.BLOCKCHAIN_ETH,
-          status
-        );
-        const btcUpdater = getStatusUpdater(
-          commit,
-          Section.BLOCKCHAIN_BTC,
-          status
-        );
+        const ethUpdater = getStatusUpdater(Section.BLOCKCHAIN_ETH);
+        const btcUpdater = getStatusUpdater(Section.BLOCKCHAIN_BTC);
         ethUpdater.setStatus(Status.LOADED);
         btcUpdater.setStatus(Status.LOADED);
       }
@@ -288,11 +281,11 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
     commit('settings/reset', payload, opts);
     commit('statistics/reset', payload, opts);
     commit('staking/reset', payload, opts);
-    commit('reset', payload, opts);
     useHistory().reset();
     useNotifications().reset();
     useReports().reset();
     useTasks().reset();
+    useMainStore().reset();
   },
 
   async addTag({ commit }, tag: Tag): Promise<ActionStatus> {
@@ -337,24 +330,21 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   },
 
   async setKrakenAccountType({ commit }, krakenAccountType: KrakenAccountType) {
+    const { setMessage } = useMainStore();
     try {
       const settings = await api.setSettings({
         krakenAccountType
       });
       commit('generalSettings', settings.general);
-      commit(
-        'setMessage',
-        {
-          title: i18n
-            .t('actions.session.kraken_account.success.title')
-            .toString(),
-          description: i18n
-            .t('actions.session.kraken_account.success.message')
-            .toString(),
-          success: true
-        } as Message,
-        { root: true }
-      );
+      setMessage({
+        title: i18n
+          .t('actions.session.kraken_account.success.title')
+          .toString(),
+        description: i18n
+          .t('actions.session.kraken_account.success.message')
+          .toString(),
+        success: true
+      });
     } catch (e: any) {
       showError(
         e.message,

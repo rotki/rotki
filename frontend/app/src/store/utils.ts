@@ -1,24 +1,20 @@
-import { inject } from '@vue/composition-api';
+import { inject, unref } from '@vue/composition-api';
 import * as logger from 'loglevel';
-import { ActionContext, Commit, Store } from 'vuex';
+import { ActionContext, Store } from 'vuex';
 import i18n from '@/i18n';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
 import { Severity } from '@/store/notifications/consts';
-import store from '@/store/store';
+import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
-import { Message, RotkehlchenState, StatusPayload } from '@/store/types';
+import { Message, RotkehlchenState } from '@/store/types';
 import { FetchPayload } from '@/store/typing';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { assert } from '@/utils/assertions';
 
 export async function fetchAsync<S, T extends TaskMeta, R>(
-  {
-    commit,
-    rootGetters: { status },
-    rootState: { session }
-  }: ActionContext<S, RotkehlchenState>,
+  { commit, rootState: { session } }: ActionContext<S, RotkehlchenState>,
   payload: FetchPayload<T, R>
 ): Promise<void> {
   const { activeModules } = session!.generalSettings;
@@ -30,7 +26,7 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
   }
 
   const section = payload.section;
-  const currentStatus = status(section);
+  const currentStatus = getStatus(section);
 
   if (
     isLoading(currentStatus) ||
@@ -40,7 +36,7 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
   }
 
   const newStatus = payload.refresh ? Status.REFRESHING : Status.LOADING;
-  setStatus(newStatus, section, status, commit);
+  setStatus(newStatus, section);
 
   const { awaitTask } = useTasks();
 
@@ -62,68 +58,74 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
       display: true
     });
   }
-  setStatus(Status.LOADED, section, status, commit);
+  setStatus(Status.LOADED, section);
 }
 
 export function showError(description: string, title?: string) {
+  const { setMessage } = useMainStore();
   const message = {
     title: title ?? i18n.t('message.error.title').toString(),
     description: description || '',
     success: false
   };
-  store.commit('setMessage', message);
+  setMessage(message);
 }
 
 export function showMessage(description: string, title?: string): void {
+  const { setMessage } = useMainStore();
   const message: Message = {
     title: title ?? i18n.t('message.success.title').toString(),
     description,
     success: true
   };
-  store.commit('setMessage', message);
+  setMessage(message);
 }
 
-export const setStatus: (
-  newStatus: Status,
-  section: Section,
-  status: (section: Section) => Status,
-  commit: Commit
-) => void = (newStatus, section, status, commit) => {
-  if (status(section) === newStatus) {
-    return;
-  }
-  const payload: StatusPayload = {
-    section: section,
-    status: newStatus
-  };
-  commit('setStatus', payload, { root: true });
+export const getStatus = (section: Section) => {
+  const { getStatus } = useMainStore();
+  return unref(getStatus(section));
 };
 
-export const getStatusUpdater = (
-  commit: Commit,
-  section: Section,
-  getStatus: (section: Section) => Status,
-  ignore: boolean = false
+export const setStatus: (newStatus: Status, section: Section) => void = (
+  newStatus,
+  section
 ) => {
-  const setStatus = (status: Status, otherSection?: Section) => {
-    if (getStatus(section) === status) {
+  const { getStatus, setStatus } = useMainStore();
+  if (unref(getStatus(section)) === newStatus) {
+    return;
+  }
+  setStatus({
+    section: section,
+    status: newStatus
+  });
+};
+
+export const getStatusUpdater = (section: Section, ignore: boolean = false) => {
+  const { setStatus, getStatus } = useMainStore();
+  const updateStatus = (status: Status, otherSection?: Section) => {
+    if (ignore) {
       return;
     }
-    const payload: StatusPayload = {
+    setStatus({
       section: otherSection ?? section,
       status: status
-    };
-    if (!ignore) {
-      commit('setStatus', payload, { root: true });
-    }
+    });
   };
 
-  const loading = () => isLoading(getStatus(section));
-  const isFirstLoad = () => getStatus(section) === Status.NONE;
+  const resetStatus = (otherSection?: Section) => {
+    setStatus({
+      section: otherSection ?? section,
+      status: Status.NONE
+    });
+  };
+
+  const loading = () => isLoading(unref(getStatus(section)));
+  const isFirstLoad = () => unref(getStatus(section)) === Status.NONE;
   return {
     loading,
     isFirstLoad,
-    setStatus
+    setStatus: updateStatus,
+    resetStatus
   };
 };
 

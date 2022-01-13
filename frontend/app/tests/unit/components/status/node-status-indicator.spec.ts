@@ -1,4 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
@@ -13,8 +14,11 @@ describe('NodeStatusIndicator.vue', () => {
   beforeEach(() => {
     document.body.setAttribute('data-app', 'true');
     const vuetify = new Vuetify();
+    const pinia = createPinia();
+    setActivePinia(pinia);
     wrapper = mount(NodeStatusIndicator, {
       store,
+      pinia,
       vuetify,
       propsData: {}
     });

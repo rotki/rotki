@@ -32,6 +32,7 @@ import {
 import { Section, Status } from '@/store/const';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
+import { getStatus } from '@/store/utils';
 import { Writeable } from '@/types';
 import { ExchangeInfo, SupportedExchange } from '@/types/exchanges';
 import { L2_LOOPRING } from '@/types/protocols';
@@ -467,12 +468,7 @@ export const getters: Getters<
     }, Zero);
   },
 
-  blockchainTotals: (
-    state,
-    getters,
-    _rootState,
-    { status }
-  ): BlockchainTotal[] => {
+  blockchainTotals: (state, getters, _rootState): BlockchainTotal[] => {
     const sum = (accounts: HasBalance[]): BigNumber => {
       return accounts.reduce((sum: BigNumber, { balance }: HasBalance) => {
         return sum.plus(balance.usdValue);
@@ -491,7 +487,7 @@ export const getters: Getters<
     const loopring: AccountAssetBalances = state.loopringBalances;
 
     if (ethAccounts.length > 0) {
-      const ethStatus = status(Section.BLOCKCHAIN_ETH);
+      const ethStatus = getStatus(Section.BLOCKCHAIN_ETH);
       const l2Totals: L2Totals[] = [];
       if (Object.keys(loopring).length > 0) {
         const balances: { [asset: string]: HasBalance } = {};
@@ -511,7 +507,7 @@ export const getters: Getters<
             }
           }
         }
-        const loopringStatus = status(Section.L2_LOOPRING_BALANCES);
+        const loopringStatus = getStatus(Section.L2_LOOPRING_BALANCES);
         l2Totals.push({
           protocol: L2_LOOPRING,
           usdValue: sum(Object.values(balances)),
@@ -529,7 +525,7 @@ export const getters: Getters<
     }
 
     if (btcAccounts.length > 0) {
-      const btcStatus = status(Section.BLOCKCHAIN_BTC);
+      const btcStatus = getStatus(Section.BLOCKCHAIN_BTC);
       totals.push({
         chain: Blockchain.BTC,
         l2: [],
@@ -539,7 +535,7 @@ export const getters: Getters<
     }
 
     if (kusamaBalances.length > 0) {
-      const ksmStatus = status(Section.BLOCKCHAIN_KSM);
+      const ksmStatus = getStatus(Section.BLOCKCHAIN_KSM);
       totals.push({
         chain: Blockchain.KSM,
         l2: [],
@@ -549,7 +545,7 @@ export const getters: Getters<
     }
 
     if (avaxAccounts.length > 0) {
-      const avaxStatus = status(Section.BLOCKCHAIN_AVAX);
+      const avaxStatus = getStatus(Section.BLOCKCHAIN_AVAX);
       totals.push({
         chain: Blockchain.AVAX,
         l2: [],
@@ -559,7 +555,7 @@ export const getters: Getters<
     }
 
     if (polkadotBalances.length > 0) {
-      const dotStatus = status(Section.BLOCKCHAIN_DOT);
+      const dotStatus = getStatus(Section.BLOCKCHAIN_DOT);
       totals.push({
         chain: Blockchain.DOT,
         l2: [],
@@ -569,7 +565,7 @@ export const getters: Getters<
     }
 
     if (eth2Balances.length > 0) {
-      const eth2Status = status(Section.BLOCKCHAIN_ETH2);
+      const eth2Status = getStatus(Section.BLOCKCHAIN_ETH2);
       totals.push({
         chain: Blockchain.ETH2,
         l2: [],

@@ -2,20 +2,21 @@
   <v-overlay opacity="1" color="grey lighten-4">
     <div
       :class="{
-        'account-management__loading': !xsOnly
+        [$style.loading]: !xsOnly
       }"
+      data-cy="account-management__loading"
     />
     <div v-if="!premiumVisible">
-      <v-card class="account-management__card pb-4" :width="width" light>
+      <v-card
+        class="pb-4"
+        :class="$style.card"
+        :width="width"
+        light
+        data-cy="account-management"
+      >
         <div
-          class="
-            pt-6
-            pb-3
-            text-h2
-            font-weight-black
-            white--text
-            account-management__card__title
-          "
+          class="pt-6 pb-3 text-h2 font-weight-black white--text"
+          :class="$style.title"
         >
           <span class="px-6">{{ $t('app.name') }}</span>
           <span class="d-block mb-3 pl-6 text-caption">
@@ -51,10 +52,10 @@
         </v-slide-y-transition>
       </v-card>
       <privacy-notice />
-      <div v-if="$interop.isPackaged" class="account-management__log-level">
+      <div v-if="isPackaged" :class="$style.icon">
         <backend-settings-button />
       </div>
-      <div v-if="!$interop.isPackaged" class="account-management__about">
+      <div v-if="!isPackaged" :class="$style.icon">
         <v-tooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
             <v-btn
@@ -81,8 +82,14 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Mixins, Prop, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';
@@ -95,12 +102,16 @@ import {
 } from '@/components/account-management/utils';
 import BackendSettingsButton from '@/components/helper/BackendSettingsButton.vue';
 import PrivacyNotice from '@/components/PrivacyNotice.vue';
-import BackendMixin from '@/mixins/backend-mixin';
-import { SyncConflict } from '@/store/session/types';
-import { ActionStatus, Message } from '@/store/types';
+import { setupBackendManagement } from '@/composables/backend';
+import { setupThemeCheck } from '@/composables/common';
+import { getPremium, setupSession } from '@/composables/session';
+import { useInterop } from '@/electron-interop';
+import i18n from '@/i18n';
+import { useMainStore } from '@/store/store';
 import { CreateAccountPayload, LoginCredentials } from '@/types/login';
 
-@Component({
+export default defineComponent({
+  name: 'AccountManagement',
   components: {
     BackendSettingsButton,
     ConnectionFailure,
@@ -110,165 +121,182 @@ import { CreateAccountPayload, LoginCredentials } from '@/types/login';
     Login,
     CreateAccount
   },
-  computed: {
-    ...mapState(['connectionFailure', 'newUser']),
-    ...mapState('session', ['syncConflict', 'premium']),
-    ...mapState(['message', 'connected']),
-    ...mapGetters(['updateNeeded', 'message'])
+  props: {
+    logged: {
+      required: true,
+      type: Boolean
+    }
   },
-  methods: {
-    ...mapActions('session', ['login', 'createAccount']),
-    ...mapMutations(['setMessage'])
-  }
-})
-export default class AccountManagement extends Mixins(BackendMixin) {
-  accountCreation: boolean = false;
-  premium!: boolean;
-  loading: boolean = false;
-  autolog: boolean = false;
-  message!: Message;
-  connected!: boolean;
-  syncConflict!: SyncConflict;
-  login!: (payload: LoginCredentials) => Promise<ActionStatus>;
-  createAccount!: (payload: CreateAccountPayload) => Promise<ActionStatus>;
-  setMessage!: (message: Message) => void;
-  errors: string[] = [];
-  accountCreationError: string = '';
+  emits: ['login-complete'],
+  setup(props, { emit }) {
+    const { logged } = toRefs(props);
+    const accountCreation = ref(false);
+    const loading = ref(false);
+    const autolog = ref(false);
+    const errors = ref<string[]>([]);
+    const accountCreationError = ref('');
+    const premiumVisible = ref(false);
 
-  premiumVisible = false;
+    const store = useMainStore();
+    const { connectionFailure, newUser, message, connected, updateNeeded } =
+      toRefs(store);
 
-  @Prop({ required: true, type: Boolean })
-  logged!: boolean;
-  connectionFailure!: boolean;
-  newUser!: boolean;
-
-  get xsOnly(): boolean {
-    return this.$vuetify.breakpoint.xsOnly;
-  }
-
-  get width(): string {
-    return this.xsOnly ? '100%' : '500px';
-  }
-
-  get displayPremium(): boolean {
-    return !this.premium && !this.message.title && this.premiumVisible;
-  }
-
-  async created() {
-    if (this.connected) {
-      return;
-    }
-
-    const { sessionOnly, url } = getBackendUrl();
-    if (!!url && !sessionOnly) {
-      await this.backendChanged(url);
-    } else {
-      await this.restartBackend();
-    }
-  }
-
-  async mounted() {
-    const { sessionOnly } = getBackendUrl();
-    if (sessionOnly) {
-      deleteBackendUrl();
-      await this.restartBackend();
-    }
-
-    this.autolog = true;
-    await this.login({ username: '', password: '' });
-    if (this.logged) {
-      this.showPremiumDialog();
-      this.showGetPremiumButton();
-    }
-    this.autolog = false;
-    if (this.newUser) {
-      this.accountCreation = true;
-    }
-  }
-
-  @Emit()
-  loginComplete() {
-    this.dismiss();
-  }
-
-  @Watch('newUser')
-  onNewUser(newUser: boolean) {
-    if (newUser) {
-      this.accountCreation = true;
-    }
-  }
-
-  async backendChanged(url: string | null) {
-    await this.$store.commit('setConnected', false);
-    if (!url) {
-      await this.restartBackend();
-    }
-    await this.$store.dispatch('connect', url);
-  }
-
-  async userLogin(credentials: LoginCredentials) {
-    const { username, password, syncApproval } = credentials;
-    this.loading = true;
-    const { message } = await this.login({
-      username,
-      password,
-      syncApproval
+    watch(newUser, newUser => {
+      if (newUser) {
+        accountCreation.value = true;
+      }
     });
 
-    if (message) {
-      this.errors = [message];
-    }
-    this.loading = false;
-    if (this.logged) {
-      setLastLogin(username);
-      this.showPremiumDialog();
-      this.showGetPremiumButton();
-    }
-  }
+    const { setConnected, connect } = store;
 
-  async createNewAccount(payload: CreateAccountPayload) {
-    this.loading = true;
-    this.accountCreationError = '';
-    const { message, success } = await this.createAccount(payload);
-    this.loading = false;
+    const loginComplete = () => {
+      dismissPremiumModal();
+      emit('login-complete');
+    };
 
-    if (success) {
-      this.accountCreation = false;
+    const { currentBreakpoint } = setupThemeCheck();
+    const xsOnly = computed(() => currentBreakpoint.value.xsOnly);
+    const width = computed(() => (xsOnly.value ? '100%' : '500px'));
+    const premium = getPremium();
 
-      if (this.logged) {
-        this.showGetPremiumButton();
-        this.loginComplete();
+    const displayPremium = computed(
+      () => !premium.value && !message.value.title && premiumVisible.value
+    );
+
+    const showPremiumDialog = () => {
+      if (premium.value) {
+        loginComplete();
+        return;
       }
-    } else {
-      this.accountCreationError =
-        message ?? this.$t('account_management.creation.error').toString();
-    }
-  }
+      premiumVisible.value = true;
+    };
 
-  upgrade() {
-    this.$interop.navigateToPremium();
-    this.loginComplete();
-  }
+    const { syncConflict, login, createAccount } = setupSession();
+    const interop = useInterop();
 
-  dismiss() {
-    this.premiumVisible = false;
-  }
+    const upgrade = () => {
+      interop.navigateToPremium();
+      loginComplete();
+    };
 
-  private showPremiumDialog() {
-    if (this.premium) {
-      this.loginComplete();
-      return;
-    }
-    this.premiumVisible = true;
-  }
+    const showGetPremiumButton = () => {
+      interop.premiumUserLoggedIn(premium.value);
+    };
 
-  private showGetPremiumButton() {
-    this.$interop.premiumUserLoggedIn(this.premium);
+    const { restartBackend } = setupBackendManagement();
+
+    onMounted(async () => {
+      const { sessionOnly } = getBackendUrl();
+      if (sessionOnly) {
+        deleteBackendUrl();
+        await restartBackend();
+      }
+
+      autolog.value = true;
+      await login({ username: '', password: '' });
+      if (logged.value) {
+        showPremiumDialog();
+        showGetPremiumButton();
+      }
+      autolog.value = false;
+      if (newUser.value) {
+        accountCreation.value = true;
+      }
+    });
+
+    const setupBackend = async () => {
+      if (connected.value) {
+        return;
+      }
+
+      const { sessionOnly, url } = getBackendUrl();
+      if (!!url && !sessionOnly) {
+        await backendChanged(url);
+      } else {
+        await restartBackend();
+      }
+    };
+
+    const backendChanged = async (url: string | null) => {
+      setConnected(false);
+      if (!url) {
+        await restartBackend();
+      }
+      await connect(url);
+    };
+
+    setupBackend().then();
+
+    const createNewAccount = async (payload: CreateAccountPayload) => {
+      loading.value = true;
+      accountCreationError.value = '';
+      const { message, success } = await createAccount(payload);
+      loading.value = false;
+
+      if (success) {
+        accountCreation.value = false;
+
+        if (logged.value) {
+          showGetPremiumButton();
+          loginComplete();
+        }
+      } else {
+        accountCreationError.value =
+          message ?? i18n.t('account_management.creation.error').toString();
+      }
+    };
+
+    const userLogin = async (credentials: LoginCredentials) => {
+      const { username, password, syncApproval } = credentials;
+      loading.value = true;
+      const { message } = await login({
+        username,
+        password,
+        syncApproval
+      });
+
+      if (message) {
+        errors.value = [message];
+      }
+      loading.value = false;
+      if (logged.value) {
+        setLastLogin(username);
+        showPremiumDialog();
+        showGetPremiumButton();
+      }
+    };
+
+    const dismissPremiumModal = () => {
+      premiumVisible.value = false;
+    };
+
+    return {
+      xsOnly,
+      width,
+      updateNeeded,
+      autolog,
+      connected,
+      connectionFailure,
+      loading,
+      displayPremium,
+      premiumVisible,
+      accountCreation,
+      accountCreationError,
+      errors,
+      syncConflict,
+      isPackaged: computed(() => interop.isPackaged),
+      backendChanged,
+      dismissPremiumModal,
+      upgrade,
+      userLogin,
+      loginComplete,
+      createNewAccount
+    };
   }
-}
+});
 </script>
 
-<style scoped lang="scss">
+<style module lang="scss">
 @import '~@/scss/scroll';
 
 @keyframes scrollLarge {
@@ -281,56 +309,53 @@ export default class AccountManagement extends Mixins(BackendMixin) {
   }
 }
 
-.account-management {
-  &__card {
-    z-index: 5;
-    max-height: 90vh;
-    overflow: auto;
+.loading {
+  position: absolute;
+  height: calc(100% + 1100px);
+  width: calc(100% + 900px);
+  left: -450px !important;
+  top: -250px !important;
+  opacity: 0.5;
+  background: url(~@/assets/images/rotkipattern2.svg) repeat;
+  background-size: 450px 150px;
+  filter: grayscale(0.5);
+  -webkit-animation-name: scrollLarge;
+  animation-name: scrollLarge;
+  -webkit-animation-duration: 35s;
+  animation-duration: 35s;
+  -webkit-animation-timing-function: linear;
+  animation-timing-function: linear;
+  -webkit-animation-iteration-count: infinite;
+  animation-iteration-count: infinite;
+}
 
-    &__title {
-      background-color: var(--v-primary-base);
-    }
+.title {
+  background-color: var(--v-primary-base);
+}
 
-    @extend .themed-scrollbar;
+.card {
+  z-index: 5;
+  max-height: 90vh;
+  overflow: auto;
+
+  @extend .themed-scrollbar;
+}
+
+.icon {
+  position: absolute !important;
+  width: 56px !important;
+  right: 12px !important;
+
+  @media (min-width: 701px) {
+    bottom: 12px !important;
   }
 
-  &__loading {
-    position: absolute;
-    height: calc(100% + 1100px);
-    width: calc(100% + 900px);
-    left: -450px !important;
-    top: -250px !important;
-    opacity: 0.5;
-    background: url(~@/assets/images/rotkipattern2.svg) repeat;
-    background-size: 450px 150px;
-    filter: grayscale(0.5);
-    -webkit-animation-name: scrollLarge;
-    animation-name: scrollLarge;
-    -webkit-animation-duration: 35s;
-    animation-duration: 35s;
-    -webkit-animation-timing-function: linear;
-    animation-timing-function: linear;
-    -webkit-animation-iteration-count: infinite;
-    animation-iteration-count: infinite;
-  }
-
-  &__log-level,
-  &__about {
-    position: absolute !important;
-    width: 56px !important;
-    right: 12px !important;
-
-    @media (min-width: 701px) {
-      bottom: 12px !important;
-    }
-
-    @media (max-width: 700px) {
-      top: 12px !important;
-    }
+  @media (max-width: 700px) {
+    top: 12px !important;
   }
 }
 
-::v-deep {
+:global {
   .v-overlay {
     &__content {
       display: flex;
