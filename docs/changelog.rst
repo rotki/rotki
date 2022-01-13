@@ -7,10 +7,10 @@ Changelog
 * :bug:`-` Fix coinbase/pro detection for GTC, TRU and FARM.
 * :bug:`3896` Fix dashboard balance search that does not show ethereum tokens.
 * :bug:`3895` Popup for successful forced sync operation should shows correct icon.
-* :bug:`3899` Crypto.com users will now be able to import supercharger events and recurring buy orders.
+* :bug:`3899` Crypto.com users will now be able to import supercharger events and recurring buy orders. Viban purchases will also now be correct categorized. 
 * :bug:`-` Restores arm64 docker images.
 * :bug:`-` AVAX balances should now be always correctly queried.
-* :bug:`-` Crypto.com users will now see correctly categorized viban_purchase from CSV files.
+* :bug:`-` PnL report will correctly detect asset cost basis when the fee of a trade is nominated in the received asset.
 * :bug:`3903` The application should now run on macOS 10.14 (Mojave) without errors.
 * :bug:`3901` Coinbase accounts with intenal subaccount movements will now display the Coinbase withdrawals properly.
 
