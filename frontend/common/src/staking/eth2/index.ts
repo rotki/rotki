@@ -7,6 +7,7 @@ export const Eth2Deposit = z.object({
   withdrawalCredentials: z.string(),
   value: Balance,
   txHash: z.string(),
+  timestamp: z.number(),
   txIndex: z.number().nonnegative()
 })
 
