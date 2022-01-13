@@ -17,7 +17,7 @@
         <span class="text-end">
           <amount-display
             show-currency="symbol"
-            :fiat-currency="currency.tickerSymbol"
+            :fiat-currency="currencySymbol"
             :value="amount"
           />
         </span>
@@ -28,29 +28,33 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { createNamespacedHelpers } from 'vuex';
+import { defineComponent, PropType } from '@vue/composition-api';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
+import { setupGeneralSettings } from '@/composables/session';
 import { capitalize } from '@/filters';
-import { Currency } from '@/types/currency';
 
-const { mapGetters } = createNamespacedHelpers('session');
-
-@Component({
+export default defineComponent({
+  name: 'ManualBalanceCardList',
   components: { AmountDisplay },
-  computed: {
-    ...mapGetters(['currency'])
-  }
-})
-export default class ManualBalanceCardList extends Vue {
-  @Prop({ required: true })
-  name!: string;
-  @Prop({ required: true })
-  amount!: BigNumber;
-  readonly capitalize = capitalize;
+  props: {
+    name: {
+      required: true,
+      type: String
+    },
+    amount: {
+      required: true,
+      type: Object as PropType<BigNumber>
+    }
+  },
+  setup() {
+    const { currencySymbol } = setupGeneralSettings();
 
-  currency!: Currency;
-}
+    return {
+      capitalize,
+      currencySymbol
+    };
+  }
+});
 </script>
 <style scoped lang="scss">
 .manual-balance-box {

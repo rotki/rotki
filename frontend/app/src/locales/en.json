@@ -781,6 +781,9 @@
       "sort_asc_tooltip": "Sort ascending"
     }
   },
+  "staking_page": {
+    "hint": "Select staking information to view"
+  },
   "statistics_graph_settings": {
     "label": "Multiplier",
     "off": "No missed snapshots will be considered as being zero.",
@@ -2611,11 +2614,6 @@
       "airdrops": "Airdrops"
     },
     "staking": "Staking",
-    "staking_sub": {
-      "adex": "AdEx",
-      "eth2": "Eth2",
-      "liquity": "Liquity"
-    },
     "manage_assets": "Manage Assets"
   },
   "trade_history": {
@@ -3314,7 +3312,6 @@
   },
   "staking": {
     "liquity": "Liquity",
-    "title": "Staking",
     "eth2": "ETH2",
     "adex": "AdEx"
   },

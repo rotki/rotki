@@ -27,21 +27,24 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { exchangeName } from '@/components/history/consts';
+import { TradeLocation } from '@/services/history/types';
 
-@Component({
-  components: { AmountDisplay }
-})
-export default class ExchangeBox extends Vue {
-  readonly exchangeName = exchangeName;
-
-  @Prop({ required: true })
-  location!: string;
-  @Prop({ required: true })
-  amount!: BigNumber;
-}
+export default defineComponent({
+  name: 'ExchangeBox',
+  components: { AmountDisplay },
+  props: {
+    location: { required: true, type: String as PropType<TradeLocation> },
+    amount: { required: true, type: Object as PropType<BigNumber> }
+  },
+  setup() {
+    return {
+      exchangeName
+    };
+  }
+});
 </script>
 <style scoped lang="scss">
 .exchange-box {

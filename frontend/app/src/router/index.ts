@@ -252,25 +252,8 @@ export default new Router({
     },
     {
       path: Routes.STAKING,
-      component: () => import('../views/Staking.vue'),
-      children: [
-        {
-          path: '',
-          redirect: Routes.STAKING_ETH2
-        },
-        {
-          path: Routes.STAKING_ETH2,
-          component: () => import('../views/staking/Eth2Page.vue')
-        },
-        {
-          path: Routes.STAKING_ADEX,
-          component: () => import('../views/staking/AdexPage.vue')
-        },
-        {
-          path: Routes.STAKING_LIQUITY,
-          component: () => import('../views/staking/LiquityPage.vue')
-        }
-      ]
+      component: () => import('../views/staking/StakingPage.vue'),
+      props: route => ({ location: route.params.location ?? null })
     },
     {
       path: Routes.ASSETS,
