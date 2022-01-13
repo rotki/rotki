@@ -223,7 +223,14 @@ type PaginationOptions = {
 };
 
 const tableHeaders: DataTableHeader[] = [
-  { text: '', value: 'selection', width: '34px', sortable: false },
+  {
+    text: '',
+    value: 'selection',
+    width: '34px',
+    sortable: false,
+    class: 'pr-0',
+    cellClass: 'pr-0'
+  },
   {
     text: i18n.t('ledger_actions.headers.location').toString(),
     value: 'location',

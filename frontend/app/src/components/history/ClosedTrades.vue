@@ -249,7 +249,14 @@ type PaginationOptions = {
 };
 
 const tableHeaders: DataTableHeader[] = [
-  { text: '', value: 'selection', width: '34px', sortable: false },
+  {
+    text: '',
+    value: 'selection',
+    width: '34px',
+    sortable: false,
+    class: 'pr-0',
+    cellClass: 'pr-0'
+  },
   {
     text: i18n.t('closed_trades.headers.location').toString(),
     value: 'location',
@@ -616,15 +623,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style scoped lang="scss">
-::v-deep {
-  th {
-    &:nth-child(2) {
-      span {
-        padding-left: 16px;
-      }
-    }
-  }
-}
-</style>

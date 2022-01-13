@@ -153,7 +153,10 @@ const tableHeaders: DataTableHeader[] = [
   {
     text: '',
     value: 'selection',
-    sortable: false
+    width: '34px',
+    sortable: false,
+    class: 'pr-0',
+    cellClass: 'pr-0'
   },
   {
     text: i18n.t('transactions.headers.txhash').toString(),

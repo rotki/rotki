@@ -41,7 +41,7 @@
           </v-col>
         </v-row>
         <v-row align="center" justify="center" :class="$style.warning">
-          <div class="font-weight-light text-subtitle-2">
+          <div class="font-weight-light text-subtitle-2 text-center">
             <slot />
           </div>
         </v-row>

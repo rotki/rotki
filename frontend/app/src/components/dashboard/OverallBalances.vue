@@ -1,5 +1,5 @@
 <template>
-  <v-card class="overall-balances mb-6">
+  <v-card class="overall-balances">
     <v-row no-gutters class="pa-5">
       <v-col
         cols="12"

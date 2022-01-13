@@ -1624,8 +1624,8 @@
   "closed_trades": {
     "clear_selection": "Clear Selection",
     "description": {
-      "with": "With",
-      "for": "For"
+      "with": "with",
+      "for": "for"
     },
     "filter": {
       "base_asset": "filter by the base asset of the trade",
