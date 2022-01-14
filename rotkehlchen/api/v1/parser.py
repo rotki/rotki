@@ -37,7 +37,7 @@ class ResourceReadingParser(FlaskParser):
         # Optimization: If argmap is passed as a dictionary, we only need
         # to generate a Schema once
         if isinstance(argmap, Mapping):
-            argmap = Schema.from_dict(argmap)()  # type: ignore
+            argmap = Schema.from_dict(argmap)()
 
         def decorator(func: Callable) -> Callable:
             req_ = request_obj
