@@ -180,7 +180,6 @@ jobs:
     env:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      DEVELOPER_DIR: /Applications/Xcode_10.3.app/Contents/Developer
     environment: macos_sign
     strategy:
       matrix:
@@ -219,6 +218,7 @@ jobs:
       - name: Package
         id: packaging
         run: |
+          pip3 install --upgrade pip
           pip3 install virtualenv
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
