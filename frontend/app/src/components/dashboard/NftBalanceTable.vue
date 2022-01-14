@@ -29,6 +29,7 @@
       :headers="tableHeaders"
       :items="mappedBalances"
       sort-by="usdPrice"
+      :loading="loading"
     >
       <template #item.name="{ item }">
         <div class="d-flex align-center">
@@ -119,12 +120,14 @@ import { computed, defineComponent, Ref } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { setupStatusChecking } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { BalanceActions } from '@/store/balances/action-types';
 import { NonFungibleBalance } from '@/store/balances/types';
+import { Section } from '@/store/const';
 import { useStore } from '@/store/utils';
 import {
   DashboardTablesVisibleColumns,
@@ -207,6 +210,8 @@ export default defineComponent({
       () => store.getters['balances/nfBalances']
     );
 
+    const { shouldShowLoadingScreen } = setupStatusChecking();
+
     const totalNetWorthUsd = computed<BigNumber>(
       () => store.getters['statistics/totalNetWorthUsd']
     );
@@ -261,6 +266,7 @@ export default defineComponent({
       currency: currencySymbol,
       refresh,
       total,
+      loading: shouldShowLoadingScreen(Section.NON_FUNGIBLE_BALANCES),
       nonFungibleRoute: Routes.NON_FUNGIBLE,
       percentageOfTotalNetValue,
       percentageOfCurrentGroup

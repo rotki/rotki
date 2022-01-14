@@ -200,6 +200,7 @@
           <v-text-field
             v-model="thousandSeparator"
             outlined
+            maxlength="1"
             class="general-settings__fields__thousand-separator"
             :label="$t('general_settings.amount.label.thousand_separator')"
             type="text"
@@ -212,6 +213,7 @@
           <v-text-field
             v-model="decimalSeparator"
             outlined
+            maxlength="1"
             class="general-settings__fields__decimal-separator"
             :label="$t('general_settings.amount.label.decimal_separator')"
             type="text"
@@ -594,13 +596,21 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
             'general_settings.thousand_separator.validation.cannot_be_the_same'
           ).toString();
         }
+        if (/[0-9]/.test(v)) {
+          return this.$t(
+            'general_settings.thousand_separator.validation.cannot_be_numeric_character'
+          ).toString();
+        }
         return true;
       }
     ];
   }
 
   async onThousandSeparatorChange(thousandSeparator: string) {
-    if (thousandSeparator === this.decimalSeparator) {
+    if (
+      thousandSeparator === this.decimalSeparator ||
+      /[0-9]/.test(thousandSeparator)
+    ) {
       const state = this.$store.state;
       this.thousandSeparator = state.settings![THOUSAND_SEPARATOR];
       return;
@@ -633,13 +643,21 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
             'general_settings.decimal_separator.validation.cannot_be_the_same'
           ).toString();
         }
+        if (/[0-9]/.test(v)) {
+          return this.$t(
+            'general_settings.decimal_separator.validation.cannot_be_numeric_character'
+          ).toString();
+        }
         return true;
       }
     ];
   }
 
   async onDecimalSeparatorChange(decimalSeparator: string) {
-    if (decimalSeparator === this.thousandSeparator) {
+    if (
+      decimalSeparator === this.thousandSeparator ||
+      /[0-9]/.test(decimalSeparator)
+    ) {
       const state = this.$store.state;
       this.decimalSeparator = state.settings![DECIMAL_SEPARATOR];
       return;

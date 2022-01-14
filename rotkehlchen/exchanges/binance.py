@@ -17,6 +17,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.errors import (
     DeserializationError,
     InputError,
@@ -86,7 +87,6 @@ BINANCE_API_TYPE = Literal['api', 'sapi', 'dapi', 'fapi']
 
 BINANCE_BASE_URL = 'binance.com/'
 BINANCEUS_BASE_URL = 'binance.us/'
-BINANCE_MARKETS_KEY = 'PAIRS'
 
 
 class BinancePermissionError(RemoteError):
@@ -185,6 +185,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             uri: str = BINANCE_BASE_URL,
+            PAIRS: Optional[List[str]] = None,  # noqa: N803
     ):
         exchange_location = Location.BINANCE
         if uri == BINANCEUS_BASE_URL:
@@ -204,6 +205,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         })
         self.msg_aggregator = msg_aggregator
         self.offset_ms = 0
+        self.selected_pairs = PAIRS
 
     def first_connection(self) -> None:
         if self.first_connection_made:
@@ -235,6 +237,30 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         if api_key is not None:
             self.session.headers.update({'X-MBX-APIKEY': api_key})
         return changed
+
+    def edit_exchange(
+            self,
+            name: Optional[str],
+            api_key: Optional[ApiKey],
+            api_secret: Optional[ApiSecret],
+            **kwargs: Any,
+    ) -> Tuple[bool, str]:
+        success, msg = super().edit_exchange(
+            name=name,
+            api_key=api_key,
+            api_secret=api_secret,
+            **kwargs,
+        )
+        if success is False:
+            return success, msg
+
+        binance_markets = kwargs.get(BINANCE_MARKETS_KEY)
+        if binance_markets is None:
+            return success, msg
+
+        # here we can finally update the account type
+        self.selected_pairs = binance_markets
+        return True, ''
 
     @property
     def symbols_to_pair(self) -> Dict[str, BinancePair]:
@@ -798,7 +824,6 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            markets: Optional[List[str]] = None,
     ) -> Tuple[List[Trade], Tuple[Timestamp, Timestamp]]:
         """
 
@@ -807,13 +832,10 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         - BinancePermissionError
         """
         self.first_connection()
-
-        if not markets:
-            iter_markets = self.get_selected_pairs()
-            if len(iter_markets) == 0:
-                iter_markets = list(self._symbols_to_pair.keys())
+        if self.selected_pairs is not None:
+            iter_markets = list(set(self.selected_pairs).intersection(set(self._symbols_to_pair.keys())))  # noqa: E501
         else:
-            iter_markets = markets
+            iter_markets = list(self._symbols_to_pair.keys())
 
         raw_data = []
         # Limit of results to return. 1000 is max limit according to docs
@@ -1264,7 +1286,3 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[LedgerAction]:
         return []  # noop for binance
-
-    def get_selected_pairs(self) -> List[str]:
-        pairs = self.db.get_binance_pairs(self.name, self.location)
-        return list(set(pairs).intersection(set(self._symbols_to_pair.keys())))

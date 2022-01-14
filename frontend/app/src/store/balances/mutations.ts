@@ -41,7 +41,13 @@ export const mutations: MutationTree<BalanceState> = {
     state.avax = { ...payload };
   },
   updateTotals(state: BalanceState, payload: Balances) {
-    state.totals = { ...state.totals, ...payload };
+    const totals = { ...state.totals, ...payload };
+
+    for (const asset in totals) {
+      if (totals[asset].amount.isZero()) delete totals[asset];
+    }
+
+    state.totals = totals;
   },
   updateLiabilities(state: BalanceState, payload: Balances) {
     state.liabilities = { ...state.liabilities, ...payload };

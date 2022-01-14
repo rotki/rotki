@@ -602,7 +602,6 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             transaction_id = None
             transaction_url = raw_data.get('id', '')
             fee = Fee(ZERO)
-            # movement_category: Union[Literal['deposit'], Literal['withdrawal']]
             if 'type' in raw_data:
                 # Then this should be a "send" which is the way Coinbase uses to send
                 # crypto outside of the exchange, or from one user to another.
@@ -640,8 +639,13 @@ class Coinbase(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if 'network' in raw_data:
                     transaction_id = get_key_if_has_val(raw_data['network'], 'hash')
                     transaction_url = get_key_if_has_val(raw_data['network'], 'transaction_url')
-                if 'to' in raw_data:
-                    address = deserialize_asset_movement_address(raw_data['to'], 'address', asset)
+                raw_to = raw_data.get('to')
+                if raw_to is not None:
+                    address = deserialize_asset_movement_address(raw_to, 'address', asset)
+
+                if 'to' in raw_data and raw_to is None:  # Internal movement between coinbase accs
+                    return None  # Can ignore. https://github.com/rotki/rotki/issues/3901
+
                 if 'from' in raw_data:
                     movement_category = AssetMovementCategory.DEPOSIT
             else:

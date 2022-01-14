@@ -25,6 +25,7 @@ import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { useHistory } from '@/store/history';
 import { useNotifications } from '@/store/notifications';
+import { Severity } from '@/store/notifications/consts';
 import { useReports } from '@/store/reports';
 import {
   ACTION_PURGE_CACHED_DATA,
@@ -623,6 +624,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       notify({
         title,
         message,
+        severity: Severity.INFO,
         display: true
       });
 

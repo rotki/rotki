@@ -8,6 +8,7 @@ from rotkehlchen.assets.asset import (
     WORLD_TO_BITTREX,
     WORLD_TO_COINBASE,
     WORLD_TO_COINBASE_PRO,
+    WORLD_TO_CRYPTOCOM,
     WORLD_TO_FTX,
     WORLD_TO_GEMINI,
     WORLD_TO_ICONOMI,
@@ -750,6 +751,7 @@ BITSTAMP_TO_WORLD = {v: k for k, v in WORLD_TO_BITSTAMP.items()}
 GEMINI_TO_WORLD = {v: k for k, v in WORLD_TO_GEMINI.items()}
 NEXO_TO_WORLD = {v: k for k, v in WORLD_TO_NEXO.items()}
 BITPANDA_TO_WORLD = {v: k for k, v in WORLD_TO_BITPANDA.items()}
+CRYPTOCOM_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOM.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -1031,3 +1033,18 @@ def asset_from_bitpanda(bitpanda_name: str) -> Asset:
 
     our_name = BITPANDA_TO_WORLD.get(bitpanda_name, bitpanda_name)
     return symbol_to_asset_or_token(our_name)
+
+
+def asset_from_cryptocom(cryptocom_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(cryptocom_name, str):
+        raise DeserializationError(
+            f'Got non-string type {type(cryptocom_name)} for cryptocom asset',
+        )
+
+    symbol = CRYPTOCOM_TO_WORLD.get(cryptocom_name, cryptocom_name)
+    return symbol_to_asset_or_token(symbol)

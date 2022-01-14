@@ -4,6 +4,7 @@ from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
+from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -92,7 +93,7 @@ class ExchangeManager():
             api_secret: Optional[ApiSecret],
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
-            binance_markets: Optional[List[str]],
+            PAIRS: Optional[List[str]],  # noqa: N803
             ftx_subaccount_name: Optional[str],
     ) -> Tuple[bool, str]:
         """Edits both the exchange object and the database entry
@@ -115,7 +116,7 @@ class ExchangeManager():
             api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
-            binance_markets=binance_markets,
+            PAIRS=PAIRS,
             ftx_subaccount_name=ftx_subaccount_name,
             should_commit=False,
         )
@@ -127,7 +128,7 @@ class ExchangeManager():
             api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
-            binance_markets=binance_markets,
+            PAIRS=PAIRS,
             ftx_subaccount_name=ftx_subaccount_name,
         )
         if success is False:
@@ -161,7 +162,7 @@ class ExchangeManager():
             for exchangeobj in exchanges:
                 data = {"location": str(location), "name": exchangeobj.name}
                 if location == Location.KRAKEN:  # ignore type since we know this is kraken here
-                    data['kraken_account_type'] = str(exchangeobj.account_type)  # type: ignore
+                    data[KRAKEN_ACCOUNT_TYPE_KEY] = str(exchangeobj.account_type)  # type: ignore
                 if location == Location.FTX:
                     subaccount = exchangeobj.subaccount  # type: ignore
                     if subaccount is not None:
@@ -190,8 +191,7 @@ class ExchangeManager():
             api_secret: ApiSecret,
             database: 'DBHandler',
             passphrase: Optional[str] = None,
-            kraken_account_type: Optional['KrakenAccountType'] = None,
-            ftx_subaccount_name: Optional[str] = None,
+            **kwargs: Any,
     ) -> Tuple[bool, str]:
         """
         Setup a new exchange with an api key, an api secret.
@@ -211,17 +211,11 @@ class ExchangeManager():
             api_secret=api_secret,
             passphrase=passphrase,
         )
-        extras: Dict[str, Any] = {}
-        if kraken_account_type is not None:
-            extras['kraken_account_type'] = kraken_account_type
-        if ftx_subaccount_name is not None:
-            extras['ftx_subaccount_name'] = ftx_subaccount_name
-
         exchange = self.initialize_exchange(
             module=self._get_exchange_module(location),
             credentials=api_credentials,
             database=database,
-            **extras,
+            **kwargs,
         )
         try:
             result, message = exchange.validate_api_key()
@@ -258,13 +252,15 @@ class ExchangeManager():
             kwargs['uri'] = BINANCE_BASE_URL
         elif credentials.location == Location.BINANCEUS:
             kwargs['uri'] = BINANCEUS_BASE_URL
+
         exchange_obj = exchange_ctor(
             name=credentials.name,
             api_key=credentials.api_key,
             secret=credentials.api_secret,
             database=database,
             msg_aggregator=self.msg_aggregator,
-            **kwargs,
+            # remove all empty kwargs
+            **{k: v for k, v in kwargs.items() if v is not None},
         )
         return exchange_obj
 

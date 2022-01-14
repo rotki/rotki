@@ -181,16 +181,9 @@ describe('balances', () => {
         }, Zero);
         dashboardPage.visit();
         dashboardPage.getOverallBalance().then($overallBalance => {
-          dashboardPage.getNonFungibleBalances().then($nonFungibleBalance => {
-            // compare overall balance with blockchain balance + non fungible balance,
-            // with tolerance 0.01 (precision = 2)
-            expect(
-              $overallBalance
-                .minus(total.plus($nonFungibleBalance))
-                .abs()
-                .isLessThan(0.01)
-            );
-          });
+          // compare overall balance with blockchain balance
+          // with tolerance 0.01 (precision = 2)
+          expect($overallBalance.minus(total).abs().isLessThan(0.01));
         });
         dashboardPage.getLocationBalances().then($dashboardBalances => {
           expect($dashboardBalances).to.deep.eq($manualBalances);
