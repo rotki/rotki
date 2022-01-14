@@ -1,12 +1,14 @@
 =========
 Changelog
 =========
-* :bug:`3929` Prevent user from using invalid character for thousand and decimal separator.
+
+* :release:`1.23.1 <2022-01-14>`
+* :bug:`3929` Prevent users from using invalid character for thousands and decimal separator.
 * :bug:`3913` NFT Balances table at dashboard should be updated when users remove an ethereum account.
 * :bug:`3916` Users with ethereum transactions that deploy contracts will now be able to load the transactions view properly.
 * :bug:`-` Fix coinbase/pro detection for GTC, TRU and FARM.
 * :bug:`3896` Fix dashboard balance search that does not show ethereum tokens.
-* :bug:`3895` Popup for successful forced sync operation should shows correct icon.
+* :bug:`3895` Popup for successful forced sync operation should show correct icon.
 * :bug:`3899` Crypto.com users will now be able to import supercharger events and recurring buy orders. Viban purchases will also now be correct categorized. 
 * :bug:`-` Restores arm64 docker images.
 * :bug:`-` AVAX balances should now be always correctly queried.
