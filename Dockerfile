@@ -10,7 +10,7 @@ RUN npm run docker:build
 
 FROM python:3.7-buster as backend-build-stage
 
-ARG PYINSTALLER_VERSION=v3.5
+ARG PYINSTALLER_VERSION=v4.8
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 

@@ -31,4 +31,4 @@ marshmallow==3.14.1
 webargs==8.1.0
 
 #constraints
-setuptools==41.0.1  # constraint required by pyinstaller==3.5.0
+setuptools==49.6.0  # constraint required by pyinstaller==4.8

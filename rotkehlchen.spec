@@ -1,10 +1,12 @@
 # -*- mode: python -*-
 from __future__ import print_function  # isort:skip
+import os
 import platform
 import sys
 from distutils.spawn import find_executable
 
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
+from rotkehlchen.typing import Location
 from rotkehlchen.utils.misc import get_system_spec
 
 """
@@ -75,6 +77,8 @@ hiddenimports = ['cytoolz.utils', 'cytoolz._signatures']
 # by pyinstaller (https://github.com/rotki/rotki/issues/602) make sure they are
 # all included as imports in the created executable
 for exchange_name in SUPPORTED_EXCHANGES:
+    if exchange_name == Location.BINANCEUS:
+        continue
     hiddenimports.append(f'rotkehlchen.exchanges.{exchange_name}')
 
 a = Entrypoint(
@@ -110,7 +114,7 @@ if ONEFILE:
         strip=False,
         upx=False,
         runtime_tmpdir=None,
-        console=True
+        console=True,
     )
 else:
     exe = EXE(
@@ -121,7 +125,7 @@ else:
         debug=False,
         strip=False,
         upx=False,
-        console=True
+        console=True,
     )
     coll = COLLECT(
         exe,
@@ -130,5 +134,5 @@ else:
         a.datas,
         strip=False,
         upx=False,
-        name='rotkehlchen'
+        name='rotkehlchen',
     )
