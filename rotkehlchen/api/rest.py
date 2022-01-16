@@ -56,10 +56,11 @@ from rotkehlchen.chain.ethereum.gitcoin.api import GitcoinAPI
 from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter
 from rotkehlchen.chain.ethereum.gitcoin.processor import GitcoinProcessor
 from rotkehlchen.chain.ethereum.modules.eth2 import FREE_VALIDATORS_LIMIT
-from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT, EthTransactions
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
+    FREE_ETH_TX_LIMIT,
     FREE_HISTORY_EVENTS_LIMIT,
     FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
@@ -3004,7 +3005,7 @@ class RestAPI():
             transactions, total_filter_count = tx_module.query(
                 only_cache=only_cache,
                 filter_query=filter_query,
-                with_limit=self.rotkehlchen.premium is None,
+                has_premium=self.rotkehlchen.premium is not None,
             )
             status_code = HTTPStatus.OK
             message = ''

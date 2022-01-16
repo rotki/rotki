@@ -87,7 +87,7 @@ def test_add_get_ethereum_transactions(data_dir, username):
     assert len(errors) == 0
     assert len(warnings) == 0
     filter_query = ETHTransactionsFilterQuery.make()
-    returned_transactions, _ = dbethtx.get_ethereum_transactions(filter_query)
+    returned_transactions = dbethtx.get_ethereum_transactions(filter_query, True)
     assert returned_transactions == [tx1, tx2]
 
     # Add the last 2 transactions. Since tx2 already exists in the DB it should be
@@ -97,7 +97,7 @@ def test_add_get_ethereum_transactions(data_dir, username):
     warnings = msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
-    returned_transactions, _ = dbethtx.get_ethereum_transactions(filter_query)
+    returned_transactions = dbethtx.get_ethereum_transactions(filter_query, True)
     assert returned_transactions == [tx1, tx2, tx3]
 
     # Now add same transactions but with other relevant address
@@ -105,15 +105,15 @@ def test_add_get_ethereum_transactions(data_dir, username):
     dbethtx.add_ethereum_transactions([tx2], relevant_address=ETH_ADDRESS2)
 
     # try transaction query by tx_hash
-    result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash_b))  # noqa: E501
+    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash_b), has_premium=True)  # noqa: E501
     assert result == [tx2], 'querying transaction by hash in bytes failed'
-    result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash))  # noqa: E501
+    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash), has_premium=True)  # noqa: E501
     assert result == [tx2], 'querying transaction by hash string failed'
-    result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=b'dsadsad'))  # noqa: E501
+    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=b'dsadsad'), has_premium=True)  # noqa: E501
     assert result == []
 
     # Now try transaction by relevant addresses
-    result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1, make_ethereum_address()]))  # noqa: E501
+    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1, make_ethereum_address()]), has_premium=True)  # noqa: E501
     assert result == [tx1, tx3]
 
 
@@ -250,18 +250,30 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
     assert len(errors) == 0
     assert len(warnings) == 0
 
-    result, _ = dbethtx.get_ethereum_transactions(
+    result, total_filter_count = dbethtx.get_ethereum_transactions_and_limit_info(
         ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS3]),
+        has_premium=True,
     )
     assert {x.tx_hash for x in result} == {b'1', b'3', b'4'}
+    assert total_filter_count == 3
 
     # Now try transaction query by relevant addresses and see we get more due to the
     # internal tx mappings
-    result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1]))  # noqa: E501
+    result, total_filter_count = dbethtx.get_ethereum_transactions_and_limit_info(
+        ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS1]),
+        has_premium=True,
+    )
     assert result == [tx1, tx3, tx4, tx5]
+    assert total_filter_count == 4
 
-    result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(addresses=[address_4]))  # noqa: E501
+    result = dbethtx.get_ethereum_transactions(
+        ETHTransactionsFilterQuery.make(addresses=[address_4]),
+        has_premium=True,
+    )
     assert result == [tx3]
 
-    result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS3]))  # noqa: E501
+    result = dbethtx.get_ethereum_transactions(
+        ETHTransactionsFilterQuery.make(addresses=[ETH_ADDRESS3]),
+        has_premium=True,
+    )
     assert result == [tx1, tx3, tx4]

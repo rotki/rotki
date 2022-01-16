@@ -975,9 +975,15 @@ def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: boo
                 )
 
             payload = f'{{"status":"1","message":"OK","result":[{tx_str}]}}'
+        elif '=tokentx&' in url:
+            # don't return any token transactions
+            payload = '{"status":"1","message":"OK","result":[]}'
         elif '=getblocknobytime&' in url:
             # we don't really care about this in the history tests so just return whatever
             payload = '{"status":"1","message":"OK","result": "1"}'
+        else:
+            raise AssertionError(f'Unexpected etherscan query {url} at test mock')
+
         return MockResponse(200, payload)
 
     return patch.object(etherscan.session, 'get', wraps=mocked_request_dict)

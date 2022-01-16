@@ -88,7 +88,10 @@ class EVMTransactionDecoder():
         # TODO: Change this if transaction filter query can accept multiple hashes
         dbethtx = DBEthTx(self.database)
         for tx_hash in hashes:
-            txs, _ = dbethtx.get_ethereum_transactions(filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash))  # noqa: E501
+            txs = dbethtx.get_ethereum_transactions(
+                filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
+                has_premium=True,  # ignore limiting here
+            )
             tx_receipt = dbethtx.get_receipt(tx_hash)
             assert tx_receipt, 'The transaction receipt for {tx_hash.hex()} should be in the DB'
             self.decode_transaction(transaction=txs[0], tx_receipt=tx_receipt)

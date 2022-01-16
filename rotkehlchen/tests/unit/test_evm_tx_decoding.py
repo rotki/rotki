@@ -29,10 +29,11 @@ def test_tx_decode(user_data_dir):
     decoder = EVMTransactionDecoder(database=database)
     dbethtx = DBEthTx(database)
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
-    transactions, _ = dbethtx.get_ethereum_transactions(
+    transactions = dbethtx.get_ethereum_transactions(
         filter_=ETHTransactionsFilterQuery.make(
             addresses=[addr1],
         ),
+        has_premium=True,
     )
     approve_tx_hash = '5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a'
     with patch.object(decoder, 'decode_transaction', wraps=decoder.decode_transaction) as decode_mock:  # noqa: E501

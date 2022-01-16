@@ -80,7 +80,7 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
     )
     filter_ = ETHTransactionsFilterQuery.make()
 
-    result, filter_count = db.get_ethereum_transactions(filter_)
+    result, filter_count = db.get_ethereum_transactions_and_limit_info(filter_, True)
     assert len(result) == 1
     assert filter_count == 1
     response = requests.delete(
@@ -90,6 +90,6 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
         ),
     )
     assert_simple_ok_response(response)
-    result, filter_count = db.get_ethereum_transactions(filter_)
+    result, filter_count = db.get_ethereum_transactions_and_limit_info(filter_, True)
     assert len(result) == 0
     assert filter_count == 0

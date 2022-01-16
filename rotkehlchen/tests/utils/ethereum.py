@@ -192,7 +192,7 @@ def setup_ethereum_transactions_test(
     if transaction_already_queried is True:
         dbethtx.add_ethereum_transactions(ethereum_transactions=[transaction1], relevant_address=addr1)  # noqa: E501
         dbethtx.add_ethereum_transactions(ethereum_transactions=[transaction2], relevant_address=addr2)  # noqa: E501
-        result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make())
+        result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(), True)
         assert result == transactions
 
     expected_receipt1 = EthereumTxReceipt(

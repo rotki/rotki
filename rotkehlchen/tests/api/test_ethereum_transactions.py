@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
+from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -238,13 +238,41 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
     Etherscan has a limit for 1k transactions per query and we need to make
     sure that we properly pull all data by using pagination
     """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    original_get = requests.get
+
+    def mock_some_etherscan_queries(etherscan: Etherscan):
+        """Just hit etherscan for the actual transations and mock all else.
+        This test just needs to see that pagination works on the tx endpoint
+        """
+        def mocked_request_dict(url, *_args, **_kwargs):
+            if '=txlistinternal&' in url:
+                # don't return any internal transactions
+                payload = '{"status":"1","message":"OK","result":[]}'
+            elif '=tokentx&' in url:
+                # don't return any token transactions
+                payload = '{"status":"1","message":"OK","result":[]}'
+            elif '=getblocknobytime&' in url:
+                # we don't really care about this in this test so return whatever
+                # payload = '{"status":"1","message":"OK","result": "1"}'
+                return original_get(url)
+            elif '=txlist&' in url:
+                return original_get(url)
+            else:
+                raise AssertionError(f'Unexpected etherscan query {url} at test mock')
+            return MockResponse(200, payload)
+
+        return patch.object(etherscan.session, 'get', wraps=mocked_request_dict)
+
     expected_at_least = 16097  # 30/08/2020
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'ethereumtransactionsresource',
-        ),
-    )
+    with mock_some_etherscan_queries(rotki.etherscan):
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'ethereumtransactionsresource',
+            ),
+        )
+
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) >= expected_at_least
     assert result['entries_found'] >= expected_at_least
@@ -255,10 +283,10 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
 
     assert rresult[1]['tx_hash'] == '0xec72748b8b784380ff6fcca9b897d649a0992eaa63b6c025ecbec885f64d2ac9'  # noqa: E501
     assert rresult[1]['nonce'] == 0
-    assert rresult[11201]['tx_hash'] == '0xa79e6c331ab180f18fe44225af28b0b4fe0e6e2fcb18e6d303722b77dc941f47'  # noqa: E501
-    assert rresult[11201]['nonce'] == 11196
-    assert rresult[16172]['tx_hash'] == '0x7cd0d2f75c53aeeefcb505cc16513840b883ebd0698bc9f5dffb65490ba910bc'  # noqa: E501
-    assert rresult[16172]['nonce'] == 16167
+    assert rresult[11201]['tx_hash'] == '0x118edf91d6d47fcc6bc9c7ceefe2ee2344e0ff3b5a1805a804fa9c9448efb746'  # noqa: E501
+    assert rresult[11201]['nonce'] == 11198
+    assert rresult[16172]['tx_hash'] == '0x92baec6dbf3351a1aea2371453bfcb5af898ffc8172fcf9577ca2e5335df4c71'  # noqa: E501
+    assert rresult[16172]['nonce'] == 16169
 
 
 def test_query_transactions_errors(rotkehlchen_api_server):
@@ -370,7 +398,7 @@ def test_query_transactions_over_limit(
             ranges_to_query=[],
         )
 
-    free_expected_entries_total = [FREE_ETH_TX_LIMIT - 10, 10]
+    free_expected_entries_total = [FREE_ETH_TX_LIMIT - 35, 35]
     free_expected_entries_found = [FREE_ETH_TX_LIMIT - 10, 60]
     premium_expected_entries = [FREE_ETH_TX_LIMIT - 10, 60]
 

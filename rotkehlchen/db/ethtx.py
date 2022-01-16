@@ -1,5 +1,4 @@
 import logging
-from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
@@ -23,6 +22,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
+from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
 
 class DBEthTx():
@@ -139,11 +140,10 @@ class DBEthTx():
     def get_ethereum_transactions(
             self,
             filter_: ETHTransactionsFilterQuery,
-    ) -> Tuple[List[EthereumTransaction], int]:
-        """Returns a tuple with 2 entries.
-        First entry is a list of ethereum transactions optionally filtered by
-        time and/or from address and pagination.
-        Second is the number of entries found for the current filter ignoring pagination.
+            has_premium: bool,
+    ) -> List[EthereumTransaction]:
+        """Returnss a list of ethereum transactions optionally filtered by
+        the given filter query
 
         This function can raise:
         - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to invalid
@@ -151,8 +151,12 @@ class DBEthTx():
         """
         cursor = self.db.conn.cursor()
         query, bindings = filter_.prepare()
-        query = 'SELECT * FROM ethereum_transactions ' + query
-        results = cursor.execute(query, bindings)
+        if has_premium:
+            query = 'SELECT * FROM ethereum_transactions ' + query
+            results = cursor.execute(query, bindings)
+        else:
+            query = 'SELECT * FROM (SELECT * from ethereum_transactions ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            results = cursor.execute(query, [FREE_ETH_TX_LIMIT] + bindings)
 
         ethereum_transactions = []
         for result in results:
@@ -179,17 +183,23 @@ class DBEthTx():
 
             ethereum_transactions.append(tx)
 
-        if filter_.pagination is not None:
-            no_pagination_filter = deepcopy(filter_)
-            no_pagination_filter.pagination = None
-            query, bindings = no_pagination_filter.prepare()
-            query = 'SELECT COUNT(*) FROM ethereum_transactions ' + query
-            results = cursor.execute(query, bindings).fetchone()
-            total_filter_count = results[0]
-        else:
-            total_filter_count = len(ethereum_transactions)
+        return ethereum_transactions
 
-        return ethereum_transactions, total_filter_count
+    def get_ethereum_transactions_and_limit_info(
+            self,
+            filter_: ETHTransactionsFilterQuery,
+            has_premium: bool,
+    ) -> Tuple[List[EthereumTransaction], int]:
+        """Gets all ethereum transactions for the query from the D.
+
+        Also returns how many are the total found for the filter.
+        """
+        txs = self.get_ethereum_transactions(filter_=filter_, has_premium=has_premium)
+        cursor = self.db.conn.cursor()
+        query, bindings = filter_.prepare(with_pagination=False)
+        query = 'SELECT COUNT(*) from ethereum_transactions ' + query
+        total_found_result = cursor.execute(query, bindings)
+        return txs, total_found_result.fetchone()[0]
 
     def purge_ethereum_transaction_data(self) -> None:
         """Deletes all ethereum transaction related data from the DB"""

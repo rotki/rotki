@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, DefaultDict, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
@@ -19,8 +19,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-FREE_ETH_TX_LIMIT = 250
 
 
 class EthTransactions(LockableQueryMixIn):
@@ -41,31 +39,6 @@ class EthTransactions(LockableQueryMixIn):
         of any batch of transaction queries.
         """
         self.ethereum.tx_per_address = defaultdict(int)
-
-    def _return_transactions_maybe_limit(
-            self,
-            requested_addresses: Optional[List[ChecksumEthAddress]],
-            transactions: List[EthereumTransaction],
-            with_limit: bool,
-    ) -> List[EthereumTransaction]:
-        if with_limit is False:
-            return transactions
-
-        count_map: DefaultDict[ChecksumEthAddress, int] = defaultdict(int)
-        for tx in transactions:
-            count_map[tx.from_address] += 1
-
-        for address, count in count_map.items():
-            self.ethereum.tx_per_address[address] = count
-
-        if requested_addresses is not None:
-            transactions_for_other_addies = sum(x for addy, x in self.ethereum.tx_per_address.items() if addy not in requested_addresses)  # noqa: E501
-            remaining_num_tx = FREE_ETH_TX_LIMIT - transactions_for_other_addies
-            returning_tx_length = min(remaining_num_tx, len(transactions))
-        else:
-            returning_tx_length = min(FREE_ETH_TX_LIMIT, len(transactions))
-
-        return transactions[:returning_tx_length]
 
     def single_address_query_transactions(
             self,
@@ -133,8 +106,9 @@ class EthTransactions(LockableQueryMixIn):
         if new_internal_txs != []:
             for internal_tx in new_internal_txs:
                 # make sure all internal transaction parent transactions are in the DB
-                result, _ = dbethtx.get_ethereum_transactions(
+                result = dbethtx.get_ethereum_transactions(
                     ETHTransactionsFilterQuery.make(tx_hash=internal_tx.parent_tx_hash),
+                    has_premium=True,  # ignore limiting here
                 )
                 if len(result) != 0:
                     continue  # already got that transaction
@@ -170,8 +144,9 @@ class EthTransactions(LockableQueryMixIn):
 
         # and add them to the DB
         for tx_hash in erc20_tx_hashes:
-            result, _ = dbethtx.get_ethereum_transactions(
+            result = dbethtx.get_ethereum_transactions(
                 ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
+                has_premium=True,  # ignore limiting here
             )
             if len(result) != 0:
                 continue  # already got that transaction
@@ -194,17 +169,12 @@ class EthTransactions(LockableQueryMixIn):
     def query(
             self,
             filter_query: ETHTransactionsFilterQuery,
-            with_limit: bool = False,
+            has_premium: bool = False,
             only_cache: bool = False,
     ) -> Tuple[List[EthereumTransaction], int]:
         """Queries for all transactions of an ethereum address or of all addresses.
 
         Returns a list of all transactions filtered and sorted according to the parameters.
-
-        If `with_limit` is true then the api limit is applied
-
-        if `recent_first` is true then the transactions are returned with the most
-        recent first on the list
 
         May raise:
         - RemoteError if etherscan is used and there is a problem with reaching it or
@@ -232,14 +202,9 @@ class EthTransactions(LockableQueryMixIn):
                 )
 
         dbethtx = DBEthTx(self.database)
-        transactions, total_filter_count = dbethtx.get_ethereum_transactions(filter_=filter_query)
-        return (
-            self._return_transactions_maybe_limit(
-                requested_addresses=query_addresses,
-                transactions=transactions,
-                with_limit=with_limit,
-            ),
-            total_filter_count,
+        return dbethtx.get_ethereum_transactions_and_limit_info(
+            filter_=filter_query,
+            has_premium=has_premium,
         )
 
     def get_or_query_transaction_receipt(
@@ -260,7 +225,10 @@ class EthTransactions(LockableQueryMixIn):
         tx_hash_b = hexstring_to_bytes(tx_hash)
         dbethtx = DBEthTx(self.database)
         # If the transaction is not in the DB then query it and add it
-        result, _ = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx_hash_b))  # noqa: E501
+        result = dbethtx.get_ethereum_transactions(
+            filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash_b),
+            has_premium=True,  # we don't need any limiting here
+        )
         if len(result) == 0:
             transaction = self.ethereum.get_transaction_by_hash(tx_hash)
             if transaction is None:
