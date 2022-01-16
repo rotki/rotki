@@ -59,7 +59,7 @@ def Entrypoint(dist, group, name, scripts=None, pathex=None, hiddenimports=None,
         hookspath=hookspath,
         excludes=excludes,
         runtime_hooks=runtime_hooks,
-        datas=datas
+        datas=datas,
     )
 
 
@@ -93,7 +93,7 @@ a = Entrypoint(
         ('rotkehlchen/data/global.db', 'rotkehlchen/data'),
         ('rotkehlchen/data/curve_pools.json', 'rotkehlchen/data'),
     ],
-    excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter', 'packaging'],
+    excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter'],
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
