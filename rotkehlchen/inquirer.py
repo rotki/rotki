@@ -35,6 +35,7 @@ from rotkehlchen.constants.assets import (
     A_FARM_WBTC,
     A_FARM_WETH,
     A_GUSD,
+    A_KFEE,
     A_TUSD,
     A_USD,
     A_USDC,
@@ -465,6 +466,11 @@ class Inquirer():
                 if instance._ethereum is not None:
                     instance._ethereum.msg_aggregator.add_warning(msg)
                 return Price(BTC_PER_BSQ * price_in_btc)
+
+        if asset == A_KFEE:
+            # KFEE is a kraken special asset where 1000 KFEE = 10 USD
+            return Price(FVal(0.01))
+
         return instance._query_oracle_instances(from_asset=asset, to_asset=A_USD)
 
     def find_uniswap_v2_lp_price(

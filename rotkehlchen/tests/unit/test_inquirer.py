@@ -8,7 +8,7 @@ import requests
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_CRV, A_ETH, A_EUR, A_LINK, A_USD
+from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_CRV, A_ETH, A_EUR, A_KFEE, A_LINK, A_USD
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -349,3 +349,10 @@ def test_find_curve_lp_token_price(inquirer, ethereum_manager):
     assert price is not None
     # Check that the protocol is correctly caught by the inquirer
     assert price == inquirer.find_usd_price(EthereumToken(address))
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_kfee_price(inquirer):
+    price = inquirer.find_usd_price(A_KFEE)
+    assert FVal(price) == FVal(0.01)
