@@ -891,7 +891,7 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         balance_index = 2
         assets_balance: DefaultDict[Asset, Balance] = defaultdict(Balance)
         for wallet in response_list:
-            if len(wallet) < API_WALLET_MIN_RESULT_LENGTH or wallet[balance_index] <= 0:
+            if len(wallet) < API_WALLET_MIN_RESULT_LENGTH:
                 log.error(
                     f'Error processing a {self.name} balance result. '
                     f'Found less items than expected',
@@ -902,6 +902,9 @@ class Bitfinex(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     f'Check logs for details. Ignoring it.',
                 )
                 continue
+
+            if wallet[balance_index] <= 0:
+                continue  # bitfinex can show small negative balances for some coins. Ignore
 
             try:
                 asset = asset_from_bitfinex(

@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Kraken's KFEE will use the price of 0.01 USD when it is needed.
+
 * :release:`1.23.1 <2022-01-14>`
 * :bug:`3929` Prevent users from using invalid character for thousands and decimal separator.
 * :bug:`3913` NFT Balances table at dashboard should be updated when users remove an ethereum account.
