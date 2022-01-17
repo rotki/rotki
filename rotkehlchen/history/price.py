@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset, RemoteError
 from rotkehlchen.fval import FVal
@@ -130,6 +130,43 @@ class PriceHistorian():
         instance._oracle_instances = [getattr(instance, f'_{str(oracle)}') for oracle in oracles]
 
     @staticmethod
+    def get_price_for_special_asset(
+        from_asset: Asset,
+        to_asset: Asset,
+        timestamp: Timestamp,
+    ) -> Optional[Price]:
+        """
+        Query the historical price on `timestamp` for `from_asset` in `to_asset`
+        for the case where `from_asset` needs a special handling.
+
+        Can return None if the from asset is not in the list of special cases
+
+        Args:
+            from_asset: The ticker symbol of the asset for which we want to know
+                        the price.
+            to_asset: The ticker symbol of the asset against which we want to
+                      know the price.
+            timestamp: The timestamp at which to query the price
+
+        May raise:
+        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
+        timestamp from the external service.
+        """
+        if from_asset == A_KFEE:
+            # For KFEE the price is fixed at 0.01$
+            usd_price = Price(FVal(0.01))
+            if to_asset == A_USD:
+                return usd_price
+
+            price_mapping = PriceHistorian().query_historical_price(
+                from_asset=A_USD,
+                to_asset=to_asset,
+                timestamp=timestamp,
+            )
+            return Price(usd_price * price_mapping)
+        return None
+
+    @staticmethod
     def query_historical_price(
             from_asset: Asset,
             to_asset: Asset,
@@ -158,6 +195,17 @@ class PriceHistorian():
         )
         if from_asset == to_asset:
             return Price(FVal('1'))
+
+        special_asset_price = None
+        if from_asset == A_KFEE:
+            special_asset_price = PriceHistorian().get_price_for_special_asset(
+                from_asset=A_KFEE,
+                to_asset=to_asset,
+                timestamp=timestamp,
+            )
+
+        if special_asset_price is not None:
+            return special_asset_price
 
         # Querying historical forex data is attempted first via the external apis
         # and then via any price oracle that has fiat to fiat.
