@@ -196,14 +196,11 @@ class PriceHistorian():
         if from_asset == to_asset:
             return Price(FVal('1'))
 
-        special_asset_price = None
-        if from_asset == A_KFEE:
-            special_asset_price = PriceHistorian().get_price_for_special_asset(
-                from_asset=A_KFEE,
-                to_asset=to_asset,
-                timestamp=timestamp,
-            )
-
+        special_asset_price = PriceHistorian().get_price_for_special_asset(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+        )
         if special_asset_price is not None:
             return special_asset_price
 
