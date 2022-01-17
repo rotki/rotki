@@ -143,6 +143,7 @@ export default class AppUpdatePopup extends Vue {
     });
     this.downloading = false;
     if (downloaded) {
+      this.downloadReady = true;
       this.openUpdatePopup();
     } else {
       this.error = this.$t('update_popup.download_failed.message').toString();
