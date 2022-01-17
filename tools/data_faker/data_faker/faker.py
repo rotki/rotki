@@ -23,7 +23,7 @@ class DataFaker():
         args.logfile = 'data_faker.log'
         self.rotki = Rotkehlchen(args)
 
-        random_seed = datetime.datetime.now()
+        random_seed = datetime.datetime.now().timestamp()
         logger.info(f'Random seed used: {random_seed}')
         random.seed(random_seed)
 
