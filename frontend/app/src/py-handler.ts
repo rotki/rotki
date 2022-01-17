@@ -67,19 +67,43 @@ function getBackendArguments(options: Partial<BackendOptions>): string[] {
 const PY_DIST_FOLDER = 'rotkehlchen_py_dist';
 
 export default class PyHandler {
+  readonly defaultLogDirectory: string;
   private rpcFailureNotifier?: any;
   private childProcess?: ChildProcess;
-  private _port?: number;
   private _websocketPort?: number;
-  private _serverUrl: string;
-  private _websocketUrl: string;
   private executable?: string;
   private _corsURL?: string;
   private backendOutput: string = '';
   private onChildError?: (err: Error) => void;
   private onChildExit?: (code: number, signal: any) => void;
   private logDirectory?: string;
-  readonly defaultLogDirectory: string;
+
+  constructor(private app: App) {
+    app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
+    this.defaultLogDirectory = app.getPath('logs');
+    this._serverUrl = '';
+    this._websocketUrl = '';
+    this.logToFile('\nStarting rotki\n');
+  }
+
+  private _port?: number;
+
+  get port(): number {
+    assert(this._port);
+    return this._port;
+  }
+
+  private _serverUrl: string;
+
+  get serverUrl(): string {
+    return this._serverUrl;
+  }
+
+  private _websocketUrl: string;
+
+  get websocketUrl(): string {
+    return this._websocketUrl;
+  }
 
   get logDir(): string {
     return this.logDirectory ?? this.defaultLogDirectory;
@@ -93,24 +117,12 @@ export default class PyHandler {
     return path.join(this.logDir, 'rotkehlchen.log');
   }
 
-  get port(): number {
-    assert(this._port);
-    return this._port;
-  }
-
-  get serverUrl(): string {
-    return this._serverUrl;
-  }
-
-  get websocketUrl(): string {
-    return this._websocketUrl;
-  }
-
-  constructor(private app: App) {
-    app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
-    this.defaultLogDirectory = app.getPath('logs');
-    this._serverUrl = '';
-    this._websocketUrl = '';
+  private static packagedBackendPath() {
+    const resources = process.resourcesPath ? process.resourcesPath : __dirname;
+    if (os.platform() === 'darwin') {
+      return path.join(resources, PY_DIST_FOLDER, 'rotkehlchen');
+    }
+    return path.join(resources, PY_DIST_FOLDER);
   }
 
   logToFile(msg: string | Error) {
@@ -123,11 +135,6 @@ export default class PyHandler {
       fs.mkdirSync(this.logDir);
     }
     fs.appendFileSync(this.electronLogFile, `${message}\n`);
-  }
-
-  private logBackendOutput(msg: string | Error) {
-    this.logToFile(msg);
-    this.backendOutput += msg;
   }
 
   setCorsURL(url: string) {
@@ -201,7 +208,7 @@ export default class PyHandler {
     const args: string[] = getBackendArguments(options);
 
     if (this.guessPackaged()) {
-      this.startProcessPackaged(port, this._websocketPort, args);
+      this.startProcessPackaged(port, this._websocketPort, args, window);
     } else {
       this.startProcess(port, this._websocketPort, args);
     }
@@ -281,6 +288,11 @@ export default class PyHandler {
     }
   }
 
+  private logBackendOutput(msg: string | Error) {
+    this.logToFile(msg);
+    this.backendOutput += msg;
+  }
+
   private terminateBackend = (client: ChildProcess) =>
     new Promise<void>((resolve, reject) => {
       client.on('exit', () => {
@@ -303,14 +315,6 @@ export default class PyHandler {
       `Determining if we are packaged by seeing if ${path} exists`
     );
     return fs.existsSync(path);
-  }
-
-  private static packagedBackendPath() {
-    const resources = process.resourcesPath ? process.resourcesPath : __dirname;
-    if (os.platform() === 'darwin') {
-      return path.join(resources, PY_DIST_FOLDER, 'rotkehlchen');
-    }
-    return path.join(resources, PY_DIST_FOLDER);
   }
 
   private setFailureNotification(
@@ -379,12 +383,22 @@ export default class PyHandler {
   private startProcessPackaged(
     port: number,
     websocketPort: number,
-    args: string[]
+    args: string[],
+    window: BrowserWindow
   ) {
     const distDir = PyHandler.packagedBackendPath();
     const files = fs.readdirSync(distDir);
     if (files.length === 0) {
       this.logAndQuit('ERROR: No files found in the dist directory');
+      return;
+    } else if (files.length > 1) {
+      const names = files.join(', ');
+      const error = `Expected only one backend binary but found multiple ones
+       in directory: ${names}.\nThis might indicate a problematic upgrade.\n\n
+       Please make sure only one binary file exists that matches the app version`;
+      this.logToFile(`ERROR: ${error}`);
+      this.setFailureNotification(window, error, BackendCode.TERMINATED);
+      return;
     }
 
     const exe = files.find(file => file.startsWith('rotkehlchen-'));
