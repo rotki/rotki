@@ -79,7 +79,7 @@ const disableModules = () => {
     .then(body => {
       const result = body.result;
       if (result) {
-        cy.log(`settings updated: ${JSON.stringify(result)}`);
+        cy.log(`settings updated: ${JSON.stringify(result['active_modules'])}`);
       }
     });
 };

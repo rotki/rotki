@@ -347,7 +347,7 @@ const AccountForm = defineComponent({
           await editAccount(blockchainAccount);
         } else {
           const entries = unref(addresses);
-          if (entries.length > 0) {
+          if (entries.length > 1) {
             const payload = entries.map(address => ({
               address: address,
               label: unref(label),

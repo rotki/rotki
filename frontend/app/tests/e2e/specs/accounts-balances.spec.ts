@@ -113,10 +113,10 @@ describe('balances', () => {
             expect($dashboardBalances).to.deep.eq($blockchainBalances);
           });
         });
-      page.visit();
     });
 
     it('edit', () => {
+      page.visit();
       const newLabel = 'New ETH label';
       blockchainBalancesPage.visit();
       blockchainBalancesPage.editBalance(blockchainBalances[0], 0, newLabel);

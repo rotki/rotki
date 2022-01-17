@@ -51,16 +51,21 @@ export class DashboardPage {
   }
 
   getNonFungibleBalances() {
-    return cy
-      .get(
-        '[data-cy="nft-balance-table"] tbody tr:last-child td:nth-child(2) [data-cy="display-amount"]'
-      )
-      .then($amount => {
-        if ($amount.length > 0) {
-          return bigNumberify(this.getSanitizedAmountString($amount.text()));
-        }
-        return Zero;
-      });
+    return cy.get('body').then($body => {
+      const item =
+        '[data-cy="nft-balance-table"] tbody tr:last-child td:nth-child(2) [data-cy="display-amount"]';
+      const ntfTableExists = $body.find(item).length > 0;
+      cy.log('NFT table exists', ntfTableExists);
+      if (ntfTableExists) {
+        return cy.get(item).then($amount => {
+          if ($amount.length > 0) {
+            return bigNumberify(this.getSanitizedAmountString($amount.text()));
+          }
+          return Zero;
+        });
+      }
+      return cy.wrap(Zero);
+    });
   }
 
   getLocationBalances() {
