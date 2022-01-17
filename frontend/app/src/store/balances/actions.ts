@@ -15,7 +15,7 @@ import {
 import { balanceKeys } from '@/services/consts';
 import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
-import { XpubAccountData } from '@/services/types-api';
+import { GeneralAccountData, XpubAccountData } from '@/services/types-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
 import { BalanceMutations } from '@/store/balances/mutation-types';
@@ -519,7 +519,22 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     if (isTaskRunning(taskType).value) {
       return;
     }
-    const existingAddresses = state.ethAccounts.map(address =>
+
+    let existingAccounts: GeneralAccountData[];
+    if (blockchain === Blockchain.ETH) {
+      existingAccounts = state.ethAccounts;
+    } else if (blockchain === Blockchain.AVAX) {
+      existingAccounts = state.avaxAccounts;
+    } else if (blockchain === Blockchain.DOT) {
+      existingAccounts = state.dotAccounts;
+    } else if (blockchain === Blockchain.KSM) {
+      existingAccounts = state.ksmAccounts;
+    } else {
+      throw new Error(
+        `this chain ${blockchain} doesn't support multiple address addition`
+      );
+    }
+    const existingAddresses = existingAccounts.map(address =>
       address.address.toLocaleLowerCase()
     );
     const accounts = payload.filter(

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`3943` Users will now be able to properly add multiple accounts on Avalance even if they exist on Ethereum.
 * :bug:`-` Kraken's KFEE will use the price of 0.01 USD when it is needed.
 
 * :release:`1.23.1 <2022-01-14>`
