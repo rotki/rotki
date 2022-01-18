@@ -526,6 +526,22 @@
     },
     "tooltip": "Help"
   },
+  "kraken_staking_events": {
+    "clear": "CLear",
+    "column": {
+      "amount": "Amount",
+      "asset": "Asset",
+      "time": "Time",
+      "event_type": "Event",
+      "value": "Value"
+    },
+    "filter": {
+      "from": "Start Date",
+      "to": "End Date"
+    },
+    "filter_title": "Filter by date",
+    "titles": "Kraken Staking Events"
+  },
   "liabilities": {
     "no_selection": "Select a loan to view more information"
   },
@@ -1979,6 +1995,15 @@
         }
       }
     },
+    "kraken_staking": {
+      "error": {
+        "message": "There was an error while querying the kraken staking events: {message}",
+        "title": "Querying Kraken staking events"
+      },
+      "task": {
+        "title": "Querying Kraken staking events"
+      }
+    },
     "ledger_actions": {
       "all_exchanges": "all exchanges",
       "task": {
@@ -3311,6 +3336,7 @@
     "balance": "Balance"
   },
   "staking": {
+    "kraken": "Kraken",
     "liquity": "Liquity",
     "eth2": "ETH2",
     "adex": "AdEx"

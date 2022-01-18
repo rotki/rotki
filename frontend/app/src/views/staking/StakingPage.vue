@@ -18,7 +18,15 @@
             <v-row v-if="data.item" :key="slot">
               <v-col class="d-flex align-center justify-space-between col-12">
                 <div>
+                  <v-img
+                    v-if="data.item.img"
+                    width="22px"
+                    contain
+                    max-height="24px"
+                    :src="data.item.icon"
+                  />
                   <asset-icon
+                    v-else
                     size="24px"
                     :identifier="getAssetIdentifierForSymbol(data.item.icon)"
                   />
@@ -57,9 +65,17 @@ import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import AdexPage from '@/views/staking/AdexPage.vue';
 import Eth2Page from '@/views/staking/Eth2Page.vue';
+import KrakenPage from '@/views/staking/KrakenPage.vue';
 import LiquityPage from '@/views/staking/LiquityPage.vue';
 
-const staking = [
+type StakinInfo = {
+  id: string;
+  icon: string;
+  name: string;
+  img?: boolean;
+};
+
+const staking: StakinInfo[] = [
   {
     id: 'eth2',
     icon: 'ETH',
@@ -74,13 +90,20 @@ const staking = [
     id: 'liquity',
     icon: 'LQTY',
     name: i18n.t('staking.liquity').toString()
+  },
+  {
+    id: 'kraken',
+    icon: require('@/assets/images/kraken.png'),
+    name: i18n.t('staking.kraken').toString(),
+    img: true
   }
 ];
 
 const pages = {
   eth2: Eth2Page,
   adex: AdexPage,
-  liquity: LiquityPage
+  liquity: LiquityPage,
+  kraken: KrakenPage
 };
 
 export default defineComponent({
@@ -89,7 +112,7 @@ export default defineComponent({
   props: {
     location: {
       required: false,
-      type: String as PropType<'eth2' | 'adex' | 'liquity' | null>,
+      type: String as PropType<'eth2' | 'adex' | 'liquity' | 'kraken' | null>,
       default: null
     }
   },
