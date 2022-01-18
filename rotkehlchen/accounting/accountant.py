@@ -360,6 +360,7 @@ class Accountant():
 
         prev_time = Timestamp(0)
         count = 0
+        actions_length = len(actions)
         last_event_ts = Timestamp(0)
         ignored_actionids_mapping = self.db.get_ignored_action_ids(action_type=None)
         for action in actions:
@@ -418,11 +419,11 @@ class Accountant():
                 count += 1
                 continue
 
-            last_event_ts = action_get_timestamp(action)
             if not should_continue:
-                count += 1
-                break
+                actions_length = count
+                break  # we reached the period end
 
+            last_event_ts = action_get_timestamp(action)
             if count % 500 == 0:
                 # This loop can take a very long time depending on the amount of actions
                 # to process. We need to yield to other greenlets or else calls to the
@@ -479,7 +480,7 @@ class Accountant():
             report_id=report_id,
             last_processed_timestamp=last_event_ts,
             processed_actions=count,
-            total_actions=len(actions),
+            total_actions=actions_length,
             **profit_loss_overview,
         )
 

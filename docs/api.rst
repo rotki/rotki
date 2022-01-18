@@ -4313,8 +4313,8 @@ Query saved PnL Reports
    :resjson str total_profit_loss: An optional stringified amount of the total PnL gerated by the PnL report. Can be missing if the report did not finish.
    :resjson str total_taxable_profit_loss: An optional stringified amount of the total taxable PnL gerated by the PnL report. Can be missing if the report did not finish.
    :resjson int last_processed_timestamp: The timestamp of the last processed action. This helps us figure out when was the last action the backend processed and if it was before the start of the PnL period to warn the user WHY the PnL is empty.
-   :resjson int processed_actions: The number of actions processed by the PnL report. This is not the same as the events shown within the report as some of them may be before the time period of the report started. This may be smaller than "total_actions" in case of a non-premium user.
-   :resjson int total_actions: The total number of actions to be processed  by the PnL report. This is not the same as the events shown within the report as some of them they may be before the time period of the report started.
+   :resjson int processed_actions: The number of actions processed by the PnL report. This is not the same as the events shown within the report as some of them may be before the time period of the report started. This may be smaller than "total_actions".
+   :resjson int total_actions: The total number of actions to be processed  by the PnL report. This is not the same as the events shown within the report as some of them they may be before or after the time period of the report.
    :resjson str profit_currency: The identifier of the asset used as profit currency in the PnL report.
    :resjson integer taxfree_after_period: An optional integer for the value of taxfree_after_period setting. Can be either null or an integer.
    :resjson bool include_crypto2crypto: The value of the setting used in the PnL report.
