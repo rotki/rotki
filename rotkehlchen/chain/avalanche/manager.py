@@ -62,9 +62,11 @@ class AvalancheManager():
         else:
             balance = ZERO
             for entry in result:
-                if entry.get('contract_address') in (AVAX_ADDRESS, COVALENT_AVAX_ADDRESS):
+                if entry.get('contract_ticker_symbol') == 'AVAX':
                     balance = from_wei(FVal(entry.get('balance', 0)))
                     break
+            if balance == ZERO:
+                balance = from_wei(FVal(self.w3.eth.get_balance(account)))
         return FVal(balance)
 
     def get_multiavax_balance(

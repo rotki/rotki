@@ -7,6 +7,7 @@ Changelog
 * :bug:`-` The application will now notify the user and exit if multiple backend binaries exist due to a failed update.
 * :bug:`-` Kraken's KFEE will use the price of 0.01 USD when it is needed.
 * :bug:`-` If a PnL report is ran for a specific period and there is more events after the period a warning for missing events and prompt to upgrade to premium won't show mistakenly anymore.
+* :bug:`-` Query for AVAX balances will be more reliable now.
 * :feature:`3952` Maker's WBTC-B, WBTC-C and MATIC-A vaults are now supported.
 
 * :release:`1.23.1 <2022-01-14>`
