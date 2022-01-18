@@ -80,7 +80,10 @@ class Opensea(ExternalServiceWithApiKey):
         super().__init__(database=database, service_name=ExternalService.OPENSEA)
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
-        self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        # Their API seems to get limited by cloudflare after 1-2 requests ... unless
+        # the user agent is a browser. We lose nothing by doing this and may revert if they fix
+        # https://twitter.com/LefterisJP/status/1483017589869711364
+        self.session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'})  # noqa: E501
         self.collections: Dict[str, Collection] = {}
 
     @overload
