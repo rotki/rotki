@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 from unittest.mock import _patch, patch
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
@@ -41,6 +41,9 @@ from rotkehlchen.typing import (
 )
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
+
 TEST_END_TS = 1559427707
 
 
@@ -49,6 +52,8 @@ prices = {
     'USD': {
         'EUR': {
             1467279735: FVal('0.9004'),
+            1539713238: FVal('0.8612'),
+            1609537953: FVal('0.82411'),
         },
     },
     'EUR': {
@@ -1159,14 +1164,25 @@ def maybe_mock_historical_price_queries(
         should_mock_price_queries: bool,
         mocked_price_queries,
         default_mock_value: Optional[FVal] = None,
+        dont_mock_price_for: Optional[List['Asset']] = None,
 ) -> None:
     """If needed will make sure the historian's price queries are mocked"""
     if not should_mock_price_queries:
         return
 
+    if dont_mock_price_for is None:
+        dont_mock_price_for = []
+
+    # save the original function in this variable to be used when
+    # the list of assets to not mock is non empty.
+    original_function = historian.query_historical_price
+
     def mock_historical_price_query(from_asset, to_asset, timestamp):
         if from_asset == to_asset:
             return FVal(1)
+
+        if from_asset in dont_mock_price_for:
+            return original_function(from_asset, to_asset, timestamp)
 
         try:
             price = mocked_price_queries[from_asset.identifier][to_asset.identifier][timestamp]
