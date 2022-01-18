@@ -448,7 +448,7 @@ Getting or modifying external services API credentials
           "result": {
               "etherscan": {"api_key": "foooooookey"},
               "cryptocompare": {"api_key": "boooookey"},
-              "alethio": {"api_key": "goooookey"}
+              "opensea": {"api_key": "goooookey"}
           },
           "message": ""
       }
@@ -479,7 +479,7 @@ Getting or modifying external services API credentials
       }
 
    :reqjson list services: The services parameter is a list of services along with their api keys.
-   :reqjsonarr string name: Each entry in the list should have a name for the service. Valid ones are ``"etherscan"``, ``"cryptocompare"`` and ``"alethio"``.
+   :reqjsonarr string name: Each entry in the list should have a name for the service. Valid ones are ``"etherscan"``, ``"cryptocompare"``, ``"beaconchain"``, ``"loopring"``, ``"covalent"`` and ``"opensea"``.
    :reqjsonarr string api_key: Each entry in the list should have an api_key entry
 
    **Example Response**:
@@ -525,7 +525,7 @@ Getting or modifying external services API credentials
           "services": ["etherscan"]
       }
 
-   :reqjson list services: A list of service names to delete. The only possible names at the moment are ``"etherscan"``, ``"cryptocompare"`` and ``"alethio"``.
+   :reqjson list services: A list of service names to delete.
 
    **Example Response**:
 

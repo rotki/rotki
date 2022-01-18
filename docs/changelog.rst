@@ -4,7 +4,7 @@ Changelog
 
 * :bug:`-` Users will now be properly prompted to restart the application after the auto-updater downloads the update.
 * :bug:`3943` Users will now be able to properly add multiple accounts on Avalance even if they exist on Ethereum.
-* :bug:`-` The application will now notify the user and exit if multiple backend binaries exists due to a failed update.
+* :bug:`-` The application will now notify the user and exit if multiple backend binaries exist due to a failed update.
 * :bug:`-` Kraken's KFEE will use the price of 0.01 USD when it is needed.
 * :bug:`-` If a PnL report is ran for a specific period and there is more events after the period a warning for missing events and prompt to upgrade to premium won't show mistakenly anymore.
 * :feature:`3952` Maker's WBTC-B, WBTC-C and MATIC-A vaults are now supported.
