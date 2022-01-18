@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-18.04 ]
-        python-version: [ 3.7 ]
+        python-version: [ 3.8 ]
         node-version: [ 16.x ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -26,7 +26,7 @@ jobs:
       - name: Set up python
         uses: actions/setup-python@v1
         with:
-          python-version: '3.7'
+          python-version: '3.8'
       - name: Setup node
         uses: actions/setup-node@v1
         with:
@@ -81,7 +81,7 @@ jobs:
     strategy:
       matrix:
         os: [ macos-10.15 ]
-        python-version: [ 3.7 ]
+        python-version: [ 3.8 ]
         node-version: [ 16.x ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -148,12 +148,12 @@ jobs:
       CI: true
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SQLCIPHER_VERSION: 'v4.4.3'
-      PYSQLCIPHER3_VERSION: 'c01b3bda144073eb34412ae64702fa2362a778e7'
+      PYSQLCIPHER3_VERSION: '1f1b703b9e35205946c820e735f58799e1b72d2d'
       BUILD_DEPENDENCIES: "build-dependencies"
     strategy:
       matrix:
         os: [ windows-latest ]
-        python-version: [ 3.7 ]
+        python-version: [ 3.8 ]
         node-version: [ 16.x ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -163,7 +163,7 @@ jobs:
       - name: Set up python
         uses: actions/setup-python@v1
         with:
-          python-version: '3.7'
+          python-version: '3.8'
       - name: Setup node
         uses: actions/setup-node@v1
         with:
