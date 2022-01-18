@@ -76,6 +76,7 @@ from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors import (
     AuthenticationError,
     DBUpgradeError,
+    DeserializationError,
     EthSyncError,
     IncorrectApiKeyFormat,
     InputError,
@@ -3910,9 +3911,9 @@ class RestAPI():
             Location.KRAKEN,
         )
         message = ''
-        if exchanges_list is None:
-            events = []
-        else:
+        events: List[StakingEvent] = []
+        total_entries = 0
+        if exchanges_list is not None:
             if only_cache is False:
                 kraken_names = []
                 for kraken_instance in exchanges_list:
@@ -3934,10 +3935,21 @@ class RestAPI():
                     entries_missing_prices=entries,
                 )
             # Query events from database
-            events_raw = self.rotkehlchen.data.db.get_history_events(query_filter)
-            events = [StakingEvent.from_history_base_entry(event) for event in events_raw]
+            events_raw, total_entries = self.rotkehlchen.data.db.get_history_events(query_filter)
+            events = []
+            for event in events_raw:
+                try:
+                    staking_event = StakingEvent.from_history_base_entry(event)
+                except DeserializationError as e:
+                    log.warning(f'Found unknown staking event {event}. {str(e)}')
+                    continue
+                events.append(staking_event)
 
-        return {'result': events, 'message': message, 'status_code': HTTPStatus.OK}
+        result = {
+            'events': events,
+            'entries_found': total_entries,
+        }
+        return {'result': result, 'message': message, 'status_code': HTTPStatus.OK}
 
     @require_loggedin_user()
     def query_kraken_staking_events(

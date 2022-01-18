@@ -5,6 +5,7 @@ import re
 import shutil
 import tempfile
 from collections import defaultdict
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
 
@@ -3511,7 +3512,10 @@ class DBHandler:
         )
         self.update_last_write()
 
-    def get_history_events(self, filter_query: HistoryEventFilterQuery) -> List[HistoryBaseEntry]:
+    def get_history_events(
+        self,
+        filter_query: HistoryEventFilterQuery,
+    ) -> Tuple[List[HistoryBaseEntry], int]:
         """
         Get history events using the provided query filter
         """
@@ -3528,7 +3532,18 @@ class DBHandler:
                 self.msg_aggregator.add_error(
                     f'Failed to read history event from database. {str(e)}',
                 )
-        return result
+
+        if filter_query.pagination is not None:
+            no_pagination_filter = deepcopy(filter_query)
+            no_pagination_filter.pagination = None
+            query, bindings = no_pagination_filter.prepare()
+            query = 'SELECT COUNT(*) FROM pnl_events ' + query
+            results = cursor.execute(query, bindings).fetchone()
+            total_filter_count = results[0]
+        else:
+            total_filter_count = len(result)
+
+        return result, total_filter_count
 
     def rows_missing_prices_in_base_entries(
         self,

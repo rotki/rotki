@@ -1223,7 +1223,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert len(result) == 0
+    assert len(result['events']) == 0
 
     rotki.data.db.purge_exchange_data(Location.KRAKEN)
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
@@ -1243,13 +1243,29 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
     )
 
     result = assert_proper_response_with_result(response)
-    assert len(result) == 3
-    assert result[0]['event_type'] == 'receive'
-    assert result[1]['event_type'] == 'staking receive asset'
-    assert result[2]['event_type'] == 'staking deposit asset'
-    assert result[0]['asset'] == 'ETH2'
-    assert result[1]['asset'] == 'ETH2'
-    assert result[2]['asset'] == 'ETH'
-    assert result[0]['usd_value'] == '0.219353533620'
-    assert result[1]['usd_value'] == '242.570400000000'
-    assert result[2]['usd_value'] == '242.570400000000'
+    events = result['events']
+    assert len(events) == 3
+    assert len(events) == result['entries_found']
+    assert events[0]['event_type'] == 'get reward'
+    assert events[1]['event_type'] == 'receive staked asset'
+    assert events[2]['event_type'] == 'stake asset'
+    assert events[0]['asset'] == 'ETH2'
+    assert events[1]['asset'] == 'ETH2'
+    assert events[2]['asset'] == 'ETH'
+    assert events[0]['usd_value'] == '0.219353533620'
+    assert events[1]['usd_value'] == '242.570400000000'
+    assert events[2]['usd_value'] == '242.570400000000'
+
+    # test that the correct number of entries is returned with pagination
+    response = requests.get(
+        api_url_for(
+            server,
+            'stakingresource',
+        ), {
+            'from_timestamp': 1636738550,
+            'to_timestamp': 1636740199,
+            'limit': 1,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 2
