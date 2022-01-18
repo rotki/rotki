@@ -111,6 +111,10 @@ class Opensea(ExternalServiceWithApiKey):
             timeout: Optional[Tuple[int, int]] = None,
     ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """May raise RemoteError"""
+        api_key = self._get_api_key()
+        if api_key is not None:
+            self.session.headers.update({'X-API-KEY': api_key})
+
         if endpoint == 'collectionstats':
             query_str = f'https://api.opensea.io/api/v1/collection/{options["name"]}/stats'  # type: ignore  # noqa: E501
         else:
