@@ -699,7 +699,10 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             location=Location.KRAKEN,
             location_label=self.name,
         )
-        trades_raw, _ = self.db.get_history_events(filter_query)
+        trades_raw = self.db.get_history_events(
+            filter_query=filter_query,
+            has_premium=True,
+        )
         trades, max_ts = self.process_kraken_trades(trades_raw)
         queried_range = (start_ts, Timestamp(max_ts)) if with_errors else (start_ts, end_ts)
         return trades, queried_range
@@ -738,7 +741,10 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             location=Location.KRAKEN,
             location_label=self.name,
         )
-        events, _ = self.db.get_history_events(filter_query)
+        events = self.db.get_history_events(
+            filter_query=filter_query,
+            has_premium=True,
+        )
         log.debug('Kraken deposit/withdrawals query result', num_results=len(events))
         movements = []
         get_attr = operator.attrgetter('event_identifier')

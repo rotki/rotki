@@ -5,7 +5,6 @@ import re
 import shutil
 import tempfile
 from collections import defaultdict
-from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
 
@@ -52,7 +51,11 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
-from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
+from rotkehlchen.constants.limits import (
+    FREE_ASSET_MOVEMENTS_LIMIT,
+    FREE_HISTORY_EVENTS,
+    FREE_TRADES_LIMIT,
+)
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS, KRAKEN_TS_MULTIPLIER
 from rotkehlchen.db.constants import (
@@ -3515,35 +3518,50 @@ class DBHandler:
     def get_history_events(
         self,
         filter_query: HistoryEventFilterQuery,
-    ) -> Tuple[List[HistoryBaseEntry], int]:
+        has_premium: bool,
+    ) -> List[HistoryBaseEntry]:
         """
         Get history events using the provided query filter
         """
         query, bindings = filter_query.prepare()
-        query = 'SELECT * FROM history_events ' + query
         cursor = self.conn.cursor()
-        cursor.execute(query, bindings)
-        result = []
-        for entry in cursor:
+        if has_premium:
+            query = 'SELECT * from history_events ' + query
+            results = cursor.execute(query, bindings)
+        else:
+            query = 'SELECT * FROM (SELECT * from history_events ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            results = cursor.execute(query, [FREE_HISTORY_EVENTS] + bindings)
+
+        output = []
+        for entry in results:
             try:
-                result.append(HistoryBaseEntry.deserialize_from_db(entry))
+                output.append(HistoryBaseEntry.deserialize_from_db(entry))
             except DeserializationError as e:
                 log.debug(f'Failed to deserialize history event {entry}')
                 self.msg_aggregator.add_error(
                     f'Failed to read history event from database. {str(e)}',
                 )
 
-        if filter_query.pagination is not None:
-            no_pagination_filter = deepcopy(filter_query)
-            no_pagination_filter.pagination = None
-            query, bindings = no_pagination_filter.prepare()
-            query = 'SELECT COUNT(*) FROM pnl_events ' + query
-            results = cursor.execute(query, bindings).fetchone()
-            total_filter_count = results[0]
-        else:
-            total_filter_count = len(result)
+        return output
 
-        return result, total_filter_count
+    def get_history_events_and_limit_info(
+        self,
+        filter_query: HistoryEventFilterQuery,
+        has_premium: bool,
+    ) -> Tuple[List[HistoryBaseEntry], int]:
+        """Gets all history events for the query from the DB
+
+        Also returns how many are the total found for the filter
+        """
+        events = self.get_history_events(
+            filter_query=filter_query,
+            has_premium=has_premium,
+        )
+        cursor = self.conn.cursor()
+        query, bindings = filter_query.prepare(with_pagination=False)
+        query = 'SELECT COUNT(*) from history_events ' + query
+        total_found_result = cursor.execute(query, bindings)
+        return events, total_found_result.fetchone()[0]
 
     def rows_missing_prices_in_base_entries(
         self,

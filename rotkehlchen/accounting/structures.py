@@ -428,8 +428,8 @@ class StakingEvent:
     location: Location
 
     @classmethod
-    def _deserailize_event_type(cls, event_type: Optional[HistoryEventSubType]) -> str:
-        """Deserialize event subtype to a redeable string
+    def _deserialize_event_type(cls, event_type: Optional[HistoryEventSubType]) -> str:
+        """Deserialize event subtype to a readable string
         May raise:
         - DeserializationError
         """
@@ -452,7 +452,7 @@ class StakingEvent:
         """
         # TODO: We forgot to add a subtype for staking rewards. This needs to be changed
         # in a database upgrade
-        event_type = cls._deserailize_event_type(event.event_subtype)
+        event_type = cls._deserialize_event_type(event.event_subtype)
         return StakingEvent(
             event_type=event_type,  # type: ignore
             asset=event.asset_balance.asset,

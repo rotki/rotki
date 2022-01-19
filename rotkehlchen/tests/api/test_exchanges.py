@@ -7,7 +7,11 @@ import pytest
 import requests
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
+from rotkehlchen.constants.limits import (
+    FREE_ASSET_MOVEMENTS_LIMIT,
+    FREE_HISTORY_EVENTS,
+    FREE_TRADES_LIMIT,
+)
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
@@ -1171,7 +1175,8 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
+@pytest.mark.parametrize('start_with_valid_premium', [False, True])
+def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
     """Test that kraken staking events are processed correctly"""
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -1255,6 +1260,10 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
     assert events[0]['usd_value'] == '0.219353533620'
     assert events[1]['usd_value'] == '242.570400000000'
     assert events[2]['usd_value'] == '242.570400000000'
+    if start_with_valid_premium:
+        assert result['entries_limit'] == -1
+    else:
+        assert result['entries_limit'] == FREE_HISTORY_EVENTS
 
     # test that the correct number of entries is returned with pagination
     response = requests.get(
