@@ -7,9 +7,10 @@
       {{ description }}
     </v-card-subtitle>
     <v-card-text class="service-key__content">
-      <v-row align="center" justify="center">
+      <v-row justify="center">
         <v-col>
           <revealable-input
+            outlined
             :value="editMode ? currentValue : ''"
             class="service-key__api-key"
             :hint="currentValue ? '' : hint"
@@ -38,6 +39,11 @@
               {{ tooltip }}
             </span>
           </v-tooltip>
+        </v-col>
+      </v-row>
+      <v-row v-if="$slots.default">
+        <v-col>
+          <slot />
         </v-col>
       </v-row>
     </v-card-text>
@@ -154,6 +160,10 @@ export default class ServiceKey extends Vue {
   }
 
   &__content {
+    &__delete {
+      margin-top: 10px;
+    }
+
     ::v-deep {
       .v-input {
         &--is-disabled {

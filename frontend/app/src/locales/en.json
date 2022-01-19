@@ -994,9 +994,11 @@
     "opensea": {
       "delete_tooltip": "Delete your OpenSea API key",
       "description": "Used to query NFT information and balances from OpenSea.",
+      "here": "here",
       "hint": "Enter your OpenSea API key",
       "label": "API Key",
-      "title": "Opensea"
+      "title": "Opensea",
+      "link": "You can apply for an API key {link}"
     },
     "set": {
       "error": {

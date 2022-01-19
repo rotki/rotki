@@ -113,7 +113,17 @@
         :tooltip="$t('external_services.opensea.delete_tooltip')"
         @save="save('opensea', $event)"
         @delete-key="deleteKey('opensea')"
-      />
+      >
+        <i18n tag="div" path="external_services.opensea.link">
+          <template #link>
+            <external-link
+              url="https://docs.opensea.io/reference/request-an-api-key"
+            >
+              {{ $t('external_services.opensea.here') }}
+            </external-link>
+          </template>
+        </i18n>
+      </service-key>
     </api-key-box>
 
     <confirm-dialog
@@ -130,6 +140,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ApiKeyBox from '@/components/settings/api-keys/ApiKeyBox.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { Message } from '@/store/types';
@@ -141,7 +152,7 @@ import {
 } from '@/types/user';
 
 @Component({
-  components: { ApiKeyBox, ServiceKey, ConfirmDialog },
+  components: { ExternalLink, ApiKeyBox, ServiceKey, ConfirmDialog },
   computed: {
     ...mapGetters('session', ['activeModules'])
   },
