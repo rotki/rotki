@@ -477,8 +477,13 @@ class Liquity(HasDSProxy):
         from_timestamp: Timestamp,
         to_timestamp: Timestamp,
     ) -> Dict[ChecksumEthAddress, List[LiquityEvent]]:
+        addresses_to_query = list(addresses)
+        proxied_addresses = self._get_accounts_having_proxy()
+        proxies_to_address = {v: k for k, v in proxied_addresses.items()}
+        addresses_to_query += proxied_addresses.values()
+
         try:
-            query = self._get_raw_history(addresses, 'trove')
+            query = self._get_raw_history(addresses_to_query, 'trove')
         except RemoteError as e:
             log.error(f'Failed to query trove graph events for liquity. {str(e)}')
             query = {}
@@ -486,6 +491,8 @@ class Liquity(HasDSProxy):
         result: Dict[ChecksumEthAddress, List[LiquityEvent]] = defaultdict(list)
         for trove in query.get('troves', []):
             owner = to_checksum_address(trove['owner']['id'])
+            if owner in proxies_to_address:
+                owner = proxies_to_address[owner]
             for change in trove['changes']:
                 try:
                     timestamp = change['transaction']['timestamp']
@@ -558,7 +565,7 @@ class Liquity(HasDSProxy):
                             ),
                         ),
                         trove_operation=operation,
-                        sequence_number=str(change['transaction']['sequenceNumber']),
+                        sequence_number=str(change['sequenceNumber']),
                     )
                     result[owner].append(event)
                 except (DeserializationError, KeyError) as e:
