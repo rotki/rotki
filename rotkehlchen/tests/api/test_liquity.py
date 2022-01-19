@@ -128,7 +128,7 @@ def test_trove_events(rotkehlchen_api_server):
     assert trove_action['trove_operation'] == 'Open Trove'
     assert trove_action['collateral_after']['amount'] == trove_action['collateral_delta']['amount']
     assert trove_action['collateral_delta']['amount'] == '3.5'
-    assert trove_action['sequence_number'] == '51647'
+    assert trove_action['sequence_number'] == '74148'
 
     # Check for account with dsproxy
     response = requests.get(
@@ -158,7 +158,7 @@ def test_trove_events(rotkehlchen_api_server):
     assert trove_action['trove_operation'] == 'Liquidation In Normal Mode'
     assert trove_action['collateral_after']['amount'] == '0'
     assert trove_action['collateral_delta']['amount'] == '-9.420492116554037728'
-    assert trove_action['sequence_number'] == '73364'
+    assert trove_action['sequence_number'] == '105764'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])

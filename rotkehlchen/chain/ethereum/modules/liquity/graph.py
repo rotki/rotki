@@ -25,6 +25,7 @@ QUERY_TROVE = (
             collateralAfter
             collateralBefore
             collateralChange
+            sequenceNumber
             borrowingFee
             transaction{
                 id

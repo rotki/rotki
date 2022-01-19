@@ -565,7 +565,7 @@ class Liquity(HasDSProxy):
                             ),
                         ),
                         trove_operation=operation,
-                        sequence_number=str(change['transaction']['sequenceNumber']),
+                        sequence_number=str(change['sequenceNumber']),
                     )
                     result[owner].append(event)
                 except (DeserializationError, KeyError) as e:
