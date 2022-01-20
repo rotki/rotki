@@ -53,6 +53,7 @@ from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT, EthTransa
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
+    FREE_HISTORY_EVENTS,
     FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
 )
@@ -76,6 +77,7 @@ from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors import (
     AuthenticationError,
     DBUpgradeError,
+    DeserializationError,
     EthSyncError,
     IncorrectApiKeyFormat,
     InputError,
@@ -3910,34 +3912,59 @@ class RestAPI():
             Location.KRAKEN,
         )
         message = ''
+        has_premium, entries_limit = True, -1
+        if self.rotkehlchen.premium is None:
+            has_premium, entries_limit = False, FREE_HISTORY_EVENTS
+
         if exchanges_list is None:
-            events = []
-        else:
-            if only_cache is False:
-                kraken_names = []
-                for kraken_instance in exchanges_list:
-                    with_errors = kraken_instance.query_kraken_ledgers(   # type: ignore
-                        start_ts=query_filter.from_ts,
-                        end_ts=query_filter.to_ts,
-                    )
-                    if with_errors:
-                        kraken_names.append(kraken_instance.name)
-                if len(kraken_names) != 0:
-                    message = f'Failed to query some events from Kraken exchanges {",".join(kraken_names)}'  # noqa: E501
+            return {
+                'events': [],
+                'entries_found': 0,
+                'entries_limit': entries_limit,
+            }
 
-            # After 3865 we have a recurring task that queries for missing prices but
-            # we make sure that the returned values have their correct value calculated
-            task_manager = self.rotkehlchen.task_manager
-            if task_manager is not None:
-                entries = task_manager.get_base_entries_missing_prices(query_filter)
-                task_manager.query_missing_prices_of_base_entries(
-                    entries_missing_prices=entries,
+        if only_cache is False:
+            kraken_names = []
+            for kraken_instance in exchanges_list:
+                with_errors = kraken_instance.query_kraken_ledgers(   # type: ignore
+                    start_ts=query_filter.from_ts,
+                    end_ts=query_filter.to_ts,
                 )
-            # Query events from database
-            events_raw = self.rotkehlchen.data.db.get_history_events(query_filter)
-            events = [StakingEvent.from_history_base_entry(event) for event in events_raw]
+                if with_errors:
+                    kraken_names.append(kraken_instance.name)
+            if len(kraken_names) != 0:
+                message = f'Failed to query some events from Kraken exchanges {",".join(kraken_names)}'  # noqa: E501
 
-        return {'result': events, 'message': message, 'status_code': HTTPStatus.OK}
+        # After 3865 we have a recurring task that queries for missing prices but
+        # we make sure that the returned values have their correct value calculated
+        task_manager = self.rotkehlchen.task_manager
+        if task_manager is not None:
+            entries = task_manager.get_base_entries_missing_prices(query_filter)
+            task_manager.query_missing_prices_of_base_entries(
+                entries_missing_prices=entries,
+            )
+        # Query events from database
+        events_raw, entries_found = self.rotkehlchen.data.db.get_history_events_and_limit_info(
+            filter_query=query_filter,
+            has_premium=has_premium,
+        )
+        events = []
+        for event in events_raw:
+            try:
+                staking_event = StakingEvent.from_history_base_entry(event)
+            except DeserializationError as e:
+                log.warning(f'Could not deserialize staking event: {event} due to {str(e)}')
+                continue
+            events.append(staking_event)
+
+        # entries_total is a param that is not needed for this endpoint by the frontend
+        # at the moment. We don't add it to the response.
+        result = {
+            'events': events,
+            'entries_found': entries_found,
+            'entries_limit': entries_limit,
+        }
+        return {'result': result, 'message': message, 'status_code': HTTPStatus.OK}
 
     @require_loggedin_user()
     def query_kraken_staking_events(

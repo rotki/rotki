@@ -7,7 +7,11 @@ import pytest
 import requests
 
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
+from rotkehlchen.constants.limits import (
+    FREE_ASSET_MOVEMENTS_LIMIT,
+    FREE_HISTORY_EVENTS,
+    FREE_TRADES_LIMIT,
+)
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
@@ -1171,7 +1175,8 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
+@pytest.mark.parametrize('start_with_valid_premium', [False, True])
+def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
     """Test that kraken staking events are processed correctly"""
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -1223,7 +1228,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert len(result) == 0
+    assert len(result['events']) == 0
 
     rotki.data.db.purge_exchange_data(Location.KRAKEN)
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
@@ -1243,13 +1248,33 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges):
     )
 
     result = assert_proper_response_with_result(response)
-    assert len(result) == 3
-    assert result[0]['event_type'] == 'receive'
-    assert result[1]['event_type'] == 'staking receive asset'
-    assert result[2]['event_type'] == 'staking deposit asset'
-    assert result[0]['asset'] == 'ETH2'
-    assert result[1]['asset'] == 'ETH2'
-    assert result[2]['asset'] == 'ETH'
-    assert result[0]['usd_value'] == '0.219353533620'
-    assert result[1]['usd_value'] == '242.570400000000'
-    assert result[2]['usd_value'] == '242.570400000000'
+    events = result['events']
+    assert len(events) == 3
+    assert len(events) == result['entries_found']
+    assert events[0]['event_type'] == 'get reward'
+    assert events[1]['event_type'] == 'receive staked asset'
+    assert events[2]['event_type'] == 'stake asset'
+    assert events[0]['asset'] == 'ETH2'
+    assert events[1]['asset'] == 'ETH2'
+    assert events[2]['asset'] == 'ETH'
+    assert events[0]['usd_value'] == '0.219353533620'
+    assert events[1]['usd_value'] == '242.570400000000'
+    assert events[2]['usd_value'] == '242.570400000000'
+    if start_with_valid_premium:
+        assert result['entries_limit'] == -1
+    else:
+        assert result['entries_limit'] == FREE_HISTORY_EVENTS
+
+    # test that the correct number of entries is returned with pagination
+    response = requests.get(
+        api_url_for(
+            server,
+            'stakingresource',
+        ), {
+            'from_timestamp': 1636738550,
+            'to_timestamp': 1636740199,
+            'limit': 1,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 2
