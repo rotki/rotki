@@ -158,7 +158,7 @@
                 </template>
                 <template #amount>
                   <strong>
-                    <amount-display :value="amount" :tooltip="false" />
+                    <amount-display :value="numericAmount" :tooltip="false" />
                   </strong>
                 </template>
                 <template #base>
@@ -169,7 +169,7 @@
                 </template>
                 <template #rate>
                   <strong>
-                    <amount-display :value="rate" :tooltip="false" />
+                    <amount-display :value="numericRate" :tooltip="false" />
                   </strong>
                 </template>
               </i18n>
@@ -183,7 +183,7 @@
                 </template>
                 <template #amount>
                   <strong>
-                    <amount-display :value="amount" :tooltip="false" />
+                    <amount-display :value="numericAmount" :tooltip="false" />
                   </strong>
                 </template>
                 <template #base>
@@ -194,7 +194,7 @@
                 </template>
                 <template #rate>
                   <strong>
-                    <amount-display :value="rate" :tooltip="false" />
+                    <amount-display :value="numericRate" :tooltip="false" />
                   </strong>
                 </template>
               </i18n>
@@ -371,6 +371,18 @@ export default class ExternalTradeForm extends Mixins(AssetMixin) {
     return this.isTaskRunning(TaskType.FETCH_HISTORIC_PRICE).value;
   }
 
+  get numericAmount(): BigNumber {
+    return bigNumberify(this.amount);
+  }
+
+  get numericRate(): BigNumber {
+    return bigNumberify(this.rate);
+  }
+
+  get numeridFee(): BigNumber {
+    return bigNumberify(this.fee);
+  }
+
   mounted() {
     this.setEditMode();
   }
@@ -498,9 +510,9 @@ export default class ExternalTradeForm extends Mixins(AssetMixin) {
   }
 
   async save(): Promise<boolean> {
-    const amount = bigNumberify(this.amount);
-    const fee = bigNumberify(this.fee);
-    const rate = bigNumberify(this.rate);
+    const amount = this.numericAmount;
+    const fee = this.numeridFee;
+    const rate = this.numericRate;
 
     const tradePayload: Writeable<NewTrade> = {
       amount: amount.isNaN() ? Zero : amount,

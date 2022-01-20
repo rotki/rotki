@@ -178,7 +178,7 @@ import {
   ERROR,
   INFO,
   Level,
-  levels,
+  levelsOptions,
   WARN
 } from '@/utils/log-level';
 
@@ -198,7 +198,7 @@ export default class BackendSettings extends Mixins(BackendMixin) {
   maxLogSize: string = '';
   maxLogFiles: string = '';
 
-  readonly levels = levels;
+  readonly levels = levelsOptions;
   selecting: boolean = false;
   confirmReset: boolean = false;
 
