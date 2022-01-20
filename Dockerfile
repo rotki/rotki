@@ -29,7 +29,7 @@ RUN git clone https://github.com/sqlcipher/sqlcipher && \
 
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-RUN rustup default nightly-2021-03-24 
+RUN rustup default nightly-2021-03-24
 
 RUN python3 -m pip install --upgrade pip setuptools wheel
 COPY ./requirements.txt /app/requirements.txt
@@ -60,7 +60,7 @@ ENV REVISION=$REVISION
 ENV ROTKI_VERSION=$ROTKI_VERSION
 
 RUN apt-get update && \
-    apt-get install -y procps && \
+    apt-get install -y procps python3 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -71,12 +71,12 @@ RUN APP=$(find "/opt/rotki" -name "rotkehlchen-*-linux"  | head -n 1) && \
     echo ${APP} && \
     ln -s ${APP} /usr/sbin/rotki
 
-VOLUME ["/data", "/logs"]
+VOLUME ["/data", "/logs", "/config"]
 
 EXPOSE 80
 
 COPY ./packaging/docker/nginx.conf /etc/nginx/conf.d/default.conf
-COPY ./packaging/docker/docker-entrypoint.sh ./opt/rotki
-CMD ["sh", "-c", "exec /opt/rotki/docker-entrypoint.sh"]
+COPY ./packaging/docker/entrypoint.py ./opt/rotki
+CMD ["sh", "-c", "/opt/rotki/entrypoint.py"]
 
 HEALTHCHECK CMD curl --fail http://localhost/api/1/ping || exit 1
