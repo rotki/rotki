@@ -20,6 +20,7 @@ import {
   IPC_DOWNLOAD_UPDATE,
   IPC_GET_DEBUG,
   IPC_INSTALL_UPDATE,
+  IPC_LOG_TO_FILE,
   IPC_METAMASK_IMPORT,
   IPC_OPEN_DIRECTORY,
   IPC_OPEN_PATH,
@@ -175,6 +176,10 @@ export function ipcSetup(
       ? { logDirectory: pyHandler.defaultLogDirectory }
       : loadConfig();
     event.sender.send(IPC_CONFIG, options);
+  });
+
+  ipcMain.on(IPC_LOG_TO_FILE, (_, message: string) => {
+    pyHandler.logToFile(message);
   });
 
   setupMetamaskImport();

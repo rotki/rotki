@@ -12,6 +12,7 @@ import {
   IPC_DOWNLOAD_UPDATE,
   IPC_GET_DEBUG,
   IPC_INSTALL_UPDATE,
+  IPC_LOG_TO_FILE,
   IPC_METAMASK_IMPORT,
   IPC_OPEN_DIRECTORY,
   IPC_OPEN_PATH,
@@ -87,5 +88,8 @@ contextBridge.exposeInMainWorld('interop', {
   openPath: (path: string) => ipcRenderer.send(IPC_OPEN_PATH, path),
   config: (defaults: boolean) => ipcAction(IPC_CONFIG, defaults),
   updateTray: (trayUpdate: TrayUpdate) =>
-    ipcRenderer.send(IPC_TRAY_UPDATE, trayUpdate)
+    ipcRenderer.send(IPC_TRAY_UPDATE, trayUpdate),
+  logToFile(message: string) {
+    ipcRenderer.send(IPC_LOG_TO_FILE, message);
+  }
 } as Interop);

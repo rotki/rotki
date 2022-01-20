@@ -165,11 +165,12 @@
 </template>
 
 <script lang="ts">
+import { mapState } from 'pinia';
 import { Component, Emit, Mixins } from 'vue-property-decorator';
-import { mapState } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { BackendOptions } from '@/electron-main/ipc';
 import BackendMixin from '@/mixins/backend-mixin';
+import { useMainStore } from '@/store/store';
 import { Writeable } from '@/types';
 import {
   CRITICAL,
@@ -185,7 +186,7 @@ import {
   name: 'BackendSettings',
   components: { ConfirmDialog },
   computed: {
-    ...mapState(['dataDirectory'])
+    ...mapState(useMainStore, ['dataDirectory'])
   }
 })
 export default class BackendSettings extends Mixins(BackendMixin) {

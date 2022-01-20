@@ -61,4 +61,5 @@ export interface Interop {
   onAbout(callback: () => void): void;
   config(defaults: boolean): Promise<Partial<BackendOptions>>;
   updateTray(trayUpdate: TrayUpdate): Promise<void>;
+  logToFile(message: string): void;
 }

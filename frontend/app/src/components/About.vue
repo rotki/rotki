@@ -105,11 +105,12 @@
 </template>
 
 <script lang="ts">
+import { mapState } from 'pinia';
 import { Component, Vue } from 'vue-property-decorator';
-import { mapState } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import { SystemVersion } from '@/electron-main/ipc';
+import { useMainStore } from '@/store/store';
 import { Version } from '@/store/types';
 import { WebVersion } from '@/types';
 
@@ -117,7 +118,7 @@ import { WebVersion } from '@/types';
   name: 'About',
   components: { AppUpdateIndicator, BaseExternalLink },
   computed: {
-    ...mapState(['version', 'dataDirectory'])
+    ...mapState(useMainStore, ['version', 'dataDirectory'])
   }
 })
 export default class About extends Vue {

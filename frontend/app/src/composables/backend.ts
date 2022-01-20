@@ -6,11 +6,12 @@ import { Writeable } from '@/types';
 import { CRITICAL, DEBUG, ERROR, Level, LOG_LEVEL } from '@/utils/log-level';
 import { logger } from '@/utils/logging';
 
+const isDevelopment = process.env.NODE_ENV === 'development';
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 
 export const loadUserOptions: () => Partial<BackendOptions> = () => {
   const defaultConfig: Partial<BackendOptions> = {
-    loglevel: process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL
+    loglevel: isDevelopment ? DEBUG : CRITICAL
   };
   try {
     const opts = localStorage.getItem(BACKEND_OPTIONS);
@@ -38,7 +39,7 @@ export const setupBackendManagement = (loaded: () => void = () => {}) => {
   const interop = useInterop();
 
   const defaultLogLevel = computed<Level>(() =>
-    process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL
+    isDevelopment ? DEBUG : CRITICAL
   );
   const logLevel = ref<Level>(defaultLogLevel.value);
   const userOptions = ref<Partial<BackendOptions>>({});
