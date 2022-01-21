@@ -395,9 +395,11 @@ And add the following to your shell startup file (e.g. .bashrc, .bash_profile, o
     source /Library/Frameworks/Python.framework/Versions/3.7/bin/virtualenvwrapper.sh
     
 And reload shell startup file::
+
     $ source ~/.bash_profile
 
 And activate Python virtual environment::
+
     $ workon rotki
 
 Before using `pip3`, let´s ensure we have the latest version::
