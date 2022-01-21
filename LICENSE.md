@@ -628,7 +628,7 @@ the exclusion of warranty; and each file should have at least the
 "copyright" line and a pointer to where the full notice is found.
 
         Copyright (C) 2017-2020 Karapetsas Eleftherios
-        Copyright (C) 2020-2021 Rotki Solutions GmbH
+        Copyright (C) 2020-2022 Rotki Solutions GmbH
 
         This program is free software: you can redistribute it and/or modify
         it under the terms of the GNU Affero General Public License as

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.23.2 <2022-01-21>`
 * :bug:`-` Users will now be properly prompted to restart the application after the auto-updater downloads the update.
 * :bug:`3943` Users will now be able to properly add multiple accounts on Avalance even if they exist on Ethereum.
 * :bug:`3964` Liquity Troves managed by a DSProxy will now see their events properly listed.
