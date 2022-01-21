@@ -39,12 +39,12 @@ export class BackupApi {
     );
   }
 
-  async deleteBackup(file: string): Promise<boolean> {
+  async deleteBackup(files: string[]): Promise<boolean> {
     const response = await this.axios.delete<DeleteDatabaseResponse>(
       '/database/backups',
       {
         data: {
-          file
+          files
         },
         validateStatus: validWithSessionStatus
       }

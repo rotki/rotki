@@ -53,7 +53,7 @@ from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT, EthTransa
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
-    FREE_HISTORY_EVENTS,
+    FREE_HISTORY_EVENTS_LIMIT,
     FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
 )
@@ -3828,12 +3828,16 @@ class RestAPI():
         )
 
     @require_loggedin_user()
-    def delete_database_backup(self, filepath: Path) -> Response:
-        if filepath.parent != self.rotkehlchen.data.db.user_data_dir:
-            error_msg = f'DB backup file {filepath} is not in the user directory'
-            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
-
-        filepath.unlink()  # should not raise file not found as marshmallow should check
+    def delete_database_backups(self, files: List[Path]) -> Response:
+        for filepath in files:
+            if filepath.parent != self.rotkehlchen.data.db.user_data_dir:
+                error_msg = f'DB backup file {filepath} is not in the user directory'
+                return api_response(
+                    result=wrap_in_fail_result(error_msg),
+                    status_code=HTTPStatus.CONFLICT,
+                )
+        for filepath in files:
+            filepath.unlink()  # should not raise file not found as marshmallow should check
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
@@ -3914,7 +3918,7 @@ class RestAPI():
         message = ''
         has_premium, entries_limit = True, -1
         if self.rotkehlchen.premium is None:
-            has_premium, entries_limit = False, FREE_HISTORY_EVENTS
+            has_premium, entries_limit = False, FREE_HISTORY_EVENTS_LIMIT
 
         if exchanges_list is None:
             return {

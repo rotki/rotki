@@ -55,6 +55,7 @@ from rotkehlchen.api.v1.encoding import (
     ExchangesResourceRemoveSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
+    FileListSchema,
     GitcoinEventsDeleteSchema,
     GitcoinEventsQuerySchema,
     GitcoinReportSchema,
@@ -438,7 +439,7 @@ class DatabaseInfoResource(BaseResource):
 
 class DatabaseBackupsResource(BaseResource):
 
-    delete_schema = SingleFileSchema()
+    delete_schema = FileListSchema()
     get_schema = SingleFileSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
@@ -449,8 +450,8 @@ class DatabaseBackupsResource(BaseResource):
         return self.rest_api.create_database_backup()
 
     @use_kwargs(delete_schema, location='json')
-    def delete(self, file: Path) -> Response:
-        return self.rest_api.delete_database_backup(filepath=file)
+    def delete(self, files: List[Path]) -> Response:
+        return self.rest_api.delete_database_backups(files=files)
 
 
 class AllAssetsResource(BaseResource):

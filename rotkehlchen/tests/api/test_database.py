@@ -69,14 +69,19 @@ def test_create_download_delete_backup(rotkehlchen_api_server, data_dir, usernam
         tempdbpath.write_bytes(response.content)
         assert filecmp.cmp(filepath, tempdbpath)
 
+    # create an extra database to check that lists work correctly
+    second_filepath = filepath.parent / 'back.db'
+    second_filepath.touch()
+
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'databasebackupsresource'),
-        json={'file': str(filepath)},
+        json={'files': [str(filepath), str(second_filepath)]},
     )
     assert_simple_ok_response(response)
     assert not filepath.exists()
+    assert not second_filepath.exists()
     response = requests.get(api_url_for(rotkehlchen_api_server, 'databaseinforesource'))
     result = assert_proper_response_with_result(response)
     backups = result['userdb']['backups']
@@ -94,7 +99,7 @@ def test_delete_download_backup_errors(rotkehlchen_api_server, data_dir, usernam
         api_url_for(
             rotkehlchen_api_server,
             'databasebackupsresource'),
-        json={'file': str(undeletable_file)},
+        json={'files': [str(undeletable_file)]},
     )
     assert_error_response(
         response=response,
@@ -118,7 +123,7 @@ def test_delete_download_backup_errors(rotkehlchen_api_server, data_dir, usernam
         api_url_for(
             rotkehlchen_api_server,
             'databasebackupsresource'),
-        json={'file': str(Path(user_data_dir, 'idontexist'))},
+        json={'files': [str(Path(user_data_dir, 'idontexist'))]},
     )
     assert_error_response(
         response=response,
@@ -136,3 +141,21 @@ def test_delete_download_backup_errors(rotkehlchen_api_server, data_dir, usernam
         contained_in_msg='does not exist',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+    # test delete two files and only one exists
+    undeletable_file.touch()
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'databasebackupsresource'))
+    filepath = Path(assert_proper_response_with_result(response))
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'databasebackupsresource'),
+        json={'files': [str(undeletable_file), str(filepath)]},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='is not in the user directory',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    assert undeletable_file.exists()
+    assert filepath.exists()
