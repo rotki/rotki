@@ -1,5 +1,4 @@
 import dataclasses
-import json
 import logging
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union, overload
@@ -102,7 +101,7 @@ class Opensea(ExternalServiceWithApiKey):
             return None
 
         try:
-            json_ret = json.loads(response.text)
+            json_ret = response.json()
         except JSONDecodeError as e:
             log.error(f'Could not decode rotki server response for opensea key: {response.text} due to {str(e)}')  # noqa: E501
             return None
@@ -204,7 +203,7 @@ class Opensea(ExternalServiceWithApiKey):
             )
 
         try:
-            json_ret = json.loads(response.text)
+            json_ret = response.json()
         except JSONDecodeError as e:
             raise RemoteError(
                 f'Opensea API request {response.url} returned invalid '
