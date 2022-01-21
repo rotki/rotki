@@ -985,11 +985,20 @@
     "loopring": {
       "settings": "Settings",
       "delete_tooltip": "Delete your Loopring API key",
-      "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key. ",
+      "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
       "hint": "Enter your Loopring API key",
       "label": "API key",
       "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
       "title": "Loopring"
+    },
+    "opensea": {
+      "delete_tooltip": "Delete your OpenSea API key",
+      "description": "Used to query NFT information and balances from OpenSea.",
+      "here": "here",
+      "hint": "Enter your OpenSea API key",
+      "label": "API Key",
+      "title": "Opensea",
+      "link": "You can apply for an API key {link}"
     },
     "set": {
       "error": {
@@ -1790,7 +1799,7 @@
   },
   "upgrade_row": {
     "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
-    "events": "Processed {limit} out of {total} {label} until {time}. To view more please upgrade to {link}",
+    "events": "Processed {limit} out of {total} {label} from {from} until {to}. To view more please upgrade to {link}",
     "rotki_premium": "rotki Premium"
   },
   "external_trade_form": {

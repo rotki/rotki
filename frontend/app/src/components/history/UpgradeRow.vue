@@ -26,8 +26,11 @@
             :href="$interop.premiumURL"
           />
         </template>
-        <template #time>
-          <date-display class="ms-1" :timestamp="time" />
+        <template #from>
+          <date-display class="mx-1" :timestamp="timeStart" />
+        </template>
+        <template #to>
+          <date-display class="ms-1" :timestamp="timeEnd" />
         </template>
       </i18n>
       <i18n
@@ -77,7 +80,9 @@ export default class UpgradeRow extends Vue {
   @Prop({ required: false, type: Boolean, default: false })
   events!: boolean;
   @Prop({ required: false, type: Number, default: 0 })
-  time!: number;
+  timeStart!: number;
+  @Prop({ required: false, type: Number, default: 0 })
+  timeEnd!: number;
 }
 </script>
 

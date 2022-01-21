@@ -29,6 +29,11 @@ def fixture_historical_price_oracles_order():
     return DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
 
 
+@pytest.fixture(name='dont_mock_price_for')
+def fixture_dont_mock_price_for():
+    return []
+
+
 @pytest.fixture
 def price_historian(
         data_dir,
@@ -39,6 +44,7 @@ def price_historian(
         session_coingecko,
         default_mock_price_value,
         historical_price_oracles_order,
+        dont_mock_price_for,
 ):
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
@@ -54,6 +60,7 @@ def price_historian(
         should_mock_price_queries=should_mock_price_queries,
         mocked_price_queries=mocked_price_queries,
         default_mock_value=default_mock_price_value,
+        dont_mock_price_for=dont_mock_price_for,
     )
 
     return historian

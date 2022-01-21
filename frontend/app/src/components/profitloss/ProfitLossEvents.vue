@@ -90,7 +90,8 @@
           events
           :total="report.totalActions"
           :limit="report.processedActions"
-          :time="report.lastProcessedTimestamp"
+          :time-end="report.lastProcessedTimestamp"
+          :time-start="report.firstProcessedTimestamp"
           :colspan="headers.length"
           :label="$t('profit_loss_events.title')"
         />
@@ -125,6 +126,7 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import { useRoute } from '@/composables/common';
+import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { SelectedReport } from '@/types/reports';
 
@@ -265,8 +267,12 @@ export default defineComponent({
       return entriesFound;
     });
 
+    const premium = getPremium();
+
     const showUpgradeMessage = computed(
-      () => report.value.totalActions > report.value.processedActions
+      () =>
+        !premium.value &&
+        report.value.totalActions > report.value.processedActions
     );
 
     const updatePagination = async (options: PaginationOptions | null) => {

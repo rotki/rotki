@@ -24,6 +24,7 @@ liquity_mocked_historical_prices = {
             1627818194: FVal('3000'),
             1627818617: FVal('3000'),
             1627827057: FVal('3500'),
+            1641529258: FVal('3395'),
         },
     },
     A_LQTY: {
@@ -36,6 +37,7 @@ liquity_mocked_historical_prices = {
             1627818194: FVal('1.02'),
             1627818617: FVal('1.019'),
             1627827057: FVal('1.02'),
+            1641529258: FVal('1.0010'),
         },
     },
 }
@@ -88,7 +90,7 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
     assert 'amount' in stake_data and float(stake_data['amount']) > 0
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])
+@pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR, LQTY_PROXY]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
@@ -126,7 +128,37 @@ def test_trove_events(rotkehlchen_api_server):
     assert trove_action['trove_operation'] == 'Open Trove'
     assert trove_action['collateral_after']['amount'] == trove_action['collateral_delta']['amount']
     assert trove_action['collateral_delta']['amount'] == '3.5'
-    assert trove_action['sequence_number'] == '51647'
+    assert trove_action['sequence_number'] == '74148'
+
+    # Check for account with dsproxy
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'liquitytroveshistoryresource',
+        ), json={
+            'async_query': async_query,
+            'from_timestamp': 1641529258,
+            'to_timestamp': 1641529258,
+            'reset_db_data': False,
+        },
+    )
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+    else:
+        result = assert_proper_response_with_result(response)
+    assert len(result[LQTY_PROXY]) == 1
+    trove_action = result[LQTY_PROXY][0]
+    tx_id = '0xef24b51a09151cce6728de1f9c3a0e69ca40db1dcc82f287a1743e41c90ce95b'
+    assert trove_action['tx'] == tx_id
+    assert trove_action['timestamp'] == 1641529258
+    assert trove_action['kind'] == 'trove'
+    assert trove_action['debt_after']['amount'] == '0'
+    assert trove_action['debt_delta']['amount'] == '-27436.074977906493051'
+    assert trove_action['trove_operation'] == 'Liquidation In Normal Mode'
+    assert trove_action['collateral_after']['amount'] == '0'
+    assert trove_action['collateral_delta']['amount'] == '-9.420492116554037728'
+    assert trove_action['sequence_number'] == '105764'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])

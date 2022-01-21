@@ -2,8 +2,16 @@
 Changelog
 =========
 
+* :release:`1.23.2 <2022-01-21>`
+* :bug:`-` Users will now be properly prompted to restart the application after the auto-updater downloads the update.
 * :bug:`3943` Users will now be able to properly add multiple accounts on Avalance even if they exist on Ethereum.
+* :bug:`3964` Liquity Troves managed by a DSProxy will now see their events properly listed.
+* :bug:`-` The application will now notify the user and exit if multiple backend binaries exist due to a failed update.
 * :bug:`-` Kraken's KFEE will use the price of 0.01 USD when it is needed.
+* :bug:`-` If a PnL report is ran for a specific period and there is more events after the period a warning for missing events and prompt to upgrade to premium won't show mistakenly anymore.
+* :bug:`-` Query for AVAX balances will be more reliable now.
+* :feature:`-` Users can now add an OpenSea API key to the external api keys page. Also some changes were made to try and improve opensea retrievals even without the user needing to input a key.
+* :feature:`3952` Maker's WBTC-B, WBTC-C and MATIC-A vaults are now supported.
 
 * :release:`1.23.1 <2022-01-14>`
 * :bug:`3929` Prevent users from using invalid character for thousands and decimal separator.
