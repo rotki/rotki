@@ -53,7 +53,7 @@ from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT, EthTransa
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
-    FREE_HISTORY_EVENTS,
+    FREE_HISTORY_EVENTS_LIMIT,
     FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
 )
@@ -3918,7 +3918,7 @@ class RestAPI():
         message = ''
         has_premium, entries_limit = True, -1
         if self.rotkehlchen.premium is None:
-            has_premium, entries_limit = False, FREE_HISTORY_EVENTS
+            has_premium, entries_limit = False, FREE_HISTORY_EVENTS_LIMIT
 
         if exchanges_list is None:
             return {

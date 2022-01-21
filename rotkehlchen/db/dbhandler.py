@@ -53,7 +53,7 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
-    FREE_HISTORY_EVENTS,
+    FREE_HISTORY_EVENTS_LIMIT,
     FREE_TRADES_LIMIT,
 )
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
@@ -3530,7 +3530,7 @@ class DBHandler:
             results = cursor.execute(query, bindings)
         else:
             query = 'SELECT * FROM (SELECT * from history_events ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
-            results = cursor.execute(query, [FREE_HISTORY_EVENTS] + bindings)
+            results = cursor.execute(query, [FREE_HISTORY_EVENTS_LIMIT] + bindings)
 
         output = []
         for entry in results:

@@ -9,7 +9,7 @@ import requests
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
-    FREE_HISTORY_EVENTS,
+    FREE_HISTORY_EVENTS_LIMIT,
     FREE_TRADES_LIMIT,
 )
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
@@ -1263,7 +1263,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     if start_with_valid_premium:
         assert result['entries_limit'] == -1
     else:
-        assert result['entries_limit'] == FREE_HISTORY_EVENTS
+        assert result['entries_limit'] == FREE_HISTORY_EVENTS_LIMIT
 
     # test that the correct number of entries is returned with pagination
     response = requests.get(
