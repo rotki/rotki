@@ -1147,11 +1147,12 @@ def test_asset_conversion():
         quote_asset=A_BTC,
         trade_type=TradeType.SELL,
         amount=FVal('1000.0'),
-        rate=FVal('0.00001694165'),
-        fee=FVal('90'),
-        fee_currency=A_USDC,
+        rate=FVal('0.0000186171978021978021978021978'),
+        fee=FVal('0.001675547802197802197802197802'),
+        fee_currency=A_BTC,
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
     )
+    assert trade.rate * trade.amount - trade.fee == FVal('0.01694165')
     assert trade == expected_trade
 
 
@@ -1229,11 +1230,12 @@ def test_asset_conversion_not_stable_coin():
         quote_asset=A_BTC,
         trade_type=TradeType.SELL,
         amount=FVal('6000.0'),
-        rate=FVal('0.000002823608333333333333333333333'),
-        fee=FVal('540'),
-        fee_currency=A_1INCH,
+        rate=FVal('0.0000031028663003663003663003663'),
+        fee=FVal('0.001675547802197802197802197802'),
+        fee_currency=A_BTC,
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
     )
+    assert trade.rate * trade.amount - trade.fee == FVal('0.01694165')
     assert trade == expected_trade
 
 
@@ -1314,7 +1316,7 @@ def test_asset_conversion_zero_fee():
         amount=FVal('6000.0'),
         rate=FVal('0.000002823608333333333333333333333'),
         fee=FVal(ZERO),
-        fee_currency=A_1INCH,
+        fee_currency=A_BTC,
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
     )
     assert trade == expected_trade

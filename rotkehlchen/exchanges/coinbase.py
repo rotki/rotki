@@ -124,22 +124,28 @@ def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> O
     native_amount = deserialize_asset_amount(trade_b['amount']['amount'])
     native_asset = asset_from_coinbase(trade_b['amount']['currency'], time=timestamp)
     amount = tx_amount
-    # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
-    rate = Price(native_amount / tx_amount)
 
     # Obtain fee amount in the native currency using data from both trades
     amount_after_fee = deserialize_asset_amount(trade_b['native_amount']['amount'])
     amount_before_fee = deserialize_asset_amount(trade_a['native_amount']['amount'])
     # amount_after_fee + amount_before_fee is a negative amount and the fee needs to be positive
     conversion_native_fee_amount = abs(amount_after_fee + amount_before_fee)
-    if ZERO not in (tx_amount, conversion_native_fee_amount, amount_before_fee):
-        # We have the fee amount in the native currency. To get it in the
-        # converted asset we have to get the rate
-        asset_native_rate = tx_amount / abs(amount_before_fee)
-        fee_amount = Fee(conversion_native_fee_amount * asset_native_rate)
+
+    # Get the fee amount nominated in the received asset
+    if native_amount != ZERO:
+        price_per_asset_received = amount_after_fee / native_amount
+        if price_per_asset_received != ZERO:
+            fee_amount = Fee(conversion_native_fee_amount / price_per_asset_received)
+        else:
+            fee_amount = Fee(ZERO)
     else:
         fee_amount = Fee(ZERO)
-    fee_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
+    # We set the fee asset to the received asset
+    fee_asset = asset_from_coinbase(trade_b['amount']['currency'], time=timestamp)
+
+    # The rate is how much you get/give in quotecurrency if you buy/sell 1 unit of base currency
+    # The rate includes the fee because the fee is deducted from the received amount
+    rate = Price((native_amount + fee_amount) / tx_amount)
 
     return Trade(
         timestamp=timestamp,
