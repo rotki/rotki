@@ -391,7 +391,11 @@ export default class PyHandler {
     if (files.length === 0) {
       this.logAndQuit('ERROR: No files found in the dist directory');
       return;
-    } else if (files.length > 1) {
+    }
+
+    const binaries = files.filter(file => file.startsWith('rotkehlchen-'));
+
+    if (binaries.length > 1) {
       const names = files.join(', ');
       const error = `Expected only one backend binary but found multiple ones
        in directory: ${names}.\nThis might indicate a problematic upgrade.\n\n
