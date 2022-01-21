@@ -9,7 +9,7 @@ Changelog
 * :bug:`-` Kraken's KFEE will use the price of 0.01 USD when it is needed.
 * :bug:`-` If a PnL report is ran for a specific period and there is more events after the period a warning for missing events and prompt to upgrade to premium won't show mistakenly anymore.
 * :bug:`-` Query for AVAX balances will be more reliable now.
-* :feature:`-` Users can now add an OpenSea API key to the external api keys page.
+* :feature:`-` Users can now add an OpenSea API key to the external api keys page. Also some changes were made to try and improve opensea retrievals even without the user needing to input a key.
 * :feature:`3952` Maker's WBTC-B, WBTC-C and MATIC-A vaults are now supported.
 
 * :release:`1.23.1 <2022-01-14>`

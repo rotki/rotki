@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, 
 
 import gevent
 import requests
+from cryptography.fernet import Fernet
 from eth_utils import to_checksum_address
 from typing_extensions import Literal
 
@@ -18,6 +19,7 @@ from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_optional_to_optional_fval
 from rotkehlchen.typing import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
@@ -29,6 +31,7 @@ ASSETS_MAX_LIMIT = 50  # according to opensea docs
 CONTRACTS_MAX_LIMIT = 300  # according to opensea docs
 
 logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 @dataclasses.dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=False)  # noqa: E501
@@ -85,6 +88,44 @@ class Opensea(ExternalServiceWithApiKey):
         # https://twitter.com/LefterisJP/status/1483017589869711364
         self.session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0'})  # noqa: E501
         self.collections: Dict[str, Collection] = {}
+        self.backup_key: Optional[str] = None
+
+    def maybe_get_backup_key(self) -> Optional[str]:
+        """This will attempt to fetch the backup key from our server if not already fetched"""
+        if self.backup_key is not None:
+            return self.backup_key
+
+        try:
+            response = requests.get('https://rotki.com/api/1/credentials', json={'name': 'opensea'})  # noqa: E501
+        except requests.exceptions.RequestException as e:
+            log.error(f'Could not connect to rotki server for fetching backup opensea key due to {str(e)}')  # noqa: E501
+            return None
+
+        try:
+            json_ret = json.loads(response.text)
+        except JSONDecodeError as e:
+            log.error(f'Could not decode rotki server response for opensea key: {response.text} due to {str(e)}')  # noqa: E501
+            return None
+
+        if response.status_code != 200:
+            log.error(
+                f'Call to rotki server for opensea key failed with status {response.status_code} '
+                f'and text: {response.text}',
+            )
+            return None
+
+        encrypted_key = json_ret.get('result')
+        if encrypted_key is None:
+            log.error(
+                f'Could not get result from json response of rotki server for '
+                f'opensea key: {json_ret}',
+            )
+            return None
+
+        f = Fernet('draq3jF_MZR2MAV4tYTtGNjZQGAyEQkE-hr1cYF8kIc='.encode())
+        computed_key = f.decrypt(encrypted_key.encode()).decode()
+        self.backup_key = computed_key
+        return self.backup_key
 
     @overload
     def _query(  # pylint: disable=no-self-use
@@ -123,7 +164,7 @@ class Opensea(ExternalServiceWithApiKey):
         backoff = 1
         backoff_limit = 33
         while backoff < backoff_limit:
-            logger.debug(f'Querying opensea: {query_str}')
+            log.debug(f'Querying opensea: {query_str}')
             try:
                 response = self.session.get(
                     query_str,
@@ -135,9 +176,14 @@ class Opensea(ExternalServiceWithApiKey):
                     f'Opensea API request {query_str} failed due to {str(e)}',
                 ) from e
 
-            if response.status_code == 429:
-                logger.debug(
-                    f'Got 429 from opensea. Will backoff for {backoff} seconds',
+            if response.status_code != 200:
+                if api_key is None and self.backup_key is None:
+                    backup_key = self.maybe_get_backup_key()
+                    if backup_key is not None:
+                        self.session.headers.update({'X-API-KEY': backup_key})
+
+                log.debug(
+                    f'Got {response.status_code} response from opensea. Will backoff for {backoff} seconds',  # noqa: E501
                 )
                 gevent.sleep(backoff)
                 backoff = backoff * 2
@@ -311,7 +357,7 @@ class Opensea(ExternalServiceWithApiKey):
                     f'Skipping detected NFT for {account} due to {str(e)}. '
                     f'Check out logs for more details',
                 )
-                logger.warning(
+                log.warning(
                     f'Skipping detected NFT for {account} due to {str(e)}. '
                     f'Problematic entry: {entry} ',
                 )
