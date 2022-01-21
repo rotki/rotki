@@ -2496,6 +2496,10 @@ class SingleFileSchema(Schema):
     file = FileField(required=True)
 
 
+class FileListSchema(Schema):
+    files = fields.List(FileField(), required=True)
+
+
 class Eth2ValidatorSchema(Schema):
     validator_index = fields.Integer(
         load_default=None,

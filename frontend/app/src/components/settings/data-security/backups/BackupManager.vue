@@ -138,7 +138,7 @@ function setupBackupActions(
   const remove = async (db: UserDbBackup) => {
     const filepath = getFilepath(db, directory);
     try {
-      await api.backups.deleteBackup(filepath);
+      await api.backups.deleteBackup([filepath]);
       if (backupInfo.value) {
         const info: DatabaseInfo = { ...backupInfo.value };
         const index = info.userdb.backups.findIndex(
