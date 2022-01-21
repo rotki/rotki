@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'rotki'
-copyright = '2018-2021, Rotki Solutions GmbH'
+copyright = '2018-2020, Eleftherios Karapetsas. 2020-2022, Rotki Solutions GmbH'
 author = 'The rotki team'
 
 # The short X.Y version
