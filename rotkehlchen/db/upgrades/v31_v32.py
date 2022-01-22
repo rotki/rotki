@@ -3,16 +3,19 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures import HistoryBaseEntry
 
 if TYPE_CHECKING:
-    from rotkehlchen.rotkehlchen import Rotkehlchen
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
-def data_migration_3(rotki: 'Rotkehlchen') -> None:
-    """
+def upgrade_v31_to_v32(db: 'DBHandler') -> None:
+    """Upgrades the DB from v31 to v32
+
     After changing the HistoryBaseEntry the identifiers for the events
     stored in database need to be updated to make them reliable. The reason
     is that the function that generates the identifier has been modified.
+
+    Also adds the subtype REWARD to staking rewards (before they had type staking
+    and no subtype)
     """
-    db = rotki.data.db
     cursor = db.conn.cursor()
     events = cursor.execute('SELECT * FROM history_events ')
     rewrites = []
@@ -24,3 +27,7 @@ def data_migration_3(rotki: 'Rotkehlchen') -> None:
         'UPDATE history_events SET identifier=? WHERE identifier=?',
         rewrites,
     )
+    cursor.execute(
+        'UPDATE history_events SET subtype="reward" WHERE type="staking" AND subtype IS NULL;',
+    )
+    db.conn.commit()
