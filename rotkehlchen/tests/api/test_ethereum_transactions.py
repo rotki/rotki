@@ -4,9 +4,12 @@ from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
 
+import gevent
 import pytest
 import requests
 
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.constants.assets import A_USDT
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.ranges import DBQueryRanges
@@ -695,3 +698,89 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         assert len(result['entries']) == 2
         assert result['entries_found'] == 2
         assert result['entries_total'] == 2
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x6e15887E2CEC81434C16D587709f64603b39b545']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereum_accounts):
+    """Test that querying for an address's transactions after the events have been
+    decoded also includes said events
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    tx_module = EthTransactions(
+        ethereum=rotki.chain_manager.ethereum,
+        database=rotki.data.db,
+    )
+    tx_module.single_address_query_transactions(
+        address=ethereum_accounts[0],
+        start_ts=0,
+        end_ts=1642803566,  # time of test writing
+    )
+    rotki.task_manager._maybe_schedule_ethereum_txreceipts()
+    gevent.joinall(rotki.greenlet_manager.greenlets)
+    rotki.task_manager._maybe_decode_evm_transactions()
+    gevent.joinall(rotki.greenlet_manager.greenlets)
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+    )
+
+    result = assert_proper_response_with_result(response)
+    entries = result['entries']
+    assert len(entries) == 4
+    assert entries[0]['decoded_events'] == [{
+        'asset': 'ETH',
+        'balance': {'amount': '0.096809163374771208', 'usd_value': '0'},
+        'counterparty': '0xA090e606E30bD747d4E6245a1517EbE430F0057e',
+        'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+        'event_subtype': None,
+        'event_type': 'spend',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Transfer 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
+        'sequence_index': 0,
+        'timestamp': 1642802807,
+    }]
+    assert entries[1]['decoded_events'] == [{
+        'asset': A_USDT.identifier,
+        'balance': {'amount': '1166', 'usd_value': '0'},
+        'counterparty': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
+        'event_identifier': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
+        'event_subtype': None,
+        'event_type': 'spend',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Transfer 1166 USDT 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
+        'sequence_index': 307,
+        'timestamp': 1642802735,
+    }]
+    assert entries[2]['decoded_events'] == [{
+        'asset': 'ETH',
+        'balance': {'amount': '0.125', 'usd_value': '0'},
+        'counterparty': '0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
+        'event_identifier': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',
+        'event_subtype': None,
+        'event_type': 'receive',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Transfer 0.125 ETH 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf -> 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+        'sequence_index': 0,
+        'timestamp': 1642802651,
+    }]
+    assert entries[3]['decoded_events'] == [{
+        'asset': A_USDT.identifier,
+        'balance': {'amount': '1166', 'usd_value': '0'},
+        'counterparty': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
+        'event_identifier': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
+        'event_subtype': None,
+        'event_type': 'receive',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Transfer 1166 USDT 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 -> 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+        'sequence_index': 385,
+        'timestamp': 1642802286,
+    }]

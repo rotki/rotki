@@ -366,7 +366,7 @@ class TaskManager():
             'SELECT A.tx_hash from ethtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B '
             'ON A.tx_hash=B.tx_hash WHERE B.tx_hash is NULL LIMIT 200',
         )
-        hashes = cursor.fetchall()
+        hashes = [x[0] for x in cursor]
         if len(hashes) > 0:
             task_name = 'Periodically decode evm trasactions'
             log.debug(f'Scheduling task to {task_name}')

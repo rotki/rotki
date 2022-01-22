@@ -3018,28 +3018,38 @@ class RestAPI():
             status_code = HTTPStatus.BAD_REQUEST
             message = str(e)
 
+        if status_code != HTTPStatus.OK:
+            return {'result': None, 'message': message, 'status_code': status_code}
+
         if transactions is not None:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ETHEREUM_TRANSACTION)  # noqa: E501
             ignored_ids = mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
             entries_result = []
             for entry in transactions:
+                tx_hash_hex = '0x' + entry.tx_hash.hex()
+                events = self.rotkehlchen.data.db.get_history_events(
+                    filter_query=HistoryEventFilterQuery.make(
+                        event_identifier=tx_hash_hex,
+                    ),
+                    has_premium=True,  # for this function we don't limit. We only limit txs.
+                )
                 entries_result.append({
                     'entry': entry.serialize(),
+                    'decoded_events': [x.serialize() for x in events],
                     'ignored_in_accounting': entry.identifier in ignored_ids,
                 })
         else:
             entries_result = []
 
         result: Optional[Dict[str, Any]] = None
-        if status_code == HTTPStatus.OK:
-            result = {
-                'entries': entries_result,
-                'entries_found': total_filter_count,
-                'entries_total': self.rotkehlchen.data.db.get_entries_count(
-                    entries_table='ethereum_transactions',
-                ),
-                'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
-            }
+        result = {
+            'entries': entries_result,
+            'entries_found': total_filter_count,
+            'entries_total': self.rotkehlchen.data.db.get_entries_count(
+                entries_table='ethereum_transactions',
+            ),
+            'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
+        }
 
         return {'result': result, 'message': message, 'status_code': status_code}
 

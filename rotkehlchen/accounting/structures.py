@@ -310,6 +310,7 @@ class HistoryEventSubType(SerializableEnumMixin):
     SPEND = 6
     RECEIVE = 7
     APPROVE = 8
+    DEPLOY = 9
 
     def serialize_event_subtype(self) -> str:
         """Serialize event subtype to a readable string
@@ -445,12 +446,28 @@ class HistoryBaseEntry:
                 notes=entry[9],
                 event_type=HistoryEventType.deserialize(entry[10]),
                 event_subtype=event_subtype,
+                counterparty=entry[12],
             )
         except ValueError as e:
             raise DeserializationError(
                 f'Failed to read FVal value from database history event with '
                 f'event identifier {entry[1]}. {str(e)}',
             ) from e
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            'event_identifier': self.event_identifier,
+            'sequence_index': self.sequence_index,
+            'timestamp': self.timestamp,
+            'location': str(self.location),
+            'asset': self.asset,
+            'balance': self.balance.serialize(),
+            'event_type': str(self.event_type),
+            'event_subtype': str(self.event_subtype) if self.event_subtype else None,
+            'location_label': self.location_label,
+            'notes': self.notes,
+            'counterparty': self.counterparty,
+        }
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
