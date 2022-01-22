@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3987` Users will now be able to delete multiple database backups.
 * :bug:`-` If binance returns a delisted market as active and rotki queries it, the entire binance trade history query will not fail.
 * :bug:`-` All Liquity events will now always be correctly queried.
 

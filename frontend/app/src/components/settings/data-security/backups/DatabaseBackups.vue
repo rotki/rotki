@@ -1,10 +1,15 @@
 <template>
   <fragment>
     <data-table
+      :value="selected"
       :items="items"
       sort-by="time"
+      show-select
+      item-key="time"
+      :single-select="false"
       :headers="headers"
       :loading="loading"
+      @input="onSelectedChange"
     >
       <template #item.time="{ item }">
         <date-display :timestamp="item.time" />
@@ -47,7 +52,7 @@
       </template>
       <template #body.append="{ isMobile }">
         <tr>
-          <td :colspan="isMobile ? 1 : 2" class="font-weight-medium">
+          <td :colspan="isMobile ? 2 : 3" class="font-weight-medium">
             {{ $t('database_backups.row.total') }}
           </td>
           <td class="text-right">
@@ -107,6 +112,7 @@ export default defineComponent({
   components: { Fragment },
   props: {
     items: { required: true, type: Array as PropType<UserDbBackup[]> },
+    selected: { required: true, type: Array as PropType<UserDbBackup[]> },
     loading: { required: false, type: Boolean, default: false },
     directory: { required: true, type: String }
   },
@@ -148,9 +154,14 @@ export default defineComponent({
     const getLink = (db: UserDbBackup) =>
       api.backups.fileUrl(getFilepath(db, directory));
 
+    const onSelectedChange = (selected: UserDbBackup[]) => {
+      emit('change', selected);
+    };
+
     return {
       remove,
       getLink,
+      onSelectedChange,
       messageInfo,
       pendingDeletion,
       size,
