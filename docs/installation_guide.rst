@@ -166,6 +166,54 @@ At this point the rotki docker container should be running and you
 should be able to access rotki frontend, open your browser and go to
 it at ``http://localhost:8084``. You should be able to see the rotki login screen.
 
+
+Configuring backend in docker
+-------------------------------
+It is possible to change the configuration of the backend in the docker container. You can do so
+using two different approaches.
+
+The first approach include mounting a config volume::
+
+   docker run -d --name rotki \
+       -p 8084:80 \
+       -v $HOME/.rotki/data:/data \
+       -v $HOME/.rotki/logs:/logs \
+       -v $HOME/.rotki/config:/config \
+       rotki/rotki:latest
+
+You need to create a ``rotki_config.json`` file and put it inside ``$HOME/.rotki/config`` directory.
+
+.. code-block:: javascript
+
+    {
+       "loglevel": "info",
+       "logfromothermodules": true,
+       "sleep-secs": 22,
+       "max_size_in_mb_all_logs": 550,
+       "max_logfiles_num": 3
+    }
+
+The list above contains all the supported configuration options, but you can also specify only the ones
+you would like to change. This approach allows you to modify the config and restart the container
+to apply them.
+
+The second approach is by using environment variables during the container creation::
+
+   docker run -d --name rotki \
+       -p 8084:80 \
+       -v $HOME/.rotki/data:/data \
+       -v $HOME/.rotki/logs:/logs \
+       -e LOGLEVEL=debug
+       rotki/rotki:latest
+
+The supported environment variables are ``LOGLEVEL``, ``LOGFROMOTHERMODDULES``, ``SLEEP_SECS``,
+``MAX_SIZE_IN_MB_ALL_LOGS`` and ``MAX_LOGFILES_NUM``. Since these variables are passed during
+the container creation to change them requires re-creating the container with the new parameters.
+
+.. warning::
+
+    When using both a config file and environment variables, the config file will take precedence.
+
 Time in Profit / Loss Report is in wrong.
 --------------------------------------------
 To set the timezone in the docker environment you can use the option ``-e TZ=Timezone`` when starting the container::
@@ -504,17 +552,6 @@ In order to build rotki on Windows, you will need to have installed and built py
 
 3. Once you have completed up to and including Step 6 in the sqlcipher build guide (you can ignore Step 7), you will have compiled sqlcipher and built the necessary headers and libraries that pysqlcipher3 depends on. In the directory you should now see ``sqlcipher.dll``, copy and paste this file to your ``<Windows>\System32`` directory. These files will be used later; you can now move on to setting up your rotki dev environment.
 
-Set up rotki dev environment
-----------------------------
-
-Docker
-=========
-
-To build Docker image from source using ``Dockerfile``::
-
-    $ docker build -t rotki .
-
-
 Downloading source and installing python dependencies
 ------------------------------------------------------
 
@@ -653,3 +690,11 @@ Read the issue for a lot of details and also the ``appveyor.yml`` for what needs
        $ cp sqlcipher-amalgamation-3020001/OpenSSL-Win32/* /c/Users/lefteris/AppData/Local/Programs/Python/Python37-32/libs/
 
    Note it has to be the OpenSSL-Win32 part.
+
+
+Docker
+=========
+
+To build Docker image from source using ``Dockerfile``::
+
+    $ docker build -t rotki .
