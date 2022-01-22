@@ -381,8 +381,7 @@ class HistoryBaseEntry:
     # currently we use to identify the exchange name assigned by the user.
     location_label: Optional[str]
     asset: Asset
-    amount: FVal
-    usd_value: FVal  # https://github.com/rotki/rotki/issues/3865
+    balance: Balance
     notes: Optional[str]
     event_type: HistoryEventType
     event_subtype: Optional[HistoryEventSubType]
@@ -398,8 +397,8 @@ class HistoryBaseEntry:
             self.location.serialize_for_db(),
             self.location_label,
             self.asset.identifier,
-            str(self.amount),
-            str(self.usd_value),
+            str(self.balance.amount),
+            str(self.balance.usd_value),
             self.notes,
             self.event_type.serialize(),
             event_subtype,
@@ -419,8 +418,10 @@ class HistoryBaseEntry:
                 location=Location.deserialize_from_db(entry[4]),
                 location_label=entry[5],
                 asset=Asset(entry[6]),
-                amount=FVal(entry[7]),
-                usd_value=FVal(entry[8]),
+                balance=Balance(
+                    amount=FVal(entry[7]),
+                    usd_value=FVal(entry[8]),
+                ),
                 notes=entry[9],
                 event_type=HistoryEventType.deserialize(entry[10]),
                 event_subtype=event_subtype,
@@ -445,7 +446,7 @@ class HistoryBaseEntry:
             str(self.sequence_index) +
             location_label +
             str(self.asset) +
-            str(self.amount) +
+            str(self.balance.amount) +
             str(self.event_type) +
             str(event_subtype)
         )
@@ -466,22 +467,33 @@ class StakingEvent:
     location: Location
 
     @classmethod
+    def _deserialize_event_type(cls, event_type: Optional[HistoryEventSubType]) -> str:
+        """Deserialize event subtype to a readable string
+        May raise:
+        - DeserializationError
+        """
+        if event_type == HistoryEventSubType.REWARD:
+            return 'get reward'
+        if event_type == HistoryEventSubType.STAKING_DEPOSIT_ASSET:
+            return 'stake asset'
+        if event_type == HistoryEventSubType.STAKING_RECEIVE_ASSET:
+            return 'receive staked asset'
+        if event_type == HistoryEventSubType.STAKING_REMOVE_ASSET:
+            return 'unstake asset'
+        raise DeserializationError(f'Found staking event with invalid subtype {event_type}')
+
+    @classmethod
     def from_history_base_entry(cls, event: HistoryBaseEntry) -> 'StakingEvent':
         """
         Read staking event from a history base entry.
         May raise:
         - DeserializationError
         """
-        # TODO: We forgot to add a subtype for staking rewards. This needs to be changed
-        # in a database upgrade
-        if event.event_subtype is None:
-            event_type = 'get reward'
-        else:
-            event_type = event.event_subtype.serialize_event_subtype()
+        event_type = cls._deserialize_event_type(event.event_subtype)
         return StakingEvent(
             event_type=event_type,  # type: ignore
-            asset=event.asset_balance.asset,
-            balance=event.asset_balance.balance,
+            asset=event.asset,
+            balance=event.balance,
             timestamp=Timestamp(int(event.timestamp / KRAKEN_TS_MULTIPLIER)),
             location=event.location,
         )
