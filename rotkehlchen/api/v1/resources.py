@@ -18,6 +18,7 @@ from rotkehlchen.api.v1.encoding import (
     AccountingReportDataSchema,
     AccountingReportsSchema,
     AllBalancesQuerySchema,
+    AppInfoSchema,
     AssetIconUploadSchema,
     AssetMovementsQuerySchema,
     AssetResetRequestSchema,
@@ -1198,8 +1199,11 @@ class QueriedAddressesResource(BaseResource):
 
 class InfoResource(BaseResource):
 
-    def get(self) -> Response:
-        return self.rest_api.get_info()
+    get_schema = AppInfoSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, check_for_updates: bool) -> Response:
+        return self.rest_api.get_info(check_for_updates)
 
 
 class PingResource(BaseResource):

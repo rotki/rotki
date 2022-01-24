@@ -42,6 +42,27 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
     assert result == {
         'version': {
             'our_version': expected_version,
+            'latest_version': None,
+            'download_url': None,
+        },
+        'data_directory': str(rotki.data_dir),
+    }
+
+    with version_patch, release_patch:
+        response = requests.get(
+            url=api_url_for(
+                rotkehlchen_api_server,
+                'inforesource',
+            ),
+            params={
+                'check_for_updates': True,
+            },
+        )
+
+    result = assert_proper_response_with_result(response)
+    assert result == {
+        'version': {
+            'our_version': expected_version,
             'latest_version': expected_version,
             'download_url': None,
         },
@@ -63,22 +84,29 @@ def test_query_ping(rotkehlchen_api_server):
 
 
 def test_query_version_when_update_required(rotkehlchen_api_server):
-    """Test that endpoint to query version works when a new version is available"""
+    """
+    Test that endpoint to query app version and available updates works
+    when a new version is available.
+    """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     def patched_get_latest_release(_klass):
         new_latest = 'v99.99.99'
         return new_latest, f'https://github.com/rotki/rotki/releases/tag/{new_latest}'
+
     release_patch = patch(
         'rotkehlchen.externalapis.github.Github.get_latest_release',
         patched_get_latest_release,
     )
     with release_patch:
         response = requests.get(
-            api_url_for(
+            url=api_url_for(
                 rotkehlchen_api_server,
                 'inforesource',
             ),
+            params={
+                'check_for_updates': True,
+            },
         )
 
     result = assert_proper_response_with_result(response)
