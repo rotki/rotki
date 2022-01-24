@@ -3610,3 +3610,23 @@ class DBHandler:
                     f'with asset identifier {asset_name}. {str(e)}',
                 )
         return result
+
+    def get_entries_assets_history_events(
+        self,
+        query_filter: HistoryEventFilterQuery,
+    ) -> List[Asset]:
+        """Returns asset from base entry events using the desired filter"""
+        cursor = self.conn.cursor()
+        query, bindings = query_filter.prepare(with_pagination=False)
+        query = 'SELECT DISTINCT asset from history_events ' + query
+        result = cursor.execute(query, bindings)
+        assets = []
+        for asset_id in result:
+            try:
+                assets.append(Asset(asset_id[0]))
+            except (UnknownAsset, DeserializationError) as e:
+                self.msg_aggregator.add_error(
+                    f'Found asset {asset_id} in the base history events table and '
+                    f'is not in the assets database. {str(e)}',
+                )
+        return assets

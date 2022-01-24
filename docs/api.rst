@@ -10195,7 +10195,10 @@ Staking events
                     "usd_value": "278.7345000000000"
                 }
               ],
-              "entries_found": 3
+              "entries_found": 3,
+              "entries_total": 3,
+              "entries_limit": -1,
+              "assets": ["ETH2", "ETH"]
           },
           "message": ""
       }
@@ -10205,7 +10208,12 @@ Staking events
    :resjsonarr string amount: The amount related to the event
    :resjsonarr string asset: Asset involved in the event
    :resjsonarr string event_type: Type of event. Can be `get reward`, `receive staked asset`, `stake asset` or  `unstake asset`.
-   :resjsonarr string message: It won't be empty if the query to external services fails for some reason. 
+   :resjsonarr string message: It won't be empty if the query to external services fails for some reason.
+   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+   :resjson int entries_limit: The limit of entries if free version. -1 for premium.
+   :resjson int entries_total: The number of total entries ignoring all filters.
+   :resjson list[string] assets: Assets involved in events ignoring all filters.
+
    :statuscode 200: Events are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.
