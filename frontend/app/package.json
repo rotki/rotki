@@ -27,6 +27,7 @@
   "dependencies": {
     "@rotki/common": "1.0.0",
     "@vue/composition-api": "1.4.4",
+    "@vueuse/core": "7.5.5",
     "axios": "0.25.0",
     "chart.js": "2.9.4",
     "cleave.js": "1.6.0",

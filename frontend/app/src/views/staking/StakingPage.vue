@@ -55,9 +55,11 @@
 import {
   computed,
   defineComponent,
+  onBeforeMount,
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { useLocalStorage } from '@vueuse/core';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupThemeCheck, useRouter } from '@/composables/common';
@@ -121,6 +123,8 @@ export default defineComponent({
     const { dark } = setupThemeCheck();
     const { getAssetIdentifierForSymbol } = setupAssetInfoRetrieval();
 
+    const lastLocation = useLocalStorage('rotki.staking.last_location', '');
+
     const page = computed(() => {
       const selectedLocation = location.value;
       return selectedLocation ? pages[selectedLocation] : null;
@@ -129,8 +133,17 @@ export default defineComponent({
     const router = useRouter();
 
     const updateLocation = (location: string) => {
+      if (location) {
+        lastLocation.value = location;
+      }
       router.push(Routes.STAKING.replace(':location*', location));
     };
+
+    onBeforeMount(() => {
+      if (lastLocation.value) {
+        updateLocation(lastLocation.value);
+      }
+    });
 
     return {
       dark,
