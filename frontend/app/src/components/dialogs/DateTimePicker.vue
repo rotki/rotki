@@ -355,7 +355,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
 
-  & > * {
+  > * {
     display: flex;
     flex-direction: row;
     justify-content: space-between;

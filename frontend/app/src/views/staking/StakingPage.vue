@@ -15,23 +15,23 @@
             :slot="slot"
             slot-scope="data"
           >
-            <v-row v-if="data.item" :key="slot">
-              <v-col class="d-flex align-center justify-space-between col-12">
-                <div>
-                  <v-img
-                    v-if="data.item.img"
-                    width="22px"
-                    contain
-                    max-height="24px"
-                    :src="data.item.icon"
-                  />
-                  <asset-icon
-                    v-else
-                    size="24px"
-                    :identifier="getAssetIdentifierForSymbol(data.item.icon)"
-                  />
-                </div>
-                <div v-if="slot === 'item'">{{ data.item.name }}</div>
+            <v-row v-if="data.item" :key="slot" align="center">
+              <v-col cols="auto">
+                <v-img
+                  v-if="data.item.img"
+                  width="22px"
+                  contain
+                  max-height="24px"
+                  :src="data.item.icon"
+                />
+                <asset-icon
+                  v-else
+                  size="24px"
+                  :identifier="getAssetIdentifierForSymbol(data.item.icon)"
+                />
+              </v-col>
+              <v-col>
+                {{ data.item.name }}
               </v-col>
             </v-row>
           </template>

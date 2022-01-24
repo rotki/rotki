@@ -1,6 +1,11 @@
 <template>
   <card outlined-body>
     <template #title>
+      <refresh-button
+        :loading="loading"
+        :tooltip="$t('kraken_staking_events.refresh_tooltip')"
+        @refresh="refresh"
+      />
       {{ $t('kraken_staking_events.titles') }}
       <v-icon v-if="loading" color="primary" class="ml-2">
         mdi-spin mdi-loading
@@ -46,7 +51,21 @@
         </v-col>
       </v-row>
     </template>
-    <data-table :items="events" :headers="headers" sort-by="timestamp">
+    <data-table
+      :items="events.events"
+      :headers="tableHeaders"
+      :options.sync="options"
+      :server-items-length="events.entriesFound"
+      sort-by="timestamp"
+    >
+      <template v-if="showUpgradeRow" #body.prepend="{ headers }">
+        <upgrade-row
+          :limit="events.entriesLimit"
+          :total="events.entriesTotal"
+          :colspan="headers.length"
+          :label="$t('kraken_staking_events.upgrade.label')"
+        />
+      </template>
       <template #item.eventType="{ item }">
         {{ item.eventType }}
       </template>
@@ -72,10 +91,13 @@ import {
   defineComponent,
   PropType,
   ref,
+  toRefs,
   unref,
   watch
 } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { setupThemeCheck } from '@/composables/common';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
@@ -113,10 +135,11 @@ const getHeaders = (): DataTableHeader[] => [
 
 export default defineComponent({
   name: 'KrakenStakingEvents',
+  components: { RefreshButton, UpgradeRow },
   props: {
     events: {
       required: true,
-      type: Array as PropType<KrakenStakingEvents>
+      type: Object as PropType<KrakenStakingEvents>
     },
     loading: {
       required: false,
@@ -124,8 +147,9 @@ export default defineComponent({
       default: false
     }
   },
-  emit: ['update:pagination'],
-  setup(_, { emit }) {
+  emit: ['update:pagination', 'refresh'],
+  setup(props, { emit }) {
+    const { events } = toRefs(props);
     const start = ref('');
     const end = ref('');
     const startField = ref();
@@ -157,6 +181,11 @@ export default defineComponent({
       return convertToTimestamp(to, dateInputFormat.value);
     });
 
+    const showUpgradeRow = computed(() => {
+      const { entriesLimit, entriesTotal } = events.value;
+      return entriesLimit <= entriesTotal && entriesLimit > 0;
+    });
+
     const updatePagination = (
       { itemsPerPage, page, sortBy, sortDesc }: KrakenStakingPaginationOptions,
       fromTimestamp?: number,
@@ -180,12 +209,14 @@ export default defineComponent({
       unref(endField)?.reset();
     };
 
+    const refresh = () => emit('refresh');
+
     watch(options, options =>
-      updatePagination(options, unref(fromTimestamp), unref(toTimestamp.value))
+      updatePagination(options, unref(fromTimestamp), unref(toTimestamp))
     );
-    watch([fromTimestamp, toTimestamp], ([from, to]) =>
-      updatePagination(unref(options), from, to)
-    );
+    watch([fromTimestamp, toTimestamp], () => {
+      options.value = { ...options.value, page: 1 };
+    });
 
     return {
       start,
@@ -194,7 +225,9 @@ export default defineComponent({
       endField,
       options,
       isMobile,
-      headers: getHeaders(),
+      showUpgradeRow,
+      tableHeaders: getHeaders(),
+      refresh,
       clear
     };
   }

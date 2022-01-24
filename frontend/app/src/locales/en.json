@@ -540,7 +540,11 @@
       "to": "End Date"
     },
     "filter_title": "Filter by date",
-    "titles": "Kraken Staking Events"
+    "refresh_tooltip": "Refresh your Kraken staking events",
+    "titles": "Kraken Staking Events",
+    "upgrade": {
+      "label": "Staking events"
+    }
   },
   "liabilities": {
     "no_selection": "Select a loan to view more information"

@@ -2,6 +2,7 @@
   <kraken-staking-events
     :events="events"
     :loading="loading"
+    @refresh.capture="refresh"
     @update:pagination="updatePagination"
   />
 </template>

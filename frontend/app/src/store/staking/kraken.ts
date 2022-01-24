@@ -19,9 +19,16 @@ const defaultPagination = (): KrakenStakingPagination => ({
   ascending: false
 });
 
+const defaultEventState = (): KrakenStakingEvents => ({
+  events: [],
+  entriesTotal: 0,
+  entriesFound: 0,
+  entriesLimit: 0
+});
+
 export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   const pagination = ref(defaultPagination());
-  const events = ref<KrakenStakingEvents>([]);
+  const events = ref<KrakenStakingEvents>(defaultEventState());
 
   const { isTaskRunning, awaitTask } = useTasks();
   const { notify } = useNotifications();

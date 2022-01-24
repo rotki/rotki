@@ -60,30 +60,24 @@
   </tr>
 </template>
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 
-@Component({
+export default defineComponent({
+  name: 'UpgradeRow',
   components: {
     BaseExternalLink
+  },
+  props: {
+    colspan: { required: true, type: Number },
+    label: { required: true, type: String },
+    total: { required: true, type: Number },
+    limit: { required: true, type: Number },
+    events: { required: false, type: Boolean, default: false },
+    timeStart: { required: false, type: Number, default: 0 },
+    timeEnd: { required: false, type: Number, default: 0 }
   }
-})
-export default class UpgradeRow extends Vue {
-  @Prop({ required: true, type: Number })
-  colspan!: number;
-  @Prop({ required: true, type: String })
-  label!: string;
-  @Prop({ required: true, type: Number })
-  total!: number;
-  @Prop({ required: true, type: Number })
-  limit!: number;
-  @Prop({ required: false, type: Boolean, default: false })
-  events!: boolean;
-  @Prop({ required: false, type: Number, default: 0 })
-  timeStart!: number;
-  @Prop({ required: false, type: Number, default: 0 })
-  timeEnd!: number;
-}
+});
 </script>
 
 <style>
