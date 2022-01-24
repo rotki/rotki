@@ -31,7 +31,13 @@ from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import ActionType, Balance, BalanceType, StakingEvent
+from rotkehlchen.accounting.structures import (
+    ActionType,
+    Balance,
+    BalanceType,
+    HistoryEventType,
+    StakingEvent,
+)
 from rotkehlchen.api.v1.encoding import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
@@ -3961,12 +3967,19 @@ class RestAPI():
                 continue
             events.append(staking_event)
 
-        # entries_total is a param that is not needed for this endpoint by the frontend
-        # at the moment. We don't add it to the response.
         result = {
             'events': events,
             'entries_found': entries_found,
             'entries_limit': entries_limit,
+            'entries_total': self.rotkehlchen.data.db.get_entries_count_history_events(
+                query_filter=HistoryEventFilterQuery.make(
+                    location=Location.KRAKEN,
+                    event_type=[
+                        HistoryEventType.STAKING,
+                        HistoryEventType.UNSTAKING,
+                    ],
+                ),
+            ),
         }
         return {'result': result, 'message': message, 'status_code': HTTPStatus.OK}
 

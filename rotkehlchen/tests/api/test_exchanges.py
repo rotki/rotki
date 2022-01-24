@@ -1180,6 +1180,8 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     """Test that kraken staking events are processed correctly"""
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    # The input has extra information to test that the filters work correctly.
+    # The events related to staking are AAA, BBB and CCC
     input_ledger = """
     {
     "ledger":{
@@ -1215,9 +1217,31 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             "amount": "-0.0600000000",
             "fee": "0.0000000000",
             "balance": "0.0250477300"
+        },
+        "L12382343902": {
+            "refid": "0",
+            "time": 1458994441.396,
+            "type": "deposit",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "EUR.HOLD",
+            "amount": "4000000.0000",
+            "fee": "1.7500",
+            "balance": "3999998.25"
+        },
+        "DDD": {
+            "refid": "DDDDD",
+            "time": 1628994441.4008,
+            "type": "staking",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "ETH2",
+            "amount": "12",
+            "fee": "0",
+            "balance": "0.1000538620"
         }
     },
-    "count": 3
+    "count": 5
     }
     """
     # Test that before populating we don't have any event
@@ -1236,7 +1260,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     kraken.random_ledgers_data = False
     with patch(target, new=input_ledger):
         kraken.query_kraken_ledgers(
-            start_ts=1408994442,
+            start_ts=1458984441,
             end_ts=1736738550,
         )
 
@@ -1244,7 +1268,10 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         api_url_for(
             server,
             'stakingresource',
-        ),
+        ), {
+            "from_timestamp": 1636538550,
+            "to_timestamp": 1640493375,
+        },
     )
 
     result = assert_proper_response_with_result(response)
@@ -1264,7 +1291,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         assert result['entries_limit'] == -1
     else:
         assert result['entries_limit'] == FREE_HISTORY_EVENTS_LIMIT
-
+    assert result['entries_total'] == 4
     # test that the correct number of entries is returned with pagination
     response = requests.get(
         api_url_for(
