@@ -3,6 +3,13 @@ const { totalmem } = require('os');
 const { DefinePlugin } = require('webpack');
 const { ContextReplacementPlugin } = require('webpack');
 
+const envPath = process.env.VUE_APP_PUBLIC_PATH;
+const publicPath = envPath ? envPath : '/';
+
+if (envPath) {
+  console.log(`A custom publicPath has been specified, using ${envPath}`);
+}
+
 module.exports = {
   devServer: {
     progress: false
@@ -123,10 +130,11 @@ module.exports = {
     }
   },
   pwa: {
+    name: 'rotki',
     workboxPluginMode: 'InjectManifest',
     workboxOptions: {
       swSrc: './src/sw.js',
-      swDest: 'service-worker.js'
+      swDest: './service-worker.js'
     },
     msTileColor: '#00aba9',
     iconPaths: {
@@ -135,6 +143,10 @@ module.exports = {
       appleTouchIcon: 'apple-touch-icon-152x152.png',
       maskIcon: 'safari-pinned-tab.svg',
       msTileImage: 'mstile-150x150.png'
+    },
+    manifestOptions: {
+      start_url: publicPath === '/' ? '.' : publicPath
     }
-  }
+  },
+  publicPath
 };

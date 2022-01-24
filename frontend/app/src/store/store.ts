@@ -81,14 +81,14 @@ export const useMainStore = defineStore('main', () => {
     }
 
     function updateApi(payload?: Nullable<string>) {
-      const interopServerUrl = window.interop?.serverUrl();
-      let backend = process.env.VUE_APP_BACKEND_URL!;
+      const interopBackendUrl = window.interop?.serverUrl();
+      let backendUrl = api.defaultServerUrl;
       if (payload) {
-        backend = payload;
-      } else if (interopServerUrl) {
-        backend = interopServerUrl;
+        backendUrl = payload;
+      } else if (interopBackendUrl) {
+        backendUrl = interopBackendUrl;
       }
-      api.setup(backend);
+      api.setup(backendUrl);
     }
 
     const attemptConnect = async function () {

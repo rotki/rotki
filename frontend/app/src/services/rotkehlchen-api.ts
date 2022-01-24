@@ -96,13 +96,27 @@ export class RotkehlchenApi {
   private _serverUrl: string;
   private signal = axios.CancelToken.source();
   private readonly baseTransformer = setupTransformer([]);
+  private readonly pathname: string;
+
+  get defaultServerUrl(): string {
+    if (process.env.VUE_APP_BACKEND_URL) {
+      return process.env.VUE_APP_BACKEND_URL;
+    }
+
+    if (process.env.VUE_APP_PUBLIC_PATH) {
+      const pathname = this.pathname;
+      return pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+    }
+
+    return '';
+  }
 
   get serverUrl(): string {
     return this._serverUrl;
   }
 
   get defaultBackend(): boolean {
-    return this._serverUrl === process.env.VUE_APP_BACKEND_URL;
+    return this._serverUrl === this.defaultServerUrl;
   }
 
   private cancel() {
@@ -121,7 +135,8 @@ export class RotkehlchenApi {
   });
 
   constructor() {
-    this._serverUrl = process.env.VUE_APP_BACKEND_URL!;
+    this.pathname = window.location.pathname;
+    this._serverUrl = this.defaultServerUrl;
     this.axios = axios.create({
       baseURL: `${this.serverUrl}/api/1/`,
       timeout: 30000
