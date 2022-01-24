@@ -3921,6 +3921,13 @@ class RestAPI():
         exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(
             Location.KRAKEN,
         )
+        table_filter = HistoryEventFilterQuery.make(
+            location=Location.KRAKEN,
+            event_type=[
+                HistoryEventType.STAKING,
+                HistoryEventType.UNSTAKING,
+            ],
+        )
         message = ''
         has_premium, entries_limit = True, -1
         if self.rotkehlchen.premium is None:
@@ -3972,13 +3979,10 @@ class RestAPI():
             'entries_found': entries_found,
             'entries_limit': entries_limit,
             'entries_total': self.rotkehlchen.data.db.get_entries_count_history_events(
-                query_filter=HistoryEventFilterQuery.make(
-                    location=Location.KRAKEN,
-                    event_type=[
-                        HistoryEventType.STAKING,
-                        HistoryEventType.UNSTAKING,
-                    ],
-                ),
+                query_filter=table_filter,
+            ),
+            'assets': self.rotkehlchen.data.db.get_entries_assets_history_events(
+                query_filter=table_filter,
             ),
         }
         return {'result': result, 'message': message, 'status_code': HTTPStatus.OK}

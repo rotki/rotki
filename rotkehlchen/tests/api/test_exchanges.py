@@ -1305,3 +1305,4 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     )
     result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 2
+    assert set(result['assets']) == {'ETH', 'ETH2'}
