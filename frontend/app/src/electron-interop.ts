@@ -21,6 +21,10 @@ export class ElectronInterop {
     return this.isPackaged && !url;
   }
 
+  logToFile(message: string) {
+    return window.interop?.logToFile(message);
+  }
+
   navigate(url: string) {
     window.interop?.openUrl(url);
   }
