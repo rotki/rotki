@@ -2388,6 +2388,14 @@ class DBHandler:
         query = cursor.execute(cursorstr)
         return query.fetchone()[0]
 
+    def get_entries_count_history_events(self, query_filter: HistoryEventFilterQuery) -> int:
+        """Returns how many of certain base entry events are in the database"""
+        cursor = self.conn.cursor()
+        query, bindings = query_filter.prepare(with_pagination=False)
+        query = 'SELECT COUNT(*) from history_events ' + query
+        result = cursor.execute(query, bindings)
+        return result.fetchone()[0]
+
     def delete_data_for_ethereum_address(self, address: ChecksumEthAddress) -> None:
         """Deletes all ethereum related data from the DB for a single ethereum address"""
         other_eth_accounts = self.get_blockchain_accounts().eth
