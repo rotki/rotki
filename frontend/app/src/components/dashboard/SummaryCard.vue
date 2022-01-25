@@ -5,15 +5,7 @@
     class="pb-1"
   >
     <v-card-title
-      class="
-        font-weight-medium
-        text-capitalize
-        px-4
-        pt-3
-        pb-0
-        secondary--text
-        summary-card__header
-      "
+      class="font-weight-medium text-capitalize px-4 pt-3 pb-0 secondary--text summary-card__header"
     >
       <card-title :class="navigatesTo ? 'summary-card--navigates' : null">
         <span @click="navigatesTo ? navigate() : null">

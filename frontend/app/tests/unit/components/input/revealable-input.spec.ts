@@ -1,5 +1,6 @@
 import { mount, Wrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
@@ -12,8 +13,11 @@ describe('RevealableInput.vue', () => {
 
   beforeEach(() => {
     const vuetify = new Vuetify();
+    const pinia = createPinia();
+    setActivePinia(pinia);
     wrapper = mount(RevealableInput, {
       store,
+      pinia,
       vuetify,
       propsData: {
         value: ''

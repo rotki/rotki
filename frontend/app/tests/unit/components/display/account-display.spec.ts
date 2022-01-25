@@ -1,6 +1,7 @@
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { mount, Wrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
@@ -20,8 +21,11 @@ describe('AccountDisplay.vue', () => {
 
   function createWrapper() {
     const vuetify = new Vuetify();
+    const pinia = createPinia();
+    setActivePinia(pinia);
     return mount(AccountDisplay, {
       store,
+      pinia,
       vuetify,
       stubs: ['v-tooltip', 'asset-icon'],
       propsData: {

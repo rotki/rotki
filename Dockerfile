@@ -1,10 +1,10 @@
 # build stage
-FROM node:14-buster as frontend-build-stage
+FROM node:16-buster as frontend-build-stage
 
 WORKDIR /app
 COPY frontend/ .
 RUN apt-get update && apt-get install -y build-essential python3
-RUN npm install -g npm@7
+RUN npm install -g npm@8
 RUN npm ci
 RUN npm run docker:build
 

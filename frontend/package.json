@@ -4,8 +4,8 @@
   "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets that protects your privacy",
   "author": "Rotki Solutions GmbH <info@rotki.com>",
   "engines": {
-    "node": ">=14 <15",
-    "npm": ">=7.19 <8"
+    "node": ">=16 <17",
+    "npm": ">=8 <9"
   },
   "homepage": "https://rotki.com",
   "license": "AGPL-3.0",
@@ -27,9 +27,9 @@
     "dev": "node start-dev.js"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "5.4.0",
-    "@typescript-eslint/parser": "5.4.0",
-    "dotenv": "10.0.0",
+    "@typescript-eslint/eslint-plugin": "5.10.1",
+    "@typescript-eslint/parser": "5.10.1",
+    "dotenv": "14.3.0",
     "rimraf": "3.0.2",
     "semver": "7.3.5"
   }

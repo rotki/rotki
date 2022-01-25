@@ -1,5 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { mount, Wrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
@@ -16,8 +17,11 @@ function createWrapper(
   fiatCurrency: string | null
 ) {
   const vuetify = new Vuetify();
+  const pinia = createPinia();
+  setActivePinia(pinia);
   return mount(AmountDisplay, {
     store,
+    pinia,
     provide: {
       'vuex-store': store
     },

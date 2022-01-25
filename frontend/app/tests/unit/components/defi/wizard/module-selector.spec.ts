@@ -1,12 +1,13 @@
 import { mount, Wrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
-import '../../../i18n';
 import { Module } from '@/types/modules';
 import { GeneralSettings } from '@/types/user';
+import '../../../i18n';
 
 jest.mock('@/services/rotkehlchen-api');
 
@@ -17,10 +18,13 @@ describe('ModuleSelector.vue', () => {
 
   function createWrapper() {
     const vuetify = new Vuetify();
+    const pinia = createPinia();
+    setActivePinia(pinia);
     return mount(ModuleSelector, {
       store,
+      pinia,
       vuetify,
-      stubs: ['v-tooltip']
+      stubs: ['v-tooltip', 'card']
     });
   }
 

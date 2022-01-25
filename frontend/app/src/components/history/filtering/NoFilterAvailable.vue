@@ -107,7 +107,8 @@ export default defineComponent({
     },
     'apply:filter': (filter: string) => {
       return filter.length > 0;
-    }
+    },
+    suggest: (_suggestion: Suggestion) => true
   },
   setup(props, { emit }) {
     const available = computed<SearchMatcher<any>[]>(

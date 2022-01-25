@@ -1,4 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
@@ -12,8 +13,11 @@ describe('ServiceKey.vue', () => {
 
   function createWrapper(): Wrapper<ServiceKey> {
     const vuetify = new Vuetify();
+    const pinia = createPinia();
+    setActivePinia(pinia);
     return mount(ServiceKey, {
       store,
+      pinia,
       vuetify,
       propsData: {
         value: '',

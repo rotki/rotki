@@ -119,15 +119,17 @@ export const setupManualBalances = () => {
     () => store.state.balances!.manualLiabilities
   );
 
-  const editBalance: (balance: ManualBalance) => Promise<ActionStatus> =
-    async balance => {
-      return await store.dispatch('balances/editManualBalance', balance);
-    };
+  const editBalance: (
+    balance: ManualBalance
+  ) => Promise<ActionStatus> = async balance => {
+    return await store.dispatch('balances/editManualBalance', balance);
+  };
 
-  const addBalance: (balance: ManualBalance) => Promise<ActionStatus> =
-    async balance => {
-      return await store.dispatch('balances/addManualBalance', balance);
-    };
+  const addBalance: (
+    balance: ManualBalance
+  ) => Promise<ActionStatus> = async balance => {
+    return await store.dispatch('balances/addManualBalance', balance);
+  };
 
   const manualLabels = computed<string[]>(() => {
     return store.getters['balances/manualLabels'];
