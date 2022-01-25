@@ -44,28 +44,32 @@
           class="secondary--text text--lighten-2"
           @click="toggleDrawer()"
         />
-        <node-status-indicator v-if="!xsOnly" />
-        <balance-saved-indicator />
-        <back-button :can-navigate-back="canNavigateBack" />
+        <div class="d-flex overflow-hidden">
+          <node-status-indicator v-if="!xsOnly" />
+          <balance-saved-indicator />
+          <back-button :can-navigate-back="canNavigateBack" />
+        </div>
         <v-spacer />
-        <v-btn v-if="isDevelopment" to="/playground" icon>
-          <v-icon>mdi-crane</v-icon>
-        </v-btn>
-        <app-update-indicator />
-        <theme-switch v-if="premium" />
-        <theme-switch-lock v-else />
-        <notification-indicator
-          :visible="notifications"
-          class="app__app-bar__button"
-          @click="notifications = !notifications"
-        />
-        <currency-drop-down class="red--text app__app-bar__button" />
-        <user-dropdown class="app__app-bar__button" />
-        <help-indicator
-          v-if="!xsOnly"
-          :visible="help"
-          @visible:update="help = $event"
-        />
+        <div class="d-flex overflow-hidden">
+          <v-btn v-if="isDevelopment" to="/playground" icon>
+            <v-icon>mdi-crane</v-icon>
+          </v-btn>
+          <app-update-indicator />
+          <theme-switch v-if="premium" />
+          <theme-switch-lock v-else />
+          <notification-indicator
+            :visible="notifications"
+            class="app__app-bar__button"
+            @click="notifications = !notifications"
+          />
+          <currency-drop-down class="red--text app__app-bar__button" />
+          <user-dropdown class="app__app-bar__button" />
+          <help-indicator
+            v-if="!xsOnly"
+            :visible="help"
+            @visible:update="help = $event"
+          />
+        </div>
       </v-app-bar>
       <notification-sidebar
         :visible="notifications"
