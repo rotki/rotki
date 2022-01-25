@@ -39,15 +39,80 @@
       </div>
     </card>
     <component :is="page" v-if="page" class="pt-4" />
-    <full-size-content v-else>
-      <v-row align="center" justify="center">
-        <v-col>
-          <span class="font-weight-light text-h6">
-            {{ $t('staking_page.hint') }}
-          </span>
-        </v-col>
-      </v-row>
-    </full-size-content>
+    <div v-else>
+      <div
+        class="d-flex flex-row align-center justify-md-end justify-center mt-2 mr-md-6"
+      >
+        <div class="flex-shrink-0">
+          <v-icon>mdi-arrow-up-left</v-icon>
+        </div>
+        <div class="text--secondary pt-3 flex-shrink-0 ms-2">
+          {{ $t('staking_page.dropdown_hint') }}
+        </div>
+      </div>
+      <full-size-content>
+        <v-row align="center" justify="center">
+          <v-col>
+            <v-row align="center" justify="center">
+              <v-col cols="auto">
+                <span class="font-weight-bold text-h5">
+                  {{ $t('staking_page.page.title') }}
+                </span>
+              </v-col>
+            </v-row>
+            <v-row justify="center" class="mt-md-12 mt-4">
+              <v-col cols="auto" class="mx-4">
+                <router-link to="/staking/eth2">
+                  <asset-icon
+                    no-tooltip
+                    :identifier="getAssetIdentifierForSymbol('ETH')"
+                    :size="iconSize"
+                  />
+                </router-link>
+              </v-col>
+              <v-col cols="auto" class="mx-4">
+                <router-link to="/staking/adex">
+                  <asset-icon
+                    no-tooltip
+                    :identifier="getAssetIdentifierForSymbol('ADX')"
+                    :size="iconSize"
+                  />
+                </router-link>
+              </v-col>
+              <v-col cols="auto" class="mx-4">
+                <router-link to="/staking/liquity">
+                  <asset-icon
+                    no-tooltip
+                    :identifier="getAssetIdentifierForSymbol('LQTY')"
+                    :size="iconSize"
+                  />
+                </router-link>
+              </v-col>
+              <v-col cols="auto" class="mx-4">
+                <router-link to="/staking/kraken">
+                  <v-img
+                    :width="iconSize"
+                    contain
+                    :src="require('@/assets/images/exchanges/kraken.svg')"
+                  />
+                </router-link>
+              </v-col>
+            </v-row>
+
+            <v-row class="mt-md-10 mt-2" justify="center">
+              <v-col cols="auto">
+                <div
+                  class="font-weight-light text-h6"
+                  :class="$style.description"
+                >
+                  {{ $t('staking_page.page.description') }}
+                </div>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
+      </full-size-content>
+    </div>
   </v-container>
 </template>
 
@@ -95,7 +160,7 @@ const staking: StakinInfo[] = [
   },
   {
     id: 'kraken',
-    icon: require('@/assets/images/kraken.png'),
+    icon: require('@/assets/images/exchanges/kraken.svg'),
     name: i18n.t('staking.kraken').toString(),
     img: true
   }
@@ -150,6 +215,7 @@ export default defineComponent({
       staking,
       pages,
       page,
+      iconSize: '64px',
       getAssetIdentifierForSymbol,
       updateLocation
     };
@@ -160,5 +226,10 @@ export default defineComponent({
 <style lang="scss" module>
 .content {
   height: calc(100% - 120px);
+}
+
+.description {
+  text-align: center;
+  max-width: 600px;
 }
 </style>

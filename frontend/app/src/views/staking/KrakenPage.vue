@@ -2,7 +2,7 @@
   <div>
     <progress-screen v-if="loading">
       <template #message>
-        {{ $t('liquity_page.loading') }}
+        {{ $t('kraken_page.loading') }}
       </template>
     </progress-screen>
     <div v-else>

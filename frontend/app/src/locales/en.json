@@ -526,6 +526,9 @@
     },
     "tooltip": "Help"
   },
+  "kraken_page": {
+    "loading": "Your Kraken staking information is loading..."
+  },
   "kraken_staking_events": {
     "clear": "CLear",
     "column": {
@@ -802,7 +805,11 @@
     }
   },
   "staking_page": {
-    "hint": "Select staking information to view"
+    "dropdown_hint": "Select a location to see more details",
+    "page": {
+      "title": "Staking Locations",
+      "description": "Select one of the supported locations to see more information about your staked assets."
+    }
   },
   "statistics_graph_settings": {
     "label": "Multiplier",
