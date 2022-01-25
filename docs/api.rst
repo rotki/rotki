@@ -9356,7 +9356,7 @@ Querying general information
 
 .. http:get:: /api/(version)/info
 
-   Doing a GET on the info endpoint will return general information about rotki. Under the version key we get info on the current version of rotki. If there is a newer version then ``"download_url"`` will be populated. If not then only ``"our_version"`` and ``"latest_version"`` will be. There is a possibility that latest version may not be populated due to github not being reachable. Also we return the data directory
+   Doing a GET on the info endpoint will return general information about rotki. Under the version key we get info on the current version of rotki. When ``check_for_updates`` is ``true`` if there is a newer version then ``"download_url"`` will be populated. If not then only ``"our_version"`` and ``"latest_version"`` will be. There is a possibility that latest version may not be populated due to github not being reachable. Also we return the data directory
 
    .. note::
       This endpoint also accepts parameters as query arguments.
@@ -9371,7 +9371,7 @@ Querying general information
 
       {"check_for_updates": true}
 
-   :reqjson bool check_for_updates: If true will perform a external query to check the latest version available and get the download link.
+   :reqjson bool check_for_updates: If true will perform an external query to check the latest version available and get the download link.
 
    **Example Response**:
 
@@ -9388,6 +9388,7 @@ Querying general information
                   "download_url": "https://github.com/rotki/rotki/releases/tag/v1.0.4"
               },
               "data_directory": "/home/username/.local/share/rotki/data"
+              "log_level": "DEBUG",
           },
           "message": ""
       }
@@ -9396,6 +9397,7 @@ Querying general information
    :resjson str latest_version: The latest version of rotki available
    :resjson str download_url: URL link to download the latest version
    :resjson str data_directory: The rotki data directory
+   :resjson str log_level: The log level used in the backend. Can be ``DEBUG``, ``INFO``, ``WARN``, ``ERROR`` or ``CRITICAL``.
 
    :statuscode 200: Information queried succesfully
    :statuscode 500: Internal rotki error
