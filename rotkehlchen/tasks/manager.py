@@ -317,7 +317,7 @@ class TaskManager():
         new_query_filter.filters.append(
             DBIgnoreValuesFilter(
                 and_op=True,
-                column='identifier',
+                column='rowid',
                 values=list(self.base_entries_ignore_set),
             ),
         )
@@ -351,7 +351,7 @@ class TaskManager():
             usd_value = amount * price
             updates.append((str(usd_value), identifier))
 
-        query = 'UPDATE history_events SET usd_value=? WHERE identifier=?'
+        query = 'UPDATE history_events SET usd_value=? WHERE rowid=?'
         cursor = self.database.conn.cursor()
         cursor.executemany(query, updates)
         self.database.update_last_write()

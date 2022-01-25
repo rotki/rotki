@@ -2405,10 +2405,6 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
     """Test upgrading the DB from version 31 to version 32.
-
-    Test that the ids at the history_events table are correctly updated after
-    changing how they are generated
-
     Check that subtype is correctly updated
     """
     msg_aggregator = MessagesAggregator()
@@ -2419,13 +2415,13 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         msg_aggregator=msg_aggregator,
     )
     cursor = db.conn.cursor()
-    result = cursor.execute('SELECT identifier from history_events')
-    old_ids = result.fetchall()
+    result = cursor.execute('SELECT rowid from history_events')
+    old_ids = {row[0] for row in result}
     assert len(old_ids) == 3
     cursor.execute(
         'SELECT subtype from history_events',
     )
-    subtypes = [row[0] for row in cursor.fetchall()]
+    subtypes = [row[0] for row in cursor]
     assert set(subtypes) == {'staking deposit asset', 'staking receive asset', None}
 
     # Execute migration
@@ -2435,19 +2431,9 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         msg_aggregator=msg_aggregator,
     )
     cursor = db.conn.cursor()
-    # Finally also make sure that we have updated to the target version
-    assert db.get_version() == 32
-    result = cursor.execute('SELECT identifier from history_events')
-    new_ids = result.fetchall()
-    assert len(new_ids) == 3
-    for new_id in new_ids:
-        assert new_id not in old_ids
-
-    cursor.execute(
-        'SELECT subtype from history_events',
-    )
-    subtypes = [row[0] for row in cursor.fetchall()]
-    assert set(subtypes) == {'staking deposit asset', 'staking receive asset', 'reward'}
+    cursor.execute('SELECT subtype from history_events')
+    subtypes = {row[0] for row in cursor}
+    assert subtypes == {'staking deposit asset', 'staking receive asset', 'reward'}
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):
