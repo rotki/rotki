@@ -8,14 +8,7 @@
   >
     <div v-if="summary.liabilities">
       <span
-        class="
-          text-subtitle-1
-          font-weight-bold
-          pb-2
-          d-flex
-          flex-row
-          justify-space-between
-        "
+        class="text-subtitle-1 font-weight-bold pb-2 d-flex flex-row justify-space-between"
       >
         {{ $t('overview.stat_card.headers.borrowing') }}
         <v-btn :to="summary.liabilitiesUrl" icon small color="primary">
@@ -36,14 +29,7 @@
     </div>
     <div v-if="summary.deposits">
       <div
-        class="
-          pb-2
-          d-flex
-          flex-row
-          justify-space-between
-          text-subtitle-1
-          font-weight-medium
-        "
+        class="pb-2 d-flex flex-row justify-space-between text-subtitle-1 font-weight-medium"
       >
         {{ $t('overview.stat_card.headers.lending') }}
         <v-btn

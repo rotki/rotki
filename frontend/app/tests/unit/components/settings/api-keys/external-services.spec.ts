@@ -32,7 +32,7 @@ describe('ExternalServices.vue', () => {
       store,
       pinia,
       vuetify,
-      stubs: ['v-dialog', 'card-title'],
+      stubs: ['v-dialog', 'card-title', 'card'],
       propsData: {
         value: ''
       },

@@ -1,10 +1,11 @@
 import { mount, Wrapper } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import store from '@/store/store';
-import '../../../i18n';
 import { DEFI_SETUP_DONE } from '@/types/frontend-settings';
+import '../../../i18n';
 
 Vue.use(Vuetify);
 
@@ -12,8 +13,11 @@ describe('DefiWizard.vue', () => {
   let wrapper: Wrapper<DefiWizard>;
   function createWrapper() {
     const vuetify = new Vuetify();
+    const pinia = createPinia();
+    setActivePinia(pinia);
     return mount(DefiWizard, {
       store,
+      pinia,
       vuetify,
       stubs: ['v-tooltip', 'module-selector', 'module-address-selector', 'card']
     });

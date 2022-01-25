@@ -130,87 +130,88 @@ import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { SelectedReport } from '@/types/reports';
 
-const getHeaders: (report: Ref<SelectedReport>) => DataTableHeader[] =
-  report => [
-    {
-      text: i18n.t('profit_loss_events.headers.type').toString(),
-      align: 'center',
-      value: 'type',
-      width: 110,
-      sortable: false
-    },
-    {
-      text: i18n.t('profit_loss_events.headers.location').toString(),
-      value: 'location',
-      width: '120px',
-      align: 'center',
-      sortable: false
-    },
-    {
-      text: i18n
-        .t('profit_loss_events.headers.paid_in', {
-          currency: report.value.currency
-        })
-        .toString(),
-      sortable: false,
-      value: 'paidInProfitCurrency',
-      align: 'end'
-    },
-    {
-      text: i18n.t('profit_loss_events.headers.paid_in_asset').toString(),
-      sortable: false,
-      value: 'paidInAsset',
-      align: 'end'
-    },
-    {
-      text: i18n.t('profit_loss_events.headers.taxable_amount').toString(),
-      sortable: false,
-      value: 'taxableAmount',
-      align: 'end'
-    },
-    {
-      text: i18n
-        .t('profit_loss_events.headers.taxable_bought_cost_in', {
-          currency: report.value.currency
-        })
-        .toString(),
-      sortable: false,
-      value: 'taxableBoughtCostInProfitCurrency',
-      align: 'end'
-    },
-    {
-      text: i18n.t('profit_loss_events.headers.received_in_asset').toString(),
-      sortable: false,
-      value: 'receivedInAsset',
-      align: 'end'
-    },
-    {
-      text: i18n
-        .t('profit_loss_events.headers.taxable_received_in', {
-          currency: report.value.currency
-        })
-        .toString(),
-      sortable: false,
-      value: 'taxableReceivedInProfitCurrency',
-      align: 'end'
-    },
-    {
-      text: i18n.t('profit_loss_events.headers.time').toString(),
-      value: 'time'
-    },
-    {
-      text: i18n.t('profit_loss_events.headers.virtual').toString(),
-      sortable: false,
-      value: 'isVirtual',
-      align: 'center'
-    },
-    {
-      text: '',
-      value: 'expand',
-      align: 'end',
-      sortable: false
-    }
-  ];
+const getHeaders: (
+  report: Ref<SelectedReport>
+) => DataTableHeader[] = report => [
+  {
+    text: i18n.t('profit_loss_events.headers.type').toString(),
+    align: 'center',
+    value: 'type',
+    width: 110,
+    sortable: false
+  },
+  {
+    text: i18n.t('profit_loss_events.headers.location').toString(),
+    value: 'location',
+    width: '120px',
+    align: 'center',
+    sortable: false
+  },
+  {
+    text: i18n
+      .t('profit_loss_events.headers.paid_in', {
+        currency: report.value.currency
+      })
+      .toString(),
+    sortable: false,
+    value: 'paidInProfitCurrency',
+    align: 'end'
+  },
+  {
+    text: i18n.t('profit_loss_events.headers.paid_in_asset').toString(),
+    sortable: false,
+    value: 'paidInAsset',
+    align: 'end'
+  },
+  {
+    text: i18n.t('profit_loss_events.headers.taxable_amount').toString(),
+    sortable: false,
+    value: 'taxableAmount',
+    align: 'end'
+  },
+  {
+    text: i18n
+      .t('profit_loss_events.headers.taxable_bought_cost_in', {
+        currency: report.value.currency
+      })
+      .toString(),
+    sortable: false,
+    value: 'taxableBoughtCostInProfitCurrency',
+    align: 'end'
+  },
+  {
+    text: i18n.t('profit_loss_events.headers.received_in_asset').toString(),
+    sortable: false,
+    value: 'receivedInAsset',
+    align: 'end'
+  },
+  {
+    text: i18n
+      .t('profit_loss_events.headers.taxable_received_in', {
+        currency: report.value.currency
+      })
+      .toString(),
+    sortable: false,
+    value: 'taxableReceivedInProfitCurrency',
+    align: 'end'
+  },
+  {
+    text: i18n.t('profit_loss_events.headers.time').toString(),
+    value: 'time'
+  },
+  {
+    text: i18n.t('profit_loss_events.headers.virtual').toString(),
+    sortable: false,
+    value: 'isVirtual',
+    align: 'center'
+  },
+  {
+    text: '',
+    value: 'expand',
+    align: 'end',
+    sortable: false
+  }
+];
 
 type PaginationOptions = {
   page: number;

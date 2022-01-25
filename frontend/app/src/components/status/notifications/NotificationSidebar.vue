@@ -23,11 +23,7 @@
       </v-col>
       <v-col>
         <span
-          class="
-            text-uppercase text--secondary text-caption
-            font-weight-medium
-            pl-1
-          "
+          class="text-uppercase text--secondary text-caption font-weight-medium pl-1"
         >
           {{ $t('notification_sidebar.title') }}
         </span>

@@ -18,11 +18,7 @@
           >
             <template #link>
               <router-link
-                class="
-                  module-not-active__link
-                  font-weight-regular
-                  text-body-1 text-decoration-none
-                "
+                class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
                 text
                 to="/settings/modules"
                 small
