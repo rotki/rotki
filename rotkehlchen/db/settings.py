@@ -15,7 +15,7 @@ from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPri
 from rotkehlchen.typing import AVAILABLE_MODULES_MAP, DEFAULT_OFF_MODULES, ModuleName, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
-ROTKEHLCHEN_DB_VERSION = 31
+ROTKEHLCHEN_DB_VERSION = 32
 LAST_DATA_MIGRATION = 1
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True

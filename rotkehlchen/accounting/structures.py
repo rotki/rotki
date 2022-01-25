@@ -7,7 +7,6 @@ from typing import Any, Callable, DefaultDict, Dict, List, Literal, Optional, Tu
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
-from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, Timestamp
@@ -350,8 +349,22 @@ EVENTS_SUBTYPES_TO_STR = {
 }
 
 
-HISTORY_EVENT_DB_TUPLE = Tuple[
-    str,            # identifier
+HISTORY_EVENT_DB_TUPLE_READ = Tuple[
+    int,            # identifier
+    str,            # event_identifier
+    int,            # sequence_index
+    int,            # timestamp
+    str,            # location
+    Optional[str],  # location label
+    str,            # asset
+    str,            # amount
+    str,            # usd value
+    Optional[str],  # notes
+    str,            # type
+    Optional[str],  # subtype
+]
+
+HISTORY_EVENT_DB_TUPLE_WRITE = Tuple[
     str,            # event_identifier
     int,            # sequence_index
     int,            # timestamp
@@ -385,12 +398,12 @@ class HistoryBaseEntry:
     notes: Optional[str]
     event_type: HistoryEventType
     event_subtype: Optional[HistoryEventSubType]
+    identifier: Optional[int] = None
 
-    def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE:
+    def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
         event_subtype = None
         event_subtype = None if self.event_subtype is None else self.event_subtype.serialize()
         return (
-            self.identifier,
             self.event_identifier,
             self.sequence_index,
             int(self.timestamp),
@@ -405,13 +418,14 @@ class HistoryBaseEntry:
         )
 
     @classmethod
-    def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE) -> 'HistoryBaseEntry':
+    def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE_READ) -> 'HistoryBaseEntry':
         """May raise DeserializationError"""
         event_subtype = None
         if entry[11] is not None:
             event_subtype = HistoryEventSubType.deserialize(entry[11])
         try:
             return HistoryBaseEntry(
+                identifier=entry[0],
                 event_identifier=entry[1],
                 sequence_index=entry[2],
                 timestamp=Timestamp(entry[3]),
@@ -431,26 +445,6 @@ class HistoryBaseEntry:
                 f'Failed to read FVal value from database history event with '
                 f'event identifier {entry[1]}. {str(e)}',
             ) from e
-
-    @property
-    def identifier(self) -> str:
-        """Generate an unique identifier based on information from the base entry that is later
-        hashed. It follows the pattern that we use in other places and has similar problems.
-        """
-        location_label = self.location_label if self.location_label is not None else ''
-        event_subtype = self.event_subtype if self.event_subtype is not None else ''
-        hashable = (
-            str(self.location) +
-            str(self.timestamp) +
-            self.event_identifier +
-            str(self.sequence_index) +
-            location_label +
-            str(self.asset) +
-            str(self.balance.amount) +
-            str(self.event_type) +
-            str(event_subtype)
-        )
-        return sha3(hashable.encode()).hex()
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
