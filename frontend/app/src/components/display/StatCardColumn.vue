@@ -13,11 +13,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class StatCardColumn extends Vue {
-  @Prop({ required: false, default: false, type: Boolean })
-  lock!: boolean;
-}
+export default defineComponent({
+  name: 'StatCardColumn',
+  props: {
+    lock: { required: false, type: Boolean, default: false }
+  }
+});
 </script>

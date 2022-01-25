@@ -22,18 +22,23 @@
   </div>
 </template>
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { DefiAsset as Asset } from '@/store/defi/types';
+import { DefiAsset } from '@/store/defi/types';
 
-@Component({
-  components: { AmountDisplay, AssetIcon }
-})
-export default class DefiAsset extends Vue {
-  @Prop({ required: true })
-  asset!: Asset;
+export default defineComponent({
+  name: 'DefiAsset',
+  components: { AmountDisplay, AssetIcon },
+  props: {
+    asset: { required: true, type: Object as PropType<DefiAsset> }
+  },
+  setup() {
+    const assetPadding: number = 1;
 
-  readonly assetPadding: number = 1;
-}
+    return {
+      assetPadding
+    };
+  }
+});
 </script>

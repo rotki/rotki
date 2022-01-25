@@ -116,55 +116,73 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import {
+  defineComponent,
+  PropType,
+  Ref,
+  ref,
+  toRefs
+} from '@vue/composition-api';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { TagEvent } from '@/components/tags/types';
+import i18n from '@/i18n';
 import { Tag } from '@/types/user';
 import { invertColor, randomColor } from '@/utils/Color';
 
-@Component({
-  components: { TagIcon }
-})
-export default class TagCreator extends Vue {
-  @Prop({ required: true })
-  tag!: Tag;
-  @Prop({ required: true })
-  editMode!: boolean;
+export default defineComponent({
+  name: 'TagCreator',
+  components: { TagIcon },
+  props: {
+    tag: { required: true, type: Object as PropType<Tag> },
+    editMode: { required: true, type: Boolean }
+  },
+  emits: ['changed', 'save', 'cancel'],
+  setup(props, { emit }) {
+    const { tag } = toRefs(props);
+    const valid = ref<boolean>(false);
 
-  valid: boolean = false;
+    const form: Ref<any> = ref(null);
+    const rules = [
+      (v: string) =>
+        !!v || i18n.t('tag_creator.validation.empty_name').toString()
+    ];
 
-  readonly rules = [
-    (v: string) =>
-      !!v || this.$t('tag_creator.validation.empty_name').toString()
-  ];
+    const changed = (event: TagEvent) => {
+      emit('changed', {
+        ...tag.value,
+        ...event
+      });
+    };
 
-  @Emit()
-  changed(event: TagEvent): Tag {
-    return { ...this.tag, ...event };
+    const save = () => {
+      form.value?.reset();
+      emit('save', tag.value);
+    };
+
+    const cancel = () => {
+      form.value?.reset();
+      emit('cancel');
+    };
+
+    const randomize = () => {
+      const backgroundColor = randomColor();
+      changed({
+        backgroundColor,
+        foregroundColor: invertColor(backgroundColor)
+      });
+    };
+
+    return {
+      form,
+      valid,
+      randomize,
+      rules,
+      changed,
+      save,
+      cancel
+    };
   }
-
-  randomize() {
-    const backgroundColor = randomColor();
-    this.changed({
-      backgroundColor: backgroundColor,
-      foregroundColor: invertColor(backgroundColor)
-    });
-  }
-
-  @Emit()
-  save(): Tag {
-    const tag = this.tag;
-    // @ts-ignore
-    this.$refs.form?.reset();
-    return tag;
-  }
-
-  @Emit()
-  cancel() {
-    // @ts-ignore
-    this.$refs.form?.reset();
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

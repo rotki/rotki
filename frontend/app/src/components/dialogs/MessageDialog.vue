@@ -39,31 +39,43 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
 
-@Component({})
-export default class MessageDialog extends Vue {
-  @Prop({ required: true })
-  title!: string;
-  @Prop({ required: true })
-  message!: string;
-  @Prop({ default: false, type: Boolean })
-  success!: boolean;
+export default defineComponent({
+  name: 'MessageDialog',
+  props: {
+    title: { required: true, type: String },
+    message: { required: true, type: String },
+    success: { required: false, type: Boolean, default: false }
+  },
+  emits: ['dismiss'],
+  setup(props, { emit }) {
+    const { message, success } = toRefs(props);
+    const visible = ref<boolean>(false);
 
-  visible: boolean = false;
+    watch(message, message => {
+      visible.value = message.length > 0;
+    });
 
-  get icon(): string {
-    return this.success ? 'mdi-check-circle ' : 'mdi-alert-circle';
+    const icon = computed<string>(() => {
+      return success.value ? 'mdi-check-circle ' : 'mdi-alert-circle';
+    });
+
+    const dismiss = () => emit('dismiss');
+
+    return {
+      visible,
+      icon,
+      dismiss
+    };
   }
-
-  @Watch('message')
-  onMessage() {
-    this.visible = this.message.length > 0;
-  }
-
-  @Emit()
-  dismiss() {}
-}
+});
 </script>
 
 <style scoped lang="scss">

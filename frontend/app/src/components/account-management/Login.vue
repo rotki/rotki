@@ -291,6 +291,7 @@ export default defineComponent({
     syncConflict: { required: true, type: Object as PropType<SyncConflict> },
     errors: { required: false, type: Array, default: () => [] }
   },
+  emits: ['backend-changed', 'login', 'new-account', 'touched'],
   setup(props, { emit }) {
     const { displayed, syncConflict, errors } = toRefs(props);
 

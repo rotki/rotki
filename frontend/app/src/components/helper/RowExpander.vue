@@ -8,14 +8,20 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class RowExpander extends Vue {
-  @Prop({ required: true, type: Boolean })
-  expanded!: boolean;
+export default defineComponent({
+  name: 'RowExpander',
+  props: {
+    expanded: { required: true, type: Boolean }
+  },
+  emits: ['click'],
+  setup(_, { emit }) {
+    const click = () => emit('click');
 
-  @Emit()
-  click() {}
-}
+    return {
+      click
+    };
+  }
+});
 </script>

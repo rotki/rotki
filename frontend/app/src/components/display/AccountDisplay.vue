@@ -13,7 +13,7 @@
     </v-col>
     <v-col
       cols="auto"
-      :class="!shouldShowAmount ? 'blur-content' : ''"
+      :class="{ 'blur-content': !shouldShowAmount }"
       class="text-no-wrap"
     >
       ({{ truncateAddress(address) }})
@@ -23,32 +23,41 @@
 
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
-import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { setupDisplayData } from '@/composables/session';
 import { truncateAddress } from '@/filters';
-import ScrambleMixin from '@/mixins/scramble-mixin';
 import { randomHex } from '@/utils/data';
 
-@Component({
+export default defineComponent({
+  name: 'AccountDisplay',
   components: { AssetIcon },
-  computed: {
-    ...mapGetters('session', ['shouldShowAmount'])
-  }
-})
-export default class AccountDisplay extends Mixins(ScrambleMixin) {
-  @Prop({ required: true })
-  account!: GeneralAccount;
-  shouldShowAmount!: boolean;
-  readonly truncateAddress = truncateAddress;
+  props: {
+    account: { required: true, type: Object as PropType<GeneralAccount> }
+  },
+  setup(props) {
+    const { account } = toRefs(props);
+    const { scrambleData, shouldShowAmount } = setupDisplayData();
 
-  get address(): string {
-    if (!this.scrambleData) {
-      return this.account.address;
-    }
-    return randomHex();
+    const address = computed<string>(() => {
+      if (!scrambleData.value) {
+        return account.value.address;
+      }
+      return randomHex();
+    });
+
+    return {
+      address,
+      truncateAddress,
+      shouldShowAmount
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

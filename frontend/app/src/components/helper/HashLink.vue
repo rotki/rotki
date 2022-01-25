@@ -1,16 +1,13 @@
 ﻿<template>
   <div class="d-flex flex-row shrink align-center">
     <span v-if="!linkOnly & !buttons">
-      <span
-        v-if="fullAddress"
-        :class="!shouldShowAmount ? 'blur-content' : null"
-      >
+      <span v-if="fullAddress" :class="{ 'blur-content': !shouldShowAmount }">
         {{ displayText }}
       </span>
       <v-tooltip v-else top open-delay="400">
         <template #activator="{ on, attrs }">
           <span
-            :class="!shouldShowAmount ? 'blur-content' : null"
+            :class="{ 'blur-content': !shouldShowAmount }"
             v-bind="attrs"
             v-on="on"
           >
@@ -66,114 +63,134 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { mapGetters, mapState } from 'vuex';
-import { explorerUrls } from '@/components/helper/asset-urls';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import {
+  Chains,
+  ExplorerUrls,
+  explorerUrls
+} from '@/components/helper/asset-urls';
+import { setupThemeCheck } from '@/composables/common';
+import { setupDisplayData } from '@/composables/session';
+import { setupSettings } from '@/composables/settings';
+import { interop } from '@/electron-interop';
 import { truncateAddress } from '@/filters';
-import ScrambleMixin from '@/mixins/scramble-mixin';
-import ThemeMixin from '@/mixins/theme-mixin';
-import { ExplorersSettings } from '@/types/frontend-settings';
 import { randomHex } from '@/utils/data';
 
-@Component({
-  computed: {
-    ...mapGetters('session', ['shouldShowAmount']),
-    ...mapState('settings', ['explorers'])
-  }
-})
-export default class HashLink extends Mixins(ScrambleMixin, ThemeMixin) {
-  @Prop({ required: false, type: String, default: '' })
-  text!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  fullAddress!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  linkOnly!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  noLink!: boolean;
-  @Prop({ required: false, type: String, default: '' })
-  baseUrl!: string;
-  @Prop({ required: false, type: String, default: Blockchain.ETH })
-  chain!: Blockchain | 'ETC' | 'zksync';
-  @Prop({ required: false, type: Boolean, default: false })
-  tx!: Boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  buttons!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  small!: boolean;
+export default defineComponent({
+  name: 'HashLink',
+  props: {
+    text: { required: false, type: String, default: '' },
+    fullAddress: { required: false, type: Boolean, default: false },
+    linkOnly: { required: false, type: Boolean, default: false },
+    noLink: { required: false, type: Boolean, default: false },
+    baseUrl: { required: false, type: String, default: '' },
+    chain: {
+      required: false,
+      type: String as PropType<Chains>,
+      default: Blockchain.ETH
+    },
+    tx: { required: false, type: Boolean, default: false },
+    buttons: { required: false, type: Boolean, default: false },
+    small: { required: false, type: Boolean, default: false }
+  },
+  setup(props) {
+    const { text, baseUrl, chain, tx } = toRefs(props);
 
-  readonly truncateAddress = truncateAddress;
+    const { scrambleData, shouldShowAmount } = setupDisplayData();
+    const { explorers } = setupSettings();
+    const { dark } = setupThemeCheck();
 
-  get displayText(): string {
-    if (!this.scrambleData) {
-      return this.text;
-    }
-    const length = this.tx ? 64 : 40;
-    return randomHex(length);
-  }
-
-  shouldShowAmount!: boolean;
-  explorers!: ExplorersSettings;
-
-  get base(): string {
-    if (this.baseUrl) {
-      return this.baseUrl;
-    }
-
-    const defaultSetting = explorerUrls[this.chain];
-    let baseUrl: string;
-    if (this.chain === 'zksync') {
-      baseUrl = this.tx ? defaultSetting.transaction : defaultSetting.address;
-    } else {
-      const explorersSetting = this.explorers[this.chain];
-      baseUrl = this.tx
-        ? explorersSetting?.transaction ?? defaultSetting.transaction
-        : explorersSetting?.address ?? defaultSetting.address;
-    }
-
-    return baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-  }
-
-  copyText(text: string) {
-    if (!navigator.clipboard) {
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      textArea.style.position = 'fixed'; //avoid scrolling to bottom
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      try {
-        document.execCommand('copy');
-      } finally {
-        document.body.removeChild(textArea);
+    const displayText = computed<string>(() => {
+      if (scrambleData.value) {
+        return text.value;
       }
-    } else {
-      navigator.clipboard.writeText(text);
-    }
-  }
+      const length = tx.value ? 64 : 40;
+      return randomHex(length);
+    });
 
-  get url(): string {
-    return this.base + this.text;
-  }
+    const base = computed<string>(() => {
+      if (baseUrl.value) {
+        return baseUrl.value;
+      }
 
-  get href(): string | undefined {
-    if (this.$interop.isPackaged) {
-      return undefined;
-    }
+      const defaultSetting: ExplorerUrls = explorerUrls[chain.value];
+      let formattedBaseUrl: string;
+      if (chain.value === 'zksync') {
+        formattedBaseUrl = tx.value
+          ? defaultSetting.transaction
+          : defaultSetting.address;
+      } else {
+        const explorersSetting = explorers.value[chain.value];
+        formattedBaseUrl = tx.value
+          ? explorersSetting?.transaction ?? defaultSetting.transaction
+          : explorersSetting?.address ?? defaultSetting.address;
+      }
 
-    return this.url;
-  }
+      return formattedBaseUrl.endsWith('/')
+        ? formattedBaseUrl
+        : `${formattedBaseUrl}/`;
+    });
 
-  get target(): string | undefined {
-    if (this.$interop.isPackaged) {
-      return undefined;
-    }
-    return '_blank';
-  }
+    const copyText = (text: string) => {
+      if (!navigator.clipboard) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed'; //avoid scrolling to bottom
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      } else {
+        navigator.clipboard.writeText(text);
+      }
+    };
 
-  openLink() {
-    this.$interop.openUrl(this.url);
+    const url = computed<string>(() => {
+      return base.value + text.value;
+    });
+
+    const href = computed<string | undefined>(() => {
+      if (interop.isPackaged) {
+        return undefined;
+      }
+
+      return url.value;
+    });
+
+    const target = computed<string | undefined>(() => {
+      if (interop.isPackaged) {
+        return undefined;
+      }
+
+      return '_blank';
+    });
+
+    const openLink = () => {
+      interop.openUrl(url.value);
+    };
+
+    return {
+      truncateAddress,
+      shouldShowAmount,
+      base,
+      displayText,
+      copyText,
+      href,
+      target,
+      openLink,
+      dark
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

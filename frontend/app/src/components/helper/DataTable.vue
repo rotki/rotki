@@ -11,7 +11,7 @@
     :footer-props="footerProps"
     :items-per-page="itemsPerPage"
     v-on="$listeners"
-    @update:items-per-page="onSelectionChange($event)"
+    @update:items-per-page="onItemsPerPageChange($event)"
     @update:page="scrollToTop"
   >
     <!-- Pass on all named slots -->
@@ -38,46 +38,50 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins, Prop } from 'vue-property-decorator';
+import { defineComponent, PropType, ref } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
-import { mapState } from 'vuex';
+import { setupThemeCheck } from '@/composables/common';
+import { setupSettings } from '@/composables/settings';
 import { footerProps } from '@/config/datatable.common';
-import SettingsMixin from '@/mixins/settings-mixin';
 import { ITEMS_PER_PAGE } from '@/types/frontend-settings';
 
-@Component({
-  computed: {
-    ...mapState('settings', [ITEMS_PER_PAGE])
-  }
-})
-export default class DataTable extends Mixins(SettingsMixin) {
-  readonly footerProps = footerProps;
-  itemsPerPage!: number;
+export default defineComponent({
+  name: 'DataTable',
+  props: {
+    sortDesc: { required: false, type: Boolean, default: true },
+    items: { required: true, type: Array },
+    headers: { required: true, type: Array as PropType<DataTableHeader[]> },
+    expanded: { required: false, type: Array, default: () => [] },
+    itemClass: { required: false, type: [String, Function], default: () => '' }
+  },
+  setup() {
+    const { itemsPerPage, updateSetting } = setupSettings();
+    const { $vuetify } = setupThemeCheck();
 
-  @Prop({ required: false, default: true, type: Boolean })
-  sortDesc!: boolean;
-  @Prop({ required: true, type: Array })
-  items!: any[];
-  @Prop({ required: true, type: Array })
-  headers!: DataTableHeader[];
-  @Prop({ required: false, type: Array, default: () => [] })
-  expanded!: any[];
-  @Prop({ required: false, type: [String, Function], default: () => '' })
-  itemClass!: string | Function;
+    const table = ref<any>(null);
 
-  async onSelectionChange(itemsPerPage: number) {
-    await this.updateSetting({
-      [ITEMS_PER_PAGE]: itemsPerPage
-    });
-  }
+    const onItemsPerPageChange = async (newValue: number) => {
+      await updateSetting({
+        [ITEMS_PER_PAGE]: newValue
+      });
+    };
 
-  scrollToTop() {
-    const table = this.$refs.table as any;
-    this.$vuetify.goTo(table, {
-      container: document.querySelector('.app-main') as HTMLElement
-    });
+    const scrollToTop = () => {
+      const tableRef = table.value;
+      $vuetify.goTo(tableRef, {
+        container: document.querySelector('.app-main') as HTMLElement
+      });
+    };
+
+    return {
+      table,
+      itemsPerPage,
+      footerProps,
+      onItemsPerPageChange,
+      scrollToTop
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

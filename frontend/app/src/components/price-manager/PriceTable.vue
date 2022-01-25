@@ -148,6 +148,7 @@ export default defineComponent({
       default: false
     }
   },
+  emits: ['edit', 'refreshed'],
   setup(props, { emit }) {
     const store = useStore();
     const { fetchPrices, prices, loading } = priceRetrieval(store);

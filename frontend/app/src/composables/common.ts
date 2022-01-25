@@ -16,8 +16,8 @@ export const useRouter = () => {
 };
 
 export const useRoute = () => {
-  const { $router } = useProxy();
-  return computed(() => $router.currentRoute);
+  const proxy = useProxy();
+  return computed(() => proxy.$route);
 };
 
 export const setupThemeCheck = () => {
@@ -33,6 +33,7 @@ export const setupThemeCheck = () => {
     };
   });
   return {
+    $vuetify,
     isMobile,
     dark,
     breakpoint,

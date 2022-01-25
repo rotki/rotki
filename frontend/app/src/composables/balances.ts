@@ -10,6 +10,7 @@ import {
   BlockchainAccountPayload,
   BlockchainAccountWithBalance,
   ExchangeRateGetter,
+  FetchPricePayload,
   IdentifierForSymbolGetter
 } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
@@ -19,6 +20,19 @@ import { Eth2Validator } from '@/types/balances';
 export const setupExchangeRateGetter = () => {
   const store = useStore();
   return store.getters['balances/exchangeRate'] as ExchangeRateGetter;
+};
+
+export const setupGeneralBalances = () => {
+  const store = useStore();
+  const refreshPrices: (
+    payload: FetchPricePayload
+  ) => Promise<void> = async payload => {
+    return await store.dispatch('balances/refreshPrices', payload);
+  };
+
+  return {
+    refreshPrices
+  };
 };
 
 export const setupSupportedAssets = () => {

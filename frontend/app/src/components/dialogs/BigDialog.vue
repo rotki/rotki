@@ -54,37 +54,38 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { themes } from '@/components/dialogs/consts';
-import { DialogThemes } from '@/components/dialogs/types';
+import { defineComponent, PropType } from '@vue/composition-api';
+import { DIALOG_TYPES, themes, TYPE_INFO } from '@/components/dialogs/consts';
 
-@Component({})
-export default class BigDialog extends Vue {
-  @Prop({ required: true })
-  title!: string;
-  @Prop({ required: false })
-  subtitle!: string;
-  @Prop({ type: Boolean, required: true })
-  display!: boolean;
-  @Prop({ type: Boolean, required: false, default: false })
-  loading!: boolean;
-  @Prop({ type: Boolean, required: false, default: false })
-  actionDisabled!: boolean;
-  @Prop({ type: String, required: false, default: 'Confirm' })
-  primaryAction!: string;
-  @Prop({ type: String, required: false, default: 'Cancel' })
-  secondaryAction!: string;
-  @Prop({ type: String, required: false, default: 'info' }) // must be one of the types defined in confirmTypesProps below
-  confirmType!: string;
+export default defineComponent({
+  name: 'BigDialog',
+  props: {
+    title: { required: true, type: String },
+    subtitle: { required: false, type: String, default: '' },
+    display: { required: true, type: Boolean },
+    loading: { required: false, type: Boolean, default: false },
+    actionDisabled: { required: false, type: Boolean, default: false },
+    primaryAction: { required: false, type: String, default: 'Confirm' },
+    secondaryAction: { required: false, type: String, default: 'Cancel' },
+    confirmType: {
+      required: false,
+      type: String as PropType<typeof DIALOG_TYPES[number]>,
+      default: TYPE_INFO
+    }
+  },
+  emits: ['confirm', 'cancel'],
+  setup(_, { emit }) {
+    const confirm = () => emit('confirm');
 
-  readonly themes: DialogThemes = themes;
+    const cancel = () => emit('cancel');
 
-  @Emit()
-  confirm() {}
-
-  @Emit()
-  cancel() {}
-}
+    return {
+      themes,
+      confirm,
+      cancel
+    };
+  }
+});
 </script>
 
 <style scoped lang="scss">

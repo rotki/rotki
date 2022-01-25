@@ -36,10 +36,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
+import i18n from '@/i18n';
 import { PoapDeliveryDetails } from '@/store/defi/types';
 import { default as images } from './poap.json';
 
@@ -64,35 +65,39 @@ const events = [
 
 export type EventType = typeof events[number];
 
-@Component({
-  components: { DataTable, TableExpandContainer }
-})
-export default class PoapDeliveryAirdrops extends Vue {
-  @Prop({ required: true, type: Boolean })
-  visible!: boolean;
-  @Prop({ required: true, type: Number })
-  colspan!: number;
-
-  readonly headers: DataTableHeader[] = [
-    {
-      text: this.$t('poap_delivery_airdrops.headers.name').toString(),
-      value: 'name'
-    },
-    {
-      text: '',
-      value: 'link',
-      align: 'end',
-      width: '50px'
-    }
-  ];
-  @Prop({ required: true, type: Array })
-  items!: PoapDeliveryDetails[];
-
-  getImage(event: EventType): string {
-    const image = images[event];
-    return image ?? '';
+const headers: DataTableHeader[] = [
+  {
+    text: i18n.t('poap_delivery_airdrops.headers.name').toString(),
+    value: 'name'
+  },
+  {
+    text: '',
+    value: 'link',
+    align: 'end',
+    width: '50px'
   }
-}
+];
+
+export default defineComponent({
+  name: 'PoapDeliveryAirdrops',
+  components: { DataTable, TableExpandContainer },
+  props: {
+    visible: { required: true, type: Boolean },
+    colspan: { required: true, type: Number },
+    items: { required: true, type: Array as PropType<PoapDeliveryDetails[]> }
+  },
+  setup() {
+    const getImage = (event: EventType): string => {
+      const image = images[event];
+      return image ?? '';
+    };
+
+    return {
+      headers,
+      getImage
+    };
+  }
+});
 </script>
 
 <style scoped lang="scss">

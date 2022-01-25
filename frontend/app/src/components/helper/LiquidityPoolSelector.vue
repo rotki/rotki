@@ -49,32 +49,40 @@
 
 <script lang="ts">
 import { Pool } from '@rotki/common/lib/defi/balancer';
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 
-@Component({
-  name: 'LiquidityPoolSelector'
-})
-export default class LiquidityPoolSelector extends Vue {
-  @Prop({ required: true })
-  pools!: Pool[];
-  @Prop({ required: true, type: Array })
-  value!: string[];
-  @Emit()
-  input(_value: string[]) {}
+import { defineComponent, PropType, toRefs } from '@vue/composition-api';
 
-  filter(item: Pool, queryText: string) {
-    const searchString = queryText.toLocaleLowerCase();
-    const asset1 = item.name.toLocaleLowerCase();
-    const asset2 = item.name.toLocaleLowerCase();
-    const name = `${asset1}/${asset2}`;
-    return name.indexOf(searchString) > -1;
+export default defineComponent({
+  name: 'LiquidityPoolSelector',
+  props: {
+    pools: { required: true, type: Array as PropType<Pool[]> },
+    value: { required: true, type: Array as PropType<string[]> }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { value } = toRefs(props);
+    const input = (_value: string[]) => emit('input', _value);
+
+    const filter = (item: Pool, queryText: string) => {
+      const searchString = queryText.toLocaleLowerCase();
+      const asset1 = item.name.toLocaleLowerCase();
+      const asset2 = item.name.toLocaleLowerCase();
+      const name = `${asset1}/${asset2}`;
+      return name.indexOf(searchString) > -1;
+    };
+
+    const remove = (asset: Pool) => {
+      const addresses = [...value.value];
+      const index = addresses.findIndex(address => address === asset.address);
+      addresses.splice(index, 1);
+      input(addresses);
+    };
+
+    return {
+      filter,
+      input,
+      remove
+    };
   }
-
-  remove(asset: Pool) {
-    const addresses = [...this.value];
-    const index = addresses.findIndex(address => address === asset.address);
-    addresses.splice(index, 1);
-    this.input(addresses);
-  }
-}
+});
 </script>

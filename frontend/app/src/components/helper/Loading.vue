@@ -5,12 +5,15 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class Loading extends Vue {
-  readonly char = '.';
-}
+export default defineComponent({
+  name: 'Loading',
+  setup() {
+    const char = '.';
+    return { char };
+  }
+});
 </script>
 
 <style scoped lang="scss">

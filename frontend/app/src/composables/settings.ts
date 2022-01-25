@@ -4,6 +4,7 @@ import { useStore } from '@/store/utils';
 import { DateFormat } from '@/types/date-format';
 import {
   DashboardTablesVisibleColumns,
+  ExplorersSettings,
   FrontendSettingsPayload
 } from '@/types/frontend-settings';
 import RoundingMode = BigNumber.RoundingMode;
@@ -47,6 +48,10 @@ export const setupSettings = () => {
     () => store.state.settings!.valueRoundingMode
   );
 
+  const explorers = computed<ExplorersSettings>(
+    () => store.state.settings!.explorers
+  );
+
   const updateSetting = async (
     settings: FrontendSettingsPayload
   ): Promise<void> => {
@@ -63,6 +68,7 @@ export const setupSettings = () => {
     currencyLocation,
     amountRoundingMode,
     valueRoundingMode,
+    explorers,
     updateSetting
   };
 };

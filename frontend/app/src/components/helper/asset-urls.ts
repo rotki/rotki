@@ -5,7 +5,7 @@ export type ExplorerUrls = {
   readonly transaction: string;
 };
 
-type Chains = Blockchain | 'ETC' | 'zksync';
+export type Chains = Blockchain | 'ETC' | 'zksync';
 
 export type AssetExplorerUrls = {
   [key in Chains]: ExplorerUrls;

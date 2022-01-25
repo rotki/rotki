@@ -1,39 +1,49 @@
 <template>
-  <asset-details-base
-    :hide-name="hideName"
-    :asset="currentAsset"
-    :opens-details="opensDetails"
-  />
+  <div>
+    <asset-details-base
+      :hide-name="hideName"
+      :asset="currentAsset"
+      :opens-details="opensDetails"
+    />
+  </div>
 </template>
 
 <script lang="ts">
-import { Component, Mixins, Prop } from 'vue-property-decorator';
+import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import AssetMixin from '@/mixins/asset-mixin';
+import { setupAssetInfoRetrieval } from '@/composables/balances';
 
-@Component({
-  components: { AssetDetailsBase }
-})
-export default class AssetDetails extends Mixins(AssetMixin) {
-  @Prop({
-    required: true,
-    validator(value: string): boolean {
-      return !!value && value.length > 0;
-    }
-  })
-  asset!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  opensDetails!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  hideName!: boolean;
+export default defineComponent({
+  name: 'AssetDetails',
+  components: { AssetDetailsBase },
+  props: {
+    asset: {
+      required: true,
+      type: String,
+      validator: (value: string): boolean => {
+        return !!value && value.length > 0;
+      }
+    },
+    opensDetails: { required: false, type: Boolean, default: false },
+    hideName: { required: false, type: Boolean, default: false }
+  },
+  setup(props) {
+    const { asset } = toRefs(props);
 
-  get currentAsset() {
-    const details = this.assetInfo(this.asset);
+    const { getAssetInfo } = setupAssetInfoRetrieval();
+
+    const currentAsset = computed(() => {
+      const details = getAssetInfo(asset.value);
+      return {
+        symbol: details ? details.symbol : asset.value,
+        name: details ? details.name : asset.value,
+        identifier: details ? details.identifier : asset.value
+      };
+    });
+
     return {
-      symbol: details ? details.symbol : this.asset,
-      name: details ? details.name : this.asset,
-      identifier: details ? details.identifier : this.asset
+      currentAsset
     };
   }
-}
+});
 </script>

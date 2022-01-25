@@ -34,7 +34,7 @@ export default defineComponent({
       type: Number
     }
   },
-  emits: ['update'],
+  emits: ['input'],
   setup(props, { emit }) {
     const { value } = toRefs(props);
     const input = () => {

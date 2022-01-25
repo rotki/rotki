@@ -41,6 +41,7 @@ export default defineComponent({
       default: null
     }
   },
+  emits: ['click'],
   setup(props, { emit }) {
     const { subtitle } = toRefs(props);
     const { currentBreakpoint } = setupThemeCheck();

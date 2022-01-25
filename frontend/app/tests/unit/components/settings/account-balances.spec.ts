@@ -21,6 +21,9 @@ describe('AccountBalances.vue', () => {
       store,
       vuetify,
       pinia,
+      provide: {
+        'vuex-store': store
+      },
       propsData: {
         blockchain: 'ETH',
         balances: [],

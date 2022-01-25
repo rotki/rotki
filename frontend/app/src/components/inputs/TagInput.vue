@@ -83,11 +83,17 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import TagManager from '@/components/tags/TagManager.vue';
-import { ActionStatus } from '@/store/types';
+import { setupTags } from '@/composables/session';
 import { Tag } from '@/types/user';
 import { invertColor, randomColor } from '@/utils/Color';
 
@@ -101,114 +107,114 @@ const valueValidator = (value: any) => {
   return (value as Array<any>).every(element => typeof element === 'string');
 };
 
-@Component({
+export default defineComponent({
+  name: 'TagInput',
   components: { TagIcon, TagManager },
-  computed: {
-    ...mapGetters('session', ['tags'])
+  props: {
+    value: {
+      required: true,
+      type: Array as PropType<string[]>,
+      validator: valueValidator
+    },
+    disabled: { required: false, type: Boolean, default: false },
+    label: { required: false, type: String, default: 'Tags' },
+    outlined: { required: false, type: Boolean, default: false }
   },
-  methods: {
-    ...mapActions('session', ['addTag'])
-  }
-})
-export default class TagInput extends Vue {
-  @Prop({ required: true, type: Array, validator: valueValidator })
-  value!: string[];
-  @Prop({ required: false, default: false, type: Boolean })
-  disabled!: boolean;
-  @Prop({ required: false, type: String, default: 'Tags' })
-  label!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  outlined!: boolean;
-  tags!: Tag[];
-  addTag!: (tag: Tag) => Promise<ActionStatus>;
-  manageTags: boolean = false;
+  setup(props, { emit }) {
+    const { value } = toRefs(props);
+    const { tags, addTag } = setupTags();
 
-  search: string = '';
-  colorScheme = this.randomScheme();
+    const manageTags = ref<boolean>(false);
 
-  @Watch('search')
-  onSearchUpdate(keyword: string | null, previous: string | null) {
-    if (keyword && !previous) {
-      this.colorScheme = this.randomScheme();
-    }
-  }
+    const search = ref<string>('');
 
-  get newTagBackground(): string {
-    return `#${this.colorScheme.backgroundColor}`;
-  }
-
-  get newTagForeground(): string {
-    return `#${this.colorScheme.foregroundColor}`;
-  }
-
-  get values(): Tag[] {
-    return this.tags.filter(({ name }) => this.value.includes(name));
-  }
-
-  filter(tag: Tag, queryText: string): boolean {
-    const { name, description } = tag;
-    const query = queryText.toLocaleLowerCase();
-    return (
-      name.toLocaleLowerCase().indexOf(query) > -1 ||
-      description.toLocaleLowerCase().indexOf(query) > -1
-    );
-  }
-
-  remove(tag: string) {
-    const tags = this.value;
-    const index = tags.indexOf(tag);
-    this.input([...tags.slice(0, index), ...tags.slice(index + 1)]);
-  }
-
-  randomScheme() {
-    const backgroundColor = randomColor();
-    return {
-      backgroundColor: backgroundColor,
-      foregroundColor: invertColor(backgroundColor)
+    const randomScheme = () => {
+      const backgroundColor = randomColor();
+      return {
+        backgroundColor,
+        foregroundColor: invertColor(backgroundColor)
+      };
     };
-  }
 
-  tagExists(tagName: string): boolean {
-    return this.tags.map(({ name }) => name).includes(tagName);
-  }
+    const colorScheme = ref(randomScheme());
 
-  async createTag(name: string) {
-    const { backgroundColor, foregroundColor } = this.colorScheme;
-    const tag: Tag = {
-      name,
-      description: '',
-      backgroundColor,
-      foregroundColor
+    const tagExists = (tagName: string): boolean => {
+      return tags.value.map(({ name }) => name).includes(tagName);
     };
-    return await this.addTag(tag);
-  }
 
-  @Emit()
-  input(_value: (string | Tag)[]): string[] {
-    const tags: string[] = [];
-    for (let i = 0; i < _value.length; i++) {
-      const element = _value[i];
-      if (typeof element === 'string') {
-        this.attemptTagCreation(element);
-        tags.push(element);
-      } else {
-        tags.push(element.name);
+    const createTag = async (name: string) => {
+      const { backgroundColor, foregroundColor } = colorScheme.value;
+      const tag: Tag = {
+        name,
+        description: '',
+        backgroundColor,
+        foregroundColor
+      };
+      return await addTag(tag);
+    };
+
+    const remove = (tag: string) => {
+      const tags = value.value;
+      const index = tags.indexOf(tag);
+      input([...tags.slice(0, index), ...tags.slice(index + 1)]);
+    };
+
+    const attemptTagCreation = (element: string) => {
+      if (tagExists(element)) {
+        return;
       }
-    }
-    return tags;
-  }
+      createTag(element).then(({ success }) => {
+        if (!success) {
+          remove(element);
+        }
+      });
+    };
 
-  private attemptTagCreation(element: string) {
-    if (this.tagExists(element)) {
-      return;
-    }
-    this.createTag(element).then(({ success }) => {
-      if (!success) {
-        this.remove(element);
+    const input = (_value: (string | Tag)[]) => {
+      const tags: string[] = [];
+      for (let i = 0; i < _value.length; i++) {
+        const element = _value[i];
+        if (typeof element === 'string') {
+          attemptTagCreation(element);
+          tags.push(element);
+        } else {
+          tags.push(element.name);
+        }
+      }
+
+      emit('input', tags);
+    };
+
+    watch(search, (keyword: string | null, previous: string | null) => {
+      if (keyword && !previous) {
+        colorScheme.value = randomScheme();
       }
     });
+
+    const newTagBackground = computed<string>(() => {
+      return `#${colorScheme.value.backgroundColor}`;
+    });
+
+    const newTagForeground = computed<string>(() => {
+      return `#${colorScheme.value.foregroundColor}`;
+    });
+
+    const values = computed<Tag[]>(() => {
+      return tags.value.filter(({ name }) => value.value.includes(name));
+    });
+
+    return {
+      values,
+      tags,
+      search,
+      input,
+      newTagBackground,
+      newTagForeground,
+      remove,
+      manageTags
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

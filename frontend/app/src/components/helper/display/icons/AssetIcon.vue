@@ -21,7 +21,7 @@
     <span>
       {{
         $t('asset_icon.tooltip', {
-          symbol: getSymbol(identifier),
+          symbol: getAssetSymbol(identifier),
           name: getAssetName(identifier)
         })
       }}
@@ -31,72 +31,78 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Component, Mixins, Prop, Watch } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
+import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { currencies } from '@/data/currencies';
-import AssetMixin from '@/mixins/asset-mixin';
+import { api } from '@/services/rotkehlchen-api';
 
-@Component({
-  components: { GeneratedIcon }
-})
-export default class AssetIcon extends Mixins(AssetMixin) {
-  @Prop({ required: true })
-  identifier!: string;
-  @Prop({ required: false, type: String, default: '' })
-  symbol!: string;
-  @Prop({ required: true, type: String })
-  size!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  changeable!: boolean;
-  @Prop({ required: false, type: Object, default: () => null })
-  styled!: any;
+export default defineComponent({
+  name: 'AssetIcon',
+  components: { GeneratedIcon },
+  props: {
+    identifier: { required: true, type: String },
+    symbol: { required: false, type: String, default: '' },
+    size: { required: true, type: String },
+    changeable: { required: false, type: Boolean, default: false },
+    styled: { required: false, type: Object, default: () => null }
+  },
+  setup(props) {
+    const { symbol, changeable, identifier } = toRefs(props);
+    const error = ref<boolean>(false);
 
-  error: boolean = false;
+    const { getAssetSymbol, getAssetName, getAssetIdentifierForSymbol } =
+      setupAssetInfoRetrieval();
 
-  @Watch('symbol')
-  onSymbolChange() {
-    this.error = false;
+    watch([symbol, changeable, identifier], () => {
+      error.value = false;
+    });
+
+    const currency = computed<string | undefined>(() => {
+      if (
+        [Blockchain.BTC, Blockchain.ETH].includes(
+          identifier.value as Blockchain
+        )
+      ) {
+        return undefined;
+      }
+      return currencies.find(
+        ({ tickerSymbol }) => tickerSymbol === identifier.value
+      )?.unicodeSymbol;
+    });
+
+    const displayAsset = computed<string>(() => {
+      if (error.value && symbol.value) {
+        return symbol.value;
+      }
+      return currency.value || identifier.value;
+    });
+
+    const url = computed<string>(() => {
+      if (
+        symbol.value === 'WETH' ||
+        getAssetIdentifierForSymbol('WETH') === identifier.value
+      ) {
+        return require(`@/assets/images/defi/weth.svg`);
+      }
+      const url = `${api.serverUrl}/api/1/assets/${identifier.value}/icon`;
+      return changeable.value ? `${url}?t=${Date.now()}` : url;
+    });
+
+    return {
+      currency,
+      error,
+      displayAsset,
+      url,
+      getAssetSymbol,
+      getAssetName
+    };
   }
-
-  @Watch('changeable')
-  onChange() {
-    this.error = false;
-  }
-
-  @Watch('identifier')
-  onIdentifierChange() {
-    this.error = false;
-  }
-
-  get asset(): string {
-    return this.identifier;
-  }
-
-  get displayAsset(): string {
-    const symbol = this.symbol ? this.symbol : this.getSymbol(this.identifier);
-    if (this.error && symbol) {
-      return symbol;
-    }
-    return this.currency || this.asset;
-  }
-
-  get currency(): string | undefined {
-    if (this.asset === Blockchain.BTC || this.asset === Blockchain.ETH) {
-      return undefined;
-    }
-    return currencies.find(({ tickerSymbol }) => tickerSymbol === this.asset)
-      ?.unicodeSymbol;
-  }
-
-  get url(): string {
-    if (
-      this.symbol === 'WETH' ||
-      this.getIdentifierForSymbol('WETH') === this.identifier
-    ) {
-      return require(`@/assets/images/defi/weth.svg`);
-    }
-    const url = `${this.$api.serverUrl}/api/1/assets/${this.asset}/icon`;
-    return this.changeable ? `${url}?t=${Date.now()}` : url;
-  }
-}
+});
 </script>

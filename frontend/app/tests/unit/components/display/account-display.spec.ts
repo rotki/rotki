@@ -10,7 +10,7 @@ import store from '@/store/store';
 Vue.use(Vuetify);
 
 describe('AccountDisplay.vue', () => {
-  let wrapper: Wrapper<AccountDisplay>;
+  let wrapper: Wrapper<any>;
 
   const account: GeneralAccount = {
     chain: Blockchain.ETH,
@@ -26,6 +26,9 @@ describe('AccountDisplay.vue', () => {
     return mount(AccountDisplay, {
       store,
       pinia,
+      provide: {
+        'vuex-store': store
+      },
       vuetify,
       stubs: ['v-tooltip', 'asset-icon'],
       propsData: {

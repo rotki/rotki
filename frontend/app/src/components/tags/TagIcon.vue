@@ -18,14 +18,14 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import { Tag } from '@/types/user';
 
-@Component({})
-export default class TagIcon extends Vue {
-  @Prop({ required: true })
-  tag!: Tag;
-  @Prop({ required: false, type: Boolean, default: false })
-  small!: boolean;
-}
+export default defineComponent({
+  name: 'TagIcon',
+  props: {
+    tag: { required: true, type: Object as PropType<Tag> },
+    small: { required: false, type: Boolean, default: false }
+  }
+});
 </script>

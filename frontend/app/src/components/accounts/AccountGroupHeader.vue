@@ -4,10 +4,10 @@
   </td>
   <fragment v-else>
     <td
-      :colspan="$vuetify.breakpoint.xsOnly ? 1 : 2"
+      :colspan="xsOnly ? 1 : 2"
       :class="{
-        'v-data-table__mobile-row': $vuetify.breakpoint.xsOnly,
-        'pa-2': !$vuetify.breakpoint.xsOnly
+        'v-data-table__mobile-row': xsOnly,
+        'pa-2': !xsOnly
       }"
     >
       <div class="ps-8">
@@ -27,7 +27,7 @@
         <span class="font-weight-medium">
           {{ $t('account_group_header.xpub') }}
         </span>
-        <span :style="amountPrivacyStyle">
+        <span :class="{ 'blur-content': !shouldShowAmount }">
           <v-tooltip top open-delay="400">
             <template #activator="{ on }">
               <span v-on="on">{{ displayXpub }}</span>
@@ -39,7 +39,10 @@
           :value="xpub.xpub"
           :tooltip="$t('account_group_header.copy_tooltip')"
         />
-        <span v-if="xpub.derivationPath" :style="amountPrivacyStyle">
+        <span
+          v-if="xpub.derivationPath"
+          :class="{ 'blur-content': !shouldShowAmount }"
+        >
           <span class="font-weight-medium">
             {{ $t('account_group_header.derivation_path') }}
           </span>
@@ -52,7 +55,7 @@
       <amount-display
         :value="sum"
         :loading="loading"
-        :asset="$vuetify.breakpoint.xsOnly ? 'BTC' : null"
+        :asset="xsOnly ? 'BTC' : null"
       />
     </td>
     <td class="text-end" :class="mobileClass">
@@ -93,70 +96,107 @@
 </template>
 <script lang="ts">
 import { Balance, BigNumber } from '@rotki/common';
-import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
+import { setupThemeCheck } from '@/composables/common';
+import { setupDisplayData } from '@/composables/session';
 import { balanceSum, truncateAddress, truncationPoints } from '@/filters';
-import PrivacyMixin from '@/mixins/privacy-mixin';
 import { XpubAccountWithBalance } from '@/store/balances/types';
 import { balanceUsdValueSum } from '@/store/defi/utils';
 
-@Component({
-  components: { TagDisplay, CopyButton, Fragment }
-})
-export default class AccountGroupHeader extends Mixins(PrivacyMixin) {
-  @Prop({ required: true, type: String })
-  group!: string;
-  @Prop({ required: true, type: Array })
-  items!: XpubAccountWithBalance[];
-  @Prop({ required: true, type: Boolean })
-  expanded!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  loading!: boolean;
+export default defineComponent({
+  name: 'AccountGroupHeader',
+  components: { TagDisplay, CopyButton, Fragment },
+  props: {
+    group: { required: true, type: String },
+    items: {
+      required: true,
+      type: Array as PropType<XpubAccountWithBalance[]>
+    },
+    expanded: { required: true, type: Boolean },
+    loading: { required: false, type: Boolean, default: false }
+  },
+  emits: ['delete-clicked', 'expand-clicked', 'edit-clicked'],
+  setup(props, { emit }) {
+    const { items } = toRefs(props);
+    const { breakpoint, currentBreakpoint } = setupThemeCheck();
+    const xsOnly = computed(() => currentBreakpoint.value.xsOnly);
+    const { shouldShowAmount } = setupDisplayData();
 
-  get mobileClass(): string | null {
-    return this.$vuetify.breakpoint.xsOnly ? 'v-data-table__mobile-row' : null;
+    const mobileClass = computed<string | null>(() => {
+      return xsOnly.value ? 'v-data-table__mobile-row' : null;
+    });
+
+    const xpub = computed<XpubAccountWithBalance>(() => {
+      return items.value.filter(item => !item.address)[0];
+    });
+
+    const label = computed<string>(() => {
+      return xpub.value.label;
+    });
+
+    const xpubTags = computed<string[]>(() => {
+      return xpub.value.tags;
+    });
+
+    const displayXpub = computed<string>(() => {
+      return truncateAddress(
+        xpub.value.xpub,
+        truncationPoints[breakpoint.value] ?? 4
+      );
+    });
+
+    const sum = computed<BigNumber>(() => {
+      return balanceSum(items.value.map(({ balance: { amount } }) => amount));
+    });
+
+    const usdSum = computed<BigNumber>(() => {
+      return balanceUsdValueSum(items.value);
+    });
+
+    const balance = computed<Balance>(() => {
+      return {
+        amount: sum.value,
+        usdValue: usdSum.value
+      };
+    });
+
+    const deleteClicked = (_payload: XpubAccountWithBalance) =>
+      emit('delete-clicked', _payload);
+
+    const expandClicked = (_payload: XpubAccountWithBalance) =>
+      emit('expand-clicked', _payload);
+
+    const editClicked = (_payload: XpubAccountWithBalance) =>
+      emit('edit-clicked', _payload);
+
+    return {
+      mobileClass,
+      xsOnly,
+      label,
+      xpub,
+      xpubTags,
+      balance,
+      displayXpub,
+      sum,
+      usdSum,
+      deleteClicked,
+      expandClicked,
+      editClicked,
+      shouldShowAmount
+    };
   }
-
-  get xpub(): XpubAccountWithBalance {
-    return this.items.filter(item => !item.address)[0];
-  }
-
-  get label(): string {
-    return this.xpub.label;
-  }
-
-  get xpubTags(): string[] {
-    return this.xpub.tags;
-  }
-
-  get displayXpub(): string {
-    return truncateAddress(
-      this.xpub.xpub,
-      truncationPoints[this.$vuetify.breakpoint.name] ?? 4
-    );
-  }
-
-  get sum(): BigNumber {
-    return balanceSum(this.items.map(({ balance: { amount } }) => amount));
-  }
-
-  get usdSum(): BigNumber {
-    return balanceUsdValueSum(this.items);
-  }
-
-  get balance(): Balance {
-    return { amount: this.sum, usdValue: this.usdSum };
-  }
-
-  @Emit()
-  deleteClicked(_payload: XpubAccountWithBalance) {}
-
-  @Emit()
-  expandClicked(_xpub: XpubAccountWithBalance) {}
-
-  @Emit()
-  editClicked(_xpub: XpubAccountWithBalance) {}
-}
+});
 </script>
+<style scoped lang="scss">
+.blur-content {
+  filter: blur(0.75em);
+}
+</style>

@@ -29,6 +29,7 @@ export default defineComponent({
       type: Object as PropType<SearchMatcher<any>>
     }
   },
+  emits: ['click'],
   setup(props, { emit }) {
     const click = (key: string) => {
       emit('click', key);

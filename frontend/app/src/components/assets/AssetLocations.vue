@@ -47,6 +47,7 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
+import { mapState } from 'pinia';
 import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DataTableHeader } from 'vuetify';
 import { mapGetters } from 'vuex';
@@ -57,6 +58,7 @@ import TagDisplay from '@/components/tags/TagDisplay.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { CURRENCY_USD } from '@/data/currencies';
 import { AssetBreakdown, AssetPriceInfo } from '@/store/balances/types';
+import { useMainStore } from '@/store/store';
 
 @Component({
   components: {
@@ -69,7 +71,7 @@ import { AssetBreakdown, AssetPriceInfo } from '@/store/balances/types';
   computed: {
     ...mapGetters('balances', ['breakdown', 'account', 'assetPriceInfo']),
     ...mapGetters('session', ['currencySymbol']),
-    ...mapGetters(['detailsLoading'])
+    ...mapState(useMainStore, ['detailsLoading'])
   }
 })
 export default class AssetLocations extends Vue {

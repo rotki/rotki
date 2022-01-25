@@ -5,9 +5,9 @@
     offset-x
     :close-on-content-click="false"
   >
-    <template #activator="{ on: menu, attrs }">
+    <template #activator="{ on: menuListeners, attrs }">
       <v-tooltip top>
-        <template #activator="{ on: tooltip }">
+        <template #activator="{ on: tooltipListeners }">
           <v-btn
             v-bind="attrs"
             icon
@@ -15,7 +15,7 @@
             small
             depressed
             :disabled="loading"
-            v-on="{ ...menu, ...tooltip }"
+            v-on="{ ...menuListeners, ...tooltipListeners }"
           >
             <v-icon color="primary">mdi-database-refresh</v-icon>
           </v-btn>
@@ -44,22 +44,28 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, ref } from '@vue/composition-api';
 
-@Component({})
-export default class ConfirmableReset extends Vue {
-  @Prop({ required: false, type: String, default: '' })
-  tooltip!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  loading!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  disabled!: string;
+export default defineComponent({
+  name: 'ConfirmableReset',
+  props: {
+    tooltip: { required: false, type: String, default: '' },
+    loading: { required: false, type: Boolean, default: false },
+    disabled: { required: false, type: Boolean, default: false }
+  },
+  emits: ['reset'],
+  setup(_, { emit }) {
+    const menu = ref<boolean>(false);
 
-  menu: boolean = false;
+    const reset = () => {
+      menu.value = false;
+      emit('reset');
+    };
 
-  @Emit()
-  reset() {
-    this.menu = false;
+    return {
+      menu,
+      reset
+    };
   }
-}
+});
 </script>
