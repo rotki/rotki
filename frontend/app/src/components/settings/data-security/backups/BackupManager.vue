@@ -19,6 +19,8 @@
         :loading="loading"
         :items="backups"
         :directory="directory"
+        :selected="selected"
+        @change="onSelectedChange"
         @remove="remove"
       />
       <template #buttons>
@@ -31,8 +33,27 @@
         >
           {{ $t('backup_manager.backup_button') }}
         </v-btn>
+        <v-btn
+          v-if="selected.length > 0"
+          depressed
+          color="error"
+          @click="showConfirmMassDelete = true"
+        >
+          {{ $t('backup_manager.delete_selected') }}
+        </v-btn>
       </template>
     </card>
+    <confirm-dialog
+      :display="!!showConfirmMassDelete"
+      :title="$t('database_backups.confirm.title')"
+      :message="
+        $t('database_backups.confirm.mass_message', {
+          length: selected.length
+        })
+      "
+      @cancel="showConfirmMassDelete = false"
+      @confirm="massRemove"
+    />
   </fragment>
 </template>
 
@@ -133,8 +154,42 @@ const setupBackupInfo = () => {
 function setupBackupActions(
   directory: Ref<string>,
   backupInfo: Ref<DatabaseInfo | null | undefined>,
-  refresh: () => Promise<void>
+  refresh: () => Promise<void>,
+  selected: Ref<UserDbBackup[]>,
+  showConfirmMassDelete: Ref<boolean>
 ) {
+  const massRemove = async () => {
+    const filepaths = selected.value.map(db => getFilepath(db, directory));
+    try {
+      await api.backups.deleteBackup(filepaths);
+      if (backupInfo.value) {
+        const info: DatabaseInfo = { ...backupInfo.value };
+        selected.value.forEach((db: UserDbBackup) => {
+          const index = info.userdb.backups.findIndex(
+            ({ size, time, version }) =>
+              version === db.version && time === db.time && size === db.size
+          );
+          info.userdb.backups.splice(index, 1);
+        });
+        backupInfo.value = info;
+      }
+      selected.value = [];
+    } catch (e: any) {
+      logger.error(e);
+      const { notify } = useNotifications();
+      notify({
+        display: true,
+        title: i18n.t('database_backups.delete_error.title').toString(),
+        message: i18n
+          .t('database_backups.delete_error.mass_message', {
+            message: e.message
+          })
+          .toString()
+      });
+    }
+
+    showConfirmMassDelete.value = false;
+  };
   const remove = async (db: UserDbBackup) => {
     const filepath = getFilepath(db, directory);
     try {
@@ -199,7 +254,7 @@ function setupBackupActions(
       saving.value = false;
     }
   };
-  return { remove, backup, saving };
+  return { remove, massRemove, backup, saving };
 }
 
 const BackupManager = defineComponent({
@@ -214,9 +269,25 @@ const BackupManager = defineComponent({
     const getBackupInfo = setupBackupInfo();
     const { backupInfo, directory } = getBackupInfo;
 
+    const showConfirmMassDelete = ref<boolean>(false);
+
+    const selected = ref<UserDbBackup[]>([]);
+    const onSelectedChange = (newSelected: UserDbBackup[]) => {
+      selected.value = newSelected;
+    };
+
     return {
       ...getBackupInfo,
-      ...setupBackupActions(directory, backupInfo, getBackupInfo.loadInfo)
+      ...setupBackupActions(
+        directory,
+        backupInfo,
+        getBackupInfo.loadInfo,
+        selected,
+        showConfirmMassDelete
+      ),
+      selected,
+      showConfirmMassDelete,
+      onSelectedChange
     };
   }
 });

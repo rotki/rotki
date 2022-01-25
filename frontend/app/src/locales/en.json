@@ -188,6 +188,7 @@
   },
   "backup_manager": {
     "backup_button": "Create new Backup",
+    "delete_selected": "Delete selected Backups",
     "title": "User Database Backups"
   },
   "balancer": {
@@ -359,10 +360,12 @@
     },
     "confirm": {
       "message": "Are you sure you want to delete the {size} database backup from {date}?",
+      "mass_message": "Are you sure you want to delete these {length} database backup(s)?",
       "title": "Delete database backup"
     },
     "delete_error": {
       "message": "There was a problem deleting {file}: {message}",
+      "mass_message": "There was a problem while deleting the database backups: {message}",
       "title": "Backup delete failure"
     },
     "load_error": {
