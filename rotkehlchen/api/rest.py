@@ -136,7 +136,7 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.utils.misc import combine_dicts
-from rotkehlchen.utils.version_check import check_if_version_up_to_date
+from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -2055,8 +2055,8 @@ class RestAPI():
 
         return self.get_queried_addresses_per_module()
 
-    def get_info(self) -> Response:
-        version = check_if_version_up_to_date()
+    def get_info(self, check_for_updates: bool) -> Response:
+        version = get_current_version(check_for_updates=check_for_updates)
         result = {'version': process_result(version), 'data_directory': str(self.rotkehlchen.data_dir)}  # noqa: E501
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 

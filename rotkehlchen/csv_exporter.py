@@ -36,7 +36,7 @@ from rotkehlchen.typing import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
-from rotkehlchen.utils.version_check import check_if_version_up_to_date
+from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.cost_basis import CostBasisInfo
@@ -340,7 +340,7 @@ class CSVExporter():
         self.all_events_csv.append(template)  # separate with 2 new lines
         self.all_events_csv.append(template)
 
-        version_result = check_if_version_up_to_date()
+        version_result = get_current_version(check_for_updates=False)
         entry = template.copy()
         entry['received_in_asset'] = 'rotki version'
         entry['net_profit_or_loss'] = version_result.our_version

@@ -2645,3 +2645,7 @@ class BinanceMarketsSchema(Schema):
         limit_to=[Location.BINANCEUS, Location.BINANCE],
         load_default=Location.BINANCE,
     )
+
+
+class AppInfoSchema(Schema):
+    check_for_updates = fields.Boolean(load_default=False)

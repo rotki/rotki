@@ -23,7 +23,7 @@ from rotkehlchen.utils.misc import (
 )
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
-from rotkehlchen.utils.version_check import check_if_version_up_to_date
+from rotkehlchen.utils.version_check import get_current_version
 
 
 def test_process_result():
@@ -127,7 +127,7 @@ def test_check_if_version_up_to_date():
     )
 
     with patch_our_version, patch_github:
-        result = check_if_version_up_to_date()
+        result = get_current_version(check_for_updates=True)
         assert result.download_url is None, 'Same version should return None as url'
 
     def mock_github_return(url, **kwargs):  # pylint: disable=unused-argument
@@ -135,7 +135,7 @@ def test_check_if_version_up_to_date():
         return MockResponse(200, contents)
 
     with patch('requests.get', side_effect=mock_github_return):
-        result = check_if_version_up_to_date()
+        result = get_current_version(check_for_updates=True)
     assert result
     assert result[0]
     assert result.latest_version == 'v99.99.99'
@@ -147,7 +147,7 @@ def test_check_if_version_up_to_date():
         return MockResponse(501, contents)
 
     with patch('requests.get', side_effect=mock_non_200_github_return):
-        result = check_if_version_up_to_date()
+        result = get_current_version(check_for_updates=True)
         assert result.our_version
         assert not result.latest_version
         assert not result.latest_version
@@ -157,7 +157,7 @@ def test_check_if_version_up_to_date():
         return MockResponse(200, contents)
 
     with patch('requests.get', side_effect=mock_missing_fields_github_return):
-        result = check_if_version_up_to_date()
+        result = get_current_version(check_for_updates=True)
         assert result.our_version
         assert not result.latest_version
         assert not result.latest_version
@@ -167,7 +167,7 @@ def test_check_if_version_up_to_date():
         return MockResponse(200, contents)
 
     with patch('requests.get', side_effect=mock_invalid_json_github_return):
-        result = check_if_version_up_to_date()
+        result = get_current_version(check_for_updates=True)
         assert result.our_version
         assert not result.latest_version
         assert not result.latest_version

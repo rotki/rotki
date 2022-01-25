@@ -9356,15 +9356,22 @@ Querying general information
 
 .. http:get:: /api/(version)/info
 
-   Doing a GET on the info endpoint will return general information about rotki. Under the version key we get info on the version of rotki. If there is a newer version then ``"download_url"`` will be populated. If not then only ``"our_version"`` and ``"latest_version"`` will be. There is a possibility that latest version may not be populated due to github not being reachable. Also we return the data directory
+   Doing a GET on the info endpoint will return general information about rotki. Under the version key we get info on the current version of rotki. If there is a newer version then ``"download_url"`` will be populated. If not then only ``"our_version"`` and ``"latest_version"`` will be. There is a possibility that latest version may not be populated due to github not being reachable. Also we return the data directory
 
+   .. note::
+      This endpoint also accepts parameters as query arguments.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/version HTTP/1.1
+      GET /api/1/info HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"check_for_updates": true}
+
+   :reqjson bool check_for_updates: If true will perform a external query to check the latest version available and get the download link.
 
    **Example Response**:
 
@@ -9387,11 +9394,12 @@ Querying general information
 
    :resjson str our_version: The version of rotki present in the system
    :resjson str latest_version: The latest version of rotki available
-   :resjson str url: URL link to download the latest version
+   :resjson str download_url: URL link to download the latest version
    :resjson str data_directory: The rotki data directory
 
    :statuscode 200: Information queried succesfully
    :statuscode 500: Internal rotki error
+
 
 Sending a Ping
 ====================
