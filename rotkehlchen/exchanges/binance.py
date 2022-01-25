@@ -358,9 +358,18 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 except JSONDecodeError:
                     pass
 
+                if 'Invalid symbol' in msg and method == 'myTrades':
+                    assert options, 'We always provide options for myTrades call'
+                    symbol = options.get('symbol', 'no symbol given')
+                    # Binance does not return trades for delisted markets. It also may
+                    # return a delisted market in the active market endpoints, so we
+                    # need to handle it here.
+                    log.debug(f'Couldnt query {self.name} trades for {symbol} since its delisted')
+                    return []
+
                 exception_class: Union[Type[RemoteError], Type[BinancePermissionError]]
                 if response.status_code == 401 and code == REJECTED_MBX_KEY:
-                    # Either API key permission error or if futures/dapi then not enables yet
+                    # Either API key permission error or if futures/dapi then not enabled yet
                     exception_class = BinancePermissionError
                 else:
                     exception_class = RemoteError

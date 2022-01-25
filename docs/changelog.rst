@@ -2,6 +2,9 @@
 Changelog
 =========
 
+* :bug:`-` If binance returns a delisted market as active and rotki queries it, the entire binance trade history query will not fail.
+* :bug:`-` All Liquity events will now always be correctly queried.
+
 * :release:`1.23.2 <2022-01-21>`
 * :bug:`-` Users will now be properly prompted to restart the application after the auto-updater downloads the update.
 * :bug:`3943` Users will now be able to properly add multiple accounts on Avalance even if they exist on Ethereum.
