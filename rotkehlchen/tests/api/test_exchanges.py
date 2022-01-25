@@ -1306,3 +1306,17 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     result = assert_proper_response_with_result(response)
     assert result['entries_found'] == 2
     assert set(result['assets']) == {'ETH', 'ETH2'}
+
+    # assert that filter by asset is working properly
+    response = requests.get(
+        api_url_for(
+            server,
+            'stakingresource',
+        ), {
+            "from_timestamp": 1636538550,
+            "to_timestamp": 1640493375,
+            "asset": "ETH",
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['events']) == 1

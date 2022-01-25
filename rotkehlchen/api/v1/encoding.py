@@ -1076,6 +1076,7 @@ class StakingQuerySchema(
 ):
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
+    asset = AssetField(load_default=None)
 
     @post_load
     def make_staking_query(  # pylint: disable=no-self-use
@@ -1096,6 +1097,7 @@ class StakingQuerySchema(
                 HistoryEventType.STAKING,
                 HistoryEventType.UNSTAKING,
             ],
+            asset=data['asset'],
         )
         return {
             'async_query': data['async_query'],
