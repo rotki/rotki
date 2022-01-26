@@ -105,8 +105,6 @@ class AssetMovement(NamedTuple):
             transaction_id=entry[4],
             timestamp=Timestamp(entry[5]),
             asset=Asset(entry[6]),
-            # TODO: should we also _force_positive here? I guess not since
-            # we always make sure to save it as positive
             amount=deserialize_asset_amount(entry[7]),
             fee_asset=Asset(entry[8]),
             fee=deserialize_fee(entry[9]),
