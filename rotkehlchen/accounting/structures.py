@@ -311,6 +311,9 @@ class HistoryEventSubType(SerializableEnumMixin):
     RECEIVE = 7
     APPROVE = 8
     DEPLOY = 9
+    AIRDROP = 10
+    BRIDGE = 11
+    GOVERNANCE_PROPOSE = 12
 
     def serialize_event_subtype(self) -> str:
         """Serialize event subtype to a readable string
@@ -402,9 +405,12 @@ class HistoryBaseEntry:
     location_label: Optional[str] = None
     notes: Optional[str] = None
     event_subtype: Optional[HistoryEventSubType] = None
-    counterparty: Optional[str] = None  # identifier for counterparty. Source/destination etc.
+    # identifier for counterparty.
+    # For a send it's the target
+    # For a receive it's the sender
+    # For bridged transfer it's the bridge's network identifier
+    counterparty: Optional[str] = None
     identifier: Optional[int] = None
-
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
         event_subtype = None

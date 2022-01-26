@@ -1,13 +1,13 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 15/12/2021 12:36:55.
+# tools/scripts/generate_constant_assets.py at 24/01/2022 21:42:06.
 # Do not edit manually!
 
 from typing import List
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.typing import Timestamp
+from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 
 CONSTANT_ASSETS: List[Asset] = []
 
@@ -337,6 +337,18 @@ A_BEST = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_BEST)
+A_GTC = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'),
+    decimals=18,
+    name="Gitcoin",
+    symbol='GTC',
+    started=Timestamp(1620856082),
+    swapped_for=None,
+    coingecko='gitcoin',
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_GTC)
 
 A_AAVE = EthereumToken.initialize(
     address=string_to_ethereum_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9'),
@@ -2241,7 +2253,7 @@ A_PSP = EthereumToken.initialize(
     started=Timestamp(1636966698),
     swapped_for=None,
     coingecko='paraswap',
-    cryptocompare=None,
+    cryptocompare='PSP',
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_PSP)

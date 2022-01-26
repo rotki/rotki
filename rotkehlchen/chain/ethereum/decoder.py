@@ -9,11 +9,12 @@ from rotkehlchen.accounting.structures import (
 )
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import decode_event_data, token_normalized_value
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Location
@@ -27,6 +28,11 @@ if TYPE_CHECKING:
 ERC20_TRANSFER = b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef'  # noqa: E501
 # keccak of approve(address,uint256)
 ERC20_APPROVE = b'\x8c[\xe1\xe5\xeb\xec}[\xd1OqB}\x1e\x84\xf3\xdd\x03\x14\xc0\xf7\xb2)\x1e[ \n\xc8\xc7\xc3\xb9%'  # noqa: E501
+GTC_CLAIM = b'\x04g R\xdc\xb6\xb5\xb1\x9a\x9c\xc2\xec\x1b\x8fD\x7f\x1f^G\xb5\xe2L\xfa^O\xfbd\rc\xca+\xe7'  # noqa: E501
+ONEINCH_CLAIM = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
+XDAI_BRIDGE_RECEIVE = b'\x9a\xfdG\x90~%\x02\x8c\xda\xca\x89\xd1\x93Q\x8c0+\xbb\x12\x86\x17\xd5\xa9\x92\xc5\xab\xd4X\x15Re\x93'  # noqa: E501
+GOVERNORALPHA_PROPOSE = b"}\x84\xa6&:\xe0\xd9\x8d3)\xbd{F\xbbN\x8do\x98\xcd5\xa7\xad\xb4\\'L\x8b\x7f\xd5\xeb\xd5\xe0"  # noqa: E501
+GOVERNORALPHA_PROPOSE_ABI = '{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"id","type":"uint256"},{"indexed":false,"internalType":"address","name":"proposer","type":"address"},{"indexed":false,"internalType":"address[]","name":"targets","type":"address[]"},{"indexed":false,"internalType":"uint256[]","name":"values","type":"uint256[]"},{"indexed":false,"internalType":"string[]","name":"signatures","type":"string[]"},{"indexed":false,"internalType":"bytes[]","name":"calldatas","type":"bytes[]"},{"indexed":false,"internalType":"uint256","name":"startBlock","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"endBlock","type":"uint256"},{"indexed":false,"internalType":"string","name":"description","type":"string"}],"name":"ProposalCreated","type":"event"}'  # noqa: E501
 
 
 class EVMTransactionDecoder():
@@ -37,6 +43,8 @@ class EVMTransactionDecoder():
         self.event_rules = (  # rules for tx receipt logs decoding
             self._maybe_decode_erc20_approve,
             self._maybe_decode_erc20_transfer,
+            self._maybe_enrich_transfers,
+            self._maybe_decode_governance,
         )
 
     def try_all_rules(
@@ -44,9 +52,10 @@ class EVMTransactionDecoder():
             token: Optional[EthereumToken],
             log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,
+            decoded_events: List[HistoryBaseEntry],
     ) -> Optional[HistoryBaseEntry]:
         for rule in self.event_rules:
-            event = rule(token=token, log=log, transaction=transaction)
+            event = rule(token=token, log=log, transaction=transaction, decoded_events=decoded_events)  # noqa: E501
             if event:
                 return event
 
@@ -74,7 +83,7 @@ class EVMTransactionDecoder():
         # decode transaction logs from the receipt
         for tx_log in tx_receipt.logs:
             token = GlobalDBHandler.get_ethereum_token(tx_log.address)
-            event = self.try_all_rules(token=token, log=tx_log, transaction=transaction)
+            event = self.try_all_rules(token=token, log=tx_log, transaction=transaction, decoded_events=events)  # noqa: E501
             if event:
                 events.append(event)
 
@@ -201,6 +210,7 @@ class EVMTransactionDecoder():
             token: Optional[EthereumToken],
             log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,
+            decoded_events: [HistoryBaseEntry],
     ) -> Optional[HistoryBaseEntry]:
         if log.topics[0] != ERC20_APPROVE or token is None:
             return None
@@ -232,6 +242,7 @@ class EVMTransactionDecoder():
             token: Optional[EthereumToken],
             log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,
+            decoded_events: [HistoryBaseEntry],
     ) -> Optional[HistoryBaseEntry]:
         if log.topics[0] != ERC20_TRANSFER or token is None:
             return None
@@ -258,3 +269,74 @@ class EVMTransactionDecoder():
             event_subtype=None,
             counterparty=counterparty,
         )
+
+    def _maybe_enrich_transfers(
+            self,
+            token: Optional[EthereumToken],
+            log: EthereumTxReceiptLog,
+            transaction: EthereumTransaction,
+            decoded_events: [HistoryBaseEntry],
+    ) -> Optional[HistoryBaseEntry]:
+        if log.topics[0] == GTC_CLAIM and log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
+            for event in decoded_events:
+                if event.asset_balance.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:  # noqa: E501
+                    event.event_subtype = HistoryEventSubType.AIRDROP
+                    event.notes = f'Claim {event.asset_balance.balance.amount} GTC from the GTC airdrop'  # noqa: E501
+            return None
+        elif log.topics[0] == ONEINCH_CLAIM and log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
+            for event in decoded_events:
+                if event.asset_balance.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:  # noqa: E501
+                    event.event_subtype = HistoryEventSubType.AIRDROP
+                    event.notes = f'Claim {event.asset_balance.balance.amount} 1INCH from the 1INCH airdrop'  # noqa: E501
+            return None
+        elif log.topics[0] == XDAI_BRIDGE_RECEIVE and log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501
+            for event in decoded_events:
+                if event.event_type == HistoryEventType.RECEIVE:
+                    # user bridged from xdai
+                    event.event_type = HistoryEventType.TRANSFER
+                    event.event_subtype = HistoryEventSubType.BRIDGE
+                    event.counterparty = 'XDAI'
+                    event.notes = (
+                        f'Bridge {event.asset_balance.balance.amount} '
+                        f'{event.asset_balance.asset.symbol} from XDAI'
+                    )
+
+        return None
+
+    def _maybe_decode_governance(
+            self,
+            token: Optional[EthereumToken],
+            log: EthereumTxReceiptLog,
+            transaction: EthereumTransaction,
+            decoded_events: [HistoryBaseEntry],
+    ) -> Optional[HistoryBaseEntry]:
+        if log.topics[0] == GOVERNORALPHA_PROPOSE:
+            if log.address == '0xDbD27635A534A3d3169Ef0498beB56Fb9c937489':
+                governance_name = 'Gitcoin'
+            else:
+                governance_name = log.address
+
+            try:
+                _, decoded_data = decode_event_data(log, GOVERNORALPHA_PROPOSE_ABI)
+            except DeserializationError as e:
+                log.debug(f'Failed to decode governor alpha event due to {e}')
+                return None
+
+            proposal_id = decoded_data[0]
+            proposal_text = decoded_data[8]
+            notes = f'Created {governance_name} proposal {proposal_id}. {proposal_text}'
+            return HistoryBaseEntry(
+                event_identifier='0x' + transaction.tx_hash.hex(),
+                sequence_index=log.log_index,
+                timestamp=transaction.timestamp,
+                location=Location.BLOCKCHAIN,
+                location_label=transaction.from_address,
+                # TODO: This should be null for proposals when possible
+                asset_balance=AssetBalance(asset=A_ETH, balance=Balance()),
+                notes=notes,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.GOVERNANCE_PROPOSE,
+                counterparty=governance_name,
+            )
+
+        return None
