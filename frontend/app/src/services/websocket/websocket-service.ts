@@ -24,7 +24,13 @@ class WebsocketService {
       let websocketUrl = window.interop?.websocketUrl() ?? null;
       const protocol = location.protocol.startsWith('https') ? 'wss' : 'ws';
       if (!websocketUrl) {
-        websocketUrl = `${window.location.host}/ws/`;
+        const websocketPort = process.env.VUE_APP_WEBSOCKET_PORT;
+        const host = window.location.host;
+        if (websocketPort) {
+          websocketUrl = `${host.split(':')[0]}:${websocketPort}`;
+        } else {
+          websocketUrl = `${host}/ws/`;
+        }
       }
       const url = `${protocol}://${websocketUrl}`;
       logger.debug(`preparing to connect to ${url}`);
