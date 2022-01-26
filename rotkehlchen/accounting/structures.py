@@ -368,6 +368,7 @@ HISTORY_EVENT_DB_TUPLE_READ = Tuple[
     Optional[str],  # notes
     str,            # type
     Optional[str],  # subtype
+    Optional[str],  # counterparty
 ]
 
 HISTORY_EVENT_DB_TUPLE_WRITE = Tuple[

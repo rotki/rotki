@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 from rotkehlchen.accounting.structures import (
-    AssetBalance,
     Balance,
     HistoryBaseEntry,
     HistoryEventSubType,
@@ -49,10 +48,8 @@ def test_tx_decode(user_data_dir):
                     timestamp=1569924574,
                     location=Location.BLOCKCHAIN,
                     location_label=addr1,
-                    asset_balance=AssetBalance(
-                        asset=A_SAI,
-                        balance=Balance(amount=1),
-                    ),
+                    asset=A_SAI,
+                    balance=Balance(amount=1),
                     notes=f'Approve 1 SAI of {addr1} for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',  # noqa: E501
                     event_type=HistoryEventType.INFORMATIONAL,
                     event_subtype=HistoryEventSubType.APPROVE,

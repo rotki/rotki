@@ -163,9 +163,14 @@ def generate_address_via_create2(
     return to_checksum_address(contract_address)
 
 
-def decode_event_data(log: EthereumTxReceiptLog, abi_json: str):
+def decode_event_data(
+        log: EthereumTxReceiptLog,
+        abi_json: str,
+) -> Tuple[List, List]:
     """This is an adjustment of web3's event data decoding to work with our code
     source: https://github.com/ethereum/web3.py/blob/ffe59daf10edc19ee5f05227b25bac8d090e8aa4/web3/_utils/events.py#L201
+
+    Returns a tuple containing the decoded topic data and decoded log data.
 
     May raise:
     - DeserializationError if the abi string is invalid or abi or log topics/data do not match
@@ -180,7 +185,7 @@ def decode_event_data(log: EthereumTxReceiptLog, abi_json: str):
     elif len(log.topics) == 0:
         raise DeserializationError('Expected non-anonymous event to have 1 or more topics')
     # type ignored b/c event_abi_to_log_topic(event_abi: Dict[str, Any])
-    elif event_abi_to_log_topic(event_abi) != log.topics[0]:  # type: ignore
+    elif event_abi_to_log_topic(event_abi) != log.topics[0]:
         raise DeserializationError('The event signature did not match the provided ABI')
     else:
         topics = log.topics[1:]

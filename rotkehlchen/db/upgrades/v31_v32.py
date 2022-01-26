@@ -25,7 +25,8 @@ def upgrade_v31_to_v32(db: 'DBHandler') -> None:
         usd_value TEXT NOT NULL,
         notes TEXT,
         type TEXT NOT NULL,
-        subtype TEXT
+        subtype TEXT,
+        counterparty TEXT
     );""")
     cursor.execute("""
     INSERT INTO history_events_copy (event_identifier, sequence_index, timestamp, location,
