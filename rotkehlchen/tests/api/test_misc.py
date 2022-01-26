@@ -46,6 +46,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
             'download_url': None,
         },
         'data_directory': str(rotki.data_dir),
+        'log_level': 'DEBUG',
     }
 
     with version_patch, release_patch:
@@ -67,6 +68,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
             'download_url': None,
         },
         'data_directory': str(rotki.data_dir),
+        'log_level': 'DEBUG',
     }
 
 
@@ -118,4 +120,5 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
             'download_url': 'https://github.com/rotki/rotki/releases/tag/v99.99.99',
         },
         'data_directory': str(rotki.data_dir),
+        'log_level': 'DEBUG',
     }

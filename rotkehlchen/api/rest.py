@@ -2057,7 +2057,11 @@ class RestAPI():
 
     def get_info(self, check_for_updates: bool) -> Response:
         version = get_current_version(check_for_updates=check_for_updates)
-        result = {'version': process_result(version), 'data_directory': str(self.rotkehlchen.data_dir)}  # noqa: E501
+        result = {
+            'version': process_result(version),
+            'data_directory': str(self.rotkehlchen.data_dir),
+            'log_level': logging.getLevelName(logging.getLogger().getEffectiveLevel()),
+        }
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @staticmethod
