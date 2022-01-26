@@ -14,6 +14,7 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import DBIgnoreValuesFilter, DBStringFilter, HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors import NoPriceForGivenTimestamp, RemoteError
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -310,6 +311,7 @@ class TaskManager():
         this session.
         """
         # Use a deepcopy to avoid mutations in the filter query if it is used later
+        db = DBHistoryEvents(self.database)
         new_query_filter = copy.deepcopy(query_filter)
         new_query_filter.filters.append(
             DBStringFilter(and_op=True, column='usd_value', value='0'),
@@ -321,7 +323,7 @@ class TaskManager():
                 values=list(self.base_entries_ignore_set),
             ),
         )
-        return self.database.rows_missing_prices_in_base_entries(filter_query=new_query_filter)
+        return db.rows_missing_prices_in_base_entries(filter_query=new_query_filter)
 
     def query_missing_prices_of_base_entries(
         self,

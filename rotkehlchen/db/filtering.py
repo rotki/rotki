@@ -399,10 +399,11 @@ class DBMultiStringFilter(DBFilter):
     """Filter a column having a string value out of a selection of values"""
     column: str
     values: List[str]
+    operator: str = 'IN'
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
         return (
-            [f'{self.column} IN ({", ".join(["?"] * len(self.values))})'],
+            [f'{self.column} {self.operator} ({", ".join(["?"] * len(self.values))}) OR {self.column} IS NULL'],  # noqa: E501
             self.values,
         )
 
@@ -645,13 +646,24 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
         return filter_query
 
 
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBNullFilter(DBFilter):
+    columns: List[str]
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        null_columns = []
+        for column in self.columns:
+            null_columns.append(f'{column} IS NULL')
+        return null_columns, []
+
+
 class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
 
     @classmethod
     def make(
             cls,
             and_op: bool = True,
-            order_by_attribute: str = 'timestamp',
+            order_by_attribute: Optional[str] = 'timestamp',
             order_ascending: bool = True,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
@@ -660,9 +672,11 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             asset: Optional[Asset] = None,
             event_type: Optional[List[HistoryEventType]] = None,
             event_subtype: Optional[List[HistoryEventSubType]] = None,
+            exclude_subtype: Optional[List[HistoryEventSubType]] = None,
             location: Optional[Location] = None,
             location_label: Optional[str] = None,
             ignored_ids: Optional[List[str]] = None,
+            null_columns: Optional[List[str]] = None,
     ) -> 'HistoryEventFilterQuery':
         filter_query = cls.create(
             and_op=and_op,
@@ -686,6 +700,14 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
                 and_op=True,
                 column='subtype',
                 values=[x.serialize() for x in event_subtype],
+                operator='IN',
+            ))
+        if exclude_subtype is not None:
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='subtype',
+                values=[x.serialize() for x in exclude_subtype],
+                operator='NOT IN',
             ))
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
@@ -700,6 +722,13 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
                     and_op=True,
                     column='identifier',
                     values=ignored_ids,
+                ),
+            )
+        if null_columns is not None:
+            filters.append(
+                DBNullFilter(
+                    and_op=True,
+                    columns=null_columns,
                 ),
             )
 

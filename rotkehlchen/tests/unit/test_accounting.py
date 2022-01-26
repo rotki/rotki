@@ -923,7 +923,7 @@ def test_fees_count_in_cost_basis(accountant):
 def test_fees_in_received_asset(accountant):
     """
     Test the sell trade where the fee is nominated in the asset received. We had a bug
-    where the PnL report said that there was no documented adquisition.
+    where the PnL report said that there was no documented acquisition.
     """
     history = [
         {

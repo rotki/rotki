@@ -147,6 +147,7 @@ from rotkehlchen.typing import (
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
+    from rotkehlchen.db.filtering import HistoryEventFilterQuery
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 
@@ -2091,10 +2092,12 @@ class StakingResource(BaseResource):
             self,
             async_query: bool,
             only_cache: bool,
-            query_filter: StakingQuerySchema,
+            query_filter: 'HistoryEventFilterQuery',
+            value_filter: 'HistoryEventFilterQuery',
     ) -> Response:
         return self.rest_api.query_kraken_staking_events(
             async_query=async_query,
             only_cache=only_cache,
             query_filter=query_filter,
+            value_filter=value_filter,
         )
