@@ -96,7 +96,7 @@ class DataHandler():
                 # on their own. At the same time delete the directory so that a new
                 # user account can be created
                 shutil.move(
-                    user_data_dir,  # type: ignore
+                    user_data_dir,
                     self.data_directory / f'auto_backup_{username}_{ts_now()}',
                 )
 
