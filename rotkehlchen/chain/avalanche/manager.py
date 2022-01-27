@@ -19,8 +19,6 @@ from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-AVAX_ADDRESS = '0x9debca6ea3af87bf422cea9ac955618ceb56efb4'
-COVALENT_AVAX_ADDRESS = '0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
 
 

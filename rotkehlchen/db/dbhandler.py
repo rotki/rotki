@@ -145,7 +145,6 @@ KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
 MAIN_DB_NAME = 'rotkehlchen.db'
 TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
-PASSWORDCHECK_STATEMENT = 'SELECT name FROM sqlite_master WHERE type="table";'
 
 DBTupleType = Literal[
     'trade',
