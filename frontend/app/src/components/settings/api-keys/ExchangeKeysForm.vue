@@ -119,7 +119,7 @@
       />
     </div>
 
-    <div v-if="exchange.location === 'ftx'">
+    <div v-if="exchange.location === 'ftx' || exchange.location === 'ftxus'">
       <v-text-field
         v-if="edit"
         outlined

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.ftx import FTX_BASE_URL, FTXUS_BASE_URL
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import (
     EXTERNAL_EXCHANGES,
@@ -27,23 +28,24 @@ log = RotkehlchenLogsAdapter(logger)
 
 # Exchanges for which we have supported modules
 SUPPORTED_EXCHANGES = [
-    Location.KRAKEN,
-    Location.POLONIEX,
-    Location.BITTREX,
-    Location.BITMEX,
     Location.BINANCE,
+    Location.BINANCEUS,
+    Location.BITCOINDE,
+    Location.BITFINEX,
+    Location.BITMEX,
+    Location.BITPANDA,
+    Location.BITSTAMP,
+    Location.BITTREX,
     Location.COINBASE,
     Location.COINBASEPRO,
     Location.GEMINI,
-    Location.BITSTAMP,
-    Location.BINANCEUS,
-    Location.BITFINEX,
-    Location.BITCOINDE,
     Location.ICONOMI,
+    Location.KRAKEN,
     Location.KUCOIN,
     Location.FTX,
+    Location.FTXUS,
     Location.INDEPENDENTRESERVE,
-    Location.BITPANDA,
+    Location.POLONIEX,
 ]
 EXCHANGES_WITH_PASSPHRASE = (Location.COINBASEPRO, Location.KUCOIN)
 # Exchanges for which we allow import via CSV
@@ -60,6 +62,8 @@ class ExchangeManager():
     def _get_exchange_module_name(location: Location) -> str:
         if location == Location.BINANCEUS:
             return str(Location.BINANCE)
+        if location == Location.FTXUS:
+            return str(Location.FTX)
 
         return str(location)
 
@@ -252,6 +256,10 @@ class ExchangeManager():
             kwargs['uri'] = BINANCE_BASE_URL
         elif credentials.location == Location.BINANCEUS:
             kwargs['uri'] = BINANCEUS_BASE_URL
+        elif credentials.location == Location.FTX:
+            kwargs['uri'] = FTX_BASE_URL
+        elif credentials.location == Location.FTXUS:
+            kwargs['uri'] = FTXUS_BASE_URL
 
         exchange_obj = exchange_ctor(
             name=credentials.name,
