@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`3993` Fix app bar icons misbehavior when windows is resized.
+* :bug:`3998` FTX subaccounts should now be working again.
 * :bug:`-` If binance returns a delisted market as active and rotki queries it, the entire binance trade history query will not fail.
 * :bug:`-` All Liquity events will now always be correctly queried.
 

@@ -101,7 +101,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
-            ftx_subaccount_name: Optional[str] = None,
+            ftx_subaccount: Optional[str] = None,
     ):
         super().__init__(
             name=name,
@@ -114,7 +114,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.base_uri = 'https://ftx.com'
         self.msg_aggregator = msg_aggregator
         self.session.headers.update({'FTX-KEY': self.api_key})
-        self.subaccount = ftx_subaccount_name
+        self.subaccount = ftx_subaccount
         if self.subaccount is not None:
             self.session.headers.update({'FTX-SUBACCOUNT': quote(self.subaccount)})
 
