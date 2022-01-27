@@ -4,17 +4,19 @@ $PYSQLCIPHER3_VERSION = if ($env:PYSQLCIPHER3_VERSION) { $env:PYSQLCIPHER3_VERSI
 $BUILD_DEPENDENCIES = if ($env:BUILD_DEPENDENCIES) { $env:BUILD_DEPENDENCIES } else { 'rotki-build-dependencies' }
 
 # Setup constants
-$MINIMUM_NPM_VERSION = "7.6.2"
+$MINIMUM_NPM_VERSION = "8.0.0"
 $TCLTK='tcltk85-8.5.19-17.tcl85.Win10.x86_64'
 
-echo "Starting rotki build process with SQLCipher $SQLCIPHER_VERSION and pysqlcipher3 $PYSQLCIPHER3_VERSION"
+echo "`nStarting rotki build process with SQLCipher $SQLCIPHER_VERSION and pysqlcipher3 $PYSQLCIPHER3_VERSION`n"
 
 $PROJECT_DIR = $PWD
 
 function ExitOnFailure {
     param([string]$ExitMessage)
     if (-not ($LASTEXITCODE -eq 0)) {
+        echo "`n------------`n"
         echo "$ExitMessage"
+        echo "`n------------`n"
         exit 1;
     }
 }
@@ -88,7 +90,7 @@ if (-not(Test-Path "$OPENSSL_PATH" -PathType Container))
     ExitOnFailure("Installation of OpenSSL Failed")
 }
 
-echo "Setting up Visual Studio Dev Shell"
+echo "`nSetting up Visual Studio Dev Shell`n"
 
 $BACKUP_ENV = @()
 Get-Childitem -Path Env:* | Foreach-Object {
@@ -193,7 +195,7 @@ if ($Env:CI) {
 }
 
 
-echo "Fetching miniupnpc for windows"
+echo "`nFetching miniupnpc for windows`n"
 $PYTHON_LOCATION = ((python -c "import os, sys; print(os.path.dirname(sys.executable))") | Out-String).trim()
 $PYTHON_DIRECTORY = Split-Path -Path $PYTHON_LOCATION -Leaf
 
@@ -202,7 +204,7 @@ if (-not ($PYTHON_DIRECTORY -match 'Scripts')) {
 }
 
 $DLL_PATH = (Join-Path $PYTHON_LOCATION "miniupnpc.dll")
-$MINIUPNPC_ZIP = "miniupnpc_64bit_py37-2.2.24.zip"
+$MINIUPNPC_ZIP = "miniupnpc_64bit_py39-2.2.24.zip"
 $ZIP_PATH = (Join-Path $BUILD_DEPS_DIR $MINIUPNPC_ZIP)
 
 if (-not ((Test-Path $ZIP_PATH -PathType Leaf) -and (Test-Path $DLL_PATH -PathType Leaf))) {
@@ -217,8 +219,7 @@ if (-not ((Test-Path $ZIP_PATH -PathType Leaf) -and (Test-Path $DLL_PATH -PathTy
     Expand-Archive -Force -Path ".\$MINIUPNPC_ZIP" -DestinationPath $PYTHON_LOCATION
 
     ExitOnFailure("Failed to unzip miniupnpc")
-    echo "Unzipped miniupnpc to $PYTHON_LOCATION"
-    echo "Done with miniupnpc"    
+    echo "Unzipped miniupnpc to $PYTHON_LOCATION`nDone with miniupnpc"
 } else {
     echo "miniupnpc.dll already installled in $PYTHON_LOCATION. skipping"
 }
@@ -235,16 +236,6 @@ if ([version]$NPM_VERSION -lt [version]$MINIMUM_NPM_VERSION) {
     exit 1;
 }
 
-if (-not (Test-Path sqlcipher.dll -PathType Leaf)) {
-    echo "Copying sqlcipher.dll to project directory"
-    Copy-Item "$SQLCIPHER_DIR\sqlcipher.dll" .\
-}
-
-if (-not (Test-Path libcrypto-1_1-x64.dll -PathType Leaf)) {
-    echo "Copying libcrypto-1_1-x64.dll to project directory"
-    Copy-Item "$OPENSSL_PATH\bin\libcrypto-1_1-x64.dll" .\
-}
-
 if ($Env:CI) {
     echo "::group::pip install"
 }
@@ -253,11 +244,26 @@ pip install pyinstaller==$PYINSTALLER_VERSION
 pip install -r requirements.txt
 pip install -e.
 
+echo "`nBuilding pysqlcipher3`n"
+
 cd $PYSQLCIPHER3_DIR
+
+if (-not (Test-Path sqlcipher.dll -PathType Leaf)) {
+    echo "Copying sqlcipher.dll to $PWD"
+    Copy-Item "$SQLCIPHER_DIR\sqlcipher.dll" .\
+}
+
+if (-not (Test-Path libcrypto-1_1-x64.dll -PathType Leaf)) {
+    echo "Copying libcrypto-1_1-x64.dll to $PWD"
+    Copy-Item "$OPENSSL_PATH\bin\libcrypto-1_1-x64.dll" .\
+}
+
 python setup.py build
 python setup.py install
 
 cd $PROJECT_DIR
+
+echo "`nVerifying pysqlcipher3`n"
 
 python -c "import sys;from rotkehlchen.db.dbhandler import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)"
 ExitOnFailure("SQLCipher version verification failed")
@@ -293,7 +299,7 @@ if ($Env:CI) {
     echo "::endgroup::"
 }
 
-echo "Packaging the electron application"
+echo "`nPackaging the electron application`n"
 
 if ($Env:CI) {
     echo "::group::npm ci"
@@ -330,7 +336,7 @@ $APP_CHECKSUM = "$PWD\$CHECKSUM_NAME"
 
 Get-FileHash $APP_BINARY -Algorithm SHA512 | Select-Object Hash | foreach {$_.Hash} | Out-File -FilePath $APP_CHECKSUM
 
-echo "Preparing backend binary for publishing"
+echo "`nPreparing backend binary for publishing`n"
 
 $BACKEND_DIST = "$PROJECT_DIR\rotkehlchen_py_dist"
 cd $BACKEND_DIST

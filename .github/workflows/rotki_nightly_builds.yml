@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-18.04 ]
-        python-version: [ 3.8 ]
+        python-version: [ 3.9 ]
         node-version: [ 16.x ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -26,7 +26,7 @@ jobs:
       - name: Set up python
         uses: actions/setup-python@v1
         with:
-          python-version: '3.8'
+          python-version: '3.9'
       - name: Setup node
         uses: actions/setup-node@v1
         with:
@@ -81,7 +81,7 @@ jobs:
     strategy:
       matrix:
         os: [ macos-10.15 ]
-        python-version: [ 3.8 ]
+        python-version: [ 3.9 ]
         node-version: [ 16.x ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -152,7 +152,7 @@ jobs:
     strategy:
       matrix:
         os: [ windows-latest ]
-        python-version: [ 3.8 ]
+        python-version: [ 3.9 ]
         node-version: [ 16.x ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -162,7 +162,7 @@ jobs:
       - name: Set up python
         uses: actions/setup-python@v1
         with:
-          python-version: '3.8'
+          python-version: '3.9'
       - name: Setup node
         uses: actions/setup-node@v1
         with:

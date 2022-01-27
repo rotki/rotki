@@ -28,7 +28,7 @@ setup(
         # TODO: Investigate if it's needed. rotkehlchen.spec is where files seem to be copied
         'rotkehlchen': ['data/*.json', 'data/*.meta', 'data/*.db'],
     },
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     install_requires=requirements,
     use_scm_version=True,
     setup_requires=['setuptools_scm'],

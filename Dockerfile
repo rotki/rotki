@@ -8,7 +8,7 @@ RUN npm install -g npm@8
 RUN npm ci
 RUN npm run docker:build
 
-FROM python:3.8-buster as backend-build-stage
+FROM python:3.9-buster as backend-build-stage
 
 ARG PYINSTALLER_VERSION=v4.8
 RUN python3 -m venv /opt/venv
