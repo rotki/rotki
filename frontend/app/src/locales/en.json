@@ -489,8 +489,20 @@
     "text": "Gitcoin Grants"
   },
   "help_sidebar": {
-    "about": "About",
-    "about_subtitle": "About the application",
+    "about": {
+      "title": "About",
+      "subtitle": "About the application"
+    },
+    "browser_log": {
+      "title": "Browser Log",
+      "subtitle": "Download brower log file",
+      "error": {
+        "empty": {
+          "title": "Empty log entries",
+          "message": "Oops, there are no log entries"
+        }
+      }
+    },
     "faq": {
       "subtitle": "Questions on the application",
       "title": "FAQ"

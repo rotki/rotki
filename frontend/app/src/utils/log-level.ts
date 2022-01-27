@@ -16,5 +16,7 @@ export const levels = [
   CRITICAL
 ] as const;
 
+export const levelsOptions = [DEBUG, INFO, WARN, ERROR, CRITICAL];
+
 export type Level = typeof levels[number];
 export const LOG_LEVEL = 'log_level';

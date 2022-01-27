@@ -42,26 +42,49 @@
           <v-icon>mdi-chevron-right</v-icon>
         </v-list-item-action>
       </v-list-item>
-      <v-list-item v-if="!$interop.isPackaged" selectable @click="openAbout()">
-        <v-list-item-avatar>
-          <v-icon>mdi-information</v-icon>
-        </v-list-item-avatar>
-        <v-list-item-content>
-          <v-list-item-title>{{ $t('help_sidebar.about') }}</v-list-item-title>
-          <v-list-item-subtitle>
-            {{ $t('help_sidebar.about_subtitle') }}
-          </v-list-item-subtitle>
-        </v-list-item-content>
-        <v-list-item-action>
-          <v-icon>mdi-chevron-right</v-icon>
-        </v-list-item-action>
-      </v-list-item>
+      <template v-if="!$interop.isPackaged">
+        <v-list-item selectable @click="openAbout()">
+          <v-list-item-avatar>
+            <v-icon>mdi-information</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>
+              {{ $t('help_sidebar.about.title') }}
+            </v-list-item-title>
+            <v-list-item-subtitle>
+              {{ $t('help_sidebar.about.subtitle') }}
+            </v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-icon>mdi-chevron-right</v-icon>
+          </v-list-item-action>
+        </v-list-item>
+        <v-list-item selectable @click="downloadBrowserLog()">
+          <v-list-item-avatar>
+            <v-icon>mdi-note-text</v-icon>
+          </v-list-item-avatar>
+          <v-list-item-content>
+            <v-list-item-title>
+              {{ $t('help_sidebar.browser_log.title') }}
+            </v-list-item-title>
+            <v-list-item-subtitle>
+              {{ $t('help_sidebar.browser_log.subtitle') }}
+            </v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-icon>mdi-chevron-right</v-icon>
+          </v-list-item-action>
+        </v-list-item>
+      </template>
     </v-list>
   </v-navigation-drawer>
 </template>
 
 <script lang="ts">
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import i18n from '@/i18n';
+import { useNotifications } from '@/store/notifications';
+import IndexedDb from '@/utils/indexed-db';
 
 type Entry = {
   readonly icon: string;
@@ -83,6 +106,41 @@ export default class HelpSidebar extends Vue {
   @Emit('about')
   openAbout() {
     this.visibleUpdate(false);
+  }
+
+  downloadBrowserLog() {
+    const loggerDb = new IndexedDb('db', 1, 'logs');
+
+    loggerDb.getAll((data: any) => {
+      if (data?.length === 0) {
+        const { notify } = useNotifications();
+        notify({
+          title: i18n
+            .t('help_sidebar.browser_log.error.empty.title')
+            .toString(),
+          message: i18n
+            .t('help_sidebar.browser_log.error.empty.message')
+            .toString(),
+          display: true
+        });
+        return;
+      }
+      const messages = data.map((item: any) => item.message).join('\n');
+      let link = document.createElement('a');
+      link.setAttribute(
+        'href',
+        'data:text/plain;charset=utf-8,' + encodeURIComponent(messages)
+      );
+      link.setAttribute('download', 'frontend_log.txt');
+
+      if (document.createEvent) {
+        let event = document.createEvent('MouseEvents');
+        event.initEvent('click', true, true);
+        link.dispatchEvent(event);
+      } else {
+        link.click();
+      }
+    });
   }
 
   readonly entries: Entry[] = [
