@@ -94,7 +94,7 @@ class ExchangeManager():
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             PAIRS: Optional[List[str]],  # noqa: N803
-            ftx_subaccount_name: Optional[str],
+            ftx_subaccount: Optional[str],
     ) -> Tuple[bool, str]:
         """Edits both the exchange object and the database entry
 
@@ -117,7 +117,7 @@ class ExchangeManager():
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             PAIRS=PAIRS,
-            ftx_subaccount_name=ftx_subaccount_name,
+            ftx_subaccount=ftx_subaccount,
             should_commit=False,
         )
 
@@ -129,7 +129,7 @@ class ExchangeManager():
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             PAIRS=PAIRS,
-            ftx_subaccount_name=ftx_subaccount_name,
+            ftx_subaccount=ftx_subaccount,
         )
         if success is False:
             self.database.conn.rollback()  # the database changes that happened need rollback
