@@ -181,6 +181,13 @@ export const tradeLocations: TradeLocationData[] = [
     exchange: true
   },
   {
+    identifier: SupportedExchange.FTXUS,
+    name: 'FTX US',
+    icon: require('@/assets/images/exchanges/ftxus.svg'),
+    imageIcon: true,
+    exchange: true
+  },
+  {
     identifier: EXCHANGE_SHAPESHIFT,
     name: 'ShapeShift',
     icon: '',

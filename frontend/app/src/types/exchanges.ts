@@ -21,6 +21,7 @@ export enum SupportedExchange {
   ICONOMI = 'iconomi',
   KUCOIN = 'kucoin',
   FTX = 'ftx',
+  FTXUS = 'ftxus',
   INDEPENDENTRESERVE = 'independentreserve',
   GEMINI = 'gemini'
 }

@@ -53,6 +53,8 @@ BACKOFF_LIMIT = 60
 PAGINATION_LIMIT = 100
 
 FTX_SUBACCOUNT_DB_SETTING = 'ftx_subaccount'
+FTX_BASE_URL = 'https://ftx.com'
+FTXUS_BASE_URL = 'https://ftx.us'
 
 
 def trade_from_ftx(raw_trade: Dict[str, Any]) -> Optional[Trade]:
@@ -102,6 +104,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             ftx_subaccount_name: Optional[str] = None,
+            uri: str = FTX_BASE_URL,
     ):
         super().__init__(
             name=name,
@@ -111,7 +114,7 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database=database,
         )
         self.apiversion = 'v2'
-        self.base_uri = 'https://ftx.com'
+        self.base_uri = uri
         self.msg_aggregator = msg_aggregator
         self.session.headers.update({'FTX-KEY': self.api_key})
         self.subaccount = ftx_subaccount_name

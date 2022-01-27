@@ -90,6 +90,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('a', 33);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('b', 34);
 /* Bisq */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('c', 35);
+/* FTX US */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('d', 36);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
