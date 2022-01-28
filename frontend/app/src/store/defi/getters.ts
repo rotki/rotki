@@ -43,7 +43,7 @@ import {
   AAVE,
   AIRDROP_POAP,
   COMPOUND,
-  getProtcolIcon,
+  getProtocolIcon,
   GETTER_BALANCER_BALANCES,
   GETTER_UNISWAP_ASSETS,
   LIQUITY,
@@ -1153,7 +1153,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       return {
         protocol: {
           name: name,
-          icon: getProtcolIcon(name)
+          icon: getProtocolIcon(name)
         },
         liabilities: !noLiabilities,
         deposits: !noDeposits,
@@ -1240,7 +1240,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           summary[protocol] = {
             protocol: {
               ...entry.protocol,
-              icon: getProtcolIcon(protocol)
+              icon: getProtocolIcon(protocol)
             },
             tokenInfo: {
               tokenName: entry.baseBalance.tokenName,
@@ -1297,7 +1297,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       const makerDAODSRSummary: DefiProtocolSummary = {
         protocol: {
           name: MAKERDAO_DSR,
-          icon: getProtcolIcon(MAKERDAO_DSR)
+          icon: getProtocolIcon(MAKERDAO_DSR)
         },
         tokenInfo: null,
         assets: [],
@@ -1315,7 +1315,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       const makerDAOVaultSummary: DefiProtocolSummary = {
         protocol: {
           name: MAKERDAO_VAULTS,
-          icon: getProtcolIcon(MAKERDAO_VAULTS)
+          icon: getProtocolIcon(MAKERDAO_VAULTS)
         },
         tokenInfo: null,
         assets: [],

@@ -9,13 +9,15 @@
             :step="n"
             editable
           >
-            <span class="d-flex flex-column align-center justify-center">
-              <v-img
-                width="55px"
-                contain
-                max-height="24px"
-                :src="modules[n - 1].icon"
-              />
+            <span class="d-flex flex-column align-center justify-start">
+              <adaptive-wrapper>
+                <v-img
+                  width="24px"
+                  contain
+                  max-height="24px"
+                  :src="modules[n - 1].icon"
+                />
+              </adaptive-wrapper>
               <span v-if="modules[n - 1].name" class="mt-3 text-center">
                 {{ modules[n - 1].name }}
               </span>
@@ -31,12 +33,14 @@
       <v-stepper-content v-for="n in steps" :key="`${n}-content`" :step="n">
         <v-row align="center">
           <v-col cols="auto">
-            <v-img
-              width="30px"
-              contain
-              max-height="24px"
-              :src="modules[n - 1].icon"
-            />
+            <adaptive-wrapper>
+              <v-img
+                width="30px"
+                contain
+                max-height="24px"
+                :src="modules[n - 1].icon"
+              />
+            </adaptive-wrapper>
           </v-col>
           <v-col>
             <div class="text-h6">{{ modules[n - 1].name }}</div>
@@ -77,11 +81,12 @@ import { mapActions, mapGetters, mapState } from 'vuex';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ModuleQueriedAddress from '@/components/defi/wizard/ModuleQueriedAddress.vue';
 import { SupportedModule } from '@/components/defi/wizard/types';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { QueriedAddresses } from '@/services/session/types';
 import { Module } from '@/types/modules';
 
 @Component({
-  components: { ModuleQueriedAddress },
+  components: { AdaptiveWrapper, ModuleQueriedAddress },
   computed: {
     ...mapGetters('session', ['activeModules']),
     ...mapState('session', ['queriedAddresses'])
@@ -137,20 +142,27 @@ export default class ModuleAddressSelector extends Vue {
         border: none !important;
         box-shadow: none !important;
         overflow-x: auto;
-        height: 120px;
+        height: 140px;
         flex-wrap: nowrap;
+
+        hr {
+          display: none;
+        }
 
         @extend .themed-scrollbar;
       }
 
       &__step {
+        padding: 24px;
+
         &__step {
           display: none !important;
         }
       }
 
       &__label {
-        min-width: 112px;
+        height: 100%;
+        min-width: 100px;
         display: block;
       }
 

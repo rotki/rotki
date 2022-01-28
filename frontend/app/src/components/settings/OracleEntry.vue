@@ -1,6 +1,6 @@
 <template>
   <v-row align="center">
-    <v-col cols="4">
+    <v-col cols="auto">
       <v-img
         :width="size"
         contain
@@ -9,7 +9,7 @@
         :src="icon"
       />
     </v-col>
-    <v-col>
+    <v-col cols="auto">
       {{ capitalize(identifier) }}
     </v-col>
   </v-row>

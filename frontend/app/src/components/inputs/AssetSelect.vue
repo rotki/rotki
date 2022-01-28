@@ -30,13 +30,13 @@
       />
     </template>
     <template #item="{ item }">
-      <v-list-item-avatar>
+      <div class="pr-4">
         <asset-icon
-          size="50px"
+          size="40px"
           :identifier="item.identifier"
           :symbol="item.symbol"
         />
-      </v-list-item-avatar>
+      </div>
       <v-list-item-content :id="`asset-${item.identifier.toLocaleLowerCase()}`">
         <v-list-item-title class="font-weight-medium">
           {{ item.symbol }}

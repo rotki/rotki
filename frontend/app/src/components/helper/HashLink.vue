@@ -179,6 +179,7 @@ export default defineComponent({
     };
 
     return {
+      url,
       truncateAddress,
       shouldShowAmount,
       base,

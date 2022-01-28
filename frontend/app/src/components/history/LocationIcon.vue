@@ -7,7 +7,7 @@
       'py-4': !noPadding
     }"
   >
-    <span>
+    <adaptive-wrapper component="span">
       <v-img
         v-if="item.imageIcon"
         :width="size"
@@ -22,7 +22,7 @@
         :width="size"
       />
       <v-icon v-else color="accent"> {{ item.icon }} </v-icon>
-    </span>
+    </adaptive-wrapper>
     <span v-if="!icon" :class="horizontal ? 'ml-3' : null" class="mt-1">
       {{ item.name }}
     </span>
@@ -30,10 +30,12 @@
 </template>
 <script lang="ts">
 import { defineComponent, PropType } from '@vue/composition-api';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { TradeLocationData } from '@/components/history/type';
 
-const LocationIcon = defineComponent({
+export default defineComponent({
   name: 'LocationIcon',
+  components: { AdaptiveWrapper },
   props: {
     item: {
       required: true,
@@ -45,5 +47,4 @@ const LocationIcon = defineComponent({
     noPadding: { required: false, type: Boolean, default: false }
   }
 });
-export default LocationIcon;
 </script>

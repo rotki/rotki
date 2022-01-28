@@ -321,7 +321,7 @@ const ICON_LIST: { [protocol in OverviewDefiProtocol]: string } = {
   [GELATO]: 'gelato.svg'
 };
 
-export function getProtcolIcon(name: OverviewDefiProtocol): string {
+export function getProtocolIcon(name: OverviewDefiProtocol): string {
   return ICON_LIST[name] ?? '';
 }
 
