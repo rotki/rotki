@@ -549,6 +549,13 @@
       "label": "Staking events"
     }
   },
+  "kraken_staking_overview": {
+    "title": "Overview",
+    "total": "Total"
+  },
+  "kraken_staking_received": {
+    "title": "Received"
+  },
   "liabilities": {
     "no_selection": "Select a loan to view more information"
   },

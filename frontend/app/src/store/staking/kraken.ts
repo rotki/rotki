@@ -10,6 +10,7 @@ import { getStatusUpdater } from '@/store/utils';
 import { KrakenStakingEvents, KrakenStakingPagination } from '@/types/staking';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { Zero } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
 
 const defaultPagination = (): KrakenStakingPagination => ({
@@ -20,10 +21,13 @@ const defaultPagination = (): KrakenStakingPagination => ({
 });
 
 const defaultEventState = (): KrakenStakingEvents => ({
-  events: [],
+  assets: [],
   entriesTotal: 0,
   entriesFound: 0,
-  entriesLimit: 0
+  entriesLimit: 0,
+  events: [],
+  received: [],
+  totalUsdValue: Zero
 });
 
 export const useKrakenStakingStore = defineStore('staking/kraken', () => {
