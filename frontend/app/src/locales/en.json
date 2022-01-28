@@ -530,7 +530,6 @@
     "loading": "Your Kraken staking information is loading..."
   },
   "kraken_staking_events": {
-    "clear": "CLear",
     "column": {
       "amount": "Amount",
       "asset": "Asset",
@@ -538,11 +537,6 @@
       "event_type": "Event",
       "value": "Value"
     },
-    "filter": {
-      "from": "Start Date",
-      "to": "End Date"
-    },
-    "filter_title": "Filter by date",
     "refresh_tooltip": "Refresh your Kraken staking events",
     "titles": "Kraken Staking Events",
     "upgrade": {

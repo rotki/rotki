@@ -12,42 +12,9 @@
       </v-icon>
     </template>
     <template #actions>
-      <v-row class="font-weight-medium">
-        <v-col>{{ $t('kraken_staking_events.filter_title') }}</v-col>
-      </v-row>
       <v-row>
-        <v-col cols="12" md="auto" class="flex-grow-1">
-          <date-time-picker
-            ref="startField"
-            v-model="start"
-            outlined
-            allow-empty
-            seconds
-            :label="$t('kraken_staking_events.filter.from')"
-          />
-        </v-col>
-        <v-col cols="12" md="auto" class="flex-grow-1">
-          <date-time-picker
-            ref="endField"
-            v-model="end"
-            outlined
-            limit-now
-            allow-empty
-            seconds
-            :label="$t('kraken_staking_events.filter.to')"
-          />
-        </v-col>
-        <v-col cols="auto">
-          <v-btn
-            depressed
-            primary
-            :class="{
-              'mt-3': !isMobile
-            }"
-            @click="clear"
-          >
-            {{ $t('kraken_staking_events.clear') }}
-          </v-btn>
+        <v-col cols="12" offset-md="6" md="6">
+          <table-filter :matchers="matchers" @update:matches="updateFilter" />
         </v-col>
       </v-row>
     </template>
@@ -90,6 +57,7 @@ import {
   computed,
   defineComponent,
   PropType,
+  Ref,
   ref,
   toRefs,
   unref,
@@ -97,16 +65,23 @@ import {
 } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import TableFilter from '@/components/history/filtering/TableFilter.vue';
+import {
+  MatchedKeyword,
+  SearchMatcher
+} from '@/components/history/filtering/types';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupThemeCheck } from '@/composables/common';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import {
   KrakenStakingEvents,
+  KrakenStakingEventType,
   KrakenStakingPagination,
   KrakenStakingPaginationOptions
 } from '@/types/staking';
-import { convertToTimestamp } from '@/utils/date';
+import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 const getHeaders = (): DataTableHeader[] => [
   {
@@ -133,9 +108,87 @@ const getHeaders = (): DataTableHeader[] => [
   }
 ];
 
+enum KrakenStakingKeys {
+  TYPE = 'type',
+  ASSET = 'asset',
+  START = 'start',
+  END = 'end'
+}
+
+enum KrakenStakingValueKeys {
+  TYPE = 'eventSubtypes',
+  ASSET = 'asset',
+  START = 'fromTimestamp',
+  END = 'toTimestamp'
+}
+
+const useMatchers = (events: Ref<KrakenStakingEvents>) => {
+  const { getAssetIdentifierForSymbol } = setupAssetInfoRetrieval();
+  const { dateInputFormat } = setupSettings();
+  return computed<SearchMatcher<KrakenStakingKeys, KrakenStakingValueKeys>[]>(
+    () => [
+      {
+        key: KrakenStakingKeys.ASSET,
+        keyValue: KrakenStakingValueKeys.ASSET,
+        description: i18n.t('closed_trades.filter.base_asset').toString(),
+        suggestions: () => events.value.assets,
+        validate: (asset: string) => events.value.assets.includes(asset),
+        transformer: (asset: string) =>
+          getAssetIdentifierForSymbol(asset) ?? asset
+      },
+      {
+        key: KrakenStakingKeys.TYPE,
+        keyValue: KrakenStakingValueKeys.TYPE,
+        description: i18n.t('closed_trades.filter.quote_asset').toString(),
+        suggestions: () => KrakenStakingEventType.options,
+        validate: (option: string) =>
+          KrakenStakingEventType.options.includes(option as any)
+      },
+      {
+        key: KrakenStakingKeys.START,
+        keyValue: KrakenStakingValueKeys.START,
+        description: i18n.t('closed_trades.filter.start_date').toString(),
+        suggestions: () => [],
+        hint: i18n
+          .t('closed_trades.filter.date_hint', {
+            format: getDateInputISOFormat(dateInputFormat.value)
+          })
+          .toString(),
+        validate: value => {
+          return (
+            value.length > 0 &&
+            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+          );
+        },
+        transformer: (date: string) =>
+          convertToTimestamp(date, dateInputFormat.value).toString()
+      },
+      {
+        key: KrakenStakingKeys.END,
+        keyValue: KrakenStakingValueKeys.END,
+        description: i18n.t('closed_trades.filter.end_date').toString(),
+        suggestions: () => [],
+        hint: i18n
+          .t('closed_trades.filter.date_hint', {
+            format: getDateInputISOFormat(dateInputFormat.value)
+          })
+          .toString(),
+        validate: value => {
+          return (
+            value.length > 0 &&
+            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+          );
+        },
+        transformer: (date: string) =>
+          convertToTimestamp(date, dateInputFormat.value).toString()
+      }
+    ]
+  );
+};
+
 export default defineComponent({
   name: 'KrakenStakingEvents',
-  components: { RefreshButton, UpgradeRow },
+  components: { TableFilter, RefreshButton, UpgradeRow },
   props: {
     events: {
       required: true,
@@ -150,12 +203,9 @@ export default defineComponent({
   emit: ['update:pagination', 'refresh'],
   setup(props, { emit }) {
     const { events } = toRefs(props);
-    const start = ref('');
-    const end = ref('');
-    const startField = ref();
-    const endField = ref();
+    const filters: Ref<MatchedKeyword<KrakenStakingValueKeys>> = ref({});
 
-    const { itemsPerPage, dateInputFormat } = setupSettings();
+    const { itemsPerPage } = setupSettings();
     const { isMobile } = setupThemeCheck();
 
     const options = ref<KrakenStakingPaginationOptions>({
@@ -165,70 +215,49 @@ export default defineComponent({
       sortDesc: [true]
     });
 
-    const fromTimestamp = computed(() => {
-      const from = unref(start);
-      if (!from) {
-        return undefined;
-      }
-      return convertToTimestamp(from, dateInputFormat.value);
-    });
-
-    const toTimestamp = computed(() => {
-      const to = unref(end);
-      if (!to) {
-        return undefined;
-      }
-      return convertToTimestamp(to, dateInputFormat.value);
-    });
-
     const showUpgradeRow = computed(() => {
       const { entriesLimit, entriesTotal } = events.value;
       return entriesLimit <= entriesTotal && entriesLimit > 0;
     });
 
-    const updatePagination = (
-      { itemsPerPage, page, sortBy, sortDesc }: KrakenStakingPaginationOptions,
-      fromTimestamp?: number,
-      toTimestamp?: number
-    ) => {
+    const updatePagination = ({
+      itemsPerPage,
+      page,
+      sortBy,
+      sortDesc
+    }: KrakenStakingPaginationOptions) => {
+      const { asset, eventSubtypes, fromTimestamp, toTimestamp } =
+        filters.value;
       const pagination: KrakenStakingPagination = {
         ascending: sortDesc[0],
         orderByAttribute: sortBy[0],
         limit: itemsPerPage,
         offset: (page - 1) * itemsPerPage,
-        fromTimestamp,
-        toTimestamp
+        fromTimestamp: fromTimestamp,
+        toTimestamp: toTimestamp,
+        eventSubtypes: eventSubtypes ? [eventSubtypes] : undefined,
+        asset: asset
       };
       emit('update:pagination', pagination);
     };
 
-    const clear = () => {
-      start.value = '';
-      end.value = '';
-      unref(startField)?.reset();
-      unref(endField)?.reset();
+    const updateFilter = (matchers: MatchedKeyword<KrakenStakingValueKeys>) => {
+      filters.value = matchers;
+      options.value = { ...options.value, page: 1 };
     };
 
     const refresh = () => emit('refresh');
 
-    watch(options, options =>
-      updatePagination(options, unref(fromTimestamp), unref(toTimestamp))
-    );
-    watch([fromTimestamp, toTimestamp], () => {
-      options.value = { ...options.value, page: 1 };
-    });
+    watch(options, options => updatePagination(options));
 
     return {
-      start,
-      end,
-      startField,
-      endField,
       options,
       isMobile,
       showUpgradeRow,
       tableHeaders: getHeaders(),
+      matchers: useMatchers(events),
       refresh,
-      clear
+      updateFilter
     };
   }
 });

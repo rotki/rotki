@@ -963,15 +963,18 @@ export class RotkehlchenApi {
     pagination: KrakenStakingPagination,
     asyncQuery: boolean = false
   ): Promise<T> {
-    const response = await this.axios.get<ActionResult<T>>('/staking/kraken', {
-      params: axiosSnakeCaseTransformer({
+    const response = await this.axios.post<ActionResult<T>>(
+      '/staking/kraken',
+      axiosSnakeCaseTransformer({
         asyncQuery,
         ...pagination,
         orderByAttribute: getUpdatedKey(pagination.orderByAttribute, false)
       }),
-      validateStatus: validWithSessionAndExternalService,
-      transformResponse: basicAxiosTransformer
-    });
+      {
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      }
+    );
     return handleResponse(response);
   }
 

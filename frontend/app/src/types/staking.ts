@@ -1,13 +1,15 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 
+export const KrakenStakingEventType = z.enum([
+  'get reward',
+  'receive staked asset',
+  'stake asset',
+  'unstake asset'
+]);
+
 const KrakenStakingEvent = z.object({
-  eventType: z.enum([
-    'get reward',
-    'receive staked asset',
-    'stake asset',
-    'unstake asset'
-  ]),
+  eventType: KrakenStakingEventType,
   asset: z.string(),
   timestamp: z.number().nonnegative(),
   location: z.literal('kraken'),
@@ -41,8 +43,10 @@ export type KrakenStakingPagination = {
   offset: number;
   orderByAttribute: keyof KrakenStakingEvent;
   ascending: boolean;
-  fromTimestamp?: number;
-  toTimestamp?: number;
+  fromTimestamp?: string;
+  toTimestamp?: string;
+  asset?: string;
+  eventSubtypes?: string[];
   onlyCache?: boolean;
 };
 
