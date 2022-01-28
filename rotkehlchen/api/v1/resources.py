@@ -2088,7 +2088,7 @@ class StakingResource(BaseResource):
     get_schema = StakingQuerySchema
 
     @use_kwargs(get_schema, location='json_and_query')
-    def get(
+    def post(
             self,
             async_query: bool,
             only_cache: bool,
