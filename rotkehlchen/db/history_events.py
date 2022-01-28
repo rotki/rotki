@@ -186,7 +186,7 @@ class DBHistoryEvents():
         self,
         query_filter: HistoryEventFilterQuery,
     ) -> Tuple[FVal, List[Tuple[Asset, FVal]]]:
-        """Returns the sum of the USD value at the time of acquisition and the amount reveived
+        """Returns the sum of the USD value at the time of acquisition and the amount received
         by asset"""
         cursor = self.db.conn.cursor()
         usd_value = FVal(0)

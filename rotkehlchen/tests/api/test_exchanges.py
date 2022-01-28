@@ -1260,7 +1260,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     }
     """
     # Test that before populating we don't have any event
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             server,
             'stakingresource',
@@ -1279,11 +1279,12 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             end_ts=1736738550,
         )
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             server,
             'stakingresource',
-        ), {
+        ),
+        json={
             "from_timestamp": 1636538550,
             "to_timestamp": 1640493378,
         },
@@ -1314,11 +1315,12 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     ]
 
     # test that the correct number of entries is returned with pagination
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             server,
             'stakingresource',
-        ), {
+        ),
+        json={
             'from_timestamp': 1636738551,
             'to_timestamp': 1640493375,
             'limit': 1,
@@ -1329,11 +1331,12 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     assert set(result['assets']) == {'ETH', 'ETH2', 'XTZ'}
 
     # assert that filter by asset is working properly
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             server,
             'stakingresource',
-        ), {
+        ),
+        json={
             "from_timestamp": 1628994442,
             "to_timestamp": 1640493377,
             "asset": "ETH2",
