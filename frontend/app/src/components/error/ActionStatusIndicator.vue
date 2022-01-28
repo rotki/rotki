@@ -14,14 +14,19 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import { ActionStatus } from '@/store/types';
 
-@Component({})
-export default class ActionStatusIndicator extends Vue {
-  @Prop({ required: true })
-  status!: ActionStatus | null;
-}
+export default defineComponent({
+  name: 'ActionStatusIndicator',
+  props: {
+    status: {
+      required: false,
+      type: Object as PropType<ActionStatus | null>,
+      default: null
+    }
+  }
+});
 </script>
 
 <style scoped lang="scss">

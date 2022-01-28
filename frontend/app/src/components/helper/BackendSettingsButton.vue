@@ -21,15 +21,17 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { defineComponent, ref } from '@vue/composition-api';
 import BackendSettings from '@/components/settings/BackendSettings.vue';
 
-@Component({
-  components: { BackendSettings }
-})
-export default class BackendSettingsButton extends Vue {
-  visible: boolean = false;
-}
+export default defineComponent({
+  name: 'BackendSettingsButton',
+  components: { BackendSettings },
+  setup() {
+    const visible = ref<boolean>(false);
+    return { visible };
+  }
+});
 </script>
 
 <style scoped lang="scss">

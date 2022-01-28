@@ -51,8 +51,7 @@
               v-on="on"
             >
               <v-list-item-avatar>
-                <v-icon v-if="privacyMode" color="primary">mdi-eye-off</v-icon>
-                <v-icon v-else color="primary">mdi-eye</v-icon>
+                <v-icon color="primary">{{ privacyModeIcon }}</v-icon>
               </v-list-item-avatar>
               <v-list-item-title>
                 {{ $t('user_dropdown.change_privacy_mode.label') }}
@@ -97,69 +96,80 @@
       :display="confirmLogout"
       :title="$t('user_dropdown.confirmation.title')"
       :message="$t('user_dropdown.confirmation.message')"
-      @confirm="logout()"
+      @confirm="logoutHandler()"
       @cancel="confirmLogout = false"
     />
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import { computed, defineComponent, ref } from '@vue/composition-api';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
-@Component({
+import { useRoute, useRouter } from '@/composables/common';
+import { setupSession } from '@/composables/session';
+import i18n from '@/i18n';
+
+const tickLabels: string[] = [
+  i18n.t('user_dropdown.change_privacy_mode.normal_mode.label').toString(),
+  i18n
+    .t('user_dropdown.change_privacy_mode.semi_private_mode.label')
+    .toString(),
+  i18n.t('user_dropdown.change_privacy_mode.private_mode.label').toString()
+];
+
+// TODO: Remove css variable for tick description in Vue3 and use State Driven Dynamic CSS
+// https://v3.vuejs.org/api/sfc-style.html#state-driven-dynamic-css
+const sliderWrapperStyle: { [key: string]: string } = {
+  '--tick-description-3': `'${i18n
+    .t('user_dropdown.change_privacy_mode.normal_mode.description')
+    .toString()}'`,
+  '--tick-description-2': `'${i18n
+    .t('user_dropdown.change_privacy_mode.semi_private_mode.description')
+    .toString()}'`,
+  '--tick-description-1': `'${i18n
+    .t('user_dropdown.change_privacy_mode.private_mode.description')
+    .toString()}'`
+};
+
+export default defineComponent({
+  name: 'UserDropdown',
   components: {
     ConfirmDialog,
     MenuTooltipButton
   },
-  computed: {
-    ...mapState('session', ['privacyMode', 'username'])
-  }
-})
-export default class UserDropdown extends Vue {
-  privacyMode!: number;
-  confirmLogout: boolean = false;
+  setup() {
+    const { username, privacyMode, changePrivacyMode, logout } = setupSession();
+    const confirmLogout = ref<boolean>(false);
+    const router = useRouter();
+    const route = useRoute();
 
-  changePrivacyMode(privacyMode: number) {
-    this.$store.commit('session/privacyMode', privacyMode);
-  }
+    const logoutHandler = async () => {
+      confirmLogout.value = false;
+      await logout();
 
-  tickLabels: string[] = [
-    this.$t('user_dropdown.change_privacy_mode.normal_mode.label').toString(),
-    this.$t(
-      'user_dropdown.change_privacy_mode.semi_private_mode.label'
-    ).toString(),
-    this.$t('user_dropdown.change_privacy_mode.private_mode.label').toString()
-  ];
+      if (route.value.path === '/') {
+        router.replace('/');
+      }
+    };
 
-  // TODO: Remove css variable for tick description in Vue3 and use State Driven Dynamic CSS
-  // https://v3.vuejs.org/api/sfc-style.html#state-driven-dynamic-css
-  get sliderWrapperStyle() {
+    const privacyModeIcon = computed<string>(() => {
+      return ['mdi-eye-off', 'mdi-eye-minus', 'mdi-eye'][privacyMode.value];
+    });
+
     return {
-      '--tick-description-3': `'${this.$t(
-        'user_dropdown.change_privacy_mode.normal_mode.description'
-      ).toString()}'`,
-      '--tick-description-2': `'${this.$t(
-        'user_dropdown.change_privacy_mode.semi_private_mode.description'
-      ).toString()}'`,
-      '--tick-description-1': `'${this.$t(
-        'user_dropdown.change_privacy_mode.private_mode.description'
-      ).toString()}'`
+      confirmLogout,
+      privacyModeIcon,
+      username,
+      privacyMode,
+      changePrivacyMode,
+      tickLabels,
+      sliderWrapperStyle,
+      logoutHandler
     };
   }
-
-  async logout() {
-    this.confirmLogout = false;
-    const { dispatch } = this.$store;
-
-    await dispatch('session/logout');
-    if (this.$route.path !== '/') {
-      await this.$router.replace('/');
-    }
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

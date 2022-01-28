@@ -16,29 +16,43 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { computed, defineComponent, toRefs } from '@vue/composition-api';
 
-@Component({})
-export default class OracleEntry extends Vue {
-  @Prop({ required: true, type: String })
-  identifier!: string;
+export default defineComponent({
+  name: 'OracleEntry',
+  props: {
+    identifier: { required: true, type: String }
+  },
+  setup(props) {
+    const { identifier } = toRefs(props);
 
-  size = '48px';
+    const size = computed<string>(() => {
+      if (identifier.value === 'manual') {
+        return '40px';
+      }
+      return '48px';
+    });
 
-  get icon(): string {
-    if (this.identifier === 'cryptocompare') {
-      return require('@/assets/images/oracles/cryptocompare.png');
-    } else if (this.identifier === 'coingecko') {
-      return require('@/assets/images/oracles/coingecko.svg');
-    } else if (this.identifier === 'manual') {
-      this.size = '40px';
-      return require('@/assets/images/oracles/book.svg');
-    }
-    return '';
+    const icon = computed<string>(() => {
+      if (identifier.value === 'cryptocompare') {
+        return require('@/assets/images/oracles/cryptocompare.png');
+      } else if (identifier.value === 'coingecko') {
+        return require('@/assets/images/oracles/coingecko.svg');
+      } else if (identifier.value === 'manual') {
+        return require('@/assets/images/oracles/book.svg');
+      }
+      return '';
+    });
+
+    const capitalize = (text: string) => {
+      return text[0].toUpperCase() + text.slice(1);
+    };
+
+    return {
+      size,
+      icon,
+      capitalize
+    };
   }
-
-  capitalize(text: string) {
-    return text[0].toUpperCase() + text.slice(1);
-  }
-}
+});
 </script>

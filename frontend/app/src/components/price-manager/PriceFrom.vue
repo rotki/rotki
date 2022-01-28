@@ -87,6 +87,7 @@ export default defineComponent({
       type: Boolean
     }
   },
+  emits: ['input', 'valid'],
   setup(props, { emit }) {
     const store = useStore();
     const getSymbol = store!.getters[

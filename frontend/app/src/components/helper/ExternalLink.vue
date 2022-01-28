@@ -3,15 +3,21 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator';
+import { defineComponent, toRefs } from '@vue/composition-api';
+import { interop } from '@/electron-interop';
 
-@Component({})
-export default class ExternalLink extends Vue {
-  @Prop({ required: true })
-  url!: string;
+export default defineComponent({
+  name: 'ExternalLink',
+  props: {
+    url: { required: true, type: String }
+  },
+  setup(props) {
+    const { url } = toRefs(props);
+    const openLink = () => {
+      interop.openUrl(url.value);
+    };
 
-  openLink() {
-    this.$interop.openUrl(this.url);
+    return { openLink };
   }
-}
+});
 </script>

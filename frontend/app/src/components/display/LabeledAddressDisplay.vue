@@ -5,11 +5,7 @@
         <span
           data-cy="labeled-address-display"
           class="labeled-address-display__address"
-          :class="
-            $vuetify.breakpoint.xsOnly
-              ? 'labeled-address-display__address--mobile'
-              : null
-          "
+          :class="xsOnly ? 'labeled-address-display__address--mobile' : null"
           v-on="on"
         >
           <v-chip label outlined class="labeled-address-display__chip">
@@ -20,15 +16,12 @@
                 })
               }}
             </span>
-            <span
-              v-if="!!label && displayAddress && !$vuetify.breakpoint.smAndDown"
-              class="px-1"
-            >
+            <span v-if="!!label && displayAddress && !smAndDown" class="px-1">
               {{ $t('labeled_address_display.divider') }}
             </span>
             <span
-              v-if="!$vuetify.breakpoint.smAndDown || !label"
-              :class="!shouldShowAmount ? 'blur-content' : null"
+              v-if="!smAndDown || !label"
+              :class="{ 'blur-content': !shouldShowAmount }"
             >
               {{ displayAddress }}
             </span>
@@ -46,79 +39,99 @@
 
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
-import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import { setupThemeCheck } from '@/composables/common';
+import { setupDisplayData } from '@/composables/session';
 import { truncateAddress, truncationPoints } from '@/filters';
-import ScrambleMixin from '@/mixins/scramble-mixin';
 import { randomHex } from '@/utils/data';
 
-@Component({
-  computed: {
-    ...mapGetters('session', ['shouldShowAmount'])
+export default defineComponent({
+  name: 'LabeledAddressDisplay',
+  props: {
+    account: { required: true, type: Object as PropType<GeneralAccount> }
+  },
+  setup(props) {
+    const { account } = toRefs(props);
+    const { currentBreakpoint } = setupThemeCheck();
+    const { scrambleData, shouldShowAmount } = setupDisplayData();
+
+    const xsOnly = computed(() => currentBreakpoint.value.xsOnly);
+    const smAndDown = computed(() => currentBreakpoint.value.smAndDown);
+
+    const address = computed<string>(() => {
+      return scrambleData.value ? randomHex() : account.value.address;
+    });
+
+    const breakpoint = computed<string>(() => {
+      return account.value.label.length > 0 && currentBreakpoint.value.mdAndDown
+        ? 'sm'
+        : currentBreakpoint.value.name;
+    });
+
+    const truncationLength = computed<number>(() => {
+      let truncationPoint = truncationPoints[breakpoint.value];
+      if (truncationPoint && account.value.label) {
+        return 4;
+      }
+      return truncationPoint ?? 4;
+    });
+
+    const truncatedAddress = computed(() => {
+      return truncateAddress(address.value, truncationLength.value);
+    });
+
+    const displayAddress = computed<string>(() => {
+      if (truncatedAddress.value.length >= address.value.length) {
+        return address.value;
+      }
+      return truncatedAddress.value;
+    });
+
+    const truncated = computed<boolean>(() => {
+      if (truncatedAddress.value.length >= address.value.length) {
+        return false;
+      }
+      return truncatedAddress.value.includes('...');
+    });
+
+    const label = computed<string>(() => {
+      const bp = currentBreakpoint.value;
+      const label = account.value.label;
+      let length = -1;
+
+      if (bp.xlOnly && label.length > 50) {
+        length = 47;
+      } else if (bp.lgOnly && label.length > 38) {
+        length = 35;
+      } else if (bp.md && label.length > 27) {
+        length = 24;
+      } else if (bp.smOnly && label.length > 19) {
+        length = 16;
+      }
+
+      if (length > 0) {
+        return label.substr(0, length) + '...';
+      }
+
+      return label;
+    });
+
+    return {
+      xsOnly,
+      smAndDown,
+      truncated,
+      label,
+      displayAddress,
+      shouldShowAmount,
+      address
+    };
   }
-})
-export default class LabeledAddressDisplay extends Mixins(ScrambleMixin) {
-  shouldShowAmount!: boolean;
-
-  @Prop({ required: true })
-  account!: GeneralAccount;
-
-  truncated: boolean = false;
-
-  get address(): string {
-    return this.scrambleData ? randomHex() : this.account.address;
-  }
-
-  get breakpoint(): string {
-    return this.account.label.length > 0 && this.$vuetify.breakpoint.mdAndDown
-      ? 'sm'
-      : this.$vuetify.breakpoint.name;
-  }
-
-  get truncationLength(): number {
-    let truncationPoint = truncationPoints[this.breakpoint];
-    if (truncationPoint && this.account.label) {
-      return 4;
-    }
-    return truncationPoint ?? 4;
-  }
-
-  get displayAddress(): string {
-    const address = truncateAddress(this.address, this.truncationLength);
-    if (address.length >= this.address.length) {
-      this.truncated = false;
-      return this.address;
-    }
-    this.truncated = address.includes('...');
-    return address;
-  }
-
-  get label(): string {
-    const bp = this.$vuetify.breakpoint;
-    const label = this.account.label;
-    let length = -1;
-
-    if (bp.xlOnly && label.length > 50) {
-      length = 47;
-    } else if (bp.lgOnly && label.length > 38) {
-      length = 35;
-    } else if (bp.md && label.length > 27) {
-      length = 24;
-    } else if (bp.smOnly && label.length > 19) {
-      length = 16;
-    }
-
-    if (length > 0) {
-      return label.substr(0, length) + '...';
-    }
-
-    return label;
-  }
-
-  copy(address: string) {
-    navigator.clipboard.writeText(address);
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

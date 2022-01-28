@@ -11,11 +11,14 @@
   </span>
 </template>
 <script lang="ts">
-import { Prop, Vue, Component } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 
-@Component({})
-export default class DefiProtocolDetails extends Vue {
-  @Prop({ required: true })
-  item!: { icon: string; name: string };
-}
+type Item = { icon: string; name: string };
+
+export default defineComponent({
+  name: 'DefiProtocolDetails',
+  props: {
+    item: { required: true, type: Object as PropType<Item> }
+  }
+});
 </script>

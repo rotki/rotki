@@ -36,6 +36,7 @@ export default defineComponent({
     title: { required: true, type: String },
     loading: { required: true, type: Boolean }
   },
+  emits: ['refresh'],
   setup(props, { emit }) {
     const { title } = toRefs(props);
     const refresh = () => {

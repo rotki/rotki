@@ -7,10 +7,11 @@
   </div>
 </template>
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class PrivacyNotice extends Vue {}
+export default defineComponent({
+  name: 'PrivacyNotice'
+});
 </script>
 <style scoped lang="scss">
 .privacy-notice {

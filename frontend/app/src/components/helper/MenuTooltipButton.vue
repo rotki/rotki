@@ -1,12 +1,12 @@
 <template>
   <v-tooltip bottom z-index="215" class="tooltip-menu-button" open-delay="250">
-    <template #activator="{ on: tooltip }">
+    <template #activator="{ on: menu }">
       <v-btn
         icon
         :class="className"
         :retain-focus-on-click="retainFocusOnClick"
         @click="click()"
-        v-on="{ ...tooltip, ...onMenu }"
+        v-on="{ ...menu, ...onMenu }"
       >
         <slot />
       </v-btn>
@@ -16,22 +16,25 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Emit } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class MenuTooltipButton extends Vue {
-  @Prop({ required: true, default: '' })
-  tooltip!: string;
-  @Prop({ required: false, default: () => {} })
-  onMenu!: () => void;
-  @Prop({ required: false, default: false })
-  retainFocusOnClick!: boolean;
-  @Prop({ required: true, default: '' })
-  className!: string;
+export default defineComponent({
+  name: 'MenuTooltipButton',
+  props: {
+    tooltip: { required: true, type: String, default: '' },
+    onMenu: { required: false, type: Object, default: () => {} },
+    retainFocusOnClick: { required: false, type: Boolean, default: false },
+    className: { required: true, type: String, default: '' }
+  },
+  emits: ['click'],
+  setup(_, { emit }) {
+    const click = () => emit('click');
 
-  @Emit()
-  click() {}
-}
+    return {
+      click
+    };
+  }
+});
 </script>
 
 <style scoped lang="scss">

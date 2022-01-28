@@ -10,17 +10,23 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, toRefs } from '@vue/composition-api';
 
-@Component({})
-export default class CopyButton extends Vue {
-  @Prop({ required: true, type: String })
-  value!: string;
-  @Prop({ required: true, type: String })
-  tooltip!: string;
+export default defineComponent({
+  name: 'CopyButton',
+  props: {
+    value: { required: true, type: String },
+    tooltip: { required: true, type: String }
+  },
+  setup(props) {
+    const { value } = toRefs(props);
+    const copy = () => {
+      navigator.clipboard.writeText(value.value);
+    };
 
-  copy() {
-    navigator.clipboard.writeText(this.value);
+    return {
+      copy
+    };
   }
-}
+});
 </script>

@@ -12,8 +12,9 @@
   </v-card>
 </template>
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class SettingCategory extends Vue {}
+export default defineComponent({
+  name: 'SettingCategory'
+});
 </script>

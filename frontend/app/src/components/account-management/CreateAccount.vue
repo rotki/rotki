@@ -300,6 +300,7 @@ export default defineComponent({
     loading: { required: true, type: Boolean },
     error: { required: false, type: String, default: '' }
   },
+  emits: ['confirm', 'cancel', 'error:clear'],
   setup(props, { emit }) {
     const { displayed, error } = toRefs(props);
 

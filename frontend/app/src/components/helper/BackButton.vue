@@ -16,17 +16,25 @@
   <div v-else class="back-button__placeholder" />
 </template>
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
+import { useRouter } from '@/composables/common';
 
-@Component({})
-export default class BackButton extends Vue {
-  @Prop({ required: true, default: false, type: Boolean })
-  canNavigateBack!: boolean;
+export default defineComponent({
+  name: 'BackButton',
+  props: {
+    canNavigateBack: { required: true, type: Boolean, default: false }
+  },
+  setup() {
+    const router = useRouter();
+    const goBack = () => {
+      router.go(-1);
+    };
 
-  goBack() {
-    this.$router.go(-1);
+    return {
+      goBack
+    };
   }
-}
+});
 </script>
 <style scoped lang="scss">
 .back-button {

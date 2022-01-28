@@ -232,6 +232,7 @@ export default defineComponent({
     LocationDisplay,
     DateDisplay
   },
+  emits: ['fetch'],
   setup(_, { emit }) {
     const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 

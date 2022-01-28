@@ -116,7 +116,7 @@ export default defineComponent({
     loading: { required: false, type: Boolean, default: false },
     directory: { required: true, type: String }
   },
-  emits: ['remove'],
+  emits: ['change', 'remove'],
   setup(props, { emit }) {
     const { items, directory } = toRefs(props);
     const pendingDeletion = ref<UserDbBackup | null>(null);

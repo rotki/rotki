@@ -1,56 +1,59 @@
 <template>
-  <span class="date-display" :class="!shouldShowAmount ? 'blur-content' : null">
-    {{ formatDate(displayTimestamp, dateFormat) }}
+  <span class="date-display" :class="{ 'blur-content': !shouldShowAmount }">
+    {{ formattedDate }}
   </span>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
-import { mapGetters, mapState } from 'vuex';
+import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { setupDisplayData, setupGeneralSettings } from '@/composables/session';
 import { displayDateFormatter } from '@/data/date_formatter';
 
-@Component({
-  computed: {
-    ...mapGetters('session', ['dateDisplayFormat', 'shouldShowAmount']),
-    ...mapState('session', ['scrambleData'])
+export default defineComponent({
+  name: 'DateDisplay',
+  props: {
+    timestamp: { required: true, type: Number },
+    noTimezone: { required: false, type: Boolean, default: false },
+    noTime: { required: false, type: Boolean, default: false }
+  },
+  setup(props) {
+    const { timestamp, noTimezone, noTime } = toRefs(props);
+    const { dateDisplayFormat } = setupGeneralSettings();
+    const { scrambleData, shouldShowAmount } = setupDisplayData();
+
+    const dateFormat = computed<string>(() => {
+      const display = noTimezone.value
+        ? dateDisplayFormat.value.replace('%z', '').replace('%Z', '')
+        : dateDisplayFormat.value;
+
+      if (noTime.value) {
+        return display.split(' ')[0];
+      }
+      return display;
+    });
+
+    const displayTimestamp = computed<number>(() => {
+      if (!scrambleData.value) {
+        return timestamp.value;
+      }
+      const start = new Date(2016, 0, 1).getTime();
+      const now = Date.now();
+      return new Date(start + Math.random() * (now - start)).getTime() / 1000;
+    });
+
+    const formattedDate = computed<string>(() => {
+      return displayDateFormatter.format(
+        new Date(displayTimestamp.value * 1000),
+        dateFormat.value
+      );
+    });
+
+    return {
+      shouldShowAmount,
+      formattedDate
+    };
   }
-})
-export default class DateDisplay extends Vue {
-  @Prop({ required: true, type: Number })
-  timestamp!: number;
-  @Prop({ required: false, type: Boolean, default: false })
-  noTimezone!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  noTime!: boolean;
-
-  dateDisplayFormat!: string;
-  shouldShowAmount!: boolean;
-  scrambleData!: boolean;
-
-  formatDate(value: number, format: string): string {
-    return displayDateFormatter.format(new Date(value * 1000), format);
-  }
-
-  get dateFormat(): string {
-    const display = this.noTimezone
-      ? this.dateDisplayFormat.replace('%z', '').replace('%Z', '')
-      : this.dateDisplayFormat;
-
-    if (this.noTime) {
-      return display.split(' ')[0];
-    }
-    return display;
-  }
-
-  get displayTimestamp(): number {
-    if (!this.scrambleData) {
-      return this.timestamp;
-    }
-    const start = new Date(2016, 0, 1).getTime();
-    const now = Date.now();
-    return new Date(start + Math.random() * (now - start)).getTime() / 1000;
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

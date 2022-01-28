@@ -7,21 +7,31 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import { capitalize } from '@/filters';
 import { EventType } from '@/services/defi/types';
 
-@Component({})
-export default class EventTypeDisplay extends Vue {
-  @Prop({ required: true })
-  eventType!: EventType;
-  readonly capitalize = capitalize;
+export default defineComponent({
+  name: 'EventTypeDisplay',
+  props: {
+    eventType: { required: true, type: Object as PropType<EventType> }
+  },
+  setup(props) {
+    const { eventType } = toRefs(props);
 
-  get event(): string {
-    if (this.eventType === 'comp') {
-      return `comp claimed`;
-    }
-    return this.eventType;
+    const event = computed<string>(() => {
+      return eventType.value === 'comp' ? 'comp claimed' : eventType.value;
+    });
+
+    return {
+      capitalize,
+      event
+    };
   }
-}
+});
 </script>

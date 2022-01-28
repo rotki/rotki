@@ -48,29 +48,31 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 
-@Component({
-  components: { PremiumLock }
-})
-export default class StatCardWide extends Vue {
-  @Prop({ required: false, type: Boolean, default: false })
-  locked!: boolean;
-  @Prop({ required: false, type: Boolean, default: false })
-  loading!: boolean;
+export default defineComponent({
+  name: 'StatCardWide',
 
-  // Determines how many cells wide the stat-card should be and
-  // adjusts `<v-col cols=` accordingly via colsSize
-  @Prop({ required: false, type: Number, default: 3 })
-  cols!: number;
+  components: { PremiumLock },
+  props: {
+    locked: { required: false, type: Boolean, default: false },
+    loading: { required: false, type: Boolean, default: false },
+    cols: { required: false, type: Number, default: 3 }
+  },
 
-  colsSize = {
-    2: 6,
-    3: 4,
-    4: 3
-  };
-}
+  setup() {
+    const colsSize = {
+      2: 6,
+      3: 4,
+      4: 3
+    };
+
+    return {
+      colsSize
+    };
+  }
+});
 </script>
 
 <style scoped lang="scss">

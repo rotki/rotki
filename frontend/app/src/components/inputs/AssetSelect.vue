@@ -21,6 +21,7 @@
     :outlined="outlined"
     :class="outlined ? 'asset-select--outlined' : null"
     @input="input"
+    @blur="blur"
   >
     <template #selection="{ item }">
       <asset-details
@@ -37,7 +38,9 @@
         />
       </v-list-item-avatar>
       <v-list-item-content :id="`asset-${item.identifier.toLocaleLowerCase()}`">
-        <v-list-item-title>{{ item.symbol }}</v-list-item-title>
+        <v-list-item-title class="font-weight-medium">
+          {{ item.symbol }}
+        </v-list-item-title>
         <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
       </v-list-item-content>
     </template>
@@ -46,109 +49,121 @@
 
 <script lang="ts">
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  PropType,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { setupSupportedAssets } from '@/composables/balances';
 import { compareAssets } from '@/utils/assets';
 
-@Component({
+export default defineComponent({
+  name: 'AssetSelect',
   components: { AssetDetails, AssetIcon },
-  computed: {
-    ...mapState('balances', ['supportedAssets'])
-  }
-})
-export default class AssetSelect extends Vue {
-  supportedAssets!: SupportedAsset[];
+  props: {
+    items: {
+      required: false,
+      type: Array as PropType<string[]>,
+      default: () => []
+    },
+    hint: { required: false, type: String, default: '' },
+    successMessages: { required: false, type: String, default: '' },
+    errorMessages: { required: false, type: String, default: '' },
+    label: { required: false, type: String, default: 'Asset' },
+    value: { required: false, type: String, default: '' },
+    rules: {
+      required: false,
+      type: Array as PropType<((v: string) => boolean | string)[]>,
+      default: () => []
+    },
+    disabled: { required: false, type: Boolean, default: false },
+    outlined: { required: false, type: Boolean, default: false },
+    clearable: { required: false, type: Boolean, default: false },
+    persistentHint: { required: false, type: Boolean, default: false }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { items } = toRefs(props);
+    const { supportedAssets } = setupSupportedAssets();
 
-  @Prop({ required: false, default: null })
-  items!: string[] | null;
+    const input = (_value: string) => emit('input', _value);
 
-  @Prop({ required: false, default: '' })
-  hint!: string;
+    const search = ref<string>('');
+    const visibleAssets = ref<SupportedAsset[]>([]);
 
-  @Prop({ required: false, default: '' })
-  successMessages!: string;
+    const keyword = computed<string>(() => {
+      if (!search.value) {
+        return '';
+      }
 
-  @Prop({ required: false, default: '' })
-  errorMessages!: string;
+      return search.value.toLocaleLowerCase().trim();
+    });
 
-  @Prop({ required: false, default: 'Asset' })
-  label!: string;
-
-  @Prop({ required: true, default: '' })
-  value!: string;
-
-  @Prop({ default: () => [], required: false })
-  rules!: ((v: string) => boolean | string)[];
-
-  @Prop({ default: false, required: false })
-  disabled!: boolean;
-
-  @Prop({ default: false, required: false, type: Boolean })
-  outlined!: boolean;
-
-  @Prop({ default: false, required: false, type: Boolean })
-  clearable!: boolean;
-
-  @Prop({ default: false, required: false, type: Boolean })
-  persistentHint!: boolean;
-
-  @Emit()
-  input(_value: string) {}
-
-  search: string = '';
-  visibleAssets: SupportedAsset[] = [];
-
-  mounted() {
-    this.visibleAssets = this.getAvailableAssets();
-  }
-
-  @Watch('items')
-  onItemsUpdate() {
-    this.visibleAssets = this.getAvailableAssets();
-  }
-
-  @Watch('search')
-  onSearchUpdate() {
-    const assets = this.getAvailableAssets();
-    this.visibleAssets = assets
-      .filter(value1 => this.customFilter(value1, this.search))
-      .sort((a, b) => compareAssets(a, b, 'name', this.keyword, false));
-  }
-
-  private getAvailableAssets() {
-    if (this.items && this.items.length > 0) {
-      return this.supportedAssets.filter(asset =>
-        this.items!.includes(asset.identifier)
-      );
-    }
-    return this.supportedAssets;
-  }
-
-  customFilter(item: SupportedAsset, queryText: string): boolean {
-    const toLower = (string?: string | null) => {
-      return string?.toLocaleLowerCase()?.trim() ?? '';
+    const getAvailableAssets = () => {
+      if (items.value && items.value.length > 0) {
+        return supportedAssets.value.filter(asset =>
+          items.value!.includes(asset.identifier)
+        );
+      }
+      return supportedAssets.value;
     };
-    const keyword = toLower(queryText);
-    const name = toLower(item.name);
-    const symbol = toLower(item.symbol);
-    return name.indexOf(keyword) >= 0 || symbol.indexOf(keyword) >= 0;
-  }
 
-  get keyword(): string {
-    const search = this.search;
-    if (!search) {
-      return '';
-    }
+    const setDefaultVisibleAssets = () => {
+      visibleAssets.value = getAvailableAssets();
+    };
 
-    return search.toLocaleLowerCase().trim();
-  }
+    onMounted(() => {
+      setDefaultVisibleAssets();
+    });
 
-  assetText(asset: SupportedAsset): string {
-    return `${asset.symbol} ${asset.name}`;
+    watch(items, () => {
+      setDefaultVisibleAssets();
+    });
+
+    const customFilter = (item: SupportedAsset, queryText: string): boolean => {
+      const toLower = (string?: string | null) => {
+        return string?.toLocaleLowerCase()?.trim() ?? '';
+      };
+      const keyword = toLower(queryText);
+      const name = toLower(item.name);
+      const symbol = toLower(item.symbol);
+      return name.indexOf(keyword) >= 0 || symbol.indexOf(keyword) >= 0;
+    };
+
+    watch(search, search => {
+      const assets = getAvailableAssets();
+
+      visibleAssets.value = assets
+        .filter(value1 => customFilter(value1, search))
+        .sort((a, b) => compareAssets(a, b, 'name', keyword.value, false));
+    });
+
+    const assetText = (asset: SupportedAsset): string => {
+      return `${asset.symbol} ${asset.name}`;
+    };
+
+    const blur = () => {
+      setTimeout(() => {
+        search.value = '';
+      }, 200);
+    };
+
+    return {
+      blur,
+      visibleAssets,
+      customFilter,
+      search,
+      assetText,
+      input
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

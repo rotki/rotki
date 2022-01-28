@@ -46,6 +46,7 @@ export default defineComponent({
       default: 'address'
     }
   },
+  emits: ['input'],
   setup(props, { emit }) {
     const { eth2Validators } = setupBlockchainAccounts();
     const account = ref<GeneralAccount[]>([]);

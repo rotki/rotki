@@ -53,6 +53,7 @@ export default defineComponent({
       required: true
     }
   },
+  emits: ['input'],
   setup(_props, { emit }) {
     const store = useStore();
     const custom = computed(({ year }) => year === 'custom');

@@ -50,38 +50,43 @@
 </template>
 
 <script lang="ts">
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import { VueConstructor } from 'vue';
-import { Component, Vue, Prop } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
-import { IdentifierForSymbolGetter } from '@/store/balances/types';
+import { setupAssetInfoRetrieval } from '@/composables/balances';
 
-@Component({
-  computed: {
-    ...mapGetters('balances', ['getIdentifierForSymbol'])
+export default defineComponent({
+  name: 'NavigationMenuItem',
+  props: {
+    showTooltips: { required: false, type: Boolean, default: false },
+    icon: { required: false, type: String, default: '' },
+    cryptoIcon: { required: false, type: String, default: '' },
+    text: { required: true, type: String },
+    image: { required: false, type: String, default: '' },
+    iconComponent: {
+      required: false,
+      type: Object as PropType<VueConstructor>,
+      default: null
+    },
+    active: { required: false, type: Boolean, default: false }
+  },
+  setup(props) {
+    const { cryptoIcon } = toRefs(props);
+    const { getAssetIdentifierForSymbol } = setupAssetInfoRetrieval();
+
+    const identifier = computed<string>(() => {
+      return getAssetIdentifierForSymbol(cryptoIcon.value) ?? cryptoIcon.value;
+    });
+
+    return {
+      identifier
+    };
   }
-})
-export default class NavigationMenuItem extends Vue {
-  @Prop({ required: false, type: Boolean, default: false })
-  showTooltips!: boolean;
-  @Prop({ required: false, type: String, default: '' })
-  icon!: string;
-  @Prop({ required: false, type: String, default: '' })
-  cryptoIcon!: string;
-  @Prop({ required: true, type: String })
-  text!: string;
-  @Prop({ required: false })
-  image!: string;
-  @Prop({ required: false })
-  iconComponent!: VueConstructor | undefined;
-  @Prop({ required: false, type: Boolean, default: false })
-  active!: boolean;
-
-  getIdentifierForSymbol!: IdentifierForSymbolGetter;
-
-  get identifier(): string {
-    return this.getIdentifierForSymbol(this.cryptoIcon) ?? this.cryptoIcon;
-  }
-}
+});
 </script>
 
 <style module lang="scss">

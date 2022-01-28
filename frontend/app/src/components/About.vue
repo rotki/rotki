@@ -105,59 +105,67 @@
 </template>
 
 <script lang="ts">
-import { mapState } from 'pinia';
-import { Component, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  ref,
+  toRefs
+} from '@vue/composition-api';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
+import { interop } from '@/electron-interop';
 import { SystemVersion } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/store';
-import { Version } from '@/store/types';
 import { WebVersion } from '@/types';
 
-@Component({
+export default defineComponent({
   name: 'About',
   components: { AppUpdateIndicator, BaseExternalLink },
-  computed: {
-    ...mapState(useMainStore, ['version', 'dataDirectory'])
-  }
-})
-export default class About extends Vue {
-  version!: Version;
-  versionInfo: SystemVersion | WebVersion | null = null;
-  dataDirectory!: string;
+  setup() {
+    const store = useMainStore();
 
-  get web(): boolean {
-    return (this.versionInfo && 'userAgent' in this.versionInfo) ?? false;
-  }
+    const { version, dataDirectory } = toRefs(store);
+    const versionInfo = ref<SystemVersion | WebVersion | null>(null);
 
-  get packaged(): boolean {
-    return this.$interop.isPackaged;
-  }
+    const web = computed<boolean>(() => {
+      return (versionInfo.value && 'userAgent' in versionInfo.value) ?? false;
+    });
 
-  get frontendVersion(): string {
-    return process.env.VERSION ?? '';
-  }
+    const frontendVersion = computed<string>(() => {
+      return process.env.VERSION ?? '';
+    });
 
-  async mounted() {
-    this.versionInfo = await this.$interop.version();
-  }
+    onMounted(async () => {
+      versionInfo.value = await interop.version();
+    });
 
-  copy() {
-    let version = '';
-    version += `App Version: ${this.version.version}\r\n`;
-    version += `Frontend Version: ${this.frontendVersion}\r\n`;
-    if (this.versionInfo) {
-      if ('userAgent' in this.versionInfo) {
-        version += `Platform: ${this.versionInfo.platform}\r\n`;
-        version += `User Agent: ${this.versionInfo.userAgent}\r\n`;
-      } else {
-        version += `Platform: ${this.versionInfo.os} ${this.versionInfo.arch} ${this.versionInfo.osVersion}\r\n`;
-        version += `Electron: ${this.versionInfo.electron}\r\n`;
+    const copy = () => {
+      let versionText = '';
+      versionText += `App Version: ${version.value.version}\r\n`;
+      versionText += `Frontend Version: ${frontendVersion.value}\r\n`;
+      if (versionInfo.value) {
+        if ('userAgent' in versionInfo.value) {
+          versionText += `Platform: ${versionInfo.value.platform}\r\n`;
+          versionText += `User Agent: ${versionInfo.value.userAgent}\r\n`;
+        } else {
+          versionText += `Platform: ${versionInfo.value.os} ${versionInfo.value.arch} ${versionInfo.value.osVersion}\r\n`;
+          versionText += `Electron: ${versionInfo.value.electron}\r\n`;
+        }
       }
-    }
-    navigator.clipboard.writeText(version);
+      navigator.clipboard.writeText(versionText);
+    };
+
+    return {
+      version,
+      copy,
+      dataDirectory,
+      versionInfo,
+      web,
+      frontendVersion
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

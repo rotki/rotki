@@ -16,24 +16,23 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { Zero } from '@/utils/bignumbers';
 
-@Component({
-  components: { AmountDisplay }
-})
-export default class InfoRow extends Vue {
-  @Prop({ required: false, type: Boolean })
-  loading!: boolean;
+export default defineComponent({
+  name: 'InfoRow',
 
-  @Prop({ required: true, type: String })
-  title!: string;
-
-  @Prop({ required: false, default: () => Zero })
-  value!: BigNumber;
-
-  @Prop({ required: false, type: Boolean })
-  fiat!: boolean;
-}
+  components: { AmountDisplay },
+  props: {
+    loading: { required: false, type: Boolean },
+    title: { required: true, type: String },
+    value: {
+      required: false,
+      type: Object as PropType<BigNumber>,
+      default: () => Zero
+    },
+    fiat: { required: false, type: Boolean }
+  }
+});
 </script>

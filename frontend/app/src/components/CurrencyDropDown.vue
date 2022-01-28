@@ -33,17 +33,17 @@
         <v-divider />
         <v-list class="currency-dropdown__list">
           <v-list-item
-            v-for="currency in currencies"
-            :id="`change-to-${currency.tickerSymbol.toLocaleLowerCase()}`"
-            :key="currency.tickerSymbol"
-            @click="onSelected(currency)"
+            v-for="item in filteredCurrencies"
+            :id="`change-to-${item.tickerSymbol.toLocaleLowerCase()}`"
+            :key="item.tickerSymbol"
+            @click="onSelected(item)"
           >
             <v-list-item-avatar class="currency-list primary--text">
-              {{ currency.unicodeSymbol }}
+              {{ item.unicodeSymbol }}
             </v-list-item-avatar>
             <v-list-item-content>
               <v-list-item-title>
-                {{ currency.name }}
+                {{ item.name }}
               </v-list-item-title>
               <v-list-item-subtitle v-text="$t('currency_drop_down.hint')" />
             </v-list-item-content>
@@ -55,61 +55,71 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import { computed, defineComponent, ref } from '@vue/composition-api';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { setupGeneralSettings, setupSession } from '@/composables/session';
 import { currencies } from '@/data/currencies';
 import ThemeMixin from '@/mixins/theme-mixin';
 import { Currency } from '@/types/currency';
-import { SettingsUpdate } from '@/types/user';
 
-@Component({
+export default defineComponent({
+  name: 'CurrencyDropDown',
   components: { MenuTooltipButton },
-  computed: mapGetters('session', ['currency']),
-  methods: {
-    ...mapActions('session', ['updateSettings'])
-  }
-})
-export default class CurrencyDropDown extends Mixins(ThemeMixin) {
-  currency!: Currency;
-  updateSettings!: (update: SettingsUpdate) => Promise<void>;
-  filter: string = '';
-  visible: boolean = false;
-  pendingTimeout: any = 0;
+  mixins: [ThemeMixin],
+  setup() {
+    const { updateSettings } = setupSession();
+    const { currency } = setupGeneralSettings();
 
-  get currencies(): Currency[] {
-    const filter = this.filter.toLocaleLowerCase();
-    if (!filter) {
-      return currencies;
-    }
-    return currencies.filter(({ name, tickerSymbol }) => {
-      const currencyName = name.toLocaleLowerCase();
-      const symbol = tickerSymbol.toLocaleLowerCase();
-      return currencyName.indexOf(filter) >= 0 || symbol.indexOf(filter) >= 0;
+    const filter = ref<string>('');
+    const visible = ref<boolean>(false);
+    const pendingTimeout = ref<any>(0);
+
+    const filteredCurrencies = computed<Currency[]>(() => {
+      const filterValue = filter.value.toLocaleLowerCase();
+      if (!filterValue) {
+        return currencies;
+      }
+      return currencies.filter(({ name, tickerSymbol }) => {
+        const currencyName = name.toLocaleLowerCase();
+        const symbol = tickerSymbol.toLocaleLowerCase();
+        return (
+          currencyName.indexOf(filterValue) >= 0 ||
+          symbol.indexOf(filterValue) >= 0
+        );
+      });
     });
-  }
 
-  async selectFirst() {
-    const currencies = this.currencies;
-    if (currencies.length === 0) {
-      return;
-    }
-    await this.onSelected(currencies[0]);
-    if (this.pendingTimeout) {
-      clearTimeout(this.pendingTimeout);
-    }
-    this.pendingTimeout = setTimeout(() => (this.filter = ''), 400);
-  }
+    const onSelected = async (newCurrency: Currency) => {
+      visible.value = false;
+      if (newCurrency.tickerSymbol === currency.value.tickerSymbol) {
+        return;
+      }
 
-  async onSelected(currency: Currency) {
-    this.visible = false;
-    if (currency.tickerSymbol === this.currency.tickerSymbol) {
-      return;
-    }
+      await updateSettings({ mainCurrency: newCurrency.tickerSymbol });
+    };
 
-    await this.updateSettings({ mainCurrency: currency.tickerSymbol });
+    const selectFirst = async () => {
+      const currencies = filteredCurrencies.value;
+      if (currencies.length === 0) {
+        return;
+      }
+      await onSelected(currencies[0]);
+      if (pendingTimeout.value) {
+        clearTimeout(pendingTimeout.value);
+      }
+      pendingTimeout.value = setTimeout(() => (filter.value = ''), 400);
+    };
+
+    return {
+      filter,
+      visible,
+      currency,
+      selectFirst,
+      filteredCurrencies,
+      onSelected
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

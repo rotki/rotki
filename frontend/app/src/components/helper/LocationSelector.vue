@@ -34,25 +34,25 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import { tradeLocations } from '@/components/history/consts';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { TradeLocationData } from '@/components/history/type';
 
-@Component({
-  components: { LocationIcon }
-})
-export default class LocationSelector extends Vue {
-  @Prop({ required: true })
-  value!: string | null;
-  @Prop({ required: false, type: Boolean, default: false })
-  pending!: boolean;
+export default defineComponent({
+  name: 'LocationSelector',
+  components: { LocationIcon },
+  props: {
+    value: { required: false, type: String, default: '' },
+    pending: { required: false, type: Boolean, default: false }
+  },
+  emits: ['change'],
+  setup(_, { emit }) {
+    const change = (_value: string) => emit('change', _value);
 
-  @Emit()
-  change(_value: string) {}
-
-  get locations(): TradeLocationData[] {
-    return tradeLocations;
+    return {
+      locations: tradeLocations,
+      change
+    };
   }
-}
+});
 </script>

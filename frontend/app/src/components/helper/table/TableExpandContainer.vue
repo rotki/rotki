@@ -12,17 +12,16 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class TableExpandContainer extends Vue {
-  @Prop({ required: true, type: Boolean })
-  visible!: boolean;
-  @Prop({ required: true, type: Number })
-  colspan!: number;
-  @Prop({ required: false, default: true, type: Boolean })
-  padded!: boolean;
-}
+export default defineComponent({
+  name: 'TableExpandContainer',
+  props: {
+    visible: { required: true, type: Boolean },
+    colspan: { required: true, type: Number },
+    padded: { required: false, type: Boolean, default: true }
+  }
+});
 </script>
 
 <style scoped lang="scss">

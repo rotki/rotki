@@ -16,15 +16,14 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import Fragment from '@/components/helper/Fragment';
 
-@Component({
+export default defineComponent({
   name: 'NotesDisplay',
-  components: { Fragment }
-})
-export default class NotesDisplay extends Vue {
-  @Prop({ required: true })
-  notes!: string | null;
-}
+  components: { Fragment },
+  props: {
+    notes: { required: false, type: String, default: '' }
+  }
+});
 </script>

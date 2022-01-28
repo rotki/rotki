@@ -34,42 +34,48 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
-import { mapGetters } from 'vuex';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { setupGeneralSettings } from '@/composables/session';
+import i18n from '@/i18n';
 import { DefiBalance } from '@/store/defi/types';
-import { Currency } from '@/types/currency';
 
-@Component({
-  components: { DataTable, PercentageDisplay, AmountDisplay, AssetIcon },
-  computed: {
-    ...mapGetters('session', ['currency'])
+const headers: DataTableHeader[] = [
+  {
+    text: i18n.t('lending_asset_table.headers.asset').toString(),
+    value: 'asset'
+  },
+  {
+    text: i18n.t('lending_asset_table.headers.amount').toString(),
+    value: 'balance.amount',
+    align: 'end'
+  },
+  { text: '', value: 'balance.usdValue', align: 'end' },
+  {
+    text: i18n
+      .t('lending_asset_table.headers.effective_interest_rate')
+      .toString(),
+    value: 'effectiveInterestRate',
+    align: 'end'
   }
-})
-export default class LendingAssetTable extends Vue {
-  @Prop({ required: true })
-  assets!: DefiBalance[];
-  @Prop({ required: false, type: Boolean })
-  loading!: boolean;
-  currency!: Currency;
+];
+export default defineComponent({
+  name: 'LendingAssetTable',
+  components: { DataTable, PercentageDisplay, AmountDisplay },
+  props: {
+    assets: { required: true, type: Array as PropType<DefiBalance[]> },
+    loading: { reuirqed: false, type: Boolean, default: false }
+  },
+  setup() {
+    const { currency } = setupGeneralSettings();
 
-  readonly headers: DataTableHeader[] = [
-    { text: this.$tc('lending_asset_table.headers.asset'), value: 'asset' },
-    {
-      text: this.$tc('lending_asset_table.headers.amount'),
-      value: 'balance.amount',
-      align: 'end'
-    },
-    { text: '', value: 'balance.usdValue', align: 'end' },
-    {
-      text: this.$tc('lending_asset_table.headers.effective_interest_rate'),
-      value: 'effectiveInterestRate',
-      align: 'end'
-    }
-  ];
-}
+    return {
+      headers,
+      currency
+    };
+  }
+});
 </script>

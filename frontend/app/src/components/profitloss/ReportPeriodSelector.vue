@@ -129,7 +129,7 @@ export default defineComponent({
       validator: (value: any) => Object.values(Quarter).includes(value)
     }
   },
-  emits: ['update:period', 'changed'],
+  emits: ['update:period', 'update:selection', 'changed'],
   setup(props, { emit }) {
     const { quarter, year } = toRefs(props);
 

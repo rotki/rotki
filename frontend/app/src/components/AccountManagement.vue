@@ -127,7 +127,7 @@ export default defineComponent({
       type: Boolean
     }
   },
-  emits: ['login-complete'],
+  emits: ['about', 'login-complete'],
   setup(props, { emit }) {
     const { logged } = toRefs(props);
     const accountCreation = ref(false);

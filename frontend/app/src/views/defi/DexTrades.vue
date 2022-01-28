@@ -3,11 +3,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import DexTradeHistory from '@/components/defi/dex-trades/DexTradeHistory.vue';
 
-@Component({
+export default defineComponent({
+  name: 'DexTrades',
   components: { DexTradeHistory }
-})
-export default class DexTrades extends Vue {}
+});
 </script>

@@ -63,15 +63,18 @@
 
 <script lang="ts">
 import { XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { Component, Mixins, Prop } from 'vue-property-decorator';
-import AssetMixin from '@/mixins/asset-mixin';
+import { defineComponent, PropType, ref } from '@vue/composition-api';
 
-@Component({
-  name: 'UniswapPoolDetails'
-})
-export default class UniswapPoolDetails extends Mixins(AssetMixin) {
-  details: boolean = false;
-  @Prop({ required: true })
-  balance!: XswapBalance;
-}
+export default defineComponent({
+  name: 'UniswapPoolDetails',
+  props: {
+    balance: { required: true, type: Object as PropType<XswapBalance> }
+  },
+  setup() {
+    const details = ref<boolean>(false);
+    return {
+      details
+    };
+  }
+});
 </script>

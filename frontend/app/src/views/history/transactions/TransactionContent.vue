@@ -221,7 +221,7 @@ export default defineComponent({
     BlockchainAccountSelector,
     RefreshButton
   },
-  emits: ['fetch', 'update:payload'],
+  emits: ['fetch'],
   setup(_, { emit }) {
     const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 

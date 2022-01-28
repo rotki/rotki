@@ -35,57 +35,66 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import { displayDateFormatter } from '@/data/date_formatter';
+import i18n from '@/i18n';
 
-@Component({
-  name: 'DateFormatHelp'
-})
-export default class DateFormatHelp extends Vue {
-  @Prop({ required: true, type: Boolean })
-  value!: boolean;
+export default defineComponent({
+  name: 'DateFormatHelp',
+  props: {
+    value: { required: true, type: Boolean }
+  },
+  emits: ['input'],
+  setup(_, { emit }) {
+    const input = (_value: boolean) => emit('input', _value);
 
-  @Emit()
-  input(_value: boolean) {}
+    const formatter = displayDateFormatter;
+    const directives: string[] = displayDateFormatter.directives;
+    const now: Date = new Date('2018-03-09T21:09:08');
 
-  readonly formatter = displayDateFormatter;
-  readonly directives: string[] = displayDateFormatter.directives;
-  readonly now: Date = new Date('2018-03-09T21:09:08');
+    const description = (directive: string): string => {
+      const descriptions: { [directive: string]: string } = {
+        a: i18n.t('date_format_help.directive.week_day_short').toString(),
+        A: i18n.t('date_format_help.directive.week_day').toString(),
+        w: i18n.t('date_format_help.directive.day_of_the_week').toString(),
+        y: i18n.t('date_format_help.directive.year_two_digit').toString(),
+        Y: i18n.t('date_format_help.directive.year').toString(),
+        b: i18n.t('date_format_help.directive.month_short').toString(),
+        B: i18n.t('date_format_help.directive.month').toString(),
+        m: i18n.t('date_format_help.directive.month_two_digit').toString(),
+        '-m': i18n.t('date_format_help.directive.month_numeric').toString(),
+        d: i18n.t('date_format_help.directive.day_two_digit').toString(),
+        '-d': i18n.t('date_format_help.directive.day_numeric').toString(),
+        H: i18n.t('date_format_help.directive.hour_padded').toString(),
+        '-H': i18n.t('date_format_help.directive.hour').toString(),
+        I: i18n.t('date_format_help.directive.hour_twelve_padded').toString(),
+        '-I': i18n.t('date_format_help.directive.hour_twelve').toString(),
+        M: i18n.t('date_format_help.directive.minutes_padded').toString(),
+        '-M': i18n.t('date_format_help.directive.minutes').toString(),
+        S: i18n.t('date_format_help.directive.seconds_padded').toString(),
+        '-S': i18n.t('date_format_help.directive.seconds').toString(),
+        p: i18n.t('date_format_help.directive.ampm').toString(),
+        z: i18n.t('date_format_help.directive.timezone_offset').toString(),
+        Z: i18n.t('date_format_help.directive.timezone').toString(),
+        j: i18n.t('date_format_help.directive.day_of_year_padded').toString(),
+        '-j': i18n.t('date_format_help.directive.day_of_year').toString(),
+        c: i18n.t('date_format_help.directive.locale_datetime').toString(),
+        x: i18n.t('date_format_help.directive.locale_date').toString(),
+        X: i18n.t('date_format_help.directive.locale_time').toString()
+      };
 
-  description(directive: string): string {
-    const descriptions: { [directive: string]: string } = {
-      a: this.$t('date_format_help.directive.week_day_short').toString(),
-      A: this.$t('date_format_help.directive.week_day').toString(),
-      w: this.$t('date_format_help.directive.day_of_the_week').toString(),
-      y: this.$t('date_format_help.directive.year_two_digit').toString(),
-      Y: this.$t('date_format_help.directive.year').toString(),
-      b: this.$t('date_format_help.directive.month_short').toString(),
-      B: this.$t('date_format_help.directive.month').toString(),
-      m: this.$t('date_format_help.directive.month_two_digit').toString(),
-      '-m': this.$t('date_format_help.directive.month_numeric').toString(),
-      d: this.$t('date_format_help.directive.day_two_digit').toString(),
-      '-d': this.$t('date_format_help.directive.day_numeric').toString(),
-      H: this.$t('date_format_help.directive.hour_padded').toString(),
-      '-H': this.$t('date_format_help.directive.hour').toString(),
-      I: this.$t('date_format_help.directive.hour_twelve_padded').toString(),
-      '-I': this.$t('date_format_help.directive.hour_twelve').toString(),
-      M: this.$t('date_format_help.directive.minutes_padded').toString(),
-      '-M': this.$t('date_format_help.directive.minutes').toString(),
-      S: this.$t('date_format_help.directive.seconds_padded').toString(),
-      '-S': this.$t('date_format_help.directive.seconds').toString(),
-      p: this.$t('date_format_help.directive.ampm').toString(),
-      z: this.$t('date_format_help.directive.timezone_offset').toString(),
-      Z: this.$t('date_format_help.directive.timezone').toString(),
-      j: this.$t('date_format_help.directive.day_of_year_padded').toString(),
-      '-j': this.$t('date_format_help.directive.day_of_year').toString(),
-      c: this.$t('date_format_help.directive.locale_datetime').toString(),
-      x: this.$t('date_format_help.directive.locale_date').toString(),
-      X: this.$t('date_format_help.directive.locale_time').toString()
+      return descriptions[directive.replace('%', '')] ?? '';
     };
 
-    return descriptions[directive.replace('%', '')] ?? '';
+    return {
+      directives,
+      formatter,
+      now,
+      description,
+      input
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

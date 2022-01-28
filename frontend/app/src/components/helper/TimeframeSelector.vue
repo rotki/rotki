@@ -32,31 +32,45 @@ import {
   TimeFramePersist,
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
-import PremiumMixin from '@/mixins/premium-mixin';
+import { defineComponent, PropType, toRefs } from '@vue/composition-api';
+import { getPremium } from '@/composables/session';
 
 import { isPeriodAllowed } from '@/store/settings/utils';
 
-@Component({})
-export default class TimeframeSelector extends Mixins(PremiumMixin) {
-  @Prop({ required: true, type: String })
-  value!: TimeFrameSetting;
-  @Prop({ required: false, type: Boolean, default: false })
-  disabled!: boolean;
-  @Prop({ required: true, type: Array })
-  visibleTimeframes!: TimeFrameSetting[];
+export default defineComponent({
+  name: 'TimeframeSelector',
+  props: {
+    value: { required: true, type: String as PropType<TimeFrameSetting> },
+    disabled: { required: false, type: Boolean, default: false },
+    visibleTimeframes: { required: true, type: Array }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { value } = toRefs(props);
+    const input = (_value: TimeFrameSetting) => {
+      emit('input', _value);
+    };
 
-  @Emit()
-  input(_value: TimeFrameSetting) {}
+    const premium = getPremium();
 
-  worksWithoutPremium(period: TimeFrameSetting): boolean {
-    return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
+    const worksWithoutPremium = (period: TimeFrameSetting): boolean => {
+      return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
+    };
+
+    const activeClass = (timeframePeriod: TimeFrameSetting): string => {
+      return timeframePeriod === value.value
+        ? 'timeframe-selector--active'
+        : '';
+    };
+
+    return {
+      input,
+      premium,
+      worksWithoutPremium,
+      activeClass
+    };
   }
-
-  activeClass(timeframePeriod: TimeFrameSetting): string {
-    return timeframePeriod === this.value ? 'timeframe-selector--active' : '';
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

@@ -12,32 +12,44 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import { tradeLocations } from '@/components/history/consts';
 import { TradeLocationData } from '@/components/history/type';
 import { capitalize } from '@/filters';
 import { SupportedExchange } from '@/types/exchanges';
 
-@Component({})
-export default class ExchangeDisplay extends Vue {
-  @Prop({ required: true })
-  exchange!: SupportedExchange;
-  readonly locations = tradeLocations;
+export default defineComponent({
+  name: 'ExchangeDisplay',
+  props: {
+    exchange: { required: true, type: String as PropType<SupportedExchange> }
+  },
+  setup(props) {
+    const { exchange } = toRefs(props);
+    const locations = tradeLocations;
 
-  get location(): TradeLocationData | undefined {
-    return this.locations.find(
-      ({ identifier }) => identifier === this.exchange
-    );
-  }
+    const location = computed<TradeLocationData | undefined>(() => {
+      return locations.find(({ identifier }) => identifier === exchange.value);
+    });
 
-  get name(): string {
-    return this.location?.name ?? capitalize(this.exchange);
-  }
+    const name = computed<string>(() => {
+      return location.value?.name ?? capitalize(exchange.value);
+    });
 
-  get icon(): string {
-    return this.location?.icon ?? '';
+    const icon = computed<string>(() => {
+      return location.value?.icon ?? '';
+    });
+
+    return {
+      icon,
+      name
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">
