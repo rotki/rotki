@@ -484,7 +484,7 @@ class MockKraken(Kraken):
 
         self.random_trade_data = True
         self.random_balance_data = True
-        self.random_ledgers_data = True
+        self.random_ledgers_data = False
         self.remote_errors = False
         self.use_original_kraken = False
 

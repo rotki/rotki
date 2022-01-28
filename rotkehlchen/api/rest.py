@@ -35,6 +35,7 @@ from rotkehlchen.accounting.structures import (
     ActionType,
     Balance,
     BalanceType,
+    HistoryEventSubType,
     HistoryEventType,
     StakingEvent,
 )
@@ -75,6 +76,7 @@ from rotkehlchen.db.filtering import (
     ReportDataFilterQuery,
     TradesFilterQuery,
 )
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.reports import DBAccountingReports
@@ -3921,7 +3923,9 @@ class RestAPI():
         self,
         only_cache: bool,
         query_filter: HistoryEventFilterQuery,
+        value_filter: HistoryEventFilterQuery,
     ) -> Dict[str, Any]:
+        history_events_db = DBHistoryEvents(self.rotkehlchen.data.db)
         exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(
             Location.KRAKEN,
         )
@@ -3931,7 +3935,11 @@ class RestAPI():
                 HistoryEventType.STAKING,
                 HistoryEventType.UNSTAKING,
             ],
+            exclude_subtype=[
+                HistoryEventSubType.STAKING_RECEIVE_ASSET,
+            ],
         )
+
         message = ''
         has_premium, entries_limit = True, -1
         if self.rotkehlchen.premium is None:
@@ -3965,7 +3973,7 @@ class RestAPI():
                 entries_missing_prices=entries,
             )
         # Query events from database
-        events_raw, entries_found = self.rotkehlchen.data.db.get_history_events_and_limit_info(
+        events_raw, entries_found = history_events_db.get_history_events_and_limit_info(
             filter_query=query_filter,
             has_premium=has_premium,
         )
@@ -3978,16 +3986,24 @@ class RestAPI():
                 continue
             events.append(staking_event)
 
+        entries_total = history_events_db.get_history_events_count(query_filter=table_filter)
+        usd_value, amounts = history_events_db.get_value_stats(query_filter=value_filter)
+
         result = {
             'events': events,
             'entries_found': entries_found,
             'entries_limit': entries_limit,
-            'entries_total': self.rotkehlchen.data.db.get_entries_count_history_events(
+            'entries_total': entries_total,
+            'total_usd_value': usd_value,
+            'assets': history_events_db.get_entries_assets_history_events(
                 query_filter=table_filter,
             ),
-            'assets': self.rotkehlchen.data.db.get_entries_assets_history_events(
-                query_filter=table_filter,
-            ),
+            'received': [
+                {
+                    'asset': entry[0].identifier,
+                    'amount': entry[1],
+                } for entry in amounts
+            ],
         }
         return {'result': result, 'message': message, 'status_code': HTTPStatus.OK}
 
@@ -3995,6 +4011,7 @@ class RestAPI():
     def query_kraken_staking_events(
             self,
             query_filter: HistoryEventFilterQuery,
+            value_filter: HistoryEventFilterQuery,
             only_cache: bool,
             async_query: bool,
     ) -> Response:
@@ -4003,11 +4020,13 @@ class RestAPI():
                 command='_query_kraken_staking_events',
                 only_cache=only_cache,
                 query_filter=query_filter,
+                value_filter=value_filter,
             )
 
         response = self._query_kraken_staking_events(
             only_cache=only_cache,
             query_filter=query_filter,
+            value_filter=value_filter,
         )
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}

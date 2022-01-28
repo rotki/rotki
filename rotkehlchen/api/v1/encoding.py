@@ -22,7 +22,12 @@ from typing_extensions import Literal
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.accounting.structures import ActionType, BalanceType, HistoryEventType
+from rotkehlchen.accounting.structures import (
+    ActionType,
+    BalanceType,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.accounting.typing import SchemaEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetType
@@ -924,6 +929,32 @@ class HistoricalPriceOracleField(fields.Field):
         return historical_price_oracle
 
 
+class EventSubtypeField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: HistoryEventSubType,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        return value.serialize()
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> HistoryEventSubType:
+        try:
+            event_subtype = HistoryEventSubType.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        return event_subtype
+
+
 class AsyncQueryArgumentSchema(Schema):
     """A schema for getters that only have one argument enabling async query"""
     async_query = fields.Boolean(load_default=False)
@@ -1077,6 +1108,7 @@ class StakingQuerySchema(
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
     asset = AssetField(load_default=None)
+    event_subtypes = fields.List(EventSubtypeField(), load_default=None)
 
     @post_load
     def make_staking_query(  # pylint: disable=no-self-use
@@ -1097,12 +1129,31 @@ class StakingQuerySchema(
                 HistoryEventType.STAKING,
                 HistoryEventType.UNSTAKING,
             ],
+            event_subtype=data['event_subtypes'],
+            exclude_subtype=[
+                HistoryEventSubType.STAKING_RECEIVE_ASSET,
+            ],
             asset=data['asset'],
         )
+
+        value_filter = HistoryEventFilterQuery.make(
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            location=Location.KRAKEN,
+            event_type=[
+                HistoryEventType.STAKING,
+            ],
+            null_columns=['subtype'],
+            order_by_attribute=None,
+        )
+
         return {
             'async_query': data['async_query'],
             'only_cache': data['only_cache'],
             'query_filter': query_filter,
+            'value_filter': value_filter,
         }
 
 

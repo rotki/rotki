@@ -1185,10 +1185,21 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     # The input has extra information to test that the filters work correctly.
-    # The events related to staking are AAA, BBB and CCC
+    # The events related to staking are AAA, BBB and CCC, DDD
     input_ledger = """
     {
     "ledger":{
+        "WWW": {
+            "refid": "WWWWWWW",
+            "time": 1640493376.4008,
+            "type": "staking",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "XTZ",
+            "amount": "0.0000100000",
+            "fee": "0.0000000000",
+            "balance": "0.0000100000"
+        },
         "AAA": {
             "refid": "XXXXXX",
             "time": 1640493374.4008,
@@ -1245,7 +1256,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             "balance": "0.1000538620"
         }
     },
-    "count": 5
+    "count": 6
     }
     """
     # Test that before populating we don't have any event
@@ -1274,42 +1285,48 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'stakingresource',
         ), {
             "from_timestamp": 1636538550,
-            "to_timestamp": 1640493375,
+            "to_timestamp": 1640493378,
         },
     )
 
     result = assert_proper_response_with_result(response)
     events = result['events']
+
     assert len(events) == 3
     assert len(events) == result['entries_found']
     assert events[0]['event_type'] == 'get reward'
-    assert events[1]['event_type'] == 'receive staked asset'
+    assert events[1]['event_type'] == 'get reward'
     assert events[2]['event_type'] == 'stake asset'
-    assert events[0]['asset'] == 'ETH2'
+    assert events[0]['asset'] == 'XTZ'
     assert events[1]['asset'] == 'ETH2'
     assert events[2]['asset'] == 'ETH'
-    assert events[0]['usd_value'] == '0.219353533620'
-    assert events[1]['usd_value'] == '242.570400000000'
+    assert events[0]['usd_value'] == '0.000046300000'
+    assert events[1]['usd_value'] == '0.219353533620'
     assert events[2]['usd_value'] == '242.570400000000'
     if start_with_valid_premium:
         assert result['entries_limit'] == -1
     else:
         assert result['entries_limit'] == FREE_HISTORY_EVENTS_LIMIT
     assert result['entries_total'] == 4
+    assert result['received'] == [
+        {'asset': 'ETH2', 'amount': '0.000053862'},
+        {'asset': 'XTZ', 'amount': '0.00001'},
+    ]
+
     # test that the correct number of entries is returned with pagination
     response = requests.get(
         api_url_for(
             server,
             'stakingresource',
         ), {
-            'from_timestamp': 1636738550,
-            'to_timestamp': 1636740199,
+            'from_timestamp': 1636738551,
+            'to_timestamp': 1640493375,
             'limit': 1,
         },
     )
     result = assert_proper_response_with_result(response)
-    assert result['entries_found'] == 2
-    assert set(result['assets']) == {'ETH', 'ETH2'}
+    assert result['entries_found'] == 1
+    assert set(result['assets']) == {'ETH', 'ETH2', 'XTZ'}
 
     # assert that filter by asset is working properly
     response = requests.get(
@@ -1317,9 +1334,9 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             server,
             'stakingresource',
         ), {
-            "from_timestamp": 1636538550,
-            "to_timestamp": 1640493375,
-            "asset": "ETH",
+            "from_timestamp": 1628994442,
+            "to_timestamp": 1640493377,
+            "asset": "ETH2",
         },
     )
     result = assert_proper_response_with_result(response)

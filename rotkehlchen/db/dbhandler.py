@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union,
 from pysqlcipher3 import dbapi2 as sqlcipher
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import ActionType, BalanceType, HistoryBaseEntry
+from rotkehlchen.accounting.structures import ActionType, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -51,24 +51,16 @@ from rotkehlchen.chain.ethereum.structures import (
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
-from rotkehlchen.constants.limits import (
-    FREE_ASSET_MOVEMENTS_LIMIT,
-    FREE_HISTORY_EVENTS_LIMIT,
-    FREE_TRADES_LIMIT,
-)
+from rotkehlchen.constants.limits import FREE_ASSET_MOVEMENTS_LIMIT, FREE_TRADES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
-from rotkehlchen.constants.timing import HOUR_IN_SECONDS, KRAKEN_TS_MULTIPLIER
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
-from rotkehlchen.db.filtering import (
-    AssetMovementsFilterQuery,
-    HistoryEventFilterQuery,
-    TradesFilterQuery,
-)
+from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
@@ -110,11 +102,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.serialization.deserialize import (
-    deserialize_fval,
-    deserialize_hex_color_code,
-    deserialize_timestamp,
-)
+from rotkehlchen.serialization.deserialize import deserialize_hex_color_code
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
@@ -2387,14 +2375,6 @@ class DBHandler:
         query = cursor.execute(cursorstr)
         return query.fetchone()[0]
 
-    def get_entries_count_history_events(self, query_filter: HistoryEventFilterQuery) -> int:
-        """Returns how many of certain base entry events are in the database"""
-        cursor = self.conn.cursor()
-        query, bindings = query_filter.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from history_events ' + query
-        result = cursor.execute(query, bindings)
-        return result.fetchone()[0]
-
     def delete_data_for_ethereum_address(self, address: ChecksumEthAddress) -> None:
         """Deletes all ethereum related data from the DB for a single ethereum address"""
         other_eth_accounts = self.get_blockchain_accounts().eth
@@ -3482,150 +3462,3 @@ class DBHandler:
         if cursor.fetchone()[0] >= 1:
             locations.add(Location.BALANCER)
         return locations
-
-    def add_history_events(self, history: List[HistoryBaseEntry]) -> None:
-        """Insert a list of history events in database. May raise:
-        - InputError if the events couldn't be stored in database
-        """
-        query_str = """INSERT INTO history_events(identifier, event_identifier, sequence_index,
-        timestamp, location, location_label, asset, amount, usd_value, notes,
-        type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
-        events = []
-        for event in history:
-            try:
-                events.append(event.serialize_for_db())
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Failed to process kraken event for database. {str(e)}',
-                )
-        self.write_tuples(
-            tuple_type='history_event',
-            query=query_str,
-            tuples=events,
-        )
-        self.update_last_write()
-
-    def delete_history_events(self, location: Location) -> None:
-        """
-        Deletes history entries following the criteria of the filter_query. May raise:
-        - DeserializationError if the location is not valid
-        """
-        # TODO: In the future this method should allow for more granularity in the delete query
-        cursor = self.conn.cursor()
-        cursor.execute(
-            'DELETE FROM history_events WHERE location=?',
-            (location.serialize_for_db(),),
-        )
-        cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{location}_history_events_%',),
-        )
-        self.update_last_write()
-
-    def get_history_events(
-        self,
-        filter_query: HistoryEventFilterQuery,
-        has_premium: bool,
-    ) -> List[HistoryBaseEntry]:
-        """
-        Get history events using the provided query filter
-        """
-        query, bindings = filter_query.prepare()
-        cursor = self.conn.cursor()
-        if has_premium:
-            query = 'SELECT * from history_events ' + query
-            results = cursor.execute(query, bindings)
-        else:
-            query = 'SELECT * FROM (SELECT * from history_events ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
-            results = cursor.execute(query, [FREE_HISTORY_EVENTS_LIMIT] + bindings)
-
-        output = []
-        for entry in results:
-            try:
-                output.append(HistoryBaseEntry.deserialize_from_db(entry))
-            except DeserializationError as e:
-                log.debug(f'Failed to deserialize history event {entry}')
-                self.msg_aggregator.add_error(
-                    f'Failed to read history event from database. {str(e)}',
-                )
-
-        return output
-
-    def get_history_events_and_limit_info(
-        self,
-        filter_query: HistoryEventFilterQuery,
-        has_premium: bool,
-    ) -> Tuple[List[HistoryBaseEntry], int]:
-        """Gets all history events for the query from the DB
-
-        Also returns how many are the total found for the filter
-        """
-        events = self.get_history_events(
-            filter_query=filter_query,
-            has_premium=has_premium,
-        )
-        cursor = self.conn.cursor()
-        query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from history_events ' + query
-        total_found_result = cursor.execute(query, bindings)
-        return events, total_found_result.fetchone()[0]
-
-    def rows_missing_prices_in_base_entries(
-        self,
-        filter_query: HistoryEventFilterQuery,
-    ) -> List[Tuple[str, FVal, Asset, Timestamp]]:
-        """
-        Get missing prices for history base entries based on filter query
-        """
-        query, bindings = filter_query.prepare()
-        query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
-        result = []
-        cursor = self.conn.cursor()
-        cursor.execute(query, bindings)
-        for identifier, amount_raw, asset_name, timestamp in cursor:
-            try:
-                amount = deserialize_fval(
-                    value=amount_raw,
-                    name='historic base entry usd_value query',
-                    location='query_missing_prices',
-                )
-                high_precision_timestamp = deserialize_timestamp(timestamp)
-                result.append(
-                    (
-                        identifier,
-                        amount,
-                        Asset(asset_name),
-                        Timestamp(int(high_precision_timestamp / KRAKEN_TS_MULTIPLIER)),
-                    ),
-                )
-            except DeserializationError as e:
-                log.error(
-                    f'Failed to read value from historic base entry {identifier} '
-                    f'with amount. {str(e)}',
-                )
-            except UnknownAsset as e:
-                log.error(
-                    f'Failed to read asset from historic base entry {identifier} '
-                    f'with asset identifier {asset_name}. {str(e)}',
-                )
-        return result
-
-    def get_entries_assets_history_events(
-        self,
-        query_filter: HistoryEventFilterQuery,
-    ) -> List[Asset]:
-        """Returns asset from base entry events using the desired filter"""
-        cursor = self.conn.cursor()
-        query, bindings = query_filter.prepare(with_pagination=False)
-        query = 'SELECT DISTINCT asset from history_events ' + query
-        result = cursor.execute(query, bindings)
-        assets = []
-        for asset_id in result:
-            try:
-                assets.append(Asset(asset_id[0]))
-            except (UnknownAsset, DeserializationError) as e:
-                self.msg_aggregator.add_error(
-                    f'Found asset {asset_id} in the base history events table and '
-                    f'is not in the assets database. {str(e)}',
-                )
-        return assets

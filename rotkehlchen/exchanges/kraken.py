@@ -32,6 +32,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, KRAKEN_TS_MULTIPLIER
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import (
     DeserializationError,
@@ -303,6 +304,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.set_account_type(kraken_account_type)
         self.call_counter = 0
         self.last_query_ts = 0
+        self.history_events_db = DBHistoryEvents(self.db)
 
     def set_account_type(self, account_type: Optional[KrakenAccountType]) -> None:
         if account_type is None:
@@ -699,7 +701,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             location=Location.KRAKEN,
             location_label=self.name,
         )
-        trades_raw = self.db.get_history_events(
+        trades_raw = self.history_events_db.get_history_events(
             filter_query=filter_query,
             has_premium=True,
         )
@@ -741,7 +743,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             location=Location.KRAKEN,
             location_label=self.name,
         )
-        events = self.db.get_history_events(
+        events = self.history_events_db.get_history_events(
             filter_query=filter_query,
             has_premium=True,
         )
@@ -1126,7 +1128,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             if len(new_events) != 0:
                 try:
-                    self.db.add_history_events(new_events)
+                    self.history_events_db.add_history_events(new_events)
                 except InputError as e:
                     self.msg_aggregator.add_error(
                         f'Failed to save kraken events from {query_start_ts} to {query_end_ts} '
