@@ -1,5 +1,4 @@
 import { TradeLocationData } from '@/components/history/type';
-import BitpandaIcon from '@/components/icons/BitpandaIcon.vue';
 import FOXIcon from '@/components/icons/FOXIcon.vue';
 import UpholdIcon from '@/components/icons/UpholdIcon.vue';
 import {
@@ -49,9 +48,8 @@ export const tradeLocations: TradeLocationData[] = [
   {
     identifier: SupportedExchange.BITPANDA,
     name: 'Bitpanda',
-    icon: '',
-    imageIcon: false,
-    component: BitpandaIcon,
+    icon: require('@/assets/images/exchanges/bitpanda.svg'),
+    imageIcon: true,
     exchange: true
   },
   {
