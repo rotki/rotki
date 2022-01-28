@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`4011` Add loading indicator to data directory field.
 * :bug:`3993` Fix app bar icons misbehavior when windows is resized.
 * :bug:`3998` FTX subaccounts should now be working again.
 * :bug:`-` If binance returns a delisted market as active and rotki queries it, the entire binance trade history query will not fail.
