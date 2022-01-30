@@ -1,22 +1,33 @@
 import base64
+import os
 
-from Crypto import Random
-from Crypto.Cipher import AES
-from Crypto.Hash import SHA3_256, SHA256
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from rotkehlchen.errors import UnableToDecryptRemoteData
 
+AES_BLOCK_SIZE = 16
+
 
 # AES encrypt/decrypt taken from here: https://stackoverflow.com/a/44212550/110395
+# and updated to use cryptography library as pyCrypto is deprecated
+# TODO: Perhaps use Fernet instead of this algorithm in the future? The docs of the
+# cryptography library seem to suggest it's the safest options. Problem is the
+# already encrypted and saved database files and how to handle the previous encryption
+# We need to keep a versioning of encryption used for each file.
 def encrypt(key: bytes, source: bytes) -> str:
     assert isinstance(key, bytes), 'key should be given in bytes'
     assert isinstance(source, bytes), 'source should be given in bytes'
-    key = SHA256.new(key).digest()  # use SHA-256 over our key to get a proper-sized AES key
-    iv = Random.new().read(AES.block_size)  # generate iv
-    encryptor = AES.new(key, AES.MODE_CBC, iv)
-    padding = AES.block_size - len(source) % AES.block_size  # calculate needed padding
+    digest = hashes.Hash(hashes.SHA256())
+    digest.update(key)
+    key = digest.finalize()  # use SHA-256 over our key to get a proper-sized AES key
+    iv = os.urandom(AES_BLOCK_SIZE)
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+    encryptor = cipher.encryptor()
+    padding = AES_BLOCK_SIZE - len(source) % AES_BLOCK_SIZE  # calculate needed padding
     source += bytes([padding]) * padding  # Python 2.x: source += chr(padding) * padding
-    data = iv + encryptor.encrypt(source)  # store the iv at the beginning and encrypt
+    # store the iv at the beginning and encrypt
+    data = iv + (encryptor.update(source) + encryptor.finalize())
     return base64.b64encode(data).decode("latin-1")
 
 
@@ -30,10 +41,15 @@ def decrypt(key: bytes, given_source: str) -> bytes:
     assert isinstance(key, bytes), 'key should be given in bytes'
     assert isinstance(given_source, str), 'source should be given in string'
     source = base64.b64decode(given_source.encode("latin-1"))
-    key = SHA256.new(key).digest()  # use SHA-256 over our key to get a proper-sized AES key
-    iv = source[:AES.block_size]  # extract the iv from the beginning
-    decryptor = AES.new(key, AES.MODE_CBC, iv)
-    data = decryptor.decrypt(source[AES.block_size:])  # decrypt
+    digest = hashes.Hash(hashes.SHA256())
+    digest.update(key)
+    key = digest.finalize()  # use SHA-256 over our key to get a proper-sized AES key
+    iv = source[:AES_BLOCK_SIZE]  # extract the iv from the beginning
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+    decryptor = cipher.decryptor()
+
+    data = source[AES_BLOCK_SIZE:]  # decrypt
+    data = decryptor.update(data)
     padding = data[-1]  # pick the padding value from the end; Python 2.x: ord(data[-1])
     if data[-padding:] != bytes([padding]) * padding:  # Python 2.x: chr(padding) * padding
         raise UnableToDecryptRemoteData(
@@ -53,4 +69,6 @@ def sha3(data: bytes) -> bytes:
         TypeError: This function does not accept unicode objects, they must be
         encoded prior to usage.
     """
-    return SHA3_256.new(data).digest()
+    digest = hashes.Hash(hashes.SHA3_256())
+    digest.update(data)
+    return digest.finalize()
