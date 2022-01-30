@@ -948,7 +948,7 @@ class EventSubtypeField(fields.Field):
             **_kwargs: Any,
     ) -> HistoryEventSubType:
         try:
-            event_subtype = HistoryEventSubType.deserialize(value)
+            event_subtype = HistoryEventSubType.deserialize_event_subtype(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
