@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
 
-import gevent
-
 from rotkehlchen.utils.mixins.common import function_sig_key
 
 if TYPE_CHECKING:
@@ -36,4 +34,10 @@ def data_migration_2(rotki: 'Rotkehlchen') -> None:
     Since this function happens at user unlock we spawn a greenlet to do the work
     asynchronously to not slow down unlock too much.
     """
-    gevent.spawn(_do_query_validator_data, rotki)
+    rotki.greenlet_manager.spawn_and_track(
+        after_seconds=None,
+        task_name='data migration 2',
+        exception_is_error=False,
+        method=_do_query_validator_data,
+        rotki=rotki,
+    )
