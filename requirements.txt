@@ -6,8 +6,6 @@ web3==5.26.0
 pysqlcipher3==1.0.4
 requests==2.27.1
 urllib3==1.26.8
-pycryptodome==3.11.0
-pycryptodomex==3.11.0
 coincurve==16.0.0
 typing-extensions==3.10.0.2
 base58check==1.0.2

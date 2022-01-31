@@ -1,6 +1,7 @@
 import datetime
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 import py
@@ -95,7 +96,9 @@ def profiler(request):
         )
 
         now = datetime.datetime.now()
-        stack_path = Path('/tmp') / f'{now:%Y%m%d_%H%M}_stack.data'
+        tmpdirname = tempfile.gettempdir()
+        stack_path = Path(tmpdirname) / f'{now:%Y%m%d_%H%M}_stack.data'
+        print(f'Stack data is saved at: {stack_path}')
         stack_stream = open(stack_path, 'w')
         flame = FlameGraphCollector(stack_stream)
         profiler_instance = TraceSampler(flame)
