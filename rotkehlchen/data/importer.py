@@ -249,6 +249,7 @@ class DataImporter():
             'viban_purchase',
             'crypto_viban_exchange',
             'recurring_buy_order',
+            'card_top_up',
         ):
             # variable mapping to raw data
             currency = csv_row['Currency']
@@ -273,6 +274,11 @@ class DataImporter():
                     raise DeserializationError('Got a trade entry with an empty quote asset')
                 base_amount_bought = deserialize_asset_amount(to_amount)
                 quote_amount_sold = deserialize_asset_amount(amount)
+            elif row_type == 'card_top_up':
+                quote_asset = asset_from_cryptocom(currency)
+                base_asset = asset_from_cryptocom(native_currency)
+                base_amount_bought = deserialize_asset_amount_force_positive(native_amount)
+                quote_amount_sold = deserialize_asset_amount_force_positive(amount)
             else:
                 base_asset = asset_from_cryptocom(currency)
                 quote_asset = asset_from_cryptocom(native_currency)
