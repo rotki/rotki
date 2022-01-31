@@ -66,7 +66,6 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import GitcoinIcon from '@/components/icons/GitcoinIcon.vue';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
 import { Routes } from '@/router/routes';
 
@@ -160,7 +159,7 @@ export default class NavigationMenu extends Vue {
           ).toString(),
           route: Routes.HISTORY_GITCOIN,
           icon: '',
-          component: GitcoinIcon,
+          image: require('@/assets/images/gitcoin.svg'),
           class: 'gitcoin'
         }
       ]
@@ -317,7 +316,7 @@ export default class NavigationMenu extends Vue {
       ::v-deep {
         .nav-icon {
           opacity: 1 !important;
-          filter: invert(100%);
+          filter: brightness(0) invert(100%);
         }
       }
     }

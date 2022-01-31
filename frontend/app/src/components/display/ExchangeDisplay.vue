@@ -1,12 +1,8 @@
 <template>
   <div class="d-flex flex-row align-center shrink">
-    <v-img
-      width="24px"
-      height="24px"
-      contain
-      class="exchange-display__icon"
-      :src="icon"
-    />
+    <adaptive-wrapper>
+      <v-img width="24px" height="24px" contain :src="icon" />
+    </adaptive-wrapper>
     <div class="ml-2" v-text="name" />
   </div>
 </template>
@@ -18,6 +14,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { tradeLocations } from '@/components/history/consts';
 import { TradeLocationData } from '@/components/history/type';
 import { capitalize } from '@/filters';
@@ -25,6 +22,7 @@ import { SupportedExchange } from '@/types/exchanges';
 
 export default defineComponent({
   name: 'ExchangeDisplay',
+  components: { AdaptiveWrapper },
   props: {
     exchange: { required: true, type: String as PropType<SupportedExchange> }
   },
@@ -51,11 +49,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style scoped lang="scss">
-.exchange-display {
-  &__icon {
-    filter: grayscale(100%);
-  }
-}
-</style>

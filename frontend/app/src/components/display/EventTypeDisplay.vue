@@ -19,7 +19,7 @@ import { EventType } from '@/services/defi/types';
 export default defineComponent({
   name: 'EventTypeDisplay',
   props: {
-    eventType: { required: true, type: Object as PropType<EventType> }
+    eventType: { required: true, type: String as PropType<EventType> }
   },
   setup(props) {
     const { eventType } = toRefs(props);

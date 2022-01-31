@@ -12,13 +12,9 @@
           text
           :value="provider.route"
         >
-          <v-img
-            contain
-            width="24"
-            height="24"
-            class="me-2"
-            :src="provider.icon"
-          />
+          <adaptive-wrapper class="me-2">
+            <v-img contain width="24" height="24" :src="provider.icon" />
+          </adaptive-wrapper>
           {{ provider.text }}
         </v-btn>
       </v-btn-toggle>
@@ -33,6 +29,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from '@vue/composition-api';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 
@@ -55,8 +52,10 @@ const providers = [
 ];
 export default defineComponent({
   name: 'Liquidity',
+  components: { AdaptiveWrapper },
   setup() {
     const path = ref('');
+
     return {
       providers,
       path

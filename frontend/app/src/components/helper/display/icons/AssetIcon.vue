@@ -1,32 +1,36 @@
 <template>
-  <v-tooltip top open-delay="400">
-    <template #activator="{ on, attrs }">
-      <div v-bind="attrs" :style="styled" v-on="on">
-        <generated-icon
-          v-if="!!currency || error"
-          :asset="displayAsset"
-          :currency="!!currency"
-          :size="size"
-        />
-        <v-img
-          v-else-if="!error"
-          :src="url"
-          :max-width="size"
-          :min-width="size"
-          contain
-          @error="error = true"
-        />
-      </div>
-    </template>
-    <span>
-      {{
-        $t('asset_icon.tooltip', {
-          symbol: getAssetSymbol(identifier),
-          name: getAssetName(identifier)
-        })
-      }}
-    </span>
-  </v-tooltip>
+  <adaptive-wrapper>
+    <v-tooltip top open-delay="400">
+      <template #activator="{ on, attrs }">
+        <div v-bind="attrs" :style="styled" class="d-flex" v-on="on">
+          <generated-icon
+            v-if="!!currency || error"
+            :asset="displayAsset"
+            :currency="!!currency"
+            :size="size"
+          />
+          <v-img
+            v-else-if="!error"
+            :src="url"
+            :max-height="size"
+            :min-height="size"
+            :max-width="size"
+            :min-width="size"
+            contain
+            @error="error = true"
+          />
+        </div>
+      </template>
+      <span>
+        {{
+          $t('asset_icon.tooltip', {
+            symbol: getAssetSymbol(identifier),
+            name: getAssetName(identifier)
+          })
+        }}
+      </span>
+    </v-tooltip>
+  </adaptive-wrapper>
 </template>
 
 <script lang="ts">
@@ -38,6 +42,7 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { currencies } from '@/data/currencies';
@@ -45,7 +50,7 @@ import { api } from '@/services/rotkehlchen-api';
 
 export default defineComponent({
   name: 'AssetIcon',
-  components: { GeneratedIcon },
+  components: { AdaptiveWrapper, GeneratedIcon },
   props: {
     identifier: { required: true, type: String },
     symbol: { required: false, type: String, default: '' },

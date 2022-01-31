@@ -101,6 +101,7 @@ export default class ActiveModules extends Vue {
 
   get style() {
     return {
+      background: 'white',
       width: `${this.modules.length * 38}px`
     };
   }

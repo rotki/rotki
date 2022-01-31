@@ -15,25 +15,20 @@
           :slot="slotName"
           slot-scope="data"
         >
-          <v-row v-if="data.item" :key="slotName">
-            <v-col class="d-flex align-center justify-space-between col-12">
-              <div
-                :class="{
-                  [$style.image]: true,
-                  [$style['image--inverted']]: dark
-                }"
-              >
-                <v-img
-                  :src="data.item.logo"
-                  max-height="100%"
-                  max-width="100%"
-                  position="center left"
-                  :contain="true"
-                />
-              </div>
-              <div v-if="slotName === 'item'">{{ data.item.name }}</div>
-            </v-col>
-          </v-row>
+          <div v-if="data.item" :key="slotName" class="d-flex align-center">
+            <adaptive-wrapper>
+              <v-img
+                :src="data.item.logo"
+                :width="30"
+                :height="30"
+                max-height="30px"
+                max-width="30px"
+                position="center left"
+                contain
+              />
+            </adaptive-wrapper>
+            <div class="pl-4">{{ data.item.name }}</div>
+          </div>
         </template>
       </v-select>
 
@@ -45,6 +40,7 @@
 </template>
 <script lang="ts">
 import { computed, defineComponent, Ref, ref } from '@vue/composition-api';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import BisqImport from '@/components/import/Bisq.vue';
 import BlockFiImport from '@/components/import/BlockFiImport.vue';
 import CointrackingImport from '@/components/import/CointrackingImport.vue';
@@ -53,7 +49,6 @@ import GitcoinImport from '@/components/import/GitcoinImport.vue';
 import NexoImport from '@/components/import/NexoImport.vue';
 import ShapeshiftImport from '@/components/import/ShapeshiftImport.vue';
 import UpholdImport from '@/components/import/UpholdImport.vue';
-import { setupThemeCheck } from '@/composables/common';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 
@@ -63,37 +58,37 @@ const sources = (premium: Ref<boolean>) =>
       {
         identifier: 'cointracking.info',
         name: i18n.t('import_data.cointracking.name').toString(),
-        logo: require('@/assets/images/import/cointracking_info.svg'),
+        logo: require('@/assets/images/cointracking.svg'),
         form: 'cointracking-import'
       },
       {
         identifier: 'cryptocom',
         name: i18n.t('import_data.cryptocom.name').toString(),
-        logo: require('@/assets/images/import/crypto_com.png'),
+        logo: require('@/assets/images/crypto_com.svg'),
         form: 'crypto-com-import'
       },
       {
         identifier: 'blockfi',
         name: i18n.t('import_data.blockfi.name').toString(),
-        logo: require('@/assets/images/import/blockfi.svg'),
+        logo: require('@/assets/images/blockfi.svg'),
         form: 'block-fi-import'
       },
       {
         identifier: 'nexo',
         name: i18n.t('import_data.nexo.name').toString(),
-        logo: require('@/assets/images/import/nexo.svg'),
+        logo: require('@/assets/images/nexo.svg'),
         form: 'nexo-import'
       },
       {
         identifier: 'shapeshift-trades',
         name: i18n.t('import_data.shapeshift.name').toString(),
-        logo: require('@/assets/images/import/shape_shift.svg'),
+        logo: require('@/assets/images/shapeshift.svg'),
         form: 'shapeshift-import'
       },
       {
         identifier: 'uphold',
         name: i18n.t('import_data.uphold.name').toString(),
-        logo: require('@/assets/images/import/uphold.svg'),
+        logo: require('@/assets/images/uphold.svg'),
         form: 'uphold-import'
       },
       {
@@ -108,7 +103,7 @@ const sources = (premium: Ref<boolean>) =>
       sources.push({
         identifier: 'gitcoin',
         name: i18n.t('import_data.gitcoin.name'),
-        logo: require('@/assets/images/import/gitcoin.svg'),
+        logo: require('@/assets/images/gitcoin.svg'),
         form: 'gitcoin-import'
       });
     }
@@ -119,6 +114,7 @@ const sources = (premium: Ref<boolean>) =>
 export default defineComponent({
   name: 'GroupedImport',
   components: {
+    AdaptiveWrapper,
     UpholdImport,
     ShapeshiftImport,
     NexoImport,
@@ -138,29 +134,11 @@ export default defineComponent({
       )?.form;
     });
 
-    const { dark } = setupThemeCheck();
-
     return {
       selectedSource,
       form,
-      dark,
       sources: sources(premium)
     };
   }
 });
 </script>
-<style module lang="scss">
-.image {
-  max-width: 200px;
-  height: 30px;
-  max-height: 30px;
-
-  > * {
-    height: 30px;
-  }
-
-  &--inverted {
-    filter: brightness(0) invert(100%);
-  }
-}
-</style>

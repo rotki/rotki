@@ -14,7 +14,10 @@
             width="24px"
             :src="image"
             class="nav-icon"
-            :class="$style.icon"
+            :class="{
+              [$style.image]: true,
+              [$style['image--inverted']]: dark
+            }"
           />
           <component
             :is="iconComponent"
@@ -34,7 +37,10 @@
         width="24px"
         :src="image"
         class="nav-icon"
-        :class="$style.icon"
+        :class="{
+          [$style.image]: true,
+          [$style['image--inverted']]: dark
+        }"
       />
       <component
         :is="iconComponent"
@@ -58,6 +64,7 @@ import {
 } from '@vue/composition-api';
 import { VueConstructor } from 'vue';
 import { setupAssetInfoRetrieval } from '@/composables/balances';
+import { setupThemeCheck } from '@/composables/common';
 
 export default defineComponent({
   name: 'NavigationMenuItem',
@@ -82,7 +89,10 @@ export default defineComponent({
       return getAssetIdentifierForSymbol(cryptoIcon.value) ?? cryptoIcon.value;
     });
 
+    const { dark } = setupThemeCheck();
+
     return {
+      dark,
       identifier
     };
   }
@@ -90,7 +100,13 @@ export default defineComponent({
 </script>
 
 <style module lang="scss">
-.icon {
-  opacity: 0.66;
+.image {
+  opacity: 0.7;
+  filter: brightness(0);
+
+  &--inverted {
+    opacity: 1;
+    filter: brightness(0) invert(100%);
+  }
 }
 </style>
