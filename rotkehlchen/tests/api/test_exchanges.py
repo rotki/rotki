@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures import HistoryEventSubType
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
@@ -1344,3 +1345,35 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     )
     result = assert_proper_response_with_result(response)
     assert len(result['events']) == 1
+
+    # test that we can correctly query subtypes
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        json={
+            "from_timestamp": 1458994441,
+            "to_timestamp": 1640493377,
+            "event_subtypes": [HistoryEventSubType.REWARD.serialize_event_subtype()],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['events']) == 3
+
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        json={
+            "from_timestamp": 1458994441,
+            "to_timestamp": 1640493377,
+            "event_subtypes": [
+                HistoryEventSubType.REWARD.serialize_event_subtype(),
+                HistoryEventSubType.STAKING_DEPOSIT_ASSET.serialize_event_subtype(),
+            ],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['events']) == 4

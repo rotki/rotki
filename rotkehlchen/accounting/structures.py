@@ -312,6 +312,45 @@ class HistoryEventSubType(SerializableEnumMixin):
     SPEND = 6
     RECEIVE = 7
 
+    def serialize_event_subtype(self) -> str:
+        """Serialize event subtype to a readable string
+        May raise:
+        - DeserializationError
+        """
+        # TODO: change this when the changes to history entries get merged in the left branch
+        if self.name == 'REWARD':
+            return 'get reward'
+        description = EVENTS_SUBTYPES_TO_STR.get(HistoryEventSubType[self.name])
+        if description is not None:
+            return description
+        raise DeserializationError(f'Found staking event with invalid subtype {self.name}')
+
+    @classmethod
+    def deserialize_event_subtype(cls, value: str) -> 'HistoryEventSubType':
+        """Serialize event subtype from redeable string
+        May raise:
+        - DeserializationError
+        """
+        str_to_event_subtype = {v: k for k, v in EVENTS_SUBTYPES_TO_STR.items()}
+        if value not in str_to_event_subtype:
+            raise DeserializationError(
+                f'Staking subtype string doesnt have a matching value {value}',
+            )
+        subtype = str_to_event_subtype[value]
+        # TODO: change this when the changes to history entries get merged in the left branch
+        if subtype is None:
+            return cls.REWARD
+        return subtype
+
+
+UNKNOWN_SUBTYPE = 'UNKNOWN SUBTYPE'
+EVENTS_SUBTYPES_TO_STR = {
+    None: 'get reward',
+    HistoryEventSubType.STAKING_DEPOSIT_ASSET: 'stake asset',
+    HistoryEventSubType.STAKING_RECEIVE_ASSET: 'receive staked asset',
+    HistoryEventSubType.STAKING_REMOVE_ASSET: 'unstake asset',
+}
+
 
 HISTORY_EVENT_DB_TUPLE = Tuple[
     str,            # identifier
@@ -428,22 +467,6 @@ class StakingEvent:
     location: Location
 
     @classmethod
-    def _deserialize_event_type(cls, event_type: Optional[HistoryEventSubType]) -> str:
-        """Deserialize event subtype to a readable string
-        May raise:
-        - DeserializationError
-        """
-        if event_type is None:
-            return 'get reward'
-        if event_type == HistoryEventSubType.STAKING_DEPOSIT_ASSET:
-            return 'stake asset'
-        if event_type == HistoryEventSubType.STAKING_RECEIVE_ASSET:
-            return 'receive staked asset'
-        if event_type == HistoryEventSubType.STAKING_REMOVE_ASSET:
-            return 'unstake asset'
-        raise DeserializationError(f'Found staking event with invalid subtype {event_type}')
-
-    @classmethod
     def from_history_base_entry(cls, event: HistoryBaseEntry) -> 'StakingEvent':
         """
         Read staking event from a history base entry.
@@ -452,7 +475,10 @@ class StakingEvent:
         """
         # TODO: We forgot to add a subtype for staking rewards. This needs to be changed
         # in a database upgrade
-        event_type = cls._deserialize_event_type(event.event_subtype)
+        if event.event_subtype is None:
+            event_type = EVENTS_SUBTYPES_TO_STR.get(None)
+        else:
+            event_type = event.event_subtype.serialize_event_subtype()
         return StakingEvent(
             event_type=event_type,  # type: ignore
             asset=event.asset_balance.asset,
