@@ -7,7 +7,9 @@ Changelog
 * :bug:`3993` Fix app bar icons misbehavior when windows is resized.
 * :bug:`3998` FTX subaccounts should now be working again.
 * :bug:`-` If binance returns a delisted market as active and rotki queries it, the entire binance trade history query will not fail.
+* :bug:`4010` Crypto.com users won't see errors for rows containing zeros.
 * :bug:`-` All Liquity events will now always be correctly queried.
+* :feature:`-` Support for LUNA and card top ups has been added to the crypto.com importer.
 
 * :release:`1.23.2 <2022-01-21>`
 * :bug:`-` Users will now be properly prompted to restart the application after the auto-updater downloads the update.

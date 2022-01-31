@@ -544,8 +544,6 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         link='',
         notes='USDC -> EUR\nSource: crypto.com (CSV import)',
     )]
-    print(trades)
-    print(expected_trades)
     assert trades == expected_trades
 
 

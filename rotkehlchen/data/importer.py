@@ -594,7 +594,7 @@ class DataImporter():
                         credited_row['Amount'],
                     ) * part_of_total
 
-                    if quote_amount_sold != ZERO:
+                    if base_amount_bought != ZERO:
                         rate = Price(abs(quote_amount_sold / base_amount_bought))
                     else:
                         rate = Price(ZERO)
