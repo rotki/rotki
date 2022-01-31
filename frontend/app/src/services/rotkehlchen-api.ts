@@ -94,6 +94,7 @@ export class RotkehlchenApi {
   private _assets: AssetApi;
   private _backups: BackupApi;
   private _serverUrl: string;
+  private signal = axios.CancelToken.source();
   private readonly baseTransformer = setupTransformer([]);
 
   get serverUrl(): string {
@@ -102,6 +103,11 @@ export class RotkehlchenApi {
 
   get defaultBackend(): boolean {
     return this._serverUrl === process.env.VUE_APP_BACKEND_URL;
+  }
+
+  private cancel() {
+    this.signal.cancel('cancelling all pending requests');
+    this.signal = axios.CancelToken.source();
   }
 
   private setupApis = (axios: AxiosInstance) => ({
@@ -120,6 +126,7 @@ export class RotkehlchenApi {
       baseURL: `${this.serverUrl}/api/1/`,
       timeout: 30000
     });
+    this.setupCancellation();
     this.baseTransformer = setupTransformer();
     ({
       defi: this._defi,
@@ -166,6 +173,7 @@ export class RotkehlchenApi {
       baseURL: `${serverUrl}/api/1/`,
       timeout: 30000
     });
+    this.setupCancellation();
     ({
       defi: this._defi,
       session: this._session,
@@ -175,6 +183,21 @@ export class RotkehlchenApi {
       assets: this._assets,
       backups: this._backups
     } = this.setupApis(this.axios));
+  }
+
+  private setupCancellation() {
+    this.axios.interceptors.request.use(
+      request => {
+        request.cancelToken = this.signal.token;
+        return request;
+      },
+      error => {
+        if (error.response) {
+          return Promise.reject(error.response.data);
+        }
+        return Promise.reject(error);
+      }
+    );
   }
 
   checkIfLogged(username: string): Promise<boolean> {
@@ -208,21 +231,18 @@ export class RotkehlchenApi {
     return Object.keys(data);
   }
 
-  logout(username: string): Promise<boolean> {
-    return this.axios
-      .patch<ActionResult<boolean>>(
-        `/users/${username}`,
-        {
-          action: 'logout'
-        },
-        { validateStatus: validAccountOperationStatus }
-      )
-      .then(value => {
-        if (value.status === 409) {
-          return true;
-        }
-        return handleResponse(value);
-      });
+  async logout(username: string): Promise<boolean> {
+    const response = await this.axios.patch<ActionResult<boolean>>(
+      `/users/${username}`,
+      {
+        action: 'logout'
+      },
+      { validateStatus: validAccountOperationStatus }
+    );
+
+    const success = response.status === 409 ? true : handleResponse(response);
+    this.cancel();
+    return success;
   }
 
   queryPeriodicData(): Promise<PeriodicClientQueryResult> {

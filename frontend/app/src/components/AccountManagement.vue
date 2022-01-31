@@ -2,7 +2,7 @@
   <v-overlay opacity="1" color="grey lighten-4">
     <div
       :class="{
-        [$style.loading]: !xsOnly
+        [$style.loading]: !xsOnly && !isTest
       }"
       data-cy="account-management__loading"
     />
@@ -284,6 +284,7 @@ export default defineComponent({
       accountCreationError,
       errors,
       syncConflict,
+      isTest: !!process.env.VUE_APP_TEST,
       isPackaged: computed(() => interop.isPackaged),
       backendChanged,
       dismissPremiumModal,
