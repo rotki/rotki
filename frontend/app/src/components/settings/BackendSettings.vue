@@ -5,9 +5,10 @@
 
     <v-text-field
       v-model="userDataDirectory"
+      :loading="!userDataDirectory"
       class="pt-2"
       outlined
-      :disabled="!!fileConfig.dataDirectory"
+      :disabled="!!fileConfig.dataDirectory || !userDataDirectory"
       persistent-hint
       :hint="
         !!fileConfig.dataDirectory
@@ -19,7 +20,7 @@
       @click="selectDataDirectory"
     >
       <template #append>
-        <v-btn icon @click="selectDataDirectory">
+        <v-btn icon :disabled="!userDataDirectory" @click="selectDataDirectory">
           <v-icon>mdi-folder</v-icon>
         </v-btn>
       </template>
@@ -165,7 +166,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Mixins } from 'vue-property-decorator';
+import { Component, Emit, Mixins, Watch } from 'vue-property-decorator';
 import { mapState } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { BackendOptions } from '@/electron-main/ipc';
@@ -263,6 +264,11 @@ export default class BackendSettings extends Mixins(BackendMixin) {
       return 'mdi-alert-decagram';
     }
     throw new Error(`Invalid option: ${level}`);
+  }
+
+  @Watch('dataDirectory')
+  onDataDirectoryChange() {
+    this.userDataDirectory = this.options.dataDirectory ?? this.dataDirectory;
   }
 
   loaded() {
