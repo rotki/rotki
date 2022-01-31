@@ -19,7 +19,7 @@ if (!fs.existsSync(tempPath)) {
 
     const currentPath = path.join(tempPath, name);
     if (fs.statSync(currentPath).isDirectory()) {
-      fs.rmdirSync(currentPath, { recursive: true });
+      fs.rmSync(currentPath, { recursive: true });
     }
   }
 }
