@@ -65,6 +65,7 @@ export interface BackendVersion {
 }
 
 export interface BackendInfo {
+  readonly logLevel: string;
   readonly version: BackendVersion;
   readonly dataDirectory: string;
 }
