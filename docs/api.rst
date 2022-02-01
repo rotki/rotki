@@ -10208,7 +10208,15 @@ Staking events
               "entries_found": 3,
               "entries_total": 3,
               "entries_limit": -1,
-              "assets": ["ETH2", "ETH"]
+              "total_usd_value": "0.02",
+              "assets": ["ETH2", "ETH"],
+              "received": [
+                  {
+                      "asset": "ETH2",
+                      "amount": "0.0000103220",
+                      "usd_value": "0.21935353362"
+                  }
+              ]
           },
           "message": ""
       }
@@ -10222,7 +10230,9 @@ Staking events
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
    :resjson int entries_total: The number of total entries ignoring all filters.
+   :resjsonarr string total_usd_value: Sum of the USD value for the assets received computed at the time of acquisition of each event.
    :resjson list[string] assets: Assets involved in events ignoring all filters.
+   :resjson list[object] received: Assets received with the total amount received for each asset and the aggregated USD value at time of acquisition.
 
    :statuscode 200: Events are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed

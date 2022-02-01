@@ -1311,8 +1311,8 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         assert result['entries_limit'] == FREE_HISTORY_EVENTS_LIMIT
     assert result['entries_total'] == 4
     assert result['received'] == [
-        {'asset': 'ETH2', 'amount': '0.000053862'},
-        {'asset': 'XTZ', 'amount': '0.00001'},
+        {'asset': 'ETH2', 'amount': '0.000053862', 'usd_value': '0.21935353362'},
+        {'asset': 'XTZ', 'amount': '0.00001', 'usd_value': '0.0000463'},
     ]
 
     # test that the correct number of entries is returned with pagination
@@ -1345,6 +1345,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     )
     result = assert_proper_response_with_result(response)
     assert len(result['events']) == 1
+    assert len(result['received']) == 1
 
     # test that we can correctly query subtypes
     response = requests.post(

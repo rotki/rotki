@@ -476,7 +476,7 @@ class StakingEvent:
         # TODO: We forgot to add a subtype for staking rewards. This needs to be changed
         # in a database upgrade
         if event.event_subtype is None:
-            event_type = EVENTS_SUBTYPES_TO_STR.get(None)
+            event_type = 'get reward'
         else:
             event_type = event.event_subtype.serialize_event_subtype()
         return StakingEvent(
