@@ -185,7 +185,7 @@ class DBHistoryEvents():
     def get_value_stats(
         self,
         query_filter: HistoryEventFilterQuery,
-    ) -> Tuple[FVal, List[Tuple[Asset, FVal]]]:
+    ) -> Tuple[FVal, List[Tuple[Asset, FVal, FVal]]]:
         """Returns the sum of the USD value at the time of acquisition and the amount received
         by asset"""
         cursor = self.db.conn.cursor()
@@ -203,7 +203,8 @@ class DBHistoryEvents():
             log.error(f'Didnt get correct valid usd_value for history_events query. {str(e)}')
 
         query = (
-            'SELECT asset, SUM(CAST(amount AS REAL)) FROM history_events ' +
+            'SELECT asset, SUM(CAST(amount AS REAL)), SUM(CAST(usd_value AS REAL)) ' +
+            'FROM history_events ' +
             query_filters +
             ' GROUP BY asset;'
         )
@@ -217,7 +218,12 @@ class DBHistoryEvents():
                     name='total amount in history events stats',
                     location='get_value_stats',
                 )
-                assets_amounts.append((asset, amount))
+                sum_of_usd_values = deserialize_fval(
+                    value=row[2],
+                    name='total usd value in history events stats',
+                    location='get_value_stats',
+                )
+                assets_amounts.append((asset, amount, sum_of_usd_values))
             except UnknownAsset as e:
                 log.debug(f'Found unknown asset {row[0]} in staking event. {str(e)}')
             except DeserializationError as e:

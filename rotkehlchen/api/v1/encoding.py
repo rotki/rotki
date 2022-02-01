@@ -1147,6 +1147,7 @@ class StakingQuerySchema(
             ],
             null_columns=['subtype'],
             order_by_attribute=None,
+            asset=data['asset'],
         )
 
         return {

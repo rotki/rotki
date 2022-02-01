@@ -4002,6 +4002,7 @@ class RestAPI():
                 {
                     'asset': entry[0].identifier,
                     'amount': entry[1],
+                    'usd_value': entry[2],
                 } for entry in amounts
             ],
         }
