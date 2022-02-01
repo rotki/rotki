@@ -531,6 +531,18 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
         fee_currency=A_USD,
         link='',
         notes='MCO Earnings/Rewards Swap\nSource: crypto.com (CSV import)',
+    ), Trade(
+        timestamp=Timestamp(1635390998),
+        location=Location.CRYPTOCOM,
+        base_asset=symbol_to_asset_or_token('EUR'),
+        quote_asset=symbol_to_asset_or_token('USDC'),
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal('11.3')),
+        rate=Price(FVal('1.145132743362831858407079646')),
+        fee=Fee(ZERO),
+        fee_currency=A_USD,
+        link='',
+        notes='USDC -> EUR\nSource: crypto.com (CSV import)',
     )]
     assert trades == expected_trades
 

@@ -249,6 +249,7 @@ class DataImporter():
             'viban_purchase',
             'crypto_viban_exchange',
             'recurring_buy_order',
+            'card_top_up',
         ):
             # variable mapping to raw data
             currency = csv_row['Currency']
@@ -273,6 +274,11 @@ class DataImporter():
                     raise DeserializationError('Got a trade entry with an empty quote asset')
                 base_amount_bought = deserialize_asset_amount(to_amount)
                 quote_amount_sold = deserialize_asset_amount(amount)
+            elif row_type == 'card_top_up':
+                quote_asset = asset_from_cryptocom(currency)
+                base_asset = asset_from_cryptocom(native_currency)
+                base_amount_bought = deserialize_asset_amount_force_positive(native_amount)
+                quote_amount_sold = deserialize_asset_amount_force_positive(amount)
             else:
                 base_asset = asset_from_cryptocom(currency)
                 quote_asset = asset_from_cryptocom(native_currency)
@@ -482,6 +488,7 @@ class DataImporter():
         formatstr = kwargs.get('timestamp_format')
         timestamp_format = formatstr if formatstr is not None else '%Y-%m-%d %H:%M:%S'
         for row in data:
+            log.debug(f'Processing cryptocom row at {row["Timestamp (UTC)"]} and type {tx_kind}')
             # If we don't have the corresponding debited entry ignore them
             # and warn the user
             if (
@@ -571,8 +578,8 @@ class DataImporter():
                     fee = Fee(ZERO)
                     fee_currency = A_USD
 
-                    base_asset = symbol_to_asset_or_token(credited_row['Currency'])
-                    quote_asset = symbol_to_asset_or_token(debited_row['Currency'])
+                    base_asset = asset_from_cryptocom(credited_row['Currency'])
+                    quote_asset = asset_from_cryptocom(debited_row['Currency'])
                     part_of_total = (
                         FVal(1)
                         if len(debited_rows) == 1
@@ -586,7 +593,11 @@ class DataImporter():
                     base_amount_bought = deserialize_asset_amount(
                         credited_row['Amount'],
                     ) * part_of_total
-                    rate = Price(abs(quote_amount_sold / base_amount_bought))
+
+                    if base_amount_bought != ZERO:
+                        rate = Price(abs(quote_amount_sold / base_amount_bought))
+                    else:
+                        rate = Price(ZERO)
 
                     trade = Trade(
                         timestamp=timestamp,
@@ -606,7 +617,7 @@ class DataImporter():
         # Compute investments profit
         if len(investments_withdrawals) != 0:
             for asset in investments_withdrawals:
-                asset_object = symbol_to_asset_or_token(asset)
+                asset_object = asset_from_cryptocom(asset)
                 if asset not in investments_deposits:
                     log.error(
                         f'Investment withdrawal without deposit at crypto.com. Ignoring '
