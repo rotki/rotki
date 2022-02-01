@@ -23,6 +23,7 @@
           <asset-details :asset="item.asset" dense />
         </v-col>
         <v-col cols="auto" :class="$style.amount">
+          <value-accuracy-hint v-if="!current" />
           <balance-display
             :asset="item.asset"
             :value="getBalance(item)"
@@ -37,12 +38,14 @@
 <script lang="ts">
 import { Balance } from '@rotki/common';
 import { defineComponent, PropType, ref, unref } from '@vue/composition-api';
+import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import { usePrices } from '@/composables/balances';
 import { ReceivedAmount } from '@/types/staking';
 import { Zero } from '@/utils/bignumbers';
 
 export default defineComponent({
   name: 'KrakenStakingReceived',
+  components: { ValueAccuracyHint },
   props: {
     received: {
       required: true,
@@ -88,6 +91,8 @@ export default defineComponent({
 
 .amount {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-shrink: 1;
+  align-items: center;
 }
 </style>

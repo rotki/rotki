@@ -527,7 +527,12 @@
     "tooltip": "Help"
   },
   "kraken_page": {
-    "loading": "Your Kraken staking information is loading..."
+    "loading": "Your Kraken staking information is loading...",
+    "page": {
+      "description": "To see your staking information you need to add a Kraken {link}",
+      "api_key": "API key",
+      "title": "Kraken Staking"
+    }
   },
   "kraken_staking_events": {
     "column": {
@@ -716,6 +721,9 @@
   },
   "pagination": {
     "of": "of {length}"
+  },
+  "price_accuracy_hint": {
+    "tooltip": "These prices are based on the current exchange rate of historical USD\n      values"
   },
   "price_form": {
     "date": "Date",

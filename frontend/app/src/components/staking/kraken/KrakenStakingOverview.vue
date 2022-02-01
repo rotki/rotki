@@ -25,6 +25,7 @@
             </div>
           </v-col>
           <v-col cols="auto">
+            <value-accuracy-hint />
             <amount-display
               show-currency="ticker"
               fiat-currency="USD"
@@ -67,6 +68,7 @@ import {
   toRefs,
   unref
 } from '@vue/composition-api';
+import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import { usePrices } from '@/composables/balances';
 import { ReceivedAmount } from '@/types/staking';
 import { assert } from '@/utils/assertions';
@@ -74,6 +76,7 @@ import { Zero } from '@/utils/bignumbers';
 
 export default defineComponent({
   name: 'KrakenStakingOverview',
+  components: { ValueAccuracyHint },
   props: {
     totalUsd: { required: true, type: Object as PropType<BigNumber> },
     earned: { required: true, type: Array as PropType<ReceivedAmount[]> }

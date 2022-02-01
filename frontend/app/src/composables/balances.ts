@@ -17,6 +17,7 @@ import {
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Eth2Validator } from '@/types/balances';
+import { Exchange } from '@/types/exchanges';
 
 export const setupExchangeRateGetter = () => {
   const store = useStore();
@@ -212,5 +213,17 @@ export const usePrices = () => {
 
   return {
     prices
+  };
+};
+
+export const useExchanges = () => {
+  const store = useStore();
+
+  const connectedExchanges = computed<Exchange[]>(() => {
+    return store.state.balances!!.connectedExchanges;
+  });
+
+  return {
+    connectedExchanges
   };
 };
