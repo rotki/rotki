@@ -13,7 +13,7 @@
       <template #activator="{ on }">
         <menu-tooltip-button
           :tooltip="$tc('sync_indicator.menu_tooltip', premium ? 2 : 1)"
-          class-name="secondary--text text--lighten-2"
+          class-name="secondary--text text--lighten-4"
           :on-menu="on"
         >
           <v-badge v-if="xsOnly" color="transparent" bottom overlap>

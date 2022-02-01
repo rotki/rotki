@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-list nav class="navigation-menu">
+    <v-list nav class="navigation-menu" :class="{ 'pa-0': isMini }">
       <v-list-item-group>
         <template v-for="(navItem, i) in navItems">
           <v-list-item
@@ -11,7 +11,7 @@
             :to="navItem.route"
           >
             <navigation-menu-item
-              :show-tooltips="showTooltips"
+              :show-tooltips="isMini"
               :text="navItem.text"
               :icon="navItem.icon"
               :image="navItem.image"
@@ -19,10 +19,14 @@
               :crypto-icon="navItem.cryptoIcon"
             />
           </v-list-item>
-          <v-list-group v-else-if="navItem.type === 'group'" :key="i">
+          <v-list-group
+            v-else-if="navItem.type === 'group'"
+            :key="i"
+            class="mb-2"
+          >
             <template #activator>
               <navigation-menu-item
-                :show-tooltips="showTooltips"
+                :show-tooltips="isMini"
                 :text="navItem.text"
                 :icon="navItem.icon"
                 :crypto-icon="navItem.cryptoIcon"
@@ -31,17 +35,17 @@
                 :class="`navigation__${navItem.class}`"
               />
             </template>
-            <div class="pl-3">
+            <div :class="isMini ? 'grey lighten-4' : 'pl-3'">
               <v-list-item
                 v-for="(subNavItem, si) in navItem.items"
                 :key="si"
-                :class="`navigation__${subNavItem.class} pl-4`"
+                :class="`navigation__${subNavItem.class}`"
                 active-class="navigation-menu__item--active"
                 :to="subNavItem.route"
               >
                 <template #default="{ active }">
                   <navigation-menu-item
-                    :show-tooltips="showTooltips"
+                    :show-tooltips="isMini"
                     :text="subNavItem.text"
                     :icon="subNavItem.icon"
                     :image="subNavItem.image"
@@ -91,7 +95,7 @@ type MenuItem = NavItem | NavGroupItem | DividerItem;
 })
 export default class NavigationMenu extends Vue {
   @Prop({ required: false, default: false })
-  showTooltips!: boolean;
+  isMini!: boolean;
 
   readonly navItems: MenuItem[] = [
     {

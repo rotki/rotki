@@ -12,7 +12,7 @@
       <template #activator="{ on }">
         <menu-tooltip-button
           :tooltip="$t('currency_drop_down.profit_currency')"
-          class-name="currency-dropdown secondary--text text--lighten-2"
+          class-name="currency-dropdown secondary--text text--lighten-4"
           :on-menu="on"
         >
           {{ currency.unicodeSymbol }}

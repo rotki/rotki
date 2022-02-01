@@ -58,26 +58,26 @@ export class LedgerActionPage {
 
     cy.get('@row')
       .find('td')
-      .eq(1)
+      .eq(2)
       .find('[data-cy=ledger-action-location]')
       .should('contain', ledgerAction.location);
 
     cy.get('@row')
       .find('td')
-      .eq(2)
+      .eq(3)
       .find('[data-cy=ledger-action-type]')
-      .should('contain', ledgerAction.action_type);
+      .should('contain', ledgerAction.action_type.toLowerCase());
 
     cy.get('@row')
       .find('td')
-      .eq(3)
+      .eq(4)
       .find('[data-cy=ledger-action-asset]')
       .find('[data-cy=details-symbol]')
       .should('contain', ledgerAction.asset);
 
     cy.get('@row')
       .find('td')
-      .eq(4)
+      .eq(5)
       .find('[data-cy=display-amount]')
       .should('contain', ledgerAction.amount);
   }

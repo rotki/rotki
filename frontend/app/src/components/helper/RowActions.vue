@@ -3,11 +3,10 @@
     <v-tooltip top>
       <template #activator="{ on, attrs }">
         <v-btn
-          small
           v-bind="attrs"
           icon
           :disabled="disabled"
-          class="mx-1 account-balances-list__actions__edit"
+          class="mx-1 actions__edit"
           data-cy="row-edit"
           v-on="on"
           @click="editClick"
@@ -20,11 +19,10 @@
     <v-tooltip v-if="!noDelete" top>
       <template #activator="{ on, attrs }">
         <v-btn
-          small
           v-bind="attrs"
           icon
           :disabled="disabled || deleteDisabled"
-          class="mx-1 account-balances-list__actions__delete"
+          class="mx-1 actions__delete"
           data-cy="row-delete"
           v-on="on"
           @click="deleteClick"
@@ -46,7 +44,7 @@ export default defineComponent({
   props: {
     disabled: { required: false, type: Boolean, default: false },
     deleteDisabled: { required: false, type: Boolean, default: false },
-    editTooltip: { required: true, type: String },
+    editTooltip: { required: false, type: String, default: '' },
     deleteTooltip: { required: false, type: String, default: '' },
     noDelete: { required: false, type: Boolean, default: false }
   },
@@ -65,5 +63,6 @@ export default defineComponent({
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
+  align-items: center;
 }
 </style>

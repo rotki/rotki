@@ -65,37 +65,27 @@
         />
       </template>
       <template #item.actions="{ item }">
-        <span>
-          <v-icon
-            small
-            class="mr-2 manual-balances-list__actions__edit"
-            @click="edit(item)"
-          >
-            mdi-pencil
-          </v-icon>
-          <v-icon
-            small
-            class="manual-balances-list__actions__delete"
-            @click="pendingDeletion = item.label"
-          >
-            mdi-delete
-          </v-icon>
-        </span>
+        <row-actions
+          :edit-tooltip="$t('manual_balances_table.edit_tooltip')"
+          :delete-tooltip="$t('manual_balances_table.delete_tooltip')"
+          @edit-click="edit(item)"
+          @delete-click="pendingDeletion = item.label"
+        />
       </template>
       <template v-if="visibleBalances.length > 0" #body.append="{ isMobile }">
-        <tr :class="$style.total">
-          <td :colspan="isMobile ? 1 : 3">
-            {{ $t('manual_balances_table.rows.total') }}
-          </td>
-          <td class="text-end">
-            <amount-display
-              show-currency="symbol"
-              class="manual-balances-list__amount"
-              :fiat-currency="currency"
-              :value="total"
-            />
-          </td>
-        </tr>
+        <row-append
+          label-colspan="4"
+          :label="$t('manual_balances_table.rows.total')"
+          :is-mobile="isMobile"
+          :right-patch-colspan="1"
+        >
+          <amount-display
+            show-currency="symbol"
+            class="manual-balances-list__amount"
+            :fiat-currency="currency"
+            :value="total"
+          />
+        </row-append>
       </template>
     </data-table>
     <confirm-dialog
@@ -122,8 +112,11 @@ import {
 import { IVueI18n } from 'vue-i18n';
 import { DataTableHeader } from 'vuetify';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
+
 import {
   setupExchangeRateGetter,
   setupManualBalances
@@ -171,6 +164,7 @@ const setupHeaders: (
     {
       text: i18n.t('manual_balances_table.columns.actions').toString(),
       value: 'actions',
+      align: 'center',
       sortable: false,
       width: '50'
     }
@@ -178,7 +172,13 @@ const setupHeaders: (
 
 const ManualBalanceTable = defineComponent({
   name: 'ManualBalanceTable',
-  components: { TagFilter, RefreshButton, TagDisplay },
+  components: {
+    RowAppend,
+    RowActions,
+    TagFilter,
+    RefreshButton,
+    TagDisplay
+  },
   props: {
     title: { required: true, type: String },
     loading: { required: false, type: Boolean, default: false },
@@ -251,10 +251,6 @@ export default ManualBalanceTable;
 </script>
 
 <style module lang="scss">
-.total {
-  font-weight: 500;
-}
-
 .label {
   padding-bottom: 0 !important;
 }

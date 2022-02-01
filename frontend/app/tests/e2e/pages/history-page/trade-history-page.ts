@@ -65,27 +65,30 @@ export class TradeHistoryPage {
   tradeIsVisible(position: number, trade: ExternalTrade) {
     cy.get('.closed-trades tbody > tr').eq(position).as('row');
 
-    cy.get('@row').find('td').eq(2).should('contain', trade.trade_type);
-
     cy.get('@row')
       .find('td')
       .eq(3)
+      .should('contain', trade.trade_type.toLowerCase());
+
+    cy.get('@row')
+      .find('td')
+      .eq(4)
+      .find('[data-cy=display-amount]')
+      .should('contain', trade.amount);
+
+    cy.get('@row')
+      .find('td')
+      .eq(5)
       .find('[data-cy=trade-base]')
       .find('[data-cy=details-symbol]')
       .should('contain', trade.base);
 
     cy.get('@row')
       .find('td')
-      .eq(5)
+      .eq(7)
       .find('[data-cy=trade-quote]')
       .find('[data-cy=details-symbol]')
       .should('contain', trade.quote);
-
-    cy.get('@row')
-      .find('td')
-      .eq(7)
-      .find('[data-cy=display-amount]')
-      .should('contain', trade.amount);
   }
 
   editTrade(position: number, amount: string) {

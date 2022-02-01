@@ -71,19 +71,18 @@
         <v-icon v-if="item.manuallyInput" color="green">mdi-check</v-icon>
       </template>
       <template #body.append="{ isMobile }">
-        <tr>
-          <td :colspan="isMobile ? 1 : 2" class="font-weight-medium">
-            {{ $t('non_fungible_balances.row.total') }}
-          </td>
-          <td class="text-right">
-            <amount-display
-              :value="total"
-              show-currency="symbol"
-              fiat-currency="USD"
-            />
-          </td>
-          <td v-if="!isMobile" />
-        </tr>
+        <row-append
+          label-colspan="2"
+          :label="$t('non_fungible_balances.row.total')"
+          :right-patch-colspan="1"
+          :is-mobile="isMobile"
+        >
+          <amount-display
+            :value="total"
+            show-currency="symbol"
+            fiat-currency="USD"
+          />
+        </row-append>
       </template>
     </data-table>
 
@@ -120,6 +119,7 @@ import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBa
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAction from '@/components/helper/RowActions.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
 import { isSectionLoading } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import i18n from '@/i18n';
@@ -164,9 +164,10 @@ const tableHeaders = (currency: Ref<string>) => {
       },
       {
         text: i18n.t('non_fungible_balance.column.actions').toString(),
-        align: 'center',
         value: 'actions',
-        class: 'text-no-wrap'
+        align: 'center',
+        sortable: false,
+        width: '50'
       }
     ];
   });
@@ -228,6 +229,7 @@ const setupConfirm = (refresh: () => Promise<void>) => {
 export default defineComponent({
   name: 'NonFungibleBalances',
   components: {
+    RowAppend,
     ActiveModules,
     RefreshButton,
     NonFungibleBalanceEdit,
