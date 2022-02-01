@@ -2,7 +2,10 @@
   <fragment>
     <v-row>
       <v-col>
-        <kraken-staking-overview :total-usd="events.totalUsdValue" />
+        <kraken-staking-overview
+          :total-usd="events.totalUsdValue"
+          :earned="events.received"
+        />
       </v-col>
       <v-col>
         <kraken-staking-received :received="events.received" />

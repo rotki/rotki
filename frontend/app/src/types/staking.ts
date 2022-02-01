@@ -21,6 +21,7 @@ export type KrakenStakingEvent = z.infer<typeof KrakenStakingEvent>;
 
 const ReceivedAmount = z.object({
   amount: NumericString,
+  usdValue: NumericString,
   asset: z.string()
 });
 

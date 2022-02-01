@@ -1,6 +1,16 @@
 <template>
-  <card>
+  <card full-height>
     <template #title>{{ $t('kraken_staking_received.title') }}</template>
+    <template #details>
+      <v-btn-toggle v-model="current" dense mandatory>
+        <v-btn :value="true">
+          {{ $t('kraken_staking_received.switch.current') }}
+        </v-btn>
+        <v-btn :value="false">
+          {{ $t('kraken_staking_received.switch.historical') }}
+        </v-btn>
+      </v-btn-toggle>
+    </template>
     <div :class="$style.received">
       <v-row
         v-for="item in received"
@@ -10,10 +20,14 @@
         align="center"
       >
         <v-col cols="auto">
-          <asset-details :asset="item.asset" />
+          <asset-details :asset="item.asset" dense />
         </v-col>
-        <v-col cols="auto" class="text-h6">
-          <amount-display :value="item.amount" />
+        <v-col cols="auto" :class="$style.amount">
+          <balance-display
+            :asset="item.asset"
+            :value="getBalance(item)"
+            ticker
+          />
         </v-col>
       </v-row>
     </div>
@@ -21,8 +35,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import { Balance } from '@rotki/common';
+import { defineComponent, PropType, ref, unref } from '@vue/composition-api';
+import { usePrices } from '@/composables/balances';
 import { ReceivedAmount } from '@/types/staking';
+import { Zero } from '@/utils/bignumbers';
 
 export default defineComponent({
   name: 'KrakenStakingReceived',
@@ -31,6 +48,29 @@ export default defineComponent({
       required: true,
       type: Array as PropType<ReceivedAmount[]>
     }
+  },
+  setup() {
+    const { prices } = usePrices();
+    const current = ref(true);
+    const getBalance = ({
+      amount,
+      asset,
+      usdValue
+    }: ReceivedAmount): Balance => {
+      const assetPrices = unref(prices);
+
+      const currentPrice = assetPrices[asset]
+        ? assetPrices[asset].times(amount)
+        : Zero;
+      return {
+        amount,
+        usdValue: unref(current) ? currentPrice : usdValue
+      };
+    };
+    return {
+      current,
+      getBalance
+    };
   }
 });
 </script>
@@ -39,10 +79,15 @@ export default defineComponent({
 @import '~@/scss/scroll';
 
 .received {
-  max-height: 326px;
+  max-height: 155px;
   overflow-y: scroll;
   overflow-x: hidden;
 
   @extend .themed-scrollbar;
+}
+
+.amount {
+  display: flex;
+  flex-direction: column;
 }
 </style>

@@ -43,7 +43,7 @@
         <amount-display :value="item.amount" />
       </template>
       <template #item.usdValue="{ item }">
-        <amount-display :value="item.usdValue" />
+        <amount-display :value="item.usdValue" fiat-currency="USD" />
       </template>
       <template #item.timestamp="{ item }">
         <date-display :timestamp="item.timestamp" />
@@ -73,6 +73,7 @@ import {
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupThemeCheck } from '@/composables/common';
+import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import {
@@ -83,31 +84,37 @@ import {
 } from '@/types/staking';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
-const getHeaders = (): DataTableHeader[] => [
-  {
-    text: i18n.t('kraken_staking_events.column.event_type').toString(),
-    value: 'eventType'
-  },
-  {
-    text: i18n.t('kraken_staking_events.column.asset').toString(),
-    value: 'asset'
-  },
-  {
-    text: i18n.t('kraken_staking_events.column.time').toString(),
-    value: 'timestamp'
-  },
-  {
-    text: i18n.t('kraken_staking_events.column.amount').toString(),
-    value: 'amount',
-    align: 'end'
-  },
-  {
-    text: i18n.t('kraken_staking_events.column.value').toString(),
-    value: 'usdValue',
-    align: 'end'
-  }
-];
-
+const useHeaders = () => {
+  const { currencySymbol } = setupGeneralSettings();
+  return computed<DataTableHeader[]>(() => [
+    {
+      text: i18n.t('kraken_staking_events.column.event_type').toString(),
+      value: 'eventType'
+    },
+    {
+      text: i18n.t('kraken_staking_events.column.asset').toString(),
+      value: 'asset'
+    },
+    {
+      text: i18n.t('kraken_staking_events.column.time').toString(),
+      value: 'timestamp'
+    },
+    {
+      text: i18n.t('kraken_staking_events.column.amount').toString(),
+      value: 'amount',
+      align: 'end'
+    },
+    {
+      text: i18n
+        .t('kraken_staking_events.column.value', {
+          symbol: unref(currencySymbol)
+        })
+        .toString(),
+      value: 'usdValue',
+      align: 'end'
+    }
+  ]);
+};
 enum KrakenStakingKeys {
   TYPE = 'type',
   ASSET = 'asset',
@@ -130,7 +137,7 @@ const useMatchers = (events: Ref<KrakenStakingEvents>) => {
       {
         key: KrakenStakingKeys.ASSET,
         keyValue: KrakenStakingValueKeys.ASSET,
-        description: i18n.t('closed_trades.filter.base_asset').toString(),
+        description: i18n.t('kraken_staking_events.filter.asset').toString(),
         suggestions: () => events.value.assets,
         validate: (asset: string) => events.value.assets.includes(asset),
         transformer: (asset: string) =>
@@ -139,7 +146,7 @@ const useMatchers = (events: Ref<KrakenStakingEvents>) => {
       {
         key: KrakenStakingKeys.TYPE,
         keyValue: KrakenStakingValueKeys.TYPE,
-        description: i18n.t('closed_trades.filter.quote_asset').toString(),
+        description: i18n.t('kraken_staking_events.filter.type').toString(),
         suggestions: () => KrakenStakingEventType.options,
         validate: (option: string) =>
           KrakenStakingEventType.options.includes(option as any)
@@ -147,10 +154,12 @@ const useMatchers = (events: Ref<KrakenStakingEvents>) => {
       {
         key: KrakenStakingKeys.START,
         keyValue: KrakenStakingValueKeys.START,
-        description: i18n.t('closed_trades.filter.start_date').toString(),
+        description: i18n
+          .t('kraken_staking_events.filter.start_date')
+          .toString(),
         suggestions: () => [],
         hint: i18n
-          .t('closed_trades.filter.date_hint', {
+          .t('kraken_staking_events.filter.date_hint', {
             format: getDateInputISOFormat(dateInputFormat.value)
           })
           .toString(),
@@ -166,10 +175,10 @@ const useMatchers = (events: Ref<KrakenStakingEvents>) => {
       {
         key: KrakenStakingKeys.END,
         keyValue: KrakenStakingValueKeys.END,
-        description: i18n.t('closed_trades.filter.end_date').toString(),
+        description: i18n.t('kraken_staking_events.filter.end_date').toString(),
         suggestions: () => [],
         hint: i18n
-          .t('closed_trades.filter.date_hint', {
+          .t('kraken_staking_events.filter.date_hint', {
             format: getDateInputISOFormat(dateInputFormat.value)
           })
           .toString(),
@@ -254,7 +263,7 @@ export default defineComponent({
       options,
       isMobile,
       showUpgradeRow,
-      tableHeaders: getHeaders(),
+      tableHeaders: useHeaders(),
       matchers: useMatchers(events),
       refresh,
       updateFilter

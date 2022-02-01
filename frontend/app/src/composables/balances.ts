@@ -6,6 +6,7 @@ import { ManualBalance } from '@/services/balances/types';
 import {
   AddAccountsPayload,
   AssetInfoGetter,
+  AssetPrices,
   AssetSymbolGetter,
   BlockchainAccountPayload,
   BlockchainAccountWithBalance,
@@ -198,5 +199,18 @@ export const setupBlockchainAccounts = () => {
     addEth2Validator,
     editEth2Validator,
     eth2Validators
+  };
+};
+
+export const usePrices = () => {
+  const store = useStore();
+
+  const prices = computed<AssetPrices>(() => {
+    const balances = store.state.balances;
+    return balances!!.prices;
+  });
+
+  return {
+    prices
   };
 };

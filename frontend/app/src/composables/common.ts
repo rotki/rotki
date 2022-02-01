@@ -1,4 +1,9 @@
-import { computed, getCurrentInstance, toRefs } from '@vue/composition-api';
+import {
+  computed,
+  getCurrentInstance,
+  toRefs,
+  unref
+} from '@vue/composition-api';
 import { Section, Status } from '@/store/const';
 import { useMainStore } from '@/store/store';
 import { getStatus } from '@/store/utils';
@@ -44,19 +49,23 @@ export const setupThemeCheck = () => {
 };
 
 export const setupStatusChecking = () => {
-  const isSectionRefreshing = (section: Section) =>
-    computed(() => {
-      const status = getStatus(section);
+  const { getStatus } = useMainStore();
+  const isSectionRefreshing = (section: Section) => {
+    const sectionStatus = getStatus(section);
+    return computed(() => {
+      const status = unref(sectionStatus);
       return (
         status === Status.LOADING ||
         status === Status.REFRESHING ||
         status === Status.PARTIALLY_LOADED
       );
     });
+  };
 
   const shouldShowLoadingScreen = (section: Section) => {
+    const sectionStatus = getStatus(section);
     return computed(() => {
-      const status = getStatus(section);
+      const status = unref(sectionStatus);
       return (
         status !== Status.LOADED &&
         status !== Status.PARTIALLY_LOADED &&

@@ -1,6 +1,7 @@
 <template>
   <div>
-    <module-not-active v-if="!enabled" :modules="module" />
+    <no-premium-placeholder v-if="!premium" :text="$t('eth2page.no_premium')" />
+    <module-not-active v-else-if="!enabled" :modules="module" />
     <progress-screen v-else-if="loading">
       <template #message>
         {{ $t('eth2page.loading') }}
@@ -67,9 +68,10 @@ import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { setupBlockchainAccounts } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
-import { setupModuleEnabled } from '@/composables/session';
+import { getPremium, setupModuleEnabled } from '@/composables/session';
 import { Eth2Staking } from '@/premium/premium';
 import { Section } from '@/store/const';
 import { useEth2StakingStore } from '@/store/staking';
@@ -80,6 +82,7 @@ import { assert } from '@/utils/assertions';
 const Eth2Page = defineComponent({
   name: 'Eth2Page',
   components: {
+    NoPremiumPlaceholder,
     Eth2ValidatorFilter,
     ActiveModules,
     ModuleNotActive,
@@ -140,6 +143,7 @@ const Eth2Page = defineComponent({
       details,
       stats,
       ownership,
+      premium: getPremium(),
       refresh,
       updatePagination,
       chains: [Blockchain.ETH],

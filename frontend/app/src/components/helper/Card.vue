@@ -2,7 +2,8 @@
   <v-card
     v-bind="$attrs"
     :class="{
-      [$style['no-radius-bottom']]: noRadiusBottom
+      [$style['no-radius-bottom']]: noRadiusBottom,
+      [$style['full-height']]: fullHeight
     }"
     v-on="$listeners"
   >
@@ -73,7 +74,8 @@ const Card = defineComponent({
   props: {
     outlinedBody: { required: false, type: Boolean, default: false },
     contained: { required: false, type: Boolean, default: false },
-    noRadiusBottom: { required: false, type: Boolean, default: false }
+    noRadiusBottom: { required: false, type: Boolean, default: false },
+    fullHeight: { required: false, type: Boolean, default: false }
   },
   setup(props) {
     const { contained } = toRefs(props);
@@ -140,5 +142,9 @@ export default Card;
 
 .actions {
   padding: 16px !important;
+}
+
+.full-height {
+  height: 100%;
 }
 </style>

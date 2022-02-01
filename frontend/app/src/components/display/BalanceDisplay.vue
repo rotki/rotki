@@ -31,6 +31,7 @@
         fiat-currency="USD"
         :asset-padding="assetPadding"
         :value="value.usdValue"
+        :show-currency="ticker ? 'ticker' : 'none'"
         class="d-block grey--text"
       />
     </div>
@@ -62,7 +63,8 @@ export default defineComponent({
       type: String as PropType<'gain' | 'loss' | ''>,
       default: ''
     },
-    assetPadding: { required: false, type: Number, default: 5 }
+    assetPadding: { required: false, type: Number, default: 5 },
+    ticker: { required: false, type: Boolean, default: false }
   }
 });
 </script>

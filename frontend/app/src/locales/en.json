@@ -535,7 +535,14 @@
       "asset": "Asset",
       "time": "Time",
       "event_type": "Event",
-      "value": "Value"
+      "value": "{symbol} Value"
+    },
+    "filter": {
+      "asset": "filter by the staked asset",
+      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
+      "end_date": "filter by the end date of the staking events",
+      "start_date": "filter by the start date of the staking events",
+      "type": "filter by the type of the staking events"
     },
     "refresh_tooltip": "Refresh your Kraken staking events",
     "titles": "Kraken Staking Events",
@@ -544,11 +551,21 @@
     }
   },
   "kraken_staking_overview": {
+    "earned": "Total Earned",
+    "hint": {
+      "current": "Based on the current price of assets",
+      "historical": "Based on the historical price of assets"
+    },
     "title": "Overview",
-    "total": "Total"
+    "historical": "historical",
+    "current": "current"
   },
   "kraken_staking_received": {
-    "title": "Received"
+    "switch": {
+      "current": "Current",
+      "historical": "Historical"
+    },
+    "title": "Earned Per Asset"
   },
   "liabilities": {
     "no_selection": "Select a loan to view more information"
@@ -970,7 +987,8 @@
     "terminate": "Terminate"
   },
   "eth2page": {
-    "loading": "Please wait while your eth2 staking details are getting loaded..."
+    "loading": "Please wait while your eth2 staking details are getting loaded...",
+    "no_premium": "ETH2 Staking is"
   },
   "asset_management": {
     "confirm_delete": {
