@@ -786,7 +786,16 @@ Liquity Staking
 If you stake LQTY in the protocol you can see the amount staked and the changes in the staked amount.
 
 .. image:: images/sc_staking_liquity.png
-   :alt: See ETH2 value earned
+   :alt: See your Liquity staking gains
+   :align: center
+
+Kraken Staking
+===============
+
+If you stake on Kraken you can see your gains, and events in the various staked assets.
+
+.. image:: images/sc_staking_kraken.png
+   :alt: See your Kraken staking gains
    :align: center
 
 

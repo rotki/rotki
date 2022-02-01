@@ -4,6 +4,7 @@
       :hide-name="hideName"
       :asset="currentAsset"
       :opens-details="opensDetails"
+      :dense="dense"
     />
   </div>
 </template>
@@ -25,7 +26,8 @@ export default defineComponent({
       }
     },
     opensDetails: { required: false, type: Boolean, default: false },
-    hideName: { required: false, type: Boolean, default: false }
+    hideName: { required: false, type: Boolean, default: false },
+    dense: { required: false, type: Boolean, default: false }
   },
   setup(props) {
     const { asset } = toRefs(props);

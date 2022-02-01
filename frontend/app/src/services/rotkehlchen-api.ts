@@ -65,6 +65,11 @@ import {
   LoginCredentials,
   SyncConflictError
 } from '@/types/login';
+import {
+  emptyPagination,
+  KrakenStakingEvents,
+  KrakenStakingPagination
+} from '@/types/staking';
 import { TaskResultResponse } from '@/types/task';
 import {
   ExternalServiceKey,
@@ -952,6 +957,39 @@ export class RotkehlchenApi {
         transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
+  }
+
+  private async interalKrakenStaking<T>(
+    pagination: KrakenStakingPagination,
+    asyncQuery: boolean = false
+  ): Promise<T> {
+    const response = await this.axios.post<ActionResult<T>>(
+      '/staking/kraken',
+      axiosSnakeCaseTransformer({
+        asyncQuery,
+        ...pagination,
+        orderByAttribute: getUpdatedKey(pagination.orderByAttribute, false)
+      }),
+      {
+        validateStatus: validWithSessionAndExternalService,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return handleResponse(response);
+  }
+
+  async refreshKrakenStaking(): Promise<PendingTask> {
+    return await this.interalKrakenStaking(emptyPagination(), true);
+  }
+
+  async fetchKrakenStakingEvents(
+    pagination: KrakenStakingPagination
+  ): Promise<KrakenStakingEvents> {
+    const data = await this.interalKrakenStaking({
+      ...pagination,
+      onlyCache: true
+    });
+    return KrakenStakingEvents.parse(data);
   }
 
   importFile(data: FormData) {

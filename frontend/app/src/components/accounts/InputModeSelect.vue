@@ -48,48 +48,50 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs,
+  unref
+} from '@vue/composition-api';
 import {
   MANUAL_ADD,
   METAMASK_IMPORT,
   XPUB_ADD
 } from '@/components/accounts/const';
 import { AccountInput } from '@/components/accounts/types';
-import Fragment from '@/components/helper/Fragment';
 import { isMetaMaskSupported } from '@/utils/metamask';
 
-@Component({
-  components: { Fragment }
-})
-export default class InputModeSelect extends Vue {
-  @Prop({
-    required: true,
-    type: String,
-    validator: (value: any) => Object.values(Blockchain).includes(value)
-  })
-  blockchain!: Blockchain;
+export default defineComponent({
+  props: {
+    blockchain: {
+      required: true,
+      type: String as PropType<Blockchain>,
+      validator: (value: any) => Object.values(Blockchain).includes(value)
+    },
+    value: { required: true, type: String as PropType<AccountInput> }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { blockchain, value } = toRefs(props);
 
-  @Prop({ required: true })
-  value!: AccountInput;
+    const input = (value: AccountInput) => emit('input', value);
 
-  readonly MANUAL_ADD = MANUAL_ADD;
-  readonly METAMASK_IMPORT = METAMASK_IMPORT;
-  readonly XPUB_ADD = XPUB_ADD;
-  readonly isMetaMaskSupported = isMetaMaskSupported;
+    const isEth = computed(() => blockchain.value === Blockchain.ETH);
+    const isBtc = computed(() => blockchain.value === Blockchain.BTC);
+    const isMetaMask = computed(() => unref(value) === METAMASK_IMPORT);
 
-  get isEth(): boolean {
-    return this.blockchain === Blockchain.ETH;
+    return {
+      MANUAL_ADD,
+      XPUB_ADD,
+      METAMASK_IMPORT,
+      isEth,
+      isBtc,
+      isMetaMask,
+      isMetaMaskSupported,
+      input
+    };
   }
-
-  get isBtc(): boolean {
-    return this.blockchain === Blockchain.BTC;
-  }
-
-  get isMetaMask(): boolean {
-    return this.value === METAMASK_IMPORT;
-  }
-
-  @Emit()
-  input(_value: AccountInput) {}
-}
+});
 </script>

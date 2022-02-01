@@ -2,6 +2,7 @@
   <list-item
     v-bind="$attrs"
     :class="opensDetails ? 'asset-details-base--link' : null"
+    :dense="dense"
     :title="symbol"
     :subtitle="name"
     @click="navigate"
@@ -40,7 +41,8 @@ const AssetDetailsBase = defineComponent({
     },
     opensDetails: { required: false, type: Boolean, default: false },
     changeable: { required: false, type: Boolean, default: false },
-    hideName: { required: false, type: Boolean, default: false }
+    hideName: { required: false, type: Boolean, default: false },
+    dense: { required: false, type: Boolean, default: false }
   },
   setup(props) {
     const { asset, opensDetails } = toRefs(props);

@@ -1,6 +1,6 @@
 <template>
   <adaptive-wrapper>
-    <v-tooltip top open-delay="400">
+    <v-tooltip top open-delay="400" :disabled="noTooltip">
       <template #activator="{ on, attrs }">
         <div v-bind="attrs" :style="styled" class="d-flex" v-on="on">
           <generated-icon
@@ -56,7 +56,8 @@ export default defineComponent({
     symbol: { required: false, type: String, default: '' },
     size: { required: true, type: String },
     changeable: { required: false, type: Boolean, default: false },
-    styled: { required: false, type: Object, default: () => null }
+    styled: { required: false, type: Object, default: () => null },
+    noTooltip: { required: false, type: Boolean, default: false }
   },
   setup(props) {
     const { symbol, changeable, identifier } = toRefs(props);

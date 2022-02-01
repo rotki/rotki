@@ -1,5 +1,5 @@
 <template>
-  <module-not-active v-if="!moduleEnabled" :modules="module" />
+  <module-not-active v-if="!enabled" :modules="module" />
   <progress-screen v-else-if="loading">
     <template #message>
       {{ $t('adex_page.loading') }}
@@ -7,8 +7,8 @@
   </progress-screen>
   <div v-else>
     <adex-staking
-      :history-refreshing="secondaryLoading || secondaryRefreshing"
-      :refreshing="refreshing"
+      :history-refreshing="secondaryRefreshing"
+      :refreshing="primaryRefreshing || secondaryRefreshing"
     >
       <template #modules>
         <active-modules :modules="module" />
@@ -18,41 +18,50 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
+import { defineComponent, onBeforeMount, unref } from '@vue/composition-api';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import ModuleMixin from '@/mixins/module-mixin';
-import StatusMixin from '@/mixins/status-mixin';
+import { setupStatusChecking } from '@/composables/common';
+import { setupModuleEnabled } from '@/composables/session';
 import { AdexStaking } from '@/premium/premium';
 import { Section } from '@/store/const';
+import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 
-@Component({
+export default defineComponent({
+  name: 'AdexPage',
   components: { ActiveModules, ModuleNotActive, AdexStaking, ProgressScreen },
-  methods: {
-    ...mapActions('staking', ['fetchAdex'])
-  }
-})
-export default class AdexPage extends Mixins(StatusMixin, ModuleMixin) {
-  readonly module = [Module.ADEX];
-  section = Section.STAKING_ADEX;
-  secondSection = Section.STAKING_ADEX_HISTORY;
+  setup() {
+    const { isModuleEnabled } = setupModuleEnabled();
+    const enabled = isModuleEnabled(Module.ADEX);
 
-  fetchAdex!: (refresh: boolean) => Promise<void>;
+    const { dispatch } = useStore();
+    onBeforeMount(() => {
+      if (!unref(enabled)) {
+        return;
+      }
+      dispatch('staking/fetchAdex', false);
+    });
 
-  get moduleEnabled(): boolean {
-    return this.isModuleEnabled(Module.ADEX);
-  }
+    const { isSectionRefreshing, shouldShowLoadingScreen } =
+      setupStatusChecking();
 
-  async mounted() {
-    if (!this.moduleEnabled) {
-      return;
-    }
-    await this.fetchAdex(false);
+    const loading = shouldShowLoadingScreen(Section.STAKING_ADEX);
+    const primaryRefreshing = isSectionRefreshing(Section.STAKING_ADEX);
+    const secondaryRefreshing = isSectionRefreshing(
+      Section.STAKING_ADEX_HISTORY
+    );
+
+    return {
+      enabled,
+      loading,
+      primaryRefreshing,
+      secondaryRefreshing,
+      module: [Module.ADEX]
+    };
   }
-}
+});
 </script>
 
 <style module lang="scss">

@@ -15,13 +15,14 @@
   </v-row>
 </template>
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class ConnectionLoading extends Vue {
-  @Prop({ required: true, type: Boolean })
-  connected!: boolean;
-}
+export default defineComponent({
+  name: 'ConnectionLoading',
+  props: {
+    connected: { required: true, type: Boolean }
+  }
+});
 </script>
 <style scoped lang="scss">
 .connection-loading {

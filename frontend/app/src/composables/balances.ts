@@ -6,6 +6,7 @@ import { ManualBalance } from '@/services/balances/types';
 import {
   AddAccountsPayload,
   AssetInfoGetter,
+  AssetPrices,
   AssetSymbolGetter,
   BlockchainAccountPayload,
   BlockchainAccountWithBalance,
@@ -16,6 +17,7 @@ import {
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Eth2Validator } from '@/types/balances';
+import { Exchange } from '@/types/exchanges';
 
 export const setupExchangeRateGetter = () => {
   const store = useStore();
@@ -198,5 +200,30 @@ export const setupBlockchainAccounts = () => {
     addEth2Validator,
     editEth2Validator,
     eth2Validators
+  };
+};
+
+export const usePrices = () => {
+  const store = useStore();
+
+  const prices = computed<AssetPrices>(() => {
+    const balances = store.state.balances;
+    return balances!!.prices;
+  });
+
+  return {
+    prices
+  };
+};
+
+export const useExchanges = () => {
+  const store = useStore();
+
+  const connectedExchanges = computed<Exchange[]>(() => {
+    return store.state.balances!!.connectedExchanges;
+  });
+
+  return {
+    connectedExchanges
   };
 };

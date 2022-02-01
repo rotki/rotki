@@ -13,9 +13,9 @@ import {
   defineComponent,
   onMounted,
   ref,
-  toRefs,
-  watch
+  toRefs
 } from '@vue/composition-api';
+import { debouncedWatch } from '@vueuse/core';
 import Cleave from 'cleave.js';
 import { useStore } from '@/store/utils';
 
@@ -72,10 +72,14 @@ export default defineComponent({
       });
     });
 
-    watch(value, () => {
-      currentValue.value = value.value;
-      cleave.value?.setRawValue(value.value);
-    });
+    debouncedWatch(
+      value,
+      value => {
+        currentValue.value = value;
+        cleave.value?.setRawValue(value);
+      },
+      { debounce: 400 }
+    );
 
     const focus = () => {
       const inputWrapper = textInput.value as any;

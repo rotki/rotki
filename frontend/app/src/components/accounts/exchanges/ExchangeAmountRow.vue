@@ -20,18 +20,20 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import { exchangeName } from '@/components/history/consts';
 import { SupportedExchange } from '@/types/exchanges';
 
-@Component({
-  name: 'ExchangeAmountRow'
-})
-export default class ExchangeAmountRow extends Vue {
-  readonly exchangeName = exchangeName;
-  @Prop({ required: true })
-  balance!: BigNumber;
-  @Prop({ required: true, type: String })
-  exchange!: SupportedExchange;
-}
+export default defineComponent({
+  name: 'ExchangeAmountRow',
+  props: {
+    balance: { required: true, type: Object as PropType<BigNumber> },
+    exchange: { required: true, type: String as PropType<SupportedExchange> }
+  },
+  setup() {
+    return {
+      exchangeName
+    };
+  }
+});
 </script>

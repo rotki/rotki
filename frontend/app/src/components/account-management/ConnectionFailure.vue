@@ -19,22 +19,26 @@
   </div>
 </template>
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import { deleteBackendUrl } from '@/components/account-management/utils';
+import { defineComponent } from '@vue/composition-api';
+import { useInterop } from '@/electron-interop';
+import { api } from '@/services/rotkehlchen-api';
+import { useMainStore } from '@/store/store';
 
-@Component({})
-export default class ConnectionFailure extends Vue {
-  retry() {
-    this.$store.dispatch('connect', this.$api.serverUrl);
-  }
+export default defineComponent({
+  name: 'ConnectionFailure',
+  setup() {
+    const { connect } = useMainStore();
+    const interop = useInterop();
 
-  toDefault() {
-    deleteBackendUrl();
-    this.$store.dispatch('connect', null);
-  }
+    const retry = () => connect(api.serverUrl);
+    const toDefault = () => connect();
+    const terminate = () => interop.closeApp();
 
-  terminate() {
-    this.$interop.closeApp();
+    return {
+      retry,
+      toDefault,
+      terminate
+    };
   }
-}
+});
 </script>

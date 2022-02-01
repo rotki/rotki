@@ -526,6 +526,52 @@
     },
     "tooltip": "Help"
   },
+  "kraken_page": {
+    "loading": "Your Kraken staking information is loading...",
+    "page": {
+      "description": "To see your staking information you need to add a Kraken {link}",
+      "api_key": "API key",
+      "title": "Kraken Staking"
+    }
+  },
+  "kraken_staking_events": {
+    "column": {
+      "amount": "Amount",
+      "asset": "Asset",
+      "time": "Time",
+      "event_type": "Event",
+      "value": "{symbol} Value"
+    },
+    "filter": {
+      "asset": "filter by the staked asset",
+      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
+      "end_date": "filter by the end date of the staking events",
+      "start_date": "filter by the start date of the staking events",
+      "type": "filter by the type of the staking events"
+    },
+    "refresh_tooltip": "Refresh your Kraken staking events",
+    "titles": "Kraken Staking Events",
+    "upgrade": {
+      "label": "Staking events"
+    }
+  },
+  "kraken_staking_overview": {
+    "earned": "Total Earned",
+    "hint": {
+      "current": "Based on the current price of assets",
+      "historical": "Based on the historical price of assets"
+    },
+    "title": "Overview",
+    "historical": "historical",
+    "current": "current"
+  },
+  "kraken_staking_received": {
+    "switch": {
+      "current": "Current",
+      "historical": "Historical"
+    },
+    "title": "Earned Per Asset"
+  },
   "liabilities": {
     "no_selection": "Select a loan to view more information"
   },
@@ -676,6 +722,9 @@
   "pagination": {
     "of": "of {length}"
   },
+  "price_accuracy_hint": {
+    "tooltip": "These prices are based on the current exchange rate of historical USD\n      values"
+  },
   "price_form": {
     "date": "Date",
     "date_non_empty": "The date of the price cannot be empty",
@@ -779,6 +828,13 @@
     "desc": {
       "sort_desc_tooltip": "Sort descending",
       "sort_asc_tooltip": "Sort ascending"
+    }
+  },
+  "staking_page": {
+    "dropdown_hint": "Select a location to see more details",
+    "page": {
+      "title": "Staking Locations",
+      "description": "Select one of the supported locations to see more information about your staked assets."
     }
   },
   "statistics_graph_settings": {
@@ -939,7 +995,8 @@
     "terminate": "Terminate"
   },
   "eth2page": {
-    "loading": "Please wait while your eth2 staking details are getting loaded..."
+    "loading": "Please wait while your eth2 staking details are getting loaded...",
+    "no_premium": "ETH2 Staking is"
   },
   "asset_management": {
     "confirm_delete": {
@@ -1976,6 +2033,15 @@
         }
       }
     },
+    "kraken_staking": {
+      "error": {
+        "message": "There was an error while querying the kraken staking events: {message}",
+        "title": "Querying Kraken staking events"
+      },
+      "task": {
+        "title": "Querying Kraken staking events"
+      }
+    },
     "ledger_actions": {
       "all_exchanges": "all exchanges",
       "task": {
@@ -2611,11 +2677,6 @@
       "airdrops": "Airdrops"
     },
     "staking": "Staking",
-    "staking_sub": {
-      "adex": "AdEx",
-      "eth2": "Eth2",
-      "liquity": "Liquity"
-    },
     "manage_assets": "Manage Assets"
   },
   "trade_history": {
@@ -3313,8 +3374,8 @@
     "balance": "Balance"
   },
   "staking": {
+    "kraken": "Kraken",
     "liquity": "Liquity",
-    "title": "Staking",
     "eth2": "ETH2",
     "adex": "AdEx"
   },

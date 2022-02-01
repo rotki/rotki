@@ -1,6 +1,7 @@
 <template>
   <div>
-    <module-not-active v-if="!enabled" :modules="module" />
+    <no-premium-placeholder v-if="!premium" :text="$t('eth2page.no_premium')" />
+    <module-not-active v-else-if="!enabled" :modules="module" />
     <progress-screen v-else-if="loading">
       <template #message>
         {{ $t('eth2page.loading') }}
@@ -56,28 +57,24 @@
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
-  Eth2DailyStats,
-  Eth2DailyStatsPayload,
-  Eth2Deposits,
-  Eth2Details
-} from '@rotki/common/lib/staking/eth2';
-import {
   computed,
   defineComponent,
   onMounted,
   ref,
   watch
 } from '@vue/composition-api';
+import { storeToRefs } from 'pinia';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import { setupBlockchainAccounts } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
-import { setupModuleEnabled } from '@/composables/session';
-import { setupStaking } from '@/composables/staking';
+import { getPremium, setupModuleEnabled } from '@/composables/session';
 import { Eth2Staking } from '@/premium/premium';
 import { Section } from '@/store/const';
+import { useEth2StakingStore } from '@/store/staking';
 import { useStore } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { assert } from '@/utils/assertions';
@@ -85,6 +82,7 @@ import { assert } from '@/utils/assertions';
 const Eth2Page = defineComponent({
   name: 'Eth2Page',
   components: {
+    NoPremiumPlaceholder,
     Eth2ValidatorFilter,
     ActiveModules,
     ModuleNotActive,
@@ -97,11 +95,14 @@ const Eth2Page = defineComponent({
     const { isModuleEnabled } = setupModuleEnabled();
 
     const enabled = isModuleEnabled(Module.ETH2);
-    const { fetchEth2StakingDetails } = setupStaking();
+
+    const store = useEth2StakingStore();
+    const { details, deposits, stats } = storeToRefs(store);
+    const { load, updatePagination } = store;
 
     onMounted(async () => {
       if (enabled.value) {
-        await fetchEth2StakingDetails();
+        await refresh();
       }
     });
     const { isSectionRefreshing, shouldShowLoadingScreen } =
@@ -116,27 +117,11 @@ const Eth2Page = defineComponent({
     const { eth2Validators } = setupBlockchainAccounts();
     watch(filterType, () => (selection.value = []));
 
-    const store = useStore();
-    const deposits = computed<Eth2Deposits>(
-      () => store.getters['staking/deposits']
-    );
-    const details = computed<Eth2Details>(
-      () => store.getters['staking/details']
-    );
-    const stats = computed<Eth2DailyStats>(
-      () => store.getters['staking/stats']
-    );
+    const refresh = async () => await load(true);
 
-    const refresh = async () => {
-      await store.dispatch('staking/fetchStakingDetails', true);
-    };
-
-    const updatePagination = async (payload: Eth2DailyStatsPayload) => {
-      await store.dispatch('staking/fetchDailyStats', payload);
-    };
-
+    const vStore = useStore();
     const ownership = computed(() => {
-      const balances = store.state.balances;
+      const balances = vStore.state.balances;
       const ownership: Record<string, string> = {};
       assert(balances);
       for (const { validatorIndex, ownershipPercentage } of balances
@@ -158,6 +143,7 @@ const Eth2Page = defineComponent({
       details,
       stats,
       ownership,
+      premium: getPremium(),
       refresh,
       updatePagination,
       chains: [Blockchain.ETH],

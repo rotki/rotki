@@ -216,37 +216,11 @@ export default class NavigationMenu extends Vue {
       icon: 'mdi-chart-bar'
     },
     {
-      type: 'group',
+      type: 'item',
       text: this.$tc('navigation_menu.staking'),
-      route: Routes.STAKING,
+      route: Routes.STAKING.split(':')[0],
       class: 'staking',
-      icon: 'mdi-inbox-arrow-down',
-      items: [
-        {
-          type: 'item',
-          text: `${this.$t('navigation_menu.staking_sub.eth2')}`,
-          route: Routes.STAKING_ETH2,
-          icon: '',
-          cryptoIcon: 'ETH2',
-          class: 'staking-adex'
-        },
-        {
-          type: 'item',
-          text: `${this.$t('navigation_menu.staking_sub.adex')}`,
-          route: Routes.STAKING_ADEX,
-          icon: '',
-          cryptoIcon: 'ADX',
-          class: 'staking-adex'
-        },
-        {
-          type: 'item',
-          text: `${this.$t('navigation_menu.staking_sub.liquity')}`,
-          route: Routes.STAKING_LIQUITY,
-          icon: '',
-          cryptoIcon: 'LQTY',
-          class: 'staking-liquity'
-        }
-      ]
+      icon: 'mdi-inbox-arrow-down'
     },
     {
       type: 'item',

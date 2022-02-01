@@ -1,5 +1,12 @@
 <template>
-  <span v-bind="$attrs" :class="$style.wrapper" @click="click">
+  <span
+    v-bind="$attrs"
+    :class="{
+      [$style.wrapper]: true,
+      [$style.dense]: dense
+    }"
+    @click="click"
+  >
     <slot name="icon" :class="$style.icon" />
     <span :class="$style.details">
       <span :class="$style.title" data-cy="details-symbol">
@@ -39,7 +46,8 @@ export default defineComponent({
       required: false,
       type: String as PropType<string | null>,
       default: null
-    }
+    },
+    dense: { required: false, type: Boolean, default: false }
   },
   emits: ['click'],
   setup(props, { emit }) {
@@ -82,8 +90,16 @@ export default defineComponent({
   flex-direction: row;
   align-items: center;
   width: 100%;
-  margin-top: 12px;
-  margin-bottom: 12px;
+
+  &:not(.dense) {
+    margin-top: 12px;
+    margin-bottom: 12px;
+  }
+
+  &.dense {
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
 
   @media (min-width: 700px) and (max-width: 1500px) {
     width: 100px;
