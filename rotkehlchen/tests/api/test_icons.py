@@ -24,7 +24,7 @@ from rotkehlchen.tests.utils.constants import A_GNO
 def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
     """Test that uploading custom icon works"""
     root_path = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))))  # noqa: E501
-    filepath = root_path / 'frontend' / 'app' / 'src' / 'assets' / 'images' / 'kraken.png'
+    filepath = root_path / 'frontend' / 'app' / 'src' / 'assets' / 'images' / 'exchanges' / 'kraken.svg'  # noqa: E501
 
     if file_upload:
         files = {'file': open(filepath, 'rb')}
@@ -48,7 +48,7 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
 
     result = assert_proper_response_with_result(response)
     assert result == {'identifier': A_GNO.identifier}
-    uploaded_icon = data_dir / 'icons' / 'custom' / f'{A_GNO.identifier}.png'
+    uploaded_icon = data_dir / 'icons' / 'custom' / f'{A_GNO.identifier}.svg'
     assert uploaded_icon.is_file()
     assert filecmp.cmp(uploaded_icon, filepath)
 
@@ -60,7 +60,7 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
 def test_upload_custom_icon_errors(rotkehlchen_api_server, file_upload):
     """Test that common error handling for uploading custom icons"""
     root_path = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))))  # noqa: E501
-    filepath = root_path / 'frontend' / 'app' / 'src' / 'assets' / 'images' / 'kraken.png'
+    filepath = root_path / 'frontend' / 'app' / 'src' / 'assets' / 'images' / 'exchanges' / 'kraken.svg'  # noqa: E501
 
     # Let's also try to upload a file without the csv prefix
     with TemporaryDirectory() as temp_directory:
