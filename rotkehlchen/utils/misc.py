@@ -1,6 +1,7 @@
 import calendar
 import datetime
 import functools
+import logging
 import operator
 import platform
 import re
@@ -25,6 +26,8 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.errors import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress, Fee, Timestamp, TimestampMS
+
+log = logging.getLogger(__name__)
 
 
 def ts_now() -> Timestamp:
@@ -332,3 +335,22 @@ def pairwise(iterable: Iterable[Any]) -> Iterator:
     "s -> (s0, s1), (s2, s3), (s4, s5), ..."
     a = iter(iterable)
     return zip(a, a)
+
+
+def shift_num_right_by(num: int, digits: int) -> int:
+    """Shift a number to the right by discarding some digits
+
+    We actually use string conversion here since division can provide
+    wrong results due to precision errors for very big numbers. e.g.:
+    6150000000000000000000000000000000000000000000000 // 1e27
+    6.149999999999999e+21   <--- wrong
+    """
+    try:
+        return int(str(num)[:-digits])
+    except ValueError:
+        # this can happen if num is 0, in which case the shifting code above will raise
+        # https://github.com/rotki/rotki/issues/3310
+        # Also log if it happens for any other reason
+        if num != 0:
+            log.error(f'At shift_num_right_by() got unecpected value {num} for num')
+        return 0

@@ -1,40 +1,32 @@
 from unittest.mock import patch
 
+import pytest
+
 from rotkehlchen.accounting.structures import (
     Balance,
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.chain.ethereum.decoder import EVMTransactionDecoder
 from rotkehlchen.constants.assets import A_SAI
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
-from rotkehlchen.tests.utils.database import _use_prepared_db
 from rotkehlchen.typing import Location
-from rotkehlchen.user_messages import MessagesAggregator
 
 
-def test_tx_decode(user_data_dir):
-    _use_prepared_db(user_data_dir, 'ethtxs.db')
-    msg_aggregator = MessagesAggregator()
-    database = DBHandler(
-        user_data_dir=user_data_dir,
-        password='123',
-        msg_aggregator=msg_aggregator,
-        initial_settings=None,
-    )
-    decoder = EVMTransactionDecoder(database=database)
+@pytest.mark.parametrize('use_custom_database', ['ethtxs.db'])
+def test_tx_decode(evm_transaction_decoder, database):
     dbethtx = DBEthTx(database)
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
+    approve_tx_hash = '5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a'
     transactions = dbethtx.get_ethereum_transactions(
         filter_=ETHTransactionsFilterQuery.make(
             addresses=[addr1],
+            tx_hash='0x' + approve_tx_hash,
         ),
         has_premium=True,
     )
-    approve_tx_hash = '5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a'
+    decoder = evm_transaction_decoder
     with patch.object(decoder, 'decode_transaction', wraps=decoder.decode_transaction) as decode_mock:  # noqa: E501
         for tx in transactions:
             receipt = dbethtx.get_receipt(tx.tx_hash)

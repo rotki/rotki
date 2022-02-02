@@ -10,6 +10,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.tests.utils.database import (
+    _use_prepared_db,
     add_blockchain_accounts_to_db,
     add_manually_tracked_balances_to_test_db,
     add_settings_to_test_db,
@@ -115,7 +116,11 @@ def _init_database(
         tags: List[Dict[str, Any]],
         manually_tracked_balances: List[ManuallyTrackedBalance],
         data_migration_version: int,
+        use_custom_database: Optional[str],
 ) -> DBHandler:
+    if use_custom_database is not None:
+        _use_prepared_db(data_dir, use_custom_database)
+
     db = DBHandler(
         user_data_dir=data_dir,
         password=password,
@@ -147,6 +152,7 @@ def database(
         tags,
         manually_tracked_balances,
         data_migration_version,
+        use_custom_database,
 ) -> Optional[DBHandler]:
     if not start_with_logged_in_user:
         return None
@@ -163,6 +169,7 @@ def database(
         tags=tags,
         manually_tracked_balances=manually_tracked_balances,
         data_migration_version=data_migration_version,
+        use_custom_database=use_custom_database,
     )
 
 
@@ -179,6 +186,7 @@ def session_database(
         session_tags,
         session_manually_tracked_balances,
         data_migration_version,
+        use_custom_database,
 ) -> Optional[DBHandler]:
     if not session_start_with_logged_in_user:
         return None
@@ -197,6 +205,7 @@ def session_database(
         tags=session_tags,
         manually_tracked_balances=session_manually_tracked_balances,
         data_migration_version=data_migration_version,
+        use_custom_database=use_custom_database,
     )
 
 

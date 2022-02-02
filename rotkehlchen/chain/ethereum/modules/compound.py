@@ -15,7 +15,12 @@ from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph, get_common_params
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import A_COMP, A_ETH
-from rotkehlchen.constants.ethereum import CTOKEN_ABI, ERC20TOKEN_ABI, EthereumConstants
+from rotkehlchen.constants.ethereum import (
+    CTOKEN_ABI,
+    ERC20TOKEN_ABI,
+    ETH_SPECIAL_ADDRESS,
+    EthereumConstants,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import BlockchainQueryError, RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
@@ -200,7 +205,7 @@ class Compound(EthereumModule):
                     continue
 
                 entry = balance_entry.base_balance
-                if entry.token_address == '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
+                if entry.token_address == ETH_SPECIAL_ADDRESS:
                     asset = A_ETH  # hacky way to specify ETH in compound
                 else:
                     try:

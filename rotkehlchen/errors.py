@@ -127,3 +127,7 @@ class ModuleInitializationFailure(Exception):
 
 class ModuleInactive(Exception):
     """Raises when call happens for a module that is not initialized"""
+
+
+class DecoderLoadingError(Exception):
+    """Error at loading a Decoder"""

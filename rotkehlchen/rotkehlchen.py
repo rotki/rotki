@@ -20,6 +20,7 @@ from rotkehlchen.balances.manual import (
     get_manually_tracked_balances,
 )
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
+from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import (
     ETHEREUM_NODES_TO_CONNECT_AT_START,
     EthereumManager,
@@ -297,6 +298,11 @@ class Rotkehlchen():
             beaconchain=self.beaconchain,
             btc_derivation_gap_limit=settings.btc_derivation_gap_limit,
         )
+        self.evm_tx_decoder = EVMTransactionDecoder(
+            database=self.data.db,
+            ethereum_manager=ethereum_manager,
+            msg_aggregator=self.msg_aggregator,
+        )
         self.events_historian = EventsHistorian(
             user_directory=self.user_directory,
             db=self.data.db,
@@ -313,6 +319,7 @@ class Rotkehlchen():
             premium_sync_manager=self.premium_sync_manager,
             chain_manager=self.chain_manager,
             exchange_manager=self.exchange_manager,
+            evm_tx_decoder=self.evm_tx_decoder,
         )
         DataMigrationManager(self).maybe_migrate_data()
         self.greenlet_manager.spawn_and_track(

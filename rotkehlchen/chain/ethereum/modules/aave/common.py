@@ -5,7 +5,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.constants.assets import A_AETH_V1, A_AREP_V1, A_ETH, A_REP
-from rotkehlchen.constants.ethereum import AAVE_ETH_RESERVE_ADDRESS
+from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.fval import FVal
@@ -64,22 +64,9 @@ class AaveBalances(NamedTuple):
     borrowing: Dict[Asset, AaveBorrowingBalance]
 
 
-def aave_reserve_address_to_reserve_asset(address: ChecksumEthAddress) -> Optional[Asset]:
-    if address == AAVE_ETH_RESERVE_ADDRESS:
-        return A_ETH
-
-    try:
-        asset = EthereumToken(address)
-    except UnknownAsset:
-        log.error(f'Could not find asset for aave reserve address {address}')
-        return None
-
-    return asset
-
-
 def asset_to_aave_reserve_address(asset: Asset) -> Optional[ChecksumEthAddress]:
     if asset == A_ETH:  # for v2 this should be WETH
-        return AAVE_ETH_RESERVE_ADDRESS
+        return ETH_SPECIAL_ADDRESS
 
     token = EthereumToken.from_asset(asset)
     assert token, 'should not be a non token asset at this point'
@@ -131,7 +118,7 @@ def asset_to_atoken(asset: Asset, version: int) -> Optional[EthereumToken]:
 def _get_reserve_address_decimals(asset: Asset) -> Tuple[ChecksumEthAddress, int]:
     """Get the reserve address and the number of decimals for symbol"""
     if asset == A_ETH:
-        reserve_address = AAVE_ETH_RESERVE_ADDRESS
+        reserve_address = ETH_SPECIAL_ADDRESS
         decimals = 18
     else:
         token = EthereumToken.from_asset(asset)

@@ -292,6 +292,8 @@ class HistoryEventType(SerializableEnumMixin):
     ADJUSTMENT = 9
     UNKNOWN = 10
     INFORMATIONAL = 11
+    MIGRATE = 12
+    SWAP = 13
 
     @classmethod
     def from_string(cls, value: str) -> 'HistoryEventType':
@@ -303,7 +305,7 @@ class HistoryEventType(SerializableEnumMixin):
 
 class HistoryEventSubType(SerializableEnumMixin):
     REWARD = 1
-    STAKING_DEPOSIT_ASSET = 2
+    STAKING_DEPOSIT_ASSET = 2  # TODO Those can be generic deposit/remove/rewards assets from staking, vaults etc. RENAME.  # noqa: E501
     STAKING_REMOVE_ASSET = 3
     STAKING_RECEIVE_ASSET = 4
     FEE = 5
@@ -314,6 +316,13 @@ class HistoryEventSubType(SerializableEnumMixin):
     AIRDROP = 10
     BRIDGE = 11
     GOVERNANCE_PROPOSE = 12
+    NONE = 13  # Have a value for None to not get into NULL/None comparison hell
+    GENERATE_DEBT = 14
+    PAYBACK_DEBT = 15
+    # receive a wrapped asset of something in any protocol. eg cDAI from DAI
+    RECEIVE_WRAPPED = 16
+    # return a wrapped asset of something in any protocol. eg. CDAI to DAI
+    RETURN_WRAPPED = 17
 
     def serialize_event_subtype(self) -> str:
         """Serialize event subtype to a readable string
@@ -412,6 +421,8 @@ class HistoryBaseEntry:
     # For bridged transfer it's the bridge's network identifier
     counterparty: Optional[str] = None
     identifier: Optional[int] = None
+    # this is not serialized -- contains data used only during processing
+    extras: Optional[Dict] = None
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
         event_subtype = None

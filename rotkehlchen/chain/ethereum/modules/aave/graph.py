@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.structures import (
     AaveLiquidationEvent,
     AaveRepayEvent,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.ethereum.utils import ethaddress_to_asset, token_normalized_value_decimals
 from rotkehlchen.constants.ethereum import ATOKEN_ABI, ATOKEN_V2_ABI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError
@@ -33,7 +33,6 @@ from .common import (
     AaveHistory,
     AaveInquirer,
     _get_reserve_address_decimals,
-    aave_reserve_address_to_reserve_asset,
     asset_to_aave_reserve_address,
     asset_to_atoken,
 )
@@ -314,7 +313,7 @@ def _parse_atoken_balance_history(
 
         version = _get_version_from_reserveid(pairs, 3)
         tx_hash = '0x' + pairs[4]
-        asset = aave_reserve_address_to_reserve_asset(reserve_address)
+        asset = ethaddress_to_asset(reserve_address)
         if asset is None:
             log.error(
                 f'Unknown aave reserve address returned by atoken balance history '
@@ -355,7 +354,7 @@ def _get_reserve_asset_and_decimals(
         log.error(f'Failed to Deserialize reserve address {entry[reserve_key]["id"]}')
         return None
 
-    asset = aave_reserve_address_to_reserve_asset(reserve_address)
+    asset = ethaddress_to_asset(reserve_address)
     if asset is None:
         log.error(
             f'Unknown aave reserve address returned by graph query: '

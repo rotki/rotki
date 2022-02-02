@@ -9,12 +9,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import (
-    ChecksumEthAddress,
-    EthereumInternalTransaction,
-    EthereumTransaction,
-    Timestamp,
-)
+from rotkehlchen.typing import ChecksumEthAddress, EthereumInternalTransaction, EthereumTransaction
 from rotkehlchen.utils.misc import hexstr_to_int, hexstring_to_bytes
 
 logger = logging.getLogger(__name__)
@@ -113,14 +108,13 @@ class DBEthTx():
 
     def get_ethereum_internal_transactions(
             self,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
+            parent_tx_hash: bytes,
     ) -> List[EthereumInternalTransaction]:
+        """Get all internal transactions under a parent tx_hash"""
         cursor = self.db.conn.cursor()
         results = cursor.execute(
-            'SELECT * from ethereum_internal_transactions WHERE timestamp >= ? '
-            'AND timestamp <= ?',
-            (from_ts, to_ts),
+            'SELECT * from ethereum_internal_transactions WHERE parent_tx_hash=?',
+            (parent_tx_hash,),
         )
         transactions = []
         for result in results:
@@ -142,7 +136,7 @@ class DBEthTx():
             filter_: ETHTransactionsFilterQuery,
             has_premium: bool,
     ) -> List[EthereumTransaction]:
-        """Returnss a list of ethereum transactions optionally filtered by
+        """Returns a list of ethereum transactions optionally filtered by
         the given filter query
 
         This function can raise:

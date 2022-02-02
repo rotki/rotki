@@ -8,7 +8,7 @@ import gevent
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
-from rotkehlchen.chain.ethereum.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.constants.assets import A_USD
@@ -66,6 +66,7 @@ class TaskManager():
             premium_sync_manager: Optional[PremiumSyncManager],
             chain_manager: ChainManager,
             exchange_manager: ExchangeManager,
+            evm_tx_decoder: EVMTransactionDecoder,
     ) -> None:
         self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
@@ -73,6 +74,7 @@ class TaskManager():
         self.database = database
         self.cryptocompare = cryptocompare
         self.exchange_manager = exchange_manager
+        self.evm_tx_decoder = evm_tx_decoder
         self.cryptocompare_queries: Set[CCHistoQuery] = set()
         self.chain_manager = chain_manager
         self.last_xpub_derivation_ts = 0
@@ -374,7 +376,7 @@ class TaskManager():
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
-                method=EVMTransactionDecoder(self.database).decode_transaction_hashes,
+                method=self.evm_tx_decoder.decode_transaction_hashes,
                 hashes=hashes,
             )
 
