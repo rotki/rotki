@@ -481,7 +481,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       commit('defi/reset', undefined, { root: true });
       dispatch(BalanceActions.FETCH_NF_BALANCES);
       await dispatch('updateBalances', { chain: blockchain, balances });
-      await dispatch('resetDefiStatus', {}, { root: true });
+      useMainStore().resetDefiStatus();
       await dispatch('refreshPrices', { ignoreCache: false });
     } catch (e: any) {
       logger.error(e);
@@ -625,7 +625,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       }
       commit('defi/reset', undefined, options);
       dispatch(BalanceActions.FETCH_NF_BALANCES);
-      await dispatch('resetDefiStatus', {}, options);
+      useMainStore().resetDefiStatus();
       await dispatch('refreshPrices', { ignoreCache: false });
     } catch (e: any) {
       logger.error(e);
@@ -704,7 +704,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       }
       commit('defi/reset', undefined, { root: true });
       dispatch(BalanceActions.FETCH_NF_BALANCES);
-      await dispatch('resetDefiStatus', {}, { root: true });
+      useMainStore().resetDefiStatus();
       await dispatch('refreshPrices', { ignoreCache: false });
     } catch (e: any) {
       logger.error(e);
