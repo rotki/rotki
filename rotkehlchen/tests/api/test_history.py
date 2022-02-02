@@ -128,7 +128,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert report_result['entries_found'] == 1
     assert report_result['entries_limit'] == FREE_REPORTS_LOOKUP_LIMIT
     report = report_result['entries'][0]
-    assert len(report) == 26  # 26 entries in the report api endpoint
+    assert len(report) == 27  # 27 entries in the report api endpoint
     assert report['first_processed_timestamp'] == 1428994442
     assert report['loan_profit'] is not None
     assert report['margin_positions_profit_loss'] is not None
@@ -140,6 +140,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert report['total_taxable_profit_loss'] is not None
     assert report['total_profit_loss'] is not None
     assert report['defi_profit_loss'] is not None
+    assert report['staking_profit_loss'] is not None
     assert report['ledger_actions_profit_loss'] is not None
     assert report['profit_currency'] == 'EUR'
     assert report['account_for_assets_movements'] is True

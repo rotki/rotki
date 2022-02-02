@@ -2,11 +2,19 @@ import jsonschema
 import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
+from rotkehlchen.accounting.structures import (
+    AssetBalance,
+    Balance,
+    DefiEvent,
+    DefiEventType,
+    HistoryBaseEntry,
+    HistoryEventType,
+)
 from rotkehlchen.accounting.typing import ACCOUNTING_EVENT_SCHEMA
 from rotkehlchen.chain.ethereum.structures import AaveInterestEvent
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH, A_KFEE, A_USDT, A_WBTC
+from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH, A_ETH2, A_KFEE, A_USDT, A_WBTC
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
@@ -1034,3 +1042,64 @@ def test_kfee_price_in_accounting(accountant):
 def test_accounting_event_schemas():
     """Test that the accounting event json schemas we use are valid"""
     jsonschema.Draft4Validator.check_schema(ACCOUNTING_EVENT_SCHEMA)
+
+
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_kraken_staking_events(accountant, events_historian):
+    """
+    Test that staking events from kraken are correctly processed
+    """
+    history_events_list = [
+        HistoryBaseEntry(
+            event_identifier='XXX',
+            sequence_index=0,
+            timestamp=16404933740000,
+            location=Location.KRAKEN,
+            location_label='Kraken 1',
+            asset_balance=AssetBalance(
+                asset=A_ETH2,
+                balance=Balance(
+                    amount=FVal(0.0000541090),
+                    usd_value=FVal(0.212353475950),
+                ),
+            ),
+            notes=None,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=None,
+        ), HistoryBaseEntry(
+            event_identifier='YYY',
+            sequence_index=0,
+            timestamp=16366385500000,
+            location=Location.KRAKEN,
+            location_label='Kraken 1',
+            asset_balance=AssetBalance(
+                asset=A_ETH2,
+                balance=Balance(
+                    amount=FVal(0.0000541090),
+                    usd_value=FVal(0.212353475950),
+                ),
+            ),
+            notes=None,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=None,
+        )]
+    db = DBHistoryEvents(events_historian.db)
+    db.add_history_events(history_events_list)
+    data = events_historian.get_history(start_ts=1636638549, end_ts=1640493376, has_premium=True)
+    report, events = accounting_history_process(
+        accountant,
+        start_ts=1640493372,
+        end_ts=1640493376,
+        history_list=[],
+        history_events_list=data[-1],
+    )
+    warnings = accountant.msg_aggregator.consume_warnings()
+    assert len(warnings) == 0
+    errors = accountant.msg_aggregator.consume_errors()
+    assert len(errors) == 0
+
+    assert FVal(report['staking_profit_loss']) == FVal(0.47150582600)
+    assert len(events) == 2
+    profits = [FVal(entry['net_profit_or_loss']) for entry in events]
+    assert [FVal(0.25114638241), FVal(0.22035944359)] == profits
+    assert {entry['type'] for entry in events} == {'staking_reward'}

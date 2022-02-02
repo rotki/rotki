@@ -582,6 +582,7 @@ class Rotkehlchen():
             eth_transactions,
             defi_events,
             ledger_actions,
+            history_base_entries,
         ) = self.events_historian.get_history(
             start_ts=start_ts,
             end_ts=end_ts,
@@ -596,6 +597,7 @@ class Rotkehlchen():
             eth_transactions=eth_transactions,
             defi_events=defi_events,
             ledger_actions=ledger_actions,
+            history_events=history_base_entries,
         )
         return report_id, error_or_empty
 

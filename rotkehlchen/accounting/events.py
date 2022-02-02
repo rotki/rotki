@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.accounting.structures import DefiEvent, HistoryBaseEntry, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BCH_BSV_FORK_TS, BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETC, A_ETH
@@ -53,6 +53,7 @@ class TaxableEvents():
         self.margin_positions_profit_loss = ZERO
         self.defi_profit_loss = ZERO
         self.ledger_actions_profit_loss = ZERO
+        self.staking_profit_loss = ZERO
 
     @property
     def include_crypto2crypto(self) -> Optional[bool]:
@@ -989,3 +990,30 @@ class TaxableEvents():
                 action=action,
                 profit_loss_in_profit_currency=profit_loss,
             )
+
+    def add_staking_reward(self, action: HistoryBaseEntry) -> None:
+        rate = self.get_rate_in_profit_currency(
+            asset=action.asset_balance.asset,
+            timestamp=action.get_standard_timestamp(),
+        )
+        if action.event_type == HistoryEventType.STAKING:
+            # At the moment we only process staking events
+            if action.event_subtype is None:
+                # TODO: This needs to be updated after the refactor to the history base entry
+                # class has been made. Here we should be checking against reward.
+                self.cost_basis.obtain_asset(
+                    location=action.location,
+                    timestamp=action.get_standard_timestamp(),
+                    description=str(action),
+                    asset=action.asset_balance.asset,
+                    amount=action.asset_balance.balance.amount,
+                    rate=rate,
+                    fee_in_profit_currency=ZERO,
+                )
+                profit_loss = action.asset_balance.balance.amount * rate
+                self.staking_profit_loss += profit_loss
+
+                self.csv_exporter.add_staking_reward(
+                    action=action,
+                    profit_loss_in_profit_currency=profit_loss,
+                )

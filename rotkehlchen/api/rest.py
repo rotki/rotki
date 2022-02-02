@@ -3978,9 +3978,6 @@ class RestAPI():
         value_filter: HistoryEventFilterQuery,
     ) -> Dict[str, Any]:
         history_events_db = DBHistoryEvents(self.rotkehlchen.data.db)
-        exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(
-            Location.KRAKEN,
-        )
         table_filter = HistoryEventFilterQuery.make(
             location=Location.KRAKEN,
             event_types=[
@@ -3993,27 +3990,18 @@ class RestAPI():
         )
 
         message = ''
-        has_premium, entries_limit = True, -1
+        entries_limit = -1
         if self.rotkehlchen.premium is None:
-            has_premium, entries_limit = False, FREE_HISTORY_EVENTS_LIMIT
+            entries_limit = FREE_HISTORY_EVENTS_LIMIT
 
+        exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(
+            Location.KRAKEN,
+        )
         if exchanges_list is None:
             return wrap_in_fail_result(
                 message='There is no kraken account added.',
                 status_code=HTTPStatus.CONFLICT,
             )
-
-        if only_cache is False:
-            kraken_names = []
-            for kraken_instance in exchanges_list:
-                with_errors = kraken_instance.query_kraken_ledgers(   # type: ignore
-                    start_ts=query_filter.from_ts,
-                    end_ts=query_filter.to_ts,
-                )
-                if with_errors:
-                    kraken_names.append(kraken_instance.name)
-            if len(kraken_names) != 0:
-                message = f'Failed to query some events from Kraken exchanges {",".join(kraken_names)}'  # noqa: E501
 
         # After 3865 we have a recurring task that queries for missing prices but
         # we make sure that the returned values have their correct value calculated
@@ -4030,9 +4018,9 @@ class RestAPI():
                     status_code=HTTPStatus.CONFLICT,
                 )
         # Query events from database
-        events_raw, entries_found = history_events_db.get_history_events_and_limit_info(
+        events_raw, entries_found = self.rotkehlchen.events_historian.query_history_events(
             filter_query=query_filter,
-            has_premium=has_premium,
+            only_cache=only_cache,
         )
         events = []
         for event in events_raw:

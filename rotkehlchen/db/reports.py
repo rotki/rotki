@@ -89,6 +89,7 @@ class DBAccountingReports():
             margin_positions_profit_loss: str,
             settlement_losses: str,
             ethereum_transaction_gas_costs: str,
+            staking_profit_loss: str,
             asset_movement_fees: str,
             general_trade_profit_loss: str,
             taxable_trade_profit_loss: str,
@@ -106,14 +107,15 @@ class DBAccountingReports():
             'loan_profit=?, margin_positions_profit_loss=?, settlement_losses=?, '
             'ethereum_transaction_gas_costs=?, asset_movement_fees=?, general_trade_profit_loss=?,'
             ' taxable_trade_profit_loss=?, total_taxable_profit_loss=?, total_profit_loss=?,'
-            ' last_processed_timestamp=?, processed_actions=?, total_actions=? '
-            ' WHERE identifier=?',
+            ' last_processed_timestamp=?, processed_actions=?, total_actions=?, '
+            'staking_profit_loss=? WHERE identifier=?',
             (ledger_actions_profit_loss, defi_profit_loss, loan_profit,
              margin_positions_profit_loss, settlement_losses,
              ethereum_transaction_gas_costs, asset_movement_fees,
              general_trade_profit_loss, taxable_trade_profit_loss,
              total_taxable_profit_loss, total_profit_loss,
-             last_processed_timestamp, processed_actions, total_actions, report_id),
+             last_processed_timestamp, processed_actions, total_actions,
+             staking_profit_loss, report_id),
         )
         if cursor.rowcount != 1:
             raise InputError(
@@ -191,6 +193,7 @@ class DBAccountingReports():
                 'calculate_past_cost_basis': bool(report[22]),
                 'include_gas_costs': bool(report[23]),
                 'account_for_assets_movements': bool(report[24]),
+                'staking_profit_loss': report[25],
             })
 
         if report_id is not None:

@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS pnl_reports (
     include_crypto2crypto INTEGER NOT NULL CHECK (include_crypto2crypto IN (0, 1)),
     calculate_past_cost_basis INTEGER NOT NULL CHECK (calculate_past_cost_basis IN (0, 1)),
     include_gas_costs INTEGER NOT NULL CHECK (include_gas_costs IN (0, 1)),
-
-    account_for_assets_movements INTEGER NOT NULL CHECK (account_for_assets_movements IN (0, 1))
+    account_for_assets_movements INTEGER NOT NULL CHECK (account_for_assets_movements IN (0, 1)),
+    staking_profit_loss TEXT
 );
 """
 

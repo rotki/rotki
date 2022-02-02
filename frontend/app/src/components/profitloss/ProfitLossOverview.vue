@@ -107,6 +107,18 @@
         </tr>
         <tr>
           <td>
+            {{ $t('profit_loss_overview.rows.taxable_staking_profit_loss') }}
+          </td>
+          <td class="text-right">
+            <amount-display
+              pnl
+              :value="overview.stakingProfitLoss"
+              :loading="loading"
+            />
+          </td>
+        </tr>
+        <tr>
+          <td>
             {{ $t('profit_loss_overview.rows.taxable_trade_profit_loss') }}
           </td>
           <td class="text-right text-subtitle-1">

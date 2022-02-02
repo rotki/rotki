@@ -1,7 +1,7 @@
 from typing import List, Union
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.accounting.structures import DefiEvent, HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_ETH
@@ -17,6 +17,7 @@ TaxableAction = Union[  # TODO: At this point we perhaps should create an interf
     DefiEvent,
     AMMTrade,
     LedgerAction,
+    HistoryBaseEntry,
 ]
 
 
@@ -37,6 +38,8 @@ def action_get_timestamp(action: TaxableAction) -> Timestamp:
             ),
     ):
         return action.timestamp
+    if isinstance(action, HistoryBaseEntry):
+        return action.get_standard_timestamp()
     if isinstance(action, (MarginPosition, Loan)):
         return action.close_time
     # else
@@ -58,13 +61,25 @@ def action_get_type(action: TaxableAction) -> str:
         return 'defi_event'
     if isinstance(action, LedgerAction):
         return 'ledger_action'
+    if isinstance(action, HistoryBaseEntry):
+        return 'history_base_entry'
     # else
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')
 
 
 def action_get_identifier(action: TaxableAction) -> str:
     """Get a unique identifier from a taxable action if possible"""
-    if isinstance(action, (AMMTrade, Trade, AssetMovement, MarginPosition, LedgerAction)):
+    if isinstance(
+        action,
+        (
+            AMMTrade,
+            Trade,
+            AssetMovement,
+            MarginPosition,
+            LedgerAction,
+            HistoryBaseEntry,
+        ),
+    ):
         return str(action.identifier)
     if isinstance(action, EthereumTransaction):
         return '0x' + action.tx_hash.hex()
@@ -105,5 +120,7 @@ def action_get_assets(action: TaxableAction) -> List[Asset]:
         return [action.pl_currency]
     if isinstance(action, Loan):
         return [action.currency]
+    if isinstance(action, HistoryBaseEntry):
+        return [action.asset_balance.asset]
     # else
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')

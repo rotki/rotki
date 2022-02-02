@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from zipfile import ZipFile
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.accounting.structures import DefiEvent, HistoryBaseEntry
 from rotkehlchen.accounting.typing import NamedJson, SchemaEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import (
@@ -19,6 +19,7 @@ from rotkehlchen.constants import (
     EV_LOAN_SETTLE,
     EV_MARGIN_CLOSE,
     EV_SELL,
+    EV_STAKING_REWARD,
     EV_TX_GAS_COST,
     ZERO,
 )
@@ -54,6 +55,7 @@ FILENAME_MARGIN_CSV = 'margin_positions.csv'
 FILENAME_LOAN_SETTLEMENTS_CSV = 'loan_settlements.csv'
 FILENAME_DEFI_EVENTS_CSV = 'defi_events.csv'
 FILENAME_LEDGER_ACTIONS_CSV = 'ledger_actions.csv'
+FILENAME_STAKING_EVENTS_CSV = 'staking_events.csv'
 FILENAME_ALL_CSV = 'all_events.csv'
 ETH_EXPLORER = 'https://etherscan.io/tx/'
 
@@ -141,6 +143,7 @@ class CSVExporter():
             self.loan_settlements_csv: List[Dict[str, Any]] = []
             self.defi_events_csv: List[Dict[str, Any]] = []
             self.ledger_actions_csv: List[Dict[str, Any]] = []
+            self.staking_events_csv: List[Dict[str, Any]] = []
             self.all_events_csv: List[Dict[str, Any]] = []
             self.all_events = []
             self.report_id = None
@@ -397,7 +400,7 @@ class CSVExporter():
                 expression=f'L{row}',
                 actual_value=net_profit_or_loss,
             )
-        elif event_type in (EV_MARGIN_CLOSE, EV_DEFI, EV_LEDGER_ACTION):
+        elif event_type in (EV_MARGIN_CLOSE, EV_DEFI, EV_LEDGER_ACTION, EV_STAKING_REWARD):
             if total_received_in_profit_currency > ZERO:
                 net_profit_or_loss = total_received_in_profit_currency
             else:
@@ -976,6 +979,10 @@ class CSVExporter():
                 self.ledger_actions_csv,
             )
             _dict_to_csv_file(
+                dirpath / FILENAME_STAKING_EVENTS_CSV,
+                self.staking_events_csv,
+            )
+            _dict_to_csv_file(
                 dirpath / FILENAME_ALL_CSV,
                 self.all_events_csv,
             )
@@ -1003,6 +1010,7 @@ class CSVExporter():
             (dirpath / FILENAME_LOAN_SETTLEMENTS_CSV, FILENAME_LOAN_SETTLEMENTS_CSV),
             (dirpath / FILENAME_DEFI_EVENTS_CSV, FILENAME_DEFI_EVENTS_CSV),
             (dirpath / FILENAME_LEDGER_ACTIONS_CSV, FILENAME_LEDGER_ACTIONS_CSV),
+            (dirpath / FILENAME_STAKING_EVENTS_CSV, FILENAME_STAKING_EVENTS_CSV),
             (dirpath / FILENAME_ALL_CSV, FILENAME_ALL_CSV),
         ]
 
@@ -1015,3 +1023,45 @@ class CSVExporter():
                 path.unlink()
 
         return csv_zip.filename
+
+    def add_staking_reward(
+        self,
+        action: HistoryBaseEntry,
+        profit_loss_in_profit_currency: FVal,
+    ) -> None:
+        if not self.create_csv:
+            return
+        self.staking_events_csv.append({
+            'time': self.timestamp_to_date(action.get_standard_timestamp()),
+            'type': str(action.event_type),
+            'subtype': str(action.event_subtype),
+            'location': str(action.location),
+            'asset': str(action.asset_balance.asset),
+            'amount': str(action.asset_balance.balance.amount),
+            f'profit_loss_in_{self.profit_currency.symbol}': profit_loss_in_profit_currency,
+        })
+
+        paid_asset: Optional[Asset]
+        received_asset: Optional[Asset]
+
+        paid_in_profit_currency = ZERO
+        paid_in_asset = ZERO
+        paid_asset = None
+        received_asset = action.asset_balance.asset
+        received_in_asset = action.asset_balance.balance.amount
+        received_in_profit_currency = profit_loss_in_profit_currency
+
+        self.add_to_allevents(
+            event_type=EV_STAKING_REWARD,
+            location=action.location,
+            paid_in_profit_currency=paid_in_profit_currency,
+            paid_asset=paid_asset,
+            paid_in_asset=paid_in_asset,
+            received_asset=received_asset,
+            received_in_asset=received_in_asset,
+            taxable_received_in_profit_currency=received_in_profit_currency,
+            total_received_in_profit_currency=received_in_profit_currency,
+            timestamp=action.get_standard_timestamp(),
+            link=action.event_identifier,
+            notes=str(action.sequence_index),
+        )

@@ -444,6 +444,16 @@ class HistoryBaseEntry:
             'counterparty': self.counterparty,
         }
 
+    def __str__(self) -> str:
+        description = (
+            f'History entry from {self.location} at {self.timestamp} of type '
+            f'{self.event_type} and subtype {self.event_subtype}'
+        )
+        return description
+
+    def get_standard_timestamp(self) -> Timestamp:
+        return Timestamp(self.timestamp // KRAKEN_TS_MULTIPLIER)
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class StakingEvent:
