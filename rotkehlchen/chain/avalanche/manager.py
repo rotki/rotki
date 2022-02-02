@@ -90,6 +90,8 @@ class AvalancheManager():
         May raise:
         - RemoteError if an external service such as Covalent is queried and
         there is a problem with its query.
+        - BlockNotFound if number used to lookup the block can't be found. Raised
+        by web3.eth.get_block().
         """
         block_data: MutableAttributeDict = MutableAttributeDict(self.w3.eth.get_block(num))  # type: ignore # pylint: disable=no-member  # noqa: E501
         block_data['hash'] = hex_or_bytes_to_str(block_data['hash'])
