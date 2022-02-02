@@ -3025,9 +3025,10 @@ class RestAPI():
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ETHEREUM_TRANSACTION)  # noqa: E501
             ignored_ids = mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
             entries_result = []
+            dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
             for entry in transactions:
                 tx_hash_hex = '0x' + entry.tx_hash.hex()
-                events = self.rotkehlchen.data.db.get_history_events(
+                events = dbevents.get_history_events(
                     filter_query=HistoryEventFilterQuery.make(
                         event_identifier=tx_hash_hex,
                     ),

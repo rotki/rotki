@@ -19,6 +19,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors import (
     ConversionError,
     DecoderLoadingError,
@@ -73,6 +74,7 @@ class EVMTransactionDecoder():
         self.ethereum_manager = ethereum_manager
         self.msg_aggregator = msg_aggregator
         self.dbethtx = DBEthTx(self.database)
+        self.dbevents = DBHistoryEvents(self.database)
         self.base = BaseDecoderTools(database=database)
         self.event_rules = [  # rules to try for all tx receipt logs decoding
             self._maybe_decode_erc20_approve,
@@ -208,7 +210,7 @@ class EVMTransactionDecoder():
             if event:
                 events.append(event)
 
-        self.database.add_history_events(events)
+        self.dbevents.add_history_events(events)
         cursor.execute(
             'INSERT INTO evm_tx_mappings(tx_hash, blockchain, value) VALUES(?, ?, ?)',
             (transaction.tx_hash, 'ETH', 'decoded'),
@@ -246,7 +248,7 @@ class EVMTransactionDecoder():
             (transaction.tx_hash, 'ETH', 'decoded'),
         )
         if results.fetchone()[0] != 0:  # already decoded and in the DB
-            events = self.database.get_history_events(
+            events = self.dbevents.get_history_events(
                 filter_query=HistoryEventFilterQuery.make(
                     event_identifier=tx_hex,
                 ),

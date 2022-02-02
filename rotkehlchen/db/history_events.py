@@ -30,9 +30,9 @@ class DBHistoryEvents():
         """Insert a list of history events in database. May raise:
         - InputError if the events couldn't be stored in database
         """
-        query_str = """INSERT INTO history_events(identifier, event_identifier, sequence_index,
+        query_str = """INSERT INTO history_events(event_identifier, sequence_index,
         timestamp, location, location_label, asset, amount, usd_value, notes,
-        type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+        type, subtype, counterparty) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
         events = []
         for event in history:
             try:
@@ -77,10 +77,10 @@ class DBHistoryEvents():
         cursor = self.db.conn.cursor()
 
         if has_premium:
-            query = 'SELECT * from history_events ' + query
+            query = 'SELECT rowid, * from history_events ' + query
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT * from history_events ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            query = 'SELECT * FROM (SELECT rowid, * from history_events ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_HISTORY_EVENTS_LIMIT] + bindings)
 
         output = []
@@ -122,7 +122,7 @@ class DBHistoryEvents():
         Get missing prices for history base entries based on filter query
         """
         query, bindings = filter_query.prepare()
-        query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
+        query = 'SELECT rowid, amount, asset, timestamp FROM history_events ' + query
         result = []
         cursor = self.db.conn.cursor()
         cursor.execute(query, bindings)

@@ -14,6 +14,15 @@ from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.typing import Location
 
 
+def assert_events_equal(e1: HistoryBaseEntry, e2: HistoryBaseEntry) -> None:
+    for a in dir(e1):
+        if a.startswith('__') or callable(getattr(e1, a)) or a == 'identifier':
+            continue
+        e1_value = getattr(e1, a)
+        e2_value = getattr(e2, a)
+        assert e1_value == e2_value, f'Events differ at {a}. {e1_value} != {e2_value}'
+
+
 @pytest.mark.parametrize('use_custom_database', ['ethtxs.db'])
 def test_tx_decode(evm_transaction_decoder, database):
     dbethtx = DBEthTx(database)
@@ -34,7 +43,7 @@ def test_tx_decode(evm_transaction_decoder, database):
             events = decoder.get_or_decode_transaction_events(tx, receipt)
             if tx.tx_hash.hex() == approve_tx_hash:  # noqa: E501
                 assert len(events) == 1
-                assert events[0] == HistoryBaseEntry(
+                assert_events_equal(events[0], HistoryBaseEntry(
                     event_identifier='0x' + approve_tx_hash,
                     sequence_index=162,
                     timestamp=1569924574,
@@ -46,7 +55,7 @@ def test_tx_decode(evm_transaction_decoder, database):
                     event_type=HistoryEventType.INFORMATIONAL,
                     event_subtype=HistoryEventSubType.APPROVE,
                     counterparty='0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
-                )
+                ))
 
         assert decode_mock.call_count == len(transactions)
         # now go again, and see that no more decoding happens as it's all pulled from the DB
