@@ -32,6 +32,7 @@
         :asset-padding="assetPadding"
         :value="value.usdValue"
         :show-currency="ticker ? 'ticker' : 'none'"
+        :loading="priceLoading"
         class="d-block grey--text"
       />
     </div>
@@ -64,7 +65,8 @@ export default defineComponent({
       default: ''
     },
     assetPadding: { required: false, type: Number, default: 5 },
-    ticker: { required: false, type: Boolean, default: false }
+    ticker: { required: false, type: Boolean, default: false },
+    priceLoading: { required: false, type: Boolean, default: false }
   }
 });
 </script>
