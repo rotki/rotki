@@ -51,6 +51,7 @@
             <amount-display
               show-currency="ticker"
               fiat-currency="USD"
+              :loading="pricesAreLoading"
               :value="totalUsdCurrent"
             />
           </v-col>
@@ -84,6 +85,10 @@ export default defineComponent({
   setup(props) {
     const { earned } = toRefs(props);
     const { prices } = usePrices();
+    const pricesAreLoading = computed(() => {
+      const assetPrices = unref(prices);
+      return Object.keys(assetPrices).length === 0;
+    });
     const totalUsdCurrent = computed<BigNumber>(() => {
       const earnedAssets = unref(earned);
       const assetPrices = unref(prices);
@@ -102,7 +107,8 @@ export default defineComponent({
     });
 
     return {
-      totalUsdCurrent
+      totalUsdCurrent,
+      pricesAreLoading
     };
   }
 });

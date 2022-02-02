@@ -27,6 +27,7 @@
           <balance-display
             :asset="item.asset"
             :value="getBalance(item)"
+            :price-loading="pricesAreLoading && current"
             ticker
           />
         </v-col>
@@ -37,7 +38,13 @@
 
 <script lang="ts">
 import { Balance } from '@rotki/common';
-import { defineComponent, PropType, ref, unref } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  unref
+} from '@vue/composition-api';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import { usePrices } from '@/composables/balances';
 import { ReceivedAmount } from '@/types/staking';
@@ -55,6 +62,9 @@ export default defineComponent({
   setup() {
     const { prices } = usePrices();
     const current = ref(true);
+    const pricesAreLoading = computed(() => {
+      return Object.keys(unref(prices)).length === 0;
+    });
     const getBalance = ({
       amount,
       asset,
@@ -72,6 +82,7 @@ export default defineComponent({
     };
     return {
       current,
+      pricesAreLoading,
       getBalance
     };
   }
