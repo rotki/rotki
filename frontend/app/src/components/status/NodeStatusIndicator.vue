@@ -9,7 +9,7 @@
     <template #activator="{ on }">
       <menu-tooltip-button
         tooltip="Ethereum Node Status"
-        class-name="secondary--text text--lighten-2"
+        class-name="secondary--text text--lighten-4"
         :on-menu="on"
       >
         <v-icon v-if="nodeConnection">mdi-link</v-icon>

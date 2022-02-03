@@ -21,7 +21,6 @@
         <v-tooltip top>
           <template #activator="{ on, attrs }">
             <v-btn
-              small
               v-bind="attrs"
               icon
               class="mx-1"
@@ -37,7 +36,6 @@
           <template #activator="{ on, attrs }">
             <v-btn
               icon
-              small
               :href="getLink(item)"
               v-bind="attrs"
               class="mx-1"
@@ -51,15 +49,14 @@
         </v-tooltip>
       </template>
       <template #body.append="{ isMobile }">
-        <tr>
-          <td :colspan="isMobile ? 2 : 3" class="font-weight-medium">
-            {{ $t('database_backups.row.total') }}
-          </td>
-          <td class="text-right">
-            {{ totalSize }}
-          </td>
-          <td v-if="!isMobile" />
-        </tr>
+        <row-append
+          label-colspan="3"
+          :label="$t('database_backups.row.total')"
+          :right-patch-colspan="1"
+          :is-mobile="isMobile"
+        >
+          {{ totalSize }}
+        </row-append>
       </template>
     </data-table>
     <confirm-dialog
@@ -82,6 +79,7 @@ import {
 } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
+import RowAppend from '@/components/helper/RowAppend.vue';
 import { getFilepath } from '@/components/settings/data-security/backups/utils';
 import { setupGeneralSettings } from '@/composables/session';
 import { displayDateFormatter } from '@/data/date_formatter';
@@ -109,7 +107,10 @@ const tableHeaders: DataTableHeader[] = [
 
 export default defineComponent({
   name: 'DatabaseBackups',
-  components: { Fragment },
+  components: {
+    RowAppend,
+    Fragment
+  },
   props: {
     items: { required: true, type: Array as PropType<UserDbBackup[]> },
     selected: { required: true, type: Array as PropType<UserDbBackup[]> },

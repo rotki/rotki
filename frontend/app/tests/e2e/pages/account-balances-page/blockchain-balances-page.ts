@@ -111,7 +111,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"] tbody`)
       .find('tr')
       .eq(position + (this.isGroupped(balance) ? 0 : 1))
-      .find('button.account-balances-list__actions__edit')
+      .find('button.actions__edit')
       .click();
 
     cy.get('[data-cy="blockchain-balance-form"]').as('edit-form');

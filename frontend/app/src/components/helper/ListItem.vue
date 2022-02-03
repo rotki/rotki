@@ -100,10 +100,6 @@ export default defineComponent({
     margin-top: 4px;
     margin-bottom: 4px;
   }
-
-  @media (min-width: 700px) and (max-width: 1500px) {
-    width: 100px;
-  }
 }
 
 .icon {
@@ -116,7 +112,7 @@ export default defineComponent({
   width: 100%;
   margin-left: 16px;
 
-  @media (min-width: 700px) and (max-width: 1500px) {
+  @media (min-width: 700px) and (max-width: 1200px) {
     width: 100px;
   }
 }
@@ -127,7 +123,7 @@ export default defineComponent({
   white-space: nowrap;
   font-weight: 500;
 
-  @media (min-width: 700px) and (max-width: 1500px) {
+  @media (min-width: 700px) and (max-width: 1200px) {
     width: 100px;
   }
 }
@@ -138,7 +134,7 @@ export default defineComponent({
   overflow: hidden;
   white-space: nowrap;
 
-  @media (min-width: 700px) and (max-width: 1500px) {
+  @media (min-width: 700px) and (max-width: 1200px) {
     width: 100px;
   }
 }

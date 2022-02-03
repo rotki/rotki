@@ -1,8 +1,9 @@
 <template>
   <span>
     <v-btn icon small @click="click">
-      <v-icon v-if="expanded" small> mdi-chevron-up </v-icon>
-      <v-icon v-else small> mdi-chevron-down </v-icon>
+      <v-icon :class="{ icon: true, 'icon--expanded': expanded }">
+        mdi-chevron-down
+      </v-icon>
     </v-btn>
   </span>
 </template>
@@ -25,3 +26,11 @@ export default defineComponent({
   }
 });
 </script>
+<style scoped lang="scss">
+.icon {
+  &--expanded {
+    transition: 0.2s all 0s;
+    transform: rotate(-180deg);
+  }
+}
+</style>

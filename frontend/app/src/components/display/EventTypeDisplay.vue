@@ -1,9 +1,7 @@
 <template>
-  <v-row no-gutters align="center">
-    <v-col cols="auto" class="font-weight-medium">
-      {{ capitalize(event) }}
-    </v-col>
-  </v-row>
+  <badge-display>
+    {{ event }}
+  </badge-display>
 </template>
 
 <script lang="ts">
@@ -13,11 +11,12 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
-import { capitalize } from '@/filters';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import { EventType } from '@/services/defi/types';
 
 export default defineComponent({
   name: 'EventTypeDisplay',
+  components: { BadgeDisplay },
   props: {
     eventType: { required: true, type: String as PropType<EventType> }
   },
@@ -29,7 +28,6 @@ export default defineComponent({
     });
 
     return {
-      capitalize,
       event
     };
   }

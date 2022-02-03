@@ -30,7 +30,7 @@
             />
             <div v-if="selected.length > 0" class="mt-2 ms-1">
               {{ $t('closed_trades.selected', { count: selected.length }) }}
-              <v-btn small text @click="setAllSelected(false)">
+              <v-btn small text @click="selected = []">
                 {{ $t('closed_trades.clear_selection') }}
               </v-btn>
             </div>
@@ -46,6 +46,7 @@
         </v-row>
       </template>
       <data-table
+        v-model="selected"
         :expanded.sync="expanded"
         :headers="tableHeaders"
         :items="data"
@@ -53,29 +54,32 @@
         :options="options"
         :server-items-length="itemLength"
         class="closed-trades"
+        :single-select="false"
+        show-select
         item-key="tradeId"
         show-expand
         single-expand
         @update:options="updatePaginationHandler($event)"
       >
-        <template #header.selection>
-          <v-simple-checkbox
-            :ripple="false"
-            :value="isAllSelected"
-            color="primary"
-            @input="setAllSelected($event)"
-          />
-        </template>
-        <template #item.selection="{ item }">
-          <v-simple-checkbox
-            :ripple="false"
-            color="primary"
-            :value="isSelected(item.tradeId)"
-            @input="selectionChanged(item.tradeId, $event)"
-          />
-        </template>
-        <template #item.ignoredInAccounting="{ item }">
-          <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
+        <template #item.ignoredInAccounting="{ item, isMobile }">
+          <div v-if="item.ignoredInAccounting">
+            <badge-display v-if="isMobile" color="grey">
+              <v-icon small> mdi-eye-off </v-icon>
+              <span class="ml-2">
+                {{ $t('closed_trades.headers.ignored') }}
+              </span>
+            </badge-display>
+            <v-tooltip v-else bottom>
+              <template #activator="{ on }">
+                <badge-display color="grey" v-on="on">
+                  <v-icon small> mdi-eye-off </v-icon>
+                </badge-display>
+              </template>
+              <span>
+                {{ $t('closed_trades.headers.ignored') }}
+              </span>
+            </v-tooltip>
+          </div>
         </template>
         <template #item.location="{ item }">
           <location-display
@@ -84,7 +88,11 @@
           />
         </template>
         <template #item.type="{ item }">
-          <div>{{ item.tradeType }}</div>
+          <badge-display
+            :color="item.tradeType.toLowerCase() === 'sell' ? 'red' : 'green'"
+          >
+            {{ item.tradeType }}
+          </badge-display>
         </template>
         <template #item.baseAsset="{ item }">
           <asset-details
@@ -122,17 +130,17 @@
           />
         </template>
         <template #item.time="{ item }">
-          <div class="d-flex flex-row align-center">
-            <date-display :timestamp="item.timestamp" />
-            <v-spacer v-if="item.location === 'external'" />
-            <row-actions
-              v-if="item.location === 'external'"
-              :edit-tooltip="$t('closed_trades.edit_tooltip')"
-              :delete-tooltip="$t('closed_trades.delete_tooltip')"
-              @edit-click="editTradeHandler(item)"
-              @delete-click="promptForDelete(item)"
-            />
-          </div>
+          <date-display :timestamp="item.timestamp" />
+        </template>
+        <template #item.actions="{ item }">
+          <row-actions
+            v-if="item.location === 'external'"
+            :disabled="refreshing"
+            :edit-tooltip="$t('closed_trades.edit_tooltip')"
+            :delete-tooltip="$t('closed_trades.delete_tooltip')"
+            @edit-click="editTradeHandler(item)"
+            @delete-click="promptForDelete(item)"
+          />
         </template>
         <template #expanded-item="{ headers, item }">
           <trade-details :span="headers.length" :item="item" />
@@ -187,6 +195,7 @@ import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import {
   MatchedKeyword,
@@ -204,8 +213,7 @@ import { setupStatusChecking } from '@/composables/common';
 import {
   getCollectionData,
   setupEntryLimit,
-  setupIgnore,
-  setupSelectionMode
+  setupIgnore
 } from '@/composables/history';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
@@ -251,11 +259,10 @@ type PaginationOptions = {
 const tableHeaders: DataTableHeader[] = [
   {
     text: '',
-    value: 'selection',
-    width: '34px',
+    value: 'ignoredInAccounting',
     sortable: false,
-    class: 'pr-0',
-    cellClass: 'pr-0'
+    class: 'pa-0',
+    cellClass: 'pa-0'
   },
   {
     text: i18n.t('closed_trades.headers.location').toString(),
@@ -265,8 +272,12 @@ const tableHeaders: DataTableHeader[] = [
   },
   {
     text: i18n.t('closed_trades.headers.action').toString(),
-    value: 'type',
-    width: '90px'
+    value: 'type'
+  },
+  {
+    text: i18n.t('closed_trades.headers.amount').toString(),
+    value: 'amount',
+    align: 'end'
   },
   {
     text: i18n.t('closed_trades.headers.base').toString(),
@@ -290,18 +301,15 @@ const tableHeaders: DataTableHeader[] = [
     align: 'end'
   },
   {
-    text: i18n.t('closed_trades.headers.amount').toString(),
-    value: 'amount',
-    align: 'end'
-  },
-  {
     text: i18n.t('closed_trades.headers.timestamp').toString(),
     value: 'time'
   },
   {
-    text: i18n.t('closed_trades.headers.ignored').toString(),
-    value: 'ignoredInAccounting',
-    sortable: false
+    text: i18n.t('closed_trades.headers.actions').toString(),
+    value: 'actions',
+    align: 'center',
+    sortable: false,
+    width: '50'
   },
   { text: '', value: 'data-table-expand', sortable: false }
 ];
@@ -309,6 +317,7 @@ const tableHeaders: DataTableHeader[] = [
 export default defineComponent({
   name: 'ClosedTrades',
   components: {
+    BadgeDisplay,
     RowActions,
     TradeDetails,
     TableFilter,
@@ -577,10 +586,10 @@ export default defineComponent({
     };
 
     const getId = (item: TradeEntry) => item.tradeId;
-
-    const selectionMode = setupSelectionMode<TradeEntry>(data, getId);
+    const selected: Ref<TradeEntry[]> = ref([]);
 
     return {
+      selected,
       tableHeaders,
       data,
       limit,
@@ -611,14 +620,7 @@ export default defineComponent({
       matchers,
       updatePaginationHandler,
       updateFilterHandler,
-      ...selectionMode,
-      ...setupIgnore(
-        IgnoreActionType.TRADES,
-        selectionMode.selected,
-        data,
-        fetch,
-        getId
-      )
+      ...setupIgnore(IgnoreActionType.TRADES, selected, data, fetch, getId)
     };
   }
 });

@@ -10,7 +10,7 @@
       <template #activator="{ on }">
         <menu-tooltip-button
           tooltip="Account"
-          class-name="user-dropdown secondary--text text--lighten-2"
+          class-name="user-dropdown secondary--text text--lighten-4"
           :on-menu="on"
         >
           <v-icon>mdi-account-circle</v-icon>

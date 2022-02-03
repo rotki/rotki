@@ -11,7 +11,7 @@
     </template>
     <menu-tooltip-button
       :tooltip="$t('notification_indicator.tooltip')"
-      class-name="secondary--text text--lighten-2"
+      class-name="secondary--text text--lighten-4"
       @click="click"
     >
       <v-icon

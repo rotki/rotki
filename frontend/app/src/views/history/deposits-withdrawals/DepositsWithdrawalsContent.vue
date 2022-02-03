@@ -19,7 +19,7 @@
             {{
               $t('deposits_withdrawals.selected', { count: selected.length })
             }}
-            <v-btn small text @click="setAllSelected(false)">
+            <v-btn small text @click="selected = []">
               {{ $t('deposits_withdrawals.clear_selection') }}
             </v-btn>
           </div>
@@ -35,6 +35,7 @@
       </v-row>
     </template>
     <data-table
+      v-model="selected"
       :expanded.sync="expanded"
       :headers="tableHeaders"
       :items="data"
@@ -42,32 +43,44 @@
       :options="options"
       :server-items-length="itemLength"
       class="asset-movements"
+      :single-select="false"
+      show-select
       item-key="identifier"
       show-expand
       single-expand
       @update:options="updatePaginationHandler($event)"
     >
-      <template #header.selection>
-        <v-simple-checkbox
-          :ripple="false"
-          :value="isAllSelected"
-          color="primary"
-          @input="setAllSelected($event)"
-        />
-      </template>
-      <template #item.selection="{ item }">
-        <v-simple-checkbox
-          :ripple="false"
-          color="primary"
-          :value="isSelected(item.identifier)"
-          @input="selectionChanged(item.identifier, $event)"
-        />
-      </template>
-      <template #item.ignoredInAccounting="{ item }">
-        <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
+      <template #item.ignoredInAccounting="{ item, isMobile }">
+        <div v-if="item.ignoredInAccounting">
+          <badge-display v-if="isMobile" color="grey">
+            <v-icon small> mdi-eye-off </v-icon>
+            <span class="ml-2">
+              {{ $t('deposits_withdrawals.headers.ignored') }}
+            </span>
+          </badge-display>
+          <v-tooltip v-else bottom>
+            <template #activator="{ on }">
+              <badge-display color="grey" v-on="on">
+                <v-icon small> mdi-eye-off </v-icon>
+              </badge-display>
+            </template>
+            <span>
+              {{ $t('deposits_withdrawals.headers.ignored') }}
+            </span>
+          </v-tooltip>
+        </div>
       </template>
       <template #item.location="{ item }">
         <location-display :identifier="item.location" />
+      </template>
+      <template #item.category="{ item }">
+        <badge-display
+          :color="
+            item.category.toLowerCase() === 'withdrawal' ? 'red' : 'green'
+          "
+        >
+          {{ item.category }}
+        </badge-display>
       </template>
       <template #item.asset="{ item }">
         <asset-details opens-details :asset="item.asset" />
@@ -111,6 +124,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import {
   MatchedKeyword,
@@ -127,8 +141,7 @@ import { setupStatusChecking } from '@/composables/common';
 import {
   getCollectionData,
   setupEntryLimit,
-  setupIgnore,
-  setupSelectionMode
+  setupIgnore
 } from '@/composables/history';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
@@ -176,11 +189,10 @@ type PaginationOptions = {
 const tableHeaders: DataTableHeader[] = [
   {
     text: '',
-    value: 'selection',
-    width: '34px',
+    value: 'ignoredInAccounting',
     sortable: false,
-    class: 'pr-0',
-    cellClass: 'pr-0'
+    class: 'pa-0',
+    cellClass: 'pa-0'
   },
   {
     text: i18n.t('deposits_withdrawals.headers.location').toString(),
@@ -211,17 +223,13 @@ const tableHeaders: DataTableHeader[] = [
     text: i18n.t('deposits_withdrawals.headers.timestamp').toString(),
     value: 'time'
   },
-  {
-    text: i18n.t('deposits_withdrawals.headers.ignored').toString(),
-    value: 'ignoredInAccounting',
-    sortable: false
-  },
   { text: '', value: 'data-table-expand', sortable: false }
 ];
 
 export default defineComponent({
   name: 'DepositsWithdrawalsContent',
   components: {
+    BadgeDisplay,
     TableFilter,
     DepositWithdrawalDetails,
     DataTable,
@@ -391,10 +399,10 @@ export default defineComponent({
     };
 
     const getId = (item: AssetMovementEntry) => item.identifier;
-
-    const selectionMode = setupSelectionMode<AssetMovementEntry>(data, getId);
+    const selected: Ref<AssetMovementEntry[]> = ref([]);
 
     return {
+      selected,
       tableHeaders,
       data,
       limit,
@@ -410,14 +418,7 @@ export default defineComponent({
       matchers,
       updatePaginationHandler,
       updateFilterHandler,
-      ...selectionMode,
-      ...setupIgnore(
-        IgnoreActionType.MOVEMENTS,
-        selectionMode.selected,
-        data,
-        fetch,
-        getId
-      )
+      ...setupIgnore(IgnoreActionType.MOVEMENTS, selected, data, fetch, getId)
     };
   }
 });

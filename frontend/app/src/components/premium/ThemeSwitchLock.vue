@@ -5,7 +5,7 @@
         <v-btn
           text
           icon
-          class="secondary--text text--lighten-4 mr-4"
+          class="secondary--text text--lighten-4"
           :href="$interop.isPackaged ? undefined : $interop.premiumURL"
           v-on="on"
           @click="

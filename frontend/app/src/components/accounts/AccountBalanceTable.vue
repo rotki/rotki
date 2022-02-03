@@ -64,26 +64,31 @@
           @edit-click="editClick(item)"
         />
       </template>
-      <template v-if="balances.length > 0" #body.append>
-        <tr class="account-balance-table__total">
-          <td :class="mobileClass" />
-          <td :class="mobileClass">{{ $t('account_balances.total') }}</td>
-          <td class="text-end" :class="mobileClass">
-            <amount-display
-              :loading="loading"
-              :value="total.amount"
-              :asset="$vuetify.breakpoint.xsOnly ? blockchain : null"
-            />
-          </td>
-          <td class="text-end" :class="mobileClass">
-            <amount-display
-              :loading="loading"
-              fiat-currency="USD"
-              show-currency="symbol"
-              :value="total.usdValue"
-            />
-          </td>
-        </tr>
+      <template v-if="balances.length > 0" #body.append="{ isMobile }">
+        <row-append
+          :label="$t('account_balances.total')"
+          :class-name="{ 'flex-column': isMobile }"
+          :left-patch-colspan="1"
+          :is-mobile="isMobile"
+        >
+          <template #custom-columns>
+            <td class="text-end" :class="mobileClass">
+              <amount-display
+                :loading="loading"
+                :value="total.amount"
+                :asset="$vuetify.breakpoint.xsOnly ? blockchain : null"
+              />
+            </td>
+            <td class="text-end" :class="mobileClass">
+              <amount-display
+                :loading="loading"
+                fiat-currency="USD"
+                show-currency="symbol"
+                :value="total.usdValue"
+              />
+            </td>
+          </template>
+        </row-append>
       </template>
       <template #expanded-item="{ headers, item }">
         <table-expand-container visible :colspan="headers.length">
@@ -147,6 +152,7 @@ import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2Val
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import AccountAssetBalances from '@/components/settings/AccountAssetBalances.vue';
@@ -168,6 +174,7 @@ import { Zero } from '@/utils/bignumbers';
 
 @Component({
   components: {
+    RowAppend,
     Eth2ValidatorLimitRow,
     DataTable,
     TableExpandContainer,

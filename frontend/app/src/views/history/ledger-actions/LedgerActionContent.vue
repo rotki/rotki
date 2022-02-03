@@ -30,7 +30,7 @@
             />
             <div v-if="selected.length > 0" class="mt-2 ms-1">
               {{ $t('ledger_actions.selected', { count: selected.length }) }}
-              <v-btn small text @click="setAllSelected(false)">
+              <v-btn small text @click="selected = []">
                 {{ $t('ledger_actions.clear_selection') }}
               </v-btn>
             </div>
@@ -46,6 +46,7 @@
         </v-row>
       </template>
       <data-table
+        v-model="selected"
         :expanded.sync="expanded"
         :headers="tableHeaders"
         :items="data"
@@ -53,29 +54,32 @@
         :options="options"
         :server-items-length="itemLength"
         class="ledger_actions"
+        :single-select="false"
+        show-select
         item-key="identifier"
         show-expand
         single-expand
         @update:options="updatePaginationHandler($event)"
       >
-        <template #header.selection>
-          <v-simple-checkbox
-            :ripple="false"
-            :value="isAllSelected"
-            color="primary"
-            @input="setAllSelected($event)"
-          />
-        </template>
-        <template #item.selection="{ item }">
-          <v-simple-checkbox
-            :ripple="false"
-            color="primary"
-            :value="isSelected(item.identifier)"
-            @input="selectionChanged(item.identifier, $event)"
-          />
-        </template>
-        <template #item.ignoredInAccounting="{ item }">
-          <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
+        <template #item.ignoredInAccounting="{ item, isMobile }">
+          <div v-if="item.ignoredInAccounting">
+            <badge-display v-if="isMobile" color="grey">
+              <v-icon small> mdi-eye-off </v-icon>
+              <span class="ml-2">
+                {{ $t('ledger_actions.headers.ignored') }}
+              </span>
+            </badge-display>
+            <v-tooltip v-else bottom>
+              <template #activator="{ on }">
+                <badge-display color="grey" v-on="on">
+                  <v-icon small> mdi-eye-off </v-icon>
+                </badge-display>
+              </template>
+              <span>
+                {{ $t('ledger_actions.headers.ignored') }}
+              </span>
+            </v-tooltip>
+          </div>
         </template>
         <template #item.type="{ item }">
           <event-type-display
@@ -162,6 +166,7 @@ import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import {
   MatchedKeyword,
@@ -179,8 +184,7 @@ import { setupStatusChecking } from '@/composables/common';
 import {
   getCollectionData,
   setupEntryLimit,
-  setupIgnore,
-  setupSelectionMode
+  setupIgnore
 } from '@/composables/history';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
@@ -225,11 +229,10 @@ type PaginationOptions = {
 const tableHeaders: DataTableHeader[] = [
   {
     text: '',
-    value: 'selection',
-    width: '34px',
+    value: 'ignoredInAccounting',
     sortable: false,
-    class: 'pr-0',
-    cellClass: 'pr-0'
+    class: 'pa-0',
+    cellClass: 'pa-0'
   },
   {
     text: i18n.t('ledger_actions.headers.location').toString(),
@@ -255,15 +258,11 @@ const tableHeaders: DataTableHeader[] = [
     value: 'timestamp'
   },
   {
-    text: i18n.t('ledger_actions.headers.ignored').toString(),
-    value: 'ignoredInAccounting',
-    sortable: false
-  },
-  {
     text: i18n.t('ledger_actions.headers.actions').toString(),
-    align: 'end',
     value: 'actions',
-    sortable: false
+    align: 'center',
+    sortable: false,
+    width: '50'
   },
   { text: '', value: 'data-table-expand', sortable: false }
 ];
@@ -271,6 +270,7 @@ const tableHeaders: DataTableHeader[] = [
 export default defineComponent({
   name: 'LedgerActionContent',
   components: {
+    BadgeDisplay,
     RowActions,
     LedgerActionDetails,
     TableFilter,
@@ -524,10 +524,10 @@ export default defineComponent({
     };
 
     const getId = (item: LedgerActionEntry) => item.identifier.toString();
-
-    const selectionMode = setupSelectionMode<LedgerActionEntry>(data, getId);
+    const selected: Ref<LedgerActionEntry[]> = ref([]);
 
     return {
+      selected,
       tableHeaders,
       data,
       limit,
@@ -558,10 +558,9 @@ export default defineComponent({
       matchers,
       updatePaginationHandler,
       updateFilterHandler,
-      ...selectionMode,
       ...setupIgnore(
         IgnoreActionType.LEDGER_ACTIONS,
-        selectionMode.selected,
+        selected,
         data,
         fetch,
         getId

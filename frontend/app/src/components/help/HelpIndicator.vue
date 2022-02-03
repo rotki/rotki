@@ -1,7 +1,7 @@
 <template>
   <menu-tooltip-button
     :tooltip="$t('help_sidebar.tooltip')"
-    class-name="secondary--text text--lighten-2"
+    class-name="secondary--text text--lighten-4"
     @click="toggleVisibility"
   >
     <v-icon :class="visible ? 'help--visible' : null"> mdi-help-circle </v-icon>

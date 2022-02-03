@@ -77,38 +77,18 @@
         <percentage-display :value="percentageOfCurrentGroup(item.usdPrice)" />
       </template>
       <template #body.append="{ isMobile }">
-        <tr v-if="!isMobile" class="font-weight-medium">
-          <td colspan="2">
-            {{ $t('nft_balance_table.row.total') }}
-          </td>
-          <td class="text-end">
-            <amount-display
-              :value="total"
-              show-currency="symbol"
-              fiat-currency="USD"
-            />
-          </td>
-          <td
-            v-if="tableHeaders.length - 3"
-            :colspan="tableHeaders.length - 3"
+        <row-append
+          label-colspan="2"
+          :label="$t('nft_balance_table.row.total')"
+          :right-patch-colspan="tableHeaders.length - 3"
+          :is-mobile="isMobile"
+        >
+          <amount-display
+            :value="total"
+            show-currency="symbol"
+            fiat-currency="USD"
           />
-        </tr>
-        <tr v-else class="font-weight-medium">
-          <td
-            class="d-flex align-center justify-space-between font-weight-medium"
-          >
-            <div>
-              {{ $t('nft_balance_table.row.total') }}
-            </div>
-            <div>
-              <amount-display
-                :value="total"
-                show-currency="symbol"
-                fiat-currency="USD"
-              />
-            </div>
-          </td>
-        </tr>
+        </row-append>
       </template>
     </data-table>
   </card>
@@ -120,6 +100,7 @@ import { computed, defineComponent, Ref } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupStatusChecking } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
@@ -203,7 +184,11 @@ const tableHeaders = (
 
 export default defineComponent({
   name: 'NftBalanceTable',
-  components: { VisibleColumnsSelector, MenuTooltipButton },
+  components: {
+    RowAppend,
+    VisibleColumnsSelector,
+    MenuTooltipButton
+  },
   setup() {
     const store = useStore();
     const balances = computed<NonFungibleBalance[]>(

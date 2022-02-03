@@ -19,7 +19,7 @@
         <div v-else class="app__logo-mini">
           {{ $t('app.name') }}
         </div>
-        <navigation-menu :show-tooltips="isMini" />
+        <navigation-menu :is-mini="isMini" />
         <v-spacer />
         <div
           v-if="!isMini"
@@ -41,14 +41,19 @@
         class="app__app-bar"
       >
         <v-app-bar-nav-icon
-          class="secondary--text text--lighten-2"
+          class="secondary--text text--lighten-4"
           @click="toggleDrawer()"
         />
         <node-status-indicator v-if="!isMobile" />
         <balance-saved-indicator />
         <back-button :can-navigate-back="canNavigateBack" />
         <v-spacer />
-        <v-btn v-if="isDevelopment" to="/playground" icon>
+        <v-btn
+          v-if="isDevelopment"
+          to="/playground"
+          icon
+          class="secondary--text text--lighten-4"
+        >
           <v-icon>mdi-crane</v-icon>
         </v-btn>
         <app-update-indicator />
@@ -59,7 +64,7 @@
           class="app__app-bar__button"
           @click="showNotificationBar = !showNotificationBar"
         />
-        <currency-drop-down class="red--text app__app-bar__button" />
+        <currency-drop-down class="app__app-bar__button" />
         <user-dropdown class="app__app-bar__button" />
         <help-indicator
           v-if="!isMobile"

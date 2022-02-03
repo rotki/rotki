@@ -50,34 +50,18 @@
         :value="item.usdValue"
       />
     </template>
-    <template v-if="balances.length > 0" #body.append>
-      <tr v-if="$vuetify.breakpoint.smAndUp" class="asset-balances__total">
-        <td colspan="3" v-text="$t('asset_balances.total')" />
-
-        <td class="text-end">
-          <amount-display
-            fiat-currency="USD"
-            show-currency="symbol"
-            :value="total"
-          />
-        </td>
-      </tr>
-      <tr v-else>
-        <td>
-          <v-row justify="space-between">
-            <v-col cols="auto" class="font-weight-medium">
-              {{ $t('asset_balances.total') }}
-            </v-col>
-            <v-col cols="auto">
-              <amount-display
-                fiat-currency="USD"
-                show-currency="symbol"
-                :value="total"
-              />
-            </v-col>
-          </v-row>
-        </td>
-      </tr>
+    <template v-if="balances.length > 0" #body.append="{ isMobile }">
+      <row-append
+        label-colspan="3"
+        :label="$t('asset_balances.total')"
+        :is-mobile="isMobile"
+      >
+        <amount-display
+          fiat-currency="USD"
+          show-currency="symbol"
+          :value="total"
+        />
+      </row-append>
     </template>
   </data-table>
 </template>
@@ -88,11 +72,13 @@ import {
   computed,
   defineComponent,
   PropType,
+  Ref,
   toRefs
 } from '@vue/composition-api';
-import { IVueI18n } from 'vue-i18n';
+import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
 import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
 import { balanceSum } from '@/filters';
@@ -101,40 +87,43 @@ import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { getSortItems } from '@/utils/assets';
 
-const tableHeaders = (i18n: IVueI18n) => {
-  return [
-    {
-      text: i18n.t('asset_balances.headers.asset').toString(),
-      value: 'asset',
-      class: 'text-no-wrap',
-      cellClass: 'asset-info'
-    },
-    {
-      text: i18n.t('asset_balances.headers.price').toString(),
-      value: 'usdPrice',
-      align: 'end',
-      class: 'text-no-wrap'
-    },
-    {
-      text: i18n.t('asset_balances.headers.amount').toString(),
-      value: 'amount',
-      align: 'end',
-      class: 'text-no-wrap',
-      cellClass: 'asset-divider'
-    },
-    {
-      text: i18n.t('asset_balances.headers.value').toString(),
-      value: 'usdValue',
-      align: 'end',
-      cellClass: 'user-asset-value',
-      class: 'text-no-wrap'
-    }
-  ];
+const tableHeaders = (currency: Ref<string>) => {
+  return computed<DataTableHeader[]>(() => {
+    return [
+      {
+        text: i18n.t('asset_balances.headers.asset').toString(),
+        value: 'asset',
+        class: 'text-no-wrap'
+      },
+      {
+        text: i18n
+          .t('asset_balances.headers.price', { currency: currency.value })
+          .toString(),
+        value: 'usdPrice',
+        align: 'end',
+        class: 'text-no-wrap'
+      },
+      {
+        text: i18n.t('asset_balances.headers.amount').toString(),
+        value: 'amount',
+        align: 'end',
+        width: '99%'
+      },
+      {
+        text: i18n
+          .t('asset_balances.headers.value', { currency: currency.value })
+          .toString(),
+        value: 'usdValue',
+        align: 'end',
+        class: 'text-no-wrap'
+      }
+    ];
+  });
 };
 
 const AssetBalancesTable = defineComponent({
   name: 'AssetBalancesTable',
-  components: { DataTable, AmountDisplay },
+  components: { RowAppend, DataTable, AmountDisplay },
   props: {
     balances: {
       required: true,
@@ -153,7 +142,7 @@ const AssetBalancesTable = defineComponent({
     const { getAssetInfo } = setupAssetInfoRetrieval();
     return {
       total,
-      tableHeaders: tableHeaders(i18n),
+      tableHeaders: tableHeaders(currencySymbol),
       loading: isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
       sortItems: getSortItems(getAssetInfo),
       currency: currencySymbol
@@ -163,46 +152,3 @@ const AssetBalancesTable = defineComponent({
 
 export default AssetBalancesTable;
 </script>
-
-<style scoped lang="scss">
-::v-deep {
-  .asset-divider {
-    width: 100%;
-
-    @media (min-width: 2000px) {
-      width: 50%;
-    }
-  }
-
-  .asset-info {
-    @media (min-width: 2000px) {
-      width: 200px;
-    }
-  }
-}
-
-.asset-balances {
-  margin-top: 16px;
-  margin-bottom: 16px;
-
-  &__balance {
-    &__asset {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-
-      &__icon {
-        margin-right: 8px;
-      }
-    }
-  }
-
-  &__total {
-    font-weight: 500;
-
-    &:hover {
-      background-color: transparent !important;
-    }
-  }
-}
-</style>

@@ -24,7 +24,7 @@ export default defineComponent({
     tooltip: { required: true, type: String, default: '' },
     onMenu: { required: false, type: Object, default: () => {} },
     retainFocusOnClick: { required: false, type: Boolean, default: false },
-    className: { required: true, type: String, default: '' }
+    className: { required: false, type: String, default: '' }
   },
   emits: ['click'],
   setup(_, { emit }) {

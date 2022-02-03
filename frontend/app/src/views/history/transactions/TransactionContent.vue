@@ -17,7 +17,7 @@
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
             {{ $t('transactions.selected', { count: selected.length }) }}
-            <v-btn small text @click="setAllSelected(false)">
+            <v-btn small text @click="selected = []">
               {{ $t('transactions.clear_selection') }}
             </v-btn>
           </div>
@@ -39,36 +39,40 @@
     </template>
 
     <data-table
-      class="table"
+      v-model="selected"
       :expanded.sync="expanded"
       :headers="tableHeaders"
       :items="data"
       :loading="refreshing"
       :options="options"
       :server-items-length="itemLength"
+      class="table"
+      :single-select="false"
+      show-select
       item-key="identifier"
       show-expand
       single-expand
       @update:options="updatePaginationHandler($event)"
     >
-      <template #header.selection>
-        <v-simple-checkbox
-          :ripple="false"
-          :value="isAllSelected"
-          color="primary"
-          @input="setAllSelected($event)"
-        />
-      </template>
-      <template #item.selection="{ item }">
-        <v-simple-checkbox
-          :ripple="false"
-          color="primary"
-          :value="isSelected(item.identifier)"
-          @input="selectionChanged(item.identifier, $event)"
-        />
-      </template>
-      <template #item.ignoredInAccounting="{ item }">
-        <v-icon v-if="item.ignoredInAccounting">mdi-check</v-icon>
+      <template #item.ignoredInAccounting="{ item, isMobile }">
+        <div v-if="item.ignoredInAccounting">
+          <badge-display v-if="isMobile" color="grey">
+            <v-icon small> mdi-eye-off </v-icon>
+            <span class="ml-2">
+              {{ $t('transactions.headers.ignored') }}
+            </span>
+          </badge-display>
+          <v-tooltip v-else bottom>
+            <template #activator="{ on }">
+              <badge-display color="grey" v-on="on">
+                <v-icon small> mdi-eye-off </v-icon>
+              </badge-display>
+            </template>
+            <span>
+              {{ $t('transactions.headers.ignored') }}
+            </span>
+          </v-tooltip>
+        </div>
       </template>
       <template #item.txHash="{ item }">
         <hash-link :text="item.txHash" tx />
@@ -121,6 +125,7 @@ import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import TransactionsDetails from '@/components/history/TransactionsDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
@@ -128,8 +133,7 @@ import { setupStatusChecking } from '@/composables/common';
 import {
   getCollectionData,
   setupEntryLimit,
-  setupIgnore,
-  setupSelectionMode
+  setupIgnore
 } from '@/composables/history';
 import i18n from '@/i18n';
 import {
@@ -152,11 +156,10 @@ type PaginationOptions = {
 const tableHeaders: DataTableHeader[] = [
   {
     text: '',
-    value: 'selection',
-    width: '34px',
+    value: 'ignoredInAccounting',
     sortable: false,
-    class: 'pr-0',
-    cellClass: 'pr-0'
+    class: 'pa-0',
+    cellClass: 'pa-0'
   },
   {
     text: i18n.t('transactions.headers.txhash').toString(),
@@ -202,19 +205,13 @@ const tableHeaders: DataTableHeader[] = [
     class: 'text-no-wrap',
     sortable: false
   },
-  {
-    text: i18n.t('transactions.headers.ignored_in_accounting').toString(),
-    value: 'ignoredInAccounting',
-    width: '15px',
-    class: 'text-no-wrap',
-    sortable: false
-  },
   { text: '', value: 'data-table-expand', sortable: false }
 ];
 
 export default defineComponent({
   name: 'TransactionContent',
   components: {
+    BadgeDisplay,
     UpgradeRow,
     TransactionsDetails,
     IgnoreButtons,
@@ -297,14 +294,14 @@ export default defineComponent({
     });
 
     const getId = (item: EthTransactionEntry) => item.identifier;
-
-    const selectionMode = setupSelectionMode<EthTransactionEntry>(data, getId);
+    const selected: Ref<EthTransactionEntry[]> = ref([]);
 
     const gasFee = (tx: EthTransaction) =>
       toUnit(tx.gasPrice.multipliedBy(tx.gasUsed), Unit.ETH);
     const toEth = (value: BigNumber) => toUnit(value, Unit.ETH);
 
     return {
+      selected,
       account,
       tableHeaders,
       data,
@@ -321,10 +318,9 @@ export default defineComponent({
       gasFee,
       toEth,
       updatePaginationHandler,
-      ...selectionMode,
       ...setupIgnore(
         IgnoreActionType.ETH_TRANSACTIONS,
-        selectionMode.selected,
+        selected,
         data,
         fetch,
         getId

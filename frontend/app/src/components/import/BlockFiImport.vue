@@ -23,13 +23,15 @@
       </v-col>
     </v-row>
 
-    <i18n tag="span" path="import_data.blockfi.note">
-      <strong>{{ $t('import_data.blockfi.source_name') }}</strong>
-    </i18n>
-    <ul>
-      <li>{{ $t('import_data.blockfi.line_one') }}</li>
-      <li>{{ $t('import_data.blockfi.line_two') }}</li>
-    </ul>
+    <div class="pt-4">
+      <i18n tag="span" path="import_data.blockfi.note">
+        <strong>{{ $t('import_data.blockfi.source_name') }}</strong>
+      </i18n>
+      <ul>
+        <li>{{ $t('import_data.blockfi.line_one') }}</li>
+        <li>{{ $t('import_data.blockfi.line_two') }}</li>
+      </ul>
+    </div>
   </div>
 </template>
 <script lang="ts">

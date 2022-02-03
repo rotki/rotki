@@ -84,41 +84,18 @@
         v-if="balances.length > 0 && search.length < 1"
         #body.append="{ isMobile }"
       >
-        <tr
-          v-if="!isMobile"
-          class="dashboard-asset-table__balances__total font-weight-medium"
+        <row-append
+          label-colspan="3"
+          :label="$t('dashboard_asset_table.total')"
+          :right-patch-colspan="tableHeaders.length - 4"
+          :is-mobile="isMobile"
         >
-          <td colspan="3">
-            {{ $t('dashboard_asset_table.total') }}
-          </td>
-          <td class="text-end">
-            <amount-display
-              :fiat-currency="currencySymbol"
-              :value="total"
-              show-currency="symbol"
-            />
-          </td>
-          <td
-            v-if="tableHeaders.length - 4"
-            :colspan="tableHeaders.length - 4"
+          <amount-display
+            :fiat-currency="currencySymbol"
+            :value="total"
+            show-currency="symbol"
           />
-        </tr>
-        <tr v-else>
-          <td
-            class="d-flex align-center justify-space-between font-weight-medium"
-          >
-            <div>
-              {{ $t('dashboard_asset_table.total') }}
-            </div>
-            <div>
-              <amount-display
-                :fiat-currency="currencySymbol"
-                :value="total"
-                show-currency="symbol"
-              />
-            </div>
-          </td>
-        </tr>
+        </row-append>
       </template>
     </data-table>
   </card>
@@ -137,6 +114,7 @@ import {
 import { DataTableHeader } from 'vuetify';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
 import {
   setupAssetInfoRetrieval,
   setupExchangeRateGetter
@@ -168,7 +146,7 @@ const tableHeaders = (
       {
         text: i18n.t('dashboard_asset_table.headers.asset').toString(),
         value: 'asset',
-        cellClass: 'asset-info'
+        class: 'text-no-wrap'
       },
       {
         text: i18n
@@ -184,7 +162,7 @@ const tableHeaders = (
         text: i18n.t('dashboard_asset_table.headers.amount').toString(),
         value: 'amount',
         align: 'end',
-        cellClass: 'asset-divider'
+        width: '99%'
       },
       {
         text: i18n
@@ -238,7 +216,7 @@ const tableHeaders = (
 
 const DashboardAssetTable = defineComponent({
   name: 'DashboardAssetTable',
-  components: { VisibleColumnsSelector, MenuTooltipButton },
+  components: { RowAppend, VisibleColumnsSelector, MenuTooltipButton },
   props: {
     loading: { required: false, type: Boolean, default: false },
     title: { required: true, type: String },
@@ -325,41 +303,9 @@ export default DashboardAssetTable;
 </script>
 
 <style scoped lang="scss">
-::v-deep {
-  .asset-divider {
-    width: 100%;
-
-    @media (min-width: 2000px) {
-      width: 50%;
-    }
-  }
-
-  .asset-info {
-    @media (min-width: 2000px) {
-      width: 300px;
-    }
-  }
-
-  .asset-percentage {
-    width: 120px;
-
-    @media (min-width: 2000px) {
-      width: 200px;
-    }
-  }
-}
-
 .dashboard-asset-table {
   &__search {
     max-width: 450px;
-  }
-
-  &__balances {
-    &__total {
-      &:hover {
-        background-color: transparent !important;
-      }
-    }
   }
 }
 </style>
