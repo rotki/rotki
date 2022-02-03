@@ -10236,5 +10236,5 @@ Staking events
 
    :statuscode 200: Events are succesfully returned
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in.
+   :statuscode 409: No user is logged in, kraken is not active or some parameter for filters is not valid.
    :statuscode 500: Internal rotki error

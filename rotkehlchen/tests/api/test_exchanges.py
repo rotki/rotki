@@ -1378,3 +1378,41 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     )
     result = assert_proper_response_with_result(response)
     assert len(result['events']) == 4
+
+    # test that sorting for a non existing column is handled correctly
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        json={
+            "ascending": False,
+            "async_query": False,
+            "limit": 10,
+            "offset": 0,
+            "only_cache": True,
+            "order_by_attribute": "random_column",
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Database query error retrieving misssing prices no such column',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # test that the event_type filter for order attribute
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        json={
+            "ascending": False,
+            "async_query": False,
+            "limit": 10,
+            "offset": 0,
+            "only_cache": True,
+            "order_by_attribute": "event_type",
+        },
+    )
+    assert_proper_response_with_result(response)
