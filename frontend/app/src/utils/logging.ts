@@ -1,12 +1,10 @@
 import { LogLevelNumbers } from 'loglevel';
 import { interop } from '@/electron-interop';
 import IndexedDb from '@/utils/indexed-db';
-import { DEBUG, Level, levels } from '@/utils/log-level';
-const logger = require('loglevel');
+import { CRITICAL, DEBUG, ERROR, Level, levels } from '@/utils/log-level';
 
-if (process.env.NODE_ENV === 'development') {
-  logger.setDefaultLevel(DEBUG);
-}
+const logger = require('loglevel');
+logger.setDefaultLevel(process.env.NODE_ENV === 'development' ? DEBUG : ERROR);
 
 const loggerDb = new IndexedDb('db', 1, 'logs');
 
@@ -39,4 +37,10 @@ logger.methodFactory = function (
 
 logger.setLevel(logger.getLevel());
 
-export { logger };
+const setLevel = (loglevel?: Level, persist: boolean = true) => {
+  const level: Exclude<Level, 'critical'> =
+    !loglevel || loglevel === CRITICAL ? ERROR : loglevel;
+  logger.setLevel(level, persist);
+};
+
+export { logger, setLevel };

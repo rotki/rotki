@@ -20,8 +20,8 @@ import {
 } from '@/store/types';
 import { isLoading } from '@/store/utils';
 import { Nullable } from '@/types';
-import { CRITICAL, DEBUG, ERROR, Level } from '@/utils/log-level';
-import { logger } from '@/utils/logging';
+import { CRITICAL, DEBUG, Level } from '@/utils/log-level';
+import { logger, setLevel } from '@/utils/logging';
 
 Vue.use(Vuex);
 
@@ -82,12 +82,7 @@ export const useMainStore = defineStore('main', () => {
     dataDirectory.value = appDataDirectory;
     const formattedAppLogLevel = appLogLevel.toLowerCase() as Level;
     logLevel.value = formattedAppLogLevel;
-
-    const level: Exclude<Level, 'critical'> =
-      !formattedAppLogLevel || formattedAppLogLevel === CRITICAL
-        ? ERROR
-        : formattedAppLogLevel;
-    logger.setDefaultLevel(level);
+    setLevel(formattedAppLogLevel);
   };
 
   const connect = async (payload?: string | null): Promise<void> => {
