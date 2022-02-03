@@ -3,8 +3,8 @@ import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/store';
 import { Writeable } from '@/types';
-import { CRITICAL, DEBUG, ERROR, Level, LOG_LEVEL } from '@/utils/log-level';
-import { logger } from '@/utils/logging';
+import { CRITICAL, DEBUG, Level, LOG_LEVEL } from '@/utils/log-level';
+import { setLevel } from '@/utils/logging';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
@@ -53,10 +53,7 @@ export const setupBackendManagement = (loaded: () => void = () => {}) => {
   onMounted(async () => {
     await load();
     loaded();
-    const loglevel = options.value.loglevel;
-    const level: Exclude<Level, 'critical'> =
-      !loglevel || loglevel === CRITICAL ? ERROR : loglevel;
-    logger.setDefaultLevel(level);
+    setLevel(options.value.loglevel);
   });
 
   const restartBackendWithOptions = async (

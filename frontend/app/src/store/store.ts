@@ -20,7 +20,8 @@ import {
 } from '@/store/types';
 import { isLoading } from '@/store/utils';
 import { Nullable } from '@/types';
-import { logger } from '@/utils/logging';
+import { CRITICAL, DEBUG, Level } from '@/utils/log-level';
+import { logger, setLevel } from '@/utils/logging';
 
 Vue.use(Vuex);
 
@@ -34,6 +35,9 @@ export const useMainStore = defineStore('main', () => {
   const connectionFailure = ref(false);
   const status = ref<Partial<Record<Section, Status>>>({});
   const dataDirectory = ref('');
+  const logLevel = ref<Level>(
+    process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL
+  );
 
   const updateNeeded = computed(() => {
     const { version: appVersion, downloadUrl } = version.value;
@@ -62,16 +66,23 @@ export const useMainStore = defineStore('main', () => {
   });
 
   const getVersion = async (): Promise<void> => {
-    const { version: appVersion, dataDirectory: appDataDirectory } =
-      await api.info();
+    const { version: appVersion } = await api.info(true);
     if (appVersion) {
       version.value = {
         version: appVersion.ourVersion || '',
         latestVersion: appVersion.latestVersion || '',
         downloadUrl: appVersion.downloadUrl || ''
       };
-      dataDirectory.value = appDataDirectory;
     }
+  };
+
+  const getInfo = async (): Promise<void> => {
+    const { dataDirectory: appDataDirectory, logLevel: appLogLevel } =
+      await api.info(false);
+    dataDirectory.value = appDataDirectory;
+    const formattedAppLogLevel = appLogLevel.toLowerCase() as Level;
+    logLevel.value = formattedAppLogLevel;
+    setLevel(formattedAppLogLevel);
   };
 
   const connect = async (payload?: string | null): Promise<void> => {
@@ -104,6 +115,7 @@ export const useMainStore = defineStore('main', () => {
           clearInterval(intervalId);
           connected.value = isConnected;
 
+          await getInfo();
           await getVersion();
         }
       } catch (e: any) {
@@ -179,6 +191,7 @@ export const useMainStore = defineStore('main', () => {
     showMessage,
     connect,
     getVersion,
+    getInfo,
     setMessage,
     setStatus,
     getStatus,

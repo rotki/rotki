@@ -305,9 +305,12 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  info(): Promise<BackendInfo> {
+  info(checkForUpdates: boolean = false): Promise<BackendInfo> {
     return this.axios
       .get<ActionResult<BackendInfo>>('/info', {
+        params: axiosSnakeCaseTransformer({
+          checkForUpdates
+        }),
         transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
