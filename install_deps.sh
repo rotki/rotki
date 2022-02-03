@@ -37,7 +37,7 @@ if [[ $SQLCIPHER_EXISTS == "" ]]; then
     cd "$WORK_DIR" || exit 1
     git clone https://github.com/sqlcipher/sqlcipher
     cd sqlcipher || exit 1
-    git checkout v4.4.3
+    git checkout v4.5.0
     ./configure \
 	--enable-tempstore=yes \
 	CFLAGS="-DSQLITE_HAS_CODEC -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS" \

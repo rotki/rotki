@@ -19,7 +19,7 @@ def test_simple_logger_with_kwargs(pylint_test_linter):
 
         checker.visit_call(node)
         messages = checker.linter.release_messages()
-        assert len(messages) == 1
+        assert len(messages) == 2
         for m in messages:
             assert m.msg_id == LOGNOKWARGS_SYMBOL
             assert m.node == node

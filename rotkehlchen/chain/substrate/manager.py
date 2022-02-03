@@ -268,7 +268,10 @@ class SubstrateManager():
 
     @staticmethod
     def _format_own_rpc_endpoint(endpoint: str) -> str:
-        return f'http://{endpoint}' if not urlparse(endpoint).scheme else endpoint
+        parsed = urlparse(endpoint)
+        if not parsed.scheme or parsed.path.isnumeric():
+            return f'http://{endpoint}'
+        return endpoint
 
     def _get_account_balance(
             self,

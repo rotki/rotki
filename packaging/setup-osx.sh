@@ -51,5 +51,5 @@ function install_mac_cpython {
     codesign --remove-signature "$PYTHON_DIR/Python"
 }
 
-install_mac_cpython "3.7.9" "10.9"
+install_mac_cpython "3.9.10" "10.9"
 echo "PATH=$PYTHON_DIR:$PYTHON_DIR/bin:$PATH" >> $GITHUB_ENV

@@ -373,9 +373,9 @@ Install electron and any other npm dependencies by::
     cd frontend
     npm ci
 
-Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ with python 3.7 to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`__ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
+Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ with python 3.9 to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <http://exponential.io/blog/2015/02/10/install-virtualenv-and-virtualenvwrapper-on-ubuntu/>`__ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
 
-    mkvirtualenv rotki -p /usr/bin/python3.7
+    mkvirtualenv rotki -p /usr/bin/python3.9
 
 Then install all the python requirements by doing::
 
@@ -400,7 +400,7 @@ OSX
 
 The tl;dr version is:
 - Install ``sqlcipher``
-- Use a virtual env with Python 3.7.x
+- Use a virtual env with Python 3.9.x
 - Confirm ``pip``(pip3) install correctly and up to date
 - Get your node under control with ``nvm``. It has been tested with v16
 
@@ -411,7 +411,7 @@ rotki uses an encrypted database called `SQLCipher <https://www.zetetic.net/sqlc
 
     $ brew update
     $ cd "$(brew --repo homebrew/core)"
-    $ git checkout 31f4d9cef46b1c39cdbe2f72ab682b5d0b02cf67 Formula/sqlcipher.rb #This formula installs 4.4.3 of sqlcipher
+    $ git checkout 9ad779deb6076d0fc251fddc579ee2eb72acbb99 Formula/sqlcipher.rb #This formula installs 4.5.0 of sqlcipher
     $ brew install sqlcipher
 
 Also these are some dependencies that may or may not be properly installed in your system so make sure you have them. ::
@@ -425,7 +425,7 @@ If you wish to use Conda, use the following commands::
     $ echo "export PATH=$PATH:/usr/local/anaconda3/bin" >> ~/.bash_profile
     $ echo ". /usr/local/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
     $ source ~/.bash_profile
-    $ conda create python=3.7 --name rotki
+    $ conda create python=3.9 --name rotki
     $ conda activate rotki
 
 If you wish to use Virtualenvwrapper use the following::
@@ -438,9 +438,9 @@ And add the following to your shell startup file (e.g. .bashrc, .bash_profile, o
     #Virtualenvwrapper settings:
     export WORKON_HOME=$HOME/.virtualenvs
     export PROJECT_HOME=$HOME/rotki_dev
-    export VIRTUALENVWRAPPER_PYTHON=/Library/Frameworks/Python.framework/Versions/3.7/bin/python3
-    export VIRTUALENVWRAPPER_VIRTUALENV=/Library/Frameworks/Python.framework/Versions/3.7/bin/virtualenv
-    source /Library/Frameworks/Python.framework/Versions/3.7/bin/virtualenvwrapper.sh
+    export VIRTUALENVWRAPPER_PYTHON=/Library/Frameworks/Python.framework/Versions/3.9/bin/python3
+    export VIRTUALENVWRAPPER_VIRTUALENV=/Library/Frameworks/Python.framework/Versions/3.9/bin/virtualenv
+    source /Library/Frameworks/Python.framework/Versions/3.9/bin/virtualenvwrapper.sh
     
 And reload shell startup file::
 
@@ -509,7 +509,7 @@ Install `node (includes npm) <https://nodejs.org/en/download/>`_.
 Python
 ^^^^^^^^^^^^^^^^^^^^
 
-1. Get `python 3.7 <https://www.python.org/downloads/release/python-374/>`_ (3.7 is required due to some rotki dependencies). Make sure to download the 64-bit version of python if your version of Windows is 64-bit! If you're unsure of what Windows version you have, you can check in Control Panel -> System and Security -> System.
+1. Get `python 3.9 <https://www.python.org/downloads/release/python-3910/>`_ (3.9 is required due to some rotki dependencies). Make sure to download the 64-bit version of python if your version of Windows is 64-bit! If you're unsure of what Windows version you have, you can check in Control Panel -> System and Security -> System.
 2. For some reason python does not always install to the Path variable in Windows. To ensure you have the necessary python directories referenced, go to Control Panel -> System -> Advanced system settings -> Advanced (tab) -> Environment Variables... In the Environment Variables... dialog under "System Varaiables" open the "Path" variable and ensure that both the root python directory as well as the ``\Scripts\`` subdirectory are included. If they are not, add them one by one by clicking "New" and then "Browse" and locating the correct directories. NOTE: By default the Windows MSI installer place python in the ``C:\Users\<username>\AppData\Local\Programs\`` directory.
 3. To test if you have entered python correctly into the Path variable, open a command prompt and type in ``python`` then hit Enter. The python cli should run and you should see the python version you installed depicted above the prompt. Press CTRL+Z, then Enter to exit.
 

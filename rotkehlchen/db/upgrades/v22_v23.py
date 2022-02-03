@@ -124,7 +124,7 @@ def upgrade_v22_to_v23(db: 'DBHandler') -> None:
     forex_history_file = data_directory / 'price_history_forex.json'
     if forex_history_file.is_file():
         shutil.move(
-            forex_history_file,  # type: ignore
+            forex_history_file,
             price_history_dir / 'forex_history_file.json',
         )
 
