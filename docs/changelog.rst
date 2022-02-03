@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`3987` Users will now be able to delete multiple database backups.
+* :feature:`2934` Users will now be able to deploy the docker image under a sub directory behind a proxy.
 * :feature:`569` Users will now be able to see assets staked, and amounts gained on Kraken's staking feature.
 * :bug:`-` If binance returns a delisted market as active and rotki queries it, the entire binance trade history query will not fail.
 * :bug:`-` All Liquity events will now always be correctly queried.
