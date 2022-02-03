@@ -1320,7 +1320,7 @@ def test_asset_conversion_zero_fee():
 
 
 def test_asset_conversion_choosing_fee_asset():
-    """Test that the fee asset is correctly choosen when the received asset transaction
+    """Test that the fee asset is correctly chosen when the received asset transaction
     is created before the giving transaction.
     """
 
