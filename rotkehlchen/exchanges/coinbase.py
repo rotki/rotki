@@ -132,10 +132,10 @@ def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> O
     amount_before_fee = deserialize_asset_amount(trade_a['native_amount']['amount'])
     # amount_after_fee + amount_before_fee is a negative amount and the fee needs to be positive
     conversion_native_fee_amount = abs(amount_after_fee + amount_before_fee)
-    if ZERO not in (tx_amount, conversion_native_fee_amount, amount_before_fee):
+    if ZERO not in (tx_amount, conversion_native_fee_amount, amount_before_fee, amount_after_fee):
         # To get the asset in wich the fee is nominated we pay attention to the creation
-        # date of each event. As per hour hypothesis the fee is nominated in the asset
-        # for wich the first transaction part was intialized
+        # date of each event. As per our hypothesis the fee is nominated in the asset
+        # for which the first transaction part was initialized
         time_created_a = deserialize_timestamp_from_date(
             date=trade_a['created_at'],
             formatstr='iso8601',
