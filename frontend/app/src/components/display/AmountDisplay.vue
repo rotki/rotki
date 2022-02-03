@@ -6,6 +6,7 @@
       'amount-display--profit': pnl && value.gt(0),
       'amount-display--loss': pnl && value.lt(0)
     }"
+    @click="copy"
   >
     <v-skeleton-loader
       :loading="loading"
@@ -22,16 +23,7 @@
         :asset="symbol"
       />
       <span>
-        <v-tooltip
-          top
-          open-delay="400ms"
-          :disabled="
-            ((!!fiatCurrency ||
-              renderValueDecimalPlaces <= floatingPrecision) &&
-              !tooltip) ||
-            isPriceAsset
-          "
-        >
+        <v-tooltip top open-delay="200ms">
           <template #activator="{ on, attrs }">
             <span
               data-cy="display-amount"
@@ -42,9 +34,35 @@
               {{ formattedValue }}
             </span>
           </template>
-          <span class="amount-display__full-value">
-            {{ fullValue }}
-          </span>
+          <div class="text-center">
+            <div
+              v-if="
+                !(
+                  (!!fiatCurrency ||
+                    renderValueDecimalPlaces <= floatingPrecision) &&
+                  !tooltip
+                ) || isPriceAsset
+              "
+              class="amount-display__full-value"
+            >
+              {{ fullFormattedValue }}
+            </div>
+            <div class="amount-display__copy-instruction">
+              <div
+                class="amount-display__copy-instruction__wrapper text-uppercase font-weight-bold text-caption"
+                :class="{
+                  'amount-display__copy-instruction__wrapper--copied': copied
+                }"
+              >
+                <div>
+                  {{ $t('amount_display.click_to_copy') }}
+                </div>
+                <div class="green--text text--lighten-2">
+                  {{ $t('amount_display.copied') }}
+                </div>
+              </div>
+            </div>
+          </div>
         </v-tooltip>
       </span>
       <amount-currency
@@ -65,6 +83,7 @@ import {
   computed,
   defineComponent,
   PropType,
+  ref,
   toRefs
 } from '@vue/composition-api';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
@@ -148,6 +167,8 @@ export default defineComponent({
 
       return getAssetSymbol(asset.value);
     });
+
+    const copied = ref<boolean>(false);
 
     const shownCurrency = computed<ShownCurrency>(() => {
       return showCurrency.value === 'none' && !!fiatCurrency.value
@@ -238,12 +259,14 @@ export default defineComponent({
       return rate ? value.multipliedBy(rate) : value;
     };
 
-    const fullValue = computed<string>(() => {
-      const value = convertFiat.value
+    const fullValue = computed<BigNumber>(() => {
+      return convertFiat.value
         ? convertValue(renderValue.value)
         : renderValue.value;
+    });
 
-      return value.toFormat(value.decimalPlaces());
+    const fullFormattedValue = computed<string>(() => {
+      return fullValue.value.toFormat(fullValue.value.decimalPlaces());
     });
 
     const rounding = computed<RoundingMode | undefined>(() => {
@@ -257,6 +280,22 @@ export default defineComponent({
       return rounding;
     });
 
+    const copiedTimeout = ref<any>(0);
+
+    const copy = () => {
+      navigator.clipboard.writeText(fullValue.value.toString());
+      if (copiedTimeout.value) {
+        clearTimeout(copiedTimeout.value);
+        copied.value = false;
+      }
+      setTimeout(() => {
+        copied.value = true;
+        copiedTimeout.value = setTimeout(() => {
+          copied.value = false;
+        }, 4000);
+      }, 50);
+    };
+
     return {
       currency,
       shouldShowAmount,
@@ -268,7 +307,9 @@ export default defineComponent({
       floatingPrecision,
       isPriceAsset,
       formattedValue,
-      fullValue
+      fullFormattedValue,
+      copied,
+      copy
     };
   }
 });
@@ -296,6 +337,19 @@ export default defineComponent({
 
   &__currency {
     font-size: 1rem;
+  }
+
+  &__copy-instruction {
+    height: 20px;
+    overflow: hidden;
+
+    &__wrapper {
+      transition: 0.2s all;
+
+      &--copied {
+        margin-top: -20px;
+      }
+    }
   }
 }
 

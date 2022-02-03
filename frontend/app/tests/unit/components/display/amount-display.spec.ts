@@ -8,6 +8,7 @@ import { currencies } from '@/data/currencies';
 import store from '@/store/store';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
 import '@/filters';
+import '../../i18n';
 
 Vue.use(Vuetify);
 

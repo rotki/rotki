@@ -67,6 +67,10 @@
       "percentage": "Percentage"
     }
   },
+  "amount_display": {
+    "click_to_copy": "Click to copy",
+    "copied": "Copied!"
+  },
   "asset_table": {
     "assets": "Assets",
     "copy_identifier": {
