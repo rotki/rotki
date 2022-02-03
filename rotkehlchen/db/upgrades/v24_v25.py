@@ -446,6 +446,85 @@ def upgrade_v24_to_v25(db: 'DBHandler') -> None:
     """
     helper = V24V25UpgradeHelper(db.msg_aggregator)
     cursor = db.conn.cursor()
+
+    # Create table misssing the creation statement in upgrades
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS balancer_pools (
+        address VARCHAR[42] NOT NULL PRIMARY KEY,
+        tokens_number INTEGER NOT NULL,
+        is_token0_unknown INTEGER NOT NULL,
+        token0_address VARCHAR[42] NOT NULL,
+        token0_symbol TEXT NOT NULL,
+        token0_name TEXT,
+        token0_decimals INTEGER,
+        token0_weight TEXT NOT NULL,
+        is_token1_unknown INTEGER NOT NULL,
+        token1_address VARCHAR[42] NOT NULL,
+        token1_symbol TEXT NOT NULL,
+        token1_name TEXT,
+        token1_decimals INTEGER,
+        token1_weight TEXT NOT NULL,
+        is_token2_unknown INTEGER,
+        token2_address VARCHAR[42],
+        token2_symbol TEXT,
+        token2_name TEXT,
+        token2_decimals INTEGER,
+        token2_weight TEXT,
+        is_token3_unknown INTEGER,
+        token3_address VARCHAR[42],
+        token3_symbol TEXT,
+        token3_name TEXT,
+        token3_decimals INTEGER,
+        token3_weight TEXT,
+        is_token4_unknown INTEGER,
+        token4_address VARCHAR[42],
+        token4_symbol TEXT,
+        token4_name TEXT,
+        token4_decimals INTEGER,
+        token4_weight TEXT,
+        is_token5_unknown INTEGER,
+        token5_address VARCHAR[42],
+        token5_symbol TEXT,
+        token5_name TEXT,
+        token5_decimals INTEGER,
+        token5_weight TEXT,
+        is_token6_unknown INTEGER,
+        token6_address VARCHAR[42],
+        token6_symbol TEXT,
+        token6_name TEXT,
+        token6_decimals INTEGER,
+        token6_weight TEXT,
+        is_token7_unknown INTEGER,
+        token7_address VARCHAR[42],
+        token7_symbol TEXT,
+        token7_name TEXT,
+        token7_decimals INTEGER,
+        token7_weight TEXT
+    );
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS balancer_events (
+        tx_hash VARCHAR[42] NOT NULL,
+        log_index INTEGER NOT NULL,
+        address VARCHAR[42] NOT NULL,
+        timestamp INTEGER NOT NULL,
+        type TEXT NOT NULL,
+        pool_address VARCHAR[42] NOT NULL,
+        lp_amount TEXT NOT NULL,
+        usd_value TEXT NOT NULL,
+        amount0 TEXT NOT NULL,
+        amount1 TEXT NOT NULL,
+        amount2 TEXT,
+        amount3 TEXT,
+        amount4 TEXT,
+        amount5 TEXT,
+        amount6 TEXT,
+        amount7 TEXT,
+        FOREIGN KEY (pool_address) REFERENCES balancer_pools(address)
+        PRIMARY KEY (tx_hash, log_index)
+    );
+    """)
+
     # Firstly let's clear tables we can easily repopulate with new data
     cursor.execute('DELETE FROM amm_swaps;')
     cursor.execute(
