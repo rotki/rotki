@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`4030` Add copy functionality for amount display.
 * :feature:`3987` Users will now be able to delete multiple database backups.
 * :feature:`569` Users will now be able to see assets staked, and amounts gained on Kraken's staking feature.
 * :bug:`-` If binance returns a delisted market as active and rotki queries it, the entire binance trade history query will not fail.
