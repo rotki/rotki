@@ -240,10 +240,6 @@ class DataImporter():
         if row_type in (
             'crypto_purchase',
             'crypto_exchange',
-            'referral_gift',
-            'referral_bonus',
-            'crypto_earn_interest_paid',
-            'referral_card_cashback',
             'card_cashback_reverted',
             'reimbursement',
             'viban_purchase',
@@ -338,6 +334,11 @@ class DataImporter():
             'pay_checkout_reward',
             'transfer_cashback',
             'supercharger_reward_to_app_credited',
+            'referral_card_cashback',
+            'referral_gift',
+            'referral_bonus',
+            'crypto_earn_interest_paid',
+
         ):
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
