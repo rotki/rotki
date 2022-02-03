@@ -10,6 +10,7 @@ Changelog
 * :bug:`-` If binance returns a delisted market as active and rotki queries it, the entire binance trade history query will not fail.
 * :bug:`4010` Crypto.com users won't see errors for rows containing zeros.
 * :bug:`-` All Liquity events will now always be correctly queried.
+* :bug:`3947` Coinbase conversions will now choose in a better way the asset to nominate the fees.
 * :feature:`-` Support for LUNA and card top ups has been added to the crypto.com importer.
 
 * :release:`1.23.2 <2022-01-21>`
