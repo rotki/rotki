@@ -430,8 +430,6 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
         link=None,
         notes=get_cryptocom_note('Refund from Merchant XXX'),
     )]
-    print(expected_ledger_actions)
-    print(ledger_actions)
     assert list(expected_ledger_actions) == ledger_actions
 
 

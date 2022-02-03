@@ -5,6 +5,7 @@ Changelog
 * :bug:`4034` If a new premium user is created, with DB sync on, premium api keys being correct but wrong password is given then creating same user with right password will now work.
 * :bug:`4013` Fix Bitpanda icon missing in exchange selector.
 * :bug:`3983` Add loading indicator to data directory field.
+* :bug:`4039` Rewards and cashbacks from crypto.com will now be correctly categorized as ledger actions.
 * :bug:`3993` Fix app bar icons misbehavior when windows is resized.
 * :bug:`3998` FTX subaccounts should now be working again.
 * :bug:`-` If binance returns a delisted market as active and rotki queries it, the entire binance trade history query will not fail.
