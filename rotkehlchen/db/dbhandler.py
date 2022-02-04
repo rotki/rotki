@@ -1879,7 +1879,7 @@ class DBHandler:
             passphrase: Optional[str] = None,
             kraken_account_type: Optional[KrakenAccountType] = None,
             PAIRS: Optional[List[str]] = None,  # noqa: N803
-            ftx_subaccount_name: Optional[str] = None,
+            ftx_subaccount: Optional[str] = None,
     ) -> None:
         if location not in SUPPORTED_EXCHANGES:
             raise InputError(f'Unsupported exchange {str(location)}')
@@ -1902,8 +1902,8 @@ class DBHandler:
         if location in (Location.BINANCE, Location.BINANCEUS) and PAIRS is not None:
             self.set_binance_pairs(name=name, pairs=PAIRS, location=location)
 
-        if location == Location.FTX and ftx_subaccount_name is not None:
-            self.set_ftx_subaccount(name, ftx_subaccount_name)
+        if location == Location.FTX and ftx_subaccount is not None:
+            self.set_ftx_subaccount(name, ftx_subaccount)
 
         self.update_last_write()
 
@@ -1917,7 +1917,7 @@ class DBHandler:
             passphrase: Optional[str],
             kraken_account_type: Optional['KrakenAccountType'],
             PAIRS: Optional[List[str]],  # noqa: N803
-            ftx_subaccount_name: Optional[str],
+            ftx_subaccount: Optional[str],
             should_commit: bool = False,
     ) -> None:
         """May raise InputError if something is wrong with editing the DB"""
@@ -1983,10 +1983,10 @@ class DBHandler:
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 self.conn.rollback()
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501
-        if location == Location.FTX and ftx_subaccount_name is not None:
+        if location == Location.FTX and ftx_subaccount is not None:
             try:
                 exchange_name = new_name if new_name is not None else name
-                self.set_ftx_subaccount(exchange_name, ftx_subaccount_name)
+                self.set_ftx_subaccount(exchange_name, ftx_subaccount)
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 self.conn.rollback()
                 raise InputError(f'Could not update DB user_credentials_mappings due to {str(e)}') from e  # noqa: E501

@@ -5,8 +5,19 @@ Changelog
 * :feature:`4030` Add copy functionality for amount display.
 * :feature:`3987` Users will now be able to delete multiple database backups.
 * :feature:`569` Users will now be able to see assets staked, and amounts gained on Kraken's staking feature.
+
+* :release:`1.23.3 <2022-02-04>`
+* :bug:`4034` If a new premium user is created, with DB sync on, premium api keys being correct but wrong password is given then creating same user with right password will now work.
+* :bug:`4013` Fix Bitpanda icon missing in exchange selector.
+* :bug:`3983` Add loading indicator to data directory field.
+* :bug:`4039` Rewards and cashbacks from crypto.com will now be correctly categorized as ledger actions.
+* :bug:`3993` Fix app bar icons misbehavior when windows is resized.
+* :bug:`3998` FTX subaccounts should now be working again.
 * :bug:`-` If binance returns a delisted market as active and rotki queries it, the entire binance trade history query will not fail.
+* :bug:`4010` Crypto.com users won't see errors for rows containing zeros.
 * :bug:`-` All Liquity events will now always be correctly queried.
+* :bug:`3947` Coinbase conversions will now choose in a better way the asset to nominate the fees.
+* :feature:`-` Support for LUNA and card top ups has been added to the crypto.com importer.
 
 * :release:`1.23.2 <2022-01-21>`
 * :bug:`-` Users will now be properly prompted to restart the application after the auto-updater downloads the update.

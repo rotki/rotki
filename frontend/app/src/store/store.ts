@@ -174,7 +174,6 @@ export const useMainStore = defineStore('main', () => {
     version.value = defaultVersion();
     connectionFailure.value = false;
     status.value = {};
-    dataDirectory.value = '';
   };
 
   return {

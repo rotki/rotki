@@ -233,6 +233,23 @@ class PremiumSyncManager():
             log.info('User approved data sync from server')
             self._sync_data_from_server_and_replace_local()  # this may raise due to password
 
+    def _abort_new_syncing_premium_user(
+            self,
+            username: str,
+            original_exception: PremiumAuthenticationError,
+    ) -> None:
+        """At this point we are at a new user trying to create an account with
+        premium API keys and we failed. But a directory was created. Remove it.
+        But create a backup of it in case something went really wrong
+        and the directory contained data we did not want to lose"""
+        shutil.move(
+            self.data.user_data_dir,  # type: ignore
+            self.data.data_directory / f'auto_backup_{username}_{ts_now()}',
+        )
+        raise PremiumAuthenticationError(
+            f'Could not verify keys for the new account. {str(original_exception)}',  # noqa: E501
+        ) from original_exception
+
     def try_premium_at_start(
             self,
             given_premium_credentials: Optional[PremiumCredentials],
@@ -257,19 +274,7 @@ class PremiumSyncManager():
             try:
                 self.premium = premium_create_and_verify(given_premium_credentials)
             except PremiumAuthenticationError as e:
-                log.error('Given API key is invalid')
-                # At this point we are at a new user trying to create an account with
-                # premium API keys and we failed. But a directory was created. Remove it.
-                # But create a backup of it in case something went really wrong
-                # and the directory contained data we did not want to lose
-                shutil.move(
-                    self.data.user_data_dir,  # type: ignore
-                    self.data.data_directory / f'auto_backup_{username}_{ts_now()}',
-                )
-                raise PremiumAuthenticationError(
-                    'Could not verify keys for the new account. '
-                    '{}'.format(str(e)),
-                ) from e
+                self._abort_new_syncing_premium_user(username=username, original_exception=e)
 
         # else, if we got premium data in the DB initialize it and try to sync with the server
         db_credentials = self.data.db.get_rotkehlchen_premium()
@@ -293,7 +298,11 @@ class PremiumSyncManager():
             # if this is a new account, make sure the api keys are properly stored
             # in the DB
             if sync_database:
-                self._sync_if_allowed(sync_approval, result)
+                try:
+                    self._sync_if_allowed(sync_approval, result)
+                except PremiumAuthenticationError as e:
+                    self._abort_new_syncing_premium_user(username=username, original_exception=e)
+
             self.data.db.set_rotkehlchen_premium(self.premium.credentials)
         else:
             self._sync_if_allowed(sync_approval, result)

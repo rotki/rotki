@@ -1088,7 +1088,7 @@ def test_asset_conversion():
             "currency": "USD",
         },
         "description": None,
-        "created_at": "2020-06-08T02:32:16Z",
+        "created_at": "2020-06-08T02:32:15Z",
         "updated_at": "2021-06-08T02:32:16Z",
         "resource": "transaction",
         "resource_path": "/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
@@ -1170,7 +1170,7 @@ def test_asset_conversion_not_stable_coin():
             "currency": "USD",
         },
         "description": None,
-        "created_at": "2020-06-08T02:32:16Z",
+        "created_at": "2020-06-08T02:32:15Z",
         "updated_at": "2021-06-08T02:32:16Z",
         "resource": "transaction",
         "resource_path": "/v2/accounts/sd5af/transactions/77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
@@ -1239,7 +1239,6 @@ def test_asset_conversion_not_stable_coin():
 
 def test_asset_conversion_zero_fee():
     """Test a conversion with 0 fee"""
-
     trade_a = {
         "id": "77c5ad72-764e-414b-8bdb-b5aed20fb4b1",
         "type": "trade",
@@ -1316,5 +1315,92 @@ def test_asset_conversion_zero_fee():
         fee=FVal(ZERO),
         fee_currency=A_1INCH,
         link='5dceef97-ef34-41e6-9171-3e60cd01639e',
+    )
+    assert trade == expected_trade
+
+
+def test_asset_conversion_choosing_fee_asset():
+    """Test that the fee asset is correctly chosen when the received asset transaction
+    is created before the giving transaction.
+    """
+
+    trade_a = {
+        "id": "REDACTED",
+        "type": "trade",
+        "status": "completed",
+        "amount": {
+            "amount": "-37734.034561",
+            "currency": "ETH",
+        },
+        "native_amount": {
+            "amount": "-79362.22",
+            "currency": "USD",
+        },
+        "description": None,
+        "created_at": "2021-10-12T13:23:56Z",
+        "updated_at": "2021-10-12T13:23:56Z",
+        "resource": "transaction",
+        "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+        "instant_exchange": False,
+        "trade": {
+            "id": "id_of_trade",
+            "resource": "trade",
+            "resource_path": "/v2/accounts/REDACTED/trades/id_of_trade",
+        },
+        "details": {
+            "title": "Converted from ETH",
+            "subtitle": "Using ETH Wallet",
+            "header": "Converted 37,734.034561 ETH ($79,362.22)",
+            "health": "positive",
+            "payment_method_name": "ETH Wallet",
+        },
+        "hide_native_amount": False,
+    }
+
+    trade_b = {
+        "id": "REDACTED",
+        "type": "trade",
+        "status": "completed",
+        "amount": {
+            "amount": "552.315885836",
+            "currency": "BTC",
+        },
+        "native_amount": {
+            "amount": "77827.94",
+            "currency": "USD",
+        },
+        "description": None,
+        "created_at": "2021-10-12T13:23:55Z",
+        "updated_at": "2021-10-12T13:23:57Z",
+        "resource": "transaction",
+        "resource_path": "/v2/accounts/REDACTED/transactions/REDACTED",
+        "instant_exchange": False,
+        "trade": {
+            "id": "id_of_trade",
+            "resource": "trade",
+            "resource_path": "/v2/accounts/REDACTED/trades/id_of_trade",
+        },
+        "details": {
+            "title": "Converted to BTC",
+            "subtitle": "Using ETH Wallet",
+            "header": "Converted 552.31588584 BTC ($77,827.94)",
+            "health": "positive",
+            "payment_method_name": "ETH Wallet",
+        },
+        "hide_native_amount": False,
+    }
+
+    trade = trade_from_conversion(trade_a, trade_b)
+    expected_trade = Trade(
+        timestamp=1634045036,
+        location=Location.COINBASE,
+        base_asset=A_ETH,
+        quote_asset=A_BTC,
+        trade_type=TradeType.SELL,
+        amount=FVal('37734.034561'),
+        rate=FVal('0.01463707478571204566189616471'),
+        fee=FVal('10.88821337581925051594581586'),
+        fee_currency=A_BTC,
+        link='id_of_trade',
     )
     assert trade == expected_trade

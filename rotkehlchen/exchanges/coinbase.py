@@ -132,14 +132,34 @@ def trade_from_conversion(trade_a: Dict[str, Any], trade_b: Dict[str, Any]) -> O
     amount_before_fee = deserialize_asset_amount(trade_a['native_amount']['amount'])
     # amount_after_fee + amount_before_fee is a negative amount and the fee needs to be positive
     conversion_native_fee_amount = abs(amount_after_fee + amount_before_fee)
-    if ZERO not in (tx_amount, conversion_native_fee_amount, amount_before_fee):
-        # We have the fee amount in the native currency. To get it in the
-        # converted asset we have to get the rate
-        asset_native_rate = tx_amount / abs(amount_before_fee)
-        fee_amount = Fee(conversion_native_fee_amount * asset_native_rate)
+    if ZERO not in (tx_amount, conversion_native_fee_amount, amount_before_fee, amount_after_fee):
+        # To get the asset in which the fee is nominated we pay attention to the creation
+        # date of each event. As per our hypothesis the fee is nominated in the asset
+        # for which the first transaction part was initialized
+        time_created_a = deserialize_timestamp_from_date(
+            date=trade_a['created_at'],
+            formatstr='iso8601',
+            location='coinbase',
+        )
+        time_created_b = deserialize_timestamp_from_date(
+            date=trade_b['created_at'],
+            formatstr='iso8601',
+            location='coinbase',
+        )
+        if time_created_a < time_created_b:
+            # We have the fee amount in the native currency. To get it in the
+            # converted asset we have to get the rate
+            asset_native_rate = tx_amount / abs(amount_before_fee)
+            fee_amount = Fee(conversion_native_fee_amount * asset_native_rate)
+            fee_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
+        else:
+            trade_b_amount = abs(deserialize_asset_amount(trade_b['amount']['amount']))
+            asset_native_rate = trade_b_amount / abs(amount_after_fee)
+            fee_amount = Fee(conversion_native_fee_amount * asset_native_rate)
+            fee_asset = asset_from_coinbase(trade_b['amount']['currency'], time=timestamp)
     else:
         fee_amount = Fee(ZERO)
-    fee_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
+        fee_asset = asset_from_coinbase(trade_a['amount']['currency'], time=timestamp)
 
     return Trade(
         timestamp=timestamp,

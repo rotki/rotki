@@ -17,7 +17,12 @@ from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
-from web3.exceptions import BadFunctionCallOutput, BadResponseFormat, TransactionNotFound
+from web3.exceptions import (
+    BadFunctionCallOutput,
+    BadResponseFormat,
+    BlockNotFound,
+    TransactionNotFound,
+)
 from web3.middleware.exception_retry_request import http_retry_request_middleware
 from web3.types import FilterParams
 
@@ -411,6 +416,7 @@ class EthereumManager():
                     requests.exceptions.RequestException,
                     BlockchainQueryError,
                     TransactionNotFound,
+                    BlockNotFound,
                     KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Probably fixed as written below, but no risking it. # noqa: E501
                     BadResponseFormat,  # should replace the above KeyError after https://github.com/ethereum/web3.py/pull/2188  # noqa: E501
             ) as e:
@@ -564,6 +570,8 @@ class EthereumManager():
         May raise:
         - RemoteError if an external service such as Etherscan is queried and
         there is a problem with its query.
+        - BlockNotFound if number used to lookup the block can't be found. Raised
+        by web3.eth.get_block().
         """
         if web3 is None:
             return self.etherscan.get_block_by_number(num)

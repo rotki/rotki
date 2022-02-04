@@ -297,7 +297,7 @@ class ExchangesResource(BaseResource):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
-            ftx_subaccount_name=ftx_subaccount,
+            ftx_subaccount=ftx_subaccount,
         )
 
     @use_kwargs(patch_schema, location='json')
@@ -322,7 +322,7 @@ class ExchangesResource(BaseResource):
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
             binance_markets=binance_markets,
-            ftx_subaccount_name=ftx_subaccount,
+            ftx_subaccount=ftx_subaccount,
         )
 
     @use_kwargs(delete_schema, location='json')
