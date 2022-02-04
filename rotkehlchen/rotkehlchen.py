@@ -6,10 +6,9 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Literal, Optional, Tuple, Union
 
 import gevent
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures import Balance, BalanceType

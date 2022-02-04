@@ -1,10 +1,9 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Set, Union, cast, overload
 
 import requests
 from eth_typing import ChecksumAddress
-from typing_extensions import Literal
 from web3 import Web3
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType

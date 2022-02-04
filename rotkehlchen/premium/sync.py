@@ -2,9 +2,7 @@ import base64
 import logging
 import shutil
 from enum import Enum
-from typing import Any, Dict, NamedTuple, Optional, Tuple
-
-from typing_extensions import Literal
+from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple
 
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors import (

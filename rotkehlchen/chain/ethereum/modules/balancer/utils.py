@@ -1,7 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
-
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Tuple
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken

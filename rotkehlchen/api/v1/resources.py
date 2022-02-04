@@ -1,12 +1,11 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
 
 from flask import Blueprint, Request, Response, request as flask_request
 from flask_restful import Resource
 from marshmallow import Schema
 from marshmallow.utils import missing
-from typing_extensions import Literal
 from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage

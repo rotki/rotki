@@ -1,7 +1,17 @@
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from eth_typing.abi import Decodable
-from typing_extensions import Literal
 from web3 import Web3
 from web3._utils.abi import get_abi_output_types
 

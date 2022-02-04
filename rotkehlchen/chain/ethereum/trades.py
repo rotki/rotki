@@ -1,6 +1,4 @@
-from typing import Any, Dict, List, NamedTuple, Tuple
-
-from typing_extensions import Literal
+from typing import Any, Dict, List, Literal, NamedTuple, Tuple
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants.assets import A_DAI

@@ -2,10 +2,9 @@ import datetime
 import logging
 from collections import defaultdict
 from operator import add, sub
-from typing import TYPE_CHECKING, DefaultDict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, DefaultDict, List, Literal, Optional, Set, Tuple
 
 from gevent.lock import Semaphore
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken

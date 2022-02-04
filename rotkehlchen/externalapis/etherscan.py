@@ -1,10 +1,9 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Optional, Tuple, Union, overload
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union, overload
 
 import gevent
 import requests
-from typing_extensions import Literal
 
 from rotkehlchen.constants.timing import (
     DEFAULT_CONNECT_TIMEOUT,

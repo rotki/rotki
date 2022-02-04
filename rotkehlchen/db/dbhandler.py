@@ -6,10 +6,9 @@ import shutil
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple, Type, Union, cast
 
 from pysqlcipher3 import dbapi2 as sqlcipher
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import ActionType, BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken

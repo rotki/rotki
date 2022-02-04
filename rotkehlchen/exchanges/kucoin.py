@@ -14,6 +14,7 @@ from typing import (
     DefaultDict,
     Dict,
     List,
+    Literal,
     Optional,
     Tuple,
     Union,
@@ -24,7 +25,6 @@ from urllib.parse import urlencode
 import gevent
 import requests
 from requests.adapters import Response
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance

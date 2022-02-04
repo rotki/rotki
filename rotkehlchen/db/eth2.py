@@ -1,8 +1,7 @@
 import logging
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import TYPE_CHECKING, List, Literal, Optional, Sequence
 
 from pysqlcipher3 import dbapi2 as sqlcipher
-from typing_extensions import Literal
 
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDailyStats

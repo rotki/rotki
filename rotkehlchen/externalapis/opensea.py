@@ -1,13 +1,23 @@
 import dataclasses
 import logging
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Union,
+    overload,
+)
 
 import gevent
 import requests
 from cryptography.fernet import Fernet
 from eth_utils import to_checksum_address
-from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value

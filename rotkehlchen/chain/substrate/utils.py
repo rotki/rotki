@@ -1,8 +1,7 @@
-from typing import Union, overload
+from typing import Literal, Union, overload
 
 from substrateinterface import Keypair
 from substrateinterface.utils.ss58 import is_valid_ss58_address
-from typing_extensions import Literal
 
 from .typing import (
     KusamaAddress,
