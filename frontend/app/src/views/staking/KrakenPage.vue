@@ -56,8 +56,9 @@
 import {
   computed,
   defineComponent,
-  onBeforeMount,
-  unref
+  onMounted,
+  unref,
+  watch
 } from '@vue/composition-api';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -83,8 +84,14 @@ export default defineComponent({
       );
     });
 
-    onBeforeMount(async () => {
+    onMounted(async () => {
       if (unref(isKrakenConnected)) {
+        await load(false);
+      }
+    });
+
+    watch(isKrakenConnected, async isKrakenConnected => {
+      if (isKrakenConnected) {
         await load(false);
       }
     });
