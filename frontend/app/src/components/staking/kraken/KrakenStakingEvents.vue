@@ -33,8 +33,18 @@
           :label="$t('kraken_staking_events.upgrade.label')"
         />
       </template>
-      <template #item.eventType="{ item }">
-        {{ item.eventType }}
+      <template #header.usdValue>
+        {{
+          $t('kraken_staking_events.column.value', {
+            symbol: currencySymbol
+          })
+        }}
+        <value-accuracy-hint />
+      </template>
+      <template #item.type="{ item }">
+        <badge-display color="grey">
+          {{ item.eventType }}
+        </badge-display>
       </template>
       <template #item.asset="{ item }">
         <asset-details :asset="item.asset" />
@@ -64,7 +74,9 @@ import {
   watch
 } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
+import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import {
   MatchedKeyword,
@@ -75,6 +87,7 @@ import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupThemeCheck } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
+import { SupportedCurrency } from '@/data/currencies';
 import i18n from '@/i18n';
 import {
   KrakenStakingEvents,
@@ -84,12 +97,11 @@ import {
 } from '@/types/staking';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
-const useHeaders = () => {
-  const { currencySymbol } = setupGeneralSettings();
+const useHeaders = (currencySymbol: Ref<SupportedCurrency>) => {
   return computed<DataTableHeader[]>(() => [
     {
       text: i18n.t('kraken_staking_events.column.event_type').toString(),
-      value: 'eventType'
+      value: 'type'
     },
     {
       text: i18n.t('kraken_staking_events.column.asset').toString(),
@@ -197,7 +209,13 @@ const useMatchers = (events: Ref<KrakenStakingEvents>) => {
 
 export default defineComponent({
   name: 'KrakenStakingEvents',
-  components: { TableFilter, RefreshButton, UpgradeRow },
+  components: {
+    BadgeDisplay,
+    TableFilter,
+    RefreshButton,
+    UpgradeRow,
+    ValueAccuracyHint
+  },
   props: {
     events: {
       required: true,
@@ -216,6 +234,8 @@ export default defineComponent({
 
     const { itemsPerPage } = setupSettings();
     const { isMobile } = setupThemeCheck();
+
+    const { currencySymbol } = setupGeneralSettings();
 
     const options = ref<KrakenStakingPaginationOptions>({
       page: 1,
@@ -263,10 +283,11 @@ export default defineComponent({
       options,
       isMobile,
       showUpgradeRow,
-      tableHeaders: useHeaders(),
+      tableHeaders: useHeaders(currencySymbol),
       matchers: useMatchers(events),
       refresh,
-      updateFilter
+      updateFilter,
+      currencySymbol
     };
   }
 });

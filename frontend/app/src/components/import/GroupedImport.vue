@@ -27,7 +27,7 @@
                 contain
               />
             </adaptive-wrapper>
-            <div class="pl-4">{{ data.item.name }}</div>
+            <div class="pl-3">{{ data.item.name }}</div>
           </div>
         </template>
       </v-select>

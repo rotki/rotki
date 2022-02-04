@@ -335,10 +335,6 @@ export default defineComponent({
     color: var(--v-rotki-loss-base);
   }
 
-  &__currency {
-    font-size: 1rem;
-  }
-
   &__copy-instruction {
     height: 20px;
     overflow: hidden;

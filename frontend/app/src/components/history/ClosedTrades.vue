@@ -272,7 +272,9 @@ const tableHeaders: DataTableHeader[] = [
   },
   {
     text: i18n.t('closed_trades.headers.action').toString(),
-    value: 'type'
+    value: 'type',
+    class: 'text-no-wrap',
+    align: 'center'
   },
   {
     text: i18n.t('closed_trades.headers.amount').toString(),

@@ -76,7 +76,7 @@
       <template #item.category="{ item }">
         <badge-display
           :color="
-            item.category.toLowerCase() === 'withdrawal' ? 'red' : 'green'
+            item.category.toLowerCase() === 'withdrawal' ? 'grey' : 'green'
           "
         >
           {{ item.category }}
@@ -202,7 +202,9 @@ const tableHeaders: DataTableHeader[] = [
   },
   {
     text: i18n.t('deposits_withdrawals.headers.action').toString(),
-    value: 'category'
+    value: 'category',
+    class: 'text-no-wrap',
+    align: 'center'
   },
   {
     text: i18n.t('deposits_withdrawals.headers.asset').toString(),

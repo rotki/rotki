@@ -835,6 +835,7 @@
     }
   },
   "staking_page": {
+    "dropdown_label": "Select location",
     "dropdown_hint": "Select a location to see more details",
     "page": {
       "title": "Staking Locations",

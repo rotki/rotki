@@ -28,7 +28,6 @@
             :asset="item.asset"
             :value="getBalance(item)"
             :price-loading="pricesAreLoading && current"
-            ticker
           />
         </v-col>
       </v-row>

@@ -18,11 +18,7 @@
         no-gutters
       >
         <v-col>
-          <balance-display
-            :asset="collateral.asset"
-            :value="collateral"
-            :min-width="18"
-          />
+          <balance-display :asset="collateral.asset" :value="collateral" />
         </v-col>
       </v-row>
     </loan-row>

@@ -11,7 +11,7 @@
         <v-col cols="10">{{ $t('premium_reminder.description') }}</v-col>
       </v-row>
     </v-card-text>
-    <v-card-actions>
+    <v-card-actions class="pa-4">
       <v-spacer />
       <v-btn
         color="primary"
