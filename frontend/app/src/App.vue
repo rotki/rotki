@@ -58,16 +58,16 @@
           <theme-switch v-if="premium" />
           <theme-switch-lock v-else />
           <notification-indicator
-            :visible="notifications"
+            :visible="showNotificationBar"
             class="app__app-bar__button"
-            @click="notifications = !notifications"
+            @click="showNotificationBar = !showNotificationBar"
           />
           <currency-drop-down class="red--text app__app-bar__button" />
           <user-dropdown class="app__app-bar__button" />
           <help-indicator
             v-if="!xsOnly"
-            :visible="help"
-            @visible:update="help = $event"
+            :visible="showHelpBar"
+            @visible:update="showHelpBar = $event"
           />
         </div>
       </v-app-bar>
@@ -127,6 +127,7 @@ import {
   onBeforeMount,
   ref,
   toRefs,
+  unref,
   watch
 } from '@vue/composition-api';
 import About from '@/components/About.vue';
@@ -214,7 +215,8 @@ export default defineComponent({
       }
     };
 
-    const { isMobile, dark } = setupThemeCheck();
+    const { isMobile, dark, currentBreakpoint } = setupThemeCheck();
+    const xsOnly = computed(() => unref(currentBreakpoint).xsOnly);
 
     const route = useRoute();
     const router = useRouter();
@@ -310,6 +312,7 @@ export default defineComponent({
       startupErrorMessage,
       isMacOsVersionUnsupported,
       isMobile,
+      xsOnly,
       appBarColor,
       canNavigateBack,
       isDevelopment,
