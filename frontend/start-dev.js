@@ -4,10 +4,15 @@ const fs = require("fs");
 const PROXY = 'proxy';
 const COMMON = '@rotki/common'
 const ROTKI = 'rotki'
+const BACKEND = 'backend';
+
+const scriptArgs = process.argv
+const noElectron = scriptArgs.indexOf('--web') >= 0;
 
 const colors = {
   magenta: (msg) => `\x1b[35m${msg}\x1b[0m`,
   green: (msg) => `\x1b[32m${msg}\x1b[0m`,
+  yellow: (msg) => `\x1b[33m${msg}\x1b[0m`,
   blue: (msg) => `\x1b[34m${msg}\x1b[0m`,
   cyan: (msg) => `\x1b[36m${msg}\x1b[0m`
 }
@@ -79,6 +84,24 @@ commonProcesses.stderr.on('data', buffer => {
 
 pids[commonProcesses.pid] = COMMON
 
+if (noElectron) {
+  logger.info("Starting python backend");
+  const backendProcess = spawn('python -m rotkehlchen --rest-api-port 4242 --websockets-api-port 4244 --api-cors http://localhost:8080 --loglevel debug --max-size-in-mb-all-logs 120', {
+    shell: true,
+    stdio: [process.stdin]
+  });
+
+  backendProcess.stdout.on('data', buffer  => {
+    logger.debug(colors.yellow(BACKEND), buffer.toLocaleString())
+  })
+  backendProcess.stderr.on('data', buffer => {
+    logger.error(colors.yellow(BACKEND), buffer.toLocaleString())
+  })
+
+  pids[BACKEND.pid] = BACKEND
+  subprocesses.push(backendProcess)
+}
+
 logger.info("Starting rotki dev mode");
 const getDebuggerPort = () => {
   try {
@@ -97,7 +120,10 @@ const args = debuggerPort? ` -- --remote-debugging-port=${debuggerPort}` : ''
 if (args) {
   logger.info(`starting rotki with args: ${args}`)
 }
-const devRotkiProcess = spawn(`sleep 20 && npm run electron:serve -w rotki${args}`, {
+
+const serveCmd = noElectron ? 'npm run serve': 'npm run electron:serve';
+
+const devRotkiProcess = spawn(`sleep 20 && ${serveCmd} -w rotki${args}`, {
   shell: true,
   stdio: [process.stdin]
 });
@@ -117,4 +143,3 @@ devRotkiProcess.on('exit', () => {
 })
 
 subprocesses.push(commonProcesses, devRotkiProcess);
-

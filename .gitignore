@@ -11,7 +11,7 @@ rotkehlchen_py_dist/
 rotkehlchen.egg-info/
 rotkehlchen-linux-x64
 .DS_Store
-rotkehlchen.log
+*rotkehlchen.log
 tools/data_faker/data_faker.log
 .pytest_cache
 ui/.ignore
