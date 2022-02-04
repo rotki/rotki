@@ -7,7 +7,6 @@ pysqlcipher3==1.0.4
 requests==2.27.1
 urllib3==1.26.8
 coincurve==16.0.0
-typing-extensions==4.0.1
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0

@@ -1,8 +1,7 @@
 from sqlite3 import Cursor
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Literal, NamedTuple, Optional, Tuple, Union
 
 from eth_utils import is_checksum_address
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset

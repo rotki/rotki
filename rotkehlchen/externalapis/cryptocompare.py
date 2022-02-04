@@ -3,11 +3,10 @@ import os
 from collections import deque
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Deque, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Deque, Dict, List, Literal, NamedTuple, Optional
 
 import gevent
 import requests
-from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO

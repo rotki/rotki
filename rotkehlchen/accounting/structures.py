@@ -2,9 +2,7 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple
-
-from typing_extensions import Literal
+from typing import Any, Callable, DefaultDict, Dict, List, Literal, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO

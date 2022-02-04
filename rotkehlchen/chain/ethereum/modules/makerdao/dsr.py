@@ -1,9 +1,8 @@
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional, Union
 
 from gevent.lock import Semaphore
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy

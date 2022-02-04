@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -18,7 +19,6 @@ import webargs
 from eth_utils import to_checksum_address
 from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
-from typing_extensions import Literal
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType

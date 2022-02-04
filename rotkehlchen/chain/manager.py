@@ -13,6 +13,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Literal,
     Optional,
     Tuple,
     TypeVar,
@@ -21,7 +22,6 @@ from typing import (
 )
 
 from gevent.lock import Semaphore
-from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures import (

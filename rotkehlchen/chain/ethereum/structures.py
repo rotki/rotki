@@ -1,9 +1,7 @@
 """Ethereum/defi protocol structures that need to be accessed from multiple places"""
 
 import dataclasses
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
-
-from typing_extensions import Literal
+from typing import Any, Dict, List, Literal, NamedTuple, Optional, Tuple
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken

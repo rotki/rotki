@@ -1,6 +1,4 @@
-from typing import Any, Dict, Tuple
-
-from typing_extensions import Literal
+from typing import Any, Dict, Literal, Tuple
 
 from rotkehlchen.accounting.ledger_actions import GitcoinEventTxType
 

@@ -1,6 +1,4 @@
-from typing import Callable, Dict, List, NamedTuple, Union
-
-from typing_extensions import Literal
+from typing import Callable, Dict, List, Literal, NamedTuple, Union
 
 from rotkehlchen.accounting.structures import Balance, BalanceSheet
 from rotkehlchen.typing import ChecksumEthAddress

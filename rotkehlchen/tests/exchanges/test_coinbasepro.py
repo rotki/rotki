@@ -10,9 +10,8 @@ TODO: Make some mock tests at some point
 
 import warnings as test_warnings
 from enum import Enum
+from typing import Literal
 from unittest.mock import patch
-
-from typing_extensions import Literal
 
 from rotkehlchen.constants.assets import A_BAT, A_ETH
 from rotkehlchen.errors import UnknownAsset

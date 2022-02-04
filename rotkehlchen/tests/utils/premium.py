@@ -2,10 +2,8 @@ import base64
 import json
 import os
 from http import HTTPStatus
-from typing import Optional
+from typing import Literal, Optional
 from unittest.mock import patch
-
-from typing_extensions import Literal
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.premium.premium import Premium, PremiumCredentials

@@ -1,11 +1,10 @@
 import json
 import logging
-from typing import Any, Dict, List, NamedTuple, Optional, Union, overload
+from typing import Any, Dict, List, Literal, NamedTuple, Optional, Union, overload
 from urllib.parse import urlencode
 
 import gevent
 import requests
-from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO

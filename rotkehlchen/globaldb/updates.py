@@ -5,10 +5,9 @@ import sqlite3
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, NamedTuple, Optional, Tuple, Union
 
 import requests
-from typing_extensions import Literal
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver

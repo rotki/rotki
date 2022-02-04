@@ -1,8 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union
-
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures import (
     AssetBalance,

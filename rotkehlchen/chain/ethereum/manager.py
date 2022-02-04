@@ -2,7 +2,7 @@ import json
 import logging
 import random
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, overload
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Union, overload
 from urllib.parse import urlparse
 
 import requests
@@ -12,7 +12,6 @@ from ens.exceptions import InvalidName
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber, HexStr
-from typing_extensions import Literal
 from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi

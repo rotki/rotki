@@ -1,8 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, List, NamedTuple, Optional, Tuple, Union, cast
-
-from typing_extensions import Literal
+from typing import Any, List, Literal, NamedTuple, Optional, Tuple, Union, cast
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures import HistoryEventSubType, HistoryEventType

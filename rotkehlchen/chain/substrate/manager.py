@@ -2,7 +2,19 @@ import logging
 from functools import wraps
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Sequence, Tuple, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
 from urllib.parse import urlparse
 
 import gevent
@@ -10,7 +22,6 @@ import requests
 from requests.adapters import Response
 from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import BlockNotFound, SubstrateRequestException
-from typing_extensions import Literal
 from websocket import WebSocketException
 
 from rotkehlchen.assets.asset import Asset

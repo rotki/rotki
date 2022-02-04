@@ -13,6 +13,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     NamedTuple,
     Optional,
     Set,
@@ -27,7 +28,6 @@ import gevent
 import requests
 from gevent.lock import Semaphore
 from requests.adapters import Response
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance

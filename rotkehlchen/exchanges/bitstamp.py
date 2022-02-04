@@ -10,6 +10,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     NamedTuple,
     Optional,
     Tuple,
@@ -20,7 +21,6 @@ from urllib.parse import urlencode
 
 import requests
 from requests.adapters import Response
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance

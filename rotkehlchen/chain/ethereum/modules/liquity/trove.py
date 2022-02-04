@@ -3,11 +3,10 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import reduce
 from operator import add
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional
 
 from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset

@@ -7,11 +7,10 @@ from base64 import b64decode, b64encode
 from binascii import Error as BinasciiError
 from enum import Enum
 from http import HTTPStatus
-from typing import Any, Dict, NamedTuple, Optional, Tuple
+from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple
 from urllib.parse import urlencode
 
 import requests
-from typing_extensions import Literal
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.errors import (

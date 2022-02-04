@@ -1,8 +1,19 @@
 from enum import Enum
-from typing import Any, Callable, Dict, List, NamedTuple, NewType, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    NamedTuple,
+    NewType,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from eth_typing import ChecksumAddress
-from typing_extensions import Literal
 
 from rotkehlchen.errors import DeserializationError  # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 from rotkehlchen.fval import FVal

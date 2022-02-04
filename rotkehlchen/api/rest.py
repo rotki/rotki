@@ -14,6 +14,7 @@ from typing import (
     DefaultDict,
     Dict,
     List,
+    Literal,
     Optional,
     Tuple,
     Union,
@@ -26,7 +27,6 @@ from flask import Response, make_response, send_file
 from gevent.event import Event
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
-from typing_extensions import Literal
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
