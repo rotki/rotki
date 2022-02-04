@@ -395,6 +395,11 @@ run ``npm run build -w @rotki/common``.
 
 After that you can start the application from the ``frontend`` directory by typing ``npm run dev``.
 
+If you don't want to do the development inside electron or you want to test any non-electron features in your browsers
+you can alternatively start ``npm run dev:web`` this will start everything except electron. After the vue development
+server was finished starting up you should be able to access the url from your browser. Keep in mind that this
+works only for localhost access and a proxy might be needed to access it from a different machine.
+
 OSX
 =====
 
