@@ -6,7 +6,7 @@ web3==5.27.0
 pysqlcipher3==1.0.4
 requests==2.27.1
 urllib3==1.26.8
-coincurve==16.0.0
+coincurve==17.0.0
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0
