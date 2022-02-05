@@ -5,7 +5,6 @@
       v-model="visible"
       transition="slide-y-transition"
       offset-y
-      bottom
       :close-on-content-click="false"
       :max-width="xsOnly ? '97%' : '350px'"
       z-index="215"

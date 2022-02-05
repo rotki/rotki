@@ -5,7 +5,6 @@
       transition="slide-y-transition"
       max-width="350px"
       min-width="350px"
-      bottom
       offset-y
       :close-on-content-click="false"
     >
