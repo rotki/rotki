@@ -241,6 +241,8 @@ class EthereumManager():
         # stateless object and thus wouldn't persist.
         # Not really happy with this approach but well ...
         self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
+        # A cache for the erc20 contract info to not requery same one
+        self.contract_info_cache: Dict[ChecksumEthAddress, Dict[str, Any]] = {}
 
     def connected_to_any_web3(self) -> bool:
         return (
@@ -1113,6 +1115,10 @@ class EthereumManager():
         if it is provided in the contract. This method may raise:
         - BadFunctionCallOutput: If there is an error calling a bad address
         """
+        cache = self.contract_info_cache.get(address)
+        if cache is not None:
+            return cache
+
         properties = ('decimals', 'symbol', 'name')
         info: Dict[str, Any] = {}
 
@@ -1138,4 +1144,5 @@ class EthereumManager():
         for prop, value in zip(properties, decoded):
             info[prop] = value
 
+        self.contract_info_cache[address] = info
         return info

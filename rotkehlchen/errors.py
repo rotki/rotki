@@ -131,3 +131,7 @@ class ModuleInactive(Exception):
 
 class DecoderLoadingError(Exception):
     """Error at loading a Decoder"""
+
+
+class NotERC20Conformant(Exception):
+    """An address is not conforming to the ERC20 standard"""

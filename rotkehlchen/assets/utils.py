@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.errors import DeserializationError, NotERC20Conformant, UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress
@@ -54,6 +54,10 @@ def get_or_create_ethereum_token(
 
     Note: if the token already exists but the other arguments don't match the
     existing token will still be silently returned
+
+    May raise:
+    - NotERC20Conformant exception if an ethereum manager is given to query
+    and the given address does not have any of symbol, decimals and name
     """
     try:
         ethereum_token = EthereumToken(ethereum_address, form_with_incomplete_data)
@@ -67,6 +71,9 @@ def get_or_create_ethereum_token(
             decimals = info['decimals'] if decimals is None else decimals
             symbol = info['symbol'] if symbol is None else symbol
             name = info['name'] if name is None else name
+
+            if None in (decimals, symbol, name):
+                raise NotERC20Conformant(f'Token {ethereum_address} is not ERC20 conformant')
 
         token_data = EthereumToken.initialize(
             address=ethereum_address,

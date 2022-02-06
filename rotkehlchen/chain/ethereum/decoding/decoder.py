@@ -24,6 +24,7 @@ from rotkehlchen.errors import (
     ConversionError,
     DecoderLoadingError,
     DeserializationError,
+    NotERC20Conformant,
     UnknownAsset,
 )
 from rotkehlchen.fval import FVal
@@ -382,11 +383,14 @@ class EVMTransactionDecoder():
             return None
 
         if token is None:
-            found_token = get_or_create_ethereum_token(
-                userdb=self.database,
-                ethereum_address=tx_log.address,
-                ethereum_manager=self.ethereum_manager,
-            )
+            try:
+                found_token = get_or_create_ethereum_token(
+                    userdb=self.database,
+                    ethereum_address=tx_log.address,
+                    ethereum_manager=self.ethereum_manager,
+                )
+            except NotERC20Conformant:
+                return None  # ignore non-ERC20 transfers for now
         else:
             found_token = token
 

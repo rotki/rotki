@@ -7,7 +7,7 @@ from typing import Any, Callable, DefaultDict, Dict, List, Literal, Optional, Tu
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
-from rotkehlchen.errors import DeserializationError, InputError
+from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts
@@ -444,7 +444,10 @@ class HistoryBaseEntry:
 
     @classmethod
     def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE_READ) -> 'HistoryBaseEntry':
-        """May raise DeserializationError"""
+        """May raise:
+        - DeserializationError
+        - UnknownAsset
+        """
         event_subtype = None
         if entry[11] is not None:
             event_subtype = HistoryEventSubType.deserialize(entry[11])
