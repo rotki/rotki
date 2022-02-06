@@ -194,7 +194,7 @@ class EVMTransactionDecoder():
             (transaction.tx_hash, 'ETH', 'decoded'),
         )
         # check if any eth transfer happened in the transaction, including in internal transactions
-        events = self._maybe_decode_simple_transactions(transaction)
+        events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
         action_items: List[ActionItem] = []
 
         # decode transaction logs from the receipt
@@ -264,34 +264,65 @@ class EVMTransactionDecoder():
     def _maybe_decode_simple_transactions(
             self,
             tx: EthereumTransaction,
+            tx_receipt: EthereumTxReceipt,
     ) -> List[HistoryBaseEntry]:
+        """Decodes normal ETH transfers, internal transactions and gas cost payments"""
         events: List[HistoryBaseEntry] = []
-        internal_txs = self.dbethtx.get_ethereum_internal_transactions(parent_tx_hash=tx.tx_hash)
-        for internal_tx in internal_txs:
-            if internal_tx.to_address is None:
-                continue  # can that actually happen? An internal transaction deploying a contract?
-            direction_result = self.base.decode_direction(internal_tx.from_address, internal_tx.to_address)  # noqa: E501
-            if direction_result is None:
-                continue
+        tx_hash_hex = '0x' + tx.tx_hash.hex()
 
-            amount = ZERO if internal_tx.value == 0 else from_wei(FVal(internal_tx.value))
-            if amount == ZERO:
-                continue
+        # check for internal transactions if the transaction is not canceled
+        if tx_receipt.status is True:
+            internal_txs = self.dbethtx.get_ethereum_internal_transactions(parent_tx_hash=tx.tx_hash)
+            for internal_tx in internal_txs:
+                if internal_tx.to_address is None:
+                    continue  # can that actually happen? An internal transaction deploying a contract?
+                direction_result = self.base.decode_direction(internal_tx.from_address, internal_tx.to_address)  # noqa: E501
+                if direction_result is None:
+                    continue
 
-            event_type, location_label, counterparty, verb = direction_result
+                amount = ZERO if internal_tx.value == 0 else from_wei(FVal(internal_tx.value))
+                if amount == ZERO:
+                    continue
+
+                event_type, location_label, counterparty, verb = direction_result
+                events.append(HistoryBaseEntry(
+                    event_identifier=tx_hash_hex,
+                    sequence_index=internal_tx.trace_id,
+                    timestamp=internal_tx.timestamp,
+                    location=Location.BLOCKCHAIN,
+                    location_label=location_label,
+                    asset=A_ETH,
+                    balance=Balance(amount=amount),
+                    notes=f'{verb} {amount} ETH {internal_tx.from_address} -> {internal_tx.to_address}',  # noqa: E501
+                    event_type=event_type,
+                    event_subtype=HistoryEventSubType.NONE,
+                    counterparty=counterparty,
+                ))
+
+        # check for gas spent
+        direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
+        if direction_result is None:
+            return events
+
+        event_type, location_label, counterparty, verb = direction_result
+        if event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
+            eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
             events.append(HistoryBaseEntry(
-                event_identifier='0x' + tx.tx_hash.hex(),
-                sequence_index=internal_tx.trace_id,
-                timestamp=internal_tx.timestamp,
+                event_identifier=tx_hash_hex,
+                sequence_index=0,
+                timestamp=tx.timestamp,
                 location=Location.BLOCKCHAIN,
                 location_label=location_label,
                 asset=A_ETH,
-                balance=Balance(amount=amount),
-                notes=f'{verb} {amount} ETH {internal_tx.from_address} -> {internal_tx.to_address}',  # noqa: E501
-                event_type=event_type,
-                event_subtype=HistoryEventSubType.NONE,
-                counterparty=counterparty,
+                balance=Balance(amount=eth_burned_as_gas),
+                notes=f'Burned {eth_burned_as_gas} ETH in gas from {location_label} for transaction {tx_hash_hex}',  # noqa: E501
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.FEE,
+                counterparty='gas',
             ))
+
+        if tx_receipt.status is False:
+            return events  # nothing more to do for failed transactions
 
         # now decode the actual transaction eth transfer itself
         amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
@@ -301,7 +332,7 @@ class EVMTransactionDecoder():
 
             events.append(HistoryBaseEntry(  # contract deployment
                 event_identifier='0x' + tx.tx_hash.hex(),
-                sequence_index=0,
+                sequence_index=1,
                 timestamp=tx.timestamp,
                 location=Location.BLOCKCHAIN,
                 location_label=tx.from_address,
@@ -317,14 +348,9 @@ class EVMTransactionDecoder():
         if amount == ZERO:
             return events
 
-        direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
-        if direction_result is None:
-            return events
-
-        event_type, location_label, counterparty, verb = direction_result
         events.append(HistoryBaseEntry(
             event_identifier='0x' + tx.tx_hash.hex(),
-            sequence_index=0,
+            sequence_index=1,
             timestamp=tx.timestamp,
             location=Location.BLOCKCHAIN,
             location_label=location_label,
