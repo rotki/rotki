@@ -126,10 +126,15 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.apiversion = 'v2'
         self.base_uri = uri
         self.msg_aggregator = msg_aggregator
-        self.session.headers.update({'FTX-KEY': self.api_key})
         self.subaccount = ftx_subaccount
+        self.base_header_string = 'FTX'
+        if self.base_uri == FTXUS_BASE_URL:
+            self.base_header_string = 'FTXUS'
+        self.session.headers.update({f'{self.base_header_string}-KEY': self.api_key})
         if self.subaccount is not None:
-            self.session.headers.update({'FTX-SUBACCOUNT': quote(self.subaccount)})
+            self.session.headers.update(
+                {f'{self.base_header_string}-SUBACCOUNT': quote(self.subaccount)},
+            )
 
     def first_connection(self) -> None:
         self.first_connection_made = True
@@ -142,13 +147,15 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     ) -> bool:
         changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
         if api_key is not None:
-            self.session.headers.update({'FTX-KEY': self.api_key})
+            self.session.headers.update({f'{self.base_header_string}-KEY': self.api_key})
             subaccount = self.db.get_ftx_subaccount(self.name)
             if subaccount is not None:
-                self.session.headers.update({'FTX-SUBACCOUNT': quote(subaccount)})
+                self.session.headers.update(
+                    {f'{self.base_header_string}-SUBACCOUNT': quote(subaccount)},
+                )
                 self.subaccount = subaccount
             else:
-                self.session.headers.pop('FTX-SUBACCOUNT', None)
+                self.session.headers.pop(f'{self.base_header_string}-SUBACCOUNT', None)
 
         return changed
 
@@ -202,8 +209,8 @@ class Ftx(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             signature = hmac.new(self.secret, signature_payload, 'sha256').hexdigest()
             log.debug('FTX API query', request_url=request_url)
             self.session.headers.update({
-                'FTX-SIGN': signature,
-                'FTX-TS': str(timestamp),
+                f'{self.base_header_string}-SIGN': signature,
+                f'{self.base_header_string}-TS': str(timestamp),
             })
 
             full_url = self.base_uri + request_url
