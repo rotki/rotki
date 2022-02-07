@@ -13,7 +13,7 @@ from web3._utils.abi import (
 )
 from web3._utils.events import get_event_abi_types_for_decoding
 from web3._utils.normalizers import BASE_RETURN_NORMALIZERS
-from web3.types import ABIEvent
+from web3.types import ABIEvent, BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
@@ -96,13 +96,17 @@ def asset_normalized_value(amount: int, asset: Asset) -> FVal:
 def multicall(
         ethereum: 'EthereumManager',
         calls: List[Tuple[ChecksumEthAddress, str]],
+        # only here to comply with multicall_2
+        require_success: bool = True,  # pylint: disable=unused-argument
         call_order: Optional[Sequence['NodeName']] = None,
+        block_identifier: BlockIdentifier = 'latest',
 ) -> Any:
     multicall_result = ETH_MULTICALL.call(
         ethereum=ethereum,
         method_name='aggregate',
         arguments=[calls],
         call_order=call_order,
+        block_identifier=block_identifier,
     )
     _, output = multicall_result
     return output
@@ -113,6 +117,7 @@ def multicall_2(
         calls: List[Tuple[ChecksumEthAddress, str]],
         require_success: bool,
         call_order: Optional[Sequence['NodeName']] = None,
+        block_identifier: BlockIdentifier = 'latest',
 ) -> List[Tuple[bool, bytes]]:
     """
     Use a MULTICALL_2 contract for an aggregated query. If require_success
@@ -123,6 +128,7 @@ def multicall_2(
         method_name='tryAggregate',
         arguments=[require_success, calls],
         call_order=call_order,
+        block_identifier=block_identifier,
     )
 
 
@@ -137,7 +143,7 @@ def multicall_specific(
         contract.address,
         contract.encode(method_name=method_name, arguments=i),
     ) for i in arguments]
-    output = multicall(ethereum, calls, call_order)
+    output = multicall(ethereum, calls, True, call_order)
     return [contract.decode(x, method_name, arguments[0]) for x in output]
 
 

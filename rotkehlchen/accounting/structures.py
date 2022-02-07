@@ -7,7 +7,7 @@ from typing import Any, Callable, DefaultDict, Dict, List, Literal, Optional, Tu
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
-from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
+from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, Timestamp
 from rotkehlchen.utils.misc import combine_dicts

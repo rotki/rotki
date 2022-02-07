@@ -234,7 +234,11 @@ class EVMTransactionDecoder():
             )
             tx_receipt = self.dbethtx.get_receipt(tx_hash)
             assert tx_receipt, 'The transaction receipt for {tx_hash.hex()} should be in the DB'
-            self.decode_transaction(transaction=txs[0], tx_receipt=tx_receipt)
+            events = self.decode_transaction(transaction=txs[0], tx_receipt=tx_receipt)
+
+            print(f'{timestamp_to_date(txs[0].timestamp)}  -- 0x{tx_hash.hex()}')
+            for event in events:
+                print(f'    {event.notes}')
 
     def get_or_decode_transaction_events(
             self,
@@ -272,10 +276,12 @@ class EVMTransactionDecoder():
 
         # check for internal transactions if the transaction is not canceled
         if tx_receipt.status is True:
-            internal_txs = self.dbethtx.get_ethereum_internal_transactions(parent_tx_hash=tx.tx_hash)
+            internal_txs = self.dbethtx.get_ethereum_internal_transactions(
+                parent_tx_hash=tx.tx_hash,
+            )
             for internal_tx in internal_txs:
                 if internal_tx.to_address is None:
-                    continue  # can that actually happen? An internal transaction deploying a contract?
+                    continue  # can that happen? Internal transaction deploying a contract?
                 direction_result = self.base.decode_direction(internal_tx.from_address, internal_tx.to_address)  # noqa: E501
                 if direction_result is None:
                     continue

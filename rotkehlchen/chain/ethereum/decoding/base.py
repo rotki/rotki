@@ -34,7 +34,7 @@ class BaseDecoderTools():
     def decode_direction(
             self,
             from_address: ChecksumEthAddress,
-            to_address: ChecksumEthAddress,
+            to_address: Optional[ChecksumEthAddress],
             set_verbs: Optional[Tuple[str, str]] = None,
             set_counterparty: Optional[str] = None,
     ) -> Optional[Tuple[HistoryEventType, str, str, str]]:
@@ -55,11 +55,11 @@ class BaseDecoderTools():
             verb = 'Send' if not set_verbs else set_verbs[0]
         else:  # can only be tracked_to
             event_type = HistoryEventType.RECEIVE
-            location_label = to_address
+            location_label = to_address  # type: ignore  # to_address can't be None here
             counterparty = from_address if not set_counterparty else set_counterparty
             verb = 'Receive' if not set_verbs else set_verbs[1]
 
-        return event_type, location_label, counterparty, verb
+        return event_type, location_label, counterparty, verb  # type: ignore
 
     def decode_erc20_721_transfer(
             self,

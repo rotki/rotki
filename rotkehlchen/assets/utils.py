@@ -73,7 +73,7 @@ def get_or_create_ethereum_token(
             name = info['name'] if name is None else name
 
             if None in (decimals, symbol, name):
-                raise NotERC20Conformant(f'Token {ethereum_address} is not ERC20 conformant')
+                raise NotERC20Conformant(f'Token {ethereum_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
 
         token_data = EthereumToken.initialize(
             address=ethereum_address,
