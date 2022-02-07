@@ -14,6 +14,12 @@ import { Nullable } from '@/types';
 class WebsocketService {
   private _connection: Nullable<WebSocket> = null;
   private _connected: boolean = false;
+  private readonly pathname: string;
+
+  constructor() {
+    const pathname = window.location.pathname;
+    this.pathname = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  }
 
   get connected(): boolean {
     return false;
@@ -29,7 +35,7 @@ class WebsocketService {
         if (websocketPort) {
           websocketUrl = `${host.split(':')[0]}:${websocketPort}`;
         } else {
-          websocketUrl = `${host}/ws/`;
+          websocketUrl = `${host}${this.pathname}/ws/`;
         }
       }
       const url = `${protocol}://${websocketUrl}`;

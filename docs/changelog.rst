@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`4030` Add copy functionality for amount display.
 * :feature:`3987` Users will now be able to delete multiple database backups.
+* :feature:`2934` Users will now be able to deploy the docker image under a sub directory behind a proxy.
 * :feature:`569` Users will now be able to see assets staked, and amounts gained on Kraken's staking feature.
 
 * :release:`1.23.3 <2022-02-04>`

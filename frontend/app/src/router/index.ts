@@ -6,9 +6,12 @@ import { Routes } from '@/router/routes';
 
 Vue.use(Router);
 
+const base = process.env.VUE_APP_PUBLIC_PATH ? window.location.pathname : '/';
+const isDocker = process.env.VUE_APP_DOCKER;
+
 export default new Router({
-  mode: 'history',
-  base: '/',
+  mode: isDocker ? 'hash' : 'history',
+  base,
   scrollBehavior: (to, from, savedPosition) => {
     if (to.hash) {
       setTimeout(() => {
