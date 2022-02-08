@@ -21,7 +21,9 @@
         v-else-if="typeof item.component !== 'undefined'"
         :width="size"
       />
-      <v-icon v-else color="accent"> {{ item.icon }} </v-icon>
+      <v-icon v-else color="accent" :style="iconStyle">
+        {{ item.icon }}
+      </v-icon>
     </adaptive-wrapper>
     <span v-if="!icon" :class="horizontal ? 'ml-3' : null" class="mt-1">
       {{ item.name }}
@@ -29,7 +31,12 @@
   </span>
 </template>
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { TradeLocationData } from '@/components/history/type';
 
@@ -45,6 +52,18 @@ export default defineComponent({
     icon: { required: false, type: Boolean, default: false },
     size: { required: false, type: String, default: '24px' },
     noPadding: { required: false, type: Boolean, default: false }
+  },
+  setup(props) {
+    const { size } = toRefs(props);
+    const iconStyle = computed(() => {
+      return {
+        fontSize: size.value
+      };
+    });
+
+    return {
+      iconStyle
+    };
   }
 });
 </script>

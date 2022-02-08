@@ -36,6 +36,7 @@
       </big-dialog>
       <asset-balances
         data-cy="blockchain-asset-balances"
+        :loading="balancesLoading"
         :title="$t('blockchain_balances.per_asset.title')"
         :balances="blockchainAssets"
       />
@@ -169,13 +170,15 @@ import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountForm, {
   AccountFormType
 } from '@/components/accounts/AccountForm.vue';
+import AssetBalances from '@/components/AssetBalances.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import AssetBalances from '@/components/settings/AssetBalances.vue';
 import { BlockchainData, setupBlockchainData } from '@/composables/balances';
 import { useProxy } from '@/composables/common';
 import i18n from '@/i18n';
 import { BlockchainAccountWithBalance } from '@/store/balances/types';
+import { useTasks } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 
 type Intersections = {
   [key in Blockchain]: boolean;
@@ -309,7 +312,13 @@ const BlockchainBalances = defineComponent({
         updateWhenRatio(entries, Blockchain.AVAX)
     };
 
+    const { isTaskRunning } = useTasks();
+    const balancesLoading = computed<boolean>(() => {
+      return isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES).value;
+    });
+
     return {
+      balancesLoading,
       form,
       context,
       accountToEdit,

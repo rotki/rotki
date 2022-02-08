@@ -3,8 +3,8 @@ import i18n from '@/i18n';
 import { EntryMeta } from '@/services/history/types';
 import { useHistory } from '@/store/history';
 import { IgnoreActionPayload, IgnoreActionType } from '@/store/history/types';
-import store from '@/store/store';
-import { ActionStatus, Message } from '@/store/types';
+import { useMainStore } from '@/store/store';
+import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Collection } from '@/types/collection';
 import { uniqueStrings } from '@/utils/data';
@@ -64,9 +64,7 @@ export const setupIgnore = <T extends EntryMeta>(
   refresh: () => any,
   getIdentifier: (item: T) => string
 ) => {
-  const setMessage = (message: Message) => {
-    store.commit('setMessage', message);
-  };
+  const { setMessage } = useMainStore();
 
   const { ignoreInAccounting } = useHistory();
 

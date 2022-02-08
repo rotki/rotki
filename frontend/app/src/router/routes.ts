@@ -10,9 +10,8 @@ export const Routes = {
   DEFI_AIRDROPS: '/defi/airdrops',
   PROFIT_LOSS_REPORTS: '/reports/',
   PROFIT_LOSS_REPORT: `/report/:id`,
-  HISTORY_LEDGER_ACTIONS: '/history/ledger-actions',
-  HISTORY_GITCOIN: '/history/gitcoin',
   ASSETS: '/assets/:identifier',
+  LOCATIONS: '/locations/:identifier',
   DEFI_DEPOSITS_LIQUIDITY_UNISWAP: '/defi/deposits/liquidity/uniswap',
   DEFI_DEPOSITS_LIQUIDITY_BALANCER: '/defi/deposits/liquidity/balancer',
   ASSET_MANAGER: '/asset-manager',
@@ -23,6 +22,8 @@ export const Routes = {
   HISTORY_TRANSACTIONS: '/history/transactions',
   HISTORY_TRADES: '/history/trades',
   HISTORY_DEPOSITS_WITHDRAWALS: '/history/deposits-withdrawals',
+  HISTORY_LEDGER_ACTIONS: '/history/ledger-actions',
+  HISTORY_GITCOIN: '/history/gitcoin',
   NFTS: '/nfts',
   NON_FUNGIBLE: '/accounts-balances/nonfungible'
 };

@@ -69,7 +69,7 @@ import { useMainStore } from '@/store/store';
     TagFilter
   },
   computed: {
-    ...mapGetters('balances', ['breakdown', 'account', 'assetPriceInfo']),
+    ...mapGetters('balances', ['assetBreakdown', 'account', 'assetPriceInfo']),
     ...mapGetters('session', ['currencySymbol']),
     ...mapState(useMainStore, ['detailsLoading'])
   }
@@ -111,7 +111,7 @@ export default class AssetLocations extends Vue {
   @Prop({ required: true, type: String })
   identifier!: string;
 
-  breakdown!: (asset: string) => AssetBreakdown[];
+  assetBreakdown!: (asset: string) => AssetBreakdown[];
   account!: (address: string) => GeneralAccount | undefined;
   currencySymbol!: string;
   detailsLoading!: boolean;
@@ -123,7 +123,7 @@ export default class AssetLocations extends Vue {
   }
 
   get assetLocations(): (AssetBreakdown & { readonly label: string })[] {
-    return this.breakdown(this.identifier).map(value => ({
+    return this.assetBreakdown(this.identifier).map(value => ({
       label: this.account(value.address)?.label ?? '',
       ...value
     }));

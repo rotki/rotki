@@ -2,17 +2,20 @@
   <card outlined-body>
     <template #title>
       <refresh-button
-        :loading="refreshing"
+        v-if="!locationOverview"
+        :loading="loading"
         :tooltip="$t('deposits_withdrawals.refresh_tooltip')"
         @refresh="fetch(true)"
       />
-      {{ $t('deposits_withdrawals.title') }}
+      <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
+        {{ $t('deposits_withdrawals.title') }}
+      </navigator-link>
     </template>
     <template #actions>
-      <v-row>
+      <v-row v-if="!locationOverview">
         <v-col cols="12" sm="6">
           <ignore-buttons
-            :disabled="selected.length === 0 || loading || refreshing"
+            :disabled="selected.length === 0 || loading"
             @ignore="ignore"
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
@@ -39,12 +42,12 @@
       :expanded.sync="expanded"
       :headers="tableHeaders"
       :items="data"
-      :loading="refreshing"
+      :loading="loading"
       :options="options"
       :server-items-length="itemLength"
       class="asset-movements"
       :single-select="false"
-      show-select
+      :show-select="!locationOverview"
       item-key="identifier"
       show-expand
       single-expand
@@ -117,12 +120,20 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, Ref, ref } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  Ref,
+  ref,
+  toRefs
+} from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import DataTable from '@/components/helper/DataTable.vue';
+import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
@@ -137,7 +148,7 @@ import {
   setupAssetInfoRetrieval,
   setupSupportedAssets
 } from '@/composables/balances';
-import { setupStatusChecking } from '@/composables/common';
+import { isSectionLoading } from '@/composables/common';
 import {
   getCollectionData,
   setupEntryLimit,
@@ -145,6 +156,7 @@ import {
 } from '@/composables/history';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
+import { Routes } from '@/router/routes';
 import {
   AssetMovement,
   AssetMovementRequestPayload,
@@ -186,51 +198,61 @@ type PaginationOptions = {
   sortDesc: boolean[];
 };
 
-const tableHeaders: DataTableHeader[] = [
-  {
-    text: '',
-    value: 'ignoredInAccounting',
-    sortable: false,
-    class: 'pa-0',
-    cellClass: 'pa-0'
-  },
-  {
-    text: i18n.t('deposits_withdrawals.headers.location').toString(),
-    value: 'location',
-    width: '120px',
-    align: 'center'
-  },
-  {
-    text: i18n.t('deposits_withdrawals.headers.action').toString(),
-    value: 'category',
-    class: 'text-no-wrap',
-    align: 'center'
-  },
-  {
-    text: i18n.t('deposits_withdrawals.headers.asset').toString(),
-    value: 'asset',
-    sortable: false
-  },
-  {
-    text: i18n.t('deposits_withdrawals.headers.amount').toString(),
-    value: 'amount',
-    align: 'end'
-  },
-  {
-    text: i18n.t('deposits_withdrawals.headers.fee').toString(),
-    value: 'fee',
-    align: 'end'
-  },
-  {
-    text: i18n.t('deposits_withdrawals.headers.timestamp').toString(),
-    value: 'time'
-  },
-  { text: '', value: 'data-table-expand', sortable: false }
-];
+const tableHeaders = (locationOverview: string): DataTableHeader[] => {
+  const headers: DataTableHeader[] = [
+    {
+      text: '',
+      value: 'ignoredInAccounting',
+      sortable: false,
+      class: !locationOverview ? 'pa-0' : 'pr-0',
+      cellClass: !locationOverview ? 'pa-0' : 'pr-0'
+    },
+    {
+      text: i18n.t('deposits_withdrawals.headers.location').toString(),
+      value: 'location',
+      width: '120px',
+      align: 'center'
+    },
+    {
+      text: i18n.t('deposits_withdrawals.headers.action').toString(),
+      value: 'category',
+      align: 'center',
+      class: `text-no-wrap ${locationOverview ? 'pl-0' : ''}`,
+      cellClass: locationOverview ? 'pl-0' : ''
+    },
+    {
+      text: i18n.t('deposits_withdrawals.headers.asset').toString(),
+      value: 'asset',
+      sortable: false
+    },
+    {
+      text: i18n.t('deposits_withdrawals.headers.amount').toString(),
+      value: 'amount',
+      align: 'end'
+    },
+    {
+      text: i18n.t('deposits_withdrawals.headers.fee').toString(),
+      value: 'fee',
+      align: 'end'
+    },
+    {
+      text: i18n.t('deposits_withdrawals.headers.timestamp').toString(),
+      value: 'time'
+    },
+    { text: '', value: 'data-table-expand', sortable: false }
+  ];
+
+  if (locationOverview) {
+    headers.splice(1, 1);
+  }
+
+  return headers;
+};
 
 export default defineComponent({
   name: 'DepositsWithdrawalsContent',
   components: {
+    NavigatorLink,
     BadgeDisplay,
     TableFilter,
     DepositWithdrawalDetails,
@@ -242,8 +264,17 @@ export default defineComponent({
     LocationDisplay,
     DateDisplay
   },
+  props: {
+    locationOverview: {
+      required: false,
+      type: String as PropType<TradeLocation | ''>,
+      default: ''
+    }
+  },
   emits: ['fetch'],
-  setup(_, { emit }) {
+  setup(props, { emit }) {
+    const { locationOverview } = toRefs(props);
+
     const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 
     const historyStore = useHistory();
@@ -259,9 +290,6 @@ export default defineComponent({
     );
 
     const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
-
-    const { isSectionRefreshing, shouldShowLoadingScreen } =
-      setupStatusChecking();
 
     const expanded: Ref<TradeEntry[]> = ref([]);
 
@@ -371,6 +399,10 @@ export default defineComponent({
         };
       }
 
+      if (locationOverview.value) {
+        filters.value.location = locationOverview.value as TradeLocation;
+      }
+
       const payload: Partial<AssetMovementRequestPayload> = {
         ...filters.value,
         ...paginationOptions
@@ -403,9 +435,12 @@ export default defineComponent({
     const getId = (item: AssetMovementEntry) => item.identifier;
     const selected: Ref<AssetMovementEntry[]> = ref([]);
 
+    const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
+
     return {
+      pageRoute,
       selected,
-      tableHeaders,
+      tableHeaders: tableHeaders(locationOverview.value),
       data,
       limit,
       found,
@@ -413,8 +448,7 @@ export default defineComponent({
       itemLength,
       fetch,
       showUpgradeRow,
-      loading: shouldShowLoadingScreen(Section.ASSET_MOVEMENT),
-      refreshing: isSectionRefreshing(Section.ASSET_MOVEMENT),
+      loading: isSectionLoading(Section.ASSET_MOVEMENT),
       expanded,
       options,
       matchers,

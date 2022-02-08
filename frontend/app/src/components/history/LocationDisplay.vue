@@ -1,56 +1,66 @@
 <template>
-  <location-icon
-    class="location-display"
-    :item="location"
-    :icon="icon"
-    :size="size"
-  />
+  <navigator-link :enabled="opensDetails" :to="route" component="div">
+    <list-item
+      v-bind="$attrs"
+      class="my-0 text-center"
+      :show-details="false"
+      :title="location.name"
+    >
+      <template #icon>
+        <location-icon
+          class="location-display"
+          :item="location"
+          :icon="icon"
+          :size="size"
+        />
+      </template>
+    </list-item>
+  </navigator-link>
 </template>
 
 <script lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Component, Mixins, Prop } from 'vue-property-decorator';
-import { tradeLocations } from '@/components/history/consts';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import ListItem from '@/components/helper/ListItem.vue';
+import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocationData } from '@/components/history/type';
-import AssetMixin from '@/mixins/asset-mixin';
+import { setupLocationInfo } from '@/composables/balances';
+import { Routes } from '@/router/routes';
 import { TradeLocation } from '@/services/history/types';
-import { assert } from '@/utils/assertions';
 
-@Component({
-  components: { LocationIcon }
-})
-export default class LocationDisplay extends Mixins(AssetMixin) {
-  readonly tradeLocations = tradeLocations;
-  @Prop({ required: true, type: String })
-  identifier!: TradeLocation;
-  @Prop({ required: false, type: Boolean, default: false })
-  icon!: boolean;
-  @Prop({ required: false, type: String, default: '24px' })
-  size!: string;
+export default defineComponent({
+  name: 'LocationDisplay',
+  components: { NavigatorLink, ListItem, LocationIcon },
+  props: {
+    identifier: { required: true, type: String as PropType<TradeLocation> },
+    icon: { required: false, type: Boolean, default: false },
+    size: { required: false, type: String, default: '24px' },
+    opensDetails: { required: false, type: Boolean, default: true }
+  },
+  setup(props) {
+    const { identifier } = toRefs(props);
 
-  get location(): TradeLocationData {
-    if (this.isSupportedBlockchain(this.identifier)) {
-      return {
-        name: this.getAssetName(this.identifier),
-        identifier: this.identifier,
-        exchange: false,
-        imageIcon: true,
-        icon: `${this.$api.serverUrl}/api/1/assets/${this.identifier}/icon`
-      };
-    }
+    const { getLocation } = setupLocationInfo();
 
-    const location = tradeLocations.find(
-      location => location.identifier === this.identifier
+    const location = computed<TradeLocationData>(() =>
+      getLocation(identifier.value)
     );
-    assert(!!location, 'location should not be falsy');
-    return location;
-  }
 
-  private isSupportedBlockchain(identifier: string): boolean {
-    return Object.values(Blockchain).includes(identifier as any);
+    const route = {
+      path: Routes.LOCATIONS.replace(':identifier', location.value.identifier)
+    };
+
+    return {
+      location,
+      route
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

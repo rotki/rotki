@@ -78,6 +78,7 @@
       >
         <asset-balances
           v-if="exchange"
+          :loading="exchangeIsLoading"
           :balances="exchangeBalances(exchange)"
         />
         <div v-else class="pa-4">
@@ -99,13 +100,17 @@
 
 <script lang="ts">
 import { AssetBalance, BigNumber } from '@rotki/common';
+import { Ref } from '@vue/composition-api';
+import { mapState as mapPiniaState } from 'pinia';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
+import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { tradeLocations } from '@/components/history/consts';
-import AssetBalances from '@/components/settings/AssetBalances.vue';
+import { useTasks } from '@/store/tasks';
 import { Exchange, ExchangeInfo } from '@/types/exchanges';
+import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 
@@ -116,6 +121,7 @@ import { uniqueStrings } from '@/utils/data';
     AmountDisplay
   },
   computed: {
+    ...mapPiniaState(useTasks, ['isTaskRunning']),
     ...mapState('balances', ['connectedExchanges']),
     ...mapGetters('balances', ['exchangeBalances', 'exchanges'])
   }
@@ -127,12 +133,17 @@ export default class ExchangeBalances extends Vue {
 
   connectedExchanges!: Exchange[];
   exchanges!: ExchangeInfo[];
+  isTaskRunning!: (type: TaskType) => Ref<boolean>;
   exchangeBalances!: (exchange: string) => AssetBalance[];
 
   get usedExchanges(): string[] {
     return this.connectedExchanges
       .map(({ location }) => location)
       .filter(uniqueStrings);
+  }
+
+  get exchangeIsLoading(): boolean {
+    return this.isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES).value;
   }
 
   mounted() {
