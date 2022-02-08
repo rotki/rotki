@@ -3946,11 +3946,10 @@ class RestAPI():
             has_premium, entries_limit = False, FREE_HISTORY_EVENTS_LIMIT
 
         if exchanges_list is None:
-            return {
-                'events': [],
-                'entries_found': 0,
-                'entries_limit': entries_limit,
-            }
+            return wrap_in_fail_result(
+                message='There is no kraken account added.',
+                status_code=HTTPStatus.CONFLICT,
+            )
 
         if only_cache is False:
             kraken_names = []
@@ -3968,10 +3967,16 @@ class RestAPI():
         # we make sure that the returned values have their correct value calculated
         task_manager = self.rotkehlchen.task_manager
         if task_manager is not None:
-            entries = task_manager.get_base_entries_missing_prices(query_filter)
-            task_manager.query_missing_prices_of_base_entries(
-                entries_missing_prices=entries,
-            )
+            try:
+                entries = task_manager.get_base_entries_missing_prices(query_filter)
+                task_manager.query_missing_prices_of_base_entries(
+                    entries_missing_prices=entries,
+                )
+            except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+                return wrap_in_fail_result(
+                    message=f'Database query error retrieving misssing prices {str(e)}',
+                    status_code=HTTPStatus.CONFLICT,
+                )
         # Query events from database
         events_raw, entries_found = history_events_db.get_history_events_and_limit_info(
             filter_query=query_filter,

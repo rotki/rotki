@@ -1117,6 +1117,8 @@ class StakingQuerySchema(
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
+        if order_by_attribute == 'event_type':
+            order_by_attribute = 'subtype'
         query_filter = HistoryEventFilterQuery.make(
             order_by_attribute=order_by_attribute,
             order_ascending=data['ascending'],
