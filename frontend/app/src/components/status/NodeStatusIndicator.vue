@@ -3,7 +3,6 @@
     data-cy="status-indicator"
     transition="slide-y-transition"
     offset-y
-    bottom
     z-index="215"
   >
     <template #activator="{ on }">

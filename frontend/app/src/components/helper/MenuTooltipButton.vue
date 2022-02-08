@@ -41,6 +41,5 @@ export default class MenuTooltipButton extends Vue {
 
 .tooltip-menu-button {
   display: block;
-  height: 100%;
 }
 </style>
