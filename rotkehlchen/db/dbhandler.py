@@ -266,7 +266,6 @@ class DBHandler:
             self.set_settings(initial_settings)
         self.update_owned_assets_in_globaldb()
         self.add_globaldb_assetids()
-        self.ensure_data_integrity()
 
     def __del__(self) -> None:
         if hasattr(self, 'conn') and self.conn:

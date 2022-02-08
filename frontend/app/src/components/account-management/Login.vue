@@ -137,20 +137,6 @@
                       </div>
                     </i18n>
                   </li>
-                  <li class="mt-2">
-                    <i18n path="login.sync_error.local_size">
-                      <div class="font-weight-medium">
-                        {{ localSize }}
-                      </div>
-                    </i18n>
-                  </li>
-                  <li class="mt-2">
-                    <i18n path="login.sync_error.remote_size">
-                      <div class="font-weight-medium">
-                        {{ remoteSize }}
-                      </div>
-                    </i18n>
-                  </li>
                 </ul>
               </div>
               <div class="mt-2">{{ $t('login.sync_error.question') }}</div>
@@ -290,14 +276,6 @@ export default class Login extends Vue {
   get remoteLastModified(): number {
     const payload = this.syncConflict.payload;
     return payload?.remoteLastModified ?? 0;
-  }
-
-  get localSize(): string {
-    return this.syncConflict.payload?.localSize ?? '';
-  }
-
-  get remoteSize(): string {
-    return this.syncConflict.payload?.remoteSize ?? '';
   }
 
   get serverColor(): string | null {
