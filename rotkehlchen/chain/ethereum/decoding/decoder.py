@@ -234,11 +234,7 @@ class EVMTransactionDecoder():
             )
             tx_receipt = self.dbethtx.get_receipt(tx_hash)
             assert tx_receipt, 'The transaction receipt for {tx_hash.hex()} should be in the DB'
-            events = self.decode_transaction(transaction=txs[0], tx_receipt=tx_receipt)
-
-            print(f'{timestamp_to_date(txs[0].timestamp)}  -- 0x{tx_hash.hex()}')
-            for event in events:
-                print(f'    {event.notes}')
+            self.decode_transaction(transaction=txs[0], tx_receipt=tx_receipt)
 
     def get_or_decode_transaction_events(
             self,

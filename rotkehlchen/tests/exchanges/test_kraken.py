@@ -539,8 +539,18 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
 }"""
 
     def query_kraken_and_test(input_trades, expected_warnings_num, expected_errors_num):
-        # delete kraken ledger entries so they get requeried
-        kraken.history_events_db.delete_history_events(location=Location.KRAKEN)
+        # delete kraken history entries so they get requeried
+        cursor = kraken.history_events_db.db.conn.cursor()
+        location = Location.KRAKEN
+        cursor.execute(
+            'DELETE FROM history_events WHERE location=?',
+            (location.serialize_for_db(),),
+        )
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ?',
+            (f'{location}_history_events_%',),
+        )
+        kraken.history_events_db.dbupdate_last_write()
         with patch(target, new=input_trades):
             trades, _ = kraken.query_online_trade_history(
                 start_ts=0,

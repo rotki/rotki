@@ -67,6 +67,7 @@ from rotkehlchen.api.v1.resources import (
     GitcoinEventsResource,
     GitcoinReportResource,
     HistoricalAssetsPriceResource,
+    HistoryBaseEntryResource,
     HistoryDownloadingResource,
     HistoryExportingResource,
     HistoryProcessingResource,
@@ -182,6 +183,7 @@ URLS_V1: URLS = [
     ('/history/status', HistoryStatusResource),
     ('/history/export/', HistoryExportingResource),
     ('/history/download/', HistoryDownloadingResource),
+    ('/history/events', HistoryBaseEntryResource),
     ('/reports/', AccountingReportsResource),
     (
         '/reports/<int:report_id>',

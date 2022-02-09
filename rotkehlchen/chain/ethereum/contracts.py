@@ -14,7 +14,7 @@ from typing import (
 from eth_typing.abi import Decodable
 from web3 import Web3
 from web3._utils.abi import get_abi_output_types
-from web3.typing import BlockIdentifier
+from web3.types import BlockIdentifier
 
 from rotkehlchen.typing import ChecksumEthAddress
 

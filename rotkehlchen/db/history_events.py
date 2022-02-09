@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -12,7 +12,7 @@ from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.typing import Location, Timestamp, Tuple
+from rotkehlchen.typing import Timestamp, Tuple
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -20,50 +20,80 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+HISTORY_INSERT = """INSERT INTO history_events(event_identifier, sequence_index,
+timestamp, location, location_label, asset, amount, usd_value, notes,
+type, subtype, counterparty) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+
 
 class DBHistoryEvents():
 
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
+    def add_history_event(self, event: HistoryBaseEntry) -> int:
+        """Insert a single history entry to the DB. Returns its identifier.
+
+        May raise:
+        - DeserializationError if the event could not be serialized for the DB
+        - sqlcipher.DatabaseError: If anything went wrong at insertion
+        """
+        cursor = self.db.conn.cursor()
+        cursor.execute(HISTORY_INSERT, event.serialize_for_db())
+        identifier = cursor.lastrowid
+        self.db.update_last_write()
+        return identifier
+
     def add_history_events(self, history: List[HistoryBaseEntry]) -> None:
-        """Insert a list of history events in database. May raise:
+        """Insert a list of history events in database.
+
+        May raise:
         - InputError if the events couldn't be stored in database
         """
-        query_str = """INSERT INTO history_events(event_identifier, sequence_index,
-        timestamp, location, location_label, asset, amount, usd_value, notes,
-        type, subtype, counterparty) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
         events = []
         for event in history:
-            try:
-                events.append(event.serialize_for_db())
-            except DeserializationError as e:
-                self.db.msg_aggregator.add_error(
-                    f'Failed to process kraken event for database. {str(e)}',
-                )
+            events.append(event.serialize_for_db())
         self.db.write_tuples(
             tuple_type='history_event',
-            query=query_str,
+            query=HISTORY_INSERT,
             tuples=events,
         )
         self.db.update_last_write()
 
-    def delete_history_events(self, location: Location) -> None:
-        """
-        Deletes history entries following the criteria of the filter_query. May raise:
-        - DeserializationError if the location is not valid
-        """
-        # TODO: In the future this method should allow for more granularity in the delete query
+    def edit_history_event(self, event: HistoryBaseEntry) -> bool:
+        """Edit a history entry to the DB. Returns the edited entry"""
         cursor = self.db.conn.cursor()
         cursor.execute(
-            'DELETE FROM history_events WHERE location=?',
-            (location.serialize_for_db(),),
+            'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
+            'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
+            'type=?, subtype=?, counterparty=? WHERE identifier=?',
+            (*event.serialize_for_db(), event.identifier),
         )
-        cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{location}_history_events_%',),
-        )
+        if cursor.rowcount != 1:
+            return False
+
         self.db.update_last_write()
+        return True
+
+    def delete_history_events_by_identifier(self, identifiers: List[int]) -> Optional[str]:
+        """
+        Delete the history events with the given identifiers.
+
+        If any identifier is missing the entire call fails and an error message
+        is returned. Otherwise None is returned.
+        """
+        cursor = self.db.conn.cursor()
+        cursor.executemany(
+            'DELETE FROM history_events WHERE identifier=?',
+            (identifiers,),
+        )
+        affected_rows = cursor.rowcount
+        if affected_rows != len(identifiers):
+            self.db.conn.rollback()
+            return (
+                f'Tried to remove {len(identifiers)} - {affected_rows} '
+                f'history events that do not exist'
+            )
+        return None
 
     def get_history_events(
         self,

@@ -35,6 +35,7 @@ from rotkehlchen.accounting.structures import (
     ActionType,
     Balance,
     BalanceType,
+    HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
     StakingEvent,
@@ -1037,6 +1038,41 @@ class RestAPI():
         )
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def add_history_event(self, event: HistoryBaseEntry) -> Response:
+        db = DBHistoryEvents(self.rotkehlchen.data.db)
+        try:
+            identifier = db.add_history_event(event)
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            db.db.conn.rollback()
+            error_msg = f'Failed to add event to the DB due to a DB error: {str(e)}'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        # success
+        result_dict = _wrap_in_ok_result({'identifier': identifier})
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def edit_history_event(self, event: HistoryBaseEntry) -> Response:
+        db = DBHistoryEvents(self.rotkehlchen.data.db)
+        if not db.edit_history_event(event):
+            error_msg = (
+                f'Tried to edit event with id {event.identifier} but could not find it in the DB'
+            )
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def delete_history_events(self, identifiers: List[int]) -> Response:
+        db = DBHistoryEvents(self.rotkehlchen.data.db)
+        error_msg = db.delete_history_events_by_identifier(identifiers=identifiers)
+        if error_msg is not None:
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        # Success
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def get_tags(self) -> Response:

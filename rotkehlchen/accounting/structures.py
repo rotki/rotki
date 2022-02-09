@@ -419,6 +419,7 @@ class HistoryBaseEntry:
     # For a send it's the target
     # For a receive it's the sender
     # For bridged transfer it's the bridge's network identifier
+    # For a protocol interaction it's the protocol.
     counterparty: Optional[str] = None
     identifier: Optional[int] = None
     # this is not serialized -- contains data used only during processing

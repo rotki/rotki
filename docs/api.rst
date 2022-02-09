@@ -4012,6 +4012,149 @@ Dealing with ledger actions
    :statuscode 409: No user is logged in.
    :statuscode 500: Internal rotki error
 
+Dealing with BaseHistoryEntry events
+============================================
+
+.. http:put:: /api/(version)/history/events
+
+   Doing a PUT on this endpoint can add a new history event base entry to rotki. The unique identifier for the entry is returned as success.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/ledgeractions HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "event_identifier": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
+	  "sequence_index": 162,
+	  "timestamp": 1569924574,
+	  "location": "blockchain",
+	  "event_type": "informational",
+	  "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+	  "amount": "1.542"
+	  "usd_value": "1.675",
+	  "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
+	  "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
+	  "event_subtype": "approve",
+	  "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE"
+      }
+
+   .. _history_base_entry_schema_section:
+
+   :reqjson string event_identifier: This is an identifier that could be common between multiple history base entries so that entries identifying a single event can be grouped. For ethereum transactions for example it's the transaction hash.
+   :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+   :reqjson int timestamp: The timestamp of the entry
+   :reqjson string location: The location of the entry
+   :reqjson string event_type: The main event type of the entry. Possible event types can be seen in HistoryEventType enum.
+   :reqjson string asset: The asset identifier for this entry
+   :reqjson string amount: The amount of asset for this entry
+   :reqjson string usd_value: The usd value of the amount of asset for this entry. If not known can also be "0".
+   :reqjson string location_label: location_label is a string field that allows to provide more information about the location. For example when we use this structure in blockchains can be used to specify the source address.
+   :reqjson string notes: This is a description of the event entry in plain text explaining what is being done. This is supposed to be shown to the user.
+   :reqjson string event_subtype: Optional. An optional subtype for the entry. Possible event types can be seen in HistoryEventSubType enum.
+   :reqjson string counterparty: Optional. An identifier for a potential counterparty of the event entry. For a send it's the target. For a receive it's the sender. For bridged transfer it's the bridge's network identifier. For a protocol interaction it's the protocol.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"identifier": 243},
+          "message": ""
+      }
+
+   :resjsonarr int identifier: The uniquely identifying identifier for this entry.
+   :statuscode 200: Entry is succesfully added.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or failure at event addition.
+   :statuscode 500: Internal rotki error
+
+.. http:patch:: /api/(version)/history/events
+
+   Doing a PATCH on this endpoint edits an existing base history entry in rotki's currently logged in user using the given ``identifier``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/history/events HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "identifier": 243,
+          "event_identifier": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
+	  "sequence_index": 162,
+	  "timestamp": 1569924574,
+	  "location": "blockchain",
+	  "event_type": "informational",
+	  "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+	  "amount": "1.542"
+	  "usd_value": "1.675",
+	  "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
+	  "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
+	  "event_subtype": "approve",
+	  "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE"
+      }
+
+   The request object is the same as above, a base history entry, with the addition of the identifier which signifies which entry will be edited.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": True,
+          "message": ""
+      }
+
+   :statuscode 200: Event was succesfully edited.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in. Or event to edit was not found in the DB.
+   :statuscode 500: Internal rotki error
+
+.. http:delete:: /api/(version)/history/events
+
+   Doing a DELETE on this endpoint deletes a set of history entry events from the DB for the currently logged in user. If any of the identifiers is not found in the DB the entire call fails.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/history/events HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"identifiers" : [55, 65, 124]}
+
+   :reqjson list<integer> identifiers: A list of the identifiers of the history entries to delete.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": True,
+          "message": ""
+      }
+
+   :statuscode 200: Event was succesfully removed.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or one of the identifiers to delete did not correspond to an event in the DB.
+   :statuscode 500: Internal rotki error
+
 Querying messages to show to the user
 =====================================
 

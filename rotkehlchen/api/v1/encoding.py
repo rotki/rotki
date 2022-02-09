@@ -10,6 +10,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Type,
     Union,
     overload,
 )
@@ -24,7 +25,9 @@ from werkzeug.datastructures import FileStorage
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import (
     ActionType,
+    Balance,
     BalanceType,
+    HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
 )
@@ -102,6 +105,7 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -407,6 +411,27 @@ class BalanceTypeField(fields.Field):
         if value == 'liability':
             return BalanceType.LIABILITY
         raise ValidationError(f'Unrecognized value {value} given for balance type')
+
+
+class SerializableEnumField(fields.Field):
+
+    def __init__(self, *, enum_class: Type[SerializableEnumMixin], **kwargs: Any) -> None:
+        self.enum_class = enum_class
+        super().__init__(**kwargs)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Any:
+        try:
+            result = self.enum_class.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        return result
 
 
 class AssetMovementCategoryField(fields.Field):
@@ -1158,6 +1183,44 @@ class StakingQuerySchema(
             'query_filter': query_filter,
             'value_filter': value_filter,
         }
+
+
+class HistoryBaseEntrySchema(Schema):
+    identifier = fields.String(load_default=None)
+    event_identifier = fields.String(required=True)
+    sequence_index = fields.Integer(required=True)
+    timestamp = TimestampField(required=True)
+    location = LocationField(required=True)
+    event_type = SerializableEnumField(required=True, enum_class=HistoryEventType)
+    asset = AssetField(required=True, form_with_incomplete_data=True)
+    amount = PositiveAmountField(required=True)
+    usd_value = PositiveAmountField(required=True)
+    location_label = fields.String(required=False)
+    notes = fields.String(required=False)
+    event_subtype = SerializableEnumField(required=False, enum_class=HistoryEventSubType)
+    counterparty = fields.String(required=False)
+
+    def __init__(self, identifier_required: bool):
+        super().__init__()
+        self.identifier_required = identifier_required
+
+    @validates_schema
+    def validate_history_entry_schema(
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if self.identifier_required is True and data['identifier'] is None:
+            raise ValidationError('History event identifier should be given')
+
+    @post_load
+    def make_history_base_entry(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        data['balance'] = Balance(data.pop('amount'), data.pop('usd_value'))
+        return {'event': HistoryBaseEntry(**data)}
 
 
 class AssetMovementsQuerySchema(
@@ -2703,3 +2766,7 @@ class BinanceMarketsSchema(Schema):
 
 class AppInfoSchema(Schema):
     check_for_updates = fields.Boolean(load_default=False)
+
+
+class IdentifiersListSchema(Schema):
+    identifiers = fields.List(fields.Integer(), required=True)

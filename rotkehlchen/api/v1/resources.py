@@ -11,7 +11,7 @@ from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.accounting.structures import ActionType
+from rotkehlchen.accounting.structures import ActionType, HistoryBaseEntry
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.encoding import (
     AccountingReportDataSchema,
@@ -60,8 +60,10 @@ from rotkehlchen.api.v1.encoding import (
     GitcoinEventsQuerySchema,
     GitcoinReportSchema,
     HistoricalAssetsPriceSchema,
+    HistoryBaseEntrySchema,
     HistoryExportingSchema,
     HistoryProcessingSchema,
+    IdentifiersListSchema,
     IgnoredActionsGetSchema,
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
@@ -799,6 +801,25 @@ class LedgerActionsResource(BaseResource):
     @use_kwargs(delete_schema, location='json')
     def delete(self, identifier: int) -> Response:
         return self.rest_api.delete_ledger_action(identifier=identifier)
+
+
+class HistoryBaseEntryResource(BaseResource):
+
+    put_schema = HistoryBaseEntrySchema(identifier_required=False)
+    patch_schema = HistoryBaseEntrySchema(identifier_required=True)
+    delete_schema = IdentifiersListSchema()
+
+    @use_kwargs(put_schema, location='json')
+    def put(self, event: HistoryBaseEntry) -> Response:
+        return self.rest_api.add_history_event(event)
+
+    @use_kwargs(patch_schema, location='json')
+    def patch(self, event: HistoryBaseEntry) -> Response:
+        return self.rest_api.edit_history_event(event=event)
+
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, identifiers: List[int]) -> Response:
+        return self.rest_api.delete_history_events(identifiers=identifiers)
 
 
 class UsersResource(BaseResource):
