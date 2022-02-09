@@ -1,7 +1,7 @@
 <template>
   <stat-card :title="$t('loan_stake.title')">
     <loan-row medium :title="$t('loan_stake.stake')">
-      <balance-display :asset="stake.asset" :value="stake" :min-width="18" />
+      <balance-display :asset="stake.asset" :value="stake" />
     </loan-row>
   </stat-card>
 </template>

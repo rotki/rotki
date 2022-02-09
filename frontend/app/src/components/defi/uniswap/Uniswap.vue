@@ -74,9 +74,7 @@
                 class="text-h5 mt-1 text"
                 :value="item.userBalance"
                 no-icon
-                :min-width="0"
                 asset=""
-                :asset-padding="0"
               />
             </v-col>
           </v-row>

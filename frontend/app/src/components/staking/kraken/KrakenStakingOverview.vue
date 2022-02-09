@@ -12,11 +12,13 @@
         </v-row>
         <v-row justify="space-between" align="center" no-gutters class="mt-2">
           <v-col cols="auto">
-            <div class="text--secondary font-weight-light ms-2">
+            <div
+              class="d-flex align-center text--secondary font-weight-light ms-2"
+            >
               {{ $t('kraken_staking_overview.historical') }}
               <v-tooltip open-delay="400" top>
                 <template #activator="{ attrs, on }">
-                  <v-icon small v-bind="attrs" v-on="on">
+                  <v-icon class="ms-1" small v-bind="attrs" v-on="on">
                     mdi-information
                   </v-icon>
                 </template>
@@ -25,27 +27,32 @@
             </div>
           </v-col>
           <v-col cols="auto">
-            <value-accuracy-hint />
-            <amount-display
-              show-currency="ticker"
-              fiat-currency="USD"
-              :value="totalUsd"
-            />
+            <div class="d-flex align-center">
+              <value-accuracy-hint />
+              <amount-display
+                show-currency="ticker"
+                fiat-currency="USD"
+                :value="totalUsd"
+                class="grey--text"
+              />
+            </div>
           </v-col>
         </v-row>
         <v-row justify="space-between" align="center" no-gutters class="mt-2">
           <v-col cols="auto">
-            <span class="text--secondary font-weight-light ms-2">
+            <div
+              class="d-flex align-center text--secondary font-weight-light ms-2"
+            >
               {{ $t('kraken_staking_overview.current') }}
               <v-tooltip open-delay="400" top>
                 <template #activator="{ attrs, on }">
-                  <v-icon small v-bind="attrs" v-on="on">
+                  <v-icon class="ms-1" small v-bind="attrs" v-on="on">
                     mdi-information
                   </v-icon>
                 </template>
                 <span>{{ $t('kraken_staking_overview.hint.current') }}</span>
               </v-tooltip>
-            </span>
+            </div>
           </v-col>
           <v-col cols="auto">
             <amount-display
@@ -53,6 +60,7 @@
               fiat-currency="USD"
               :loading="pricesAreLoading"
               :value="totalUsdCurrent"
+              class="grey--text"
             />
           </v-col>
         </v-row>

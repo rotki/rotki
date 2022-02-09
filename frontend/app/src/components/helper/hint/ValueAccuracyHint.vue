@@ -1,7 +1,7 @@
 <template>
   <v-tooltip v-if="notUsd" open-delay="400" top>
     <template #activator="{ on, attrs }">
-      <v-icon v-bind="attrs" x-small class="mx-2" v-on="on">
+      <v-icon v-bind="attrs" small class="mx-2" v-on="on">
         mdi-information
       </v-icon>
     </template>

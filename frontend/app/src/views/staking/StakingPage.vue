@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container class="py-6">
     <card>
       <div class="pa-2">
         <v-select
@@ -7,6 +7,7 @@
           outlined
           hide-details
           :items="staking"
+          :label="$t('staking_page.dropdown_label')"
           item-value="id"
           @change="updateLocation"
         >
@@ -17,20 +18,22 @@
           >
             <v-row v-if="data.item" :key="slot" align="center">
               <v-col cols="auto">
-                <v-img
-                  v-if="data.item.img"
-                  width="22px"
-                  contain
-                  max-height="24px"
-                  :src="data.item.icon"
-                />
+                <adaptive-wrapper v-if="data.item.img" width="24" height="24">
+                  <v-img
+                    width="24px"
+                    contain
+                    max-height="24px"
+                    :src="data.item.icon"
+                  />
+                </adaptive-wrapper>
+
                 <asset-icon
                   v-else
                   size="24px"
                   :identifier="getAssetIdentifierForSymbol(data.item.icon)"
                 />
               </v-col>
-              <v-col>
+              <v-col class="pl-0">
                 {{ data.item.name }}
               </v-col>
             </v-row>
@@ -38,7 +41,9 @@
         </v-select>
       </div>
     </card>
-    <component :is="page" v-if="page" class="pt-4" />
+    <div v-if="page" class="pt-4">
+      <component :is="page" />
+    </div>
     <div v-else>
       <div
         class="d-flex flex-row align-center justify-md-end justify-center mt-2 mr-md-6"
@@ -126,6 +131,7 @@ import {
 } from '@vue/composition-api';
 import { useLocalStorage } from '@vueuse/core';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupThemeCheck, useRouter } from '@/composables/common';
 import i18n from '@/i18n';
@@ -175,7 +181,7 @@ const pages = {
 
 export default defineComponent({
   name: 'StakingPage',
-  components: { FullSizeContent },
+  components: { AdaptiveWrapper, FullSizeContent },
   props: {
     location: {
       required: false,

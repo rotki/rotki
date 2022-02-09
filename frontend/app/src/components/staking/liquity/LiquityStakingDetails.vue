@@ -1,7 +1,7 @@
 <template>
-  <fragment>
-    <v-row>
-      <v-col>
+  <div>
+    <v-row align="center" no-gutters class="pt-2">
+      <v-col cols="6">
         <blockchain-account-selector
           v-model="selectedAccount"
           :label="$t('liquity_staking_details.select_account')"
@@ -11,13 +11,13 @@
           no-padding
           flat
           :usable-addresses="availableAddresses"
-          :max-width="isMobile ? '100%' : '250px'"
         />
       </v-col>
+      <v-col />
       <v-col v-if="$slots.modules" cols="auto">
         <slot name="modules" />
       </v-col>
-      <v-col cols="auto">
+      <v-col cols="auto" class="pl-2">
         <refresh-button
           :tooltip="$t('liquity_staking_details.refresh_tooltip')"
           :loading="eventsLoading || loading"
@@ -37,7 +37,7 @@
       :loading="eventsLoading"
       class="mt-8"
     />
-  </fragment>
+  </div>
 </template>
 
 <script lang="ts">
@@ -45,7 +45,6 @@ import { AssetBalance } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { LiquityStakingEvent } from '@rotki/common/lib/liquity';
 import { computed, defineComponent, ref } from '@vue/composition-api';
-import Fragment from '@/components/helper/Fragment';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
 import { isSectionLoading, setupThemeCheck } from '@/composables/common';
@@ -59,7 +58,6 @@ export default defineComponent({
   components: {
     LiquityStake,
     RefreshButton,
-    Fragment,
     LiquityStakeEvents
   },
   setup() {
