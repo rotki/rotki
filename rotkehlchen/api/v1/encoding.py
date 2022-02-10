@@ -415,7 +415,7 @@ class BalanceTypeField(fields.Field):
 
 class SerializableEnumField(fields.Field):
 
-    def __init__(self, *, enum_class: Type[SerializableEnumMixin], **kwargs: Any) -> None:
+    def __init__(self, enum_class: Type[SerializableEnumMixin], **kwargs: Any) -> None:
         self.enum_class = enum_class
         super().__init__(**kwargs)
 
@@ -1186,18 +1186,23 @@ class StakingQuerySchema(
 
 
 class HistoryBaseEntrySchema(Schema):
-    identifier = fields.String(load_default=None)
+    identifier = fields.Integer(load_default=None, required=False)
     event_identifier = fields.String(required=True)
     sequence_index = fields.Integer(required=True)
     timestamp = TimestampField(required=True)
     location = LocationField(required=True)
-    event_type = SerializableEnumField(required=True, enum_class=HistoryEventType)
+    event_type = SerializableEnumField(enum_class=HistoryEventType, required=True)
     asset = AssetField(required=True, form_with_incomplete_data=True)
     amount = PositiveAmountField(required=True)
     usd_value = PositiveAmountField(required=True)
     location_label = fields.String(required=False)
     notes = fields.String(required=False)
-    event_subtype = SerializableEnumField(required=False, enum_class=HistoryEventSubType)
+    event_subtype = SerializableEnumField(
+        enum_class=HistoryEventSubType,
+        required=False,
+        load_default=HistoryEventSubType.NONE,
+        allow_none=True,
+    )
     counterparty = fields.String(required=False)
 
     def __init__(self, identifier_required: bool):

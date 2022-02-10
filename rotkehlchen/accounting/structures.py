@@ -482,7 +482,7 @@ class HistoryBaseEntry:
             'sequence_index': self.sequence_index,
             'timestamp': self.timestamp,
             'location': str(self.location),
-            'asset': self.asset,
+            'asset': self.asset.identifier,
             'balance': self.balance.serialize(),
             'event_type': str(self.event_type),
             'event_subtype': str(self.event_subtype) if self.event_subtype else None,

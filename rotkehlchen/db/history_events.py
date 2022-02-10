@@ -65,7 +65,7 @@ class DBHistoryEvents():
         cursor.execute(
             'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
             'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
-            'type=?, subtype=?, counterparty=? WHERE identifier=?',
+            'type=?, subtype=?, counterparty=? WHERE rowid=?',
             (*event.serialize_for_db(), event.identifier),
         )
         if cursor.rowcount != 1:
@@ -82,15 +82,17 @@ class DBHistoryEvents():
         is returned. Otherwise None is returned.
         """
         cursor = self.db.conn.cursor()
-        cursor.executemany(
-            'DELETE FROM history_events WHERE identifier=?',
-            (identifiers,),
+        ids_len = len(identifiers)
+        questionmarks = '?' * ids_len
+        cursor.execute(
+            f'DELETE FROM history_events WHERE rowid IN ({",".join(questionmarks)})',
+            identifiers,
         )
         affected_rows = cursor.rowcount
-        if affected_rows != len(identifiers):
+        if affected_rows != ids_len:
             self.db.conn.rollback()
             return (
-                f'Tried to remove {len(identifiers)} - {affected_rows} '
+                f'Tried to remove {ids_len - affected_rows} '
                 f'history events that do not exist'
             )
         return None
