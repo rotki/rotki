@@ -1,4 +1,5 @@
 import { ActionResult } from '@rotki/common/lib/data';
+import { Severity } from '@rotki/common/lib/messages';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { ActionTree } from 'vuex';
 import { lastLogin } from '@/components/account-management/utils';
@@ -25,7 +26,6 @@ import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { useHistory } from '@/store/history';
 import { useNotifications } from '@/store/notifications';
-import { Severity } from '@/store/notifications/consts';
 import { useReports } from '@/store/reports';
 import {
   ACTION_PURGE_CACHED_DATA,

@@ -1,4 +1,4 @@
-import { NetValue } from '@/services/types-api';
+import { NetValue } from '@rotki/common/lib/statistics';
 import { StatisticsState } from '@/store/statistics/types';
 
 const defaultNetValue: () => NetValue = () => ({

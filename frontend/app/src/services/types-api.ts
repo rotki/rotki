@@ -27,35 +27,11 @@ export interface Messages {
   readonly errors: string[];
 }
 
-export interface LocationData {
-  readonly time: number;
-  readonly location: string;
-  readonly usd_value: string;
-}
-
 // This is equivalent to python's AssetBalance named tuple
-export interface DBAssetBalance {
-  readonly time: number;
-  readonly asset: string;
-  readonly amount: string;
-  readonly usd_value: string;
-}
-
 export interface PeriodicClientQueryResult {
   readonly lastBalanceSave: number;
   readonly ethNodeConnection: boolean;
   readonly lastDataUploadTs: number;
-}
-
-export interface NetValue {
-  readonly times: number[];
-  readonly data: number[];
-}
-
-export interface SingleAssetBalance {
-  readonly time: number;
-  readonly amount: string;
-  readonly usd_value: string;
 }
 
 export interface BackendVersion {

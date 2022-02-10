@@ -58,6 +58,7 @@
 </template>
 
 <script lang="ts">
+import { Severity } from '@rotki/common/lib/messages';
 import {
   computed,
   defineComponent,
@@ -74,7 +75,6 @@ import i18n from '@/i18n';
 import { DatabaseInfo, UserDbBackup } from '@/services/backup/types';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
-import { Severity } from '@/store/notifications/consts';
 import { size } from '@/utils/data';
 import { logger } from '@/utils/logging';
 

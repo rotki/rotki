@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Rotki common frontend code",
   "main": "lib/index.js",
-  "module": "lib/index.es.js",
+  "module": "lib/index.js",
   "files": [
     "lib/"
   ],
@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "bignumber.js": "9.0.2",
+    "vue-demi": "0.12.1",
     "zod": "3.11.6"
   }
 }

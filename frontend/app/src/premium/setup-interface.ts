@@ -1,10 +1,7 @@
 import {
-  GitcoinGrantEventsPayload,
-  GitcoinReportPayload
-} from '@rotki/common/lib/gitcoin';
-import {
   DataUtilities,
   DateUtilities,
+  PremiumInterface,
   SettingsApi
 } from '@rotki/common/lib/premium';
 import {
@@ -20,11 +17,20 @@ import Vue from 'vue';
 import Vuex from 'vuex';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
+import {
+  adexApi,
+  balancerApi,
+  balancesApi,
+  compoundApi,
+  dexTradeApi,
+  gitcoinApi,
+  statisticsApi,
+  userSettings,
+  utilsApi
+} from '@/premium/premium-apis';
 import { registerComponents } from '@/premium/register-components';
-import { statisticsApi } from '@/premium/statistics-api';
-import { api } from '@/services/rotkehlchen-api';
-import { useHistory } from '@/store/history';
-import store from '@/store/store';
+import { useNotifications } from '@/store/notifications';
+import store, { useMainStore } from '@/store/store';
 import { FrontendSettingsPayload } from '@/types/frontend-settings';
 
 const date: DateUtilities = {
@@ -55,25 +61,22 @@ const date: DateUtilities = {
 };
 
 const data: DataUtilities = {
-  assetInfo: (identifier: string) => {
-    return store.getters['balances/assetInfo'](identifier);
-  },
-  getIdentifierForSymbol: (symbol: string) => {
-    return store.getters['balances/getIdentifierForSymbol'](symbol);
-  },
-  gitcoin: {
-    generateReport(payload: GitcoinReportPayload) {
-      return api.history.generateReport(payload);
+  assets: {
+    assetInfo: (identifier: string) => {
+      return store.getters['balances/assetInfo'](identifier);
     },
-    deleteGrant(grantId: number) {
-      return api.history.deleteGitcoinGrantEvents(grantId);
-    },
-    fetchGrantEvents(payload: GitcoinGrantEventsPayload) {
-      const { fetchGitcoinGrant } = useHistory();
-      return fetchGitcoinGrant(payload);
+    getIdentifierForSymbol: (symbol: string) => {
+      return store.getters['balances/getIdentifierForSymbol'](symbol);
     }
   },
-  statistics: statisticsApi
+  gitcoin: gitcoinApi(),
+  statistics: statisticsApi(),
+  adex: adexApi(),
+  balances: balancesApi(),
+  balancer: balancerApi(),
+  compound: compoundApi(),
+  dexTrades: dexTradeApi(),
+  utils: utilsApi()
 };
 
 const settings: SettingsApi = {
@@ -92,22 +95,34 @@ const settings: SettingsApi = {
       light: settings[LIGHT_THEME],
       dark: settings[DARK_THEME]
     };
-  }
+  },
+  user: userSettings()
 };
+
+const messages = () => {
+  const { setMessage } = useMainStore();
+  const { notify } = useNotifications();
+  return {
+    notify,
+    showMessage: setMessage
+  };
+};
+
+export const usePremiumApi = (): PremiumInterface => ({
+  useHostComponents: true,
+  version: 16,
+  api: {
+    date,
+    data,
+    settings,
+    messages: messages()
+  }
+});
 
 export const setupPremium = () => {
   window.Vue = Vue;
   window.Chart = Chart;
   window.Vue.use(Vuex);
   window['@vue/composition-api'] = CompositionAPI;
-  window.rotki = {
-    useHostComponents: true,
-    version: 16,
-    utils: {
-      date,
-      data,
-      settings
-    }
-  };
   registerComponents();
 };

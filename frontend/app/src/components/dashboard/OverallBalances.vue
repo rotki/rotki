@@ -81,6 +81,7 @@ import {
   Timeframes,
   timeframes
 } from '@rotki/common/lib/settings/graphs';
+import { NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
@@ -90,7 +91,6 @@ import Loading from '@/components/helper/Loading.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
-import { NetValue } from '@/services/types-api';
 import { Section } from '@/store/const';
 import { isPeriodAllowed } from '@/store/settings/utils';
 import { ActionStatus } from '@/store/types';

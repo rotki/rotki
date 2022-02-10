@@ -70,6 +70,7 @@
 </template>
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Severity } from '@rotki/common/lib/messages';
 import {
   computed,
   defineComponent,
@@ -107,7 +108,6 @@ import {
   XpubPayload
 } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
-import { Severity } from '@/store/notifications/consts';
 import { Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { TaskType } from '@/types/task-type';

@@ -133,6 +133,7 @@
 </template>
 
 <script lang="ts">
+import { Severity } from '@rotki/common/lib/messages';
 import { Ref } from '@vue/composition-api';
 import { mapState } from 'pinia';
 import { Component, Vue, Watch } from 'vue-property-decorator';
@@ -146,7 +147,6 @@ import OracleEntry from '@/components/settings/OracleEntry.vue';
 import { OracleCacheMeta } from '@/services/balances/types';
 import { OracleCachePayload } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
-import { Severity } from '@/store/notifications/consts';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { TaskType } from '@/types/task-type';

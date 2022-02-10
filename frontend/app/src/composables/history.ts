@@ -1,3 +1,4 @@
+import { Message } from '@rotki/common/lib/messages';
 import { computed, Ref } from '@vue/composition-api';
 import i18n from '@/i18n';
 import { EntryMeta } from '@/services/history/types';

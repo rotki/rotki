@@ -176,6 +176,7 @@
 import { BigNumber } from '@rotki/common';
 import { Account, DefiAccount } from '@rotki/common/lib/account';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
+import { ProfitLossModel } from '@rotki/common/lib/defi';
 import Component from 'vue-class-component';
 import { Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapState } from 'vuex';
@@ -205,7 +206,7 @@ import { ProtocolVersion } from '@/services/defi/consts';
 import { YearnVaultProfitLoss } from '@/services/defi/types/yearn';
 import { Section } from '@/store/const';
 import { DefiGetterTypes } from '@/store/defi/getters';
-import { BaseDefiBalance, ProfitLossModel } from '@/store/defi/types';
+import { BaseDefiBalance } from '@/store/defi/types';
 import { Nullable } from '@/types';
 import { Module } from '@/types/modules';
 

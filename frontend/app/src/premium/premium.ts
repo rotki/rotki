@@ -1,4 +1,3 @@
-import { RotkiPremiumInterface } from '@rotki/common/lib/premium';
 import Chart from 'chart.js';
 import Vue, { VueConstructor } from 'vue';
 import PremiumLoading from '@/components/premium/PremiumLoading.vue';
@@ -165,6 +164,5 @@ declare global {
     Vue: any;
     Chart: typeof Chart;
     '@vue/composition-api': any;
-    rotki: RotkiPremiumInterface;
   }
 }

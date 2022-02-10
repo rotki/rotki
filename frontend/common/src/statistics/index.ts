@@ -30,3 +30,8 @@ const TimedAssetBalance = AssetBalance.merge(TimedEntry)
 export const TimedAssetBalances = z.array(TimedAssetBalance)
 
 export type TimedAssetBalances = z.infer<typeof TimedAssetBalances>
+
+export interface NetValue {
+  readonly times: number[];
+  readonly data: number[];
+}

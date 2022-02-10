@@ -42,6 +42,7 @@
 </template>
 
 <script lang="ts">
+import { NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import {
   computed,
   defineComponent,
@@ -60,8 +61,6 @@ import {
   HistoricalPricePayload
 } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
-import { Severity } from '@/store/notifications/consts';
-import { NotificationPayload } from '@/store/notifications/types';
 import { RotkehlchenState } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Nullable } from '@/types';

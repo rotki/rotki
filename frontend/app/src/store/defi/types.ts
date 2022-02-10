@@ -289,12 +289,6 @@ export interface AllDefiProtocols {
   readonly [asset: string]: DefiProtocolData[];
 }
 
-export interface ProfitLossModel {
-  readonly address: string;
-  readonly asset: string;
-  readonly value: Balance;
-}
-
 export interface DexTrades {
   readonly [address: string]: DexTrade[];
 }

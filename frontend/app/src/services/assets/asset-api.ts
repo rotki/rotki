@@ -1,4 +1,5 @@
 import { ActionResult, SupportedAsset } from '@rotki/common/lib/data';
+import { OwnedAssets } from '@rotki/common/lib/statistics';
 import { AxiosInstance, AxiosResponseTransformer } from 'axios';
 import {
   AssetIdResponse,
@@ -156,12 +157,15 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  queryOwnedAssets(): Promise<string[]> {
-    return this.axios
-      .get<ActionResult<string[]>>('/assets', {
+  async queryOwnedAssets(): Promise<string[]> {
+    const ownedAssets = await this.axios.get<ActionResult<string[]>>(
+      '/assets',
+      {
         validateStatus: validStatus
-      })
-      .then(handleResponse);
+      }
+    );
+
+    return OwnedAssets.parse(handleResponse(ownedAssets));
   }
 
   addAsset(

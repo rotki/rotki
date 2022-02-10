@@ -1,6 +1,7 @@
 import { AddressIndexed, Balance, BigNumber } from '@rotki/common';
 import { DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
+import { ProfitLossModel } from '@rotki/common/lib/defi';
 import {
   AaveBorrowingEventType,
   AaveEvent,
@@ -70,7 +71,6 @@ import {
   MakerDAOVaultModel,
   OverviewDefiProtocol,
   PoapDelivery,
-  ProfitLossModel,
   TokenInfo
 } from '@/store/defi/types';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
