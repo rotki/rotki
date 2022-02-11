@@ -7,6 +7,7 @@ from collections import defaultdict
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
+from tempfile import mkdtemp
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,11 +22,13 @@ from typing import (
     overload,
 )
 from uuid import uuid4
+from zipfile import ZipFile
 
 import gevent
 from flask import Response, make_response, send_file
 from gevent.event import Event
 from gevent.lock import Semaphore
+from marshmallow.exceptions import ValidationError
 from pysqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
 
@@ -41,7 +44,7 @@ from rotkehlchen.accounting.structures import (
     StakingEvent,
 )
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import (
@@ -106,6 +109,7 @@ from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
@@ -113,7 +117,7 @@ from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.serialization.serialize import process_result, process_result_list
+from rotkehlchen.serialization.serialize import asset_to_dict, process_result, process_result_list
 from rotkehlchen.typing import (
     AVAILABLE_MODULES_MAP,
     IMPORTABLE_LOCATIONS,
@@ -137,6 +141,7 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.utils.misc import combine_dicts
+from rotkehlchen.utils.validation_schemas import ExportedAssetsSchema
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
@@ -3954,3 +3959,166 @@ class RestAPI():
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=status_code)
+
+    def _get_user_added_assets(self) -> Dict[str, Any]:
+        try:
+            assets = GlobalDBHandler().get_user_added_assets(user_db=self.rotkehlchen.data.db)
+            dirpath = Path(mkdtemp())
+            dirpath.mkdir(parents=True, exist_ok=True)
+            serialized = []
+            for asset_identifier in assets:
+                try:
+                    asset = Asset(asset_identifier)
+                    serialized.append(asset_to_dict(asset))
+                except UnknownAsset as e:
+                    log.error(e)
+        except PermissionError as e:
+            return wrap_in_fail_result(
+                message=f'Failed to create information file. {str(e)}',
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+        except sqlcipher.Error as e:  # pylint: disable=no-member
+            return wrap_in_fail_result(
+                message=f'Failed to retrieve the list of assets {str(e)}',
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+        cursor = GlobalDBHandler()._conn.cursor()
+        query = cursor.execute('SELECT value from clean_db.settings WHERE name=="version";')
+        version = query.fetchone()[0]
+        data = {
+            'version': version,
+            'assets': serialized,
+        }
+
+        zip_path = dirpath / 'assets.zip'
+        with ZipFile(zip_path, 'w') as assets_zip:
+            assets_zip.writestr(
+                zinfo_or_arcname='assets.json',
+                data=json.dumps(data),
+            )
+
+        return _wrap_in_ok_result({'file': str(zip_path)})
+
+    @require_loggedin_user()
+    def get_user_added_assets(self, async_query: bool) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_get_user_added_assets',
+            )
+
+        response = self._get_user_added_assets()
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=status_code)
+
+    def _import_user_assets(self, path: Path) -> Dict[str, Any]:
+        globaldb = GlobalDBHandler()
+
+        try:
+            with open(path) as f:
+                data = ExportedAssetsSchema().loads(f.read())
+        except ValidationError as e:
+            return wrap_in_fail_result(
+                message=f'Provided file does not have the expected format. {str(e)}',
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
+
+        # First assert that the version is correct
+        if int(data['version']) != GLOBAL_DB_VERSION:
+            return wrap_in_fail_result(
+                message='Provided file is for a different version of rotki',
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
+
+        identifiers = []
+        for asset_data in data['assets']:
+            # Check if we already have the asset with that name and symbol. It is possible that
+            # we have added a missing asset
+            asset_type = AssetType.deserialize_from_db(asset_data['asset_type'])
+            identifier = globaldb.check_asset_exists(
+                asset_type=asset_type,
+                name=asset_data['name'],
+                symbol=asset_data['symbol'],
+            )
+            if identifier is not None:
+                self.rotkehlchen.msg_aggregator.add_warning(
+                    f'Tried to import existing asset {identifier} with name {asset_data.name}',
+                )
+                continue
+
+            extra_information: Union[Dict[str, Any], EthereumToken]
+            if asset_type == AssetType.ETHEREUM_TOKEN:
+                underlying_tokens = None
+                if asset_data['underlying_tokens'] is not None:
+                    underlying_tokens = []
+                    for entry in asset_data['underlying_tokens']:
+                        underlying_tokens.append(UnderlyingToken(
+                            address=entry['address'],
+                            weight=entry['weight'],
+                        ))
+                extra_information = EthereumToken.initialize(
+                    address=asset_data['ethereum_address'],
+                    name=asset_data['name'],
+                    symbol=asset_data['symbol'],
+                    decimals=asset_data['decimals'],
+                    started=asset_data['started'],
+                    swapped_for=asset_data['swapped_for'],
+                    coingecko=asset_data['coingecko'],
+                    cryptocompare=asset_data['cryptocompare'],
+                    underlying_tokens=underlying_tokens,
+                )
+            else:
+                extra_information = {
+                    'name': asset_data['name'],
+                    'symbol': asset_data['symbol'],
+                    'started': asset_data['started'],
+                    'swapper_for': asset_data['swapped_for'],
+                    'coingecko': asset_data['coingecko'],
+                    'cryptocompare': asset_data['cryptocompare'],
+                }
+
+            try:
+                GlobalDBHandler().add_asset(
+                    asset_id=asset_data['identifier'],
+                    asset_type=asset_type,
+                    data=extra_information,
+                )
+            except InputError as e:
+                log.error(
+                    f'Failed to add asset with {asset_data["identifier"]=}',
+                    f'{asset_type=} and {data=}. {str(e)}',
+                )
+                self.rotkehlchen.msg_aggregator.add_warning(
+                    f'Failed to save asset with identifier '
+                    f'{asset_data["identifier"]}.Check logs for more details',
+                )
+                continue
+            identifiers.append(asset_data['identifier'])
+
+        self.rotkehlchen.data.db.add_asset_identifiers(identifiers)
+        return _wrap_in_ok_result(OK_RESULT)
+
+    @require_loggedin_user()
+    def import_user_assets(self, async_query: bool, path: Path) -> Response:
+        if async_query:
+            return self._query_async(
+                command='_import_user_assets',
+                path=path,
+            )
+
+        response = self._import_user_assets(path=path)
+        result = response['result']
+        msg = response['message']
+        status_code = _get_status_code_from_async_response(response)
+        if result is None:
+            return api_response(wrap_in_fail_result(msg), status_code=status_code)
+
+        # success
+        result_dict = _wrap_in_result(result, msg)
+        return api_response(result_dict, status_code=status_code)

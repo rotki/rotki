@@ -1906,3 +1906,7 @@ class AppInfoSchema(Schema):
 
 class IdentifiersListSchema(Schema):
     identifiers = fields.List(fields.Integer(), required=True)
+
+
+class AssetsImportingSchema(AsyncQueryArgumentSchema):
+    file = FileField(required=True, allowed_extensions=['.json'])

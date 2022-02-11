@@ -23,6 +23,7 @@ from rotkehlchen.api.v1.schemas import (
     AssetMovementsQuerySchema,
     AssetResetRequestSchema,
     AssetSchema,
+    AssetsImportingSchema,
     AssetsReplaceSchema,
     AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
@@ -2043,3 +2044,25 @@ class StakingResource(BaseResource):
             query_filter=query_filter,
             value_filter=value_filter,
         )
+
+
+class AssetsExportingResource(BaseResource):
+    get_schema = AsyncQueryArgumentSchema
+    upload_schema = AssetsImportingSchema
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_user_added_assets(async_query=async_query)
+
+    @use_kwargs(upload_schema, location='json')
+    def put(self, async_query: bool, file: Path) -> Response:
+        return self.rest_api.import_user_assets(async_query=async_query, path=file)
+
+    @use_kwargs(upload_schema, location='form_and_file')
+    def post(self, file: FileStorage) -> Response:
+        with TemporaryDirectory() as temp_directory:
+            filename = file.filename if file.filename else 'assets.json'
+            filepath = Path(temp_directory) / filename
+            file.save(str(filepath))
+            response = self.rest_api.import_user_assets(path=filepath)
+        return response

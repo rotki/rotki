@@ -10,6 +10,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Set,
     Tuple,
     Union,
     cast,
@@ -1230,8 +1231,6 @@ class GlobalDBHandler():
         Delete all custom asset entries and repopulate from the last
         builtin version
         """
-        root_dir = Path(__file__).resolve().parent.parent
-        builtin_database = root_dir / 'data' / 'global.db'
         detach_database = 'DETACH DATABASE "clean_db";'
 
         connection = GlobalDBHandler()._conn
@@ -1242,18 +1241,9 @@ class GlobalDBHandler():
         user_db.update_owned_assets_in_globaldb()
 
         try:
-            # First check that the operation can be made. For this create a set with the
-            # difference of the identifiers owned by any user and registered at the globaldb and
-            # the assets identifiers at the packaged db and take the difference. If the difference
+            # First check that the operation can be made. If the difference
             # is not the empty set the operation is dangerous and the user should be notified.
-            query = cursor.execute('SELECT asset_id from user_owned_assets;')
-            user_ids = {tup[0] for tup in query.fetchall()}
-            # Attach to the clean db packaged with rotki
-            cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
-            # Get built in identifiers
-            query = cursor.execute('SELECT identifier from clean_db.assets;')
-            shipped_ids = {tup[0] for tup in query.fetchall()}
-            diff_ids = user_ids - shipped_ids
+            diff_ids = GlobalDBHandler().get_user_added_assets(user_db)
             if len(diff_ids) != 0 and not force:
                 cursor.execute(detach_database)
                 msg = 'There are assets that can not be deleted. Check logs for more details.'
@@ -1389,6 +1379,27 @@ class GlobalDBHandler():
             except DeserializationError as e:
                 log.debug(f'Failed to deserialize binance pair {pair}. {str(e)}')
         return pairs
+
+    def get_user_added_assets(self, user_db: 'DBHandler') -> Set[str]:
+        """
+        Create a list of the assets indentifiers added by the user AND that any user owns.
+        May raise:
+        - sqlite3.Error if the user_db couldn't be correctly attached
+        """
+        connection = self._conn
+        cursor = connection.cursor()
+        root_dir = Path(__file__).resolve().parent.parent
+        builtin_database = root_dir / 'data' / 'global.db'
+        # Update the list of owned assets
+        user_db.update_owned_assets_in_globaldb()
+        query = cursor.execute('SELECT asset_id from user_owned_assets;')
+        user_ids = {tup[0] for tup in query.fetchall()}
+        # Attach to the clean db packaged with rotki
+        cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
+        # Get built in identifiers
+        query = cursor.execute('SELECT identifier from clean_db.assets;')
+        shipped_ids = {tup[0] for tup in query.fetchall()}
+        return user_ids - shipped_ids
 
 
 def _reload_constant_assets(globaldb: GlobalDBHandler) -> None:

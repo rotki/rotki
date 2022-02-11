@@ -10198,3 +10198,88 @@ Staking events
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in, kraken is not active or some parameter for filters is not valid.
    :statuscode 500: Internal rotki error
+
+
+Export assets added by the user
+===============================
+
+.. http:get:: /api/(version)/assets/user
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+
+   Doing a get to this endpoint will create a zip file with the assets that are not provided by rotki and any user in the system owns.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/user HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": true}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+                "file": "/tmp/tmp3b16a1i2/assets.zip"
+          },
+          "message": ""
+      }
+
+   :resjsonarr string file: Location where the file has been generated.
+
+   :statuscode 200: Events are succesfully returned
+   :statuscode 409: No user is logged in, kraken is not active or some parameter for filters is not valid.
+   :statuscode 500: Internal rotki error
+
+
+Import assets added by the user
+===============================
+
+.. http:post:: /api/(version)/assets/user
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+
+   Doing a post to this endpoint will import the assets in the json file provided. The file has to follow the rotki expected format and will be verified.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/assets/user HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": true, "path": "/tmp/assets.json"}
+
+   
+   :resjsonarr string path: Path where the file is located
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": True,
+          "message": ""
+      }
+
+   :statuscode 200: Events are succesfully returned
+   :statuscode 400: Imported file is for an older version of the schema or file can't be loaded or format is not valid.
+   :statuscode 409: No user is logged in.
+   :statuscode 500: Internal rotki error

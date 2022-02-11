@@ -5,7 +5,7 @@ from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures import Balance, BalanceType, StakingEvent
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.defi.structures import (
@@ -215,3 +215,40 @@ def process_result_list(result: List[Any]) -> List[Any]:
     processed_result = _process_entry(result)
     assert isinstance(processed_result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
     return processed_result
+
+
+def asset_to_dict(asset: Asset) -> Dict[str, Any]:
+    """Returns an exportable json representation for an asset"""
+    forked, swapped_for = None, None
+    if asset.forked is not None:
+        forked = asset.forked.identifier
+    if asset.swapped_for is not None:
+        swapped_for = asset.swapped_for.identifier
+
+    asset_dict: Dict[str, Any] = {
+        'identifier': asset.identifier,
+        'name': asset.name,
+        'symbol': asset.symbol,
+        'asset_type': asset.asset_type.serialize_for_db(),
+        'started': asset.started,
+        'forked': forked,
+        'swapped_for': swapped_for,
+        'cryptocompare': asset.cryptocompare,
+        'coingecko': asset.coingecko,
+    }
+
+    if asset.is_eth_token():
+        asset_as_token = EthereumToken.from_asset(asset)
+        if asset_as_token is None:
+            return asset_dict
+        underlying = None
+        if asset_as_token.underlying_tokens is not None:
+            underlying = [token.serialize() for token in asset_as_token.underlying_tokens]
+        asset_dict |= {
+            'ethereum_address': asset_as_token.ethereum_address,
+            'decimals': asset_as_token.decimals,
+            'protocol': asset_as_token.protocol,
+            'underlying_tokens': underlying,
+        }
+
+    return asset_dict
