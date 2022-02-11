@@ -1,10 +1,9 @@
 import logging
 from typing import TYPE_CHECKING, List, Optional
 
-from pysqlcipher3 import dbapi2 as sqlcipher
-
 from rotkehlchen.accounting.structures import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -221,17 +220,18 @@ class DBHistoryEvents():
         """Returns the sum of the USD value at the time of acquisition and the amount received
         by asset"""
         cursor = self.db.conn.cursor()
-        usd_value = FVal(0)
+        usd_value = ZERO
         query_filters, bindings = query_filter.prepare(with_pagination=False)
         try:
             query = 'SELECT SUM(CAST(usd_value AS REAL)) FROM history_events ' + query_filters
-            result = cursor.execute(query, bindings)
-            usd_value = deserialize_fval(
-                value=result.fetchone()[0],
-                name='usd value in history events stats',
-                location='get_value_stats',
-            )
-        except (DeserializationError, sqlcipher.DatabaseError) as e:  # pylint: disable=no-member)
+            result = cursor.execute(query, bindings).fetchone()[0]
+            if result is not None:
+                usd_value = deserialize_fval(
+                    value=result,
+                    name='usd value in history events stats',
+                    location='get_value_stats',
+                )
+        except DeserializationError as e:
             log.error(f'Didnt get correct valid usd_value for history_events query. {str(e)}')
 
         query = (

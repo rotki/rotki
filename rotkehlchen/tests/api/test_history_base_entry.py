@@ -68,7 +68,7 @@ def _add_entries(server) -> List[HistoryBaseEntry]:
         balance=Balance(amount=FVal(1), usd_value=FVal('1525.11')),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         notes='Receive 1 ETH from 0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a to 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # noqa: E501
-        event_subtype=None,
+        event_subtype=HistoryEventSubType.NONE,
         counterparty='0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a',
     )]
 
@@ -119,7 +119,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     entry.balance = Balance(amount=FVal('1500.1'), usd_value=FVal('1499.45'))
     entry.location_label = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
     entry.notes = 'Deposit stuff for staking somewhere'
-    entry.event_subtype = None
+    entry.event_subtype = HistoryEventSubType.NONE
     entry.counterparty = '0xAB8d71d59827dcc90fEDc5DDb97f87eFfB1B1A5B'
     json_data = entry_to_input_dict(entry, include_identifier=True)
     response = requests.patch(

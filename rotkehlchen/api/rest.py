@@ -3983,11 +3983,11 @@ class RestAPI():
         )
         table_filter = HistoryEventFilterQuery.make(
             location=Location.KRAKEN,
-            event_type=[
+            event_types=[
                 HistoryEventType.STAKING,
                 HistoryEventType.UNSTAKING,
             ],
-            exclude_subtype=[
+            exclude_subtypes=[
                 HistoryEventSubType.STAKING_RECEIVE_ASSET,
             ],
         )

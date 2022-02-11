@@ -8,9 +8,10 @@ from rotkehlchen.accounting.structures import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.constants.assets import A_SAI
+from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location
 
 
@@ -42,8 +43,21 @@ def test_tx_decode(evm_transaction_decoder, database):
             assert receipt is not None, 'all receipts should be queried in the test DB'
             events = decoder.get_or_decode_transaction_events(tx, receipt)
             if tx.tx_hash.hex() == approve_tx_hash:  # noqa: E501
-                assert len(events) == 1
+                assert len(events) == 2
                 assert_events_equal(events[0], HistoryBaseEntry(
+                    event_identifier='0x' + approve_tx_hash,
+                    sequence_index=0,
+                    timestamp=1569924574,
+                    location=Location.BLOCKCHAIN,
+                    location_label=addr1,
+                    asset=A_ETH,
+                    balance=Balance(amount=FVal('0.000030921')),
+                    notes=f'Burned 0.000030921 ETH in gas from {addr1} for transaction {"0x" + approve_tx_hash}',  # noqa: E501
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    counterparty='gas',
+                ))
+                assert_events_equal(events[1], HistoryBaseEntry(
                     event_identifier='0x' + approve_tx_hash,
                     sequence_index=162,
                     timestamp=1569924574,

@@ -219,7 +219,7 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges):
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 5
+    assert len(errors) == 11
     assert all('kraken' in e for e in errors[:2])
     assert 'Etherscan API request http://someurl.com returned invalid JSON response: [{' in errors[2]  # noqa: E501
     # The history processing is completely mocked away and omitted in this test.

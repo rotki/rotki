@@ -734,6 +734,18 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
     assert len(entries) == 4
     assert entries[0]['decoded_events'] == [{
         'asset': 'ETH',
+        'balance': {'amount': '0.00863351371344', 'usd_value': '0'},
+        'counterparty': 'gas',
+        'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+        'event_subtype': 'fee',
+        'event_type': 'spend',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
+        'sequence_index': 0,
+        'timestamp': 1642802807,
+    }, {
+        'asset': 'ETH',
         'balance': {'amount': '0.096809163374771208', 'usd_value': '0'},
         'counterparty': '0xA090e606E30bD747d4E6245a1517EbE430F0057e',
         'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
@@ -741,11 +753,23 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'event_type': 'spend',
         'location': 'blockchain',
         'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Transfer 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
-        'sequence_index': 0,
+        'notes': 'Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
+        'sequence_index': 1,
         'timestamp': 1642802807,
     }]
     assert entries[1]['decoded_events'] == [{
+        'asset': 'ETH',
+        'balance': {'amount': '0.017690836625228792', 'usd_value': '0'},
+        'counterparty': 'gas',
+        'event_identifier': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
+        'event_subtype': 'fee',
+        'event_type': 'spend',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Burned 0.017690836625228792 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
+        'sequence_index': 0,
+        'timestamp': 1642802735,
+    }, {
         'asset': A_USDT.identifier,
         'balance': {'amount': '1166', 'usd_value': '0'},
         'counterparty': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
@@ -754,7 +778,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'event_type': 'spend',
         'location': 'blockchain',
         'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Transfer 1166 USDT 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
+        'notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
         'sequence_index': 307,
         'timestamp': 1642802735,
     }]
@@ -767,8 +791,8 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'event_type': 'receive',
         'location': 'blockchain',
         'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Transfer 0.125 ETH 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf -> 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
-        'sequence_index': 0,
+        'notes': 'Receive 0.125 ETH 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf -> 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+        'sequence_index': 1,
         'timestamp': 1642802651,
     }]
     assert entries[3]['decoded_events'] == [{
@@ -780,7 +804,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'event_type': 'receive',
         'location': 'blockchain',
         'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-        'notes': 'Transfer 1166 USDT 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 -> 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+        'notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
         'sequence_index': 385,
         'timestamp': 1642802286,
     }]

@@ -186,7 +186,7 @@ def session_database(
         session_tags,
         session_manually_tracked_balances,
         data_migration_version,
-        use_custom_database,
+        session_use_custom_database,
 ) -> Optional[DBHandler]:
     if not session_start_with_logged_in_user:
         return None
@@ -205,7 +205,7 @@ def session_database(
         tags=session_tags,
         manually_tracked_balances=session_manually_tracked_balances,
         data_migration_version=data_migration_version,
-        use_custom_database=use_custom_database,
+        use_custom_database=session_use_custom_database,
     )
 
 
@@ -221,4 +221,9 @@ def fixture_session_db_settings() -> Optional[Dict[str, Any]]:
 
 @pytest.fixture(name='use_custom_database')
 def fixture_use_custom_database() -> Optional[str]:
+    return None
+
+
+@pytest.fixture(scope='session', name='session_use_custom_database')
+def fixture_session_use_custom_database() -> Optional[str]:
     return None

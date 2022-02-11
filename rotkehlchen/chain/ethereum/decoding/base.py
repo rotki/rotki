@@ -28,6 +28,9 @@ class BaseDecoderTools():
         self.database = database
         self.tracked_accounts = self.database.get_blockchain_accounts()
 
+    def refresh_tracked_accounts(self) -> None:
+        self.tracked_accounts = self.database.get_blockchain_accounts()
+
     def is_tracked(self, adddress: ChecksumEthAddress) -> bool:
         return adddress in self.tracked_accounts.eth
 

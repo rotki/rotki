@@ -148,7 +148,7 @@ def history_event_from_kraken(
             identifier = raw_event['refid']
             event_type = HistoryEventType.from_string(raw_event['type'])
             asset = asset_from_kraken(raw_event['asset'])
-            event_subtype = None
+            event_subtype = HistoryEventSubType.NONE
             notes = None
             raw_amount = deserialize_asset_amount(raw_event['amount'])
             # If we don't know how to handle an event atm or we find an unsupported
@@ -172,7 +172,7 @@ def history_event_from_kraken(
                     event_subtype = HistoryEventSubType.SPEND
                 else:
                     event_subtype = HistoryEventSubType.RECEIVE
-            elif event_type == HistoryEventType.STAKING and event_subtype is None:
+            elif event_type == HistoryEventType.STAKING:
                 event_subtype = HistoryEventSubType.REWARD
             elif event_type == HistoryEventType.UNKNOWN:
                 found_unknown_event = True
@@ -689,7 +689,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         filter_query = HistoryEventFilterQuery.make(
             from_ts=Timestamp(start_ts),
             to_ts=Timestamp(end_ts),
-            event_type=[
+            event_types=[
                 HistoryEventType.TRADE,
                 HistoryEventType.RECEIVE,
                 HistoryEventType.SPEND,
@@ -733,7 +733,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         filter_query = HistoryEventFilterQuery.make(
             from_ts=Timestamp(start_ts),
             to_ts=Timestamp(end_ts),
-            event_type=[
+            event_types=[
                 HistoryEventType.DEPOSIT,
                 HistoryEventType.WITHDRAWAL,
             ],

@@ -324,44 +324,12 @@ class HistoryEventSubType(SerializableEnumMixin):
     # return a wrapped asset of something in any protocol. eg. CDAI to DAI
     RETURN_WRAPPED = 17
 
-    def serialize_event_subtype(self) -> str:
-        """Serialize event subtype to a readable string
-        May raise:
-        - DeserializationError
-        """
-        # TODO: change this when the changes to history entries get merged in the left branch
-        if self.name == 'REWARD':
-            return 'get reward'
-        description = EVENTS_SUBTYPES_TO_STR.get(HistoryEventSubType[self.name])
-        if description is not None:
-            return description
-        raise DeserializationError(f'Found staking event with invalid subtype {self.name}')
+    def serialize_for_other(self) -> Optional[str]:
+        """Temporary until I figure out what to do with serialize_event_subtype()"""
+        if self == HistoryEventSubType.NONE:
+            return None
 
-    @classmethod
-    def deserialize_event_subtype(cls, value: str) -> 'HistoryEventSubType':
-        """Serialize event subtype from redeable string
-        May raise:
-        - DeserializationError
-        """
-        str_to_event_subtype = {v: k for k, v in EVENTS_SUBTYPES_TO_STR.items()}
-        if value not in str_to_event_subtype:
-            raise DeserializationError(
-                f'Staking subtype string doesnt have a matching value {value}',
-            )
-        subtype = str_to_event_subtype[value]
-        # TODO: change this when the changes to history entries get merged in the left branch
-        if subtype is None:
-            return cls.REWARD
-        return subtype
-
-
-UNKNOWN_SUBTYPE = 'UNKNOWN SUBTYPE'
-EVENTS_SUBTYPES_TO_STR = {
-    None: 'get reward',
-    HistoryEventSubType.STAKING_DEPOSIT_ASSET: 'stake asset',
-    HistoryEventSubType.STAKING_RECEIVE_ASSET: 'receive staked asset',
-    HistoryEventSubType.STAKING_REMOVE_ASSET: 'unstake asset',
-}
+        return self.serialize()
 
 
 HISTORY_EVENT_DB_TUPLE_READ = Tuple[
@@ -376,7 +344,7 @@ HISTORY_EVENT_DB_TUPLE_READ = Tuple[
     str,            # usd value
     Optional[str],  # notes
     str,            # type
-    Optional[str],  # subtype
+    str,            # subtype
     Optional[str],  # counterparty
 ]
 
@@ -391,7 +359,7 @@ HISTORY_EVENT_DB_TUPLE_WRITE = Tuple[
     str,            # usd value
     Optional[str],  # notes
     str,            # type
-    Optional[str],  # subtype
+    str,            # subtype
     Optional[str],  # counterparty
 ]
 
@@ -407,6 +375,7 @@ class HistoryBaseEntry:
     timestamp: Timestamp
     location: Location
     event_type: HistoryEventType
+    event_subtype: HistoryEventSubType
     asset: Asset
     balance: Balance
     # location_label is a string field that allows to provide more information about the location.
@@ -414,7 +383,6 @@ class HistoryBaseEntry:
     # currently we use to identify the exchange name assigned by the user.
     location_label: Optional[str] = None
     notes: Optional[str] = None
-    event_subtype: Optional[HistoryEventSubType] = None
     # identifier for counterparty.
     # For a send it's the target
     # For a receive it's the sender
@@ -426,8 +394,6 @@ class HistoryBaseEntry:
     extras: Optional[Dict] = None
 
     def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
-        event_subtype = None
-        event_subtype = None if self.event_subtype is None else self.event_subtype.serialize()
         return (
             self.event_identifier,
             self.sequence_index,
@@ -439,7 +405,7 @@ class HistoryBaseEntry:
             str(self.balance.usd_value),
             self.notes,
             self.event_type.serialize(),
-            event_subtype,
+            self.event_subtype.serialize(),
             self.counterparty,
         )
 
@@ -449,9 +415,6 @@ class HistoryBaseEntry:
         - DeserializationError
         - UnknownAsset
         """
-        event_subtype = None
-        if entry[11] is not None:
-            event_subtype = HistoryEventSubType.deserialize(entry[11])
         try:
             return HistoryBaseEntry(
                 identifier=entry[0],
@@ -467,7 +430,7 @@ class HistoryBaseEntry:
                 ),
                 notes=entry[9],
                 event_type=HistoryEventType.deserialize(entry[10]),
-                event_subtype=event_subtype,
+                event_subtype=HistoryEventSubType.deserialize(entry[11]),
                 counterparty=entry[12],
             )
         except ValueError as e:
@@ -484,8 +447,8 @@ class HistoryBaseEntry:
             'location': str(self.location),
             'asset': self.asset.identifier,
             'balance': self.balance.serialize(),
-            'event_type': str(self.event_type),
-            'event_subtype': str(self.event_subtype) if self.event_subtype else None,
+            'event_type': self.event_type.serialize(),
+            'event_subtype': self.event_subtype.serialize_for_other(),
             'location_label': self.location_label,
             'notes': self.notes,
             'counterparty': self.counterparty,

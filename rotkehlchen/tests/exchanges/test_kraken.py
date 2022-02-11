@@ -550,7 +550,7 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
             'DELETE FROM used_query_ranges WHERE name LIKE ?',
             (f'{location}_history_events_%',),
         )
-        kraken.history_events_db.dbupdate_last_write()
+        kraken.history_events_db.db.update_last_write()
         with patch(target, new=input_trades):
             trades, _ = kraken.query_online_trade_history(
                 start_ts=0,

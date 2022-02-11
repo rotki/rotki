@@ -973,7 +973,7 @@ class EventSubtypeField(fields.Field):
             **_kwargs: Any,
     ) -> HistoryEventSubType:
         try:
-            event_subtype = HistoryEventSubType.deserialize_event_subtype(value)
+            event_subtype = HistoryEventSubType.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
@@ -1144,6 +1144,7 @@ class StakingQuerySchema(
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         if order_by_attribute == 'event_type':
             order_by_attribute = 'subtype'
+
         query_filter = HistoryEventFilterQuery.make(
             order_by_attribute=order_by_attribute,
             order_ascending=data['ascending'],
@@ -1152,12 +1153,12 @@ class StakingQuerySchema(
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
             location=Location.KRAKEN,
-            event_type=[
+            event_types=[
                 HistoryEventType.STAKING,
                 HistoryEventType.UNSTAKING,
             ],
-            event_subtype=data['event_subtypes'],
-            exclude_subtype=[
+            event_subtypes=data['event_subtypes'],
+            exclude_subtypes=[
                 HistoryEventSubType.STAKING_RECEIVE_ASSET,
             ],
             asset=data['asset'],
@@ -1169,10 +1170,12 @@ class StakingQuerySchema(
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
             location=Location.KRAKEN,
-            event_type=[
+            event_types=[
                 HistoryEventType.STAKING,
             ],
-            null_columns=['subtype'],
+            event_subtypes=[
+                HistoryEventSubType.REWARD,
+            ],
             order_by_attribute=None,
             asset=data['asset'],
         )
@@ -1225,6 +1228,9 @@ class HistoryBaseEntrySchema(Schema):
             **_kwargs: Any,
     ) -> Dict[str, Any]:
         data['balance'] = Balance(data.pop('amount'), data.pop('usd_value'))
+        if data['event_subtype'] is None:
+            data['event_subtype'] = HistoryEventSubType.NONE
+
         return {'event': HistoryBaseEntry(**data)}
 
 

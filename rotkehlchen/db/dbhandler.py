@@ -1618,7 +1618,6 @@ class DBHandler:
             'SELECT blockchain, account FROM blockchain_accounts;',
         )
         query = query.fetchall()
-
         eth_list = []
         btc_list = []
         ksm_list = []

@@ -195,7 +195,7 @@ class DBFilterQuery():
 
         if len(filterstrings) != 0:
             operator = ' AND ' if self.and_op else ' OR '
-            filter_query = f'{"WHERE " if self.join_clause is None else "AND"}{operator.join(filterstrings)}'  # noqa: E501
+            filter_query = f'{"WHERE " if self.join_clause is None else "AND ("}{operator.join(filterstrings)}{"" if self.join_clause is None else ")"}'  # noqa: E501
             query_parts.append(filter_query)
 
         if self.order_by is not None:
@@ -665,9 +665,9 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             asset: Optional[Asset] = None,
-            event_type: Optional[List[HistoryEventType]] = None,
-            event_subtype: Optional[List[HistoryEventSubType]] = None,
-            exclude_subtype: Optional[List[HistoryEventSubType]] = None,
+            event_types: Optional[List[HistoryEventType]] = None,
+            event_subtypes: Optional[List[HistoryEventSubType]] = None,
+            exclude_subtypes: Optional[List[HistoryEventSubType]] = None,
             location: Optional[Location] = None,
             location_label: Optional[str] = None,
             ignored_ids: Optional[List[str]] = None,
@@ -685,24 +685,24 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
         filters: List[DBFilter] = []
         if asset is not None:
             filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
-        if event_type is not None:
+        if event_types is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='type',
-                values=[x.serialize() for x in event_type],
+                values=[x.serialize() for x in event_types],
             ))
-        if event_subtype is not None:
+        if event_subtypes is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='subtype',
-                values=[x.serialize() for x in event_subtype],
+                values=[x.serialize() for x in event_subtypes],
                 operator='IN',
             ))
-        if exclude_subtype is not None:
+        if exclude_subtypes is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='subtype',
-                values=[x.serialize() for x in exclude_subtype],
+                values=[x.serialize() for x in exclude_subtypes],
                 operator='NOT IN',
             ))
         if location is not None:

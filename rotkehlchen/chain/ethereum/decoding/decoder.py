@@ -32,12 +32,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Location
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import (
-    from_wei,
-    hex_or_bytes_to_address,
-    hex_or_bytes_to_int,
-    timestamp_to_date,
-)
+from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .base import BaseDecoderTools
 from .constants import (
@@ -226,6 +221,8 @@ class EVMTransactionDecoder():
         - The transaction hashes must exist in the DB for transactions
         - The transaction hashes must also have the corresponding receipts in the DB
         """
+        self.base.refresh_tracked_accounts()
+
         # TODO: Change this if transaction filter query can accept multiple hashes
         for tx_hash in hashes:
             txs = self.dbethtx.get_ethereum_transactions(

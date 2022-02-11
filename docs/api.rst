@@ -4095,7 +4095,7 @@ Dealing with BaseHistoryEntry events
           "location": "blockchain",
           "event_type": "informational",
           "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
-          "amount": "1.542"
+          "amount": "1.542",
           "usd_value": "1.675",
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
           "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
