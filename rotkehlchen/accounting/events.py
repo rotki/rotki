@@ -991,29 +991,31 @@ class TaxableEvents():
                 profit_loss_in_profit_currency=profit_loss,
             )
 
-    def add_staking_reward(self, action: HistoryBaseEntry) -> None:
+    def add_history_base_entry(self, action: HistoryBaseEntry) -> None:
+        timestamp=action.get_standard_timestamp()
         rate = self.get_rate_in_profit_currency(
             asset=action.asset_balance.asset,
-            timestamp=action.get_standard_timestamp(),
+            timestamp=timestamp,
         )
-        if action.event_type == HistoryEventType.STAKING:
-            # At the moment we only process staking events
-            if action.event_subtype is None:
-                # TODO: This needs to be updated after the refactor to the history base entry
-                # class has been made. Here we should be checking against reward.
-                self.cost_basis.obtain_asset(
-                    location=action.location,
-                    timestamp=action.get_standard_timestamp(),
-                    description=str(action),
-                    asset=action.asset_balance.asset,
-                    amount=action.asset_balance.balance.amount,
-                    rate=rate,
-                    fee_in_profit_currency=ZERO,
-                )
-                profit_loss = action.asset_balance.balance.amount * rate
-                self.staking_profit_loss += profit_loss
+        # At the moment we only process staking events
+        if action.event_type != HistoryEventType.STAKING or action.event_subtype is not None:
+            return None
+        
+        # TODO: This needs to be updated after the refactor to the history base entry
+        # class has been made. Here we should be checking against reward.
+        self.cost_basis.obtain_asset(
+            location=action.location,
+            timestamp=timestamp,
+            description=str(action),
+            asset=action.asset_balance.asset,
+            amount=action.asset_balance.balance.amount,
+            rate=rate,
+            fee_in_profit_currency=ZERO,
+        )
+        profit_loss = action.asset_balance.balance.amount * rate
+        self.staking_profit_loss += profit_loss
 
-                self.csv_exporter.add_staking_reward(
-                    action=action,
-                    profit_loss_in_profit_currency=profit_loss,
-                )
+        self.csv_exporter.add_staking_reward(
+            action=action,
+            profit_loss_in_profit_currency=profit_loss,
+        )

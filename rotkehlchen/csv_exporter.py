@@ -55,7 +55,7 @@ FILENAME_MARGIN_CSV = 'margin_positions.csv'
 FILENAME_LOAN_SETTLEMENTS_CSV = 'loan_settlements.csv'
 FILENAME_DEFI_EVENTS_CSV = 'defi_events.csv'
 FILENAME_LEDGER_ACTIONS_CSV = 'ledger_actions.csv'
-FILENAME_STAKING_EVENTS_CSV = 'staking_events.csv'
+FILENAME_BASE_EVENTS_CSV = 'base_events.csv'
 FILENAME_ALL_CSV = 'all_events.csv'
 ETH_EXPLORER = 'https://etherscan.io/tx/'
 
@@ -394,13 +394,13 @@ class CSVExporter():
                 expression=f'-K{row}',
                 actual_value=net_profit_or_loss,
             )
-        elif event_type == EV_INTEREST_PAYMENT:
+        elif event_type in (EV_INTEREST_PAYMENT, EV_STAKING_REWARD):
             net_profit_or_loss = taxable_received_in_profit_currency
             net_profit_or_loss_csv = self._add_equals_formula(
                 expression=f'L{row}',
                 actual_value=net_profit_or_loss,
             )
-        elif event_type in (EV_MARGIN_CLOSE, EV_DEFI, EV_LEDGER_ACTION, EV_STAKING_REWARD):
+        elif event_type in (EV_MARGIN_CLOSE, EV_DEFI, EV_LEDGER_ACTION):
             if total_received_in_profit_currency > ZERO:
                 net_profit_or_loss = total_received_in_profit_currency
             else:
@@ -979,7 +979,7 @@ class CSVExporter():
                 self.ledger_actions_csv,
             )
             _dict_to_csv_file(
-                dirpath / FILENAME_STAKING_EVENTS_CSV,
+                dirpath / FILENAME_BASE_EVENTS_CSV,
                 self.staking_events_csv,
             )
             _dict_to_csv_file(
@@ -1010,7 +1010,7 @@ class CSVExporter():
             (dirpath / FILENAME_LOAN_SETTLEMENTS_CSV, FILENAME_LOAN_SETTLEMENTS_CSV),
             (dirpath / FILENAME_DEFI_EVENTS_CSV, FILENAME_DEFI_EVENTS_CSV),
             (dirpath / FILENAME_LEDGER_ACTIONS_CSV, FILENAME_LEDGER_ACTIONS_CSV),
-            (dirpath / FILENAME_STAKING_EVENTS_CSV, FILENAME_STAKING_EVENTS_CSV),
+            (dirpath / FILENAME_BASE_EVENTS_CSV, FILENAME_BASE_EVENTS_CSV),
             (dirpath / FILENAME_ALL_CSV, FILENAME_ALL_CSV),
         ]
 

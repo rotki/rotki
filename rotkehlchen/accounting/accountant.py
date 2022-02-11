@@ -649,7 +649,7 @@ class Accountant():
             return True, prev_time
         if action_type == 'history_base_entry':
             action = cast(HistoryBaseEntry, action)
-            self.events.add_staking_reward(action)
+            self.events.add_history_base_entry(action)
             return True, prev_time
 
         if isinstance(action, AMMTrade) and action.tx_hash:
