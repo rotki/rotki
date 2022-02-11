@@ -23,7 +23,6 @@ export const Routes = {
   HISTORY_TRADES: '/history/trades',
   HISTORY_DEPOSITS_WITHDRAWALS: '/history/deposits-withdrawals',
   HISTORY_LEDGER_ACTIONS: '/history/ledger-actions',
-  HISTORY_GITCOIN: '/history/gitcoin',
   NFTS: '/nfts',
   NON_FUNGIBLE: '/accounts-balances/nonfungible'
 };

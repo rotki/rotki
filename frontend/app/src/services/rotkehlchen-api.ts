@@ -437,7 +437,8 @@ export class RotkehlchenApi {
           fromTimestamp,
           toTimestamp
         }),
-        validateStatus: validStatus
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
       }
     );
 

@@ -19,6 +19,7 @@
 </template>
 
 <script lang="ts">
+import { mapActions as mapPiniaActions } from 'pinia';
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -30,6 +31,7 @@ import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { DexTradesTable } from '@/premium/premium';
 import { Section } from '@/store/const';
+import { useUniswap } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';
 
 @Component({
@@ -41,7 +43,8 @@ import { Module } from '@/types/modules';
     DexTradesTable
   },
   methods: {
-    ...mapActions('defi', ['fetchUniswapTrades', 'fetchBalancerTrades']),
+    ...mapPiniaActions(useUniswap, { fetchUniswapTrades: 'fetchTrades' }),
+    ...mapActions('defi', ['fetchBalancerTrades']),
     ...mapActions('defi/sushiswap', {
       fetchSushiswapTrades: 'fetchTrades'
     })

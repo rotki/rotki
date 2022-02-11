@@ -7,17 +7,13 @@ import {
   Pool
 } from '@rotki/common/lib/defi/balancer';
 import {
-  GitcoinGrantEventsPayload,
-  GitcoinReportPayload
-} from '@rotki/common/lib/gitcoin';
-import {
   AdexApi,
   BalancerApi,
   BalancesApi,
   CompoundApi,
   DexTradesApi,
-  GitCoinApi,
   StatisticsApi,
+  SushiApi,
   UserSettingsApi,
   UtilsApi
 } from '@rotki/common/lib/premium';
@@ -31,7 +27,7 @@ import {
 import { computed } from '@vue/composition-api';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
-import { useHistory } from '@/store/history';
+import { useUniswap } from '@/store/defi/uniswap';
 import { useStore } from '@/store/utils';
 
 export const statisticsApi = (): StatisticsApi => {
@@ -58,21 +54,6 @@ export const statisticsApi = (): StatisticsApi => {
     },
     netValue: startingDate =>
       computed(() => store.getters['statistics/netValue'](startingDate))
-  };
-};
-
-export const gitcoinApi = (): GitCoinApi => {
-  return {
-    generateReport(payload: GitcoinReportPayload) {
-      return api.history.generateReport(payload);
-    },
-    deleteGrant(grantId: number) {
-      return api.history.deleteGitcoinGrantEvents(grantId);
-    },
-    fetchGrantEvents(payload: GitcoinGrantEventsPayload) {
-      const { fetchGitcoinGrant } = useHistory();
-      return fetchGitcoinGrant(payload);
-    }
   };
 };
 
@@ -184,6 +165,7 @@ export const compoundApi = (): CompoundApi => {
 
 export const dexTradeApi = (): DexTradesApi => {
   const store = useStore();
+  const { fetchTrades } = useUniswap();
   return {
     dexTrades: addresses =>
       computed(() => store.getters['defi/dexTrades'](addresses)),
@@ -191,8 +173,25 @@ export const dexTradeApi = (): DexTradesApi => {
       store.dispatch('defi/fetchBalancerTrades', refresh),
     fetchSushiswapTrades: refresh =>
       store.dispatch('defi/fetchSushiswapTrades', refresh),
-    fetchUniswapTrades: refresh =>
-      store.dispatch('defi/fetchUniswapTrades', refresh)
+    fetchUniswapTrades: refresh => fetchTrades(refresh)
+  };
+};
+
+export const sushiApi = (): SushiApi => {
+  const store = useStore();
+  return {
+    addresses: computed(() => store.getters['defi/sushiswap/addresses']),
+    pools: computed(() => store.getters['defi/sushiswap/pools']),
+    events: addresses =>
+      computed(() => store.getters['defi/sushiswap/events'](addresses)),
+    balances: addresses =>
+      computed(() => store.getters['defi/sushiswap/balances'](addresses)),
+    poolProfit: addresses =>
+      computed(() => store.getters['defi/sushiswap/poolProfit'](addresses)),
+    fetchEvents: refresh =>
+      store.dispatch('defi/sushiswap/fetchEvents', refresh),
+    fetchBalances: refresh =>
+      store.dispatch('defi/sushiswap/fetchBalances', refresh)
   };
 };
 

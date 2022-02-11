@@ -3,7 +3,7 @@
     <div class="mx-4 pt-2">
       <v-autocomplete
         :value="value"
-        :items="uniswapAssets"
+        :items="poolAssets"
         multiple
         clearable
         deletable-chips
@@ -59,36 +59,47 @@
 
 <script lang="ts">
 import { XswapPool } from '@rotki/common/lib/defi/xswap';
-import { Component, Emit, Mixins, Prop } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
-import AssetMixin from '@/mixins/asset-mixin';
-import { GETTER_UNISWAP_ASSETS } from '@/store/defi/const';
+import { defineComponent, PropType, toRefs, unref } from '@vue/composition-api';
+import { setupAssetInfoRetrieval } from '@/composables/balances';
+import { useUniswap } from '@/store/defi/uniswap';
 
-@Component({
-  computed: {
-    ...mapGetters('defi', [GETTER_UNISWAP_ASSETS])
-  }
-})
-export default class UniswapPoolFilter extends Mixins(AssetMixin) {
-  uniswapAssets!: XswapPool[];
-  @Prop({ required: true, type: Array })
-  value!: string[];
-  @Emit()
-  input(_value: string[]) {}
+export default defineComponent({
+  name: 'UniswapPoolFilter',
+  props: {
+    value: { required: true, type: Array as PropType<string[]> }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { value } = toRefs(props);
+    const { poolAssets } = useUniswap();
+    const { getAssetSymbol: getSymbol } = setupAssetInfoRetrieval();
 
-  filter(item: XswapPool, queryText: string) {
-    const searchString = queryText.toLocaleLowerCase();
-    const asset1 = this.getSymbol(item.assets[0]).toLocaleLowerCase();
-    const asset2 = this.getSymbol(item.assets[1]).toLocaleLowerCase();
-    const name = `${asset1}/${asset2}`;
-    return name.indexOf(searchString) > -1;
-  }
+    const input = (value: string[]) => {
+      emit('input', value);
+    };
 
-  remove(asset: XswapPool) {
-    const addresses = [...this.value];
-    const index = addresses.findIndex(address => address === asset.address);
-    addresses.splice(index, 1);
-    this.input(addresses);
+    const filter = (item: XswapPool, queryText: string) => {
+      const searchString = queryText.toLocaleLowerCase();
+      const asset1 = getSymbol(item.assets[0]).toLocaleLowerCase();
+      const asset2 = getSymbol(item.assets[1]).toLocaleLowerCase();
+      const name = `${asset1}/${asset2}`;
+      return name.indexOf(searchString) > -1;
+    };
+
+    const remove = (asset: XswapPool) => {
+      const addresses = [...unref(value)];
+      const index = addresses.findIndex(address => address === asset.address);
+      addresses.splice(index, 1);
+      input(addresses);
+    };
+
+    return {
+      poolAssets,
+      getSymbol,
+      input,
+      filter,
+      remove
+    };
   }
-}
+});
 </script>

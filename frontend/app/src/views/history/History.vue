@@ -24,11 +24,6 @@ const tabs: TabContent[] = [
     routeTo: Routes.HISTORY_TRANSACTIONS
   },
   {
-    name: i18n.t('history.tabs.gitcoin_grants').toString(),
-    routeTo: Routes.HISTORY_GITCOIN,
-    hideHeader: true
-  },
-  {
     name: i18n.t('history.tabs.ledger_actions').toString(),
     routeTo: Routes.HISTORY_LEDGER_ACTIONS
   }

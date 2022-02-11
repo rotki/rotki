@@ -93,7 +93,6 @@ const SOURCES = [
   'nexo',
   'blockfi-transactions',
   'blockfi-trades',
-  'gitcoin',
   'shapeshift-trades',
   'uphold',
   'bisq'

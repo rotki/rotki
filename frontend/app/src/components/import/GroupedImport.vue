@@ -39,20 +39,18 @@
   </card>
 </template>
 <script lang="ts">
-import { computed, defineComponent, Ref, ref } from '@vue/composition-api';
+import { computed, defineComponent, ref } from '@vue/composition-api';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import BisqImport from '@/components/import/Bisq.vue';
 import BlockFiImport from '@/components/import/BlockFiImport.vue';
 import CointrackingImport from '@/components/import/CointrackingImport.vue';
 import CryptoComImport from '@/components/import/CryptoComImport.vue';
-import GitcoinImport from '@/components/import/GitcoinImport.vue';
 import NexoImport from '@/components/import/NexoImport.vue';
 import ShapeshiftImport from '@/components/import/ShapeshiftImport.vue';
 import UpholdImport from '@/components/import/UpholdImport.vue';
-import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 
-const sources = (premium: Ref<boolean>) =>
+const sources = () =>
   computed(() => {
     const sources = [
       {
@@ -99,15 +97,6 @@ const sources = (premium: Ref<boolean>) =>
       }
     ];
 
-    if (premium.value) {
-      sources.push({
-        identifier: 'gitcoin',
-        name: i18n.t('import_data.gitcoin.name'),
-        logo: require('@/assets/images/gitcoin.svg'),
-        form: 'gitcoin-import'
-      });
-    }
-
     return sources;
   });
 
@@ -121,15 +110,13 @@ export default defineComponent({
     BlockFiImport,
     CryptoComImport,
     CointrackingImport,
-    BisqImport,
-    GitcoinImport
+    BisqImport
   },
   setup() {
     const selectedSource = ref<string>('');
-    const premium: Ref<boolean> = getPremium();
 
     const form = computed(() => {
-      return sources(premium).value.find(
+      return sources().value.find(
         source => source.identifier === selectedSource.value
       )?.form;
     });
@@ -137,7 +124,7 @@ export default defineComponent({
     return {
       selectedSource,
       form,
-      sources: sources(premium)
+      sources: sources()
     };
   }
 });

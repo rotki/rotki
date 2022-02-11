@@ -1,5 +1,5 @@
 <template>
-  <module-not-active v-if="!isEnabled" :modules="modules" />
+  <module-not-active v-if="!enabled" :modules="modules" />
   <progress-screen v-else-if="loading">
     <template #message>
       {{ $t('uniswap.loading') }}
@@ -17,7 +17,7 @@
     <refresh-header
       :title="$t('uniswap.title')"
       class="mt-4"
-      :loading="anyRefreshing"
+      :loading="primaryRefreshing || secondaryRefreshing"
       @refresh="refresh()"
     >
       <template #actions>
@@ -29,8 +29,8 @@
         <blockchain-account-selector
           v-model="selectedAccount"
           hint
-          :chains="[ETH]"
-          :usable-addresses="uniswapAddresses"
+          :chains="chains"
+          :usable-addresses="addresses"
         />
       </v-col>
       <v-col>
@@ -110,9 +110,9 @@
 
     <uniswap-details
       v-if="premium"
-      :loading="secondaryLoading"
-      :selected-addresses="selectedAddresses"
-      :selected-pool-address="selectedPools"
+      :loading="secondaryRefreshing"
+      :events="events"
+      :profit="poolProfit"
     />
   </div>
 </template>
@@ -120,9 +120,13 @@
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { XswapBalance } from '@rotki/common/lib/defi/xswap';
-import { Component, Mixins } from 'vue-property-decorator';
-import { mapActions, mapGetters } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  ref,
+  unref
+} from '@vue/composition-api';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -132,15 +136,15 @@ import UniswapPoolFilter from '@/components/defi/uniswap/UniswapPoolFilter.vue';
 import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import AssetMixin from '@/mixins/asset-mixin';
-import ModuleMixin from '@/mixins/module-mixin';
-import PremiumMixin from '@/mixins/premium-mixin';
-import StatusMixin from '@/mixins/status-mixin';
+import { setupAssetInfoRetrieval } from '@/composables/balances';
+import { setupStatusChecking } from '@/composables/common';
+import { getPremium, setupModuleEnabled } from '@/composables/session';
 import { UniswapDetails } from '@/premium/premium';
 import { Section } from '@/store/const';
+import { useUniswap } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';
 
-@Component({
+export default defineComponent({
   components: {
     PaginatedCards,
     ActiveModules,
@@ -153,63 +157,93 @@ import { Module } from '@/types/modules';
     UniswapPoolAsset,
     BlockchainAccountSelector
   },
-  computed: {
-    ...mapGetters('defi', ['uniswapBalances', 'uniswapAddresses'])
-  },
-  methods: {
-    ...mapActions('defi', ['fetchUniswapEvents', 'fetchUniswapBalances'])
-  }
-})
-export default class Uniswap extends Mixins(
-  StatusMixin,
-  ModuleMixin,
-  PremiumMixin,
-  AssetMixin
-) {
-  readonly ETH = Blockchain.ETH;
-  readonly modules: Module[] = [Module.UNISWAP];
-  section = Section.DEFI_UNISWAP_BALANCES;
-  secondSection = Section.DEFI_UNISWAP_EVENTS;
+  setup() {
+    const selectedAccount = ref<GeneralAccount | null>(null);
+    const selectedPools = ref<string[]>([]);
+    const {
+      fetchEvents,
+      fetchBalances,
+      addresses,
+      uniswapBalances,
+      uniswapEvents,
+      uniswapPoolProfit
+    } = useUniswap();
+    const { isModuleEnabled } = setupModuleEnabled();
+    const { getAssetSymbol: getSymbol, getTokenAddress } =
+      setupAssetInfoRetrieval();
+    const { isSectionRefreshing, shouldShowLoadingScreen } =
+      setupStatusChecking();
 
-  uniswapBalances!: (addresses: string[]) => XswapBalance[];
-  uniswapAddresses!: string[];
-  selectedAccount: GeneralAccount | null = null;
-  selectedPools: string[] = [];
-  fetchUniswapBalances!: (refresh: boolean) => Promise<void>;
-  fetchUniswapEvents!: (refresh: boolean) => Promise<void>;
-
-  get isEnabled(): boolean {
-    return this.isModuleEnabled(Module.UNISWAP);
-  }
-
-  get selectedAddresses(): string[] {
-    return this.selectedAccount ? [this.selectedAccount.address] : [];
-  }
-
-  get balances(): XswapBalance[] {
-    const balances = this.uniswapBalances(this.selectedAddresses);
-    if (this.selectedPools.length === 0) {
-      return balances;
-    }
-    return balances.filter(({ address }) =>
-      this.selectedPools.includes(address)
+    const loading = shouldShowLoadingScreen(Section.DEFI_UNISWAP_BALANCES);
+    const primaryRefreshing = isSectionRefreshing(
+      Section.DEFI_UNISWAP_BALANCES
     );
-  }
+    const secondaryRefreshing = isSectionRefreshing(
+      Section.DEFI_UNISWAP_EVENTS
+    );
 
-  async mounted() {
-    await Promise.all([
-      this.fetchUniswapBalances(false),
-      this.fetchUniswapEvents(false)
-    ]);
-  }
+    const selectedAddresses = computed(() => {
+      let account = unref(selectedAccount);
+      return account ? [account.address] : [];
+    });
 
-  async refresh() {
-    await Promise.all([
-      this.fetchUniswapBalances(true),
-      this.fetchUniswapEvents(true)
-    ]);
+    const balances = computed(() => {
+      const addresses = unref(selectedAddresses);
+      const pools = unref(selectedPools);
+      const balances = unref(uniswapBalances(addresses));
+      return pools.length === 0
+        ? balances
+        : balances.filter(({ address }) => pools.includes(address));
+    });
+
+    const events = computed(() => {
+      const addresses = unref(selectedAddresses);
+      const pools = unref(selectedPools);
+      const events = unref(uniswapEvents(addresses));
+      return pools.length === 0
+        ? events
+        : events.filter(({ address }) => pools.includes(address));
+    });
+
+    const poolProfit = computed(() => {
+      const addresses = unref(selectedAddresses);
+      const pools = unref(selectedPools);
+      const profit = unref(uniswapPoolProfit(addresses));
+      return pools.length === 0
+        ? profit
+        : profit.filter(({ poolAddress }) => pools.includes(poolAddress));
+    });
+
+    onMounted(async () => {
+      await Promise.all([fetchBalances(false), fetchEvents(false)]);
+    });
+
+    const refresh = async () => {
+      await Promise.all([fetchBalances(true), fetchEvents(true)]);
+    };
+
+    const uniswap = Module.UNISWAP;
+    return {
+      selectedAccount,
+      selectedPools,
+      selectedAddresses,
+      addresses,
+      balances,
+      events,
+      poolProfit,
+      loading,
+      primaryRefreshing,
+      secondaryRefreshing,
+      premium: getPremium(),
+      chains: [Blockchain.ETH],
+      modules: [uniswap],
+      enabled: isModuleEnabled(uniswap),
+      refresh,
+      getSymbol,
+      getTokenAddress
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

@@ -1,6 +1,5 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
-import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { ActionContext, ActionTree } from 'vuex';
 import i18n from '@/i18n';
 import { balanceKeys } from '@/services/consts';
@@ -23,12 +22,7 @@ import {
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_MODULES } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
-import {
-  ACTION_PURGE_PROTOCOL,
-  dexTradeNumericKeys,
-  uniswapEventsNumericKeys,
-  uniswapNumericKeys
-} from '@/store/defi/const';
+import { ACTION_PURGE_PROTOCOL, dexTradeNumericKeys } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
 import { DefiMutations } from '@/store/defi/mutation-types';
 import { defaultCompoundHistory } from '@/store/defi/state';
@@ -36,7 +30,6 @@ import {
   Airdrops,
   AllDefiProtocols,
   DefiState,
-  DexTrades,
   DSRBalances,
   DSRHistory,
   MakerDAOVaultDetails
@@ -884,162 +877,6 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       });
     }
     setStatus(Status.LOADED, section);
-  },
-
-  async fetchUniswapBalances(
-    { dispatch, commit, rootState: { session } },
-    refresh: boolean = false
-  ) {
-    const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(Module.UNISWAP)) {
-      return;
-    }
-
-    const section = Section.DEFI_UNISWAP_BALANCES;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-    const { awaitTask } = useTasks();
-    try {
-      const taskType = TaskType.DEFI_UNISWAP_BALANCES;
-      const { taskId } = await api.defi.fetchUniswapBalances();
-      const { result } = await awaitTask<XswapBalances, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n.tc('actions.defi.uniswap.task.title'),
-          numericKeys: uniswapNumericKeys
-        }
-      );
-
-      commit('uniswapBalances', result);
-    } catch (e: any) {
-      const { notify } = useNotifications();
-      notify({
-        title: i18n.tc('actions.defi.uniswap.error.title'),
-        message: i18n.tc('actions.defi.uniswap.error.description', undefined, {
-          error: e.message
-        }),
-        display: true
-      });
-    }
-    setStatus(Status.LOADED, section);
-    await dispatch('balances/fetchSupportedAssets', true, { root: true });
-  },
-
-  async fetchUniswapTrades(
-    { dispatch, commit, rootState: { session } },
-    refresh: boolean = false
-  ) {
-    const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(Module.UNISWAP) || !session!.premium) {
-      return;
-    }
-
-    const section = Section.DEFI_UNISWAP_TRADES;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-    const { awaitTask } = useTasks();
-    try {
-      const taskType = TaskType.DEFI_UNISWAP_TRADES;
-      const { taskId } = await api.defi.fetchUniswapTrades();
-      const { result } = await awaitTask<DexTrades, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n.tc('actions.defi.uniswap_trades.task.title'),
-          numericKeys: dexTradeNumericKeys
-        }
-      );
-
-      commit('uniswapTrades', result);
-    } catch (e: any) {
-      const { notify } = useNotifications();
-      notify({
-        title: i18n.tc('actions.defi.uniswap_trades.error.title'),
-        message: i18n.tc(
-          'actions.defi.uniswap_trades.error.description',
-          undefined,
-          {
-            error: e.message
-          }
-        ),
-        display: true
-      });
-    }
-    setStatus(Status.LOADED, section);
-    await dispatch('balances/fetchSupportedAssets', true, { root: true });
-  },
-
-  async fetchUniswapEvents(
-    { dispatch, commit, rootState: { session } },
-    refresh: boolean = false
-  ) {
-    const { activeModules } = session!.generalSettings;
-    if (!activeModules.includes(Module.UNISWAP) || !session!.premium) {
-      return;
-    }
-
-    const section = Section.DEFI_UNISWAP_EVENTS;
-    const currentStatus = getStatus(section);
-
-    if (
-      isLoading(currentStatus) ||
-      (currentStatus === Status.LOADED && !refresh)
-    ) {
-      return;
-    }
-
-    const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-    setStatus(newStatus, section);
-
-    const { awaitTask } = useTasks();
-    try {
-      const taskType = TaskType.DEFI_UNISWAP_EVENTS;
-      const { taskId } = await api.defi.fetchUniswapEvents();
-      const { result } = await awaitTask<XswapEvents, TaskMeta>(
-        taskId,
-        taskType,
-        {
-          title: i18n.tc('actions.defi.uniswap_events.task.title'),
-          numericKeys: uniswapEventsNumericKeys
-        }
-      );
-
-      commit('uniswapEvents', result);
-    } catch (e: any) {
-      const { notify } = useNotifications();
-      notify({
-        title: i18n.tc('actions.defi.uniswap_events.error.title'),
-        message: i18n.tc(
-          'actions.defi.uniswap_events.error.description',
-          undefined,
-          {
-            error: e.message
-          }
-        ),
-        display: true
-      });
-    }
-    setStatus(Status.LOADED, section);
-    await dispatch('balances/fetchSupportedAssets', true, { root: true });
   },
 
   async fetchAirdrops({ commit }, refresh: boolean = false) {

@@ -1,11 +1,10 @@
-import { ComputedRef } from "vue-demi";
-import { ActionResult, SupportedAsset } from "../data";
+import { ComputedRef } from "@vue/composition-api";
+import { SupportedAsset } from "../data";
 import { ProfitLossModel } from "../defi";
 import { BalancerBalanceWithOwner, BalancerEvent, BalancerProfitLoss, Pool } from "../defi/balancer";
 import { DexTrade } from "../defi/dex";
-import { GitcoinGrantEventsPayload, GitcoinGrantReport, GitcoinGrants, GitcoinReportPayload } from "../gitcoin";
-import { AssetBalanceWithPrice, BigNumber, SemiPartial } from "../index";
-import { Message, NotificationPayload } from "../messages";
+import { XswapBalance, XswapEventDetails, XswapPool, XswapPoolProfit } from "../defi/xswap";
+import { AssetBalanceWithPrice, BigNumber } from "../index";
 import { DebugSettings, FrontendSettingsPayload, Themes, TimeUnit } from "../settings";
 import { AdexBalances, AdexHistory } from "../staking/adex";
 import { LocationData, NetValue, OwnedAssets, TimedAssetBalances, TimedBalances } from "../statistics";
@@ -15,14 +14,6 @@ export interface PremiumInterface {
   readonly version: number;
   readonly api: PremiumApi;
   readonly debug?: DebugSettings;
-}
-
-export interface GitCoinApi {
-  deleteGrant(grantId: number): Promise<boolean>;
-  fetchGrantEvents(
-    payload: GitcoinGrantEventsPayload
-  ): Promise<ActionResult<GitcoinGrants>>;
-  generateReport(payload: GitcoinReportPayload): Promise<GitcoinGrantReport>;
 }
 
 export interface StatisticsApi {
@@ -39,7 +30,7 @@ export interface StatisticsApi {
 }
 
 export interface AdexApi {
-  fetchAdex(refresh: boolean): Promise<void>
+  fetchAdex(ComputedRefresh: boolean): Promise<void>
   adexHistory: ComputedRef<AdexHistory>
   adexBalances: ComputedRef<AdexBalances>
 }
@@ -55,9 +46,9 @@ export interface DateUtilities {
 }
 
 export type DexTradesApi = {
-  fetchUniswapTrades: (refresh: boolean) => Promise<void>
-  fetchBalancerTrades: (refresh: boolean) => Promise<void>
-  fetchSushiswapTrades: (refresh: boolean) => Promise<void>
+  fetchUniswapTrades: (ComputedRefresh: boolean) => Promise<void>
+  fetchBalancerTrades: (ComputedRefresh: boolean) => Promise<void>
+  fetchSushiswapTrades: (ComputedRefresh: boolean) => Promise<void>
   dexTrades: (addresses: string[]) => ComputedRef<DexTrade[]>
 };
 
@@ -74,9 +65,19 @@ export type BalancerApi = {
   balancerBalances: ComputedRef<BalancerBalanceWithOwner[]>,
   balancerPools: ComputedRef<Pool[]>,
   balancerAddresses: ComputedRef<string[]>,
-  fetchBalancerBalances: (refresh: boolean) => Promise<void>,
-  fetchBalancerEvents: (refresh: boolean) => Promise<void>
+  fetchBalancerBalances: (ComputedRefresh: boolean) => Promise<void>,
+  fetchBalancerEvents: (ComputedRefresh: boolean) => Promise<void>
 };
+
+export type SushiApi = {
+  balances: (addresses: string[]) => ComputedRef<XswapBalance[]>
+  events: (addresses: string[]) => ComputedRef<XswapEventDetails[]>;
+  poolProfit: (addresses: string[]) => ComputedRef<XswapPoolProfit[]>
+  addresses: ComputedRef<string[]>
+  pools: ComputedRef<XswapPool[]>
+  fetchBalances: (ComputedRefresh: boolean) => Promise<void>
+  fetchEvents: (ComputedRefresh: boolean) => Promise<void>
+}
 
 export type BalancesApi = {
   byLocation: ComputedRef<Record<string, BigNumber>>
@@ -96,13 +97,13 @@ export type UtilsApi = {
 export interface DataUtilities {
   readonly assets: AssetsApi
   readonly utils: UtilsApi
-  readonly gitcoin: GitCoinApi;
   readonly statistics: StatisticsApi;
   readonly adex: AdexApi;
   readonly dexTrades: DexTradesApi,
   readonly compound: CompoundApi,
   readonly balancer: BalancerApi,
   readonly balances: BalancesApi
+  readonly sushi: SushiApi
 }
 
 export type UserSettingsApi = {
@@ -127,8 +128,4 @@ export type PremiumApi = {
   readonly date: DateUtilities;
   readonly data: DataUtilities;
   readonly settings: SettingsApi;
-  readonly messages: {
-    showMessage(message: Message): void
-    notify(notification: SemiPartial<NotificationPayload, 'title' | 'message'>): void
-  }
 };

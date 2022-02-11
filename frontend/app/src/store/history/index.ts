@@ -1,14 +1,8 @@
-import { ActionResult } from '@rotki/common/lib/data';
-import {
-  GitcoinGrantEventsPayload,
-  GitcoinGrants
-} from '@rotki/common/lib/gitcoin';
 import { computed, Ref, ref } from '@vue/composition-api';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { exchangeName } from '@/components/history/consts';
 import i18n from '@/i18n';
-import { balanceKeys } from '@/services/consts';
 import { IgnoredActions } from '@/services/history/const';
 import {
   AssetMovement,
@@ -164,35 +158,6 @@ export const useHistory = defineStore('history', () => {
     }
   };
 
-  // Gitcoin
-  const fetchGitcoinGrant = async (
-    payload: GitcoinGrantEventsPayload
-  ): Promise<ActionResult<GitcoinGrants>> => {
-    try {
-      const { awaitTask } = useTasks();
-      const { taskId } = await api.history.gatherGitcoinGrandEvents(payload);
-      const meta: TaskMeta = {
-        title: i18n
-          .t('actions.balances.gitcoin_grant.task.title', {
-            grant: 'grantId' in payload ? payload.grantId : ''
-          })
-          .toString(),
-        numericKeys: balanceKeys
-      };
-      const { result } = await awaitTask<GitcoinGrants, TaskMeta>(
-        taskId,
-        TaskType.GITCOIN_GRANT_EVENTS,
-        meta
-      );
-      return { result, message: '' };
-    } catch (e: any) {
-      return {
-        result: {},
-        message: e.message
-      };
-    }
-  };
-
   // Reset
   const reset = () => {
     associatedLocations.value = [];
@@ -211,7 +176,6 @@ export const useHistory = defineStore('history', () => {
     ignoreInAccounting,
     purgeExchange,
     purgeHistoryLocation,
-    fetchGitcoinGrant,
     reset
   };
 });

@@ -14,7 +14,6 @@ import * as CompositionAPI from '@vue/composition-api';
 import Chart from 'chart.js';
 import dayjs from 'dayjs';
 import Vue from 'vue';
-import Vuex from 'vuex';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
@@ -23,14 +22,13 @@ import {
   balancesApi,
   compoundApi,
   dexTradeApi,
-  gitcoinApi,
   statisticsApi,
+  sushiApi,
   userSettings,
   utilsApi
 } from '@/premium/premium-apis';
 import { registerComponents } from '@/premium/register-components';
-import { useNotifications } from '@/store/notifications';
-import store, { useMainStore } from '@/store/store';
+import store from '@/store/store';
 import { FrontendSettingsPayload } from '@/types/frontend-settings';
 
 const date: DateUtilities = {
@@ -60,7 +58,7 @@ const date: DateUtilities = {
   }
 };
 
-const data: DataUtilities = {
+const data = (): DataUtilities => ({
   assets: {
     assetInfo: (identifier: string) => {
       return store.getters['balances/assetInfo'](identifier);
@@ -69,17 +67,17 @@ const data: DataUtilities = {
       return store.getters['balances/getIdentifierForSymbol'](symbol);
     }
   },
-  gitcoin: gitcoinApi(),
   statistics: statisticsApi(),
   adex: adexApi(),
   balances: balancesApi(),
   balancer: balancerApi(),
   compound: compoundApi(),
   dexTrades: dexTradeApi(),
+  sushi: sushiApi(),
   utils: utilsApi()
-};
+});
 
-const settings: SettingsApi = {
+const settings = (): SettingsApi => ({
   async update(settings: FrontendSettingsPayload): Promise<void> {
     await store.dispatch('settings/updateSetting', settings);
   },
@@ -97,32 +95,21 @@ const settings: SettingsApi = {
     };
   },
   user: userSettings()
-};
-
-const messages = () => {
-  const { setMessage } = useMainStore();
-  const { notify } = useNotifications();
-  return {
-    notify,
-    showMessage: setMessage
-  };
-};
+});
 
 export const usePremiumApi = (): PremiumInterface => ({
   useHostComponents: true,
   version: 16,
   api: {
     date,
-    data,
-    settings,
-    messages: messages()
+    data: data(),
+    settings: settings()
   }
 });
 
 export const setupPremium = () => {
   window.Vue = Vue;
   window.Chart = Chart;
-  window.Vue.use(Vuex);
   window['@vue/composition-api'] = CompositionAPI;
   registerComponents();
 };
