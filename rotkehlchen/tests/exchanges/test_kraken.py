@@ -1,10 +1,12 @@
 import warnings as test_warnings
 from contextlib import ExitStack
+from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import patch
 
 import gevent
 import pytest
+import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
@@ -22,11 +24,17 @@ from rotkehlchen.constants.assets import (
     A_USDT,
     A_XRP,
 )
+from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.errors import DeserializationError, UnknownAsset, UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken, kraken_to_world_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_kraken
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_error_response,
+    assert_proper_response_with_result,
+)
 from rotkehlchen.tests.utils.constants import (
     A_AUD,
     A_CAD,
@@ -43,7 +51,8 @@ from rotkehlchen.tests.utils.constants import (
     A_WAVES,
     A_XTZ,
 )
-from rotkehlchen.tests.utils.history import TEST_END_TS
+from rotkehlchen.tests.utils.exchanges import try_get_first_exchange
+from rotkehlchen.tests.utils.history import TEST_END_TS, prices
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp, TradeType
 from rotkehlchen.utils.misc import ts_now
@@ -630,3 +639,243 @@ def test_timestamp_deserialization():
         deserialize_timestamp_from_kraken("234a")
     with pytest.raises(DeserializationError):
         deserialize_timestamp_from_kraken("")
+
+
+@pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('start_with_valid_premium', [False, True])
+def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
+    """Test that kraken staking events are processed correctly"""
+    server = rotkehlchen_api_server_with_exchanges
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    # The input has extra information to test that the filters work correctly.
+    # The events related to staking are AAA, BBB and CCC, DDD
+    input_ledger = """
+    {
+    "ledger":{
+        "WWW": {
+            "refid": "WWWWWWW",
+            "time": 1640493376.4008,
+            "type": "staking",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "XTZ",
+            "amount": "0.0000100000",
+            "fee": "0.0000000000",
+            "balance": "0.0000100000"
+        },
+        "AAA": {
+            "refid": "XXXXXX",
+            "time": 1640493374.4008,
+            "type": "staking",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "ETH2",
+            "amount": "0.0000538620",
+            "fee": "0.0000000000",
+            "balance": "0.0003349820"
+        },
+        "BBB": {
+            "refid": "YYYYYYYY",
+            "time": 1636740198.9674,
+            "type": "transfer",
+            "subtype": "stakingfromspot",
+            "aclass": "currency",
+            "asset": "ETH2.S",
+            "amount": "0.0600000000",
+            "fee": "0.0000000000",
+            "balance": "0.0600000000"
+        },
+        "CCC": {
+            "refid": "ZZZZZZZZZ",
+            "time": 1636738550.7562,
+            "type": "transfer",
+            "subtype": "spottostaking",
+            "aclass": "currency",
+            "asset": "XETH",
+            "amount": "-0.0600000000",
+            "fee": "0.0000000000",
+            "balance": "0.0250477300"
+        },
+        "L12382343902": {
+            "refid": "0",
+            "time": 1458994441.396,
+            "type": "deposit",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "EUR.HOLD",
+            "amount": "4000000.0000",
+            "fee": "1.7500",
+            "balance": "3999998.25"
+        },
+        "DDD": {
+            "refid": "DDDDD",
+            "time": 1628994441.4008,
+            "type": "staking",
+            "subtype": "",
+            "aclass": "currency",
+            "asset": "ETH2",
+            "amount": "12",
+            "fee": "0",
+            "balance": "0.1000538620"
+        }
+    },
+    "count": 6
+    }
+    """
+    # Test that before populating we don't have any event
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['events']) == 0
+
+    rotki.data.db.purge_exchange_data(Location.KRAKEN)
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
+    kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
+    kraken.random_ledgers_data = False
+    with patch(target, new=input_ledger):
+        kraken.query_kraken_ledgers(
+            start_ts=1458984441,
+            end_ts=1736738550,
+        )
+
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        json={
+            "from_timestamp": 1636538550,
+            "to_timestamp": 1640493378,
+        },
+    )
+
+    result = assert_proper_response_with_result(response)
+    events = result['events']
+
+    assert len(events) == 3
+    assert len(events) == result['entries_found']
+    assert events[0]['event_type'] == 'reward'
+    assert events[1]['event_type'] == 'reward'
+    assert events[2]['event_type'] == 'deposit asset'
+    assert events[0]['asset'] == 'XTZ'
+    assert events[1]['asset'] == 'ETH2'
+    assert events[2]['asset'] == 'ETH'
+    assert events[0]['usd_value'] == '0.000046300000'
+    assert events[1]['usd_value'] == '0.219353533620'
+    assert events[2]['usd_value'] == '242.570400000000'
+    if start_with_valid_premium:
+        assert result['entries_limit'] == -1
+    else:
+        assert result['entries_limit'] == FREE_HISTORY_EVENTS_LIMIT
+    assert result['entries_total'] == 4
+    assert result['received'] == [
+        {'asset': 'ETH2', 'amount': '0.000053862', 'usd_value': '0.21935353362'},
+        {'asset': 'XTZ', 'amount': '0.00001', 'usd_value': '0.0000463'},
+    ]
+
+    # test that the correct number of entries is returned with pagination
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        json={
+            'from_timestamp': 1636738551,
+            'to_timestamp': 1640493375,
+            'limit': 1,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 1
+    assert set(result['assets']) == {'ETH', 'ETH2', 'XTZ'}
+
+    # assert that filter by asset is working properly
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        json={
+            "from_timestamp": 1628994442,
+            "to_timestamp": 1640493377,
+            "asset": "ETH2",
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['events']) == 1
+    assert len(result['received']) == 1
+
+    # test that we can correctly query subtypes
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        json={
+            "from_timestamp": 1458994441,
+            "to_timestamp": 1640493377,
+            "event_subtypes": ['reward'],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['events']) == 3
+
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        json={
+            "from_timestamp": 1458994441,
+            "to_timestamp": 1640493377,
+            "event_subtypes": [
+                'reward',
+                'deposit asset',
+            ],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert len(result['events']) == 4
+
+    # test that sorting for a non existing column is handled correctly
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        json={
+            "ascending": False,
+            "async_query": False,
+            "limit": 10,
+            "offset": 0,
+            "only_cache": True,
+            "order_by_attribute": "random_column",
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Database query error retrieving misssing prices no such column',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # test that the event_type filter for order attribute
+    response = requests.post(
+        api_url_for(
+            server,
+            'stakingresource',
+        ),
+        json={
+            "ascending": False,
+            "async_query": False,
+            "limit": 10,
+            "offset": 0,
+            "only_cache": True,
+            "order_by_attribute": "event_type",
+        },
+    )
+    assert_proper_response_with_result(response)
