@@ -38,6 +38,14 @@ def ts_now_in_ms() -> TimestampMS:
     return TimestampMS(int(time.time() * 1000))
 
 
+def ts_sec_to_ms(ts: Timestamp) -> TimestampMS:
+    return TimestampMS(ts * 1000)
+
+
+def ts_ms_to_sec(ts: TimestampMS) -> Timestamp:
+    return Timestamp(int(ts / 1000))
+
+
 def create_timestamp(datestr: str, formatstr: str = '%Y-%m-%d %H:%M:%S') -> Timestamp:
     """Can throw ValueError due to strptime"""
     return Timestamp(calendar.timegm(time.strptime(datestr, formatstr)))
@@ -289,7 +297,7 @@ def hex_or_bytes_to_str(value: Union[bytes, str]) -> str:
     if isinstance(value, bytes):
         hexstr = value.hex()
     else:
-        hexstr = value.lstrip('0x')
+        hexstr = value.removeprefix('0x')
 
     return hexstr
 
@@ -305,7 +313,12 @@ def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
         hexstr = hex_or_bytes_to_str(value)
     except ConversionError as e:
         raise DeserializationError(f'Could not turn {value!r} to an ethereum address') from e
-    return ChecksumEthAddress(to_checksum_address('0x' + hexstr[24:]))
+    try:
+        return ChecksumEthAddress(to_checksum_address('0x' + hexstr[24:]))
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {hexstr[24:]}',
+        ) from e
 
 
 def address_to_bytes32(address: ChecksumEthAddress) -> str:

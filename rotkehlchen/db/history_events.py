@@ -5,13 +5,13 @@ from rotkehlchen.accounting.structures import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
-from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.typing import Timestamp, Tuple
+from rotkehlchen.serialization.deserialize import deserialize_fval
+from rotkehlchen.typing import Timestamp, TimestampMS, Tuple
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -164,13 +164,12 @@ class DBHistoryEvents():
                     name='historic base entry usd_value query',
                     location='query_missing_prices',
                 )
-                high_precision_timestamp = deserialize_timestamp(timestamp)
                 result.append(
                     (
                         identifier,
                         amount,
                         Asset(asset_name),
-                        Timestamp(int(high_precision_timestamp / KRAKEN_TS_MULTIPLIER)),
+                        ts_ms_to_sec(TimestampMS(timestamp)),
                     ),
                 )
             except DeserializationError as e:

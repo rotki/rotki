@@ -6,11 +6,10 @@ from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location, Timestamp
-from rotkehlchen.utils.misc import combine_dicts
+from rotkehlchen.typing import Location, Timestamp, TimestampMS
+from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
@@ -363,7 +362,7 @@ class HistoryBaseEntry:
     """
     event_identifier: str  # identifier shared between related events
     sequence_index: int  # When this transaction was executed relative to other related events
-    timestamp: Timestamp
+    timestamp: TimestampMS
     location: Location
     event_type: HistoryEventType
     event_subtype: HistoryEventSubType
@@ -411,7 +410,7 @@ class HistoryBaseEntry:
                 identifier=entry[0],
                 event_identifier=entry[1],
                 sequence_index=entry[2],
-                timestamp=Timestamp(entry[3]),
+                timestamp=TimestampMS(entry[3]),
                 location=Location.deserialize_from_db(entry[4]),
                 location_label=entry[5],
                 asset=Asset(entry[6]),
@@ -434,7 +433,7 @@ class HistoryBaseEntry:
         return {
             'event_identifier': self.event_identifier,
             'sequence_index': self.sequence_index,
-            'timestamp': self.timestamp,
+            'timestamp': ts_ms_to_sec(self.timestamp),  # serialize to api in seconds MS
             'location': str(self.location),
             'asset': self.asset.identifier,
             'balance': self.balance.serialize(),
@@ -465,7 +464,7 @@ class StakingEvent:
             event_type=event.event_subtype,
             asset=event.asset,
             balance=event.balance,
-            timestamp=Timestamp(int(event.timestamp / KRAKEN_TS_MULTIPLIER)),
+            timestamp=ts_ms_to_sec(event.timestamp),
             location=event.location,
         )
 

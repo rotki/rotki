@@ -161,6 +161,10 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
 
 class TimestampField(fields.Field):
 
+    def __init__(self, ts_multiplier: int = 1, **kwargs: Any) -> None:
+        self.ts_multiplier = ts_multiplier
+        super().__init__(**kwargs)
+
     def _deserialize(
             self,
             value: str,
@@ -173,7 +177,7 @@ class TimestampField(fields.Field):
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
-        return timestamp
+        return Timestamp(timestamp * self.ts_multiplier)
 
 
 class ColorField(fields.Field):
@@ -1192,7 +1196,8 @@ class HistoryBaseEntrySchema(Schema):
     identifier = fields.Integer(load_default=None, required=False)
     event_identifier = fields.String(required=True)
     sequence_index = fields.Integer(required=True)
-    timestamp = TimestampField(required=True)
+    # This timestamp coming in from the API is in seconds, in contrast to what we save in the sruct
+    timestamp = TimestampField(ts_multiplier=1000, required=True)
     location = LocationField(required=True)
     event_type = SerializableEnumField(enum_class=HistoryEventType, required=True)
     asset = AssetField(required=True, form_with_incomplete_data=True)

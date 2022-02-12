@@ -32,7 +32,12 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Location
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import (
+    from_wei,
+    hex_or_bytes_to_address,
+    hex_or_bytes_to_int,
+    ts_sec_to_ms,
+)
 
 from .base import BaseDecoderTools
 from .constants import (
@@ -266,6 +271,7 @@ class EVMTransactionDecoder():
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
         events: List[HistoryBaseEntry] = []
         tx_hash_hex = '0x' + tx.tx_hash.hex()
+        ts_ms = ts_sec_to_ms(tx.timestamp)
 
         # check for internal transactions if the transaction is not canceled
         if tx_receipt.status is True:
@@ -287,7 +293,7 @@ class EVMTransactionDecoder():
                 events.append(HistoryBaseEntry(
                     event_identifier=tx_hash_hex,
                     sequence_index=internal_tx.trace_id,
-                    timestamp=internal_tx.timestamp,
+                    timestamp=ts_ms,
                     location=Location.BLOCKCHAIN,
                     location_label=location_label,
                     asset=A_ETH,
@@ -309,7 +315,7 @@ class EVMTransactionDecoder():
             events.append(HistoryBaseEntry(
                 event_identifier=tx_hash_hex,
                 sequence_index=0,
-                timestamp=tx.timestamp,
+                timestamp=ts_ms,
                 location=Location.BLOCKCHAIN,
                 location_label=location_label,
                 asset=A_ETH,
@@ -332,7 +338,7 @@ class EVMTransactionDecoder():
             events.append(HistoryBaseEntry(  # contract deployment
                 event_identifier='0x' + tx.tx_hash.hex(),
                 sequence_index=1,
-                timestamp=tx.timestamp,
+                timestamp=ts_ms,
                 location=Location.BLOCKCHAIN,
                 location_label=tx.from_address,
                 asset=A_ETH,
@@ -350,7 +356,7 @@ class EVMTransactionDecoder():
         events.append(HistoryBaseEntry(
             event_identifier='0x' + tx.tx_hash.hex(),
             sequence_index=1,
-            timestamp=tx.timestamp,
+            timestamp=ts_ms,
             location=Location.BLOCKCHAIN,
             location_label=location_label,
             asset=A_ETH,
@@ -385,7 +391,7 @@ class EVMTransactionDecoder():
         return HistoryBaseEntry(
             event_identifier='0x' + transaction.tx_hash.hex(),
             sequence_index=tx_log.log_index,
-            timestamp=transaction.timestamp,
+            timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
             location_label=owner_address,
             asset=token,
@@ -514,7 +520,7 @@ class EVMTransactionDecoder():
             return HistoryBaseEntry(
                 event_identifier='0x' + transaction.tx_hash.hex(),
                 sequence_index=tx_log.log_index,
-                timestamp=transaction.timestamp,
+                timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.BLOCKCHAIN,
                 location_label=transaction.from_address,
                 # TODO: This should be null for proposals and other informational events

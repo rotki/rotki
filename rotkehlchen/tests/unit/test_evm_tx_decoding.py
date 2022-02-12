@@ -47,7 +47,7 @@ def test_tx_decode(evm_transaction_decoder, database):
                 assert_events_equal(events[0], HistoryBaseEntry(
                     event_identifier='0x' + approve_tx_hash,
                     sequence_index=0,
-                    timestamp=1569924574,
+                    timestamp=1569924574000,
                     location=Location.BLOCKCHAIN,
                     location_label=addr1,
                     asset=A_ETH,
@@ -60,7 +60,7 @@ def test_tx_decode(evm_transaction_decoder, database):
                 assert_events_equal(events[1], HistoryBaseEntry(
                     event_identifier='0x' + approve_tx_hash,
                     sequence_index=162,
-                    timestamp=1569924574,
+                    timestamp=1569924574000,
                     location=Location.BLOCKCHAIN,
                     location_label=addr1,
                     asset=A_SAI,

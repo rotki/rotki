@@ -16,7 +16,7 @@ from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import EthereumTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 from .constants import NAUGHTY_ERC721
 
@@ -120,7 +120,7 @@ class BaseDecoderTools():
         return HistoryBaseEntry(
             event_identifier='0x' + transaction.tx_hash.hex(),
             sequence_index=tx_log.log_index,
-            timestamp=transaction.timestamp,
+            timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
             location_label=location_label,
             asset=token,

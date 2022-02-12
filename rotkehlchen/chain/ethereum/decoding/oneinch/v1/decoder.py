@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Location
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
@@ -111,7 +111,7 @@ class Oneinchv1Decoder(DecoderInterface):
         fee_event = HistoryBaseEntry(
             event_identifier='0x' + transaction.tx_hash.hex(),
             sequence_index=tx_log.log_index,
-            timestamp=transaction.timestamp,
+            timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
             location_label=sender_address,
             asset=to_asset,

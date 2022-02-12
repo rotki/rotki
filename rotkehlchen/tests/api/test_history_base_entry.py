@@ -19,7 +19,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.typing import Location, Timestamp
+from rotkehlchen.typing import Location, Timestamp, TimestampMS
 
 
 def entry_to_input_dict(entry: HistoryBaseEntry, include_identifier: bool) -> Dict[str, Any]:
@@ -37,7 +37,7 @@ def _add_entries(server) -> List[HistoryBaseEntry]:
     entries = [HistoryBaseEntry(
         event_identifier='0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e',
         sequence_index=162,
-        timestamp=Timestamp(1569924574),
+        timestamp=TimestampMS(1569924574000),
         location=Location.BLOCKCHAIN,
         event_type=HistoryEventType.INFORMATIONAL,
         asset=A_DAI,
@@ -49,7 +49,7 @@ def _add_entries(server) -> List[HistoryBaseEntry]:
     ), HistoryBaseEntry(
         event_identifier='0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc',
         sequence_index=2,
-        timestamp=Timestamp(1619924574),
+        timestamp=TimestampMS(1619924574000),
         location=Location.BLOCKCHAIN,
         event_type=HistoryEventType.SPEND,
         asset=A_ETH,
@@ -61,7 +61,7 @@ def _add_entries(server) -> List[HistoryBaseEntry]:
     ), HistoryBaseEntry(
         event_identifier='0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023',
         sequence_index=55,
-        timestamp=Timestamp(1629924574),
+        timestamp=TimestampMS(1629924574000),
         location=Location.BLOCKCHAIN,
         event_type=HistoryEventType.RECEIVE,
         asset=A_ETH,
@@ -112,7 +112,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     # test editing works
     entry.event_identifier = '0x6d9fc1bf73deb590da508051de41923984cba1a3463e0d3829c45ef54404da92'  # noqa: E501
     entry.sequence_index = 4
-    entry.timestamp = Timestamp(1639924575)
+    entry.timestamp = Timestamp(1639924575000)
     entry.location = Location.UNISWAP
     entry.event_type = HistoryEventType.DEPOSIT
     entry.asset = A_USDT

@@ -6,7 +6,6 @@ from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.typing import SchemaEventType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -737,7 +736,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             from_ts=from_ts,
             to_ts=to_ts,
             timestamp_attribute='timestamp',
-            scaling_factor=FVal(KRAKEN_TS_MULTIPLIER),
+            scaling_factor=FVal(1000),  # these timestamps are in MS
         )
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters

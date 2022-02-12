@@ -28,7 +28,7 @@ from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, KRAKEN_TS_MULTIPLIER
+from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -57,10 +57,11 @@ from rotkehlchen.typing import (
     Location,
     Price,
     Timestamp,
+    TimestampMS,
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import pairwise, ts_now
+from rotkehlchen.utils.misc import pairwise, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
@@ -171,9 +172,9 @@ def history_event_from_kraken(
     found_unknown_event = False
     for idx, raw_event in enumerate(events):
         try:
-            timestamp = Timestamp((deserialize_fval(
+            timestamp = TimestampMS((deserialize_fval(
                 value=raw_event['time'], name='time', location='kraken ledger processing',
-            ) * KRAKEN_TS_MULTIPLIER).to_int(exact=False))
+            ) * 1000).to_int(exact=False))
             identifier = raw_event['refid']
             event_type = kraken_ledger_entry_type_to_ours(raw_event['type'])
             asset = asset_from_kraken(raw_event['asset'])
@@ -805,7 +806,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 movements.append(AssetMovement(
                     location=Location.KRAKEN,
                     category=deserialize_asset_movement_category(movement_type),
-                    timestamp=Timestamp(int(movement.timestamp / KRAKEN_TS_MULTIPLIER)),
+                    timestamp=ts_ms_to_sec(movement.timestamp),
                     address=None,  # no data from kraken ledger endpoint
                     transaction_id=None,  # no data from kraken ledger endpoint
                     asset=asset,
@@ -904,7 +905,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             )
             return None
 
-        timestamp = Timestamp(int(trade_parts[0].timestamp / KRAKEN_TS_MULTIPLIER))
+        timestamp = ts_ms_to_sec(trade_parts[0].timestamp)
         exchange_uuid = (
             str(event_id) +
             str(timestamp)
@@ -1067,7 +1068,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 rate = Price(abs(receive_event.balance.amount / spend_event.balance.amount))
                 trade = Trade(
-                    timestamp=Timestamp(int(a1.timestamp / KRAKEN_TS_MULTIPLIER)),
+                    timestamp=ts_ms_to_sec(a1.timestamp),
                     location=Location.KRAKEN,
                     base_asset=receive_event.asset,
                     quote_asset=spend_event.asset,
