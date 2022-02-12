@@ -10324,20 +10324,20 @@ Staking events
           "result": {
               "events": [
                 {
+                    "event_type": "unstake asset",
+                    "asset": "ETH2",
+                    "timestamp": 1636740198,
+                    "location": "kraken",
+                    "amount": "0.0600000000",
+                    "usd_value": "278.7345000000000"
+                },
+                {
                   "event_type": "get reward",
                   "asset": "ETH2",
                   "timestamp": 1636864588,
                   "location": "kraken",
                   "amount": "0.0000103220",
                   "usd_value": "0.0478582110500"
-                },
-                {
-                    "event_type": "receive staked asset",
-                    "asset": "ETH2",
-                    "timestamp": 1636740198,
-                    "location": "kraken",
-                    "amount": "0.0600000000",
-                    "usd_value": "278.7345000000000"
                 },
                 {
                     "event_type": "stake asset",
@@ -10368,7 +10368,7 @@ Staking events
    :resjsonarr string location: A valid location at which the event happened
    :resjsonarr string amount: The amount related to the event
    :resjsonarr string asset: Asset involved in the event
-   :resjsonarr string event_type: Type of event. Can be `get reward`, `receive staked asset`, `stake asset` or  `unstake asset`.
+   :resjsonarr string event_type: Type of event. Can be `reward`, `deposit asset` or  `remove asset`.
    :resjsonarr string message: It won't be empty if the query to external services fails for some reason.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.

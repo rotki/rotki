@@ -80,6 +80,35 @@ KRAKEN_BACKOFF_DIVIDEND = 15
 MAX_CALL_COUNTER_INCREASE = 2  # Trades and Ledger produce the max increase
 
 
+def kraken_ledger_entry_type_to_ours(value: str) -> HistoryEventType:
+    """Turns a kraken ledger entry to our history event type
+
+    Though they are very similar to our current event types we keep this mapping function
+    since there is some minor differences and if we ever want to change our types we
+    can do so without breaking kraken.
+
+    Returns Informational type for any kraken event that we don't know how to process
+    """
+    if value == 'trade':
+        return HistoryEventType.TRADE
+    if value == 'staking':
+        return HistoryEventType.STAKING
+    if value == 'deposit':
+        return HistoryEventType.DEPOSIT
+    if value == 'withdrawal':
+        return HistoryEventType.WITHDRAWAL
+    if value == 'spend':
+        return HistoryEventType.SPEND
+    if value == 'receive':
+        return HistoryEventType.RECEIVE
+    if value == 'transfer':
+        return HistoryEventType.TRANSFER
+    if value == 'adjustment':
+        return HistoryEventType.ADJUSTMENT
+
+    return HistoryEventType.INFORMATIONAL  # returned for kraken's unknown events
+
+
 def kraken_to_world_pair(pair: str) -> Tuple[Asset, Asset]:
     """Turns a pair from kraken to our base/quote asset tuple
 
@@ -146,7 +175,7 @@ def history_event_from_kraken(
                 value=raw_event['time'], name='time', location='kraken ledger processing',
             ) * KRAKEN_TS_MULTIPLIER).to_int(exact=False))
             identifier = raw_event['refid']
-            event_type = HistoryEventType.from_string(raw_event['type'])
+            event_type = kraken_ledger_entry_type_to_ours(raw_event['type'])
             asset = asset_from_kraken(raw_event['asset'])
             event_subtype = HistoryEventSubType.NONE
             notes = None
@@ -157,16 +186,16 @@ def history_event_from_kraken(
             if event_type == HistoryEventType.TRANSFER:
                 if raw_event['subtype'] == 'spottostaking':
                     event_type = HistoryEventType.STAKING
-                    event_subtype = HistoryEventSubType.STAKING_DEPOSIT_ASSET
+                    event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 elif raw_event['subtype'] == 'stakingfromspot':
                     event_type = HistoryEventType.STAKING
-                    event_subtype = HistoryEventSubType.STAKING_RECEIVE_ASSET
+                    event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 elif raw_event['subtype'] == 'stakingtospot':
-                    event_type = HistoryEventType.UNSTAKING
-                    event_subtype = HistoryEventSubType.STAKING_REMOVE_ASSET
+                    event_type = HistoryEventType.STAKING
+                    event_subtype = HistoryEventSubType.REMOVE_ASSET
                 elif raw_event['subtype'] == 'spotfromstaking':
-                    event_type = HistoryEventType.UNSTAKING
-                    event_subtype = HistoryEventSubType.STAKING_RECEIVE_ASSET
+                    event_type = HistoryEventType.STAKING
+                    event_subtype = HistoryEventSubType.RETURN_WRAPPED
             elif event_type == HistoryEventType.ADJUSTMENT:
                 if raw_amount < ZERO:
                     event_subtype = HistoryEventSubType.SPEND
@@ -174,7 +203,7 @@ def history_event_from_kraken(
                     event_subtype = HistoryEventSubType.RECEIVE
             elif event_type == HistoryEventType.STAKING:
                 event_subtype = HistoryEventSubType.REWARD
-            elif event_type == HistoryEventType.UNKNOWN:
+            elif event_type == HistoryEventType.INFORMATIONAL:
                 found_unknown_event = True
                 notes = raw_event['type']
                 log.warning(
@@ -1120,7 +1149,7 @@ class Kraken(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 )
                 if found_unknown_event:
                     for event in group_events:
-                        event.event_type = HistoryEventType.UNKNOWN
+                        event.event_type = HistoryEventType.INFORMATIONAL
                 new_events.extend(group_events)
 
             if len(new_events) != 0:

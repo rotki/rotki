@@ -1155,11 +1155,11 @@ class StakingQuerySchema(
             location=Location.KRAKEN,
             event_types=[
                 HistoryEventType.STAKING,
-                HistoryEventType.UNSTAKING,
             ],
             event_subtypes=data['event_subtypes'],
             exclude_subtypes=[
-                HistoryEventSubType.STAKING_RECEIVE_ASSET,
+                HistoryEventSubType.RECEIVE_WRAPPED,
+                HistoryEventSubType.RETURN_WRAPPED,
             ],
             asset=data['asset'],
         )

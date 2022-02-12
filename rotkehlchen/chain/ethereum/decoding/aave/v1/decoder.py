@@ -59,7 +59,7 @@ class Aavev1Decoder(DecoderInterface):
             if event.event_type == HistoryEventType.SPEND and event.location_label == user_address and amount == event.balance.amount and reserve_asset == event.asset:  # noqa: E501
                 # find the deposit transfer (can also be an ETH internal transfer)
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.STAKING_DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = 'aave-v1'
                 event.notes = f'Deposit {amount} {reserve_asset.symbol} to aave-v1 from {event.location_label}'  # noqa: E501
             elif event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and atoken == event.asset:  # noqa: E501

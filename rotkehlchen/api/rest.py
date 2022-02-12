@@ -3985,10 +3985,10 @@ class RestAPI():
             location=Location.KRAKEN,
             event_types=[
                 HistoryEventType.STAKING,
-                HistoryEventType.UNSTAKING,
             ],
             exclude_subtypes=[
-                HistoryEventSubType.STAKING_RECEIVE_ASSET,
+                HistoryEventSubType.RECEIVE_WRAPPED,
+                HistoryEventSubType.RETURN_WRAPPED,
             ],
         )
 

@@ -183,7 +183,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 if event.event_type == HistoryEventType.SPEND and event.asset == vault_asset and event.balance.amount == amount:  # noqa: E501
                     event.sequence_index = tx_log.log_index  # to better position it in the list
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.STAKING_DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.counterparty = 'makerdao vault'
                     event.notes = f'Deposit {amount} {vault_asset.symbol} to {vault_type} MakerDAO vault'  # noqa: E501
                     event.extras = {'vault_type': vault_type}
@@ -200,7 +200,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             for event in decoded_events:
                 if event.event_type == HistoryEventType.RECEIVE and event.asset == vault_asset and event.balance.amount == amount:  # noqa: E501
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.STAKING_REMOVE_ASSET
+                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = 'makerdao vault'
                     event.notes = f'Withdraw {amount} {vault_asset.symbol} from {vault_type} MakerDAO vault'  # noqa: E501
                     event.extras = {'vault_type': vault_type}
@@ -282,7 +282,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                     event.location_label = user
                     event.counterparty = 'makerdao dsr'
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.STAKING_DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.notes = f'Deposit {amount} DAI in the DSR'
                     return None, None
 
@@ -320,7 +320,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 asset=A_DAI,
                 amount=amount,
                 to_event_type=HistoryEventType.WITHDRAWAL,
-                to_event_subtype=HistoryEventSubType.STAKING_REMOVE_ASSET,
+                to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
                 to_notes=f'Withdraw {amount} DAI from the DSR',
                 to_counterparty='makerdao dsr',
             )
@@ -477,7 +477,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             # dink is the raw collateral amount change. Let's use this event to see if
             # there was a deposit event beforehand to append the cdp id
             for event in decoded_events:
-                if event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.STAKING_DEPOSIT_ASSET and event.counterparty == 'makerdao vault':  # noqa: E501
+                if event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.counterparty == 'makerdao vault':  # noqa: E501
                     normalized_dink = asset_normalized_value(amount=dink, asset=event.asset)
                     if normalized_dink != event.balance.amount:
                         continue

@@ -1295,9 +1295,9 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
 
     assert len(events) == 3
     assert len(events) == result['entries_found']
-    assert events[0]['event_type'] == 'get reward'
-    assert events[1]['event_type'] == 'get reward'
-    assert events[2]['event_type'] == 'stake asset'
+    assert events[0]['event_type'] == 'reward'
+    assert events[1]['event_type'] == 'reward'
+    assert events[2]['event_type'] == 'deposit asset'
     assert events[0]['asset'] == 'XTZ'
     assert events[1]['asset'] == 'ETH2'
     assert events[2]['asset'] == 'ETH'
@@ -1371,7 +1371,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             "to_timestamp": 1640493377,
             "event_subtypes": [
                 'reward',
-                'staking deposit asset',
+                'deposit asset',
             ],
         },
     )

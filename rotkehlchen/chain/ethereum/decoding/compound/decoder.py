@@ -66,7 +66,7 @@ class CompoundDecoder(DecoderInterface):
             # Find the transfer event which should have come before the minting
             if event.event_type == HistoryEventType.SPEND and event.asset == underlying_token and event.balance.amount == mint_amount:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.STAKING_DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = 'compound'
                 event.notes = f'Deposit {mint_amount} {underlying_token} to compound'
                 break
@@ -104,7 +104,7 @@ class CompoundDecoder(DecoderInterface):
             # Find the transfer event which should have come before the redeeming
             if event.event_type == HistoryEventType.RECEIVE and event.asset == underlying_token and event.balance.amount == redeem_amount:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.STAKING_REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = 'compound'
                 event.notes = f'Withdraw {redeem_amount} {underlying_token.symbol} from compound'
             elif event.event_type == HistoryEventType.SPEND and event.asset == compound_token and event.balance.amount == redeem_tokens:  # noqa: E501

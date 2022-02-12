@@ -60,13 +60,13 @@ class Oneinchv1Decoder(DecoderInterface):
         for event in decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.location_label == sender and from_amount == event.balance.amount and from_asset == event.asset:  # noqa: E501
                 # find the send event
-                event.event_type = HistoryEventType.SWAP
+                event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = '1inch-v1'
                 event.notes = f'Swap {from_amount} {from_asset.symbol} in 1inch-v1 from {event.location_label}'  # noqa: E501
             elif event.event_type == HistoryEventType.RECEIVE and event.location_label == sender and to_amount == event.balance.amount and to_asset == event.asset:  # noqa: E501
                 # find the receive event
-                event.event_type = HistoryEventType.SWAP
+                event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.counterparty = '1inch-v1'
                 event.notes = f'Receive {to_amount} {to_asset.symbol} from 1inch-v1 swap in {event.location_label}'  # noqa: E501
@@ -97,7 +97,7 @@ class Oneinchv1Decoder(DecoderInterface):
         sender_address = None
         for event in decoded_events:
             # Edit the full amount in the swap's receive event
-            if event.event_type == HistoryEventType.SWAP and event.event_subtype == HistoryEventSubType.RECEIVE and event.counterparty == '1inch-v1':  # noqa: E501
+            if event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE and event.counterparty == '1inch-v1':  # noqa: E501
                 event.balance.amount = full_amount
                 event.notes = f'Receive {full_amount} {event.asset.symbol} from 1inch-v1 swap in {event.location_label}'  # noqa: E501
                 sender_address = event.location_label

@@ -47,7 +47,7 @@ class Uniswapv1Decoder(DecoderInterface):
             # search for a send to buyer from a tracked address
             for event in decoded_events:
                 if event.event_type == HistoryEventType.SPEND and event.counterparty == buyer:
-                    event.event_type = HistoryEventType.SWAP
+                    event.event_type = HistoryEventType.TRADE
                     event.event_subtype = HistoryEventSubType.SPEND
                     event.counterparty = 'uniswap-v1'
                     event.notes = f'Swap {event.balance.amount} {event.asset.symbol} in uniswap-v1 from {event.location_label}'  # noqa: E501
@@ -58,7 +58,7 @@ class Uniswapv1Decoder(DecoderInterface):
             # search for a receive to buyer
             for event in decoded_events:
                 if event.event_type == HistoryEventType.RECEIVE and event.location_label == buyer:
-                    event.event_type = HistoryEventType.SWAP
+                    event.event_type = HistoryEventType.TRADE
                     event.event_subtype = HistoryEventSubType.RECEIVE
                     event.counterparty = 'uniswap-v1'
                     event.notes = f'Receive {event.balance.amount} {event.asset.symbol} from uniswap-v1 swap in {event.location_label}'  # noqa: E501

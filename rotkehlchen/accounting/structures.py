@@ -2,7 +2,7 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, DefaultDict, Dict, List, Literal, Optional, Tuple
+from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
@@ -279,53 +279,44 @@ class ActionType(DBEnumMixIn):
 
 
 class HistoryEventType(SerializableEnumMixin):
-    TRADE = 1
-    STAKING = 2
-    UNSTAKING = 3
-    DEPOSIT = 4
-    WITHDRAWAL = 5
-    TRANSFER = 6
-    SPEND = 7
-    RECEIVE = 8
+    TRADE = 0
+    STAKING = auto()
+    DEPOSIT = auto()
+    WITHDRAWAL = auto()
+    TRANSFER = auto()
+    SPEND = auto()
+    RECEIVE = auto()
     # forced adjustments of a system, like a CEX. For example having DAO in Kraken
     # and Kraken delisting them and exchanging them for ETH for you
-    ADJUSTMENT = 9
-    UNKNOWN = 10
-    INFORMATIONAL = 11
-    MIGRATE = 12
-    SWAP = 13
-
-    @classmethod
-    def from_string(cls, value: str) -> 'HistoryEventType':
-        try:
-            return super().deserialize(value)
-        except DeserializationError:
-            return HistoryEventType.UNKNOWN
+    ADJUSTMENT = auto()
+    UNKNOWN = auto()
+    # An informational event. For kraken entries it means an unknown event
+    INFORMATIONAL = auto()
+    MIGRATE = auto()
 
 
 class HistoryEventSubType(SerializableEnumMixin):
-    REWARD = 1
-    STAKING_DEPOSIT_ASSET = 2  # TODO Those can be generic deposit/remove/rewards assets from staking, vaults etc. RENAME.  # noqa: E501
-    STAKING_REMOVE_ASSET = 3
-    STAKING_RECEIVE_ASSET = 4
-    FEE = 5
-    SPEND = 6
-    RECEIVE = 7
-    APPROVE = 8
-    DEPLOY = 9
-    AIRDROP = 10
-    BRIDGE = 11
-    GOVERNANCE_PROPOSE = 12
-    NONE = 13  # Have a value for None to not get into NULL/None comparison hell
-    GENERATE_DEBT = 14
-    PAYBACK_DEBT = 15
+    REWARD = 0
+    DEPOSIT_ASSET = auto()  # deposit asset in a contract, for staking etc.
+    REMOVE_ASSET = auto()  # remove asset from a contract. from staking etc.
+    FEE = auto()
+    SPEND = auto()
+    RECEIVE = auto()
+    APPROVE = auto()
+    DEPLOY = auto()
+    AIRDROP = auto()
+    BRIDGE = auto()
+    GOVERNANCE_PROPOSE = auto()
+    NONE = auto()  # Have a value for None to not get into NULL/None comparison hell
+    GENERATE_DEBT = auto()
+    PAYBACK_DEBT = auto()
     # receive a wrapped asset of something in any protocol. eg cDAI from DAI
-    RECEIVE_WRAPPED = 16
+    RECEIVE_WRAPPED = auto()
     # return a wrapped asset of something in any protocol. eg. CDAI to DAI
-    RETURN_WRAPPED = 17
+    RETURN_WRAPPED = auto()
 
-    def serialize_for_other(self) -> Optional[str]:
-        """Temporary until I figure out what to do with serialize_event_subtype()"""
+    def serialize_or_none(self) -> Optional[str]:
+        """Serializes the subtype but for the subtype None it returns None"""
         if self == HistoryEventSubType.NONE:
             return None
 
@@ -448,7 +439,7 @@ class HistoryBaseEntry:
             'asset': self.asset.identifier,
             'balance': self.balance.serialize(),
             'event_type': self.event_type.serialize(),
-            'event_subtype': self.event_subtype.serialize_for_other(),
+            'event_subtype': self.event_subtype.serialize_or_none(),
             'location_label': self.location_label,
             'notes': self.notes,
             'counterparty': self.counterparty,
@@ -457,32 +448,11 @@ class HistoryBaseEntry:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class StakingEvent:
-    event_type: Literal[
-        'get reward',
-        'stake asset',
-        'receive staked asset',
-        'unstake asset',
-    ]
+    event_type: HistoryEventSubType
     asset: Asset
     balance: Balance
     timestamp: Timestamp
     location: Location
-
-    @classmethod
-    def _deserialize_event_type(cls, event_type: Optional[HistoryEventSubType]) -> str:
-        """Deserialize event subtype to a readable string
-        May raise:
-        - DeserializationError
-        """
-        if event_type == HistoryEventSubType.REWARD:
-            return 'get reward'
-        if event_type == HistoryEventSubType.STAKING_DEPOSIT_ASSET:
-            return 'stake asset'
-        if event_type == HistoryEventSubType.STAKING_RECEIVE_ASSET:
-            return 'receive staked asset'
-        if event_type == HistoryEventSubType.STAKING_REMOVE_ASSET:
-            return 'unstake asset'
-        raise DeserializationError(f'Found staking event with invalid subtype {event_type}')
 
     @classmethod
     def from_history_base_entry(cls, event: HistoryBaseEntry) -> 'StakingEvent':
@@ -491,9 +461,8 @@ class StakingEvent:
         May raise:
         - DeserializationError
         """
-        event_type = cls._deserialize_event_type(event.event_subtype)
         return StakingEvent(
-            event_type=event_type,  # type: ignore
+            event_type=event.event_subtype,
             asset=event.asset,
             balance=event.balance,
             timestamp=Timestamp(int(event.timestamp / KRAKEN_TS_MULTIPLIER)),
@@ -502,7 +471,7 @@ class StakingEvent:
 
     def serialize(self) -> Dict[str, Any]:
         data = {
-            'event_type': self.event_type,
+            'event_type': self.event_type.serialize(),
             'asset': self.asset.identifier,
             'timestamp': self.timestamp,
             'location': str(self.location),
