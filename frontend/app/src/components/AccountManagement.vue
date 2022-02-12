@@ -1,27 +1,26 @@
 <template>
   <v-overlay opacity="1" color="grey lighten-4">
     <div
+      class="animate"
       :class="{
-        [$style.loading]: !xsOnly && !isTest
+        [$style.loading]: !xsOnly && !isTest,
+        [$style['loading--paused']]: !animationEnabled
       }"
       data-cy="account-management__loading"
     />
-    <div v-if="!premiumVisible">
+    <div v-if="!premiumVisible" :class="$style.wrapper">
+      <div />
       <v-card
         class="pb-4"
         :class="$style.card"
-        :width="width"
         light
         data-cy="account-management"
       >
-        <div
-          class="pt-6 pb-3 text-h2 font-weight-black white--text"
-          :class="$style.title"
-        >
-          <span class="px-6">{{ $t('app.name') }}</span>
-          <span class="d-block mb-3 pl-6 text-caption">
+        <div class="pa-6 text-h2 font-weight-black white--text primary">
+          <div>{{ $t('app.name') }}</div>
+          <div class="text-caption">
             {{ $t('app.moto') }}
-          </span>
+          </div>
         </div>
         <connection-loading
           v-if="!connectionFailure"
@@ -51,25 +50,53 @@
           />
         </v-slide-y-transition>
       </v-card>
-      <privacy-notice />
-      <div v-if="isPackaged" :class="$style.icon">
-        <backend-settings-button />
-      </div>
-      <div v-if="!isPackaged" :class="$style.icon">
+      <div :class="`${$style.icon} ${$style['icon--left']}`">
         <v-tooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
             <v-btn
-              icon
+              text
+              fab
+              depressed
               color="primary"
               v-bind="attrs"
-              @click="$emit('about')"
               v-on="on"
+              @click="toggleAnimationEnabled"
             >
-              <v-icon>mdi-information</v-icon>
+              <v-icon v-if="animationEnabled">mdi-pause</v-icon>
+              <v-icon v-else>mdi-play</v-icon>
             </v-btn>
           </template>
-          <span>{{ $t('account_management.about_tooltip') }}</span>
+          <span v-if="animationEnabled">
+            {{ $t('frontend_settings.animations.disable') }} ({{
+              $t('frontend_settings.animations.disable_hint')
+            }})
+          </span>
+          <span v-else>{{ $t('frontend_settings.animations.enable') }}</span>
         </v-tooltip>
+      </div>
+      <privacy-notice />
+      <div :class="`${$style.icon} ${$style['icon--right']}`">
+        <template v-if="isPackaged">
+          <backend-settings-button />
+        </template>
+        <template v-else>
+          <v-tooltip open-delay="400" top>
+            <template #activator="{ on, attrs }">
+              <v-btn
+                text
+                fab
+                depressed
+                color="primary"
+                v-bind="attrs"
+                @click="$emit('about')"
+                v-on="on"
+              >
+                <v-icon>mdi-information</v-icon>
+              </v-btn>
+            </template>
+            <span>{{ $t('account_management.about_tooltip') }}</span>
+          </v-tooltip>
+        </template>
       </div>
     </div>
 
@@ -90,6 +117,7 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
+import { useLocalStorage } from '@vueuse/core';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';
@@ -141,6 +169,15 @@ export default defineComponent({
     const { connectionFailure, newUser, message, connected, updateNeeded } =
       toRefs(store);
 
+    const animationEnabled = useLocalStorage(
+      'rotki.login_animation_enabled',
+      true
+    );
+
+    const toggleAnimationEnabled = () => {
+      animationEnabled.value = !animationEnabled.value;
+    };
+
     watch(newUser, newUser => {
       if (newUser) {
         accountCreation.value = true;
@@ -156,7 +193,6 @@ export default defineComponent({
 
     const { currentBreakpoint } = setupThemeCheck();
     const xsOnly = computed(() => currentBreakpoint.value.xsOnly);
-    const width = computed(() => (xsOnly.value ? '100%' : '500px'));
     const premium = getPremium();
 
     const displayPremium = computed(
@@ -272,7 +308,6 @@ export default defineComponent({
 
     return {
       xsOnly,
-      width,
       updateNeeded,
       autolog,
       connected,
@@ -291,7 +326,9 @@ export default defineComponent({
       upgrade,
       userLogin,
       loginComplete,
-      createNewAccount
+      createNewAccount,
+      animationEnabled,
+      toggleAnimationEnabled
     };
   }
 });
@@ -328,15 +365,29 @@ export default defineComponent({
   animation-timing-function: linear;
   -webkit-animation-iteration-count: infinite;
   animation-iteration-count: infinite;
+
+  &--paused {
+    animation-play-state: paused;
+  }
 }
 
-.title {
-  background-color: var(--v-primary-base);
+.wrapper {
+  width: 600px;
+  max-width: 100%;
+  padding: 32px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100vh;
+
+  @media (max-height: 800px) {
+    padding-top: 0;
+  }
 }
 
 .card {
   z-index: 5;
-  max-height: 90vh;
+  max-height: calc(100vh - 140px);
   overflow: auto;
 
   @extend .themed-scrollbar;
@@ -344,15 +395,19 @@ export default defineComponent({
 
 .icon {
   position: absolute !important;
-  width: 56px !important;
-  right: 12px !important;
+  bottom: 12px;
 
-  @media (min-width: 701px) {
-    bottom: 12px !important;
+  &--left {
+    left: 12px;
+  }
+
+  &--right {
+    right: 12px;
   }
 
   @media (max-width: 700px) {
-    top: 12px !important;
+    top: 12px;
+    bottom: auto;
   }
 }
 

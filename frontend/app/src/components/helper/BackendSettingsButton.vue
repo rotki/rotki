@@ -8,9 +8,10 @@
             text
             fab
             depressed
+            color="primary"
             v-on="{ ...menu, ...tooltip }"
           >
-            <v-icon color="primary">mdi-cog</v-icon>
+            <v-icon>mdi-cog</v-icon>
           </v-btn>
         </template>
         <span>{{ $t('backend_settings_button.tooltip') }}</span>
@@ -35,8 +36,6 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
 ::v-deep {
   .v-card {
     border-bottom-left-radius: 0 !important;

@@ -65,7 +65,7 @@
         </v-row>
 
         <transition v-if="customBackendDisplay" name="bounce">
-          <div>
+          <div class="animate">
             <v-divider />
             <v-row no-gutters class="mt-4" align="center">
               <v-col>
@@ -98,6 +98,7 @@
               <v-col>
                 <v-checkbox
                   v-model="customBackendSessionOnly"
+                  hide-details
                   :disabled="customBackendSaved"
                   :label="$t('login.custom_backend.session_only')"
                 />
@@ -105,11 +106,10 @@
             </v-row>
           </div>
         </transition>
-
         <transition name="bounce">
           <v-alert
             v-if="!!syncConflict.message"
-            class="login__sync-error"
+            class="animate login__sync-error"
             text
             prominent
             outlined
@@ -173,6 +173,7 @@
         <transition name="bounce">
           <v-alert
             v-if="errors.length > 0"
+            class="animate mt-4 mb-0"
             text
             outlined
             type="error"

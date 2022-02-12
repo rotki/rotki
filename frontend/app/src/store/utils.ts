@@ -163,3 +163,16 @@ export function useStore(): Store<RotkehlchenState> {
   assert(store);
   return store;
 }
+
+const KEY_ANIMATIONS_ENABLED = 'rotki.animations_enabled' as const;
+export function isAnimationsEnabled(): boolean {
+  return !localStorage.getItem(KEY_ANIMATIONS_ENABLED) ?? true;
+}
+
+export function setAnimationsEnabled(enabled: boolean): void {
+  if (!enabled) {
+    localStorage.setItem(KEY_ANIMATIONS_ENABLED, `${enabled}`);
+  } else {
+    localStorage.removeItem(KEY_ANIMATIONS_ENABLED);
+  }
+}

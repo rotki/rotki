@@ -1,5 +1,10 @@
 <template>
-  <v-app v-if="!isPlayground" id="rotki" class="app">
+  <v-app
+    v-if="!isPlayground"
+    id="rotki"
+    class="app"
+    :class="{ ['app--animations-disabled']: !animationsEnabled }"
+  >
     <app-update-popup />
     <div v-if="logged" class="app__content rotki-light-grey">
       <asset-update auto />
@@ -152,7 +157,7 @@ import AppUpdatePopup from '@/components/status/update/AppUpdatePopup.vue';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import { setupThemeCheck, useRoute, useRouter } from '@/composables/common';
-import { getPremium } from '@/composables/session';
+import { getPremium, setupSession } from '@/composables/session';
 import DevApp from '@/DevApp.vue';
 import { useInterop } from '@/electron-interop';
 import { BackendCode } from '@/electron-main/backend-code';
@@ -194,6 +199,8 @@ export default defineComponent({
     const store = useMainStore();
     const { appVersion, message } = toRefs(store);
     const { setMessage, connect } = store;
+
+    const { animationsEnabled } = setupSession();
 
     const showNotificationBar = ref(false);
     const showHelpBar = ref(false);
@@ -297,6 +304,7 @@ export default defineComponent({
     const premium = getPremium();
 
     return {
+      animationsEnabled,
       username,
       premium,
       loginIn,
@@ -337,8 +345,48 @@ export default defineComponent({
   @extend .themed-scrollbar;
 }
 
+::v-deep {
+  .v-navigation-drawer {
+    box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
+
+    &__border {
+      background-color: transparent !important;
+    }
+  }
+
+  .v-main {
+    padding: 0 !important;
+  }
+
+  .v-app-bar {
+    &::after {
+      height: 1px;
+      display: block;
+      width: 100%;
+      content: '';
+      border-bottom: var(--v-rotki-light-grey-darken1) solid thin;
+    }
+  }
+}
+
 .app {
   overflow: hidden;
+
+  &--animations-disabled {
+    ::v-deep {
+      * {
+        &:not(.animate) {
+          // ignore manual animation (e.g. animation on login screen)
+
+          &,
+          &::before,
+          &::after {
+            animation-timing-function: steps(5, end) !important;
+          }
+        }
+      }
+    }
+  }
 
   &__content {
     height: 100vh;
@@ -390,51 +438,27 @@ export default defineComponent({
       width: 100%;
     }
   }
-}
 
-.app-main {
-  top: 64px;
-  position: fixed;
-  width: 100%;
-  height: calc(100vh - 64px);
-  overflow-y: scroll;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
+  &-main {
+    top: 64px;
+    position: fixed;
+    width: 100%;
+    height: calc(100vh - 64px);
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
 
-  &.small {
-    left: 56px;
-    width: calc(100vw - 56px);
-  }
-
-  &.expanded {
-    left: 300px;
-    width: calc(100vw - 300px);
-  }
-
-  @extend .themed-scrollbar;
-}
-
-::v-deep {
-  .v-navigation-drawer {
-    box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
-
-    &__border {
-      background-color: transparent !important;
+    &.small {
+      left: 56px;
+      width: calc(100vw - 56px);
     }
-  }
 
-  .v-main {
-    padding: 0 !important;
-  }
-
-  .v-app-bar {
-    &::after {
-      height: 1px;
-      display: block;
-      width: 100%;
-      content: '';
-      border-bottom: var(--v-rotki-light-grey-darken1) solid thin;
+    &.expanded {
+      left: 300px;
+      width: calc(100vw - 300px);
     }
+
+    @extend .themed-scrollbar;
   }
 }
 </style>

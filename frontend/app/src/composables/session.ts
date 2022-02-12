@@ -34,6 +34,7 @@ export const setupSession = () => {
   const syncConflict = computed(() => state.syncConflict);
   const username = computed(() => state.username);
   const privacyMode = computed(() => state.privacyMode);
+  const animationsEnabled = computed(() => state.animationsEnabled);
   const login = (payload: LoginCredentials): Promise<ActionStatus> => {
     return store.dispatch('session/login', payload);
   };
@@ -55,15 +56,21 @@ export const setupSession = () => {
     store.commit('session/privacyMode', privacyMode);
   };
 
+  const setAnimationsEnabled = (enabled: boolean) => {
+    store.commit('session/setAnimationsEnabled', enabled);
+  };
+
   return {
     syncConflict,
     username,
     privacyMode,
+    animationsEnabled,
     createAccount,
     login,
     logout,
     updateSettings,
-    changePrivacyMode
+    changePrivacyMode,
+    setAnimationsEnabled
   };
 };
 
