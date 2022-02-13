@@ -2,11 +2,11 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Type, Union
 
-import marshmallow
 import webargs
 from eth_utils import to_checksum_address
 from marshmallow import fields
 from marshmallow.exceptions import ValidationError
+from marshmallow.utils import is_iterable_but_not_string
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.assets.asset import Asset
@@ -79,13 +79,13 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
         try:
             ret = (
                 value
-                if marshmallow.utils.is_iterable_but_not_string(value)
+                if is_iterable_but_not_string(value)
                 else value.split(self.delimiter)  # type: ignore
             )
         except AttributeError as e:
-            raise self.make_error("invalid") from e
+            raise self.make_error('invalid') from e
         # purposefully skip the superclass here
-        return marshmallow.fields.List._deserialize(self, ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
+        return fields.List._deserialize(self, ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
 
 
 class TimestampField(fields.Field):

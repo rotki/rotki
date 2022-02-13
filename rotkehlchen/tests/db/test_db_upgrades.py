@@ -2416,6 +2416,14 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     )
     subtypes = [row[0] for row in cursor]
     assert set(subtypes) == {'staking deposit asset', 'staking receive asset', None}
+    # check used query ranges
+    result = cursor.execute('SELECT * from used_query_ranges').fetchall()
+    assert result == [
+        ('ethtxs_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
+        ('eth2_deposits_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 1602667372, 1637575118),
+        ('kraken_asset_movements_kraken1', 0, 1634850532),
+        ('gitcoingrants_0x4362BBa5a26b07db048Bc2603f843E21Ac22D75E', 1, 2),
+    ]
     # Check gitcoin ledger actions are there
     result = cursor.execute('SELECT * from ledger_actions').fetchall()
     assert result == [
@@ -2441,6 +2449,13 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     cursor.execute('SELECT subtype from history_events')
     subtypes = {row[0] for row in cursor}
     assert subtypes == {'staking deposit asset', 'staking receive asset', 'reward'}
+    # check used query range got delete and rest are intact
+    result = cursor.execute('SELECT * from used_query_ranges').fetchall()
+    assert result == [
+        ('ethtxs_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
+        ('eth2_deposits_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 1602667372, 1637575118),
+        ('kraken_asset_movements_kraken1', 0, 1634850532),
+    ]
     # Check that the non-gitcoin ledger action is still there
     result = cursor.execute('SELECT * from ledger_actions').fetchall()
     assert result == [(1, 1, 'A', 'A', '1', 'ETH', None, None, None, None)]

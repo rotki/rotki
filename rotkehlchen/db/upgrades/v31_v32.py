@@ -38,6 +38,7 @@ def _upgrade_history_events(cursor: 'Cursor') -> None:
 
 def _remove_gitcoin(cursor: 'Cursor') -> None:
     cursor.execute('DELETE from ledger_actions WHERE identifier IN (SELECT parent_id FROM ledger_actions_gitcoin_data)')  # noqa: E501
+    cursor.execute('DELETE from used_query_ranges WHERE name LIKE "gitcoingrants_%"')
     cursor.execute('DROP TABLE IF exists gitcoin_grant_metadata')
     cursor.execute('DROP TABLE IF exists ledger_actions_gitcoin_data')
     cursor.execute('DROP TABLE IF exists gitcoin_tx_type')
