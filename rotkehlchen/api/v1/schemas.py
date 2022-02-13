@@ -527,6 +527,7 @@ class TradeSchema(Schema):
 
 
 class LedgerActionSchema(Schema):
+    identifier = fields.Integer(load_default=None, required=False)
     timestamp = TimestampField(required=True)
     action_type = SerializableEnumField(enum_class=LedgerActionType, required=True)
     location = LocationField(required=True)
@@ -537,21 +538,29 @@ class LedgerActionSchema(Schema):
     link = fields.String(load_default=None)
     notes = fields.String(load_default=None)
 
+    def __init__(self, identifier_required: bool):
+        super().__init__()
+        self.identifier_required = identifier_required
 
-class LedgerActionWithIdentifierSchema(LedgerActionSchema):
-    identifier = fields.Integer(required=True)
+    @validates_schema
+    def validate_ledger_action_schema(
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if self.identifier_required is True and data['identifier'] is None:
+            raise ValidationError(
+                message='Ledger action identifier should be given',
+                field_name='identifier',
+            )
 
-    @post_load
+    @post_load(pass_many=True)
     def make_ledger_action(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
-    ) -> LedgerAction:
-        return LedgerAction(**data)
-
-
-class LedgerActionEditSchema(Schema):
-    action = fields.Nested(LedgerActionWithIdentifierSchema, required=True)
+    ) -> Dict[str, LedgerAction]:
+        return {'action': LedgerAction(**data)}
 
 
 class IntegerIdentifierSchema(Schema):
@@ -598,15 +607,24 @@ class TradeDeleteSchema(Schema):
 class TagSchema(Schema):
     name = fields.String(required=True)
     description = fields.String(load_default=None)
-    background_color = ColorField(required=True)
-    foreground_color = ColorField(required=True)
+    background_color = ColorField(required=False, load_default=None)
+    foreground_color = ColorField(required=False, load_default=None)
 
+    def __init__(self, color_required: bool):
+        super().__init__()
+        self.color_required = color_required
 
-class TagEditSchema(Schema):
-    name = fields.String(required=True)
-    description = fields.String(load_default=None)
-    background_color = ColorField(load_default=None)
-    foreground_color = ColorField(load_default=None)
+    @validates_schema
+    def validate_tag_schema(
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if self.color_required is True and None in (data['background_color'], data['foreground_color']):  # noqa: E501
+            raise ValidationError(
+                message='Background and foreground color should be given for the tag',
+                field_name='background_color',
+            )
 
 
 class NameDeleteSchema(Schema):
@@ -1426,6 +1444,7 @@ def _validate_external_ids(
 
 
 class AssetSchema(Schema):
+    identifier = fields.String(required=False, load_default=None)
     asset_type = AssetTypeField(required=True, exclude_types=(AssetType.ETHEREUM_TOKEN,))
     name = fields.String(required=True)
     symbol = fields.String(required=True)
@@ -1435,8 +1454,14 @@ class AssetSchema(Schema):
     coingecko = fields.String(load_default=None)
     cryptocompare = fields.String(load_default=None)
 
-    def __init__(self, coingecko: 'Coingecko', cryptocompare: 'Cryptocompare'):
+    def __init__(
+            self,
+            identifier_required: bool,
+            coingecko: 'Coingecko',
+            cryptocompare: 'Cryptocompare',
+    ) -> None:
         super().__init__()
+        self.identifier_required = identifier_required
         self.coingecko_obj = coingecko
         self.cryptocompare_obj = cryptocompare
 
@@ -1446,11 +1471,9 @@ class AssetSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
+        if self.identifier_required is True and data['identifier'] is None:
+            raise ValidationError(message='Asset schema identifier should be given', field_name='identifier')  # noqa: E501
         _validate_external_ids(data, self.coingecko_obj, self.cryptocompare_obj)
-
-
-class AssetSchemaWithIdentifier(AssetSchema):
-    identifier = fields.String(required=True)
 
 
 class EthereumTokenSchema(Schema):

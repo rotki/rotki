@@ -10,7 +10,7 @@ from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import ActionType, HistoryBaseEntry
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
@@ -23,7 +23,6 @@ from rotkehlchen.api.v1.schemas import (
     AssetMovementsQuerySchema,
     AssetResetRequestSchema,
     AssetSchema,
-    AssetSchemaWithIdentifier,
     AssetsReplaceSchema,
     AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
@@ -69,7 +68,6 @@ from rotkehlchen.api.v1.schemas import (
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
     IntegerIdentifierSchema,
-    LedgerActionEditSchema,
     LedgerActionSchema,
     LedgerActionsQuerySchema,
     LimitsCounterResetSchema,
@@ -95,7 +93,6 @@ from rotkehlchen.api.v1.schemas import (
     StatisticsNetValueSchema,
     StatisticsValueDistributionSchema,
     StringIdentifierSchema,
-    TagEditSchema,
     TagSchema,
     TimedManualPriceSchema,
     TradeDeleteSchema,
@@ -463,12 +460,14 @@ class AllAssetsResource(BaseResource):
 
     def make_add_schema(self) -> AssetSchema:
         return AssetSchema(
+            identifier_required=False,
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
 
-    def make_edit_schema(self) -> AssetSchemaWithIdentifier:
-        return AssetSchemaWithIdentifier(
+    def make_edit_schema(self) -> AssetSchema:
+        return AssetSchema(
+            identifier_required=True,
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
@@ -705,8 +704,8 @@ class AssetMovementsResource(BaseResource):
 
 class TagsResource(BaseResource):
 
-    put_schema = TagSchema()
-    patch_schema = TagEditSchema()
+    put_schema = TagSchema(color_required=True)
+    patch_schema = TagSchema(color_required=False)
     delete_schema = NameDeleteSchema()
 
     def get(self) -> Response:
@@ -750,8 +749,8 @@ class TagsResource(BaseResource):
 class LedgerActionsResource(BaseResource):
 
     get_schema = LedgerActionsQuerySchema()
-    put_schema = LedgerActionSchema()
-    patch_schema = LedgerActionEditSchema()
+    put_schema = LedgerActionSchema(identifier_required=False)
+    patch_schema = LedgerActionSchema(identifier_required=True)
     delete_schema = IntegerIdentifierSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
@@ -770,28 +769,8 @@ class LedgerActionsResource(BaseResource):
     @use_kwargs(put_schema, location='json')
     def put(
             self,
-            timestamp: Timestamp,
-            action_type: LedgerActionType,
-            location: Location,
-            amount: AssetAmount,
-            asset: Asset,
-            rate: Optional[Price],
-            rate_asset: Optional[Asset],
-            link: Optional[str],
-            notes: Optional[str],
+            action: LedgerAction,
     ) -> Response:
-        action = LedgerAction(
-            identifier=0,  # whatever -- is not used at insertion
-            timestamp=timestamp,
-            action_type=action_type,
-            location=location,
-            amount=amount,
-            asset=asset,
-            rate=rate,
-            rate_asset=rate_asset,
-            link=link,
-            notes=notes,
-        )
         return self.rest_api.add_ledger_action(action)
 
     @use_kwargs(patch_schema, location='json')

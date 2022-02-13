@@ -242,7 +242,7 @@ export class HistoryApi {
     return this.axios
       .patch<ActionResult<LedgerAction>>(
         '/ledgeractions',
-        { action: ledgerAction },
+        axiosSnakeCaseTransformer(ledgerAction),
         {
           validateStatus: validStatus,
           transformResponse: basicAxiosTransformer,

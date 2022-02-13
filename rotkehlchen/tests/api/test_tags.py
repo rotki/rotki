@@ -230,7 +230,7 @@ def test_add_edit_tag_errors(
             )
             assert_error_response(
                 response=response,
-                contained_in_msg=f'"{field}": ["Missing data for required field',
+                contained_in_msg='Background and foreground color should be given for the tag',
                 status_code=HTTPStatus.BAD_REQUEST,
             )
         # Invalid color type
