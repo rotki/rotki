@@ -222,23 +222,6 @@ class TaxFreeAfterPeriodField(fields.Field):
         return value
 
 
-class KrakenAccountTypeField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> KrakenAccountType:
-        try:
-            acc_type = KrakenAccountType.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(f'{value} is not a valid kraken account type') from e
-
-        return acc_type
-
-
 class AmountField(fields.Field):
 
     @staticmethod
@@ -401,22 +384,6 @@ class BlockchainField(fields.Field):
         return chain_type
 
 
-class BalanceTypeField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> BalanceType:
-        if value == 'asset':
-            return BalanceType.ASSET
-        if value == 'liability':
-            return BalanceType.LIABILITY
-        raise ValidationError(f'Unrecognized value {value} given for balance type')
-
-
 class SerializableEnumField(fields.Field):
 
     def __init__(self, enum_class: Type[SerializableEnumMixin], **kwargs: Any) -> None:
@@ -432,23 +399,6 @@ class SerializableEnumField(fields.Field):
     ) -> Any:
         try:
             result = self.enum_class.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return result
-
-
-class AssetMovementCategoryField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> AssetMovementCategory:
-        try:
-            result = AssetMovementCategory.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
@@ -549,62 +499,6 @@ class EthereumAddressField(fields.Field):
         return address
 
 
-class SchemaEventTypeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: SchemaEventType,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> SchemaEventType:
-        # Make sure that given value is an AccountingEvent
-        try:
-            event_type = SchemaEventType.deserialize_from_db(value)
-        except DeserializationError as e:
-            raise ValidationError(
-                f'Given value {value} is not an SchemaEventType',
-                field_name='event_type',
-            ) from e
-
-        return event_type
-
-
-class TradeTypeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: TradeType,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> TradeType:
-        try:
-            trade_type = TradeType.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return trade_type
-
-
 class AssetTypeField(fields.Field):
 
     def __init__(self, *, exclude_types: Optional[Sequence[AssetType]] = None, **kwargs: Any) -> None:  # noqa: E501
@@ -636,58 +530,6 @@ class AssetTypeField(fields.Field):
             raise ValidationError(f'Asset type {str(asset_type)} is not allowed in this endpoint')
 
         return asset_type
-
-
-class LedgerActionTypeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: LedgerActionType,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> LedgerActionType:
-        try:
-            action_type = LedgerActionType.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return action_type
-
-
-class ActionTypeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: ActionType,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> ActionType:
-        try:
-            action_type = ActionType.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return action_type
 
 
 class LocationField(fields.Field):
@@ -724,25 +566,6 @@ class LocationField(fields.Field):
             )
 
         return location
-
-
-class ExternalServiceNameField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> ExternalService:
-        if not isinstance(value, str):
-            raise ValidationError('External service name should be a string')
-        try:
-            service = ExternalService.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(f'External service {value} is not known') from e
-
-        return service
 
 
 class ApiKeyField(fields.Field):
@@ -958,32 +781,6 @@ class HistoricalPriceOracleField(fields.Field):
         return historical_price_oracle
 
 
-class EventSubtypeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: HistoryEventSubType,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return value.serialize()
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> HistoryEventSubType:
-        try:
-            event_subtype = HistoryEventSubType.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return event_subtype
-
-
 class AsyncQueryArgumentSchema(Schema):
     """A schema for getters that only have one argument enabling async query"""
     async_query = fields.Boolean(load_default=False)
@@ -1078,7 +875,7 @@ class TradesQuerySchema(
     quote_asset = AssetField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    trade_type = TradeTypeField(load_default=None)
+    trade_type = SerializableEnumField(enum_class=TradeType, load_default=None)
     location = LocationField(load_default=None)
 
     @validates_schema
@@ -1137,7 +934,10 @@ class StakingQuerySchema(
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
     asset = AssetField(load_default=None)
-    event_subtypes = fields.List(EventSubtypeField(), load_default=None)
+    event_subtypes = fields.List(
+        SerializableEnumField(enum_class=HistoryEventSubType),
+        load_default=None,
+    )
 
     @post_load
     def make_staking_query(  # pylint: disable=no-self-use
@@ -1248,7 +1048,7 @@ class AssetMovementsQuerySchema(
     asset = AssetField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    action = AssetMovementCategoryField(load_default=None)
+    action = SerializableEnumField(enum_class=AssetMovementCategory, load_default=None)
     location = LocationField(load_default=None)
 
     @validates_schema
@@ -1305,7 +1105,7 @@ class LedgerActionsQuerySchema(
     asset = AssetField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    type = LedgerActionTypeField(load_default=None)
+    type = SerializableEnumField(enum_class=LedgerActionType, load_default=None)
     location = LocationField(load_default=None)
 
     @validates_schema
@@ -1390,7 +1190,7 @@ class TradeSchema(Schema):
     location = LocationField(required=True)
     base_asset = AssetField(required=True)
     quote_asset = AssetField(required=True)
-    trade_type = TradeTypeField(required=True)
+    trade_type = SerializableEnumField(enum_class=TradeType, required=True)
     amount = PositiveAmountField(required=True)
     rate = PriceField(required=True)
     fee = FeeField(load_default=None)
@@ -1401,7 +1201,7 @@ class TradeSchema(Schema):
 
 class LedgerActionSchema(Schema):
     timestamp = TimestampField(required=True)
-    action_type = LedgerActionTypeField(required=True)
+    action_type = SerializableEnumField(enum_class=LedgerActionType, required=True)
     location = LocationField(required=True)
     amount = AmountField(required=True)
     asset = AssetField(required=True)
@@ -1441,7 +1241,7 @@ class ManuallyTrackedBalanceSchema(Schema):
     amount = PositiveAmountField(required=True)
     location = LocationField(required=True)
     tags = fields.List(fields.String(), load_default=None)
-    balance_type = BalanceTypeField(load_default=BalanceType.ASSET)
+    balance_type = SerializableEnumField(enum_class=BalanceType, load_default=BalanceType.ASSET)
 
     @post_load
     def make_manually_tracked_balances(  # pylint: disable=no-self-use
@@ -1575,7 +1375,10 @@ class ModifiableSettingsSchema(Schema):
         validate=_validate_historical_price_oracles,
         load_default=None,
     )
-    taxable_ledger_actions = fields.List(LedgerActionTypeField, load_default=None)
+    taxable_ledger_actions = fields.List(
+        SerializableEnumField(enum_class=LedgerActionType),
+        load_default=None,
+    )
     pnl_csv_with_formulas = fields.Bool(load_default=None)
     pnl_csv_have_summary = fields.Bool(load_default=None)
     ssf_0graph_multiplier = fields.Integer(
@@ -1703,7 +1506,7 @@ class AllBalancesQuerySchema(Schema):
 
 
 class ExternalServiceSchema(Schema):
-    name = ExternalServiceNameField(required=True)
+    name = SerializableEnumField(enum_class=ExternalService, required=True)
     api_key = fields.String(required=True)
 
     @post_load
@@ -1721,7 +1524,7 @@ class ExternalServicesResourceAddSchema(Schema):
 
 
 class ExternalServicesResourceDeleteSchema(Schema):
-    services = fields.List(ExternalServiceNameField(), required=True)
+    services = fields.List(SerializableEnumField(enum_class=ExternalService), required=True)
 
 
 class ExchangesResourceEditSchema(Schema):
@@ -1731,7 +1534,7 @@ class ExchangesResourceEditSchema(Schema):
     api_key = ApiKeyField(load_default=None)
     api_secret = ApiSecretField(load_default=None)
     passphrase = fields.String(load_default=None)
-    kraken_account_type = KrakenAccountTypeField(load_default=None)
+    kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
     binance_markets = fields.List(fields.String(), load_default=None)
     ftx_subaccount = fields.String(load_default=None)
 
@@ -1742,7 +1545,7 @@ class ExchangesResourceAddSchema(Schema):
     api_key = ApiKeyField(required=True)
     api_secret = ApiSecretField(required=True)
     passphrase = fields.String(load_default=None)
-    kraken_account_type = KrakenAccountTypeField(load_default=None)
+    kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
     binance_markets = fields.List(fields.String(), load_default=None)
     ftx_subaccount = fields.String(load_default=None)
 
@@ -1806,7 +1609,7 @@ class AccountingReportsSchema(Schema):
 
 class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
     report_id = fields.Integer(load_default=None)
-    event_type = SchemaEventTypeField(load_default=None)
+    event_type = SerializableEnumField(enum_class=SchemaEventType, load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
 
@@ -2252,11 +2055,11 @@ class IgnoredAssetsSchema(Schema):
 
 
 class IgnoredActionsGetSchema(Schema):
-    action_type = ActionTypeField(load_default=None)
+    action_type = SerializableEnumField(enum_class=ActionType, load_default=None)
 
 
 class IgnoredActionsModifySchema(Schema):
-    action_type = ActionTypeField(required=True)
+    action_type = SerializableEnumField(enum_class=ActionType, required=True)
     action_ids = fields.List(fields.String(required=True), required=True)
 
 
