@@ -25,10 +25,9 @@
   </v-tooltip>
 </template>
 <script lang="ts">
-import { Vue, Component } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({
+export default defineComponent({
   name: 'ThemeSwitchLock'
-})
-export default class ThemeSwitchLock extends Vue {}
+});
 </script>

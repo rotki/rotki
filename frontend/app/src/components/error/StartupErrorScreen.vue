@@ -16,28 +16,33 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, toRefs } from '@vue/composition-api';
+import { useClipboard } from '@vueuse/core';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 
-@Component({
-  components: { ErrorScreen }
-})
-export default class StartupErrorScreen extends Vue {
-  @Prop({ required: true, type: String })
-  message!: string;
+import { interop } from '@/electron-interop';
 
-  terminate() {
-    this.$interop.closeApp();
-  }
+export default defineComponent({
+  name: 'StartupErrorScreen',
+  components: { ErrorScreen },
+  props: {
+    message: { required: true, type: String }
+  },
+  setup(props) {
+    const { message } = toRefs(props);
 
-  copy() {
-    const copy = this.$refs.copy as HTMLTextAreaElement;
-    copy.focus();
-    copy.select();
-    document.execCommand('copy');
-    copy.blur();
+    const terminate = () => {
+      interop.closeApp();
+    };
+
+    const { copy } = useClipboard({ source: message });
+
+    return {
+      terminate,
+      copy
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

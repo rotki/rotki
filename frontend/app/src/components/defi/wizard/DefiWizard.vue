@@ -89,29 +89,29 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
+import { defineComponent, ref } from '@vue/composition-api';
 import ModuleAddressSelector from '@/components/defi/wizard/ModuleAddressSelector.vue';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
-import {
-  DEFI_SETUP_DONE,
-  FrontendSettingsPayload
-} from '@/types/frontend-settings';
+import { setupSettings } from '@/composables/settings';
+import { DEFI_SETUP_DONE } from '@/types/frontend-settings';
 
-@Component({
+export default defineComponent({
+  name: 'DefiWizard',
   components: { ModuleAddressSelector, ModuleSelector },
-  methods: {
-    ...mapActions('settings', ['updateSetting'])
-  }
-})
-export default class DefiWizard extends Vue {
-  updateSetting!: (payload: FrontendSettingsPayload) => void;
+  setup() {
+    const { updateSetting } = setupSettings();
 
-  step: number = 1;
-  done() {
-    this.updateSetting({ [DEFI_SETUP_DONE]: true });
+    const step = ref<number>(1);
+    const done = () => {
+      updateSetting({ [DEFI_SETUP_DONE]: true });
+    };
+
+    return {
+      step,
+      done
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

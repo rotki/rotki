@@ -1,6 +1,6 @@
 <template>
   <fragment>
-    <v-row align="center">
+    <v-row class="mb-0" align="center">
       <v-col>
         <v-autocomplete
           outlined
@@ -10,43 +10,40 @@
           item-text="text"
           item-value="id"
           :disabled="pending"
+          hide-details
           @input="input"
         />
       </v-col>
       <v-col cols="auto">
-        <div class="pb-6">
-          <v-tooltip open-delay="400" top>
-            <template #activator="{ on, attrs }">
-              <v-btn
-                v-bind="attrs"
-                icon
-                :disabled="!value || pending"
-                :loading="pending"
-                v-on="on"
-                @click="purge({ source: value, text: text(value) })"
-              >
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
-            </template>
-            <span> {{ $t('purge_selector.tooltip') }} </span>
-          </v-tooltip>
-        </div>
+        <v-tooltip open-delay="400" top>
+          <template #activator="{ on, attrs }">
+            <v-btn
+              v-bind="attrs"
+              icon
+              :disabled="!value || pending"
+              :loading="pending"
+              v-on="on"
+              @click="purge({ source: value, text: text(value) })"
+            >
+              <v-icon>mdi-delete</v-icon>
+            </v-btn>
+          </template>
+          <span> {{ $t('purge_selector.tooltip') }} </span>
+        </v-tooltip>
       </v-col>
     </v-row>
-    <v-row no-gutters>
-      <v-col>
-        <action-status-indicator :status="status" />
-      </v-col>
-    </v-row>
+
+    <action-status-indicator :status="status" />
   </fragment>
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent, PropType } from '@vue/composition-api';
 import { SUPPORTED_MODULES } from '@/components/defi/wizard/consts';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import Fragment from '@/components/helper/Fragment';
 import { tradeLocations } from '@/components/history/consts';
+import i18n from '@/i18n';
 import {
   ALL_CENTRALIZED_EXCHANGES,
   ALL_DECENTRALIZED_EXCHANGES,
@@ -59,57 +56,67 @@ import { ActionStatus } from '@/store/types';
 
 export type PurgeParams = { readonly source: Purgeable; readonly text: string };
 
-@Component({
-  components: { ActionStatusIndicator, Fragment }
-})
-export default class PurgeSelector extends Vue {
-  readonly purgable = PURGABLE.map(id => ({
-    id: id,
-    text: this.text(id)
-  })).sort((a, b) => (a.text < b.text ? -1 : 1));
+export default defineComponent({
+  name: 'PurgeSelector',
+  components: { ActionStatusIndicator, Fragment },
+  props: {
+    value: { required: true, type: String as PropType<Purgeable> },
+    status: {
+      required: false,
+      type: Object as PropType<ActionStatus>,
+      default: null
+    },
+    pending: { required: false, type: Boolean, default: false }
+  },
+  emits: ['input', 'purge'],
+  setup(_, { emit }) {
+    const input = (value: Purgeable) => emit('input', value);
+    const purge = (payload: PurgeParams) => emit('purge', payload);
 
-  @Prop({ required: true })
-  value!: Purgeable;
+    const text = (source: Purgeable) => {
+      const location = tradeLocations.find(
+        ({ identifier }) => identifier === source
+      );
+      if (location) {
+        return i18n
+          .t('purge_selector.exchange', {
+            name: location.name
+          })
+          .toString();
+      }
 
-  @Prop({ required: false })
-  status!: ActionStatus | null;
+      const module = SUPPORTED_MODULES.find(
+        ({ identifier }) => identifier === source
+      );
+      if (module) {
+        return i18n
+          .t('purge_selector.module', { name: module.name })
+          .toString();
+      }
 
-  @Prop({ required: false, type: Boolean, default: false })
-  pending!: boolean;
+      if (source === ALL_TRANSACTIONS) {
+        return i18n.t('purge_selector.ethereum_transactions').toString();
+      } else if (source === ALL_CENTRALIZED_EXCHANGES) {
+        return i18n.t('purge_selector.all_exchanges').toString();
+      } else if (source === ALL_MODULES) {
+        return i18n.t('purge_selector.all_modules').toString();
+      } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
+        return i18n.t('purge_selector.all_decentralized_exchanges').toString();
+      }
+      return source;
+    };
 
-  @Emit()
-  input(_value: Purgeable) {}
+    const purgable = PURGABLE.map(id => ({
+      id,
+      text: text(id)
+    })).sort((a, b) => (a.text < b.text ? -1 : 1));
 
-  @Emit()
-  purge(_payload: PurgeParams) {}
-
-  text(source: Purgeable) {
-    const location = tradeLocations.find(
-      ({ identifier }) => identifier === source
-    );
-    if (location) {
-      return this.$t('purge_selector.exchange', {
-        name: location.name
-      }).toString();
-    }
-
-    const module = SUPPORTED_MODULES.find(
-      ({ identifier }) => identifier === source
-    );
-    if (module) {
-      return this.$t('purge_selector.module', { name: module.name }).toString();
-    }
-
-    if (source === ALL_TRANSACTIONS) {
-      return this.$t('purge_selector.ethereum_transactions').toString();
-    } else if (source === ALL_CENTRALIZED_EXCHANGES) {
-      return this.$t('purge_selector.all_exchanges').toString();
-    } else if (source === ALL_MODULES) {
-      return this.$t('purge_selector.all_modules').toString();
-    } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
-      return this.$t('purge_selector.all_decentralized_exchanges').toString();
-    }
-    return source;
+    return {
+      input,
+      purge,
+      text,
+      purgable
+    };
   }
-}
+});
 </script>

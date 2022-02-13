@@ -1,32 +1,31 @@
 <template>
   <v-sheet outlined rounded class="mt-4">
-    <v-row class="mt-2">
-      <v-col class="text-h5 ms-4 mb-2">
+    <div class="pa-4 pb-0">
+      <div class="text-h5 pt-2 pb-4">
         <slot name="title" />
-      </v-col>
-    </v-row>
-    <v-row no-gutters align="center">
-      <v-col>
-        <v-autocomplete
-          v-model="selection"
-          prepend-inner-icon="mdi-magnify"
-          outlined
-          :no-data-text="$t('price_oracle_selection.all_added')"
-          :items="missing"
-          class="pa-3"
-        >
-          <template #selection="{ item }">
-            <oracle-entry :identifier="item" />
-          </template>
-          <template #item="{ item }">
-            <oracle-entry :identifier="item" />
-          </template>
-        </v-autocomplete>
-      </v-col>
-      <v-col cols="auto">
-        <v-tooltip open-delay="400" top>
-          <template #activator="{ on, attrs }">
-            <div class="pb-6 pe-3">
+      </div>
+
+      <v-row class="mb-4" no-gutters align="center">
+        <v-col class="pr-4">
+          <v-autocomplete
+            v-model="selection"
+            prepend-inner-icon="mdi-magnify"
+            outlined
+            :no-data-text="$t('price_oracle_selection.all_added')"
+            :items="missing"
+            hide-details
+          >
+            <template #selection="{ item }">
+              <oracle-entry :identifier="item" />
+            </template>
+            <template #item="{ item }">
+              <oracle-entry :identifier="item" />
+            </template>
+          </v-autocomplete>
+        </v-col>
+        <v-col cols="auto">
+          <v-tooltip open-delay="400" top>
+            <template #activator="{ on, attrs }">
               <v-btn
                 color="primary"
                 v-bind="attrs"
@@ -37,14 +36,14 @@
               >
                 <v-icon>mdi-plus</v-icon>
               </v-btn>
-            </div>
-          </template>
-          <span>{{ $t('price_oracle_selection.add_tooltip') }}</span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
+            </template>
+            <span>{{ $t('price_oracle_selection.add_tooltip') }}</span>
+          </v-tooltip>
+        </v-col>
+      </v-row>
 
-    <action-status-indicator :status="status" />
+      <action-status-indicator :status="status" />
+    </div>
 
     <v-simple-table>
       <thead>
@@ -115,72 +114,93 @@
   </v-sheet>
 </template>
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import OracleEntry from '@/components/settings/OracleEntry.vue';
 import { ActionStatus } from '@/store/types';
+import { Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
 
-@Component({
-  components: { OracleEntry, ActionStatusIndicator }
-})
-export default class PriceOracleSelection extends Vue {
-  @Prop({ required: true, type: Array })
-  value!: string[];
+export default defineComponent({
+  name: 'PriceOracleSelection',
+  components: { OracleEntry, ActionStatusIndicator },
+  props: {
+    value: { required: true, type: Array as PropType<string[]> },
+    allItems: { required: true, type: Array as PropType<string[]> },
+    status: {
+      required: false,
+      type: Object as PropType<ActionStatus>,
+      default: () => null
+    }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { value, allItems } = toRefs(props);
+    const selection = ref<Nullable<string>>(null);
 
-  @Prop({ required: true, type: Array })
-  allItems!: string[];
+    const input = (items: string[]) => emit('input', items);
 
-  @Prop({ required: false, default: () => null })
-  status!: ActionStatus | null;
+    const missing = computed<string[]>(() => {
+      return get(allItems).filter(item => !get(value).includes(item));
+    });
 
-  selection: string | null = null;
+    const noResults = computed<boolean>(() => {
+      return get(value).length === 0;
+    });
 
-  get missing(): string[] {
-    return this.allItems.filter(item => !this.value.includes(item));
+    const isFirst = (item: string): boolean => {
+      return get(value)[0] === item;
+    };
+
+    const isLast = (item: string): boolean => {
+      const items = get(value);
+      return items[items.length - 1] === item;
+    };
+
+    const addItem = () => {
+      assert(get(selection));
+      const items = [...get(value)];
+      items.push(get(selection)!);
+      input(items);
+      set(selection, null);
+    };
+
+    const move = (item: string, down: boolean) => {
+      const items = [...get(value)];
+      const itemIndex = items.indexOf(item);
+      const nextIndex = itemIndex + (down ? 1 : -1);
+      const nextItem = items[nextIndex];
+      items[nextIndex] = item;
+      items[itemIndex] = nextItem;
+      input(items);
+    };
+
+    const remove = (item: string) => {
+      const items = [...get(value)];
+      const itemIndex = items.indexOf(item);
+      items.splice(itemIndex, 1);
+      input(items);
+    };
+
+    return {
+      selection,
+      missing,
+      noResults,
+      isFirst,
+      isLast,
+      addItem,
+      move,
+      remove
+    };
   }
-
-  @Emit()
-  input(_items: string[]) {}
-
-  get noResults(): boolean {
-    return this.value.length === 0;
-  }
-
-  isFirst(oracle: string): boolean {
-    return this.value[0] === oracle;
-  }
-
-  isLast(item: string): boolean {
-    const items = this.value;
-    return items[items.length - 1] === item;
-  }
-
-  addItem() {
-    assert(this.selection);
-    const items = [...this.value];
-    items.push(this.selection);
-    this.input(items);
-    this.selection = null;
-  }
-
-  move(item: string, down: boolean) {
-    const items = [...this.value];
-    const itemIndex = items.indexOf(item);
-    const nextIndex = itemIndex + (down ? 1 : -1);
-    const nextItem = items[nextIndex];
-    items[nextIndex] = item;
-    items[itemIndex] = nextItem;
-    this.input(items);
-  }
-
-  remove(item: string) {
-    const items = [...this.value];
-    const itemIndex = items.indexOf(item);
-    items.splice(itemIndex, 1);
-    this.input(items);
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

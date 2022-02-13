@@ -2,6 +2,7 @@
   <div class="action-status-indicator">
     <v-alert
       v-if="status"
+      class="mb-0"
       dense
       :color="status.success ? 'success' : 'error'"
       text
@@ -32,7 +33,6 @@ export default defineComponent({
 <style scoped lang="scss">
 .action-status-indicator {
   height: 48px;
-  padding: 16px;
   margin-bottom: 8px;
 }
 </style>

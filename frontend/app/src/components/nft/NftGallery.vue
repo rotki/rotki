@@ -134,6 +134,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import SortingSelector from '@/components/helper/SortingSelector.vue';
 import NftGalleryItem from '@/components/nft/NftGalleryItem.vue';
 import { setupThemeCheck } from '@/composables/common';
+import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { AssetPriceArray } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
@@ -360,7 +361,7 @@ export default defineComponent({
   },
   setup() {
     const { isMobile, breakpoint, width } = setupThemeCheck();
-    const { dispatch, state } = useStore();
+    const { dispatch } = useStore();
 
     const page = ref(1);
 
@@ -376,7 +377,7 @@ export default defineComponent({
     });
     const selectedAccount = ref<GeneralAccount | null>(null);
     const selectedCollection = ref<string | null>(null);
-    const premium = computed(() => state.session?.premium);
+    const premium = getPremium();
 
     watch(selectedAccount, () => (page.value = 1));
     watch(selectedCollection, () => (page.value = 1));
