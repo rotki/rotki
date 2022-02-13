@@ -111,8 +111,7 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.parametrize('aave_use_graph', [True])
-def test_query_aave_history_with_borrowing_v2(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_aave_history_with_borrowing_v2(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
@@ -159,7 +158,6 @@ def _query_simple_aave_history_test(
         setup: BalancesTestSetup,
         server: APIServer,
         async_query: bool,
-        use_graph: bool,
 ) -> None:
     with ExitStack() as stack:
         # patch ethereum/etherscan to not autodetect tokens
@@ -191,13 +189,12 @@ def _query_simple_aave_history_test(
     assert FVal(total_earned_interest[A_ADAI_V1.identifier]['usd_value']) >= FVal('24.580592532348742989192')  # noqa: E501
 
     expected_events = process_result_list(expected_aave_deposit_test_events)
-    if use_graph:
-        expected_events = expected_events[:7] + expected_events[8:]
+    expected_events = expected_events[:7] + expected_events[8:]
 
     assert_serialized_lists_equal(
         a=events[:len(expected_events)],
         b=expected_events,
-        ignore_keys=['log_index', 'block_number'] if use_graph else None,
+        ignore_keys=['log_index', 'block_number'],
     )
 
 
@@ -248,8 +245,7 @@ def _query_simple_aave_history_test_v2(
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.parametrize('aave_use_graph', [True, False])  # Try both with blockchain and graph
-def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data.
 
     Since this actually queries real blockchain data for aave it is a very slow test
@@ -266,10 +262,7 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts, aave_use_
     # Instead we randomly choose one. Eventually both cases will be covered.
     async_query = random.choice([True, False])
 
-    _query_simple_aave_history_test(setup, rotkehlchen_api_server, async_query, aave_use_graph)
-
-    if aave_use_graph:  # run it once more for graph to make sure DB querying gives same results
-        _query_simple_aave_history_test(setup, rotkehlchen_api_server, async_query, aave_use_graph)
+    _query_simple_aave_history_test(setup, rotkehlchen_api_server, async_query)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_2]])
@@ -278,8 +271,7 @@ def test_query_aave_history(rotkehlchen_api_server, ethereum_accounts, aave_use_
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.parametrize('aave_use_graph', [True])  # Try both with blockchain and graph
-def test_query_aave_history2(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_aave_history2(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data.
 
     Since this actually queries real blockchain data for aave it is a very slow test
@@ -296,10 +288,7 @@ def test_query_aave_history2(rotkehlchen_api_server, ethereum_accounts, aave_use
     # Instead we randomly choose one. Eventually both cases will be covered.
     async_query = random.choice([True, False])
 
-    _query_simple_aave_history_test(setup, rotkehlchen_api_server, async_query, aave_use_graph)
-
-    if aave_use_graph:  # run it once more for graph to make sure DB querying gives same results
-        _query_simple_aave_history_test(setup, rotkehlchen_api_server, async_query, aave_use_graph)
+    _query_simple_aave_history_test(setup, rotkehlchen_api_server, async_query)
 
 
 def _query_borrowing_aave_history_test(setup: BalancesTestSetup, server: APIServer) -> None:
@@ -358,8 +347,7 @@ def _query_borrowing_aave_history_test(setup: BalancesTestSetup, server: APIServ
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.parametrize('aave_use_graph', [True])
-def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_aave_history_with_borrowing(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
@@ -420,8 +408,7 @@ def _test_for_duplicates_and_negatives(setup: BalancesTestSetup, server: APIServ
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.parametrize('aave_use_graph', [True])
-def test_query_aave_history_no_duplicates(rotkehlchen_api_server, ethereum_accounts, aave_use_graph):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_aave_history_no_duplicates(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy avoids duplicate event data and keeps totals positive"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
