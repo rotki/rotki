@@ -1032,12 +1032,12 @@ class CSVExporter():
         if not self.create_csv:
             return
         self.staking_events_csv.append({
-            'time': self.timestamp_to_date(action.get_standard_timestamp()),
+            'time': self.timestamp_to_date(action.get_timestamp_in_sec()),
             'type': str(action.event_type),
             'subtype': str(action.event_subtype),
             'location': str(action.location),
-            'asset': str(action.asset_balance.asset),
-            'amount': str(action.asset_balance.balance.amount),
+            'asset': str(action.asset),
+            'amount': str(action.balance.amount),
             f'profit_loss_in_{self.profit_currency.symbol}': profit_loss_in_profit_currency,
         })
 
@@ -1047,8 +1047,8 @@ class CSVExporter():
         paid_in_profit_currency = ZERO
         paid_in_asset = ZERO
         paid_asset = None
-        received_asset = action.asset_balance.asset
-        received_in_asset = action.asset_balance.balance.amount
+        received_asset = action.asset
+        received_in_asset = action.balance.amount
         received_in_profit_currency = profit_loss_in_profit_currency
 
         self.add_to_allevents(
@@ -1061,7 +1061,7 @@ class CSVExporter():
             received_in_asset=received_in_asset,
             taxable_received_in_profit_currency=received_in_profit_currency,
             total_received_in_profit_currency=received_in_profit_currency,
-            timestamp=action.get_standard_timestamp(),
+            timestamp=action.get_timestamp_in_sec(),
             link=action.event_identifier,
             notes=str(action.sequence_index),
         )

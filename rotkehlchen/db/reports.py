@@ -89,7 +89,7 @@ class DBAccountingReports():
             margin_positions_profit_loss: str,
             settlement_losses: str,
             ethereum_transaction_gas_costs: str,
-            staking_profit_loss: str,
+            staking_profit: str,
             asset_movement_fees: str,
             general_trade_profit_loss: str,
             taxable_trade_profit_loss: str,
@@ -105,17 +105,16 @@ class DBAccountingReports():
         cursor.execute(
             'UPDATE pnl_reports SET ledger_actions_profit_loss=?, defi_profit_loss=?, '
             'loan_profit=?, margin_positions_profit_loss=?, settlement_losses=?, '
-            'ethereum_transaction_gas_costs=?, asset_movement_fees=?, general_trade_profit_loss=?,'
-            ' taxable_trade_profit_loss=?, total_taxable_profit_loss=?, total_profit_loss=?,'
-            ' last_processed_timestamp=?, processed_actions=?, total_actions=?, '
-            'staking_profit_loss=? WHERE identifier=?',
+            'ethereum_transaction_gas_costs=?, asset_movement_fees=?, staking_profit=?,'
+            ' general_trade_profit_loss=?, taxable_trade_profit_loss=?,'
+            ' total_taxable_profit_loss=?, total_profit_loss=?, last_processed_timestamp=?,'
+            ' processed_actions=?, total_actions=? WHERE identifier=?',
             (ledger_actions_profit_loss, defi_profit_loss, loan_profit,
              margin_positions_profit_loss, settlement_losses,
              ethereum_transaction_gas_costs, asset_movement_fees,
-             general_trade_profit_loss, taxable_trade_profit_loss,
+             staking_profit, general_trade_profit_loss, taxable_trade_profit_loss,
              total_taxable_profit_loss, total_profit_loss,
-             last_processed_timestamp, processed_actions, total_actions,
-             staking_profit_loss, report_id),
+             last_processed_timestamp, processed_actions, total_actions, report_id),
         )
         if cursor.rowcount != 1:
             raise InputError(
@@ -180,20 +179,20 @@ class DBAccountingReports():
                 'settlement_losses': report[9],
                 'ethereum_transaction_gas_costs': report[10],
                 'asset_movement_fees': report[11],
-                'general_trade_profit_loss': report[12],
-                'taxable_trade_profit_loss': report[13],
-                'total_taxable_profit_loss': report[14],
-                'total_profit_loss': report[15],
-                'last_processed_timestamp': report[16],
-                'processed_actions': report[17],
-                'total_actions': report[18],
-                'profit_currency': report[19],
-                'taxfree_after_period': report[20],
-                'include_crypto2crypto': bool(report[21]),
-                'calculate_past_cost_basis': bool(report[22]),
-                'include_gas_costs': bool(report[23]),
-                'account_for_assets_movements': bool(report[24]),
-                'staking_profit_loss': report[25],
+                'staking_profit': report[12],
+                'general_trade_profit_loss': report[13],
+                'taxable_trade_profit_loss': report[14],
+                'total_taxable_profit_loss': report[15],
+                'total_profit_loss': report[16],
+                'last_processed_timestamp': report[17],
+                'processed_actions': report[18],
+                'total_actions': report[19],
+                'profit_currency': report[20],
+                'taxfree_after_period': report[21],
+                'include_crypto2crypto': bool(report[22]),
+                'calculate_past_cost_basis': bool(report[23]),
+                'include_gas_costs': bool(report[24]),
+                'account_for_assets_movements': bool(report[25]),
             })
 
         if report_id is not None:

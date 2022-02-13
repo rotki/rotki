@@ -565,7 +565,7 @@ class EventsHistorian():
         history_events_db = DBHistoryEvents(self.db)
         base_entries, _ = history_events_db.get_history_events_and_limit_info(
             filter_query=HistoryEventFilterQuery.make(
-                event_type=[HistoryEventType.STAKING],
+                event_types=[HistoryEventType.STAKING],
             ),
             has_premium=has_premium,
         )

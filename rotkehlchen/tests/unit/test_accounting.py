@@ -8,6 +8,7 @@ from rotkehlchen.accounting.structures import (
     DefiEvent,
     DefiEventType,
     HistoryBaseEntry,
+    HistoryEventSubType,
     HistoryEventType,
 )
 from rotkehlchen.accounting.typing import ACCOUNTING_EVENT_SCHEMA
@@ -1053,35 +1054,31 @@ def test_kraken_staking_events(accountant, events_historian):
         HistoryBaseEntry(
             event_identifier='XXX',
             sequence_index=0,
-            timestamp=16404933740000,
+            timestamp=1640493374000,
             location=Location.KRAKEN,
             location_label='Kraken 1',
-            asset_balance=AssetBalance(
-                asset=A_ETH2,
-                balance=Balance(
-                    amount=FVal(0.0000541090),
-                    usd_value=FVal(0.212353475950),
-                ),
+            asset=A_ETH2,
+            balance=Balance(
+                amount=FVal(0.0000541090),
+                usd_value=FVal(0.212353475950),
             ),
             notes=None,
             event_type=HistoryEventType.STAKING,
-            event_subtype=None,
+            event_subtype=HistoryEventSubType.REWARD,
         ), HistoryBaseEntry(
             event_identifier='YYY',
             sequence_index=0,
-            timestamp=16366385500000,
+            timestamp=1636638550000,
             location=Location.KRAKEN,
             location_label='Kraken 1',
-            asset_balance=AssetBalance(
-                asset=A_ETH2,
-                balance=Balance(
-                    amount=FVal(0.0000541090),
-                    usd_value=FVal(0.212353475950),
-                ),
+            asset=A_ETH2,
+            balance=Balance(
+                amount=FVal(0.0000541090),
+                usd_value=FVal(0.212353475950),
             ),
             notes=None,
             event_type=HistoryEventType.STAKING,
-            event_subtype=None,
+            event_subtype=HistoryEventSubType.REWARD,
         )]
     db = DBHistoryEvents(events_historian.db)
     db.add_history_events(history_events_list)
@@ -1098,7 +1095,7 @@ def test_kraken_staking_events(accountant, events_historian):
     errors = accountant.msg_aggregator.consume_errors()
     assert len(errors) == 0
 
-    assert FVal(report['staking_profit_loss']) == FVal(0.47150582600)
+    assert FVal(report['staking_profit']) == FVal(0.47150582600)
     assert len(events) == 2
     profits = [FVal(entry['net_profit_or_loss']) for entry in events]
     assert [FVal(0.25114638241), FVal(0.22035944359)] == profits

@@ -445,7 +445,7 @@ class Accountant():
         sum_other_actions = (
             self.events.margin_positions_profit_loss +
             self.events.defi_profit_loss +
-            self.events.staking_profit_loss +
+            self.events.staking_profit +
             self.events.ledger_actions_profit_loss +
             self.events.loan_profit -
             self.events.settlement_losses -
@@ -471,7 +471,7 @@ class Accountant():
             'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
             'settlement_losses': str(self.events.settlement_losses),
             'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
-            'staking_profit_loss': str(self.events.staking_profit_loss),
+            'staking_profit': str(self.events.staking_profit),
             'asset_movement_fees': str(self.asset_movement_fees),
             'general_trade_profit_loss': str(self.events.general_trade_profit_loss),
             'taxable_trade_profit_loss': str(self.events.taxable_trade_profit_loss),

@@ -39,7 +39,7 @@ def action_get_timestamp(action: TaxableAction) -> Timestamp:
     ):
         return action.timestamp
     if isinstance(action, HistoryBaseEntry):
-        return action.get_standard_timestamp()
+        return action.get_timestamp_in_sec()
     if isinstance(action, (MarginPosition, Loan)):
         return action.close_time
     # else
@@ -121,6 +121,6 @@ def action_get_assets(action: TaxableAction) -> List[Asset]:
     if isinstance(action, Loan):
         return [action.currency]
     if isinstance(action, HistoryBaseEntry):
-        return [action.asset_balance.asset]
+        return [action.asset]
     # else
     raise AssertionError(f'TaxableAction of unknown type {type(action)} encountered')

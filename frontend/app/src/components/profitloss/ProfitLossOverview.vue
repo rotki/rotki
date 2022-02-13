@@ -107,12 +107,12 @@
         </tr>
         <tr>
           <td>
-            {{ $t('profit_loss_overview.rows.taxable_staking_profit_loss') }}
+            {{ $t('profit_loss_overview.rows.taxable_staking_profit') }}
           </td>
           <td class="text-right">
             <amount-display
               pnl
-              :value="overview.stakingProfitLoss"
+              :value="overview.stakingProfit"
               :loading="loading"
             />
           </td>
