@@ -1078,7 +1078,7 @@ def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges
     assert_error_response(
         response=response,
         status_code=HTTPStatus.BAD_REQUEST,
-        contained_in_msg='pleb is not a valid kraken account type',
+        contained_in_msg='Failed to deserialize KrakenAccountType value pleb',
     )
 
 

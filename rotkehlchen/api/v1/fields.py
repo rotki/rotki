@@ -319,6 +319,15 @@ class SerializableEnumField(fields.Field):
         self.enum_class = enum_class
         super().__init__(**kwargs)
 
+    @staticmethod
+    def _serialize(
+            value: SerializableEnumMixin,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        return value.serialize()
+
     def _deserialize(
             self,
             value: str,

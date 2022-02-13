@@ -184,7 +184,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='"name": ["External service unknown is not known"',
+        contained_in_msg='Failed to deserialize ExternalService value unknown',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -196,7 +196,7 @@ def test_add_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="External service name should be a string",
+        contained_in_msg='Failed to deserialize ExternalService value from non string value: 23.2',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -245,7 +245,7 @@ def test_remove_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg='"services": {"0": ["External service name should be a string"]',
+        contained_in_msg='Failed to deserialize ExternalService value from non string value: 55',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -257,6 +257,6 @@ def test_remove_external_services_errors(rotkehlchen_api_server):
     )
     assert_error_response(
         response=response,
-        contained_in_msg="External service unknown is not known",
+        contained_in_msg='Failed to deserialize ExternalService value unknown',
         status_code=HTTPStatus.BAD_REQUEST,
     )
