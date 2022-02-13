@@ -1,12 +1,16 @@
+import os
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
 
+import gevent
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.constants.assets import A_USDT
+from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -223,7 +227,10 @@ def test_query_transactions(rotkehlchen_api_server):
     assert all(x['ignored_in_accounting'] is True for x in result['entries']), msg
 
 
-# TODO: This is a super slow test. Would make sense to run it sparingly
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='SLOW TEST -- run locally from time to time',
+)
 @pytest.mark.parametrize('ethereum_accounts', [['0xe62193Bc1c340EF2205C0Bd71691Fad5e5072253']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_query_over_10k_transactions(rotkehlchen_api_server):
@@ -234,13 +241,41 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
     Etherscan has a limit for 1k transactions per query and we need to make
     sure that we properly pull all data by using pagination
     """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    original_get = requests.get
+
+    def mock_some_etherscan_queries(etherscan: Etherscan):
+        """Just hit etherscan for the actual transations and mock all else.
+        This test just needs to see that pagination works on the tx endpoint
+        """
+        def mocked_request_dict(url, *_args, **_kwargs):
+            if '=txlistinternal&' in url:
+                # don't return any internal transactions
+                payload = '{"status":"1","message":"OK","result":[]}'
+            elif '=tokentx&' in url:
+                # don't return any token transactions
+                payload = '{"status":"1","message":"OK","result":[]}'
+            elif '=getblocknobytime&' in url:
+                # we don't really care about this in this test so return whatever
+                # payload = '{"status":"1","message":"OK","result": "1"}'
+                return original_get(url)
+            elif '=txlist&' in url:
+                return original_get(url)
+            else:
+                raise AssertionError(f'Unexpected etherscan query {url} at test mock')
+            return MockResponse(200, payload)
+
+        return patch.object(etherscan.session, 'get', wraps=mocked_request_dict)
+
     expected_at_least = 16097  # 30/08/2020
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'ethereumtransactionsresource',
-        ),
-    )
+    with mock_some_etherscan_queries(rotki.etherscan):
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'ethereumtransactionsresource',
+            ),
+        )
+
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) >= expected_at_least
     assert result['entries_found'] >= expected_at_least
@@ -340,7 +375,7 @@ def test_query_transactions_over_limit(
         input_data=x.to_bytes(2, byteorder='little'),
         nonce=x,
     ) for x in range(FREE_ETH_TX_LIMIT - 10)]
-    transactions.extend([EthereumTransaction(
+    extra_transactions = [EthereumTransaction(
         tx_hash=(x + 500).to_bytes(2, byteorder='little'),
         timestamp=x,
         block_number=x,
@@ -352,10 +387,11 @@ def test_query_transactions_over_limit(
         gas_used=x,
         input_data=x.to_bytes(2, byteorder='little'),
         nonce=x,
-    ) for x in range(60)])
+    ) for x in range(60)]
 
     dbethtx = DBEthTx(db)
-    dbethtx.add_ethereum_transactions(transactions)
+    dbethtx.add_ethereum_transactions(transactions, relevant_address=ethereum_accounts[0])
+    dbethtx.add_ethereum_transactions(extra_transactions, relevant_address=ethereum_accounts[1])
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -365,7 +401,7 @@ def test_query_transactions_over_limit(
             ranges_to_query=[],
         )
 
-    free_expected_entries_total = [FREE_ETH_TX_LIMIT - 10, 10]
+    free_expected_entries_total = [FREE_ETH_TX_LIMIT - 35, 35]
     free_expected_entries_found = [FREE_ETH_TX_LIMIT - 10, 60]
     premium_expected_entries = [FREE_ETH_TX_LIMIT - 10, 60]
 
@@ -447,7 +483,8 @@ def test_query_transactions_from_to_address(
         nonce=55,
     )]
     dbethtx = DBEthTx(db)
-    dbethtx.add_ethereum_transactions(transactions)
+    dbethtx.add_ethereum_transactions(transactions, relevant_address=ethereum_accounts[0])
+    dbethtx.add_ethereum_transactions([transactions[1]], relevant_address=ethereum_accounts[1])
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -546,7 +583,8 @@ def test_query_transactions_removed_address(
         nonce=0,
     )]
     dbethtx = DBEthTx(db)
-    dbethtx.add_ethereum_transactions(transactions)
+    dbethtx.add_ethereum_transactions(transactions[0:2] + transactions[3:], relevant_address=ethereum_accounts[0])  # noqa: E501
+    dbethtx.add_ethereum_transactions(transactions[2:], relevant_address=ethereum_accounts[1])  # noqa: E501
     # Also make sure to update query ranges so as not to query etherscan at all
     for address in ethereum_accounts:
         DBQueryRanges(db).update_used_query_range(
@@ -591,7 +629,7 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
 ):
     """Make sure that if we track two addresses and they send one transaction
     to each other it's not counted as duplicate in the DB but is returned
-    every by both addresses"""
+    every time by both addresses"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     def mock_etherscan_transaction_response(etherscan: Etherscan, eth_accounts):
@@ -601,6 +639,9 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
             addr2_txs = f"""{addr1_tx}, {{"blockNumber":"2","timeStamp":"2","hash":"0x1c81f54c29ff0226f835cd0a2a2f2a7eca6db52a711f8211b566fd15d3e0e8d4","nonce":"1","blockHash":"0xd1cabad2adab0b56ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{eth_accounts[1]}","to":"{make_ethereum_address()}","value":"1","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"0x","contractAddress":"","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"1"}}"""  # noqa: E501
             if '=txlistinternal&' in url:
                 # don't return any internal transactions
+                payload = '{"status":"1","message":"OK","result":[]}'
+            elif 'action=tokentx&' in url:
+                # don't return any token transactions
                 payload = '{"status":"1","message":"OK","result":[]}'
             elif '=txlist&' in url:
                 if eth_accounts[0] in url:
@@ -615,6 +656,8 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
             elif '=getblocknobytime&' in url:
                 # we don't really care about this so just return whatever
                 payload = '{"status":"1","message":"OK","result": "1"}'
+            else:
+                raise AssertionError('Got in unexpected section during test')
 
             return MockResponse(200, payload)
 
@@ -655,3 +698,113 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         assert len(result['entries']) == 2
         assert result['entries_found'] == 2
         assert result['entries_total'] == 2
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x6e15887E2CEC81434C16D587709f64603b39b545']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereum_accounts):
+    """Test that querying for an address's transactions after the events have been
+    decoded also includes said events
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    tx_module = EthTransactions(
+        ethereum=rotki.chain_manager.ethereum,
+        database=rotki.data.db,
+    )
+    tx_module.single_address_query_transactions(
+        address=ethereum_accounts[0],
+        start_ts=0,
+        end_ts=1642803566,  # time of test writing
+    )
+    rotki.task_manager._maybe_schedule_ethereum_txreceipts()
+    gevent.joinall(rotki.greenlet_manager.greenlets)
+    rotki.task_manager._maybe_decode_evm_transactions()
+    gevent.joinall(rotki.greenlet_manager.greenlets)
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ),
+    )
+
+    result = assert_proper_response_with_result(response)
+    entries = result['entries']
+    assert len(entries) == 4
+    assert entries[0]['decoded_events'] == [{
+        'asset': 'ETH',
+        'balance': {'amount': '0.00863351371344', 'usd_value': '0'},
+        'counterparty': 'gas',
+        'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+        'event_subtype': 'fee',
+        'event_type': 'spend',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
+        'sequence_index': 0,
+        'timestamp': 1642802807,
+    }, {
+        'asset': 'ETH',
+        'balance': {'amount': '0.096809163374771208', 'usd_value': '0'},
+        'counterparty': '0xA090e606E30bD747d4E6245a1517EbE430F0057e',
+        'event_identifier': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+        'event_subtype': None,
+        'event_type': 'spend',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
+        'sequence_index': 1,
+        'timestamp': 1642802807,
+    }]
+    assert entries[1]['decoded_events'] == [{
+        'asset': 'ETH',
+        'balance': {'amount': '0.017690836625228792', 'usd_value': '0'},
+        'counterparty': 'gas',
+        'event_identifier': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
+        'event_subtype': 'fee',
+        'event_type': 'spend',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Burned 0.017690836625228792 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
+        'sequence_index': 0,
+        'timestamp': 1642802735,
+    }, {
+        'asset': A_USDT.identifier,
+        'balance': {'amount': '1166', 'usd_value': '0'},
+        'counterparty': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
+        'event_identifier': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
+        'event_subtype': None,
+        'event_type': 'spend',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
+        'sequence_index': 307,
+        'timestamp': 1642802735,
+    }]
+    assert entries[2]['decoded_events'] == [{
+        'asset': 'ETH',
+        'balance': {'amount': '0.125', 'usd_value': '0'},
+        'counterparty': '0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
+        'event_identifier': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',
+        'event_subtype': None,
+        'event_type': 'receive',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Receive 0.125 ETH 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf -> 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+        'sequence_index': 1,
+        'timestamp': 1642802651,
+    }]
+    assert entries[3]['decoded_events'] == [{
+        'asset': A_USDT.identifier,
+        'balance': {'amount': '1166', 'usd_value': '0'},
+        'counterparty': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
+        'event_identifier': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
+        'event_subtype': None,
+        'event_type': 'receive',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+        'sequence_index': 385,
+        'timestamp': 1642802286,
+    }]

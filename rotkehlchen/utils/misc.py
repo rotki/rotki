@@ -1,6 +1,7 @@
 import calendar
 import datetime
 import functools
+import logging
 import operator
 import platform
 import re
@@ -26,6 +27,8 @@ from rotkehlchen.errors import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import ChecksumEthAddress, Fee, Timestamp, TimestampMS
 
+log = logging.getLogger(__name__)
+
 
 def ts_now() -> Timestamp:
     return Timestamp(int(time.time()))
@@ -33,6 +36,14 @@ def ts_now() -> Timestamp:
 
 def ts_now_in_ms() -> TimestampMS:
     return TimestampMS(int(time.time() * 1000))
+
+
+def ts_sec_to_ms(ts: Timestamp) -> TimestampMS:
+    return TimestampMS(ts * 1000)
+
+
+def ts_ms_to_sec(ts: TimestampMS) -> Timestamp:
+    return Timestamp(int(ts / 1000))
 
 
 def create_timestamp(datestr: str, formatstr: str = '%Y-%m-%d %H:%M:%S') -> Timestamp:
@@ -286,7 +297,7 @@ def hex_or_bytes_to_str(value: Union[bytes, str]) -> str:
     if isinstance(value, bytes):
         hexstr = value.hex()
     else:
-        hexstr = value
+        hexstr = value.removeprefix('0x')
 
     return hexstr
 
@@ -302,7 +313,12 @@ def hex_or_bytes_to_address(value: Union[bytes, str]) -> ChecksumEthAddress:
         hexstr = hex_or_bytes_to_str(value)
     except ConversionError as e:
         raise DeserializationError(f'Could not turn {value!r} to an ethereum address') from e
-    return ChecksumEthAddress(to_checksum_address('0x' + hexstr[26:]))
+    try:
+        return ChecksumEthAddress(to_checksum_address('0x' + hexstr[24:]))
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {hexstr[24:]}',
+        ) from e
 
 
 def address_to_bytes32(address: ChecksumEthAddress) -> str:
@@ -332,3 +348,22 @@ def pairwise(iterable: Iterable[Any]) -> Iterator:
     "s -> (s0, s1), (s2, s3), (s4, s5), ..."
     a = iter(iterable)
     return zip(a, a)
+
+
+def shift_num_right_by(num: int, digits: int) -> int:
+    """Shift a number to the right by discarding some digits
+
+    We actually use string conversion here since division can provide
+    wrong results due to precision errors for very big numbers. e.g.:
+    6150000000000000000000000000000000000000000000000 // 1e27
+    6.149999999999999e+21   <--- wrong
+    """
+    try:
+        return int(str(num)[:-digits])
+    except ValueError:
+        # this can happen if num is 0, in which case the shifting code above will raise
+        # https://github.com/rotki/rotki/issues/3310
+        # Also log if it happens for any other reason
+        if num != 0:
+            log.error(f'At shift_num_right_by() got unecpected value {num} for num')
+        return 0

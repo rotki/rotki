@@ -48,6 +48,7 @@ def fixture_task_manager(
         api_task_greenlets,
         cryptocompare,
         exchange_manager,
+        evm_transaction_decoder,
 ) -> TaskManager:
     task_manager = TaskManager(
         max_tasks_num=max_tasks_num,
@@ -58,6 +59,7 @@ def fixture_task_manager(
         premium_sync_manager=MockPremiumSyncManager(),  # type: ignore
         chain_manager=blockchain,
         exchange_manager=exchange_manager,
+        evm_tx_decoder=evm_transaction_decoder,
     )
     return task_manager
 

@@ -8,6 +8,7 @@ import gevent
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.constants.assets import A_USD
@@ -25,7 +26,7 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.typing import ChecksumEthAddress, Location, Timestamp
+from rotkehlchen.typing import ChecksumEthAddress, Location, Optional, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -62,9 +63,10 @@ class TaskManager():
             api_task_greenlets: List[gevent.Greenlet],
             database: DBHandler,
             cryptocompare: Cryptocompare,
-            premium_sync_manager: PremiumSyncManager,
+            premium_sync_manager: Optional[PremiumSyncManager],
             chain_manager: ChainManager,
             exchange_manager: ExchangeManager,
+            evm_tx_decoder: EVMTransactionDecoder,
     ) -> None:
         self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
@@ -72,7 +74,7 @@ class TaskManager():
         self.database = database
         self.cryptocompare = cryptocompare
         self.exchange_manager = exchange_manager
-        self.premium_sync_manager = premium_sync_manager
+        self.evm_tx_decoder = evm_tx_decoder
         self.cryptocompare_queries: Set[CCHistoQuery] = set()
         self.chain_manager = chain_manager
         self.last_xpub_derivation_ts = 0
@@ -89,13 +91,15 @@ class TaskManager():
 
         self.potential_tasks = [
             self._maybe_schedule_cryptocompare_query,
-            self.premium_sync_manager.maybe_upload_data_to_server,
             self._maybe_schedule_xpub_derivation,
             self._maybe_query_ethereum_transactions,
             self._maybe_schedule_exchange_history_query,
             self._maybe_schedule_ethereum_txreceipts,
             self._maybe_query_missing_prices,
+            self._maybe_decode_evm_transactions,
         ]
+        if premium_sync_manager is not None:
+            self.potential_tasks.append(premium_sync_manager.maybe_upload_data_to_server)
         self.schedule_lock = gevent.lock.Semaphore()
 
     def _prepare_cryptocompare_queries(self) -> None:
@@ -240,7 +244,7 @@ class TaskManager():
         cursor = self.database.conn.cursor()
         result = cursor.execute(
             'SELECT tx_hash from ethereum_transactions WHERE tx_hash NOT IN '
-            '(SELECT tx_hash from ethtx_receipts) LIMIT 100;',
+            '(SELECT tx_hash from ethtx_receipts) LIMIT 500;',
         ).fetchall()
         if len(result) == 0:
             return
@@ -319,7 +323,7 @@ class TaskManager():
         new_query_filter.filters.append(
             DBIgnoreValuesFilter(
                 and_op=True,
-                column='identifier',
+                column='rowid',
                 values=list(self.base_entries_ignore_set),
             ),
         )
@@ -353,10 +357,28 @@ class TaskManager():
             usd_value = amount * price
             updates.append((str(usd_value), identifier))
 
-        query = 'UPDATE history_events SET usd_value=? WHERE identifier=?'
+        query = 'UPDATE history_events SET usd_value=? WHERE rowid=?'
         cursor = self.database.conn.cursor()
         cursor.executemany(query, updates)
         self.database.update_last_write()
+
+    def _maybe_decode_evm_transactions(self) -> None:
+        cursor = self.database.conn.cursor()
+        cursor.execute(
+            'SELECT A.tx_hash from ethtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B '
+            'ON A.tx_hash=B.tx_hash WHERE B.tx_hash is NULL LIMIT 200',
+        )
+        hashes = [x[0] for x in cursor]
+        if len(hashes) > 0:
+            task_name = 'Periodically decode evm trasactions'
+            log.debug(f'Scheduling task to {task_name}')
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=task_name,
+                exception_is_error=True,
+                method=self.evm_tx_decoder.decode_transaction_hashes,
+                hashes=hashes,
+            )
 
     def _schedule(self) -> None:
         """Schedules background tasks"""
@@ -377,7 +399,7 @@ class TaskManager():
         )
 
         for callable_fn in callables:
-            callable_fn()  # type: ignore
+            callable_fn()
 
     def schedule(self) -> None:
         """Schedules background task while holding the scheduling lock

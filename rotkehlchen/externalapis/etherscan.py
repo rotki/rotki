@@ -1,6 +1,6 @@
 import logging
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union, overload
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union, overload
 
 import gevent
 import requests
@@ -18,7 +18,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_transaction,
     deserialize_int_from_str,
 )
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, ExternalService, Timestamp
+from rotkehlchen.typing import (
+    ChecksumEthAddress,
+    EthereumInternalTransaction,
+    EthereumTransaction,
+    ExternalService,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -206,12 +212,43 @@ class Etherscan(ExternalServiceWithApiKey):
 
         return result
 
+    @overload
     def get_transactions(
             self,
             account: ChecksumEthAddress,
+            action: Literal['txlistinternal'],
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+    ) -> List[EthereumInternalTransaction]:
+        ...
+
+    @overload
+    def get_transactions(
+            self,
+            account: ChecksumEthAddress,
+            action: Literal['txlist'],
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> List[EthereumTransaction]:
+        ...
+
+    @overload
+    def get_transactions(
+            self,
+            account: ChecksumEthAddress,
+            action: Literal['tokentx'],
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+    ) -> Set[str]:
+        ...
+
+    def get_transactions(
+            self,
+            account: ChecksumEthAddress,
+            action: Literal['txlist', 'txlistinternal', 'tokentx'],
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+    ) -> Union[List[EthereumTransaction], List[EthereumInternalTransaction], Set[str]]:
         """Gets a list of transactions (either normal or internal) for account.
 
         May raise:
@@ -226,17 +263,29 @@ class Etherscan(ExternalServiceWithApiKey):
             to_block = self.get_blocknumber_by_time(to_ts)
             options['endBlock'] = str(to_block)
 
-        transactions = []
+        transactions: Union[List[EthereumTransaction], List[EthereumInternalTransaction], Set[str]]
+        if action == 'tokentx':
+            transactions = set()
+        else:
+            transactions = []  # type: ignore
         while True:
-            result = self._query(module='account', action='txlist', options=options)
+            result = self._query(module='account', action=action, options=options)
             for entry in result:
+                if action == 'tokentx':
+                    transactions.add(entry['hash'])  # type: ignore
+                    continue
+
                 try:
-                    tx = deserialize_ethereum_transaction(data=entry, ethereum=None)
+                    tx = deserialize_ethereum_transaction(  # type: ignore
+                        data=entry,
+                        internal=action == 'txlistinternal',
+                        ethereum=None,
+                    )
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{str(e)}. Skipping transaction')
                     continue
 
-                transactions.append(tx)
+                transactions.append(tx)  # type: ignore
 
             if len(result) != ETHERSCAN_TX_QUERY_LIMIT:
                 break

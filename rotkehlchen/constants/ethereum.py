@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 
 MAX_BLOCKTIME_CACHE = 250  # 55 mins with 13 secs avg block time
 ZERO_ADDRESS = string_to_ethereum_address('0x0000000000000000000000000000000000000000')
-AAVE_ETH_RESERVE_ADDRESS = string_to_ethereum_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
+ETH_SPECIAL_ADDRESS = string_to_ethereum_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
 
 
 class EthereumConstants():
@@ -156,3 +156,5 @@ LIQUITY_TROVE_MANAGER = EthereumConstants().contract('TROVE_MANAGER')
 
 PICKLE_DILL_REWARDS = EthereumConstants().contract('DILL_REWARDS')
 PICKLE_DILL = EthereumConstants().contract('DILL')
+
+RAY_DIGITS = 27

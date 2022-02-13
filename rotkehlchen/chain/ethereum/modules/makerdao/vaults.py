@@ -72,6 +72,7 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_WBTC_C_JOIN,
     MAKERDAO_YFI_A_JOIN,
     MAKERDAO_ZRX_A_JOIN,
+    RAY_DIGITS,
 )
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.errors import DeserializationError, RemoteError
@@ -83,9 +84,9 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
+from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, shift_num_right_by, ts_now
 
-from .constants import MAKERDAO_REQUERY_PERIOD, RAY, RAY_DIGITS, WAD
+from .constants import MAKERDAO_REQUERY_PERIOD, RAY, WAD
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -149,25 +150,6 @@ COLLATERAL_TYPE_MAPPING = {
     'AAVE-A': A_AAVE,
     'MATIC-A': A_MATIC,
 }
-
-
-def _shift_num_right_by(num: int, digits: int) -> int:
-    """Shift a number to the right by discarding some digits
-
-    We actually use string conversion here since division can provide
-    wrong results due to precision errors for very big numbers. e.g.:
-    6150000000000000000000000000000000000000000000000 // 1e27
-    6.149999999999999e+21   <--- wrong
-    """
-    try:
-        return int(str(num)[:-digits])
-    except ValueError:
-        # this can happen if num is 0, in which case the shifting code above will raise
-        # https://github.com/rotki/rotki/issues/3310
-        # Also log if it happens for any other reason
-        if num != 0:
-            log.error(f'At makerdao _shift_num_right_by() got unecpected value {num} for num')
-        return 0
 
 
 class VaultEventType(Enum):
@@ -538,7 +520,7 @@ class MakerdaoVaults(HasDSProxy):
             from_block=MAKERDAO_VAT.deployed_block,
         )
         for event in events:
-            given_amount = _shift_num_right_by(hexstr_to_int(event['topics'][3]), RAY_DIGITS)
+            given_amount = shift_num_right_by(hexstr_to_int(event['topics'][3]), RAY_DIGITS)
             total_dai_wei += given_amount
             amount = token_normalized_value(
                 token_amount=given_amount,
@@ -845,7 +827,7 @@ class MakerdaoVaults(HasDSProxy):
     def on_account_addition(self, address: ChecksumEthAddress) -> Optional[List[AssetBalance]]:  # pylint: disable=useless-return  # noqa: E501
         super().on_account_addition(address)
         # Check if it has been added to the mapping
-        proxy_address = self.proxy_mappings.get(address)
+        proxy_address = self.address_to_proxy.get(address)
         if proxy_address:
             # get any vaults the proxy owns
             self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)

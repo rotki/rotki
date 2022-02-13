@@ -378,7 +378,7 @@ class EventsHistorian():
             ethtx_module = EthTransactions(ethereum=self.chain_manager.ethereum, database=self.db)
             eth_transactions, _ = ethtx_module.query(
                 filter_query=filter_query,
-                with_limit=False,  # at the moment ignore the limit for historical processing
+                has_premium=True,  # at the moment ignore the limit for historical processing
                 only_cache=False,
             )
         except RemoteError as e:

@@ -1,5 +1,4 @@
 import logging
-from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
@@ -10,7 +9,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import EthereumTransaction
+from rotkehlchen.typing import ChecksumEthAddress, EthereumInternalTransaction, EthereumTransaction
 from rotkehlchen.utils.misc import hexstr_to_int, hexstring_to_bytes
 
 logger = logging.getLogger(__name__)
@@ -19,13 +18,19 @@ log = RotkehlchenLogsAdapter(logger)
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
+from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
+
 
 class DBEthTx():
 
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
-    def add_ethereum_transactions(self, ethereum_transactions: List[EthereumTransaction]) -> None:
+    def add_ethereum_transactions(
+            self,
+            ethereum_transactions: List[EthereumTransaction],
+            relevant_address: Optional[ChecksumEthAddress],
+    ) -> None:
         """Adds ethereum transactions to the database"""
         tx_tuples: List[Tuple[Any, ...]] = []
         for tx in ethereum_transactions:
@@ -62,16 +67,77 @@ class DBEthTx():
             tuple_type='ethereum_transaction',
             query=query,
             tuples=tx_tuples,
+            relevant_address=relevant_address,
         )
+
+    def add_ethereum_internal_transactions(
+            self,
+            transactions: List[EthereumInternalTransaction],
+            relevant_address: ChecksumEthAddress,
+    ) -> None:
+        """Adds ethereum transactions to the database"""
+        tx_tuples: List[Tuple[Any, ...]] = []
+        for tx in transactions:
+            tx_tuples.append((
+                tx.parent_tx_hash,
+                tx.trace_id,
+                tx.timestamp,
+                tx.block_number,
+                tx.from_address,
+                tx.to_address,
+                str(tx.value),
+            ))
+
+        query = """
+            INSERT INTO ethereum_internal_transactions(
+              parent_tx_hash,
+              trace_id,
+              timestamp,
+              block_number,
+              from_address,
+              to_address,
+              value)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """
+        self.db.write_tuples(
+            tuple_type='ethereum_transaction',
+            query=query,
+            tuples=tx_tuples,
+            relevant_address=relevant_address,
+        )
+
+    def get_ethereum_internal_transactions(
+            self,
+            parent_tx_hash: bytes,
+    ) -> List[EthereumInternalTransaction]:
+        """Get all internal transactions under a parent tx_hash"""
+        cursor = self.db.conn.cursor()
+        results = cursor.execute(
+            'SELECT * from ethereum_internal_transactions WHERE parent_tx_hash=?',
+            (parent_tx_hash,),
+        )
+        transactions = []
+        for result in results:
+            tx = EthereumInternalTransaction(
+                parent_tx_hash=result[0],
+                trace_id=result[1],
+                timestamp=result[2],
+                block_number=result[3],
+                from_address=result[4],
+                to_address=result[5],
+                value=result[6],
+            )
+            transactions.append(tx)
+
+        return transactions
 
     def get_ethereum_transactions(
             self,
             filter_: ETHTransactionsFilterQuery,
-    ) -> Tuple[List[EthereumTransaction], int]:
-        """Returns a tuple with 2 entries.
-        First entry is a list of ethereum transactions optionally filtered by
-        time and/or from address and pagination.
-        Second is the number of entries found for the current filter ignoring pagination.
+            has_premium: bool,
+    ) -> List[EthereumTransaction]:
+        """Returns a list of ethereum transactions optionally filtered by
+        the given filter query
 
         This function can raise:
         - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to invalid
@@ -79,8 +145,12 @@ class DBEthTx():
         """
         cursor = self.db.conn.cursor()
         query, bindings = filter_.prepare()
-        query = 'SELECT * FROM ethereum_transactions ' + query
-        results = cursor.execute(query, bindings)
+        if has_premium:
+            query = 'SELECT * FROM ethereum_transactions ' + query
+            results = cursor.execute(query, bindings)
+        else:
+            query = 'SELECT * FROM (SELECT * from ethereum_transactions ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            results = cursor.execute(query, [FREE_ETH_TX_LIMIT] + bindings)
 
         ethereum_transactions = []
         for result in results:
@@ -107,17 +177,23 @@ class DBEthTx():
 
             ethereum_transactions.append(tx)
 
-        if filter_.pagination is not None:
-            no_pagination_filter = deepcopy(filter_)
-            no_pagination_filter.pagination = None
-            query, bindings = no_pagination_filter.prepare()
-            query = 'SELECT COUNT(*) FROM ethereum_transactions ' + query
-            results = cursor.execute(query, bindings).fetchone()
-            total_filter_count = results[0]
-        else:
-            total_filter_count = len(ethereum_transactions)
+        return ethereum_transactions
 
-        return ethereum_transactions, total_filter_count
+    def get_ethereum_transactions_and_limit_info(
+            self,
+            filter_: ETHTransactionsFilterQuery,
+            has_premium: bool,
+    ) -> Tuple[List[EthereumTransaction], int]:
+        """Gets all ethereum transactions for the query from the D.
+
+        Also returns how many are the total found for the filter.
+        """
+        txs = self.get_ethereum_transactions(filter_=filter_, has_premium=has_premium)
+        cursor = self.db.conn.cursor()
+        query, bindings = filter_.prepare(with_pagination=False)
+        query = 'SELECT COUNT(*) from ethereum_transactions ' + query
+        total_found_result = cursor.execute(query, bindings)
+        return txs, total_found_result.fetchone()[0]
 
     def purge_ethereum_transaction_data(self) -> None:
         """Deletes all ethereum transaction related data from the DB"""

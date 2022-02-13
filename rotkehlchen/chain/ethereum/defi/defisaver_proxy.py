@@ -40,7 +40,8 @@ class HasDSProxy(EthereumModule):
         self.ethereum = ethereum_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
-        self.proxy_mappings: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
+        self.address_to_proxy: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
+        self.proxy_to_address: Dict[ChecksumEthAddress, ChecksumEthAddress] = {}
         self.reset_last_query_ts()
 
     def reset_last_query_ts(self) -> None:
@@ -116,14 +117,15 @@ class HasDSProxy(EthereumModule):
         """
         now = ts_now()
         if now - self.last_proxy_mapping_query_ts < DS_REQUERY_PERIOD:
-            return self.proxy_mappings
+            return self.address_to_proxy
 
         accounts = self.database.get_blockchain_accounts()
         eth_accounts = accounts.eth
         mapping = self._get_accounts_proxy(eth_accounts)
 
         self.last_proxy_mapping_query_ts = ts_now()
-        self.proxy_mappings = mapping
+        self.address_to_proxy = mapping
+        self.proxy_to_address = {v: k for k, v in mapping.items()}
         return mapping
 
     # -- Methods following the EthereumModule interface -- #
@@ -138,7 +140,7 @@ class HasDSProxy(EthereumModule):
             return None
 
         # add it to the mapping
-        self.proxy_mappings[address] = proxy_result
+        self.address_to_proxy[address] = proxy_result
         return None
 
     def on_account_removal(self, address: ChecksumEthAddress) -> None:

@@ -2,16 +2,14 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, DefaultDict, Dict, List, Literal, Optional, Tuple
+from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
-from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location, Timestamp
-from rotkehlchen.utils.misc import combine_dicts
+from rotkehlchen.typing import Location, Timestamp, TimestampMS
+from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
@@ -280,78 +278,52 @@ class ActionType(DBEnumMixIn):
 
 
 class HistoryEventType(SerializableEnumMixin):
-    TRADE = 1
-    STAKING = 2
-    UNSTAKING = 3
-    DEPOSIT = 4
-    WITHDRAWAL = 5
-    TRANSFER = 6
-    SPEND = 7
-    RECEIVE = 8
+    TRADE = 0
+    STAKING = auto()
+    DEPOSIT = auto()
+    WITHDRAWAL = auto()
+    TRANSFER = auto()
+    SPEND = auto()
+    RECEIVE = auto()
     # forced adjustments of a system, like a CEX. For example having DAO in Kraken
     # and Kraken delisting them and exchanging them for ETH for you
-    ADJUSTMENT = 9
-    UNKNOWN = 10
-
-    @classmethod
-    def from_string(cls, value: str) -> 'HistoryEventType':
-        try:
-            return super().deserialize(value)
-        except DeserializationError:
-            return HistoryEventType.UNKNOWN
+    ADJUSTMENT = auto()
+    UNKNOWN = auto()
+    # An informational event. For kraken entries it means an unknown event
+    INFORMATIONAL = auto()
+    MIGRATE = auto()
 
 
 class HistoryEventSubType(SerializableEnumMixin):
-    REWARD = 1
-    STAKING_DEPOSIT_ASSET = 2
-    STAKING_REMOVE_ASSET = 3
-    STAKING_RECEIVE_ASSET = 4
-    FEE = 5
-    SPEND = 6
-    RECEIVE = 7
+    REWARD = 0
+    DEPOSIT_ASSET = auto()  # deposit asset in a contract, for staking etc.
+    REMOVE_ASSET = auto()  # remove asset from a contract. from staking etc.
+    FEE = auto()
+    SPEND = auto()
+    RECEIVE = auto()
+    APPROVE = auto()
+    DEPLOY = auto()
+    AIRDROP = auto()
+    BRIDGE = auto()
+    GOVERNANCE_PROPOSE = auto()
+    NONE = auto()  # Have a value for None to not get into NULL/None comparison hell
+    GENERATE_DEBT = auto()
+    PAYBACK_DEBT = auto()
+    # receive a wrapped asset of something in any protocol. eg cDAI from DAI
+    RECEIVE_WRAPPED = auto()
+    # return a wrapped asset of something in any protocol. eg. CDAI to DAI
+    RETURN_WRAPPED = auto()
 
-    def serialize_event_subtype(self) -> str:
-        """Serialize event subtype to a readable string
-        May raise:
-        - DeserializationError
-        """
-        # TODO: change this when the changes to history entries get merged in the left branch
-        if self.name == 'REWARD':
-            return 'get reward'
-        description = EVENTS_SUBTYPES_TO_STR.get(HistoryEventSubType[self.name])
-        if description is not None:
-            return description
-        raise DeserializationError(f'Found staking event with invalid subtype {self.name}')
+    def serialize_or_none(self) -> Optional[str]:
+        """Serializes the subtype but for the subtype None it returns None"""
+        if self == HistoryEventSubType.NONE:
+            return None
 
-    @classmethod
-    def deserialize_event_subtype(cls, value: str) -> 'HistoryEventSubType':
-        """Serialize event subtype from redeable string
-        May raise:
-        - DeserializationError
-        """
-        str_to_event_subtype = {v: k for k, v in EVENTS_SUBTYPES_TO_STR.items()}
-        if value not in str_to_event_subtype:
-            raise DeserializationError(
-                f'Staking subtype string doesnt have a matching value {value}',
-            )
-        subtype = str_to_event_subtype[value]
-        # TODO: change this when the changes to history entries get merged in the left branch
-        if subtype is None:
-            return cls.REWARD
-        return subtype
+        return self.serialize()
 
 
-UNKNOWN_SUBTYPE = 'UNKNOWN SUBTYPE'
-EVENTS_SUBTYPES_TO_STR = {
-    None: 'get reward',
-    HistoryEventSubType.STAKING_DEPOSIT_ASSET: 'stake asset',
-    HistoryEventSubType.STAKING_RECEIVE_ASSET: 'receive staked asset',
-    HistoryEventSubType.STAKING_REMOVE_ASSET: 'unstake asset',
-}
-
-
-HISTORY_EVENT_DB_TUPLE = Tuple[
-    str,            # identifier
+HISTORY_EVENT_DB_TUPLE_READ = Tuple[
+    int,            # identifier
     str,            # event_identifier
     int,            # sequence_index
     int,            # timestamp
@@ -362,7 +334,23 @@ HISTORY_EVENT_DB_TUPLE = Tuple[
     str,            # usd value
     Optional[str],  # notes
     str,            # type
-    Optional[str],  # subtype
+    str,            # subtype
+    Optional[str],  # counterparty
+]
+
+HISTORY_EVENT_DB_TUPLE_WRITE = Tuple[
+    str,            # event_identifier
+    int,            # sequence_index
+    int,            # timestamp
+    str,            # location
+    Optional[str],  # location label
+    str,            # asset
+    str,            # amount
+    str,            # usd value
+    Optional[str],  # notes
+    str,            # type
+    str,            # subtype
+    Optional[str],  # counterparty
 ]
 
 
@@ -374,56 +362,66 @@ class HistoryBaseEntry:
     """
     event_identifier: str  # identifier shared between related events
     sequence_index: int  # When this transaction was executed relative to other related events
-    timestamp: Timestamp
+    timestamp: TimestampMS
     location: Location
+    event_type: HistoryEventType
+    event_subtype: HistoryEventSubType
+    asset: Asset
+    balance: Balance
     # location_label is a string field that allows to provide more information about the location.
     # When we use this structure in blockchains can be used to specify addresses for example.
     # currently we use to identify the exchange name assigned by the user.
-    location_label: Optional[str]
-    asset_balance: AssetBalance  # usd value starts 0: https://github.com/rotki/rotki/issues/3865
-    notes: Optional[str]
-    event_type: HistoryEventType
-    event_subtype: Optional[HistoryEventSubType]
+    location_label: Optional[str] = None
+    notes: Optional[str] = None
+    # identifier for counterparty.
+    # For a send it's the target
+    # For a receive it's the sender
+    # For bridged transfer it's the bridge's network identifier
+    # For a protocol interaction it's the protocol.
+    counterparty: Optional[str] = None
+    identifier: Optional[int] = None
+    # this is not serialized -- contains data used only during processing
+    extras: Optional[Dict] = None
 
-    def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE:
-        event_subtype = None
-        event_subtype = None if self.event_subtype is None else self.event_subtype.serialize()
+    def serialize_for_db(self) -> HISTORY_EVENT_DB_TUPLE_WRITE:
         return (
-            self.identifier,
             self.event_identifier,
             self.sequence_index,
             int(self.timestamp),
             self.location.serialize_for_db(),
             self.location_label,
-            *self.asset_balance.serialize_for_db(),
+            self.asset.identifier,
+            str(self.balance.amount),
+            str(self.balance.usd_value),
             self.notes,
             self.event_type.serialize(),
-            event_subtype,
+            self.event_subtype.serialize(),
+            self.counterparty,
         )
 
     @classmethod
-    def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE) -> 'HistoryBaseEntry':
-        """May raise DeserializationError"""
-        event_subtype = None
-        if entry[11] is not None:
-            event_subtype = HistoryEventSubType.deserialize(entry[11])
+    def deserialize_from_db(cls, entry: HISTORY_EVENT_DB_TUPLE_READ) -> 'HistoryBaseEntry':
+        """May raise:
+        - DeserializationError
+        - UnknownAsset
+        """
         try:
             return HistoryBaseEntry(
+                identifier=entry[0],
                 event_identifier=entry[1],
                 sequence_index=entry[2],
-                timestamp=Timestamp(entry[3]),
+                timestamp=TimestampMS(entry[3]),
                 location=Location.deserialize_from_db(entry[4]),
                 location_label=entry[5],
-                asset_balance=AssetBalance(
-                    asset=Asset(entry[6]),
-                    balance=Balance(
-                        amount=FVal(entry[7]),
-                        usd_value=FVal(entry[8]),
-                    ),
+                asset=Asset(entry[6]),
+                balance=Balance(
+                    amount=FVal(entry[7]),
+                    usd_value=FVal(entry[8]),
                 ),
                 notes=entry[9],
                 event_type=HistoryEventType.deserialize(entry[10]),
-                event_subtype=event_subtype,
+                event_subtype=HistoryEventSubType.deserialize(entry[11]),
+                counterparty=entry[12],
             )
         except ValueError as e:
             raise DeserializationError(
@@ -431,34 +429,25 @@ class HistoryBaseEntry:
                 f'event identifier {entry[1]}. {str(e)}',
             ) from e
 
-    @property
-    def identifier(self) -> str:
-        """Generate an unique identifier based on information from the base entry that is later
-        hashed. It follows the pattern that we use in other places and has similar problems.
-        """
-        location_label = self.location_label if self.location_label is not None else ''
-        event_subtype = self.event_subtype if self.event_subtype is not None else ''
-        hashable = (
-            str(self.location) +
-            str(self.timestamp) +
-            self.event_identifier +
-            str(self.sequence_index) +
-            location_label +
-            str(self.asset_balance) +
-            str(self.event_type) +
-            str(event_subtype)
-        )
-        return sha3(hashable.encode()).hex()
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            'event_identifier': self.event_identifier,
+            'sequence_index': self.sequence_index,
+            'timestamp': ts_ms_to_sec(self.timestamp),  # serialize to api in seconds MS
+            'location': str(self.location),
+            'asset': self.asset.identifier,
+            'balance': self.balance.serialize(),
+            'event_type': self.event_type.serialize(),
+            'event_subtype': self.event_subtype.serialize_or_none(),
+            'location_label': self.location_label,
+            'notes': self.notes,
+            'counterparty': self.counterparty,
+        }
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class StakingEvent:
-    event_type: Literal[
-        'get reward',
-        'stake asset',
-        'receive staked asset',
-        'unstake asset',
-    ]
+    event_type: HistoryEventSubType
     asset: Asset
     balance: Balance
     timestamp: Timestamp
@@ -471,23 +460,17 @@ class StakingEvent:
         May raise:
         - DeserializationError
         """
-        # TODO: We forgot to add a subtype for staking rewards. This needs to be changed
-        # in a database upgrade
-        if event.event_subtype is None:
-            event_type = 'get reward'
-        else:
-            event_type = event.event_subtype.serialize_event_subtype()
         return StakingEvent(
-            event_type=event_type,  # type: ignore
-            asset=event.asset_balance.asset,
-            balance=event.asset_balance.balance,
-            timestamp=Timestamp(int(event.timestamp / KRAKEN_TS_MULTIPLIER)),
+            event_type=event.event_subtype,
+            asset=event.asset,
+            balance=event.balance,
+            timestamp=ts_ms_to_sec(event.timestamp),
             location=event.location,
         )
 
     def serialize(self) -> Dict[str, Any]:
         data = {
-            'event_type': self.event_type,
+            'event_type': self.event_type.serialize(),
             'asset': self.asset.identifier,
             'timestamp': self.timestamp,
             'location': str(self.location),

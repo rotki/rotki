@@ -2393,6 +2393,40 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
     ]
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
+    """Test upgrading the DB from version 31 to version 32.
+    Check that subtype is correctly updated
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v31_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=31,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+    result = cursor.execute('SELECT rowid from history_events')
+    old_ids = {row[0] for row in result}
+    assert len(old_ids) == 3
+    cursor.execute(
+        'SELECT subtype from history_events',
+    )
+    subtypes = [row[0] for row in cursor]
+    assert set(subtypes) == {'staking deposit asset', 'staking receive asset', None}
+
+    # Execute migration
+    db = _init_db_with_target_version(
+        target_version=32,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+    cursor.execute('SELECT subtype from history_events')
+    subtypes = {row[0] for row in cursor}
+    assert subtypes == {'staking deposit asset', 'staking receive asset', 'reward'}
+
+
 def test_db_newer_than_software_raises_error(data_dir, username):
     """
     If the DB version is greater than the current known version in the

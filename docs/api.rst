@@ -770,7 +770,7 @@ Query the result of an ongoing backend task
                           }}
                   }},
                   "totals": {"BTC": {"amount": "10", "usd_value": "70500.15"}},
-		  "status_code": 200
+                  "status_code": 200
               }
           },
           "message": ""
@@ -1919,7 +1919,7 @@ Querying ethereum transactions
       { "result":
             "entries": [{
                 "entry": {
-	            "identifier": "0xdasdsadsadadads",
+                    "identifier": "0xdasdsadsadadads",
                     "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
                     "timestamp": 1598006527,
                     "block_number": 10703085,
@@ -1935,7 +1935,7 @@ Querying ethereum transactions
                "ignored_in_accounting": false
             }, {
                 "entry": {
-	            "identifier": "0xdasdsadsadadads",
+                    "identifier": "0xdasdsadsadadads",
                     "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
                     "timestamp": 1588006528,
                     "block_number": 10700085,
@@ -1953,7 +1953,7 @@ Querying ethereum transactions
             "entries_found": 95,
             "entries_limit": 500,
             "entries_total": 1000
-	    },
+            },
         "message": ""
       }
 
@@ -2287,7 +2287,7 @@ Querying onchain balances
                        "assets": {
                            "ETH2": {"amount": "33.12", "usd_value": "45243.21"},
                        },
-		       "0x97bc980f17f42a994827899e0720cee288b538646292ce7c866a5a5c9d1002cd1fb7a80195445be2670b64cf4d1c215e": {
+                       "0x97bc980f17f42a994827899e0720cee288b538646292ce7c866a5a5c9d1002cd1fb7a80195445be2670b64cf4d1c215e": {
                        "assets": {
                            "ETH2": {"amount": "32.45", "usd_value": "40241.55"},
                        },
@@ -2491,7 +2491,7 @@ The details of each asset can contain the following keys:
                   "swapped_for": "VET",
                   "symbol": "VEN",
                   "type": "ethereum token",
-		  "coingecko": "vechain"
+                  "coingecko": "vechain"
               },
           },
           "message": ""
@@ -2951,9 +2951,9 @@ Checking for pending asset updates
 
       {
           "result": {
-	      "local": 1,
-	      "remote": 4,
-	      "new_changes": 121
+              "local": 1,
+              "remote": 4,
+              "new_changes": 121
           "message": ""
       }
 
@@ -2986,12 +2986,12 @@ Performing an asset update
 
       {
           "async_query": true,
-	  "up_to_version": 5,
-	  "conflicts": {
-	      "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "local",
-	      "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "remote",
-	      "Fas-23-da20": "local"
-	  }
+          "up_to_version": 5,
+          "conflicts": {
+              "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "local",
+              "_ceth_0xD178b20c6007572bD1FD01D205cC20D32B4A6015": "remote",
+              "Fas-23-da20": "local"
+          }
       }
 
    :reqjson bool async_query: Optional. If given and true then the query becomes an asynchronous query.
@@ -3018,43 +3018,43 @@ Performing an asset update
       Content-Type: application/json
 
       {
-      	"result": [{
-      	    "identifier":  "assetid1",
-      	    "local": {
-      		"coingecko": "2give",
-      		"name": "2GIVE",
-      		"started": 1460937600,
-      		"symbol": "2GIVE",
-      		"type": "own chain"
-      	    },
-      	    "remote": {
-      		"coingecko": "TWOgive",
-      		"name": "TWOGIVE",
-      		"started": 1460937600,
-      		"symbol": "2GIVEORNOTTOGIVE",
-      		"type": "own chain"
-      	   }}, {
-      	   "identifier": "asset_id2",
-      	   "local": {
-      		   "coingecko": "aave",
-      		   "ethereum_address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
-      		   "ethereum_token_decimals": 18,
-      		   "name": "Aave Token",
-      		   "started": 1600970788,
-      		   "symbol": "AAVE",
-      		   "type": "ethereum token"
-      	   },
-      	   "remote": {
-      		   "coingecko": "aaveNGORZ",
-      		   "ethereum_address": "0x1Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
-      		   "ethereum_token_decimals": 15,
-      		   "name": "Aave Token FOR REALZ",
-      		   "started": 1600970789,
-      		   "symbol": "AAVE_YO!",
-      		   "type": "binance token"
-      	   }
-      	}],
-      	"message": ""
+        "result": [{
+            "identifier":  "assetid1",
+            "local": {
+                "coingecko": "2give",
+                "name": "2GIVE",
+                "started": 1460937600,
+                "symbol": "2GIVE",
+                "type": "own chain"
+            },
+            "remote": {
+                "coingecko": "TWOgive",
+                "name": "TWOGIVE",
+                "started": 1460937600,
+                "symbol": "2GIVEORNOTTOGIVE",
+                "type": "own chain"
+           }}, {
+           "identifier": "asset_id2",
+           "local": {
+                   "coingecko": "aave",
+                   "ethereum_address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+                   "ethereum_token_decimals": 18,
+                   "name": "Aave Token",
+                   "started": 1600970788,
+                   "symbol": "AAVE",
+                   "type": "ethereum token"
+           },
+           "remote": {
+                   "coingecko": "aaveNGORZ",
+                   "ethereum_address": "0x1Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+                   "ethereum_token_decimals": 15,
+                   "name": "Aave Token FOR REALZ",
+                   "started": 1600970789,
+                   "symbol": "AAVE_YO!",
+                   "type": "binance token"
+           }
+        }],
+        "message": ""
       }
 
    :resjson object result: Either ``true`` if all went fine or a a list of conflicts, containing the identifier of the asset in question and the local and remote versions.
@@ -3818,8 +3818,8 @@ Dealing with ledger actions
                       "location": "blockchain",
                       "amount": "1550",
                       "asset": "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F",
-		      "rate": "0.85",
-		      "rate_asset": "EUR",
+                      "rate": "0.85",
+                      "rate_asset": "EUR",
                       "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
                       "notes": "The DAI I lost in the pickle finance hack"
                   },
@@ -3869,8 +3869,8 @@ Dealing with ledger actions
               "location": "external",
               "amount": "1",
               "asset": "ETH",
-	      "rate": "650",
-	      "rate_asset": "EUR",
+              "rate": "650",
+              "rate_asset": "EUR",
               "link": "Optional unique identifier",
               "notes": "Eth I received for being pretty"
       }}
@@ -4010,6 +4010,149 @@ Dealing with ledger actions
    :statuscode 200: Action was succesfully removed.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in.
+   :statuscode 500: Internal rotki error
+
+Dealing with BaseHistoryEntry events
+============================================
+
+.. http:put:: /api/(version)/history/events
+
+   Doing a PUT on this endpoint can add a new history event base entry to rotki. The unique identifier for the entry is returned as success.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/ledgeractions HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "event_identifier": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
+          "sequence_index": 162,
+          "timestamp": 1569924574,
+          "location": "blockchain",
+          "event_type": "informational",
+          "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+          "amount": "1.542",
+          "usd_value": "1.675",
+          "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
+          "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
+          "event_subtype": "approve",
+          "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE"
+      }
+
+   .. _history_base_entry_schema_section:
+
+   :reqjson string event_identifier: This is an identifier that could be common between multiple history base entries so that entries identifying a single event can be grouped. For ethereum transactions for example it's the transaction hash.
+   :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+   :reqjson int timestamp: The timestamp of the entry
+   :reqjson string location: The location of the entry
+   :reqjson string event_type: The main event type of the entry. Possible event types can be seen in HistoryEventType enum.
+   :reqjson string asset: The asset identifier for this entry
+   :reqjson string amount: The amount of asset for this entry
+   :reqjson string usd_value: The usd value of the amount of asset for this entry. If not known can also be "0".
+   :reqjson string location_label: location_label is a string field that allows to provide more information about the location. For example when we use this structure in blockchains can be used to specify the source address.
+   :reqjson string notes: This is a description of the event entry in plain text explaining what is being done. This is supposed to be shown to the user.
+   :reqjson string event_subtype: Optional. An optional subtype for the entry. Possible event types can be seen in HistoryEventSubType enum.
+   :reqjson string counterparty: Optional. An identifier for a potential counterparty of the event entry. For a send it's the target. For a receive it's the sender. For bridged transfer it's the bridge's network identifier. For a protocol interaction it's the protocol.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {"identifier": 243},
+          "message": ""
+      }
+
+   :resjsonarr int identifier: The uniquely identifying identifier for this entry.
+   :statuscode 200: Entry is succesfully added.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or failure at event addition.
+   :statuscode 500: Internal rotki error
+
+.. http:patch:: /api/(version)/history/events
+
+   Doing a PATCH on this endpoint edits an existing base history entry in rotki's currently logged in user using the given ``identifier``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/history/events HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "identifier": 243,
+          "event_identifier": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
+          "sequence_index": 162,
+          "timestamp": 1569924574,
+          "location": "blockchain",
+          "event_type": "informational",
+          "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+          "amount": "1.542",
+          "usd_value": "1.675",
+          "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
+          "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
+          "event_subtype": "approve",
+          "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE"
+      }
+
+   The request object is the same as above, a base history entry, with the addition of the identifier which signifies which entry will be edited.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": True,
+          "message": ""
+      }
+
+   :statuscode 200: Event was succesfully edited.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in. Or event to edit was not found in the DB.
+   :statuscode 500: Internal rotki error
+
+.. http:delete:: /api/(version)/history/events
+
+   Doing a DELETE on this endpoint deletes a set of history entry events from the DB for the currently logged in user. If any of the identifiers is not found in the DB the entire call fails.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/history/events HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"identifiers" : [55, 65, 124]}
+
+   :reqjson list<integer> identifiers: A list of the identifiers of the history entries to delete.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": True,
+          "message": ""
+      }
+
+   :statuscode 200: Event was succesfully removed.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or one of the identifiers to delete did not correspond to an event in the DB.
    :statuscode 500: Internal rotki error
 
 Querying messages to show to the user
@@ -4223,9 +4366,9 @@ Query saved PnL Reports
               "timestamp":1637931185,
               "total_profit_loss":null,
               "total_taxable_profit_loss":null,
-	      "last_processed_timestamp": 1612042717,
-	      "processed_actions": 100,
-	      "total_actions": 2585,
+              "last_processed_timestamp": 1612042717,
+              "processed_actions": 100,
+              "total_actions": 2585,
               "profit_currency": "EUR",
               "taxfree_after_period": null,
               "include_crypto2crypto": false,
@@ -4251,9 +4394,9 @@ Query saved PnL Reports
               "timestamp":1637931305,
               "total_profit_loss":"25.30761544",
               "total_taxable_profit_loss":"25.30761544",
-	      "last_processed_timestamp": 1602042717,
-	      "processed_actions": 1500,
-	      "total_actions": 1500,
+              "last_processed_timestamp": 1602042717,
+              "processed_actions": 1500,
+              "total_actions": 1500,
               "profit_currency": "USD",
               "taxfree_after_period": 365,
               "include_crypto2crypto": true,
@@ -4279,9 +4422,9 @@ Query saved PnL Reports
               "timestamp":1637934538,
               "total_profit_loss":"3.80586544",
               "total_taxable_profit_loss":"3.80586544",
-	      "last_processed_timestamp": 1592042717,
-	      "processed_actions": 2505,
-	      "total_actions": 2505,
+              "last_processed_timestamp": 1592042717,
+              "processed_actions": 2505,
+              "total_actions": 2505,
               "profit_currency": "EUR",
               "taxfree_after_period": 1,
               "include_crypto2crypto": true,
@@ -4360,40 +4503,40 @@ Get saved events of a PnL Report
 
       {
         "result": {
-	    "entries": [{
-		    "cost_basis": null,
-		    "is_virtual": false,
-		    "link": null,
-		    "location": "blockchain",
-		    "net_profit_or_loss": "0.26083196",
-		    "notes": null,
-		    "paid_asset": "",
-		    "paid_in_asset": "0",
-		    "paid_in_profit_currency": "0",
-		    "received_asset": "BTC",
-		    "received_in_asset": "0.23",
-		    "taxable_amount": "0",
-		    "taxable_bought_cost_in_profit_currency": "0",
-		    "taxable_received_in_profit_currency": "0.26083196",
-		    "time": 1637276400,
-		    "type": "ledger_action"
-		}, {
-		    "cost_basis": null,
-		    "is_virtual": false,
-		    "link": null,
-		    "location": "blockchain",
-		    "net_profit_or_loss": "0.61830810",
-		    "notes": null,
-		    "paid_asset": "",
-		    "paid_in_asset": "0",
-		    "paid_in_profit_currency": "0",
-		    "received_asset": "BTC",
-		    "received_in_asset": "0.54",
-		    "taxable_amount": "0",
-		    "taxable_bought_cost_in_profit_currency": "0",
-		    "taxable_received_in_profit_currency": "0.61830810",
-		    "time": 1636921926,
-		    "type": "ledger_action"
+            "entries": [{
+                    "cost_basis": null,
+                    "is_virtual": false,
+                    "link": null,
+                    "location": "blockchain",
+                    "net_profit_or_loss": "0.26083196",
+                    "notes": null,
+                    "paid_asset": "",
+                    "paid_in_asset": "0",
+                    "paid_in_profit_currency": "0",
+                    "received_asset": "BTC",
+                    "received_in_asset": "0.23",
+                    "taxable_amount": "0",
+                    "taxable_bought_cost_in_profit_currency": "0",
+                    "taxable_received_in_profit_currency": "0.26083196",
+                    "time": 1637276400,
+                    "type": "ledger_action"
+                }, {
+                    "cost_basis": null,
+                    "is_virtual": false,
+                    "link": null,
+                    "location": "blockchain",
+                    "net_profit_or_loss": "0.61830810",
+                    "notes": null,
+                    "paid_asset": "",
+                    "paid_in_asset": "0",
+                    "paid_in_profit_currency": "0",
+                    "received_asset": "BTC",
+                    "received_in_asset": "0.54",
+                    "taxable_amount": "0",
+                    "taxable_bought_cost_in_profit_currency": "0",
+                    "taxable_received_in_profit_currency": "0.61830810",
+                    "time": 1636921926,
+                    "type": "ledger_action"
         }],
         "entries_found": 2,
         "entries_limit": 1000
@@ -7542,7 +7685,7 @@ Getting Eth2 Staking daily stats
 
       {
         "result": {
-	    "entries": [{
+            "entries": [{
                   "validator_index": 15,
                   "timestamp": 1613952000,
                   "pnl": {"amount": "0.007", "usd_value": "70"},
@@ -7826,17 +7969,17 @@ Getting tracked Eth2 validators
             {
               "index":1,
               "public_key":"0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c",
-	      "ownership_percentage": "100"
+              "ownership_percentage": "100"
             },
             {
               "index":1532,
               "public_key":"0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed",
-	      "ownership_percentage": "50"
+              "ownership_percentage": "50"
             },
             {
               "index":5421,
               "public_key":"0xa64722f93f37c7da8da67ee36fd2a763103897efc274e3accb4cd172382f7a170f064b81552ae77cdbe440208a1b897e",
-	      "ownership_percentage": "25.75"
+              "ownership_percentage": "25.75"
             }
           ],
           "entries_found":3,
@@ -9643,7 +9786,7 @@ Gitcoin gather event data
                       "clr_round": 9,
                   }],
                   "name": "rotki",
-		  "created_on": 1624791600
+                  "created_on": 1624791600
              }
           },
           "message": ""
@@ -9735,35 +9878,35 @@ Gitcoin report
 
       {
           "result": {
-	      "profit_currency": "EUR",
-	      "reports": {
-		  "149": {
-		      "per_asset": {
-			  "ETH": {
-			      "amount": "5",
-			      "value": "5500"
-			  },
-			  "_ceth_0x1A175474E89094C44Da98b954EedeAC495271d9A": {
-			      "amount": "150",
-			      "value": "131.44"
-			  },
-			  "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
-			      "amount": "101",
-			      "value": "93.21"
-			  }
-		      },
-		      "total": "5724.65"
-	          },
-		  "184": {
-		      "per_asset": {
-			  "ETH": {
-			      "amount": "5",
-			      "value": "5500"
-			  },
-		      },
-		      "total": "5500"
-		  }
-	  }
+              "profit_currency": "EUR",
+              "reports": {
+                  "149": {
+                      "per_asset": {
+                          "ETH": {
+                              "amount": "5",
+                              "value": "5500"
+                          },
+                          "_ceth_0x1A175474E89094C44Da98b954EedeAC495271d9A": {
+                              "amount": "150",
+                              "value": "131.44"
+                          },
+                          "_ceth_0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+                              "amount": "101",
+                              "value": "93.21"
+                          }
+                      },
+                      "total": "5724.65"
+                  },
+                  "184": {
+                      "per_asset": {
+                          "ETH": {
+                              "amount": "5",
+                              "value": "5500"
+                          },
+                      },
+                      "total": "5500"
+                  }
+          }
           "message": ""
       }
 
@@ -9983,17 +10126,17 @@ Querying database information
       {
           "result": {
               "globaldb": {"globaldb_assets_version": 10, "globaldb_schema_version": 2},
-	      "userdb": {
-	          "info": {
-		      "filepath": "/home/username/.local/share/rotki/data/user/rotkehlchen.db",
-		      "size": 5590482,
-		      "version": 30
-		  },
-		  "backups": [{
-		      "size": 323441, "time": 1626382287, "version": 27
-		  }, {
-		      "size": 623441, "time": 1623384287, "version": 24
-		  }]
+              "userdb": {
+                  "info": {
+                      "filepath": "/home/username/.local/share/rotki/data/user/rotkehlchen.db",
+                      "size": 5590482,
+                      "version": 30
+                  },
+                  "backups": [{
+                      "size": 323441, "time": 1626382287, "version": 27
+                  }, {
+                      "size": 623441, "time": 1623384287, "version": 24
+                  }]
           }
           "message": ""
       }
@@ -10181,20 +10324,20 @@ Staking events
           "result": {
               "events": [
                 {
+                    "event_type": "unstake asset",
+                    "asset": "ETH2",
+                    "timestamp": 1636740198,
+                    "location": "kraken",
+                    "amount": "0.0600000000",
+                    "usd_value": "278.7345000000000"
+                },
+                {
                   "event_type": "get reward",
                   "asset": "ETH2",
                   "timestamp": 1636864588,
                   "location": "kraken",
                   "amount": "0.0000103220",
                   "usd_value": "0.0478582110500"
-                },
-                {
-                    "event_type": "receive staked asset",
-                    "asset": "ETH2",
-                    "timestamp": 1636740198,
-                    "location": "kraken",
-                    "amount": "0.0600000000",
-                    "usd_value": "278.7345000000000"
                 },
                 {
                     "event_type": "stake asset",
@@ -10225,7 +10368,7 @@ Staking events
    :resjsonarr string location: A valid location at which the event happened
    :resjsonarr string amount: The amount related to the event
    :resjsonarr string asset: Asset involved in the event
-   :resjsonarr string event_type: Type of event. Can be `get reward`, `receive staked asset`, `stake asset` or  `unstake asset`.
+   :resjsonarr string event_type: Type of event. Can be `reward`, `deposit asset` or  `remove asset`.
    :resjsonarr string message: It won't be empty if the query to external services fails for some reason.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.

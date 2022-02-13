@@ -35,6 +35,7 @@ from rotkehlchen.accounting.structures import (
     ActionType,
     Balance,
     BalanceType,
+    HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
     StakingEvent,
@@ -56,10 +57,11 @@ from rotkehlchen.chain.ethereum.gitcoin.api import GitcoinAPI
 from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter
 from rotkehlchen.chain.ethereum.gitcoin.processor import GitcoinProcessor
 from rotkehlchen.chain.ethereum.modules.eth2 import FREE_VALIDATORS_LIMIT
-from rotkehlchen.chain.ethereum.transactions import FREE_ETH_TX_LIMIT, EthTransactions
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
+    FREE_ETH_TX_LIMIT,
     FREE_HISTORY_EVENTS_LIMIT,
     FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
@@ -1036,6 +1038,41 @@ class RestAPI():
         )
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def add_history_event(self, event: HistoryBaseEntry) -> Response:
+        db = DBHistoryEvents(self.rotkehlchen.data.db)
+        try:
+            identifier = db.add_history_event(event)
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            db.db.conn.rollback()
+            error_msg = f'Failed to add event to the DB due to a DB error: {str(e)}'
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        # success
+        result_dict = _wrap_in_ok_result({'identifier': identifier})
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def edit_history_event(self, event: HistoryBaseEntry) -> Response:
+        db = DBHistoryEvents(self.rotkehlchen.data.db)
+        if not db.edit_history_event(event):
+            error_msg = (
+                f'Tried to edit event with id {event.identifier} but could not find it in the DB'
+            )
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def delete_history_events(self, identifiers: List[int]) -> Response:
+        db = DBHistoryEvents(self.rotkehlchen.data.db)
+        error_msg = db.delete_history_events_by_identifier(identifiers=identifiers)
+        if error_msg is not None:
+            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+
+        # Success
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def get_tags(self) -> Response:
@@ -3004,7 +3041,7 @@ class RestAPI():
             transactions, total_filter_count = tx_module.query(
                 only_cache=only_cache,
                 filter_query=filter_query,
-                with_limit=self.rotkehlchen.premium is None,
+                has_premium=self.rotkehlchen.premium is not None,
             )
             status_code = HTTPStatus.OK
             message = ''
@@ -3017,28 +3054,39 @@ class RestAPI():
             status_code = HTTPStatus.BAD_REQUEST
             message = str(e)
 
+        if status_code != HTTPStatus.OK:
+            return {'result': None, 'message': message, 'status_code': status_code}
+
         if transactions is not None:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(ActionType.ETHEREUM_TRANSACTION)  # noqa: E501
             ignored_ids = mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
             entries_result = []
+            dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
             for entry in transactions:
+                tx_hash_hex = '0x' + entry.tx_hash.hex()
+                events = dbevents.get_history_events(
+                    filter_query=HistoryEventFilterQuery.make(
+                        event_identifier=tx_hash_hex,
+                    ),
+                    has_premium=True,  # for this function we don't limit. We only limit txs.
+                )
                 entries_result.append({
                     'entry': entry.serialize(),
+                    'decoded_events': [x.serialize() for x in events],
                     'ignored_in_accounting': entry.identifier in ignored_ids,
                 })
         else:
             entries_result = []
 
         result: Optional[Dict[str, Any]] = None
-        if status_code == HTTPStatus.OK:
-            result = {
-                'entries': entries_result,
-                'entries_found': total_filter_count,
-                'entries_total': self.rotkehlchen.data.db.get_entries_count(
-                    entries_table='ethereum_transactions',
-                ),
-                'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
-            }
+        result = {
+            'entries': entries_result,
+            'entries_found': total_filter_count,
+            'entries_total': self.rotkehlchen.data.db.get_entries_count(
+                entries_table='ethereum_transactions',
+            ),
+            'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
+        }
 
         return {'result': result, 'message': message, 'status_code': status_code}
 
@@ -3640,7 +3688,11 @@ class RestAPI():
         to_timestamp: Timestamp,
     ) -> Dict[str, Any]:
         avalanche = self.rotkehlchen.chain_manager.avalanche
-        response = avalanche.covalent.get_transactions(address, from_timestamp, to_timestamp)
+        response = avalanche.covalent.get_transactions(
+            account=address,
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+        )
         if response is None:
             return {
                 'result': [],
@@ -3931,12 +3983,12 @@ class RestAPI():
         )
         table_filter = HistoryEventFilterQuery.make(
             location=Location.KRAKEN,
-            event_type=[
+            event_types=[
                 HistoryEventType.STAKING,
-                HistoryEventType.UNSTAKING,
             ],
-            exclude_subtype=[
-                HistoryEventSubType.STAKING_RECEIVE_ASSET,
+            exclude_subtypes=[
+                HistoryEventSubType.RECEIVE_WRAPPED,
+                HistoryEventSubType.RETURN_WRAPPED,
             ],
         )
 

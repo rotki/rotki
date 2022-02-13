@@ -1,18 +1,17 @@
 import logging
-from typing import TYPE_CHECKING, List
-
-from pysqlcipher3 import dbapi2 as sqlcipher
+from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.accounting.structures import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
-from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.typing import Location, Timestamp, Tuple
+from rotkehlchen.serialization.deserialize import deserialize_fval
+from rotkehlchen.typing import Timestamp, TimestampMS, Tuple
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -20,50 +19,82 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+HISTORY_INSERT = """INSERT INTO history_events(event_identifier, sequence_index,
+timestamp, location, location_label, asset, amount, usd_value, notes,
+type, subtype, counterparty) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+
 
 class DBHistoryEvents():
 
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
+    def add_history_event(self, event: HistoryBaseEntry) -> int:
+        """Insert a single history entry to the DB. Returns its identifier.
+
+        May raise:
+        - DeserializationError if the event could not be serialized for the DB
+        - sqlcipher.DatabaseError: If anything went wrong at insertion
+        """
+        cursor = self.db.conn.cursor()
+        cursor.execute(HISTORY_INSERT, event.serialize_for_db())
+        identifier = cursor.lastrowid
+        self.db.update_last_write()
+        return identifier
+
     def add_history_events(self, history: List[HistoryBaseEntry]) -> None:
-        """Insert a list of history events in database. May raise:
+        """Insert a list of history events in database.
+
+        May raise:
         - InputError if the events couldn't be stored in database
         """
-        query_str = """INSERT INTO history_events(identifier, event_identifier, sequence_index,
-        timestamp, location, location_label, asset, amount, usd_value, notes,
-        type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
         events = []
         for event in history:
-            try:
-                events.append(event.serialize_for_db())
-            except DeserializationError as e:
-                self.db.msg_aggregator.add_error(
-                    f'Failed to process kraken event for database. {str(e)}',
-                )
+            events.append(event.serialize_for_db())
         self.db.write_tuples(
             tuple_type='history_event',
-            query=query_str,
+            query=HISTORY_INSERT,
             tuples=events,
         )
         self.db.update_last_write()
 
-    def delete_history_events(self, location: Location) -> None:
-        """
-        Deletes history entries following the criteria of the filter_query. May raise:
-        - DeserializationError if the location is not valid
-        """
-        # TODO: In the future this method should allow for more granularity in the delete query
+    def edit_history_event(self, event: HistoryBaseEntry) -> bool:
+        """Edit a history entry to the DB. Returns the edited entry"""
         cursor = self.db.conn.cursor()
         cursor.execute(
-            'DELETE FROM history_events WHERE location=?',
-            (location.serialize_for_db(),),
+            'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
+            'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
+            'type=?, subtype=?, counterparty=? WHERE rowid=?',
+            (*event.serialize_for_db(), event.identifier),
         )
-        cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{location}_history_events_%',),
-        )
+        if cursor.rowcount != 1:
+            return False
+
         self.db.update_last_write()
+        return True
+
+    def delete_history_events_by_identifier(self, identifiers: List[int]) -> Optional[str]:
+        """
+        Delete the history events with the given identifiers.
+
+        If any identifier is missing the entire call fails and an error message
+        is returned. Otherwise None is returned.
+        """
+        cursor = self.db.conn.cursor()
+        ids_len = len(identifiers)
+        questionmarks = '?' * ids_len
+        cursor.execute(
+            f'DELETE FROM history_events WHERE rowid IN ({",".join(questionmarks)})',
+            identifiers,
+        )
+        affected_rows = cursor.rowcount
+        if affected_rows != ids_len:
+            self.db.conn.rollback()
+            return (
+                f'Tried to remove {ids_len - affected_rows} '
+                f'history events that do not exist'
+            )
+        return None
 
     def get_history_events(
         self,
@@ -77,17 +108,17 @@ class DBHistoryEvents():
         cursor = self.db.conn.cursor()
 
         if has_premium:
-            query = 'SELECT * from history_events ' + query
+            query = 'SELECT rowid, * from history_events ' + query
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT * from history_events ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            query = 'SELECT * FROM (SELECT rowid, * from history_events ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_HISTORY_EVENTS_LIMIT] + bindings)
 
         output = []
         for entry in results:
             try:
                 output.append(HistoryBaseEntry.deserialize_from_db(entry))
-            except DeserializationError as e:
+            except (DeserializationError, UnknownAsset) as e:
                 log.debug(f'Failed to deserialize history event {entry}')
                 self.db.msg_aggregator.add_error(
                     f'Failed to read history event from database. {str(e)}',
@@ -122,7 +153,7 @@ class DBHistoryEvents():
         Get missing prices for history base entries based on filter query
         """
         query, bindings = filter_query.prepare()
-        query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
+        query = 'SELECT rowid, amount, asset, timestamp FROM history_events ' + query
         result = []
         cursor = self.db.conn.cursor()
         cursor.execute(query, bindings)
@@ -133,13 +164,12 @@ class DBHistoryEvents():
                     name='historic base entry usd_value query',
                     location='query_missing_prices',
                 )
-                high_precision_timestamp = deserialize_timestamp(timestamp)
                 result.append(
                     (
                         identifier,
                         amount,
                         Asset(asset_name),
-                        Timestamp(int(high_precision_timestamp / KRAKEN_TS_MULTIPLIER)),
+                        ts_ms_to_sec(TimestampMS(timestamp)),
                     ),
                 )
             except DeserializationError as e:
@@ -189,17 +219,18 @@ class DBHistoryEvents():
         """Returns the sum of the USD value at the time of acquisition and the amount received
         by asset"""
         cursor = self.db.conn.cursor()
-        usd_value = FVal(0)
+        usd_value = ZERO
         query_filters, bindings = query_filter.prepare(with_pagination=False)
         try:
             query = 'SELECT SUM(CAST(usd_value AS REAL)) FROM history_events ' + query_filters
-            result = cursor.execute(query, bindings)
-            usd_value = deserialize_fval(
-                value=result.fetchone()[0],
-                name='usd value in history events stats',
-                location='get_value_stats',
-            )
-        except (DeserializationError, sqlcipher.DatabaseError) as e:  # pylint: disable=no-member)
+            result = cursor.execute(query, bindings).fetchone()[0]
+            if result is not None:
+                usd_value = deserialize_fval(
+                    value=result,
+                    name='usd value in history events stats',
+                    location='get_value_stats',
+                )
+        except DeserializationError as e:
             log.error(f'Didnt get correct valid usd_value for history_events query. {str(e)}')
 
         query = (

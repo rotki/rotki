@@ -466,6 +466,20 @@ CREATE TABLE IF NOT EXISTS ethereum_transactions (
 );
 """
 
+DB_CREATE_ETHEREUM_INTERNAL_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS ethereum_internal_transactions (
+    parent_tx_hash BLOB NOT NULL,
+    trace_id INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    block_number INTEGER NOT NULL,
+    from_address TEXT NOT NULL,
+    to_address TEXT,
+    value TEXT NOT NULL,
+    FOREIGN KEY(parent_tx_hash) REFERENCES ethereum_transactions(tx_hash) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(parent_tx_hash, trace_id)
+);
+"""  # noqa: E501
+
 DB_CREATE_ETHTX_RECEIPTS = """
 CREATE TABLE IF NOT EXISTS ethtx_receipts (
     tx_hash BLOB NOT NULL PRIMARY KEY,
@@ -499,6 +513,17 @@ CREATE TABLE IF NOT EXISTS ethtx_receipt_log_topics (
 );
 """  # noqa: E501
 
+DB_CREATE_ETHTX_ADDRESS_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS ethx_address_mappings (
+    address TEXT NOT NULL,
+    tx_hash BLOB NOT NULL,
+    blockchain TEXT NOT NULL,
+    FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
+    FOREIGN KEY(tx_hash) references ethereum_transactions(tx_hash) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (address, tx_hash, blockchain)
+);
+"""  # noqa: E501
+
 DB_CREATE_USED_QUERY_RANGES = """
 CREATE TABLE IF NOT EXISTS used_query_ranges (
     name VARCHAR[24] NOT NULL PRIMARY KEY,
@@ -506,6 +531,16 @@ CREATE TABLE IF NOT EXISTS used_query_ranges (
     end_ts INTEGER
 );
 """
+
+DB_CREATE_EVM_TX_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS evm_tx_mappings (
+    tx_hash BLOB NOT NULL,
+    blockchain TEXT NOT NULL,
+    value TEXT NOT NULL,
+    FOREIGN KEY(tx_hash) references ethereum_transactions(tx_hash) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (tx_hash, value)
+);
+"""  # noqa: E501
 
 DB_CREATE_SETTINGS = """
 CREATE TABLE IF NOT EXISTS settings (
@@ -603,7 +638,6 @@ CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
 
 DB_CREATE_HISTORY_EVENTS = """
 CREATE TABLE IF NOT EXISTS history_events (
-    identifier TEXT NOT NULL PRIMARY KEY,
     event_identifier TEXT NOT NULL,
     sequence_index INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
@@ -614,7 +648,8 @@ CREATE TABLE IF NOT EXISTS history_events (
     usd_value TEXT NOT NULL,
     notes TEXT,
     type TEXT NOT NULL,
-    subtype TEXT
+    subtype TEXT,
+    counterparty TEXT
 );
 """
 
@@ -797,12 +832,15 @@ BEGIN TRANSACTION;
 {DB_CREATE_MANUALLY_TRACKED_BALANCES}
 {DB_CREATE_TRADES}
 {DB_CREATE_ETHEREUM_TRANSACTIONS}
+{DB_CREATE_ETHEREUM_INTERNAL_TRANSACTIONS}
 {DB_CREATE_ETHTX_RECEIPTS}
 {DB_CREATE_ETHTX_RECEIPT_LOGS}
 {DB_CREATE_ETHTX_RECEIPT_LOG_TOPICS}
+{DB_CREATE_ETHTX_ADDRESS_MAPPINGS}
 {DB_CREATE_MARGIN}
 {DB_CREATE_ASSET_MOVEMENTS}
 {DB_CREATE_USED_QUERY_RANGES}
+{DB_CREATE_EVM_TX_MAPPINGS}
 {DB_CREATE_SETTINGS}
 {DB_CREATE_TAGS_TABLE}
 {DB_CREATE_TAG_MAPPINGS}

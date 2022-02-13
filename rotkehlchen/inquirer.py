@@ -55,7 +55,7 @@ from rotkehlchen.constants.assets import (
     A_YV1_WETH,
     A_YV1_YFI,
 )
-from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, UNISWAP_V2_LP_ABI, YEARN_VAULT_V2_ABI
+from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, YEARN_VAULT_V2_ABI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors import (
     BlockchainQueryError,
@@ -474,81 +474,19 @@ class Inquirer():
         return instance._query_oracle_instances(from_asset=asset, to_asset=A_USD)
 
     def find_uniswap_v2_lp_price(
-        self,
-        token: EthereumToken,
+            self,
+            token: EthereumToken,
     ) -> Optional[Price]:
-        """
-        Calculate the price for a uniswap v2 LP token. That is
-        value = (Total value of liquidity pool) / (Current suply of LP tokens)
-        We need:
-        - Price of token 0
-        - Price of token 1
-        - Pooled amount of token 0
-        - Pooled amount of token 1
-        - Total supply of of pool token
-        """
         assert self._ethereum is not None, 'Inquirer ethereum manager should have been initialized'  # noqa: E501
-
-        address = token.ethereum_address
-        contract = EthereumContract(address=address, abi=UNISWAP_V2_LP_ABI, deployed_block=0)
-        methods = ['token0', 'token1', 'totalSupply', 'getReserves', 'decimals']
-        try:
-            output = multicall_2(
-                ethereum=self._ethereum,
-                require_success=True,
-                calls=[(address, contract.encode(method_name=method)) for method in methods],
-            )
-        except RemoteError as e:
-            log.error(
-                f'Remote error calling multicall contract for uniswap v2 lp '
-                f'token {token.ethereum_address} properties: {str(e)}',
-            )
-            return None
-
-        # decode output
-        decoded = []
-        for (method_output, method_name) in zip(output, methods):
-            if method_output[0] and len(method_output[1]) != 0:
-                decoded_method = contract.decode(method_output[1], method_name)
-                if len(decoded_method) == 1:
-                    # https://github.com/PyCQA/pylint/issues/4739
-                    decoded.append(decoded_method[0])  # pylint: disable=unsubscriptable-object
-                else:
-                    decoded.append(decoded_method)
-            else:
-                log.debug(
-                    f'Multicall to Uniswap V2 LP failed to fetch field {method_name} '
-                    f'for token {token.ethereum_address}',
-                )
-                return None
-
-        try:
-            token0 = EthereumToken(decoded[0])
-            token1 = EthereumToken(decoded[1])
-        except UnknownAsset:
-            return None
-
-        try:
-            token0_supply = FVal(decoded[3][0] * 10**-token0.decimals)
-            token1_supply = FVal(decoded[3][1] * 10**-token1.decimals)
-            total_supply = FVal(decoded[2] * 10 ** - decoded[4])
-        except ValueError as e:
-            log.debug(
-                f'Failed to deserialize token amounts for token {address} '
-                f'with values {str(decoded)}. f{str(e)}',
-            )
-            return None
-        token0_price = self.find_usd_price(token0)
-        token1_price = self.find_usd_price(token1)
-
-        if ZERO in (token0_price, token1_price):
-            log.debug(
-                f'Couldnt retrieve non zero price information for tokens {token0}, {token1} '
-                f'with result {token0_price}, {token1_price}',
-            )
-        numerator = (token0_supply * token0_price + token1_supply * token1_price)
-        share_value = numerator / total_supply
-        return Price(share_value)
+        # BAD BAD BAD. TODO: Need to rethinking placement of modules here
+        from rotkehlchen.chain.ethereum.modules.uniswap.utils import find_uniswap_v2_lp_price  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
+        return find_uniswap_v2_lp_price(
+            ethereum=self._ethereum,
+            token=token,
+            token_price_func=self.find_usd_price,
+            token_price_func_args=[],
+            block_identifier='latest',
+        )
 
     def find_curve_pool_price(
         self,

@@ -6,7 +6,6 @@ from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.typing import SchemaEventType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.timing import KRAKEN_TS_MULTIPLIER
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -80,18 +79,20 @@ class DBTimestampFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBETHTransactionAddressFilter(DBFilter):
-    addresses: Optional[List[ChecksumEthAddress]] = None
+    """Find transactions involving any of the addresses. Including in an internal.
+
+    This uses the mappings we create in the DB at transaction addition to signify
+    relevant addresses for a transaction.
+    """
+    addresses: List[ChecksumEthAddress]
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
-        filters = []
-        bindings = []
-        if self.addresses is not None:
-            questionmarks = '?' * len(self.addresses)
-            filters = [
-                f'from_address IN ({",".join(questionmarks)})',
-                f'to_address IN ({",".join(questionmarks)})',
-            ]
-            bindings = [*self.addresses, *self.addresses]
+        questionmarks = '?' * len(self.addresses)
+        filters = [
+            f'AS A LEFT OUTER JOIN ethx_address_mappings AS B WHERE '
+            f'A.tx_hash=b.tx_hash AND B.address IN ({",".join(questionmarks)})',
+        ]
+        bindings = self.addresses
 
         return filters, bindings
 
@@ -168,6 +169,7 @@ class DBLocationFilter(DBFilter):
 class DBFilterQuery():
     and_op: bool
     filters: List[DBFilter]
+    join_clause: Optional[DBFilter] = None
     order_by: Optional[DBFilterOrder] = None
     pagination: Optional[DBFilterPagination] = None
 
@@ -175,6 +177,11 @@ class DBFilterQuery():
         query_parts = []
         bindings = []
         filterstrings = []
+
+        if self.join_clause is not None:
+            join_querystr, single_bindings = self.join_clause.prepare()
+            query_parts.append(join_querystr[0])
+            bindings.extend(single_bindings)
 
         for fil in self.filters:
             filters, single_bindings = fil.prepare()
@@ -187,8 +194,8 @@ class DBFilterQuery():
 
         if len(filterstrings) != 0:
             operator = ' AND ' if self.and_op else ' OR '
-            where_query = 'WHERE ' + operator.join(filterstrings)
-            query_parts.append(where_query)
+            filter_query = f'{"WHERE " if self.join_clause is None else "AND ("}{operator.join(filterstrings)}{"" if self.join_clause is None else ")"}'  # noqa: E501
+            query_parts.append(filter_query)
 
         if self.order_by is not None:
             orderby_query = self.order_by.prepare()
@@ -273,24 +280,12 @@ class FilterWithLocation():
 class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
-    def address_filter(self) -> Optional[DBETHTransactionAddressFilter]:
-        if len(self.filters) >= 1 and isinstance(self.filters[0], DBETHTransactionAddressFilter):
-            return self.filters[0]
-        return None
-
-    @property
     def addresses(self) -> Optional[List[ChecksumEthAddress]]:
-        address_filter = self.address_filter
-        if address_filter is None:
+        if self.join_clause is None:
             return None
-        return address_filter.addresses
 
-    @addresses.setter
-    def addresses(self, addresses: Optional[List[ChecksumEthAddress]]) -> None:
-        address_filter = self.address_filter
-        if address_filter is None:
-            return
-        address_filter.addresses = addresses
+        ethaddress_filter = cast('DBETHTransactionAddressFilter', self.join_clause)
+        return ethaddress_filter.addresses
 
     @classmethod
     def make(
@@ -314,10 +309,11 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         )
         filter_query = cast('ETHTransactionsFilterQuery', filter_query)
         filters: List[DBFilter] = []
-        if tx_hash:  # tx_hash means single result so make it as single filter
+        if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBETHTransactionHashFilter(and_op=False, tx_hash=tx_hash))
         else:
-            filters.append(DBETHTransactionAddressFilter(and_op=False, addresses=addresses))
+            if addresses is not None:
+                filter_query.join_clause = DBETHTransactionAddressFilter(and_op=False, addresses=addresses)  # noqa: E501
 
             filter_query.timestamp_filter = DBTimestampFilter(
                 and_op=True,
@@ -668,13 +664,14 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             asset: Optional[Asset] = None,
-            event_type: Optional[List[HistoryEventType]] = None,
-            event_subtype: Optional[List[HistoryEventSubType]] = None,
-            exclude_subtype: Optional[List[HistoryEventSubType]] = None,
+            event_types: Optional[List[HistoryEventType]] = None,
+            event_subtypes: Optional[List[HistoryEventSubType]] = None,
+            exclude_subtypes: Optional[List[HistoryEventSubType]] = None,
             location: Optional[Location] = None,
             location_label: Optional[str] = None,
             ignored_ids: Optional[List[str]] = None,
             null_columns: Optional[List[str]] = None,
+            event_identifier: Optional[str] = None,
     ) -> 'HistoryEventFilterQuery':
         filter_query = cls.create(
             and_op=and_op,
@@ -687,24 +684,24 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
         filters: List[DBFilter] = []
         if asset is not None:
             filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
-        if event_type is not None:
+        if event_types is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='type',
-                values=[x.serialize() for x in event_type],
+                values=[x.serialize() for x in event_types],
             ))
-        if event_subtype is not None:
+        if event_subtypes is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='subtype',
-                values=[x.serialize() for x in event_subtype],
+                values=[x.serialize() for x in event_subtypes],
                 operator='IN',
             ))
-        if exclude_subtype is not None:
+        if exclude_subtypes is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='subtype',
-                values=[x.serialize() for x in exclude_subtype],
+                values=[x.serialize() for x in exclude_subtypes],
                 operator='NOT IN',
             ))
         if location is not None:
@@ -729,13 +726,17 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
                     columns=null_columns,
                 ),
             )
+        if event_identifier is not None:
+            filters.append(
+                DBStringFilter(and_op=True, column='event_identifier', value=event_identifier),
+            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
             from_ts=from_ts,
             to_ts=to_ts,
             timestamp_attribute='timestamp',
-            scaling_factor=FVal(KRAKEN_TS_MULTIPLIER),
+            scaling_factor=FVal(1000),  # these timestamps are in MS
         )
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters

@@ -34,6 +34,7 @@ from rotkehlchen.db.upgrades.v27_v28 import upgrade_v27_to_v28
 from rotkehlchen.db.upgrades.v28_v29 import upgrade_v28_to_v29
 from rotkehlchen.db.upgrades.v29_v30 import upgrade_v29_to_v30
 from rotkehlchen.db.upgrades.v30_v31 import upgrade_v30_to_v31
+from rotkehlchen.db.upgrades.v31_v32 import upgrade_v31_to_v32
 from rotkehlchen.errors import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -209,6 +210,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=30,
         function=upgrade_v30_to_v31,
+    ),
+    UpgradeRecord(
+        from_version=31,
+        function=upgrade_v31_to_v32,
     ),
 ]
 

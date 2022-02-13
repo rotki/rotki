@@ -1,18 +1,38 @@
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple
+import json
+import logging
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
-from eth_utils import to_checksum_address
+from eth_utils import event_abi_to_log_topic, to_checksum_address
 from web3 import Web3
+from web3._utils.abi import (
+    exclude_indexed_event_inputs,
+    get_abi_input_names,
+    get_indexed_event_inputs,
+    map_abi_data,
+    normalize_event_input_types,
+)
+from web3._utils.events import get_event_abi_types_for_decoding
+from web3._utils.normalizers import BASE_RETURN_NORMALIZERS
+from web3.types import ABIEvent, BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_MULTICALL_2
-from rotkehlchen.errors import UnsupportedAsset
+from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
+from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.ethereum import ETH_MULTICALL, ETH_MULTICALL_2, ETH_SPECIAL_ADDRESS
+from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+WEB3 = Web3()
 
 # TODO: remove this once web3.py updates ENS library for supporting multichain
 # https://github.com/ethereum/web3.py/issues/1839
@@ -76,13 +96,17 @@ def asset_normalized_value(amount: int, asset: Asset) -> FVal:
 def multicall(
         ethereum: 'EthereumManager',
         calls: List[Tuple[ChecksumEthAddress, str]],
+        # only here to comply with multicall_2
+        require_success: bool = True,  # pylint: disable=unused-argument
         call_order: Optional[Sequence['NodeName']] = None,
+        block_identifier: BlockIdentifier = 'latest',
 ) -> Any:
     multicall_result = ETH_MULTICALL.call(
         ethereum=ethereum,
         method_name='aggregate',
         arguments=[calls],
         call_order=call_order,
+        block_identifier=block_identifier,
     )
     _, output = multicall_result
     return output
@@ -93,6 +117,7 @@ def multicall_2(
         calls: List[Tuple[ChecksumEthAddress, str]],
         require_success: bool,
         call_order: Optional[Sequence['NodeName']] = None,
+        block_identifier: BlockIdentifier = 'latest',
 ) -> List[Tuple[bool, bytes]]:
     """
     Use a MULTICALL_2 contract for an aggregated query. If require_success
@@ -103,6 +128,7 @@ def multicall_2(
         method_name='tryAggregate',
         arguments=[require_success, calls],
         call_order=call_order,
+        block_identifier=block_identifier,
     )
 
 
@@ -117,7 +143,7 @@ def multicall_specific(
         contract.address,
         contract.encode(method_name=method_name, arguments=i),
     ) for i in arguments]
-    output = multicall(ethereum, calls, call_order)
+    output = multicall(ethereum, calls, True, call_order)
     return [contract.decode(x, method_name, arguments[0]) for x in output]
 
 
@@ -147,3 +173,106 @@ def generate_address_via_create2(
         Web3.keccak(hexstring_to_bytes(init_code)),
     )[12:].hex()
     return to_checksum_address(contract_address)
+
+
+def decode_event_data_abi_str(
+        tx_log: EthereumTxReceiptLog,
+        abi_json: str,
+) -> Tuple[List, List]:
+    """This is an adjustment of web3's event data decoding to work with our code
+    source: https://github.com/ethereum/web3.py/blob/ffe59daf10edc19ee5f05227b25bac8d090e8aa4/web3/_utils/events.py#L201
+
+    Returns a tuple containing the decoded topic data and decoded log data.
+
+    May raise:
+    - DeserializationError if the abi string is invalid or abi or log topics/data do not match
+    """  # noqa: E501
+    try:
+        event_abi = json.loads(abi_json)
+    except json.decoder.JSONDecodeError as e:
+        raise DeserializationError('Failed to read the given event abi into json') from e
+    return decode_event_data_abi(tx_log, event_abi)
+
+
+def decode_event_data_abi(
+        tx_log: EthereumTxReceiptLog,
+        event_abi: Dict[str, Any],
+) -> Tuple[List, List]:
+    """This is an adjustment of web3's event data decoding to work with our code
+    source: https://github.com/ethereum/web3.py/blob/ffe59daf10edc19ee5f05227b25bac8d090e8aa4/web3/_utils/events.py#L201
+
+    Returns a tuple containing the decoded topic data and decoded log data.
+
+    May raise:
+    - DeserializationError if the abi string is invalid or abi or log topics/data do not match
+    """  # noqa: E501
+    if event_abi['anonymous']:
+        topics = tx_log.topics
+    elif len(tx_log.topics) == 0:
+        raise DeserializationError('Expected non-anonymous event to have 1 or more topics')
+    elif event_abi_to_log_topic(event_abi) != tx_log.topics[0]:
+        raise DeserializationError('The event signature did not match the provided ABI')
+    else:
+        topics = tx_log.topics[1:]
+
+    # type ignored b/c event_abi is a Dict which is an ABIEvent
+    log_topics_abi = get_indexed_event_inputs(event_abi)  # type: ignore
+    log_topic_normalized_inputs = normalize_event_input_types(log_topics_abi)
+    log_topic_types = get_event_abi_types_for_decoding(log_topic_normalized_inputs)
+    log_topic_names = get_abi_input_names(ABIEvent({'inputs': log_topics_abi}))
+
+    if len(topics) != len(log_topic_types):
+        raise DeserializationError('Expected {0} log topics.  Got {1}'.format(
+            len(log_topic_types),
+            len(topics),
+        ))
+
+    # type ignored b/c event_abi is a Dict which is an ABIEvent
+    log_data_abi = exclude_indexed_event_inputs(event_abi)  # type: ignore
+    log_data_normalized_inputs = normalize_event_input_types(log_data_abi)
+    log_data_types = get_event_abi_types_for_decoding(log_data_normalized_inputs)
+    log_data_names = get_abi_input_names(ABIEvent({'inputs': log_data_abi}))
+
+    # sanity check that there are not name intersections between the topic
+    # names and the data argument names.
+    duplicate_names = set(log_topic_names).intersection(log_data_names)
+    if duplicate_names:
+        raise DeserializationError(
+            f"The following argument names are duplicated "
+            f"between event inputs: '{', '.join(duplicate_names)}'",
+        )
+
+    decoded_log_data = WEB3.codec.decode_abi(log_data_types, tx_log.data)
+    normalized_log_data = map_abi_data(
+        BASE_RETURN_NORMALIZERS,
+        log_data_types,
+        decoded_log_data,
+    )
+    decoded_topic_data = [
+        WEB3.codec.decode_single(topic_type, topic_data)
+        for topic_type, topic_data
+        in zip(log_topic_types, topics)
+    ]
+    normalized_topic_data = map_abi_data(
+        BASE_RETURN_NORMALIZERS,
+        log_topic_types,
+        decoded_topic_data,
+    )
+    return normalized_topic_data, normalized_log_data
+
+
+def ethaddress_to_asset(address: ChecksumEthAddress) -> Optional[Asset]:
+    """Takes an ethereum address and returns a token/asset for it
+
+    Checks for special cases like the special ETH address used in some protocols
+    """
+    if address == ETH_SPECIAL_ADDRESS:
+        return A_ETH
+
+    try:
+        asset = EthereumToken(address)
+    except UnknownAsset:
+        log.error(f'Could not find asset/token for address {address}')
+        return None
+
+    return asset

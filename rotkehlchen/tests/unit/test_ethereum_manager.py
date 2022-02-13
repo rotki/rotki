@@ -24,7 +24,8 @@ from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_TEST_PARAMETERS,
     wait_until_all_nodes_connected,
 )
-from rotkehlchen.typing import EthereumTransaction
+from rotkehlchen.tests.utils.factories import make_ethereum_address
+from rotkehlchen.typing import BlockchainAccountData, EthereumTransaction, SupportedBlockchain
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 
@@ -67,21 +68,33 @@ def test_get_transaction_receipt(
     assert result['logs'][0]['logIndex'] == 235
     assert result['logs'][1]['logIndex'] == 236
 
+    from_addy = make_ethereum_address()
+    to_addy = make_ethereum_address()
+    database.add_blockchain_accounts(
+        blockchain=SupportedBlockchain.ETHEREUM,
+        account_data=[
+            BlockchainAccountData(address=from_addy),
+            BlockchainAccountData(address=to_addy),
+        ],
+    )
     tx_hash_bytes = hexstring_to_bytes(tx_hash)
     db = DBEthTx(database)
-    db.add_ethereum_transactions([EthereumTransaction(  # need to add the tx first
-        tx_hash=tx_hash_bytes,
-        timestamp=1,  # all other fields don't matter for this test
-        block_number=1,
-        from_address='0x0',
-        to_address='0x0',
-        value=1,
-        gas=1,
-        gas_price=1,
-        gas_used=1,
-        input_data=b'',
-        nonce=1,
-    )])
+    db.add_ethereum_transactions(
+        [EthereumTransaction(  # need to add the tx first
+            tx_hash=tx_hash_bytes,
+            timestamp=1,  # all other fields don't matter for this test
+            block_number=1,
+            from_address=from_addy,
+            to_address=to_addy,
+            value=1,
+            gas=1,
+            gas_price=1,
+            gas_used=1,
+            input_data=b'',
+            nonce=1,
+        )],
+        relevant_address=from_addy,
+    )
 
     # also test receipt can be stored and retrieved from the DB.
     # This tests that all node types (say openethereum) are processed properly

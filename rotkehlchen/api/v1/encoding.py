@@ -10,6 +10,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Type,
     Union,
     overload,
 )
@@ -24,7 +25,9 @@ from werkzeug.datastructures import FileStorage
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import (
     ActionType,
+    Balance,
     BalanceType,
+    HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
 )
@@ -102,6 +105,7 @@ from rotkehlchen.typing import (
     TradeType,
 )
 from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
+from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -157,6 +161,10 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
 
 class TimestampField(fields.Field):
 
+    def __init__(self, ts_multiplier: int = 1, **kwargs: Any) -> None:
+        self.ts_multiplier = ts_multiplier
+        super().__init__(**kwargs)
+
     def _deserialize(
             self,
             value: str,
@@ -169,7 +177,7 @@ class TimestampField(fields.Field):
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
-        return timestamp
+        return Timestamp(timestamp * self.ts_multiplier)
 
 
 class ColorField(fields.Field):
@@ -407,6 +415,27 @@ class BalanceTypeField(fields.Field):
         if value == 'liability':
             return BalanceType.LIABILITY
         raise ValidationError(f'Unrecognized value {value} given for balance type')
+
+
+class SerializableEnumField(fields.Field):
+
+    def __init__(self, enum_class: Type[SerializableEnumMixin], **kwargs: Any) -> None:
+        self.enum_class = enum_class
+        super().__init__(**kwargs)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Any:
+        try:
+            result = self.enum_class.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        return result
 
 
 class AssetMovementCategoryField(fields.Field):
@@ -948,7 +977,7 @@ class EventSubtypeField(fields.Field):
             **_kwargs: Any,
     ) -> HistoryEventSubType:
         try:
-            event_subtype = HistoryEventSubType.deserialize_event_subtype(value)
+            event_subtype = HistoryEventSubType.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
@@ -1119,6 +1148,7 @@ class StakingQuerySchema(
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         if order_by_attribute == 'event_type':
             order_by_attribute = 'subtype'
+
         query_filter = HistoryEventFilterQuery.make(
             order_by_attribute=order_by_attribute,
             order_ascending=data['ascending'],
@@ -1127,13 +1157,13 @@ class StakingQuerySchema(
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
             location=Location.KRAKEN,
-            event_type=[
+            event_types=[
                 HistoryEventType.STAKING,
-                HistoryEventType.UNSTAKING,
             ],
-            event_subtype=data['event_subtypes'],
-            exclude_subtype=[
-                HistoryEventSubType.STAKING_RECEIVE_ASSET,
+            event_subtypes=data['event_subtypes'],
+            exclude_subtypes=[
+                HistoryEventSubType.RECEIVE_WRAPPED,
+                HistoryEventSubType.RETURN_WRAPPED,
             ],
             asset=data['asset'],
         )
@@ -1144,10 +1174,12 @@ class StakingQuerySchema(
             from_ts=data['from_timestamp'],
             to_ts=data['to_timestamp'],
             location=Location.KRAKEN,
-            event_type=[
+            event_types=[
                 HistoryEventType.STAKING,
             ],
-            null_columns=['subtype'],
+            event_subtypes=[
+                HistoryEventSubType.REWARD,
+            ],
             order_by_attribute=None,
             asset=data['asset'],
         )
@@ -1158,6 +1190,53 @@ class StakingQuerySchema(
             'query_filter': query_filter,
             'value_filter': value_filter,
         }
+
+
+class HistoryBaseEntrySchema(Schema):
+    identifier = fields.Integer(load_default=None, required=False)
+    event_identifier = fields.String(required=True)
+    sequence_index = fields.Integer(required=True)
+    # This timestamp coming in from the API is in seconds, in contrast to what we save in the sruct
+    timestamp = TimestampField(ts_multiplier=1000, required=True)
+    location = LocationField(required=True)
+    event_type = SerializableEnumField(enum_class=HistoryEventType, required=True)
+    asset = AssetField(required=True, form_with_incomplete_data=True)
+    amount = PositiveAmountField(required=True)
+    usd_value = PositiveAmountField(required=True)
+    location_label = fields.String(required=False)
+    notes = fields.String(required=False)
+    event_subtype = SerializableEnumField(
+        enum_class=HistoryEventSubType,
+        required=False,
+        load_default=HistoryEventSubType.NONE,
+        allow_none=True,
+    )
+    counterparty = fields.String(required=False)
+
+    def __init__(self, identifier_required: bool):
+        super().__init__()
+        self.identifier_required = identifier_required
+
+    @validates_schema
+    def validate_history_entry_schema(
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if self.identifier_required is True and data['identifier'] is None:
+            raise ValidationError('History event identifier should be given')
+
+    @post_load
+    def make_history_base_entry(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Dict[str, Any]:
+        data['balance'] = Balance(data.pop('amount'), data.pop('usd_value'))
+        if data['event_subtype'] is None:
+            data['event_subtype'] = HistoryEventSubType.NONE
+
+        return {'event': HistoryBaseEntry(**data)}
 
 
 class AssetMovementsQuerySchema(
@@ -2703,3 +2782,7 @@ class BinanceMarketsSchema(Schema):
 
 class AppInfoSchema(Schema):
     check_for_updates = fields.Boolean(load_default=False)
+
+
+class IdentifiersListSchema(Schema):
+    identifiers = fields.List(fields.Integer(), required=True)

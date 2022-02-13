@@ -3,6 +3,7 @@ from typing import List, Optional, Sequence
 import pytest
 
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
+from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
@@ -130,6 +131,19 @@ def fixture_ethereum_manager(
     )
 
     return manager
+
+
+@pytest.fixture(name='evm_transaction_decoder')
+def fixture_evm_transaction_decoder(
+        database,
+        ethereum_manager,
+        function_scope_messages_aggregator,
+):  # noqa: E501
+    return EVMTransactionDecoder(
+        database=database,
+        ethereum_manager=ethereum_manager,
+        msg_aggregator=function_scope_messages_aggregator,
+    )
 
 
 @pytest.fixture(name='ksm_rpc_endpoint')

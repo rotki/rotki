@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.errors import DeserializationError, NotERC20Conformant, UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.typing import ChecksumEthAddress
@@ -11,6 +11,7 @@ from .asset import Asset, EthereumToken, UnderlyingToken
 from .typing import AssetType
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -35,27 +36,45 @@ def add_ethereum_token_to_db(token_data: EthereumToken) -> EthereumToken:
 
 def get_or_create_ethereum_token(
         userdb: 'DBHandler',
-        symbol: str,
         ethereum_address: ChecksumEthAddress,
+        symbol: Optional[str] = None,
         name: Optional[str] = None,
         decimals: Optional[int] = None,
         protocol: Optional[str] = None,
         underlying_tokens: Optional[List[UnderlyingToken]] = None,
         form_with_incomplete_data: bool = False,
+        ethereum_manager: 'EthereumManager' = None,
 ) -> EthereumToken:
-    """Given a token symbol and address return the <EthereumToken>
+    """Given a token address return the <EthereumToken>
 
     If the token exists in the GlobalDB it's returned. If not it's created and added.
+
+    If an ethereum_manager instance is passed then in the case that the token is not
+    in the global DB it will be added and an attempt to get metadata will be made.
+
     Note: if the token already exists but the other arguments don't match the
     existing token will still be silently returned
+
+    May raise:
+    - NotERC20Conformant exception if an ethereum manager is given to query
+    and the given address does not have any of symbol, decimals and name
     """
     try:
         ethereum_token = EthereumToken(ethereum_address, form_with_incomplete_data)
     except (UnknownAsset, DeserializationError):
         log.info(
-            f'Encountered unknown asset {symbol} with address '
+            f'Encountered unknown asset with address '
             f'{ethereum_address}. Adding it to the global DB',
         )
+        if ethereum_manager is not None:
+            info = ethereum_manager.get_basic_contract_info(ethereum_address)
+            decimals = info['decimals'] if decimals is None else decimals
+            symbol = info['symbol'] if symbol is None else symbol
+            name = info['name'] if name is None else name
+
+            if None in (decimals, symbol, name):
+                raise NotERC20Conformant(f'Token {ethereum_address} is not ERC20 conformant')  # noqa: E501  # pylint: disable=raise-missing-from
+
         token_data = EthereumToken.initialize(
             address=ethereum_address,
             name=name,

@@ -1,7 +1,8 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple, TypeVar, Union, overload
 
 from eth_utils import to_checksum_address
+from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import HistoryEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -20,6 +21,7 @@ from rotkehlchen.typing import (
     AssetAmount,
     AssetMovementCategory,
     ChecksumEthAddress,
+    EthereumInternalTransaction,
     EthereumTransaction,
     Fee,
     HexColorCode,
@@ -502,10 +504,29 @@ def deserialize_optional(input_val: Optional[X], fn: Callable[[X], Y]) -> Option
     return fn(input_val)
 
 
+@overload
 def deserialize_ethereum_transaction(
         data: Dict[str, Any],
+        internal: Literal[True],
+        ethereum: Optional['EthereumManager'] = None,
+) -> EthereumInternalTransaction:
+    ...
+
+
+@overload
+def deserialize_ethereum_transaction(
+        data: Dict[str, Any],
+        internal: Literal[False],
         ethereum: Optional['EthereumManager'] = None,
 ) -> EthereumTransaction:
+    ...
+
+
+def deserialize_ethereum_transaction(
+        data: Dict[str, Any],
+        internal: bool,
+        ethereum: Optional['EthereumManager'] = None,
+) -> Union[EthereumTransaction, EthereumInternalTransaction]:
     """Reads dict data of a transaction and deserializes it.
     If the transaction is not from etherscan then it's missing some data
     so ethereum manager is used to fetch it.
@@ -514,10 +535,7 @@ def deserialize_ethereum_transaction(
     """
     source = 'etherscan' if ethereum is None else 'web3'
     try:
-        gas_price = read_integer(data=data, key='gasPrice', api=source)
         tx_hash = read_hash(data=data, key='hash', api=source)
-
-        input_data = read_hash(data, 'input', source)
         block_number = read_integer(data, 'blockNumber', source)
         if 'timeStamp' not in data:
             if ethereum is None:
@@ -528,6 +546,24 @@ def deserialize_ethereum_transaction(
         else:
             timestamp = deserialize_timestamp(data['timeStamp'])
 
+        from_address = deserialize_ethereum_address(data['from'])
+        to_address = deserialize_ethereum_address(data['to']) if data['to'] != '' else None
+        value = read_integer(data, 'value', source)
+
+        if internal:
+            return EthereumInternalTransaction(
+                parent_tx_hash=tx_hash,
+                trace_id=int(data['traceId']),
+                timestamp=timestamp,
+                block_number=block_number,
+                from_address=from_address,
+                to_address=to_address,
+                value=value,
+            )
+
+        # else normal transaction
+        gas_price = read_integer(data=data, key='gasPrice', api=source)
+        input_data = read_hash(data, 'input', source)
         if 'gasUsed' not in data:
             if ethereum is None:
                 raise DeserializationError('Got in deserialize ethereum transaction without gasUsed and without ethereum manager')  # noqa: E501
@@ -535,15 +571,14 @@ def deserialize_ethereum_transaction(
             gas_used = read_integer(receipt_data, 'gasUsed', source)
         else:
             gas_used = read_integer(data, 'gasUsed', source)
-
         nonce = read_integer(data, 'nonce', source)
         return EthereumTransaction(
             timestamp=timestamp,
             block_number=block_number,
             tx_hash=tx_hash,
-            from_address=deserialize_ethereum_address(data['from']),
-            to_address=deserialize_ethereum_address(data['to']) if data['to'] != '' else None,
-            value=read_integer(data, 'value', source),
+            from_address=from_address,
+            to_address=to_address,
+            value=value,
             gas=read_integer(data, 'gas', source),
             gas_price=gas_price,
             gas_used=gas_used,
@@ -552,5 +587,5 @@ def deserialize_ethereum_transaction(
         )
     except KeyError as e:
         raise DeserializationError(
-            f'ethereum transaction from {source} missing expected key {str(e)}',
+            f'ethereum {"internal" if internal else ""}transaction from {source} missing expected key {str(e)}',  # noqa: E501
         ) from e

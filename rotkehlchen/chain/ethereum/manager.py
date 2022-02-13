@@ -24,7 +24,7 @@ from web3.exceptions import (
     TransactionNotFound,
 )
 from web3.middleware.exception_retry_request import http_retry_request_middleware
-from web3.types import FilterParams
+from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
@@ -241,6 +241,8 @@ class EthereumManager():
         # stateless object and thus wouldn't persist.
         # Not really happy with this approach but well ...
         self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
+        # A cache for the erc20 contract info to not requery same one
+        self.contract_info_cache: Dict[ChecksumEthAddress, Dict[str, Any]] = {}
 
     def connected_to_any_web3(self) -> bool:
         return (
@@ -823,7 +825,7 @@ class EthereumManager():
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
 
         try:
-            transaction = deserialize_ethereum_transaction(data=tx_data, ethereum=self)
+            transaction = deserialize_ethereum_transaction(data=tx_data, internal=False, ethereum=self)  # noqa: E501
         except (DeserializationError, ValueError) as e:
             raise RemoteError(
                 f'Couldnt deserialize ethereum transaction data from {tx_data}. Error: {str(e)}',
@@ -849,6 +851,7 @@ class EthereumManager():
             method_name: str,
             arguments: Optional[List[Any]] = None,
             call_order: Optional[Sequence[NodeName]] = None,
+            block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
         return self.query(
             method=self._call_contract,
@@ -857,6 +860,7 @@ class EthereumManager():
             abi=abi,
             method_name=method_name,
             arguments=arguments,
+            block_identifier=block_identifier,
         )
 
     def _call_contract(
@@ -866,6 +870,7 @@ class EthereumManager():
             abi: List,
             method_name: str,
             arguments: Optional[List[Any]] = None,
+            block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
         """Performs an eth_call to an ethereum contract
 
@@ -884,7 +889,7 @@ class EthereumManager():
 
         contract = web3.eth.contract(address=contract_address, abi=abi)
         try:
-            method = getattr(contract.caller, method_name)
+            method = getattr(contract.caller(block_identifier=block_identifier), method_name)
             result = method(*arguments if arguments else [])
         except (ValueError, BadFunctionCallOutput) as e:
             raise BlockchainQueryError(
@@ -1113,6 +1118,10 @@ class EthereumManager():
         if it is provided in the contract. This method may raise:
         - BadFunctionCallOutput: If there is an error calling a bad address
         """
+        cache = self.contract_info_cache.get(address)
+        if cache is not None:
+            return cache
+
         properties = ('decimals', 'symbol', 'name')
         info: Dict[str, Any] = {}
 
@@ -1138,4 +1147,5 @@ class EthereumManager():
         for prop, value in zip(properties, decoded):
             info[prop] = value
 
+        self.contract_info_cache[address] = info
         return info
