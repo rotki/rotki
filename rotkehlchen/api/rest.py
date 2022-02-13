@@ -40,7 +40,7 @@ from rotkehlchen.accounting.structures import (
     HistoryEventType,
     StakingEvent,
 )
-from rotkehlchen.api.v1.encoding import TradeSchema
+from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.typing import AssetType

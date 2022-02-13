@@ -7,7 +7,7 @@ from typing import Any, Dict
 import pytest
 import requests
 
-from rotkehlchen.api.v1.encoding import TradeSchema
+from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_WETH
 from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
