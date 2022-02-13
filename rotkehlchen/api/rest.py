@@ -3726,16 +3726,6 @@ class RestAPI():
             asset=asset,
         )
 
-    @require_loggedin_user()
-    def reset_limits_counter(self, location: str) -> Response:  # pylint: disable=unused-argument
-        tx_module = EthTransactions(
-            ethereum=self.rotkehlchen.chain_manager.ethereum,
-            database=self.rotkehlchen.data.db,
-        )
-        # at the moment only location is ethereum_transactions and is checked by marshmallow
-        tx_module.reset_count()
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
-
     def get_database_info(self) -> Response:
         globaldb_schema_version = GlobalDBHandler().get_schema_version()
         globaldb_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)

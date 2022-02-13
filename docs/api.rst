@@ -9876,40 +9876,6 @@ Show NFT Balances
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as opensea could not be reached or returned unexpected response.
 
-Resetting limits counters
-==============================
-
-.. http:post:: /api/(version)/limits/reset/(location)
-
-   Doing a POST on this endpoint will reset the counter limits of the given location. Frontend should use it to reset limits of a location between queries, otherwise limits may become too strict.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      POST /api/1/limits/reset/ethereum_transactions HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {}
-
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      { "result": true,
-        "message": ""
-      }
-
-
-   :resjson bool result: Always true.
-   :statuscode 200: Limits reset
-   :statuscode 409: User is not logged in or some other error. Check error message for details.
-   :statuscode 500: Internal rotki error
 
 Querying database information
 =================================

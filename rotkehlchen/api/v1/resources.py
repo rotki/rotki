@@ -67,7 +67,6 @@ from rotkehlchen.api.v1.schemas import (
     IntegerIdentifierSchema,
     LedgerActionSchema,
     LedgerActionsQuerySchema,
-    LimitsCounterResetSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
     ManualPriceDeleteSchema,
@@ -2025,14 +2024,6 @@ class NFTSBalanceResource(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool, ignore_cache: bool) -> Response:
         return self.rest_api.get_nfts_balances(async_query=async_query, ignore_cache=ignore_cache)
-
-
-class LimitsCounterResetResource(BaseResource):
-    post_schema = LimitsCounterResetSchema()
-
-    @use_kwargs(post_schema, location='view_args')
-    def post(self, location: str) -> Response:
-        return self.rest_api.reset_limits_counter(location)
 
 
 class StakingResource(BaseResource):

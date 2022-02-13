@@ -1747,13 +1747,6 @@ class AvalancheTransactionQuerySchema(Schema):
     to_timestamp = TimestampField(load_default=ts_now)
 
 
-class LimitsCounterResetSchema(Schema):
-    location = fields.String(
-        required=True,
-        validate=webargs.validate.OneOf(choices=('ethereum_transactions',)),
-    )
-
-
 class SingleFileSchema(Schema):
     file = FileField(required=True)
 
