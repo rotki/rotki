@@ -486,32 +486,6 @@ class TimerangeQuerySchema(Schema):
     async_query = fields.Boolean(load_default=False)
 
 
-class GitcoinReportSchema(TimerangeQuerySchema):
-    grant_id = fields.Integer(
-        strict=True,
-        validate=webargs.validate.Range(
-            min=1,
-            error='Gitcoin grant id must be a positive integer',
-        ),
-        load_default=None,
-    )
-
-
-class GitcoinEventsQuerySchema(GitcoinReportSchema):
-    only_cache = fields.Boolean(load_default=False)
-
-
-class GitcoinEventsDeleteSchema(Schema):
-    grant_id = fields.Integer(
-        strict=True,
-        validate=webargs.validate.Range(
-            min=1,
-            error='Gitcoin grant id must be a positive integer',
-        ),
-        load_default=None,
-    )
-
-
 class TradeSchema(Schema):
     timestamp = TimestampField(required=True)
     location = LocationField(required=True)

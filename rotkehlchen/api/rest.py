@@ -53,9 +53,6 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
-from rotkehlchen.chain.ethereum.gitcoin.api import GitcoinAPI
-from rotkehlchen.chain.ethereum.gitcoin.importer import GitcoinDataImporter
-from rotkehlchen.chain.ethereum.gitcoin.processor import GitcoinProcessor
 from rotkehlchen.chain.ethereum.modules.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_ETH
@@ -2154,15 +2151,6 @@ class RestAPI():
             if not success:
                 result = wrap_in_fail_result(f'Invalid CSV format, missing required field: {msg}')
                 return api_response(result, status_code=HTTPStatus.BAD_REQUEST)
-        elif source == 'gitcoin':
-            if self.rotkehlchen.premium is None:
-                return api_response(wrap_in_fail_result(
-                    'Gitcoin grants importing is premium only',
-                    status_code=HTTPStatus.CONFLICT,
-                ))
-
-            gitcoin_importer = GitcoinDataImporter(db=self.rotkehlchen.data.db)
-            gitcoin_importer.import_gitcoin_csv(filepath)
         elif source == 'shapeshift-trades':
             success, msg = self.rotkehlchen.data_importer.import_shapeshift_trades_csv(
                 filepath=filepath,
@@ -3511,107 +3499,6 @@ class RestAPI():
             ),
             status_code=HTTPStatus.OK,
         )
-
-    def _process_gitcoin(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            grant_id: Optional[int],
-    ) -> Dict[str, Any]:
-        processor = GitcoinProcessor(self.rotkehlchen.data.db)
-        profit_currency, reports = processor.process_gitcoin(
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-            grant_id=grant_id,
-        )
-        result = {
-            'reports': {grantid: report.serialize() for grantid, report in reports.items()},
-            'profit_currency': profit_currency.identifier,
-        }
-        return {'result': result, 'message': ''}
-
-    @require_premium_user(active_check=False)
-    def process_gitcoin(
-            self,
-            async_query: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            grant_id: Optional[int],
-    ) -> Response:
-        if async_query:
-            return self._query_async(
-                command='_process_gitcoin',
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-                grant_id=grant_id,
-            )
-
-        response = self._process_gitcoin(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            grant_id=grant_id,
-        )
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
-
-    def _get_gitcoin_events(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            grant_id: Optional[int],
-            only_cache: bool,
-    ) -> Dict[str, Any]:
-        api = GitcoinAPI(self.rotkehlchen.data.db)
-        try:
-            grantid_to_data = api.query_grant_history(
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-                grant_id=grant_id,
-                only_cache=only_cache,
-            )
-        except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
-        except InputError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
-
-        return {'result': grantid_to_data, 'message': '', 'status_code': HTTPStatus.OK}
-
-    @require_premium_user(active_check=False)
-    def get_gitcoin_events(
-            self,
-            async_query: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            grant_id: Optional[int],
-            only_cache: bool,
-    ) -> Response:
-        if async_query:
-            return self._query_async(
-                command='_get_gitcoin_events',
-                from_timestamp=from_timestamp,
-                to_timestamp=to_timestamp,
-                grant_id=grant_id,
-                only_cache=only_cache,
-            )
-
-        response = self._get_gitcoin_events(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            grant_id=grant_id,
-            only_cache=only_cache,
-        )
-        result_dict = {'result': response['result'], 'message': response['message']}
-        return api_response(
-            result=result_dict,
-            status_code=response.get('status_code', HTTPStatus.OK),
-        )
-
-    @require_loggedin_user()
-    def purge_gitcoin_grant_data(self, grant_id: Optional[int]) -> Response:
-        DBLedgerActions(
-            self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator,
-        ).delete_gitcoin_ledger_actions(grant_id)
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def add_manual_price(  # pylint: disable=no-self-use
         self,

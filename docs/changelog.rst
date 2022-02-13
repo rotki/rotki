@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`4068` Introduces location overview page.
+* :feature:`-` rotki no longer uses the gitcoin api or gitcoin CSVs to import information from gitcoin.
 * :feature:`4030` Add copy functionality for amount display.
 * :feature:`3987` Users will now be able to delete multiple database backups.
 * :feature:`2934` Users will now be able to deploy the docker image under a sub directory behind a proxy.

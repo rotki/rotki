@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Dict, Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.history.deserialization import deserialize_price
@@ -65,49 +65,6 @@ LedgerActionDBTupleWithIdentifier = Tuple[
 ]
 
 
-class GitcoinEventTxType(DBEnumMixIn):
-    ETHEREUM = 1
-    ZKSYNC = 2
-
-
-GitcoinEventDataDB = Tuple[
-    int,            # parent_id
-    str,            # tx_id
-    int,            # grant_id
-    Optional[int],  # clr_round
-    str,            # tx_type
-]
-
-
-class GitcoinEventData(NamedTuple):
-    tx_id: str
-    grant_id: int
-    clr_round: Optional[int]
-    tx_type: GitcoinEventTxType
-
-    def serialize_for_db(self, parent_id: int) -> GitcoinEventDataDB:
-        """Serializes Gitcoin event data to a tuple for writing to DB"""
-        return (
-            parent_id,
-            self.tx_id,
-            self.grant_id,
-            self.clr_round,
-            self.tx_type.serialize_for_db(),
-        )
-
-    @staticmethod
-    def deserialize_from_db(data: GitcoinEventDataDB) -> 'GitcoinEventData':
-        """May raise:
-        - DeserializationError
-        """
-        return GitcoinEventData(
-            tx_id=data[1],
-            grant_id=data[2],
-            clr_round=data[3],
-            tx_type=GitcoinEventTxType.deserialize_from_db(data[4]),
-        )
-
-
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class LedgerAction:
     """Represents an income/loss/expense for accounting purposes"""
@@ -121,7 +78,6 @@ class LedgerAction:
     rate_asset: Optional[Asset]
     link: Optional[str]
     notes: Optional[str]
-    extra_data: Optional[GitcoinEventData] = None
 
     def __hash__(self) -> int:
         return hash(str(self))
@@ -150,20 +106,6 @@ class LedgerAction:
             'notes': self.notes,
         }
 
-    def serialize_for_gitcoin(self) -> Dict[str, Any]:
-        """Should only be called for actions that have gitcoin data"""
-        extra_data: GitcoinEventData = self.extra_data  # type: ignore
-        return {
-            'timestamp': self.timestamp,
-            'amount': str(self.amount),
-            'asset': self.asset.identifier,
-            'usd_value': str(self.amount * self.rate),  # type: ignore
-            'grant_id': extra_data.grant_id,
-            'tx_id': extra_data.tx_id,
-            'tx_type': str(extra_data.tx_type),
-            'clr_round': extra_data.clr_round,
-        }
-
     def serialize_for_db(self) -> LedgerActionDBTuple:
         """Serializes an action for writing in the DB.
         Identifier and extra_data are ignored"""
@@ -183,18 +125,11 @@ class LedgerAction:
     def deserialize_from_db(
             cls,
             data: LedgerActionDBTupleWithIdentifier,
-            given_gitcoin_map: Optional[Dict[int, GitcoinEventDataDB]] = None,
     ) -> 'LedgerAction':
         """May raise:
         - DeserializationError
         - UnknownAsset
         """
-        extra_data = None
-        gitcoin_map = {} if not given_gitcoin_map else given_gitcoin_map
-        gitcoin_data = gitcoin_map.get(data[0], None)
-        if gitcoin_data is not None:
-            extra_data = GitcoinEventData.deserialize_from_db(data=gitcoin_data)
-
         return cls(
             identifier=data[0],
             timestamp=deserialize_timestamp(data[1]),
@@ -206,7 +141,6 @@ class LedgerAction:
             rate_asset=deserialize_optional(data[7], Asset),
             link=data[8],
             notes=data[9],
-            extra_data=extra_data,
         )
 
     def is_profitable(self) -> bool:

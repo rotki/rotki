@@ -1344,31 +1344,6 @@ Moreover you can see a piechart of the distribution of your netvalue across all 
    :align: center
 
 
-Gitcoin Grants
-***************
-
-As a premium user you can also keep track of your Gitcoin grants and generate reports for them.
-
-.. image:: images/gitcoin_grants.png
-   :alt: Gitcoin grant events
-   :align: center
-
-You need to first find the id ofthe grant you are interested in. When you visit the grant, the id is what comes after the ``grants/`` part of the url. For example for rotki (https://gitcoin.co/grants/149/rotki) the id is ``149``.
-
-You type the grant id, select a period you are interested in and press the fetch button to retrieve the events for this
-period. After the the retrieval completes you should be able to see the list of the events for this Grant.
-
-.. image:: images/gitcoin_grants_report.png
-   :alt: Gitcoin grant events
-   :align: center
-
-With the events retrieved you can also generate reports for specific periods. In these reports you can see a breakdown
-of the assets received for the specified grant over the selected period.
-
-.. warning::
-    The report depends on the already fetched events. If any events are missing during the selected report period
-    then they will not be included in the generated report.
-
 .. _set-the-backend-s-arguments:
 
 Set the backend's arguments

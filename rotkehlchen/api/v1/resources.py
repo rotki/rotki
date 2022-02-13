@@ -56,9 +56,6 @@ from rotkehlchen.api.v1.schemas import (
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
     FileListSchema,
-    GitcoinEventsDeleteSchema,
-    GitcoinEventsQuerySchema,
-    GitcoinReportSchema,
     HistoricalAssetsPriceSchema,
     HistoryBaseEntrySchema,
     HistoryExportingSchema,
@@ -1985,51 +1982,6 @@ class BinanceUserMarkets(BaseResource):
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(self, name: str, location: Location) -> Response:
         return self.rest_api.get_user_binance_pairs(name, location)
-
-
-class GitcoinEventsResource(BaseResource):
-    post_schema = GitcoinEventsQuerySchema()
-    delete_schema = GitcoinEventsDeleteSchema()
-
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            async_query: bool,
-            grant_id: Optional[int],
-            only_cache: bool,
-    ) -> Response:
-        return self.rest_api.get_gitcoin_events(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            async_query=async_query,
-            grant_id=grant_id,
-            only_cache=only_cache,
-        )
-
-    @use_kwargs(delete_schema, location='json_and_query')
-    def delete(self, grant_id: Optional[int]) -> Response:
-        return self.rest_api.purge_gitcoin_grant_data(grant_id=grant_id)
-
-
-class GitcoinReportResource(BaseResource):
-    put_schema = GitcoinReportSchema()
-
-    @use_kwargs(put_schema, location='json_and_query')
-    def put(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            async_query: bool,
-            grant_id: Optional[int],
-    ) -> Response:
-        return self.rest_api.process_gitcoin(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            async_query=async_query,
-            grant_id=grant_id,
-        )
 
 
 class AvalancheTransactionsResource(BaseResource):
