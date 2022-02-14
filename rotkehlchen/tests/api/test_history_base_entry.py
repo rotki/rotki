@@ -18,15 +18,13 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
 )
 from rotkehlchen.typing import Location, Timestamp, TimestampMS
 
 
 def entry_to_input_dict(entry: HistoryBaseEntry, include_identifier: bool) -> Dict[str, Any]:
     serialized = entry.serialize()
-    balance = serialized.pop('balance')
-    serialized['amount'] = balance['amount']
-    serialized['usd_value'] = balance['usd_value']
     if include_identifier:
         assert entry.identifier is not None
         serialized['identifier'] = entry.identifier
@@ -126,8 +124,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
         json=json_data,
     )
-    result = assert_proper_response_with_result(response)
-    assert result is True
+    assert_simple_ok_response(response)
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
     saved_events = db.get_history_events(HistoryEventFilterQuery.make(), True)

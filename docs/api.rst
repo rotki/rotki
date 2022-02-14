@@ -4075,8 +4075,7 @@ Dealing with BaseHistoryEntry events
           "location": "blockchain",
           "event_type": "informational",
           "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
-          "amount": "1.542",
-          "usd_value": "1.675",
+          "balance": {"amount": "1.542", "usd_value": "1.675"},
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
           "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
           "event_subtype": "approve",
@@ -4091,8 +4090,7 @@ Dealing with BaseHistoryEntry events
    :reqjson string location: The location of the entry
    :reqjson string event_type: The main event type of the entry. Possible event types can be seen in HistoryEventType enum.
    :reqjson string asset: The asset identifier for this entry
-   :reqjson string amount: The amount of asset for this entry
-   :reqjson string usd_value: The usd value of the amount of asset for this entry. If not known can also be "0".
+   :reqjson object balance: The amount/usd value of the event. If not known usd_value can also be "0".
    :reqjson string location_label: location_label is a string field that allows to provide more information about the location. For example when we use this structure in blockchains can be used to specify the source address.
    :reqjson string notes: This is a description of the event entry in plain text explaining what is being done. This is supposed to be shown to the user.
    :reqjson string event_subtype: Optional. An optional subtype for the entry. Possible event types can be seen in HistoryEventSubType enum.
@@ -4136,8 +4134,7 @@ Dealing with BaseHistoryEntry events
           "location": "blockchain",
           "event_type": "informational",
           "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
-          "amount": "1.542",
-          "usd_value": "1.675",
+          "balance": {"amount": "1.542", "usd_value": "1.675"},
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
           "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
           "event_subtype": "approve",
