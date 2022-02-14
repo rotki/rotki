@@ -3,7 +3,12 @@ from typing import List, Optional
 
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.accounting.structures import (
+    DefiEvent,
+    HistoryBaseEntry,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BCH_BSV_FORK_TS, BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETC, A_ETH
@@ -53,6 +58,7 @@ class TaxableEvents():
         self.margin_positions_profit_loss = ZERO
         self.defi_profit_loss = ZERO
         self.ledger_actions_profit_loss = ZERO
+        self.staking_profit = ZERO
 
     @property
     def include_crypto2crypto(self) -> Optional[bool]:
@@ -989,3 +995,34 @@ class TaxableEvents():
                 action=action,
                 profit_loss_in_profit_currency=profit_loss,
             )
+
+    def add_history_base_entry(self, action: HistoryBaseEntry) -> None:
+        timestamp = action.get_timestamp_in_sec()
+        rate = self.get_rate_in_profit_currency(
+            asset=action.asset,
+            timestamp=timestamp,
+        )
+        # At the moment we only process staking events
+        if (
+            action.event_type != HistoryEventType.STAKING or
+            action.event_subtype != HistoryEventSubType.REWARD
+        ):
+            return None
+
+        self.cost_basis.obtain_asset(
+            location=action.location,
+            timestamp=timestamp,
+            description=str(action),
+            asset=action.asset,
+            amount=action.balance.amount,
+            rate=rate,
+            fee_in_profit_currency=ZERO,
+        )
+        profit_loss = action.balance.amount * rate
+        self.staking_profit += profit_loss
+
+        self.csv_exporter.add_staking_reward(
+            action=action,
+            profit_loss_in_profit_currency=profit_loss,
+        )
+        return None

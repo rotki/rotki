@@ -1360,7 +1360,8 @@
     "ledger_action": "Ledger Action",
     "loan_settlement": "Loan settlement",
     "margin_position_close": "Margin Position Close",
-    "sell": "Sell"
+    "sell": "Sell",
+    "staking_reward": "Staking Reward"
   },
   "progress_screen": {
     "progress": "{progress} %"
@@ -1449,6 +1450,7 @@
       "margin_positions_pnl": "Margin Positions Profit/Loss",
       "settlement_losses": "Settlement Losses",
       "taxable_trade_profit_loss": "Taxable Trade Profit/Loss",
+      "taxable_staking_profit": "Taxable Staking Profit",
       "total_profit_loss": "Total Profit/Loss",
       "total_taxable_profit_loss": "Total Taxable Profit/Loss"
     },

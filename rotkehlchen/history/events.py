@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union, cast
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
+from rotkehlchen.accounting.structures import HistoryBaseEntry, HistoryEventType
 from rotkehlchen.chain.ethereum.graph import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
@@ -10,9 +11,11 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     ETHTransactionsFilterQuery,
+    HistoryEventFilterQuery,
     LedgerActionsFilterQuery,
     TradesFilterQuery,
 )
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -46,8 +49,9 @@ log = RotkehlchenLogsAdapter(logger)
 # aave lending
 # eth2
 # liquity
+# base history entries
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 10 + len(EXTERNAL_LOCATION) + len(AMMTradeLocations)
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 11 + len(EXTERNAL_LOCATION) + len(AMMTradeLocations)
 
 
 HistoryResult = Tuple[
@@ -58,6 +62,7 @@ HistoryResult = Tuple[
     List[EthereumTransaction],
     List['DefiEvent'],
     List['LedgerAction'],
+    List[HistoryBaseEntry],
 ]
 # TRADES_LIST = List[Union[Trade, AMMTrade]]
 TRADES_LIST = List[Trade]
@@ -302,6 +307,35 @@ class EventsHistorian():
         )
         return asset_movements, filter_total_found
 
+    def query_history_events(
+        self,
+        filter_query: HistoryEventFilterQuery,
+        only_cache: bool,
+    ) -> Tuple[List[HistoryBaseEntry], int]:
+        if only_cache is False:
+            exchanges_list = self.exchange_manager.connected_exchanges.get(Location.KRAKEN, [])
+            kraken_names = []
+            for kraken_instance in exchanges_list:
+                with_errors = kraken_instance.query_kraken_ledgers(   # type: ignore
+                    start_ts=filter_query.from_ts,
+                    end_ts=filter_query.to_ts,
+                )
+                if with_errors:
+                    kraken_names.append(kraken_instance.name)
+            if len(kraken_names) != 0:
+                self.msg_aggregator.add_error(
+                    f'Failed to query some events from Kraken exchanges '
+                    f'{",".join(kraken_names)}',
+                )
+
+        db = DBHistoryEvents(self.db)
+        has_premium = self.chain_manager.premium is not None
+        events, filter_total_found = db.get_history_events_and_limit_info(
+            filter_query=filter_query,
+            has_premium=has_premium,
+        )
+        return events, filter_total_found
+
     def get_history(
             self,
             start_ts: Timestamp,
@@ -322,6 +356,7 @@ class EventsHistorian():
         asset_movements = []
         ledger_actions = []
         loans = []
+        history_base_entries = []
         empty_or_error = ''
 
         def populate_history_cb(
@@ -524,6 +559,17 @@ class EventsHistorian():
                 to_timestamp=end_ts,
                 addresses=self.chain_manager.queried_addresses_for_module('liquity'),
             ))
+        step = self._increase_progress(step, total_steps)
+
+        # Include base history entries
+        history_events_db = DBHistoryEvents(self.db)
+        base_entries, _ = history_events_db.get_history_events_and_limit_info(
+            filter_query=HistoryEventFilterQuery.make(
+                event_types=[HistoryEventType.STAKING],
+            ),
+            has_premium=has_premium,
+        )
+        history_base_entries.extend(base_entries)
         self._increase_progress(step, total_steps)
 
         history.sort(key=action_get_timestamp)
@@ -535,4 +581,5 @@ class EventsHistorian():
             eth_transactions,
             defi_events,
             ledger_actions,
+            history_base_entries,
         )

@@ -14,6 +14,7 @@ export const ProfitLossOverview = z.object({
   generalTradeProfitLoss: NumericString,
   taxableTradeProfitLoss: NumericString,
   totalTaxableProfitLoss: NumericString,
+  stakingProfit: NumericString,
   totalProfitLoss: NumericString
 });
 

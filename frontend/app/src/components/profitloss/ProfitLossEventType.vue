@@ -27,6 +27,7 @@ const INTEREST_RATE_PAYMENT = 'interest_rate_payment';
 const MARGIN_POSITION_CLOSE = 'margin_position_close';
 const DEFI_EVENT = 'defi_event';
 const LEDGER_ACTION = 'ledger_action';
+const STAKING_REWARD = 'staking_reward';
 
 const EVENT_TYPES = [
   BUY,
@@ -37,7 +38,8 @@ const EVENT_TYPES = [
   INTEREST_RATE_PAYMENT,
   MARGIN_POSITION_CLOSE,
   DEFI_EVENT,
-  LEDGER_ACTION
+  LEDGER_ACTION,
+  STAKING_REWARD
 ] as const;
 
 type EventTypes = typeof EVENT_TYPES[number];
@@ -53,7 +55,8 @@ const icons: Resources = {
   [INTEREST_RATE_PAYMENT]: 'bank-transfer-in',
   [MARGIN_POSITION_CLOSE]: 'mdi-margin',
   [DEFI_EVENT]: 'mdi-finance',
-  [LEDGER_ACTION]: 'mdi-book-open-variant'
+  [LEDGER_ACTION]: 'mdi-book-open-variant',
+  [STAKING_REWARD]: 'mdi-sprout'
 };
 
 const names: Resources = {
@@ -71,7 +74,8 @@ const names: Resources = {
     .t('profit_loss_event_type.margin_position_close')
     .toString(),
   [DEFI_EVENT]: i18n.t('profit_loss_event_type.defi_event').toString(),
-  [LEDGER_ACTION]: i18n.t('profit_loss_event_type.ledger_action').toString()
+  [LEDGER_ACTION]: i18n.t('profit_loss_event_type.ledger_action').toString(),
+  [STAKING_REWARD]: i18n.t('profit_loss_event_type.staking_reward').toString()
 };
 
 export default defineComponent({

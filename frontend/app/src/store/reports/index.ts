@@ -51,6 +51,7 @@ const pnlOverview = (): ProfitLossOverview => ({
   generalTradeProfitLoss: Zero,
   taxableTradeProfitLoss: Zero,
   totalTaxableProfitLoss: Zero,
+  stakingProfit: Zero,
   totalProfitLoss: Zero
 });
 
@@ -160,6 +161,7 @@ export const useReports = defineStore('reports', () => {
         taxableTradeProfitLoss: selectedReport.taxableTradeProfitLoss,
         totalProfitLoss: selectedReport.totalProfitLoss,
         totalTaxableProfitLoss: selectedReport.totalTaxableProfitLoss,
+        stakingProfit: selectedReport.stakingProfit,
         loanProfit: selectedReport.loanProfit
       };
       const settings: BaseAccountingSettings = {

@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Sequence, Tuple, Union
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import DefiEvent
+from rotkehlchen.accounting.structures import DefiEvent, HistoryBaseEntry
 from rotkehlchen.db.reports import DBAccountingReports, ReportDataFilterQuery
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
@@ -24,6 +24,7 @@ def accounting_history_process(
         eth_transaction_list: List[Dict] = None,
         defi_events_list: List[DefiEvent] = None,
         ledger_actions_list: List[LedgerAction] = None,
+        history_events_list: List[HistoryBaseEntry] = None,
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     trade_history: Sequence[Union[Trade, MarginPosition]]
     # For filtering the taxable actions list we start with 0 ts so that we have the
@@ -64,6 +65,10 @@ def accounting_history_process(
     if ledger_actions_list:
         ledger_actions = ledger_actions_list
 
+    history_events = []
+    if history_events_list:
+        history_events = history_events_list
+
     report_id = accountant.process_history(
         start_ts=start_ts,
         end_ts=end_ts,
@@ -73,6 +78,7 @@ def accounting_history_process(
         eth_transactions=eth_transactions,
         defi_events=defi_events,
         ledger_actions=ledger_actions,
+        history_events=history_events,
     )
     dbpnl = DBAccountingReports(accountant.csvexporter.database)
     report = dbpnl.get_reports(report_id=report_id, with_limit=False)[0][0]

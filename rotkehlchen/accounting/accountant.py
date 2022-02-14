@@ -7,7 +7,7 @@ import gevent
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import ActionType, DefiEvent
+from rotkehlchen.accounting.structures import ActionType, DefiEvent, HistoryBaseEntry
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -295,6 +295,7 @@ class Accountant():
             eth_transactions: List[EthereumTransaction],
             defi_events: List[DefiEvent],
             ledger_actions: List[LedgerAction],
+            history_events: List[HistoryBaseEntry],
     ) -> int:
         """Processes the entire history of cryptoworld actions in order to determine
         the price and time at which every asset was obtained and also
@@ -343,6 +344,9 @@ class Accountant():
 
         if len(ledger_actions) != 0:
             actions.extend(ledger_actions)
+
+        if len(history_events) != 0:
+            actions.extend(history_events)
 
         actions.sort(key=action_get_timestamp)
         # The first ts is the ts of the first action we have in history or 0 for empty history
@@ -441,6 +445,7 @@ class Accountant():
         sum_other_actions = (
             self.events.margin_positions_profit_loss +
             self.events.defi_profit_loss +
+            self.events.staking_profit +
             self.events.ledger_actions_profit_loss +
             self.events.loan_profit -
             self.events.settlement_losses -
@@ -466,6 +471,7 @@ class Accountant():
             'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
             'settlement_losses': str(self.events.settlement_losses),
             'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
+            'staking_profit': str(self.events.staking_profit),
             'asset_movement_fees': str(self.asset_movement_fees),
             'general_trade_profit_loss': str(self.events.general_trade_profit_loss),
             'taxable_trade_profit_loss': str(self.events.taxable_trade_profit_loss),
@@ -640,6 +646,10 @@ class Accountant():
         if action_type == 'ledger_action':
             action = cast(LedgerAction, action)
             self.events.add_ledger_action(action)
+            return True, prev_time
+        if action_type == 'history_base_entry':
+            action = cast(HistoryBaseEntry, action)
+            self.events.add_history_base_entry(action)
             return True, prev_time
 
         if isinstance(action, AMMTrade) and action.tx_hash:

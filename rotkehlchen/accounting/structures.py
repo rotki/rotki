@@ -9,7 +9,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.typing import Location, Timestamp, TimestampMS
-from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec
+from rotkehlchen.utils.misc import combine_dicts, timestamp_to_date, ts_ms_to_sec
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
@@ -443,6 +443,21 @@ class HistoryBaseEntry:
             'notes': self.notes,
             'counterparty': self.counterparty,
         }
+
+    def __str__(self) -> str:
+        return (
+            f'{self.event_subtype} event at {self.location} and time '
+            f'{timestamp_to_date(ts_ms_to_sec(self.timestamp))} using {self.asset}'
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f'History entry from {self.location} at {self.timestamp} of type '
+            f'{self.event_type} and subtype {self.event_subtype}'
+        )
+
+    def get_timestamp_in_sec(self) -> Timestamp:
+        return ts_ms_to_sec(self.timestamp)
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
