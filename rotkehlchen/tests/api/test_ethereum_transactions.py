@@ -27,7 +27,6 @@ from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import EthereumTransaction
 
 EXPECTED_AFB7_TXS = [{
-    # 'identifier': '0x13684203a4bf07aaed0112983cb380db6004acac772af2a5d46cb2a28245fbad0xC47Aaa860008be6f65B58c6C6E02a84e666EfE31100',  # noqa: E501
     'tx_hash': '0x13684203a4bf07aaed0112983cb380db6004acac772af2a5d46cb2a28245fbad',
     'timestamp': 1439984408,
     'block_number': 111083,
@@ -40,7 +39,6 @@ EXPECTED_AFB7_TXS = [{
     'input_data': '0x',
     'nonce': 100,
 }, {
-    # 'identifier': '0xe58af420fd8430c061303e4c5bd2668fafbc0fd41078fa6aa01d7781c1dadc7a0x9e6316f44BaEeeE5d41A1070516cc5fA47BAF227326',  # noqa: E501
     'tx_hash': '0xe58af420fd8430c061303e4c5bd2668fafbc0fd41078fa6aa01d7781c1dadc7a',
     'timestamp': 1461221228,
     'block_number': 1375816,
@@ -53,7 +51,6 @@ EXPECTED_AFB7_TXS = [{
     'input_data': '0x',
     'nonce': 326,
 }, {
-    # 'identifier': '0x0ae8b470b4a69c7f6905b9ec09f50c8772821080d11ba0acc83ac23a7ccb4ad80xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA70',  # noqa: E501
     'tx_hash': '0x0ae8b470b4a69c7f6905b9ec09f50c8772821080d11ba0acc83ac23a7ccb4ad8',
     'timestamp': 1461399856,
     'block_number': 1388248,
@@ -724,6 +721,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
     entries = result['entries']
     assert len(entries) == 4
     assert entries[0]['decoded_events'] == [{
+        'identifier': 4,
         'asset': 'ETH',
         'balance': {'amount': '0.00863351371344', 'usd_value': '0'},
         'counterparty': 'gas',
@@ -736,6 +734,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'sequence_index': 0,
         'timestamp': 1642802807,
     }, {
+        'identifier': 5,
         'asset': 'ETH',
         'balance': {'amount': '0.096809163374771208', 'usd_value': '0'},
         'counterparty': '0xA090e606E30bD747d4E6245a1517EbE430F0057e',
@@ -749,6 +748,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'timestamp': 1642802807,
     }]
     assert entries[1]['decoded_events'] == [{
+        'identifier': 1,
         'asset': 'ETH',
         'balance': {'amount': '0.017690836625228792', 'usd_value': '0'},
         'counterparty': 'gas',
@@ -761,6 +761,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'sequence_index': 0,
         'timestamp': 1642802735,
     }, {
+        'identifier': 2,
         'asset': A_USDT.identifier,
         'balance': {'amount': '1166', 'usd_value': '0'},
         'counterparty': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
@@ -774,6 +775,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'timestamp': 1642802735,
     }]
     assert entries[2]['decoded_events'] == [{
+        'identifier': 3,
         'asset': 'ETH',
         'balance': {'amount': '0.125', 'usd_value': '0'},
         'counterparty': '0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
@@ -787,6 +789,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'timestamp': 1642802651,
     }]
     assert entries[3]['decoded_events'] == [{
+        'identifier': 6,
         'asset': A_USDT.identifier,
         'balance': {'amount': '1166', 'usd_value': '0'},
         'counterparty': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',

@@ -1934,6 +1934,7 @@ Querying ethereum transactions
                },
                "ignored_in_accounting": false,
 	       "decoded_events": [{
+	           "identifier": 1,
 	           "asset": "ETH",
 		   "balance": {"amount": "0.00863351371344", "usd_value": "0"},
 		   "counterparty": "gas",
@@ -1946,6 +1947,7 @@ Querying ethereum transactions
                    "sequence_index": 0,
 		   "timestamp": 1642802807
 	       }, {
+                "identifier": 2,
 		"asset": "ETH",
 		"balance": {"amount": "0.096809163374771208", "usd_value": "0"},
 		"counterparty": "0xA090e606E30bD747d4E6245a1517EbE430F0057e",
@@ -1975,6 +1977,7 @@ Querying ethereum transactions
                 },
                 "ignored_in_accounting": true,
 		"decoded_events": [{
+	           "identifier": 3,
 	           "asset": "ETH",
 		   "balance": {"amount": "0.00863351371344", "usd_value": "0"},
 		   "counterparty": "gas",
