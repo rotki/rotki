@@ -2046,7 +2046,7 @@ class StakingResource(BaseResource):
         )
 
 
-class AssetsExportingResource(BaseResource):
+class UserAssetsResource(BaseResource):
     get_schema = AsyncQueryArgumentSchema
     upload_schema = AssetsImportingSchema
 

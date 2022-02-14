@@ -854,7 +854,7 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb):
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            'assetsexportingresource',
+            'userassetsresource',
         ),
     )
     result = assert_proper_response_with_result(response)
@@ -887,14 +887,13 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb):
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_importing_custom_assets_list(rotkehlchen_api_server):
     """Test that the endpoint for importing custom assets works correctly"""
-
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'exported_assets.json'
 
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            'assetsexportingresource',
+            'userassetsresource',
         ), json={'file': str(filepath)},
     )
 
@@ -911,7 +910,7 @@ def test_importing_custom_assets_list(rotkehlchen_api_server):
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'assetsexportingresource',
+            'userassetsresource',
         ), files={'file': open(filepath, 'rb')},
     )
 

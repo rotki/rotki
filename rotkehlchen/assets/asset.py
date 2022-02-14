@@ -731,6 +731,42 @@ class Asset():
         # else
         raise ValueError(f'Invalid comparison of asset with {type(other)}')
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Returns an exportable json representation for an asset"""
+        forked, swapped_for = None, None
+        if self.forked is not None:
+            forked = self.forked.identifier
+        if self.swapped_for is not None:
+            swapped_for = self.swapped_for.identifier
+
+        asset_dict: Dict[str, Any] = {
+            'identifier': self.identifier,
+            'name': self.name,
+            'symbol': self.symbol,
+            'asset_type': self.asset_type.serialize_for_db(),
+            'started': self.started,
+            'forked': forked,
+            'swapped_for': swapped_for,
+            'cryptocompare': self.cryptocompare,
+            'coingecko': self.coingecko,
+        }
+
+        if self.is_eth_token():
+            asset_as_token = EthereumToken.from_asset(self)
+            if asset_as_token is None:
+                return asset_dict
+            underlying = None
+            if asset_as_token.underlying_tokens is not None:
+                underlying = [token.serialize() for token in asset_as_token.underlying_tokens]
+            asset_dict |= {
+                'ethereum_address': asset_as_token.ethereum_address,
+                'decimals': asset_as_token.decimals,
+                'protocol': asset_as_token.protocol,
+                'underlying_tokens': underlying,
+            }
+
+        return asset_dict
+
     @classmethod
     def initialize(
             cls: Type[Z],

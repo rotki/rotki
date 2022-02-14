@@ -117,7 +117,7 @@ from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.serialization.serialize import asset_to_dict, process_result, process_result_list
+from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.typing import (
     AVAILABLE_MODULES_MAP,
     IMPORTABLE_LOCATIONS,
@@ -3962,21 +3962,22 @@ class RestAPI():
 
     def _get_user_added_assets(self) -> Dict[str, Any]:
         try:
-            assets = GlobalDBHandler().get_user_added_assets(user_db=self.rotkehlchen.data.db)
             dirpath = Path(mkdtemp())
             dirpath.mkdir(parents=True, exist_ok=True)
+        except PermissionError as e:
+            return wrap_in_fail_result(
+                message=f'Failed to create information file. {str(e)}',
+                status_code=HTTPStatus.INSUFFICIENT_STORAGE,
+            )
+        assets = GlobalDBHandler().get_user_added_assets(user_db=self.rotkehlchen.data.db)
+        try:
             serialized = []
             for asset_identifier in assets:
                 try:
                     asset = Asset(asset_identifier)
-                    serialized.append(asset_to_dict(asset))
+                    serialized.append(asset.to_dict())
                 except UnknownAsset as e:
                     log.error(e)
-        except PermissionError as e:
-            return wrap_in_fail_result(
-                message=f'Failed to create information file. {str(e)}',
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-            )
         except sqlcipher.Error as e:  # pylint: disable=no-member
             return wrap_in_fail_result(
                 message=f'Failed to retrieve the list of assets {str(e)}',
@@ -4091,11 +4092,11 @@ class RestAPI():
                 )
             except InputError as e:
                 log.error(
-                    f'Failed to add asset with {asset_data["identifier"]=}',
+                    f'Failed to import asset with {asset_data["identifier"]=}',
                     f'{asset_type=} and {data=}. {str(e)}',
                 )
                 self.rotkehlchen.msg_aggregator.add_warning(
-                    f'Failed to save asset with identifier '
+                    f'Failed to save import with identifier '
                     f'{asset_data["identifier"]}.Check logs for more details',
                 )
                 continue
