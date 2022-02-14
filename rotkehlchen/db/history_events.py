@@ -64,7 +64,7 @@ class DBHistoryEvents():
         cursor.execute(
             'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
             'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
-            'type=?, subtype=?, counterparty=? WHERE rowid=?',
+            'type=?, subtype=?, counterparty=? WHERE identifier=?',
             (*event.serialize_for_db(), event.identifier),
         )
         if cursor.rowcount != 1:
@@ -84,7 +84,7 @@ class DBHistoryEvents():
         ids_len = len(identifiers)
         questionmarks = '?' * ids_len
         cursor.execute(
-            f'DELETE FROM history_events WHERE rowid IN ({",".join(questionmarks)})',
+            f'DELETE FROM history_events WHERE identifier IN ({",".join(questionmarks)})',
             identifiers,
         )
         affected_rows = cursor.rowcount
@@ -108,10 +108,10 @@ class DBHistoryEvents():
         cursor = self.db.conn.cursor()
 
         if has_premium:
-            query = 'SELECT rowid, * from history_events ' + query
+            query = 'SELECT * from history_events ' + query
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT rowid, * from history_events ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            query = 'SELECT * FROM (SELECT * from history_events ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_HISTORY_EVENTS_LIMIT] + bindings)
 
         output = []
@@ -153,7 +153,7 @@ class DBHistoryEvents():
         Get missing prices for history base entries based on filter query
         """
         query, bindings = filter_query.prepare()
-        query = 'SELECT rowid, amount, asset, timestamp FROM history_events ' + query
+        query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
         result = []
         cursor = self.db.conn.cursor()
         cursor.execute(query, bindings)

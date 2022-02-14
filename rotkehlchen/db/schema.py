@@ -605,6 +605,7 @@ CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
 
 DB_CREATE_HISTORY_EVENTS = """
 CREATE TABLE IF NOT EXISTS history_events (
+    identifier INTEGER NOT NULL PRIMARY KEY,
     event_identifier TEXT NOT NULL,
     sequence_index INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
