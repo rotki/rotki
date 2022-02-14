@@ -14,6 +14,7 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery
 from rotkehlchen.db.old_create import OLD_DB_SCRIPT_CREATE_TABLES
+from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import UPGRADES_LIST
 from rotkehlchen.db.upgrades.v6_v7 import (
@@ -75,10 +76,19 @@ def _init_db_with_target_version(
         user_data_dir: Path,
         msg_aggregator: MessagesAggregator,
 ) -> DBHandler:
+    no_tables_created_after_init = patch(
+        'rotkehlchen.db.dbhandler.DB_SCRIPT_CREATE_TABLES',
+        new='',
+    )
     with ExitStack() as stack:
         stack.enter_context(target_patch(target_version=target_version))
-        if target_version <= 24:
+        if target_version not in (2, 4):
+            # Some early upgrade tests rely on a mocked creation so we need to not touch it
+            # for others do not allow latest tables to be created after init
+            stack.enter_context(no_tables_created_after_init)
+        if target_version <= 25:
             stack.enter_context(mock_dbhandler_update_owned_assets())
+            stack.enter_context(mock_dbhandler_add_globaldb_assetids())
         db = DBHandler(
             user_data_dir=user_data_dir,
             password='123',
@@ -1749,13 +1759,11 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
 
     # Check errors/warnings
     warnings = msg_aggregator.consume_warnings()
-    assert len(warnings) == 11
+    assert len(warnings) == 9
     for idx in (0, 1, 3, 5, 7):
         assert "During v24 -> v25 DB upgrade could not find key '_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94'" in warnings[idx]  # noqa: E501
-    for idx in (2, 4, 6):
+    for idx in (2, 4, 6, 8):
         assert "During v24 -> v25 DB upgrade could not find key '_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e'" in warnings[idx]  # noqa: E501
-    assert 'Unknown/unsupported asset _ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94' in warnings[9]  # noqa: E501
-    assert 'Unknown/unsupported asset _ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e' in warnings[10]  # noqa: E501
     errors = msg_aggregator.consume_errors()
     assert len(errors) == 0
     # Finally also make sure that we have updated to the target version
@@ -2438,7 +2446,6 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         assert cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
         ).fetchone()[0] == 1
-
     # Execute upgrade
     db = _init_db_with_target_version(
         target_version=32,
@@ -2464,6 +2471,47 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         assert cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
         ).fetchone()[0] == 0
+
+
+def test_latest_upgrade_adds_remove_tables(user_data_dir):
+    """
+    This is a test that we can only do for the last upgrade.
+    It tests that we know and have included addition statements for all
+    of the new database tables introduced.
+
+    Each time a new database upgrade is added this will need to be modified as
+    this is just to reminds us not to forget to add create table statements.
+    """
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v31_rotkehlchen.db')
+    db = _init_db_with_target_version(
+        target_version=31,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+    result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
+    tables_before = {x[0] for x in result}
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=32,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+    )
+    cursor = db.conn.cursor()
+    result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
+    tables_after_upgrade = {x[0] for x in result}
+    # also add latest tables (this will indicate if DB upgrade missed something
+    db.conn.executescript(DB_SCRIPT_CREATE_TABLES)
+    result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
+    tables_after_creation = {x[0] for x in result}
+
+    removed_tables = {'gitcoin_grant_metadata', 'ledger_actions_gitcoin_data', 'gitcoin_tx_type'}
+    missing_tables = tables_before - tables_after_upgrade
+    assert missing_tables == removed_tables
+    assert tables_after_creation - tables_after_upgrade == set()
+    new_tables = tables_after_upgrade - tables_before
+    assert new_tables == {'ethereum_internal_transactions', 'ethx_address_mappings', 'evm_tx_mappings'}  # noqa: E501
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):
