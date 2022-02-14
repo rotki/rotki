@@ -132,7 +132,6 @@ def initialize_mock_rotkehlchen_instance(
         kusama_manager_connect_at_start,
         eth_rpc_endpoint,
         ksm_rpc_endpoint,
-        aave_use_graph,
         max_tasks_num,
         legacy_messages_via_websockets,
         data_migration_version,
@@ -250,10 +249,6 @@ def initialize_mock_rotkehlchen_instance(
         substrate_manager=rotki.chain_manager.kusama,
     )
 
-    aave = rotki.chain_manager.get_module('aave')
-    if aave:
-        aave.use_graph = aave_use_graph
-
 
 @pytest.fixture(name='uninitialized_rotkehlchen')
 def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, globaldb):  # pylint: disable=unused-argument  # noqa: E501
@@ -296,7 +291,6 @@ def fixture_rotkehlchen_api_server(
         kusama_manager_connect_at_start,
         ethrpc_endpoint,
         ksm_rpc_endpoint,
-        aave_use_graph,
         max_tasks_num,
         legacy_messages_via_websockets,
         data_migration_version,
@@ -335,7 +329,6 @@ def fixture_rotkehlchen_api_server(
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         eth_rpc_endpoint=ethrpc_endpoint,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
-        aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
         legacy_messages_via_websockets=legacy_messages_via_websockets,
         data_migration_version=data_migration_version,
@@ -371,7 +364,6 @@ def rotkehlchen_instance(
         kusama_manager_connect_at_start,
         ethrpc_endpoint,
         ksm_rpc_endpoint,
-        aave_use_graph,
         max_tasks_num,
         legacy_messages_via_websockets,
         data_migration_version,
@@ -404,7 +396,6 @@ def rotkehlchen_instance(
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         eth_rpc_endpoint=ethrpc_endpoint,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
-        aave_use_graph=aave_use_graph,
         max_tasks_num=max_tasks_num,
         legacy_messages_via_websockets=legacy_messages_via_websockets,
         data_migration_version=data_migration_version,

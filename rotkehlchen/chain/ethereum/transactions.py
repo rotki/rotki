@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from rotkehlchen.db.ethtx import DBEthTx
@@ -31,14 +30,6 @@ class EthTransactions(LockableQueryMixIn):
         super().__init__()
         self.ethereum = ethereum
         self.database = database
-
-    def reset_count(self) -> None:
-        """Reset the limit counter for ethereum transactions
-
-        This should be done by the frontend for non-premium users at the start
-        of any batch of transaction queries.
-        """
-        self.ethereum.tx_per_address = defaultdict(int)
 
     def single_address_query_transactions(
             self,

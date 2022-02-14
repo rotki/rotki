@@ -10,10 +10,11 @@ from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import ActionType, HistoryBaseEntry
 from rotkehlchen.api.rest import RestAPI
-from rotkehlchen.api.v1.encoding import (
+from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
+from rotkehlchen.api.v1.schemas import (
     AccountingReportDataSchema,
     AccountingReportsSchema,
     AllBalancesQuerySchema,
@@ -22,7 +23,6 @@ from rotkehlchen.api.v1.encoding import (
     AssetMovementsQuerySchema,
     AssetResetRequestSchema,
     AssetSchema,
-    AssetSchemaWithIdentifier,
     AssetsReplaceSchema,
     AssetUpdatesRequestSchema,
     AsyncHistoricalQuerySchema,
@@ -56,9 +56,6 @@ from rotkehlchen.api.v1.encoding import (
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
     FileListSchema,
-    GitcoinEventsDeleteSchema,
-    GitcoinEventsQuerySchema,
-    GitcoinReportSchema,
     HistoricalAssetsPriceSchema,
     HistoryBaseEntrySchema,
     HistoryExportingSchema,
@@ -68,10 +65,8 @@ from rotkehlchen.api.v1.encoding import (
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
     IntegerIdentifierSchema,
-    LedgerActionEditSchema,
     LedgerActionSchema,
     LedgerActionsQuerySchema,
-    LimitsCounterResetSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesSchema,
     ManualPriceDeleteSchema,
@@ -94,7 +89,6 @@ from rotkehlchen.api.v1.encoding import (
     StatisticsNetValueSchema,
     StatisticsValueDistributionSchema,
     StringIdentifierSchema,
-    TagEditSchema,
     TagSchema,
     TimedManualPriceSchema,
     TradeDeleteSchema,
@@ -110,7 +104,6 @@ from rotkehlchen.api.v1.encoding import (
     XpubAddSchema,
     XpubPatchSchema,
 )
-from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -463,12 +456,14 @@ class AllAssetsResource(BaseResource):
 
     def make_add_schema(self) -> AssetSchema:
         return AssetSchema(
+            identifier_required=False,
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
 
-    def make_edit_schema(self) -> AssetSchemaWithIdentifier:
-        return AssetSchemaWithIdentifier(
+    def make_edit_schema(self) -> AssetSchema:
+        return AssetSchema(
+            identifier_required=True,
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
         )
@@ -705,8 +700,8 @@ class AssetMovementsResource(BaseResource):
 
 class TagsResource(BaseResource):
 
-    put_schema = TagSchema()
-    patch_schema = TagEditSchema()
+    put_schema = TagSchema(color_required=True)
+    patch_schema = TagSchema(color_required=False)
     delete_schema = NameDeleteSchema()
 
     def get(self) -> Response:
@@ -750,8 +745,8 @@ class TagsResource(BaseResource):
 class LedgerActionsResource(BaseResource):
 
     get_schema = LedgerActionsQuerySchema()
-    put_schema = LedgerActionSchema()
-    patch_schema = LedgerActionEditSchema()
+    put_schema = LedgerActionSchema(identifier_required=False)
+    patch_schema = LedgerActionSchema(identifier_required=True)
     delete_schema = IntegerIdentifierSchema()
 
     @use_kwargs(get_schema, location='json_and_query')
@@ -770,28 +765,8 @@ class LedgerActionsResource(BaseResource):
     @use_kwargs(put_schema, location='json')
     def put(
             self,
-            timestamp: Timestamp,
-            action_type: LedgerActionType,
-            location: Location,
-            amount: AssetAmount,
-            asset: Asset,
-            rate: Optional[Price],
-            rate_asset: Optional[Asset],
-            link: Optional[str],
-            notes: Optional[str],
+            action: LedgerAction,
     ) -> Response:
-        action = LedgerAction(
-            identifier=0,  # whatever -- is not used at insertion
-            timestamp=timestamp,
-            action_type=action_type,
-            location=location,
-            amount=amount,
-            asset=asset,
-            rate=rate,
-            rate_asset=rate_asset,
-            link=link,
-            notes=notes,
-        )
         return self.rest_api.add_ledger_action(action)
 
     @use_kwargs(patch_schema, location='json')
@@ -2008,51 +1983,6 @@ class BinanceUserMarkets(BaseResource):
         return self.rest_api.get_user_binance_pairs(name, location)
 
 
-class GitcoinEventsResource(BaseResource):
-    post_schema = GitcoinEventsQuerySchema()
-    delete_schema = GitcoinEventsDeleteSchema()
-
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            async_query: bool,
-            grant_id: Optional[int],
-            only_cache: bool,
-    ) -> Response:
-        return self.rest_api.get_gitcoin_events(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            async_query=async_query,
-            grant_id=grant_id,
-            only_cache=only_cache,
-        )
-
-    @use_kwargs(delete_schema, location='json_and_query')
-    def delete(self, grant_id: Optional[int]) -> Response:
-        return self.rest_api.purge_gitcoin_grant_data(grant_id=grant_id)
-
-
-class GitcoinReportResource(BaseResource):
-    put_schema = GitcoinReportSchema()
-
-    @use_kwargs(put_schema, location='json_and_query')
-    def put(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            async_query: bool,
-            grant_id: Optional[int],
-    ) -> Response:
-        return self.rest_api.process_gitcoin(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            async_query=async_query,
-            grant_id=grant_id,
-        )
-
-
 class AvalancheTransactionsResource(BaseResource):
     get_schema = AvalancheTransactionQuerySchema()
 
@@ -2094,14 +2024,6 @@ class NFTSBalanceResource(BaseResource):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool, ignore_cache: bool) -> Response:
         return self.rest_api.get_nfts_balances(async_query=async_query, ignore_cache=ignore_cache)
-
-
-class LimitsCounterResetResource(BaseResource):
-    post_schema = LimitsCounterResetSchema()
-
-    @use_kwargs(post_schema, location='view_args')
-    def post(self, location: str) -> Response:
-        return self.rest_api.reset_limits_counter(location)
 
 
 class StakingResource(BaseResource):

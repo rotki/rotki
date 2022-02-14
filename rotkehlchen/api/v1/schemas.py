@@ -1,26 +1,10 @@
 import logging
-from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Union, overload
 
-import marshmallow
 import webargs
 from eth_utils import to_checksum_address
 from marshmallow import Schema, fields, post_load, validates_schema
 from marshmallow.exceptions import ValidationError
-from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures import (
@@ -32,15 +16,11 @@ from rotkehlchen.accounting.structures import (
     HistoryEventType,
 )
 from rotkehlchen.accounting.typing import SchemaEventType
-from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
+from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
-from rotkehlchen.chain.bitcoin.utils import (
-    is_valid_btc_address,
-    is_valid_derivation_path,
-    scriptpubkey_to_btc_address,
-)
+from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.substrate.typing import (
     KusamaAddress,
@@ -53,7 +33,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_kusama_address,
     is_valid_polkadot_address,
 )
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     Eth2DailyStatsFilterQuery,
@@ -69,43 +49,56 @@ from rotkehlchen.errors import (
     EncodingError,
     InputError,
     RemoteError,
-    UnknownAsset,
     XPUBError,
 )
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.typing import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
-    deserialize_hex_color_code,
-    deserialize_timestamp,
-)
 from rotkehlchen.typing import (
     AVAILABLE_MODULES_MAP,
-    ApiKey,
-    ApiSecret,
-    AssetAmount,
     AssetMovementCategory,
     BTCAddress,
     ChecksumEthAddress,
     ExternalService,
     ExternalServiceApiCredentials,
-    Fee,
-    HexColorCode,
     Location,
-    Price,
     SupportedBlockchain,
     Timestamp,
     TradeType,
 )
 from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
-from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+
+from .fields import (
+    AmountField,
+    ApiKeyField,
+    ApiSecretField,
+    AssetConflictsField,
+    AssetField,
+    AssetTypeField,
+    BlockchainField,
+    ColorField,
+    CurrentPriceOracleField,
+    DelimitedOrNormalList,
+    DerivationPathField,
+    DirectoryField,
+    EthereumAddressField,
+    FeeField,
+    FileField,
+    FloatingPercentageField,
+    HistoricalPriceOracleField,
+    LocationField,
+    MaybeAssetField,
+    PositiveAmountField,
+    PriceField,
+    SerializableEnumField,
+    TaxFreeAfterPeriodField,
+    TimestampField,
+    XpubField,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -113,875 +106,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-class DelimitedOrNormalList(webargs.fields.DelimitedList):
-    """This is equal to DelimitedList in webargs v5.6.0
-
-    Essentially accepting either a delimited string or a list-like object
-
-    We introduce it due to them implementing https://github.com/marshmallow-code/webargs/issues/423
-    """
-
-    def __init__(
-            self,
-            cls_or_instance: Any,
-            *,
-            _delimiter: Optional[str] = None,
-            **kwargs: Any,
-    ) -> None:
-        super().__init__(cls_or_instance, **kwargs)
-
-    def _deserialize(  # type: ignore  # we may get a list in value
-            self,
-            value: Union[List[str], str],
-            attr: str,
-            data: Dict[str, Any],
-            **kwargs: Any,
-    ) -> List[Any]:
-        """Adjusting code for _deserialize so that it also works for list-like objects
-
-        Adjusting code from
-        https://github.com/marshmallow-code/webargs/blob/dev/src/webargs/fields.py#L71
-        so that it uses the list-like detection seen in
-        https://github.com/marshmallow-code/webargs/blob/f1ae764973b6492e3c69109060c95240b7cc3d41/src/webargs/fields.py#L69
-        which was removed as part of https://github.com/marshmallow-code/webargs/issues/423
-        """
-        try:
-            ret = (
-                value
-                if marshmallow.utils.is_iterable_but_not_string(value)
-                else value.split(self.delimiter)  # type: ignore
-            )
-        except AttributeError as e:
-            raise self.make_error("invalid") from e
-        # purposefully skip the superclass here
-        return marshmallow.fields.List._deserialize(self, ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
-
-
-class TimestampField(fields.Field):
-
-    def __init__(self, ts_multiplier: int = 1, **kwargs: Any) -> None:
-        self.ts_multiplier = ts_multiplier
-        super().__init__(**kwargs)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Timestamp:
-        try:
-            timestamp = deserialize_timestamp(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return Timestamp(timestamp * self.ts_multiplier)
-
-
-class ColorField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> HexColorCode:
-        try:
-            color_code = deserialize_hex_color_code(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return color_code
-
-
-class TaxFreeAfterPeriodField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: int,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> int:
-        try:
-            value = int(value)
-        except ValueError:
-            raise ValidationError(f'{value} is not a valid integer') from None
-
-        if value < -1:
-            raise ValidationError(
-                'The taxfree_after_period value can not be negative, except for '
-                'the value of -1 to disable the setting',
-            )
-        if value == 0:
-            raise ValidationError('The taxfree_after_period value can not be set to zero')
-
-        return value
-
-
-class KrakenAccountTypeField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> KrakenAccountType:
-        try:
-            acc_type = KrakenAccountType.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(f'{value} is not a valid kraken account type') from e
-
-        return acc_type
-
-
-class AmountField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: AssetAmount,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: Union[str, int],
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> AssetAmount:
-        try:
-            amount = deserialize_asset_amount(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return amount
-
-
-class PositiveAmountField(AmountField):
-
-    def _deserialize(
-            self,
-            value: Union[str, int],
-            attr: Optional[str],
-            data: Optional[Mapping[str, Any]],
-            **kwargs: Any,
-    ) -> AssetAmount:
-        amount = super()._deserialize(value, attr, data, **kwargs)
-        if amount <= ZERO:
-            raise ValidationError(f'Non-positive amount {value} given. Amount should be > 0')
-
-        return amount
-
-
-class PriceField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: FVal,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Price:
-        try:
-            price = deserialize_price(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        if price == ZERO:
-            raise ValidationError('A zero rate is not allowed')
-
-        return price
-
-
-class FeeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: Fee,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Optional[str]:
-        # Fee can be missing so we need to handle None when serializing from schema
-        return str(value) if value else None
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Fee:
-        try:
-            fee = deserialize_fee(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return fee
-
-
-class FloatingPercentageField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: FVal,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> FVal:
-        try:
-            percentage = FVal(value)
-        except ValueError as e:
-            raise ValidationError(str(e)) from e
-
-        if percentage < ZERO:
-            raise ValidationError('Percentage field can not be negative')
-        if percentage > FVal(100):
-            raise ValidationError('Percentage field can not be greater than 100')
-
-        return percentage / FVal(100)
-
-
-class BlockchainField(fields.Field):
-
-    def __init__(self, *, exclude_types: Optional[Sequence[SupportedBlockchain]] = None, **kwargs: Any) -> None:  # noqa: E501
-        self.exclude_types = exclude_types
-        super().__init__(**kwargs)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> SupportedBlockchain:
-        if value in ('btc', 'BTC'):
-            chain_type = SupportedBlockchain.BITCOIN
-        elif value in ('eth', 'ETH'):
-            chain_type = SupportedBlockchain.ETHEREUM
-        elif value in ('eth2', 'ETH2'):
-            chain_type = SupportedBlockchain.ETHEREUM_BEACONCHAIN
-        elif value in ('ksm', 'KSM'):
-            chain_type = SupportedBlockchain.KUSAMA
-        elif value in ('dot', 'DOT'):
-            chain_type = SupportedBlockchain.POLKADOT
-        elif value in ('avax', 'AVAX'):
-            chain_type = SupportedBlockchain.AVALANCHE
-        else:
-            raise ValidationError(f'Unrecognized value {value} given for blockchain name')
-
-        if self.exclude_types and chain_type in self.exclude_types:
-            raise ValidationError(f'Blockchain name {str(value)} is not allowed in this endpoint')
-        return chain_type
-
-
-class BalanceTypeField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> BalanceType:
-        if value == 'asset':
-            return BalanceType.ASSET
-        if value == 'liability':
-            return BalanceType.LIABILITY
-        raise ValidationError(f'Unrecognized value {value} given for balance type')
-
-
-class SerializableEnumField(fields.Field):
-
-    def __init__(self, enum_class: Type[SerializableEnumMixin], **kwargs: Any) -> None:
-        self.enum_class = enum_class
-        super().__init__(**kwargs)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Any:
-        try:
-            result = self.enum_class.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return result
-
-
-class AssetMovementCategoryField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> AssetMovementCategory:
-        try:
-            result = AssetMovementCategory.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return result
-
-
-class AssetField(fields.Field):
-
-    def __init__(self, *, form_with_incomplete_data: bool = False, **kwargs: Any) -> None:  # noqa: E501
-        self.form_with_incomplete_data = form_with_incomplete_data
-        super().__init__(**kwargs)
-
-    @staticmethod
-    def _serialize(
-            value: Asset,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Optional[str]:
-        # Asset can be missing so we need to handle None when serializing from schema
-        return str(value.identifier) if value else None
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Asset:
-        try:
-            asset = Asset(value, form_with_incomplete_data=self.form_with_incomplete_data)
-        except (DeserializationError, UnknownAsset) as e:
-            raise ValidationError(str(e)) from e
-
-        return asset
-
-
-class MaybeAssetField(fields.Field):
-
-    def __init__(self, *, form_with_incomplete_data: bool = False, **kwargs: Any) -> None:  # noqa: E501
-        self.form_with_incomplete_data = form_with_incomplete_data
-        super().__init__(**kwargs)
-
-    @staticmethod
-    def _serialize(
-            value: Asset,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Optional[str]:
-        # Asset can be missing so we need to handle None when serializing from schema
-        return str(value.identifier) if value else None
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Optional[Asset]:
-        try:
-            asset = Asset(value, form_with_incomplete_data=self.form_with_incomplete_data)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-        except UnknownAsset:
-            log.error(f'Failed to deserialize asset {value}')
-            return None
-        return asset
-
-
-class EthereumAddressField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: ChecksumEthAddress,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> ChecksumEthAddress:
-        # Make sure that given value is an ethereum address
-        try:
-            address = to_checksum_address(value)
-        except (ValueError, TypeError) as e:
-            raise ValidationError(
-                f'Given value {value} is not an ethereum address',
-                field_name='address',
-            ) from e
-
-        return address
-
-
-class SchemaEventTypeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: SchemaEventType,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> SchemaEventType:
-        # Make sure that given value is an AccountingEvent
-        try:
-            event_type = SchemaEventType.deserialize_from_db(value)
-        except DeserializationError as e:
-            raise ValidationError(
-                f'Given value {value} is not an SchemaEventType',
-                field_name='event_type',
-            ) from e
-
-        return event_type
-
-
-class TradeTypeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: TradeType,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> TradeType:
-        try:
-            trade_type = TradeType.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return trade_type
-
-
-class AssetTypeField(fields.Field):
-
-    def __init__(self, *, exclude_types: Optional[Sequence[AssetType]] = None, **kwargs: Any) -> None:  # noqa: E501
-        self.exclude_types = exclude_types
-        super().__init__(**kwargs)
-
-    @staticmethod
-    def _serialize(
-            value: AssetType,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> AssetType:
-        try:
-            asset_type = AssetType.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        if self.exclude_types and asset_type in self.exclude_types:
-            raise ValidationError(f'Asset type {str(asset_type)} is not allowed in this endpoint')
-
-        return asset_type
-
-
-class LedgerActionTypeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: LedgerActionType,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> LedgerActionType:
-        try:
-            action_type = LedgerActionType.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return action_type
-
-
-class ActionTypeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: ActionType,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> ActionType:
-        try:
-            action_type = ActionType.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return action_type
-
-
-class LocationField(fields.Field):
-
-    def __init__(self, *, limit_to: Optional[List[Location]] = None, **kwargs: Any) -> None:  # noqa: E501
-        self.limit_to = limit_to
-        super().__init__(**kwargs)
-
-    @staticmethod
-    def _serialize(
-            value: Location,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value)
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Location:
-        try:
-            location = Location.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        if self.limit_to is not None and location not in self.limit_to:
-            raise ValidationError(
-                f'Given location {value} is not one of '
-                f'{",".join([str(x) for x in self.limit_to])} as needed by the endpoint',
-            )
-
-        return location
-
-
-class ExternalServiceNameField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> ExternalService:
-        if not isinstance(value, str):
-            raise ValidationError('External service name should be a string')
-        try:
-            service = ExternalService.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(f'External service {value} is not known') from e
-
-        return service
-
-
-class ApiKeyField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> ApiKey:
-        if not isinstance(value, str):
-            raise ValidationError('Given API Key should be a string')
-        return ApiKey(value)
-
-
-class ApiSecretField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: ApiSecret,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return str(value.decode())
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> ApiSecret:
-        if not isinstance(value, str):
-            raise ValidationError('Given API Secret should be a string')
-        return ApiSecret(value.encode())
-
-
-class DirectoryField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Path:
-        path = Path(value)
-        if not path.exists():
-            raise ValidationError(f'Given path {value} does not exist')
-
-        if not path.is_dir():
-            raise ValidationError(f'Given path {value} is not a directory')
-
-        return path
-
-
-class AssetConflictsField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: Dict[str, Any],
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Dict[str, Any]:
-        # TODO: If this ever gets used we probably need to change
-        # the dict keys to identifiers from assets
-        return value
-
-    def _deserialize(
-            self,
-            value: Dict[str, str],
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Dict[Asset, Literal['remote', 'local']]:
-        if not isinstance(value, dict):
-            raise ValidationError('A dict object should be given for the conflictss')
-
-        if len(value) == 0:
-            raise ValidationError('An empty dict object should not be given. Provide null instead')
-
-        deserialized_dict = {}
-        for asset_id, choice in value.items():
-            try:
-                asset = Asset(asset_id)
-            except UnknownAsset as e:
-                raise ValidationError(f'Unknown asset identifier {asset_id}') from e
-
-            if choice not in ('remote', 'local'):
-                raise ValidationError(
-                    f'Unknown asset update choice: {choice}. Valid values '
-                    f'are "remote" or "local"',
-                )
-
-            deserialized_dict[asset] = choice
-
-        return deserialized_dict  # type: ignore
-
-
-class FileField(fields.Field):
-
-    def __init__(self, *, allowed_extensions: Optional[Sequence[str]] = None, **kwargs: Any) -> None:  # noqa: E501
-        self.allowed_extensions = allowed_extensions
-        super().__init__(**kwargs)
-
-    def _deserialize(
-            self,
-            value: Union[str, FileStorage],
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> Union[Path, FileStorage]:
-        if isinstance(value, FileStorage):
-            if self.allowed_extensions is not None and value.filename:
-                if not any(value.filename.endswith(x) for x in self.allowed_extensions):
-                    raise ValidationError(
-                        f'Given file {value.filename} does not end in any of '
-                        f'{",".join(self.allowed_extensions)}',
-                    )
-
-            return value
-
-        if not isinstance(value, str):
-            raise ValidationError('Provided non string or file type for file')
-
-        path = Path(value)
-        if not path.exists():
-            raise ValidationError(f'Given path {value} does not exist')
-
-        if not path.is_file():
-            raise ValidationError(f'Given path {value} is not a file')
-
-        if self.allowed_extensions is not None:
-            if not any(path.suffix == x for x in self.allowed_extensions):
-                raise ValidationError(
-                    f'Given file {path} does not end in any of '
-                    f'{",".join(self.allowed_extensions)}',
-                )
-
-        return path
-
-
-class XpubField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> HDKey:
-        if not isinstance(value, str):
-            raise ValidationError('Xpub should be a string')
-
-        try:
-            hdkey = HDKey.from_xpub(value, path='m')
-        except XPUBError as e:
-            raise ValidationError(str(e)) from e
-
-        return hdkey
-
-
-class DerivationPathField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        valid, msg = is_valid_derivation_path(value)
-        if not valid:
-            raise ValidationError(msg)
-
-        return value
-
-
-class CurrentPriceOracleField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> CurrentPriceOracle:
-        try:
-            current_price_oracle = CurrentPriceOracle.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(f'Invalid current price oracle: {value}') from e
-
-        return current_price_oracle
-
-
-class HistoricalPriceOracleField(fields.Field):
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> HistoricalPriceOracle:
-        try:
-            historical_price_oracle = HistoricalPriceOracle.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(f'Invalid historical price oracle: {value}') from e
-
-        return historical_price_oracle
-
-
-class EventSubtypeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: HistoryEventSubType,
-            attr: str,  # pylint: disable=unused-argument
-            obj: Any,  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> str:
-        return value.serialize()
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: Optional[str],  # pylint: disable=unused-argument
-            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
-            **_kwargs: Any,
-    ) -> HistoryEventSubType:
-        try:
-            event_subtype = HistoryEventSubType.deserialize(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return event_subtype
 
 
 class AsyncQueryArgumentSchema(Schema):
@@ -1078,7 +202,7 @@ class TradesQuerySchema(
     quote_asset = AssetField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    trade_type = TradeTypeField(load_default=None)
+    trade_type = SerializableEnumField(enum_class=TradeType, load_default=None)
     location = LocationField(load_default=None)
 
     @validates_schema
@@ -1137,7 +261,10 @@ class StakingQuerySchema(
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
     asset = AssetField(load_default=None)
-    event_subtypes = fields.List(EventSubtypeField(), load_default=None)
+    event_subtypes = fields.List(
+        SerializableEnumField(enum_class=HistoryEventSubType),
+        load_default=None,
+    )
 
     @post_load
     def make_staking_query(  # pylint: disable=no-self-use
@@ -1248,7 +375,7 @@ class AssetMovementsQuerySchema(
     asset = AssetField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    action = AssetMovementCategoryField(load_default=None)
+    action = SerializableEnumField(enum_class=AssetMovementCategory, load_default=None)
     location = LocationField(load_default=None)
 
     @validates_schema
@@ -1305,7 +432,7 @@ class LedgerActionsQuerySchema(
     asset = AssetField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-    type = LedgerActionTypeField(load_default=None)
+    type = SerializableEnumField(enum_class=LedgerActionType, load_default=None)
     location = LocationField(load_default=None)
 
     @validates_schema
@@ -1359,38 +486,12 @@ class TimerangeQuerySchema(Schema):
     async_query = fields.Boolean(load_default=False)
 
 
-class GitcoinReportSchema(TimerangeQuerySchema):
-    grant_id = fields.Integer(
-        strict=True,
-        validate=webargs.validate.Range(
-            min=1,
-            error='Gitcoin grant id must be a positive integer',
-        ),
-        load_default=None,
-    )
-
-
-class GitcoinEventsQuerySchema(GitcoinReportSchema):
-    only_cache = fields.Boolean(load_default=False)
-
-
-class GitcoinEventsDeleteSchema(Schema):
-    grant_id = fields.Integer(
-        strict=True,
-        validate=webargs.validate.Range(
-            min=1,
-            error='Gitcoin grant id must be a positive integer',
-        ),
-        load_default=None,
-    )
-
-
 class TradeSchema(Schema):
     timestamp = TimestampField(required=True)
     location = LocationField(required=True)
     base_asset = AssetField(required=True)
     quote_asset = AssetField(required=True)
-    trade_type = TradeTypeField(required=True)
+    trade_type = SerializableEnumField(enum_class=TradeType, required=True)
     amount = PositiveAmountField(required=True)
     rate = PriceField(required=True)
     fee = FeeField(load_default=None)
@@ -1400,8 +501,9 @@ class TradeSchema(Schema):
 
 
 class LedgerActionSchema(Schema):
+    identifier = fields.Integer(load_default=None, required=False)
     timestamp = TimestampField(required=True)
-    action_type = LedgerActionTypeField(required=True)
+    action_type = SerializableEnumField(enum_class=LedgerActionType, required=True)
     location = LocationField(required=True)
     amount = AmountField(required=True)
     asset = AssetField(required=True)
@@ -1410,21 +512,29 @@ class LedgerActionSchema(Schema):
     link = fields.String(load_default=None)
     notes = fields.String(load_default=None)
 
+    def __init__(self, identifier_required: bool):
+        super().__init__()
+        self.identifier_required = identifier_required
 
-class LedgerActionWithIdentifierSchema(LedgerActionSchema):
-    identifier = fields.Integer(required=True)
+    @validates_schema
+    def validate_ledger_action_schema(
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if self.identifier_required is True and data['identifier'] is None:
+            raise ValidationError(
+                message='Ledger action identifier should be given',
+                field_name='identifier',
+            )
 
-    @post_load
+    @post_load(pass_many=True)
     def make_ledger_action(  # pylint: disable=no-self-use
             self,
             data: Dict[str, Any],
             **_kwargs: Any,
-    ) -> LedgerAction:
-        return LedgerAction(**data)
-
-
-class LedgerActionEditSchema(Schema):
-    action = fields.Nested(LedgerActionWithIdentifierSchema, required=True)
+    ) -> Dict[str, LedgerAction]:
+        return {'action': LedgerAction(**data)}
 
 
 class IntegerIdentifierSchema(Schema):
@@ -1441,7 +551,7 @@ class ManuallyTrackedBalanceSchema(Schema):
     amount = PositiveAmountField(required=True)
     location = LocationField(required=True)
     tags = fields.List(fields.String(), load_default=None)
-    balance_type = BalanceTypeField(load_default=BalanceType.ASSET)
+    balance_type = SerializableEnumField(enum_class=BalanceType, load_default=BalanceType.ASSET)
 
     @post_load
     def make_manually_tracked_balances(  # pylint: disable=no-self-use
@@ -1471,15 +581,24 @@ class TradeDeleteSchema(Schema):
 class TagSchema(Schema):
     name = fields.String(required=True)
     description = fields.String(load_default=None)
-    background_color = ColorField(required=True)
-    foreground_color = ColorField(required=True)
+    background_color = ColorField(required=False, load_default=None)
+    foreground_color = ColorField(required=False, load_default=None)
 
+    def __init__(self, color_required: bool):
+        super().__init__()
+        self.color_required = color_required
 
-class TagEditSchema(Schema):
-    name = fields.String(required=True)
-    description = fields.String(load_default=None)
-    background_color = ColorField(load_default=None)
-    foreground_color = ColorField(load_default=None)
+    @validates_schema
+    def validate_tag_schema(
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if self.color_required is True and None in (data['background_color'], data['foreground_color']):  # noqa: E501
+            raise ValidationError(
+                message='Background and foreground color should be given for the tag',
+                field_name='background_color',
+            )
 
 
 class NameDeleteSchema(Schema):
@@ -1575,7 +694,10 @@ class ModifiableSettingsSchema(Schema):
         validate=_validate_historical_price_oracles,
         load_default=None,
     )
-    taxable_ledger_actions = fields.List(LedgerActionTypeField, load_default=None)
+    taxable_ledger_actions = fields.List(
+        SerializableEnumField(enum_class=LedgerActionType),
+        load_default=None,
+    )
     pnl_csv_with_formulas = fields.Bool(load_default=None)
     pnl_csv_have_summary = fields.Bool(load_default=None)
     ssf_0graph_multiplier = fields.Integer(
@@ -1703,7 +825,7 @@ class AllBalancesQuerySchema(Schema):
 
 
 class ExternalServiceSchema(Schema):
-    name = ExternalServiceNameField(required=True)
+    name = SerializableEnumField(enum_class=ExternalService, required=True)
     api_key = fields.String(required=True)
 
     @post_load
@@ -1721,7 +843,7 @@ class ExternalServicesResourceAddSchema(Schema):
 
 
 class ExternalServicesResourceDeleteSchema(Schema):
-    services = fields.List(ExternalServiceNameField(), required=True)
+    services = fields.List(SerializableEnumField(enum_class=ExternalService), required=True)
 
 
 class ExchangesResourceEditSchema(Schema):
@@ -1731,7 +853,7 @@ class ExchangesResourceEditSchema(Schema):
     api_key = ApiKeyField(load_default=None)
     api_secret = ApiSecretField(load_default=None)
     passphrase = fields.String(load_default=None)
-    kraken_account_type = KrakenAccountTypeField(load_default=None)
+    kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
     binance_markets = fields.List(fields.String(), load_default=None)
     ftx_subaccount = fields.String(load_default=None)
 
@@ -1742,7 +864,7 @@ class ExchangesResourceAddSchema(Schema):
     api_key = ApiKeyField(required=True)
     api_secret = ApiSecretField(required=True)
     passphrase = fields.String(load_default=None)
-    kraken_account_type = KrakenAccountTypeField(load_default=None)
+    kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
     binance_markets = fields.List(fields.String(), load_default=None)
     ftx_subaccount = fields.String(load_default=None)
 
@@ -1806,7 +928,7 @@ class AccountingReportsSchema(Schema):
 
 class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
     report_id = fields.Integer(load_default=None)
-    event_type = SchemaEventTypeField(load_default=None)
+    event_type = SerializableEnumField(enum_class=SchemaEventType, load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
 
@@ -2252,11 +1374,11 @@ class IgnoredAssetsSchema(Schema):
 
 
 class IgnoredActionsGetSchema(Schema):
-    action_type = ActionTypeField(load_default=None)
+    action_type = SerializableEnumField(enum_class=ActionType, load_default=None)
 
 
 class IgnoredActionsModifySchema(Schema):
-    action_type = ActionTypeField(required=True)
+    action_type = SerializableEnumField(enum_class=ActionType, required=True)
     action_ids = fields.List(fields.String(required=True), required=True)
 
 
@@ -2296,6 +1418,7 @@ def _validate_external_ids(
 
 
 class AssetSchema(Schema):
+    identifier = fields.String(required=False, load_default=None)
     asset_type = AssetTypeField(required=True, exclude_types=(AssetType.ETHEREUM_TOKEN,))
     name = fields.String(required=True)
     symbol = fields.String(required=True)
@@ -2305,8 +1428,14 @@ class AssetSchema(Schema):
     coingecko = fields.String(load_default=None)
     cryptocompare = fields.String(load_default=None)
 
-    def __init__(self, coingecko: 'Coingecko', cryptocompare: 'Cryptocompare'):
+    def __init__(
+            self,
+            identifier_required: bool,
+            coingecko: 'Coingecko',
+            cryptocompare: 'Cryptocompare',
+    ) -> None:
         super().__init__()
+        self.identifier_required = identifier_required
         self.coingecko_obj = coingecko
         self.cryptocompare_obj = cryptocompare
 
@@ -2316,11 +1445,9 @@ class AssetSchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> None:
+        if self.identifier_required is True and data['identifier'] is None:
+            raise ValidationError(message='Asset schema identifier should be given', field_name='identifier')  # noqa: E501
         _validate_external_ids(data, self.coingecko_obj, self.cryptocompare_obj)
-
-
-class AssetSchemaWithIdentifier(AssetSchema):
-    identifier = fields.String(required=True)
 
 
 class EthereumTokenSchema(Schema):
@@ -2618,13 +1745,6 @@ class AvalancheTransactionQuerySchema(Schema):
     address = EthereumAddressField(load_default=None)
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
-
-
-class LimitsCounterResetSchema(Schema):
-    location = fields.String(
-        required=True,
-        validate=webargs.validate.OneOf(choices=('ethereum_transactions',)),
-    )
 
 
 class SingleFileSchema(Schema):

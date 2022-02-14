@@ -17,7 +17,7 @@ from rotkehlchen.chain.ethereum.structures import (
 )
 from rotkehlchen.constants.ethereum import AAVE_V1_LENDING_POOL, AAVE_V2_LENDING_POOL
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import RemoteError, UnknownAsset
+from rotkehlchen.errors import ModuleInitializationFailure, RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
@@ -25,7 +25,6 @@ from rotkehlchen.typing import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
-from .blockchain import AaveBlockchainInquirer
 from .common import (
     AaveBalances,
     AaveBorrowingBalance,
@@ -66,34 +65,26 @@ class Aave(EthereumModule):
             database: 'DBHandler',
             premium: Optional[Premium],
             msg_aggregator: MessagesAggregator,
-            use_graph: bool = True,  # by default use graph
     ) -> None:
         self.ethereum = ethereum_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.premium = premium
-        self.blockchain_inquirer = AaveBlockchainInquirer(
-            ethereum_manager=ethereum_manager,
-            database=database,
-            premium=premium,
-            msg_aggregator=msg_aggregator,
-        )
         try:
-            self.graph_inquirer: Optional[AaveGraphInquirer] = AaveGraphInquirer(
+            self.graph_inquirer = AaveGraphInquirer(
                 ethereum_manager=ethereum_manager,
                 database=database,
                 premium=premium,
                 msg_aggregator=msg_aggregator,
             )
         except RemoteError as e:
-            self.graph_inquirer = None
             self.msg_aggregator.add_error(
                 f'Could not initialize the Aave subgraph due to {str(e)}. '
                 f' All aave historical queries are not functioning until this is fixed. '
                 f'Probably will get fixed with time. If not report it to rotkis support channel ',
             )
+            raise ModuleInitializationFailure('Aave subgraph remote error') from e
 
-        self.use_graph = use_graph
         self.history_lock = Semaphore()
         self.balances_lock = Semaphore()
 
@@ -210,29 +201,13 @@ class Aave(EthereumModule):
             if reset_db_data is True:
                 self.database.delete_aave_data()
 
-            if self.use_graph:
-                if self.graph_inquirer is None:  # could not initialize graph
-                    log.error(
-                        "Tried to query Aave's history via the subgraph "
-                        "without an initialized graph_inquirer",
-                    )
-                    return {}
-
-                aave_balances = self.get_balances(given_defi_balances)
-                return self.graph_inquirer.get_history_for_addresses(
-                    addresses=addresses,
-                    to_block=latest_block,
-                    from_timestamp=from_timestamp,
-                    to_timestamp=to_timestamp,
-                    aave_balances=aave_balances,
-                )
-            # else
-            return self.blockchain_inquirer.get_history_for_addresses(
+            aave_balances = self.get_balances(given_defi_balances)
+            return self.graph_inquirer.get_history_for_addresses(
                 addresses=addresses,
                 to_block=latest_block,
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
-                aave_balances=None,  # type: ignore
+                aave_balances=aave_balances,
             )
 
     def get_history_events(

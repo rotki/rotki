@@ -304,7 +304,7 @@ def test_edit_ledger_actions(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'ledgeractionsresource',
-        ), json={'action': new_action},
+        ), json=new_action,
     )
     result = assert_proper_response_with_result(response)
     result = [x['entry'] for x in result['entries']]
@@ -317,7 +317,7 @@ def test_edit_ledger_actions(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'ledgeractionsresource',
-        ), json={'action': new_action},
+        ), json=new_action,
     )
     assert_error_response(
         response,

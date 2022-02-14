@@ -2396,7 +2396,9 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument  # noqa: E501
     """Test upgrading the DB from version 31 to version 32.
-    Check that subtype is correctly updated
+
+    - Check that subtype is correctly updated
+    - Check that gitcoin data is properly delete
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v31_rotkehlchen.db')
@@ -2414,8 +2416,30 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     )
     subtypes = [row[0] for row in cursor]
     assert set(subtypes) == {'staking deposit asset', 'staking receive asset', None}
+    # check used query ranges
+    result = cursor.execute('SELECT * from used_query_ranges').fetchall()
+    assert result == [
+        ('ethtxs_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
+        ('eth2_deposits_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 1602667372, 1637575118),
+        ('kraken_asset_movements_kraken1', 0, 1634850532),
+        ('gitcoingrants_0x4362BBa5a26b07db048Bc2603f843E21Ac22D75E', 1, 2),
+    ]
+    # Check gitcoin ledger actions are there
+    result = cursor.execute('SELECT * from ledger_actions').fetchall()
+    assert result == [
+        (1, 1, 'A', 'A', '1', 'ETH', None, None, None, None),
+        (2, 2, 'A', '^', '1', 'ETH', None, None, None, None),
+        (3, 3, 'A', '^', '1', 'ETH', None, None, None, None),
+    ]
+    result = cursor.execute('SELECT * from ledger_actions_gitcoin_data').fetchall()
+    assert result == [(2, '0x1', 1, 1, 'A'), (3, '0x2', 1, 1, 'B')]
+    # Check that the other gitcoin tables exist at this point
+    for name in ('gitcoin_tx_type', 'ledger_actions_gitcoin_data', 'gitcoin_grant_metadata'):
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
+        ).fetchone()[0] == 1
 
-    # Execute migration
+    # Execute upgrade
     db = _init_db_with_target_version(
         target_version=32,
         user_data_dir=user_data_dir,
@@ -2425,6 +2449,21 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     cursor.execute('SELECT subtype from history_events')
     subtypes = {row[0] for row in cursor}
     assert subtypes == {'staking deposit asset', 'staking receive asset', 'reward'}
+    # check used query range got delete and rest are intact
+    result = cursor.execute('SELECT * from used_query_ranges').fetchall()
+    assert result == [
+        ('ethtxs_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 0, 1637575118),
+        ('eth2_deposits_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 1602667372, 1637575118),
+        ('kraken_asset_movements_kraken1', 0, 1634850532),
+    ]
+    # Check that the non-gitcoin ledger action is still there
+    result = cursor.execute('SELECT * from ledger_actions').fetchall()
+    assert result == [(1, 1, 'A', 'A', '1', 'ETH', None, None, None, None)]
+    # Check that all gitcoin tables are deleted
+    for name in ('gitcoin_tx_type', 'ledger_actions_gitcoin_data', 'gitcoin_grant_metadata'):
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
+        ).fetchone()[0] == 0
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

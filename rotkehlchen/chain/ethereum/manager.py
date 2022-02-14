@@ -1,7 +1,6 @@
 import json
 import logging
 import random
-from collections import defaultdict
 from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Union, overload
 from urllib.parse import urlparse
 
@@ -237,10 +236,6 @@ class EthereumManager():
         self.blocks_subgraph = Graph(
             'https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks',
         )
-        # Used by the transactions class. Can't be instantiated there since that is
-        # stateless object and thus wouldn't persist.
-        # Not really happy with this approach but well ...
-        self.tx_per_address: Dict[ChecksumEthAddress, int] = defaultdict(int)
         # A cache for the erc20 contract info to not requery same one
         self.contract_info_cache: Dict[ChecksumEthAddress, Dict[str, Any]] = {}
 

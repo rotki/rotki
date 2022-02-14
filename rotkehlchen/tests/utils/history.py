@@ -4,7 +4,7 @@ from unittest.mock import _patch, patch
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import DefiEvent, HistoryBaseEntry
-from rotkehlchen.api.v1.encoding import TradeSchema
+from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LTC, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ZERO
