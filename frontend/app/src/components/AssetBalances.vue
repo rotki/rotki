@@ -83,8 +83,6 @@ import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
 import { balanceSum } from '@/filters';
 import i18n from '@/i18n';
-import { useTasks } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 import { getSortItems } from '@/utils/assets';
 
 const tableHeaders = (currency: Ref<string>) => {
@@ -107,7 +105,7 @@ const tableHeaders = (currency: Ref<string>) => {
         text: i18n.t('asset_balances.headers.amount').toString(),
         value: 'amount',
         align: 'end',
-        width: '99%'
+        width: '50%'
       },
       {
         text: i18n
@@ -128,6 +126,11 @@ const AssetBalancesTable = defineComponent({
     balances: {
       required: true,
       type: Array as PropType<AssetBalanceWithPrice[]>
+    },
+    loading: {
+      required: false,
+      type: Boolean,
+      default: false
     }
   },
   setup(props) {
@@ -138,12 +141,10 @@ const AssetBalancesTable = defineComponent({
 
     const { currencySymbol } = setupGeneralSettings();
 
-    const { isTaskRunning } = useTasks();
     const { getAssetInfo } = setupAssetInfoRetrieval();
     return {
       total,
       tableHeaders: tableHeaders(currencySymbol),
-      loading: isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
       sortItems: getSortItems(getAssetInfo),
       currency: currencySymbol
     };

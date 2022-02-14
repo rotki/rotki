@@ -1778,6 +1778,10 @@
     "selection_single": "Showing results for {location}",
     "label": "Filter location"
   },
+  "locations": {
+    "assets": "Assets",
+    "total_asset_price": "Total Asset Price"
+  },
   "deposits_withdrawals": {
     "clear_selection": "Clear Selection",
     "title": "Deposits & Withdrawals",

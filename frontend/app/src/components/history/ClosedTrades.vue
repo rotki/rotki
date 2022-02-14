@@ -2,6 +2,7 @@
   <fragment>
     <card outlined-body>
       <v-btn
+        v-if="!locationOverview"
         absolute
         fab
         top
@@ -15,17 +16,20 @@
       </v-btn>
       <template #title>
         <refresh-button
-          :loading="refreshing"
+          v-if="!locationOverview"
+          :loading="loading"
           :tooltip="$t('closed_trades.refresh_tooltip')"
           @refresh="fetch(true)"
         />
-        {{ $t('closed_trades.title') }}
+        <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
+          {{ $t('closed_trades.title') }}
+        </navigator-link>
       </template>
       <template #actions>
-        <v-row>
+        <v-row v-if="!locationOverview">
           <v-col cols="12" sm="6">
             <ignore-buttons
-              :disabled="selected.length === 0 || loading || refreshing"
+              :disabled="selected.length === 0 || loading"
               @ignore="ignore"
             />
             <div v-if="selected.length > 0" class="mt-2 ms-1">
@@ -50,12 +54,12 @@
         :expanded.sync="expanded"
         :headers="tableHeaders"
         :items="data"
-        :loading="refreshing"
+        :loading="loading"
         :options="options"
         :server-items-length="itemLength"
         class="closed-trades"
         :single-select="false"
-        show-select
+        :show-select="!locationOverview"
         item-key="tradeId"
         show-expand
         single-expand
@@ -135,7 +139,7 @@
         <template #item.actions="{ item }">
           <row-actions
             v-if="item.location === 'external'"
-            :disabled="refreshing"
+            :disabled="loading"
             :edit-tooltip="$t('closed_trades.edit_tooltip')"
             :delete-tooltip="$t('closed_trades.delete_tooltip')"
             @edit-click="editTradeHandler(item)"
@@ -184,7 +188,14 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, Ref, ref } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  Ref,
+  ref,
+  toRefs
+} from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -193,6 +204,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import ExternalTradeForm from '@/components/ExternalTradeForm.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
+import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
@@ -209,7 +221,7 @@ import {
   setupAssetInfoRetrieval,
   setupSupportedAssets
 } from '@/composables/balances';
-import { setupStatusChecking } from '@/composables/common';
+import { isSectionLoading } from '@/composables/common';
 import {
   getCollectionData,
   setupEntryLimit,
@@ -217,6 +229,7 @@ import {
 } from '@/composables/history';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
+import { Routes } from '@/router/routes';
 import {
   NewTrade,
   Trade,
@@ -256,69 +269,80 @@ type PaginationOptions = {
   sortDesc: boolean[];
 };
 
-const tableHeaders: DataTableHeader[] = [
-  {
-    text: '',
-    value: 'ignoredInAccounting',
-    sortable: false,
-    class: 'pa-0',
-    cellClass: 'pa-0'
-  },
-  {
-    text: i18n.t('closed_trades.headers.location').toString(),
-    value: 'location',
-    width: '120px',
-    align: 'center'
-  },
-  {
-    text: i18n.t('closed_trades.headers.action').toString(),
-    value: 'type',
-    class: 'text-no-wrap',
-    align: 'center'
-  },
-  {
-    text: i18n.t('closed_trades.headers.amount').toString(),
-    value: 'amount',
-    align: 'end'
-  },
-  {
-    text: i18n.t('closed_trades.headers.base').toString(),
-    value: 'baseAsset',
-    sortable: false
-  },
-  {
-    text: '',
-    value: 'description',
-    sortable: false,
-    width: '40px'
-  },
-  {
-    text: i18n.t('closed_trades.headers.quote').toString(),
-    value: 'quoteAsset',
-    sortable: false
-  },
-  {
-    text: i18n.t('closed_trades.headers.rate').toString(),
-    value: 'rate',
-    align: 'end'
-  },
-  {
-    text: i18n.t('closed_trades.headers.timestamp').toString(),
-    value: 'time'
-  },
-  {
-    text: i18n.t('closed_trades.headers.actions').toString(),
-    value: 'actions',
-    align: 'center',
-    sortable: false,
-    width: '50'
-  },
-  { text: '', value: 'data-table-expand', sortable: false }
-];
+const tableHeaders = (locationOverview: string): DataTableHeader[] => {
+  const headers: DataTableHeader[] = [
+    {
+      text: '',
+      value: 'ignoredInAccounting',
+      sortable: false,
+      class: !locationOverview ? 'pa-0' : 'pr-0',
+      cellClass: !locationOverview ? 'pa-0' : 'pr-0'
+    },
+    {
+      text: i18n.t('closed_trades.headers.location').toString(),
+      value: 'location',
+      width: '120px',
+      align: 'center'
+    },
+    {
+      text: i18n.t('closed_trades.headers.action').toString(),
+      value: 'type',
+      align: 'center',
+      class: `text-no-wrap ${locationOverview ? 'pl-0' : ''}`,
+      cellClass: locationOverview ? 'pl-0' : ''
+    },
+    {
+      text: i18n.t('closed_trades.headers.amount').toString(),
+      value: 'amount',
+      align: 'end'
+    },
+    {
+      text: i18n.t('closed_trades.headers.base').toString(),
+      value: 'baseAsset',
+      sortable: false
+    },
+    {
+      text: '',
+      value: 'description',
+      sortable: false,
+      width: '40px'
+    },
+    {
+      text: i18n.t('closed_trades.headers.quote').toString(),
+      value: 'quoteAsset',
+      sortable: false
+    },
+    {
+      text: i18n.t('closed_trades.headers.rate').toString(),
+      value: 'rate',
+      align: 'end'
+    },
+    {
+      text: i18n.t('closed_trades.headers.timestamp').toString(),
+      value: 'time'
+    },
+    {
+      text: i18n.t('closed_trades.headers.actions').toString(),
+      value: 'actions',
+      align: 'center',
+      sortable: false,
+      width: '50'
+    },
+    { text: '', value: 'data-table-expand', sortable: false }
+  ];
+
+  if (locationOverview) {
+    headers.splice(9, 1);
+    headers.splice(1, 1);
+  }
+
+  return headers;
+};
 
 export default defineComponent({
   name: 'ClosedTrades',
   components: {
+    NavigatorLink,
     BadgeDisplay,
     RowActions,
     TradeDetails,
@@ -334,8 +358,17 @@ export default defineComponent({
     ConfirmDialog,
     BigDialog
   },
+  props: {
+    locationOverview: {
+      required: false,
+      type: String as PropType<TradeLocation | ''>,
+      default: ''
+    }
+  },
   emits: ['fetch', 'update:payload'],
-  setup(_, { emit }) {
+  setup(props, { emit }) {
+    const { locationOverview } = toRefs(props);
+
     const fetch = (refresh: boolean = false) => emit('fetch', refresh);
 
     const historyStore = useHistory();
@@ -356,9 +389,6 @@ export default defineComponent({
     );
 
     const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
-
-    const { isSectionRefreshing, shouldShowLoadingScreen } =
-      setupStatusChecking();
 
     const dialogTitle: Ref<string> = ref('');
     const dialogSubtitle: Ref<string> = ref('');
@@ -558,6 +588,10 @@ export default defineComponent({
         };
       }
 
+      if (locationOverview.value) {
+        filters.value.location = locationOverview.value as TradeLocation;
+      }
+
       const payload: Partial<TradeRequestPayload> = {
         ...filters.value,
         ...paginationOptions
@@ -590,9 +624,12 @@ export default defineComponent({
     const getId = (item: TradeEntry) => item.tradeId;
     const selected: Ref<TradeEntry[]> = ref([]);
 
+    const pageRoute = Routes.HISTORY_TRADES;
+
     return {
+      pageRoute,
       selected,
-      tableHeaders,
+      tableHeaders: tableHeaders(locationOverview.value),
       data,
       limit,
       found,
@@ -600,8 +637,7 @@ export default defineComponent({
       itemLength,
       fetch,
       showUpgradeRow,
-      loading: shouldShowLoadingScreen(Section.TRADES),
-      refreshing: isSectionRefreshing(Section.TRADES),
+      loading: isSectionLoading(Section.TRADES),
       dialogTitle,
       dialogSubtitle,
       openDialog,

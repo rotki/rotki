@@ -8,7 +8,7 @@
     @click="click"
   >
     <slot name="icon" :class="$style.icon" />
-    <span :class="$style.details">
+    <span v-if="showDetails" :class="$style.details">
       <span :class="$style.title" data-cy="details-symbol">
         {{ title }}
       </span>
@@ -39,15 +39,21 @@ export default defineComponent({
   name: 'ListItem',
   props: {
     title: {
-      required: true,
-      type: String
+      required: false,
+      type: String,
+      default: ''
     },
     subtitle: {
       required: false,
       type: String as PropType<string | null>,
       default: null
     },
-    dense: { required: false, type: Boolean, default: false }
+    dense: { required: false, type: Boolean, default: false },
+    showDetails: {
+      required: false,
+      type: Boolean,
+      default: true
+    }
   },
   emits: ['click'],
   setup(props, { emit }) {

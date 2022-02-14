@@ -65,32 +65,36 @@ export default new Router({
       children: [
         {
           path: '',
-          name: 'trades',
           redirect: 'trades',
           component: () => import('../views/history/trades/TradeHistory.vue')
         },
         {
-          path: 'trades',
+          name: 'trades',
+          path: Routes.HISTORY_TRADES,
           component: () => import('../views/history/trades/TradeHistory.vue')
         },
         {
-          path: 'deposits-withdrawals',
+          name: 'deposits-withdrawals',
+          path: Routes.HISTORY_DEPOSITS_WITHDRAWALS,
           component: () =>
             import(
               '../views/history/deposits-withdrawals/DepositsWithdrawals.vue'
             )
         },
         {
-          path: 'transactions',
+          name: 'transactions',
+          path: Routes.HISTORY_TRANSACTIONS,
           component: () =>
             import('../views/history/transactions/Transactions.vue')
         },
         {
+          name: 'ledger-actions',
           path: Routes.HISTORY_LEDGER_ACTIONS,
           component: () =>
             import('../views/history/ledger-actions/LedgerActions.vue')
         },
         {
+          name: 'gitcoin',
           path: Routes.HISTORY_GITCOIN,
           component: () => import('../views/history/GitcoinGrants.vue')
         }
@@ -261,6 +265,14 @@ export default new Router({
     {
       path: Routes.ASSETS,
       component: () => import('../views/Assets.vue'),
+      meta: {
+        canNavigateBack: true
+      },
+      props: true
+    },
+    {
+      path: Routes.LOCATIONS,
+      component: () => import('../views/LocationOverview.vue'),
       meta: {
         canNavigateBack: true
       },

@@ -2,7 +2,7 @@
   <card class="mt-8" outlined-body>
     <template #title>
       <refresh-button
-        :loading="refreshing"
+        :loading="loading"
         :tooltip="$t('transactions.refresh_tooltip')"
         @refresh="fetch(true)"
       />
@@ -12,7 +12,7 @@
       <v-row>
         <v-col cols="12" md="6">
           <ignore-buttons
-            :disabled="selected.length === 0 || loading || refreshing"
+            :disabled="selected.length === 0 || loading"
             @ignore="ignore"
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
@@ -43,7 +43,7 @@
       :expanded.sync="expanded"
       :headers="tableHeaders"
       :items="data"
-      :loading="refreshing"
+      :loading="loading"
       :options="options"
       :server-items-length="itemLength"
       class="table"
@@ -129,7 +129,7 @@ import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import TransactionsDetails from '@/components/history/TransactionsDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { setupStatusChecking } from '@/composables/common';
+import { isSectionLoading } from '@/composables/common';
 import {
   getCollectionData,
   setupEntryLimit,
@@ -232,9 +232,6 @@ export default defineComponent({
       );
     const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
-    const { isSectionRefreshing, shouldShowLoadingScreen } =
-      setupStatusChecking();
-
     const expanded: Ref<EthTransactionEntry[]> = ref([]);
 
     const options: Ref<PaginationOptions | null> = ref(null);
@@ -311,8 +308,7 @@ export default defineComponent({
       itemLength,
       fetch,
       showUpgradeRow,
-      loading: shouldShowLoadingScreen(Section.TX),
-      refreshing: isSectionRefreshing(Section.TX),
+      loading: isSectionLoading(Section.TX),
       expanded,
       options,
       gasFee,

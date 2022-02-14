@@ -1,8 +1,11 @@
 import { AssetBalanceWithPrice } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { computed, Ref } from '@vue/composition-api';
+import { tradeLocations } from '@/components/history/consts';
 import { ManualBalance } from '@/services/balances/types';
+import { api } from '@/services/rotkehlchen-api';
 import {
   AddAccountsPayload,
   AssetInfoGetter,
@@ -18,6 +21,7 @@ import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Eth2Validator } from '@/types/balances';
 import { Exchange } from '@/types/exchanges';
+import { assert } from '@/utils/assertions';
 
 export const setupExchangeRateGetter = () => {
   const store = useStore();
@@ -117,6 +121,36 @@ export const setupAssetInfoRetrieval = () => {
     getAssetSymbol,
     getAssetName,
     getTokenAddress
+  };
+};
+
+export const setupLocationInfo = () => {
+  const isSupportedBlockchain = (identifier: string): boolean => {
+    return Object.values(Blockchain).includes(identifier as any);
+  };
+
+  const getLocation = (identifier: string) => {
+    const { getAssetName } = setupAssetInfoRetrieval();
+
+    if (isSupportedBlockchain(identifier)) {
+      return {
+        name: getAssetName(identifier),
+        identifier: identifier,
+        exchange: false,
+        imageIcon: true,
+        icon: `${api.serverUrl}/api/1/assets/${identifier}/icon`
+      };
+    }
+
+    const locationFound = tradeLocations.find(
+      location => location.identifier === identifier
+    );
+    assert(!!locationFound, 'location should not be falsy');
+    return locationFound;
+  };
+
+  return {
+    getLocation
   };
 };
 

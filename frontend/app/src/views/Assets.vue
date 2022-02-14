@@ -1,5 +1,5 @@
 ﻿<template>
-  <v-container>
+  <v-container class="pb-12">
     <v-row align="center" class="mt-12">
       <v-col cols="auto">
         <asset-icon :identifier="icon" size="48px" :symbol="symbol" />

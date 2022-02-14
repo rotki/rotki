@@ -71,10 +71,11 @@ export interface BalanceGetters {
   assetSymbol: AssetSymbolGetter;
   isEthereumToken: (asset: string) => boolean;
   assetPriceInfo: (asset: string) => AssetPriceInfo;
-  breakdown: (asset: string) => AssetBreakdown[];
+  assetBreakdown: (asset: string) => AssetBreakdown[];
   loopringBalances: (address: string) => AssetBalance[];
   blockchainAssets: AssetBalanceWithPrice[];
   getIdentifierForSymbol: IdentifierForSymbolGetter;
+  locationBreakdown: (location: string) => AssetBalanceWithPrice[];
   byLocation: BalanceByLocation;
   exchangeNonce: (exchange: SupportedExchange) => number;
   nfTotalValue: BigNumber;
@@ -707,7 +708,7 @@ export const getters: Getters<
       usdValue: assetValue?.usdValue ?? Zero
     };
   },
-  breakdown:
+  assetBreakdown:
     ({
       btc: { standalone, xpubs },
       btcAccounts,
@@ -947,9 +948,80 @@ export const getters: Getters<
       const asset = assetInfo(identifier);
       return asset?.symbol ?? identifier;
     },
+  locationBreakdown:
+    (
+      {
+        connectedExchanges,
+        manualBalances,
+        loopringBalances,
+        prices
+      }: BalanceState,
+      { exchangeBalances, totals },
+      { session }
+    ) =>
+    identifier => {
+      const ignoredAssets = session!.ignoredAssets;
+      const ownedAssets: { [asset: string]: AssetBalanceWithPrice } = {};
+      const addToOwned = (value: AssetBalance) => {
+        const asset = ownedAssets[value.asset];
+        if (ignoredAssets.includes(value.asset)) {
+          return;
+        }
+        ownedAssets[value.asset] = !asset
+          ? {
+              ...value,
+              usdPrice: prices[value.asset] ?? new BigNumber(-1)
+            }
+          : {
+              asset: asset.asset,
+              amount: asset.amount.plus(value.amount),
+              usdValue: asset.usdValue.plus(value.usdValue),
+              usdPrice: prices[asset.asset] ?? new BigNumber(-1)
+            };
+      };
+
+      const exchange = connectedExchanges.find(
+        ({ location }) => identifier === location
+      );
+
+      if (exchange) {
+        const balances = exchangeBalances(identifier);
+        balances.forEach((value: AssetBalance) => addToOwned(value));
+      }
+
+      if (identifier === TRADE_LOCATION_BLOCKCHAIN) {
+        totals.forEach((value: AssetBalance) => addToOwned(value));
+
+        for (const address in loopringBalances) {
+          const balances = loopringBalances[address];
+          for (const asset in balances) {
+            addToOwned({
+              ...balances[asset],
+              asset
+            });
+          }
+        }
+      }
+
+      manualBalances.forEach(value => {
+        if (value.location === identifier) {
+          addToOwned(value);
+        }
+      });
+
+      return Object.values(ownedAssets).sort((a, b) =>
+        b.usdValue.minus(a.usdValue).toNumber()
+      );
+    },
   byLocation: (
     state,
-    { blockchainTotal, exchanges, manualBalanceByLocation: manual }
+    {
+      blockchainTotal,
+      exchangeRate,
+      exchanges,
+      manualBalanceByLocation: manual
+    },
+    { session }
   ) => {
     const byLocation: BalanceByLocation = {};
 
@@ -957,19 +1029,32 @@ export const getters: Getters<
       byLocation[location] = usdValue;
     }
 
+    const mainCurrency = session?.generalSettings.mainCurrency.tickerSymbol;
+    assert(mainCurrency, 'main currency was not properly set');
+
+    const currentExchangeRate = exchangeRate(mainCurrency);
+    const blockchainTotalConverted = currentExchangeRate
+      ? blockchainTotal.multipliedBy(currentExchangeRate)
+      : blockchainTotal;
+
     const blockchain = byLocation[TRADE_LOCATION_BLOCKCHAIN];
     if (blockchain) {
-      byLocation[TRADE_LOCATION_BLOCKCHAIN] = blockchain.plus(blockchainTotal);
+      byLocation[TRADE_LOCATION_BLOCKCHAIN] = blockchain.plus(
+        blockchainTotalConverted
+      );
     } else {
-      byLocation[TRADE_LOCATION_BLOCKCHAIN] = blockchainTotal;
+      byLocation[TRADE_LOCATION_BLOCKCHAIN] = blockchainTotalConverted;
     }
 
     for (const { location, total } of exchanges) {
       const locationElement = byLocation[location];
+      const exchangeBalanceConverted = currentExchangeRate
+        ? total.multipliedBy(currentExchangeRate)
+        : total;
       if (locationElement) {
-        byLocation[location] = locationElement.plus(total);
+        byLocation[location] = locationElement.plus(exchangeBalanceConverted);
       } else {
-        byLocation[location] = total;
+        byLocation[location] = exchangeBalanceConverted;
       }
     }
 
