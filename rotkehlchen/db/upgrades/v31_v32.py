@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 def _upgrade_history_events(cursor: 'Cursor') -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS history_events_copy (
+        identifier INTEGER NOT NULL PRIMARY KEY,
         event_identifier TEXT NOT NULL,
         sequence_index INTEGER NOT NULL,
         timestamp INTEGER NOT NULL,

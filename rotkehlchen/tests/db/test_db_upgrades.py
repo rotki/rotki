@@ -2453,9 +2453,11 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         msg_aggregator=msg_aggregator,
     )
     cursor = db.conn.cursor()
-    cursor.execute('SELECT subtype from history_events')
+    cursor.execute('SELECT subtype FROM history_events')
     subtypes = {row[0] for row in cursor}
     assert subtypes == {'staking deposit asset', 'staking receive asset', 'reward'}
+    result = cursor.execute('SELECT identifier FROM history_events')
+    assert [x[0] for x in result] == [1, 2, 3], 'identifier column should be added'
     # check used query range got delete and rest are intact
     result = cursor.execute('SELECT * from used_query_ranges').fetchall()
     assert result == [
