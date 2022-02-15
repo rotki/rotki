@@ -117,6 +117,15 @@ class DBHistoryEvents():
             )
         return None
 
+    def get_customized_event_identifiers(self) -> List[int]:
+        """Returns the identifiers of all the events in the database that have been customized"""
+        cursor = self.db.conn.cursor()
+        result = cursor.execute(
+            'SELECT parent_identifier FROM history_events_mappings WHERE value=?',
+            (HISTORY_MAPPING_CUSTOMIZED,),
+        )
+        return [x[0] for x in result]
+
     def get_history_events(
         self,
         filter_query: HistoryEventFilterQuery,

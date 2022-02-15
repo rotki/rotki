@@ -1934,31 +1934,37 @@ Querying ethereum transactions
                },
                "ignored_in_accounting": false,
 	       "decoded_events": [{
-	           "identifier": 1,
-	           "asset": "ETH",
-		   "balance": {"amount": "0.00863351371344", "usd_value": "0"},
-		   "counterparty": "gas",
-		   "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-		   "event_subtype": "fee",
-		   "event_type": "spend",
-		   "location": "blockchain",
-		   "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-		   "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-                   "sequence_index": 0,
-		   "timestamp": 1642802807
+	           "entry": {
+		       "identifier": 1,
+		       "asset": "ETH",
+		       "balance": {"amount": "0.00863351371344", "usd_value": "0"},
+		       "counterparty": "gas",
+		       "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+		       "event_subtype": "fee",
+		       "event_type": "spend",
+		       "location": "blockchain",
+		       "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
+		       "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+		       "sequence_index": 0,
+		       "timestamp": 1642802807
+		   },
+		   "customized": false
 	       }, {
-                "identifier": 2,
-		"asset": "ETH",
-		"balance": {"amount": "0.096809163374771208", "usd_value": "0"},
-		"counterparty": "0xA090e606E30bD747d4E6245a1517EbE430F0057e",
-		"event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-		"event_subtype": None,
-		"event_type": "spend",
-		"location": "blockchain",
-		"location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-		"notes": "Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e",  # noqa: E501
-		"sequence_index": 1,
-		"timestamp": 1642802807
+	        "entry": {
+		    "identifier": 2,
+		    "asset": "ETH",
+		    "balance": {"amount": "0.096809163374771208", "usd_value": "0"},
+		    "counterparty": "0xA090e606E30bD747d4E6245a1517EbE430F0057e",
+		    "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+		    "event_subtype": None,
+		    "event_type": "spend",
+		    "location": "blockchain",
+		    "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
+		    "notes": "Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e",  # noqa: E501
+		    "sequence_index": 1,
+		    "timestamp": 1642802807
+		},
+		"customized": true
 	       }]
             }, {
                 "entry": {
@@ -1977,18 +1983,21 @@ Querying ethereum transactions
                 },
                 "ignored_in_accounting": true,
 		"decoded_events": [{
-	           "identifier": 3,
-	           "asset": "ETH",
-		   "balance": {"amount": "0.00863351371344", "usd_value": "0"},
-		   "counterparty": "gas",
-		   "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-		   "event_subtype": "fee",
-		   "event_type": "spend",
-		   "location": "blockchain",
-		   "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-		   "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-                   "sequence_index": 0,
-		   "timestamp": 1642802807
+		   "entry": {
+		       "identifier": 3,
+		       "asset": "ETH",
+		       "balance": {"amount": "0.00863351371344", "usd_value": "0"},
+		       "counterparty": "gas",
+		       "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+		       "event_subtype": "fee",
+		       "event_type": "spend",
+		       "location": "blockchain",
+		       "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
+		       "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+		       "sequence_index": 0,
+		       "timestamp": 1642802807
+		   },
+		   "customized": false
 		}],
             }],
             "entries_found": 95,
@@ -2001,7 +2010,7 @@ Querying ethereum transactions
    :resjson object result: A list of transaction entries to return for the given filter.
    :resjson object entry: A single transaction entry
    :resjson bool ignored_in_accounting: A boolean indicating whether this transaction should be ignored in accounting or not
-   :resjson list decoded_events: A list of decoded events for the given transaction.
+   :resjson list decoded_events: A list of decoded events for the given transaction. Each even is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
    :resjson int entries_total: The number of total entries ignoring all filters.

@@ -3059,9 +3059,15 @@ class RestAPI():
                     ),
                     has_premium=True,  # for this function we don't limit. We only limit txs.
                 )
+                customized_event_ids = dbevents.get_customized_event_identifiers()
                 entries_result.append({
                     'entry': entry.serialize(),
-                    'decoded_events': [x.serialize() for x in events],
+                    'decoded_events': [
+                        {
+                            'entry': x.serialize(),
+                            'customized': x.identifier in customized_event_ids,
+                        } for x in events
+                    ],
                     'ignored_in_accounting': entry.identifier in ignored_ids,
                 })
         else:
