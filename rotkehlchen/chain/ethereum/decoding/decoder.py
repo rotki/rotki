@@ -17,6 +17,7 @@ from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxR
 from rotkehlchen.chain.ethereum.utils import decode_event_data_abi_str, token_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
+from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -187,12 +188,6 @@ class EVMTransactionDecoder():
     ) -> List[HistoryBaseEntry]:
         """Decodes an ethereum transaction and its receipt and saves result in the DB"""
         cursor = self.database.conn.cursor()
-        tx_hex = '0x' + transaction.tx_hash.hex()
-        cursor.execute('DELETE FROM history_events WHERE event_identifier=?', (tx_hex,))
-        cursor.execute(
-            'DELETE FROM evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
-            (transaction.tx_hash, 'ETH', 'decoded'),
-        )
         # check if any eth transfer happened in the transaction, including in internal transactions
         events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
         action_items: List[ActionItem] = []
@@ -213,8 +208,8 @@ class EVMTransactionDecoder():
 
         self.dbevents.add_history_events(events)
         cursor.execute(
-            'INSERT INTO evm_tx_mappings(tx_hash, blockchain, value) VALUES(?, ?, ?)',
-            (transaction.tx_hash, 'ETH', 'decoded'),
+            'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, blockchain, value) VALUES(?, ?, ?)',
+            (transaction.tx_hash, 'ETH', HISTORY_MAPPING_DECODED),
         )
         self.database.update_last_write()
         return sorted(events, key=lambda x: x.sequence_index, reverse=False)
@@ -248,7 +243,7 @@ class EVMTransactionDecoder():
         cursor = self.database.conn.cursor()
         results = cursor.execute(
             'SELECT COUNT(*) from evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
-            (transaction.tx_hash, 'ETH', 'decoded'),
+            (transaction.tx_hash, 'ETH', HISTORY_MAPPING_DECODED),
         )
         if results.fetchone()[0] != 0:  # already decoded and in the DB
             events = self.dbevents.get_history_events(

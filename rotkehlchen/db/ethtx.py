@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
+from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED, HISTORY_MAPPING_DECODED
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -303,3 +304,37 @@ class DBEthTx():
             tx_receipt.logs.append(tx_receipt_log)
 
         return tx_receipt
+
+    def delete_transactions(self, address: ChecksumEthAddress) -> None:
+        """Delete all transactions related data to the given address from the DB
+
+        So transactions, receipts, logs and decoded events
+        """
+        cursor = self.db.conn.cursor()
+        # Delete all relevant (by event_identifier) history events except those that are customized
+        cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'ethtxs_{address}',))
+        cursor.execute(
+            """
+            DELETE FROM history_events WHERE event_identifier IN (
+                SELECT "0x"||LOWER(HEX(tx_hash)) from ethx_address_mappings WHERE address=? AND blockchain=?
+            ) AND identifier NOT IN (
+                SELECT parent_identifier FROM history_events_mappings WHERE value=?
+            )""",  # noqa: E501
+            (address, 'ETH', HISTORY_MAPPING_CUSTOMIZED),
+        )
+        # Now delete all relevant transactions. By deleting all relevant transactions all tables
+        # are cleared thanks to cascading (except for history_events which was cleared above)
+        result = cursor.execute(
+            'SELECT tx_hash from ethx_address_mappings WHERE address=? AND blockchain=?',
+            (address, 'ETH'),
+        )
+        tx_hashes = [(x[0], '0x' + x[0].hex()) for x in result]
+        cursor.executemany(
+            'DELETE FROM ethereum_transactions WHERE tx_hash=? AND ? NOT IN (SELECT event_identifier FROM history_events)',  # noqa: E501
+            tx_hashes,
+        )
+        # Delete all remaining evm_tx_mappings so decoding can happen again for customized events
+        cursor.executemany(
+            'DELETE FROM evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
+            [(x[0], 'ETH', HISTORY_MAPPING_DECODED) for x in tx_hashes],
+        )

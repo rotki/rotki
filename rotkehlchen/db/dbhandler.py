@@ -59,6 +59,7 @@ from rotkehlchen.db.constants import (
     USER_CREDENTIAL_MAPPING_KEYS,
 )
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
+from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -2401,7 +2402,6 @@ class DBHandler:
             other_eth_accounts.remove(address)
 
         cursor = self.conn.cursor()
-        cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'ethtxs_{address}',))
         cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))
         cursor.execute(
             'DELETE FROM used_query_ranges WHERE name = ?',
@@ -2439,22 +2439,8 @@ class DBHandler:
         loopring = DBLoopring(self)
         loopring.remove_accountid_mapping(address)
 
-        # For transactions we need to delete all transactions where the address
-        # appears in either from or to, BUT no other tracked address is in
-        # from or to of the DB entry
-        questionmarks = '?' * len(other_eth_accounts)
-        # IN operator support in python sqlite is terrible :(
-        # https://stackoverflow.com/questions/31473451/sqlite3-in-clause
-        cursor.execute(
-            f'DELETE FROM ethereum_transactions WHERE '
-            f'from_address="{address}" AND to_address NOT IN ({",".join(questionmarks)});',
-            other_eth_accounts,
-        )
-        cursor.execute(
-            f'DELETE FROM ethereum_transactions WHERE '
-            f'to_address="{address}" AND from_address NOT IN ({",".join(questionmarks)});',
-            other_eth_accounts,
-        )
+        dbtx = DBEthTx(self)
+        dbtx.delete_transactions(address)
         cursor.execute('DELETE FROM amm_swaps WHERE address=?;', (address,))
         cursor.execute('DELETE FROM eth2_deposits WHERE from_address=?;', (address,))
 

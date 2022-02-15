@@ -65,6 +65,7 @@ from rotkehlchen.constants.limits import (
 )
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -1040,7 +1041,7 @@ class RestAPI():
     def add_history_event(self, event: HistoryBaseEntry) -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         try:
-            identifier = db.add_history_event(event)
+            identifier = db.add_history_event(event, mapping_value=HISTORY_MAPPING_CUSTOMIZED)
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             db.db.conn.rollback()
             error_msg = f'Failed to add event to the DB due to a DB error: {str(e)}'

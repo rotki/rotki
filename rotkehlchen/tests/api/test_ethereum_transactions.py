@@ -1,6 +1,7 @@
 import os
 import random
 from contextlib import ExitStack
+from copy import deepcopy
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -9,9 +10,11 @@ import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.constants.assets import A_USDT
+from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 from rotkehlchen.db.ethtx import DBEthTx
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.tests.utils.api import (
@@ -19,12 +22,14 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
+    assert_simple_ok_response,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.typing import EthereumTransaction
+from rotkehlchen.typing import EthereumTransaction, Timestamp
 
 EXPECTED_AFB7_TXS = [{
     'tx_hash': '0x13684203a4bf07aaed0112983cb380db6004acac772af2a5d46cb2a28245fbad',
@@ -693,34 +698,39 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
 def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereum_accounts):
     """Test that querying for an address's transactions after the events have been
     decoded also includes said events
+
+    Also test that if an event is edited or added to a transaction that transaction and
+    event are not purged when the ethereum transactions are purged. And if transactions
+    are requeried the edited events are there.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
     tx_module = EthTransactions(
         ethereum=rotki.chain_manager.ethereum,
         database=rotki.data.db,
     )
-    tx_module.single_address_query_transactions(
-        address=ethereum_accounts[0],
-        start_ts=0,
-        end_ts=1642803566,  # time of test writing
-    )
-    rotki.task_manager._maybe_schedule_ethereum_txreceipts()
-    gevent.joinall(rotki.greenlet_manager.greenlets)
-    rotki.task_manager._maybe_decode_evm_transactions()
-    gevent.joinall(rotki.greenlet_manager.greenlets)
 
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'ethereumtransactionsresource',
-        ),
-    )
+    def query_transactions(rotki, tx_module: EthTransactions) -> None:
+        tx_module.single_address_query_transactions(
+            address=ethereum_accounts[0],
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1642803566),  # time of test writing
+        )
+        rotki.task_manager._maybe_schedule_ethereum_txreceipts()
+        gevent.joinall(rotki.greenlet_manager.greenlets)
+        rotki.task_manager._maybe_decode_evm_transactions()
+        gevent.joinall(rotki.greenlet_manager.greenlets)
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'ethereumtransactionsresource',
+            ),
+        )
+        return assert_proper_response_with_result(response)
 
-    result = assert_proper_response_with_result(response)
+    result = query_transactions(rotki, tx_module)
     entries = result['entries']
     assert len(entries) == 4
-    assert entries[0]['decoded_events'] == [{
+    tx1_events = [{
         'identifier': 4,
         'asset': 'ETH',
         'balance': {'amount': '0.00863351371344', 'usd_value': '0'},
@@ -747,7 +757,8 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'sequence_index': 1,
         'timestamp': 1642802807,
     }]
-    assert entries[1]['decoded_events'] == [{
+    assert entries[0]['decoded_events'] == tx1_events
+    tx2_events = [{
         'identifier': 1,
         'asset': 'ETH',
         'balance': {'amount': '0.017690836625228792', 'usd_value': '0'},
@@ -774,7 +785,8 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'sequence_index': 307,
         'timestamp': 1642802735,
     }]
-    assert entries[2]['decoded_events'] == [{
+    assert entries[1]['decoded_events'] == tx2_events
+    tx3_events = [{
         'identifier': 3,
         'asset': 'ETH',
         'balance': {'amount': '0.125', 'usd_value': '0'},
@@ -788,7 +800,8 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'sequence_index': 1,
         'timestamp': 1642802651,
     }]
-    assert entries[3]['decoded_events'] == [{
+    assert entries[2]['decoded_events'] == tx3_events
+    tx4_events = [{
         'identifier': 6,
         'asset': A_USDT.identifier,
         'balance': {'amount': '1166', 'usd_value': '0'},
@@ -802,3 +815,89 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'sequence_index': 385,
         'timestamp': 1642802286,
     }]
+    assert entries[3]['decoded_events'] == tx4_events
+
+    # Now let's edit 1 event and add another one
+    tx2_event_before_edit = deepcopy(tx2_events[1])
+    tx2_events[1]['asset'] = A_DAI.identifier
+    tx2_events[1]['balance'] = {'amount': '2500', 'usd_value': '2501.1'}
+    tx2_events[1]['event_type'] = 'spend'
+    tx2_events[1]['event_subtype'] = 'payback debt'
+    tx2_events[1]['notes'] = 'Edited event'
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+        json=tx2_events[1],
+    )
+    assert_simple_ok_response(response)
+
+    tx4_events.insert(0, {
+        'asset': 'ETH',
+        'balance': {'amount': '1', 'usd_value': '1500.1'},
+        'counterparty': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
+        'event_identifier': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
+        'event_subtype': 'deposit asset',
+        'event_type': 'spend',
+        'location': 'blockchain',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'notes': 'Some kind of deposit',
+        'sequence_index': 1,
+        'timestamp': 1642802286,
+    })
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+        json=tx4_events[0],
+    )
+    result = assert_proper_response_with_result(response)
+    tx4_events[0]['identifier'] = result['identifier']
+
+    # Now let's check DB tables to see they will get modified at purging
+    cursor = rotki.data.db.conn.cursor()
+    for name, count in (
+            ('ethereum_transactions', 4), ('ethereum_internal_transactions', 0),
+            ('ethtx_receipts', 4), ('ethtx_receipt_log_topics', 6),
+            ('ethx_address_mappings', 4), ('evm_tx_mappings', 4),
+            ('history_events_mappings', 2),
+    ):
+        assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
+    # Now purge all transactions of this address and see data is deleted BUT that
+    # the edited/added event and all it's tied to is not
+    dbethtx = DBEthTx(rotki.data.db)
+    dbethtx.delete_transactions(ethereum_accounts[0])
+
+    cursor = rotki.data.db.conn.cursor()
+    for name, count in (
+            ('ethereum_transactions', 2), ('ethereum_internal_transactions', 0),
+            ('ethtx_receipts', 2), ('ethtx_receipt_log_topics', 6),
+            ('ethx_address_mappings', 2), ('evm_tx_mappings', 0),
+            ('history_events_mappings', 2),
+    ):
+        assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
+    dbevents = DBHistoryEvents(rotki.data.db)
+    customized_events = dbevents.get_history_events(HistoryEventFilterQuery.make(), True)
+    assert customized_events[0].serialize() == tx4_events[0]
+    assert customized_events[1].serialize() == tx2_events[1]
+
+    # requery all transactions and events and assert they are the same (different event id though)
+    tx2_events.insert(0, deepcopy(tx2_events[1]))
+    tx2_events[2] = tx2_event_before_edit
+    result = query_transactions(rotki, tx_module)
+    entries = result['entries']
+    assert len(entries) == 4
+    assert_serialized_lists_equal(entries[0]['decoded_events'], tx1_events, ignore_keys='identifier')  # noqa: E501
+    assert_serialized_lists_equal(entries[1]['decoded_events'], tx2_events, ignore_keys='identifier')  # noqa: E501
+    assert_serialized_lists_equal(entries[2]['decoded_events'], tx3_events, ignore_keys='identifier')  # noqa: E501
+    assert_serialized_lists_equal(entries[3]['decoded_events'], tx4_events, ignore_keys='identifier')  # noqa: E501
+
+    # explicitly delete the customized (added/edited) transactions
+    dbevents.delete_history_events_by_identifier([x.identifier for x in customized_events])
+    # and now purge all transactions again and see everything is deleted
+    dbethtx.delete_transactions(ethereum_accounts[0])
+    cursor = rotki.data.db.conn.cursor()
+    for name in (
+            'ethereum_transactions', 'ethereum_internal_transactions',
+            'ethtx_receipts', 'ethtx_receipt_log_topics',
+            'ethx_address_mappings', 'evm_tx_mappings',
+            'history_events_mappings',
+    ):
+        assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == 0
+    assert dbevents.get_history_events(HistoryEventFilterQuery.make(), True) == []

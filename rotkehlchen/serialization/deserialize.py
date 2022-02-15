@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Tuple, TypeVar, Union, overload
 
 from eth_utils import to_checksum_address
 

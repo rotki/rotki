@@ -121,6 +121,7 @@ TABLES_AT_INIT = [
     'balancer_events',
     'nfts',
     'history_events',
+    'history_events_mappings',
 ]
 
 

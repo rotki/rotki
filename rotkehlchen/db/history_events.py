@@ -5,6 +5,7 @@ from rotkehlchen.accounting.structures import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
+from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
@@ -29,8 +30,15 @@ class DBHistoryEvents():
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
-    def add_history_event(self, event: HistoryBaseEntry) -> int:
+    def add_history_event(
+            self,
+            event: HistoryBaseEntry,
+            mapping_value: Optional[str] = None,
+    ) -> int:
         """Insert a single history entry to the DB. Returns its identifier.
+
+        Optionally map it to a specific value used to map attributes
+        to some events
 
         May raise:
         - DeserializationError if the event could not be serialized for the DB
@@ -39,6 +47,14 @@ class DBHistoryEvents():
         cursor = self.db.conn.cursor()
         cursor.execute(HISTORY_INSERT, event.serialize_for_db())
         identifier = cursor.lastrowid
+
+        if mapping_value is not None:
+            cursor.execute(
+                'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, value) '
+                'VALUES(?, ?)',
+                (identifier, mapping_value),
+            )
+
         self.db.update_last_write()
         return identifier
 
@@ -69,6 +85,11 @@ class DBHistoryEvents():
         )
         if cursor.rowcount != 1:
             return False
+        cursor.execute(
+            'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, value) '
+            'VALUES(?, ?)',
+            (event.identifier, HISTORY_MAPPING_CUSTOMIZED),
+        )
 
         self.db.update_last_write()
         return True

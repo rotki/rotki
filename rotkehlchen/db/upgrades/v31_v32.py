@@ -75,6 +75,13 @@ def _add_new_tables(cursor: 'Cursor') -> None:
     FOREIGN KEY(tx_hash) references ethereum_transactions(tx_hash) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (tx_hash, value)
 );""")  # noqa: E501
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS history_events_mappings (
+    parent_identifier INTEGER NOT NULL,
+    value TEXT NOT NULL,
+    FOREIGN KEY(parent_identifier) references history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (parent_identifier, value)
+);""")  # noqa: E501
 
 
 def upgrade_v31_to_v32(db: 'DBHandler') -> None:
