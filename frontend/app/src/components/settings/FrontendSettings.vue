@@ -4,6 +4,14 @@
       {{ $t('frontend_settings.title') }}
     </template>
     <v-switch
+      :value="!animationsEnabled"
+      class="general-settings__fields__animation-enabled"
+      :label="$t('frontend_settings.label.animations')"
+      :success-messages="settingsMessages[ANIMATIONS_ENABLED].success"
+      :error-messages="settingsMessages[ANIMATIONS_ENABLED].error"
+      @change="onAnimationsEnabledChange($event)"
+    />
+    <v-switch
       v-model="scrambleData"
       class="general-settings__fields__scramble-data"
       :label="$t('frontend_settings.label.scramble')"
@@ -140,6 +148,7 @@ import {
 } from '@/types/frontend-settings';
 
 const SETTING_SCRAMBLE_DATA = 'scrambleData';
+const SETTING_ANIMATIONS_ENABLED = 'animationsEnabled';
 const SETTING_TIMEFRAME = 'timeframe';
 const SETTING_VISIBLE_TIMEFRAMES = 'visibleTimeframes';
 const SETTING_QUERY_PERIOD = 'queryPeriod';
@@ -147,6 +156,7 @@ const SETTING_REFRESH_PERIOD = 'refreshPeriod';
 
 const SETTINGS = [
   SETTING_SCRAMBLE_DATA,
+  SETTING_ANIMATIONS_ENABLED,
   SETTING_TIMEFRAME,
   SETTING_VISIBLE_TIMEFRAMES,
   SETTING_QUERY_PERIOD,
@@ -183,9 +193,11 @@ export default class FrontendSettings extends Mixins<
   refreshEnabled: boolean = false;
   zeroBased: boolean = false;
   includeNfts: boolean = true;
+  animationsEnabled: boolean = true;
   fetchNetValue!: () => Promise<void>;
 
   readonly SCRAMBLE_DATA = SETTING_SCRAMBLE_DATA;
+  readonly ANIMATIONS_ENABLED = SETTING_ANIMATIONS_ENABLED;
   readonly TIMEFRAME = SETTING_TIMEFRAME;
   readonly QUERY_PERIOD = SETTING_QUERY_PERIOD;
   readonly REFRESH_PERIOD = SETTING_REFRESH_PERIOD;
@@ -324,6 +336,32 @@ export default class FrontendSettings extends Mixins<
     );
   }
 
+  onAnimationsEnabledChange(enabled: boolean) {
+    const { dispatch } = this.$store;
+    const previousValue = this.$store.state.session.animationsEnabled;
+
+    let success: boolean = false;
+    let message: string | undefined;
+
+    try {
+      dispatch('session/setAnimationsEnabled', !enabled);
+      success = true;
+    } catch (error: any) {
+      this.animationsEnabled = previousValue;
+      message = error.message;
+    }
+
+    this.validateSettingChange(
+      SETTING_ANIMATIONS_ENABLED,
+      success ? 'success' : 'error',
+      success
+        ? ''
+        : `${this.$t('frontend_settings.validation.animations.error', {
+            message
+          })}`
+    );
+  }
+
   async onRefreshPeriodChange(period: string) {
     const refreshPeriod = parseInt(period);
     if (refreshPeriod > MAX_REFRESH_PERIOD) {
@@ -378,6 +416,7 @@ export default class FrontendSettings extends Mixins<
   mounted() {
     const state = this.$store.state;
     this.scrambleData = state.session.scrambleData;
+    this.animationsEnabled = state.session.animationsEnabled;
     this.currentSessionTimeframe = state.session.timeframe;
     this.defaultGraphTimeframe = state.settings![TIMEFRAME_SETTING];
     this.visibleTimeframes = state.settings![VISIBLE_TIMEFRAMES];

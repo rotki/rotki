@@ -1478,10 +1478,16 @@
     "inactive_timeframes": "Inactive Timeframes"
   },
   "frontend_settings": {
+    "animations": {
+      "disable": "Disable animations",
+      "disable_hint": "Disabling animations will improve app performance.",
+      "enable": "Enable animations"
+    },
     "hint": {
       "refresh": "How often (in minutes) your balances will be automatically refreshed"
     },
     "label": {
+      "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
       "query_period": "Query period in seconds",
       "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
       "refresh": "Set the automatic refresh period",
@@ -1500,6 +1506,9 @@
     },
     "title": "Frontend-only Settings",
     "validation": {
+      "animations": {
+        "error": "Error setting animations state: {message}"
+      },
       "timeframe": {
         "error": "Failed to set the default timeframe for the user",
         "success": "Default timeframe set to {timeframe}"

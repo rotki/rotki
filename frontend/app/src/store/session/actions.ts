@@ -41,7 +41,12 @@ import { ACTION_PURGE_DATA } from '@/store/staking/consts';
 import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus, RotkehlchenState } from '@/store/types';
-import { getStatusUpdater, showError, showMessage } from '@/store/utils';
+import {
+  getStatusUpdater,
+  setAnimationsEnabled,
+  showError,
+  showMessage
+} from '@/store/utils';
 import {
   Exchange,
   KrakenAccountType,
@@ -710,5 +715,10 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
 
   async dismissUpdatePopup({ commit }): Promise<void> {
     commit('setShowUpdatePopup', false);
+  },
+
+  setAnimationsEnabled({ commit }, enabled: boolean): void {
+    commit('setAnimationsEnabled', enabled);
+    setAnimationsEnabled(enabled);
   }
 };

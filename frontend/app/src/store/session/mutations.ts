@@ -86,5 +86,8 @@ export const mutations: MutationTree<SessionState> = {
   },
   setShowUpdatePopup(state: SessionState, showUpdatePopup: boolean) {
     state.showUpdatePopup = showUpdatePopup;
+  },
+  setAnimationsEnabled(state: SessionState, animationsEnabled: boolean) {
+    state.animationsEnabled = animationsEnabled;
   }
 };
