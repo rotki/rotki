@@ -60,7 +60,7 @@ def _add_new_tables(cursor: 'Cursor') -> None:
     PRIMARY KEY(parent_tx_hash, trace_id)
 );""")  # noqa: E501
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS ethx_address_mappings (
+    CREATE TABLE IF NOT EXISTS ethtx_address_mappings (
     address TEXT NOT NULL,
     tx_hash BLOB NOT NULL,
     blockchain TEXT NOT NULL,

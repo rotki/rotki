@@ -860,7 +860,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
     for name, count in (
             ('ethereum_transactions', 4), ('ethereum_internal_transactions', 0),
             ('ethtx_receipts', 4), ('ethtx_receipt_log_topics', 6),
-            ('ethx_address_mappings', 4), ('evm_tx_mappings', 4),
+            ('ethtx_address_mappings', 4), ('evm_tx_mappings', 4),
             ('history_events_mappings', 2),
     ):
         assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
@@ -873,7 +873,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
     for name, count in (
             ('ethereum_transactions', 2), ('ethereum_internal_transactions', 0),
             ('ethtx_receipts', 2), ('ethtx_receipt_log_topics', 6),
-            ('ethx_address_mappings', 2), ('evm_tx_mappings', 0),
+            ('ethtx_address_mappings', 2), ('evm_tx_mappings', 0),
             ('history_events_mappings', 2),
     ):
         assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
@@ -903,7 +903,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
     for name in (
             'ethereum_transactions', 'ethereum_internal_transactions',
             'ethtx_receipts', 'ethtx_receipt_log_topics',
-            'ethx_address_mappings', 'evm_tx_mappings',
+            'ethtx_address_mappings', 'evm_tx_mappings',
             'history_events_mappings',
     ):
         assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == 0

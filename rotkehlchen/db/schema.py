@@ -481,7 +481,7 @@ CREATE TABLE IF NOT EXISTS ethtx_receipt_log_topics (
 """  # noqa: E501
 
 DB_CREATE_ETHTX_ADDRESS_MAPPINGS = """
-CREATE TABLE IF NOT EXISTS ethx_address_mappings (
+CREATE TABLE IF NOT EXISTS ethtx_address_mappings (
     address TEXT NOT NULL,
     tx_hash BLOB NOT NULL,
     blockchain TEXT NOT NULL,

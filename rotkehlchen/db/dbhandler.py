@@ -2157,7 +2157,7 @@ class DBHandler:
             if relevant_address is not None:
                 mapping_tuples = [(relevant_address, x[0], 'ETH') for x in tuples]
                 cursor.executemany(
-                    'INSERT OR IGNORE INTO ethx_address_mappings(address, tx_hash, blockchain) '
+                    'INSERT OR IGNORE INTO ethtx_address_mappings(address, tx_hash, blockchain) '
                     'VALUES(?, ?, ?)',
                     mapping_tuples,
                 )
@@ -2170,7 +2170,7 @@ class DBHandler:
                     cursor.execute(query, entry)
                     if relevant_address is not None:
                         cursor.execute(
-                            'INSERT OR IGNORE INTO ethx_address_mappings '
+                            'INSERT OR IGNORE INTO ethtx_address_mappings '
                             '(address, tx_hash, blockchain) VALUES(?, ?, ?)',
                             (relevant_address, entry[0], 'ETH'),
                         )
@@ -2184,7 +2184,7 @@ class DBHandler:
                         # other and both accounts are being tracked.
                         if relevant_address is not None:
                             cursor.execute(
-                                'INSERT OR IGNORE INTO ethx_address_mappings '
+                                'INSERT OR IGNORE INTO ethtx_address_mappings '
                                 '(address, tx_hash, blockchain) VALUES(?, ?, ?)',
                                 (relevant_address, entry[0], 'ETH'),
                             )

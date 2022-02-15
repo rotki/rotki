@@ -315,8 +315,8 @@ class DBEthTx():
         cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'ethtxs_{address}',))
         # Get all tx_hashes that are touched by this address and no other address
         result = cursor.execute(
-            'SELECT tx_hash from ethx_address_mappings WHERE address=? AND tx_hash NOT IN ( '
-            'SELECT tx_hash from ethx_address_mappings WHERE address!=?'
+            'SELECT tx_hash from ethtx_address_mappings WHERE address=? AND tx_hash NOT IN ( '
+            'SELECT tx_hash from ethtx_address_mappings WHERE address!=?'
             ')',
             (address, address),
         )
