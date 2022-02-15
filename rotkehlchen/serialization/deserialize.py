@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple, TypeVar, Union, overload
 
 from eth_utils import to_checksum_address
-from typing_extensions import Literal
 
 from rotkehlchen.accounting.structures import HistoryEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
