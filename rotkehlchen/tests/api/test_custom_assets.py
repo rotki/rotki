@@ -1,4 +1,5 @@
 import json
+import tempfile
 from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
@@ -833,7 +834,8 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb):
+@pytest.mark.parametrize('with_custom_path', [False, True])
+def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_custom_path):
     """Test that the endpoint for exporting custom assets works correctly"""
     eth_address = make_ethereum_address()
     identifier = f'_ceth_{eth_address}'
@@ -849,53 +851,73 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb):
             cryptocompare='YAB',
         ),
     )
-    cursor = globaldb._conn.cursor()
-    cursor.execute('INSERT INTO user_owned_assets VALUES(?)', (identifier,))
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'userassetsresource',
-        ),
-    )
-    result = assert_proper_response_with_result(response)
-    zip_file = ZipFile(result['file'])
-    data = json.loads(zip_file.read('assets.json'))
-    assert int(data['version']) == GLOBAL_DB_VERSION
-    assert len(data['assets']) == 1
-    assert data['assets'][0] == {
-        'identifier': identifier,
-        'name': 'yabirtoken',
-        'decimals': 18,
-        'symbol': 'YAB',
-        'asset_type': 'C',
-        'started': None,
-        'forked': None,
-        'swapped_for': None,
-        'cryptocompare': 'YAB',
-        'coingecko': 'YAB',
-        'protocol': None,
-        'underlying_tokens': None,
-        'ethereum_address': eth_address,
-    }
-    assets_file = Path(result['file'])
-    assets_directory = assets_file.parent
-    assets_file.unlink()
-    assets_directory.rmdir()
+    with tempfile.TemporaryDirectory() as path:
+        if with_custom_path:
+            response = requests.put(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'userassetsresource',
+                ), json={'action': 'download', 'destination': path},
+            )
+        else:
+            response = requests.put(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'userassetsresource',
+                ), json={'action': 'download'},
+            )
+
+        result = assert_proper_response_with_result(response)
+        if with_custom_path:
+            assert path in result['file']
+        zip_file = ZipFile(result['file'])
+        data = json.loads(zip_file.read('assets.json'))
+        assert int(data['version']) == GLOBAL_DB_VERSION
+        assert len(data['assets']) == 1
+        assert data['assets'][0] == {
+            'identifier': identifier,
+            'name': 'yabirtoken',
+            'decimals': 18,
+            'symbol': 'YAB',
+            'asset_type': 'C',
+            'started': None,
+            'forked': None,
+            'swapped_for': None,
+            'cryptocompare': 'YAB',
+            'coingecko': 'YAB',
+            'protocol': None,
+            'underlying_tokens': None,
+            'ethereum_address': eth_address,
+        }
+        assets_file = Path(result['file'])
+        assets_directory = assets_file.parent
+        assets_file.unlink()
+        assets_directory.rmdir()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_importing_custom_assets_list(rotkehlchen_api_server):
+@pytest.mark.parametrize('method', ['post', 'put'])
+def test_importing_custom_assets_list(rotkehlchen_api_server, method):
     """Test that the endpoint for importing custom assets works correctly"""
     dir_path = Path(__file__).resolve().parent.parent
     filepath = dir_path / 'data' / 'exported_assets.json'
 
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'userassetsresource',
-        ), json={'file': str(filepath)},
-    )
+    if method == 'put':
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'userassetsresource',
+            ), json={'action': 'upload', 'file': str(filepath)},
+        )
+    else:
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'userassetsresource',
+            ), json={'action': 'upload'},
+            files={'file': open(filepath, 'rb')},
+        )
 
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     errors = rotki.msg_aggregator.consume_errors()
@@ -906,13 +928,3 @@ def test_importing_custom_assets_list(rotkehlchen_api_server):
     assert stinch.symbol == 'st1INCH'
     assert len(stinch.underlying_tokens) == 1
     assert stinch.decimals == 18
-
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'userassetsresource',
-        ), files={'file': open(filepath, 'rb')},
-    )
-
-    errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 0

@@ -1243,7 +1243,7 @@ class GlobalDBHandler():
         try:
             # First check that the operation can be made. If the difference
             # is not the empty set the operation is dangerous and the user should be notified.
-            diff_ids = GlobalDBHandler().get_user_added_assets(user_db)
+            diff_ids = GlobalDBHandler().get_user_added_assets(user_db=user_db, only_owned=True)
             if len(diff_ids) != 0 and not force:
                 cursor.execute(detach_database)
                 msg = 'There are assets that can not be deleted. Check logs for more details.'
@@ -1380,9 +1380,14 @@ class GlobalDBHandler():
                 log.debug(f'Failed to deserialize binance pair {pair}. {str(e)}')
         return pairs
 
-    def get_user_added_assets(self, user_db: 'DBHandler') -> Set[str]:
+    def get_user_added_assets(
+        self,
+        user_db: 'DBHandler',
+        only_owned: bool = False,
+    ) -> Set[str]:
         """
-        Create a list of the assets indentifiers added by the user AND that any user owns.
+        Create a list of the assets indentifiers added by the user. If only_owned
+        the assets added by the user and at some point he had are returned.
         May raise:
         - sqlite3.Error if the user_db couldn't be correctly attached
         """
@@ -1392,7 +1397,10 @@ class GlobalDBHandler():
         builtin_database = root_dir / 'data' / 'global.db'
         # Update the list of owned assets
         user_db.update_owned_assets_in_globaldb()
-        query = cursor.execute('SELECT asset_id from user_owned_assets;')
+        if only_owned:
+            query = cursor.execute('SELECT asset_id from user_owned_assets;')
+        else:
+            query = cursor.execute('SELECT identifier from assets;')
         user_ids = {tup[0] for tup in query.fetchall()}
         # Attach to the clean db packaged with rotki
         cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')

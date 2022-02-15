@@ -717,3 +717,26 @@ class HistoricalPriceOracleField(fields.Field):
             raise ValidationError(f'Invalid historical price oracle: {value}') from e
 
         return historical_price_oracle
+
+
+class FolderField(fields.Field):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> Path:
+
+        if not isinstance(value, str):
+            raise ValidationError('Provided non string path')
+
+        path = Path(value)
+        if not path.exists():
+            raise ValidationError(f'Given path {value} does not exist')
+
+        if not path.is_dir():
+            raise ValidationError(f'Given path {value} is not a file')
+
+        return path

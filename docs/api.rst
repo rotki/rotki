@@ -10203,23 +10203,19 @@ Staking events
 Export assets added by the user
 ===============================
 
-.. http:get:: /api/(version)/assets/user
+.. http:put:: /api/(version)/assets/user
 
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-
-   Doing a get to this endpoint will create a zip file with the assets that are not provided by rotki and any user in the system owns.
+   Calling this endpoint with PUT and action `download` will create a zip file with the assets that are not included by default with vanilla rotki.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/assets/user HTTP/1.1
+      PUT /api/1/assets/user HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": true}
+      {"action": "download", "destination": "/home/user/Downloads"}
 
 
    **Example Response**:
@@ -10231,28 +10227,29 @@ Export assets added by the user
 
       {
           "result": {
-                "file": "/tmp/tmp3b16a1i2/assets.zip"
+                "file": "/home/user/Downloads/assets.zip"
           },
           "message": ""
       }
 
-   :resjsonarr string file: Location where the file has been generated.
+   :resjsonarr string action: Action performed on the endpoint
+   :resjsonarr string destination: Folder where the generated files will be saved. If none is chosed a temporary folder is used.
 
-   :statuscode 200: Events are succesfully returned
-   :statuscode 409: No user is logged in, kraken is not active or some parameter for filters is not valid.
-   :statuscode 500: Internal rotki error
+   :statuscode 200: Response file is correctly generated
+   :statuscode 409: No user is logged in.
+   :statuscode 507: Failed to crete the file.
 
 
 Import assets added by the user
 ===============================
 
+.. http:put:: /api/(version)/assets/user
 .. http:post:: /api/(version)/assets/user
 
+   Doing a put or a post to this endpoint will import the assets in the json file provided. The file has to follow the rotki expected format and will be verified.
+
    .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-
-   Doing a post to this endpoint will import the assets in the json file provided. The file has to follow the rotki expected format and will be verified.
+      If doing a POST the `action` field is not required.
 
    **Example Request**:
 
@@ -10262,10 +10259,11 @@ Import assets added by the user
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": true, "path": "/tmp/assets.json"}
+      {"action": "upload", "file": "/tmp/assets.json"}
 
    
-   :resjsonarr string path: Path where the file is located
+   :resjsonarr string action: Action performed on the endpoint
+   :resjsonarr string file: The path to the file to upload for PUT. The file itself for POST.
 
    **Example Response**:
 
@@ -10279,7 +10277,6 @@ Import assets added by the user
           "message": ""
       }
 
-   :statuscode 200: Events are succesfully returned
-   :statuscode 400: Imported file is for an older version of the schema or file can't be loaded or format is not valid.
-   :statuscode 409: No user is logged in.
-   :statuscode 500: Internal rotki error
+   :statuscode 200: Assets correctly imported
+   :statuscode 409: No user is logged in, imported file is for an older version of the schema or file can't be loaded or format is not valid.
+   :statuscode 507: Internal rotki error

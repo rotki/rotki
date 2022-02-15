@@ -5,7 +5,7 @@ from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures import Balance, BalanceType, StakingEvent
-from rotkehlchen.assets.asset import Asset, EthereumToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.defi.structures import (
@@ -215,4 +215,3 @@ def process_result_list(result: List[Any]) -> List[Any]:
     processed_result = _process_entry(result)
     assert isinstance(processed_result, List)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
     return processed_result
-

@@ -23,6 +23,7 @@ from rotkehlchen.api.v1.schemas import (
     AssetMovementsQuerySchema,
     AssetResetRequestSchema,
     AssetSchema,
+    AssetsImportingFromFormSchema,
     AssetsImportingSchema,
     AssetsReplaceSchema,
     AssetUpdatesRequestSchema,
@@ -2047,18 +2048,16 @@ class StakingResource(BaseResource):
 
 
 class UserAssetsResource(BaseResource):
-    get_schema = AsyncQueryArgumentSchema
-    upload_schema = AssetsImportingSchema
+    importing_schema = AssetsImportingSchema
+    import_from_form = AssetsImportingFromFormSchema
 
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_user_added_assets(async_query=async_query)
+    @use_kwargs(importing_schema, location='json')
+    def put(self, file: Optional[Path], destination: Optional[Path], action: str) -> Response:
+        if action == 'upload':
+            return self.rest_api.import_user_assets(path=file)
+        return self.rest_api.get_user_added_assets(path=destination)
 
-    @use_kwargs(upload_schema, location='json')
-    def put(self, async_query: bool, file: Path) -> Response:
-        return self.rest_api.import_user_assets(async_query=async_query, path=file)
-
-    @use_kwargs(upload_schema, location='form_and_file')
+    @use_kwargs(import_from_form, location='form_and_file')
     def post(self, file: FileStorage) -> Response:
         with TemporaryDirectory() as temp_directory:
             filename = file.filename if file.filename else 'assets.json'
