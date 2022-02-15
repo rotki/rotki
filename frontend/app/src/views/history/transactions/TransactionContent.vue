@@ -40,7 +40,7 @@
 
     <data-table
       v-model="selected"
-      :expanded.sync="expanded"
+      :expanded="data"
       :headers="tableHeaders"
       :items="data"
       :loading="loading"
@@ -48,10 +48,10 @@
       :server-items-length="itemLength"
       class="table"
       :single-select="false"
+      :mobile-breakpoint="0"
+      :item-class="test"
       show-select
       item-key="identifier"
-      show-expand
-      single-expand
       @update:options="updatePaginationHandler($event)"
     >
       <template #item.ignoredInAccounting="{ item, isMobile }">
@@ -75,7 +75,12 @@
         </div>
       </template>
       <template #item.txHash="{ item }">
-        <hash-link :text="item.txHash" tx />
+        <hash-link
+          :text="item.txHash"
+          :truncate-length="8"
+          :full-address="$vuetify.breakpoint.lgAndUp"
+          tx
+        />
         <v-chip
           v-if="item.gasPrice.lt(0)"
           small
@@ -86,24 +91,23 @@
           {{ $t('transaction_details.internal_transaction') }}
         </v-chip>
       </template>
-      <template #item.fromAddress="{ item }">
-        <hash-link :text="item.fromAddress" />
-      </template>
-      <template #item.toAddress="{ item }">
-        <hash-link v-if="item.toAddress" :text="item.toAddress" />
-        <span v-else>-</span>
-      </template>
       <template #item.timestamp="{ item }">
         <date-display :timestamp="item.timestamp" />
       </template>
-      <template #item.value="{ item }">
-        <amount-display :value="toEth(item.value)" asset="ETH" />
-      </template>
-      <template #item.gasFee="{ item }">
-        <amount-display :value="gasFee(item)" asset="ETH" />
+      <template #item.action="{ item }">
+        <v-dialog width="600">
+          <template #activator="{ on }">
+            <v-btn small color="primary" text v-on="on">
+              {{ $t('transaction_details.details') }}
+              <v-icon small>mdi-chevron-right</v-icon>
+            </v-btn>
+          </template>
+
+          <transaction-detail :transaction="item" />
+        </v-dialog>
       </template>
       <template #expanded-item="{ headers, item }">
-        <transactions-details :transaction="item" :colspan="headers.length" />
+        <transaction-events :transaction="item" :colspan="headers.length" />
       </template>
       <template v-if="showUpgradeRow" #body.prepend="{ headers }">
         <upgrade-row
@@ -118,7 +122,6 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { defineComponent, Ref, ref, watch } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
@@ -127,7 +130,8 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
-import TransactionsDetails from '@/components/history/TransactionsDetails.vue';
+import TransactionDetail from '@/components/history/transactions/TransactionDetail.vue';
+import TransactionEvents from '@/components/history/transactions/TransactionEvents.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { isSectionLoading } from '@/composables/common';
 import {
@@ -144,7 +148,6 @@ import { Section } from '@/store/const';
 import { useTransactions } from '@/store/history';
 import { EthTransactionEntry, IgnoreActionType } from '@/store/history/types';
 import { Collection } from '@/types/collection';
-import { toUnit, Unit } from '@/utils/calculation';
 
 type PaginationOptions = {
   page: number;
@@ -162,58 +165,31 @@ const tableHeaders: DataTableHeader[] = [
     cellClass: 'pa-0'
   },
   {
-    text: i18n.t('transactions.headers.txhash').toString(),
+    text: i18n.t('transactions.headers.tx_hash').toString(),
     value: 'txHash',
-    class: 'text-no-wrap',
-    sortable: false
-  },
-  {
-    text: i18n.t('transactions.headers.block').toString(),
-    value: 'blockNumber',
-    align: 'end',
-    class: 'text-no-wrap',
     sortable: false
   },
   {
     text: i18n.t('transactions.headers.timestamp').toString(),
     value: 'timestamp',
-    class: 'text-no-wrap'
+    cellClass: 'text-no-wrap'
   },
   {
-    text: i18n.t('transactions.headers.from_address').toString(),
-    value: 'fromAddress',
-    class: 'text-no-wrap',
-    sortable: false
-  },
-  {
-    text: i18n.t('transactions.headers.to_address').toString(),
-    value: 'toAddress',
-    class: 'text-no-wrap',
-    sortable: false
-  },
-  {
-    text: i18n.t('transactions.headers.value').toString(),
-    value: 'value',
+    text: '',
+    value: 'action',
+    width: '20px',
     align: 'end',
-    class: 'text-no-wrap',
     sortable: false
-  },
-  {
-    text: i18n.t('transactions.headers.gas_fee').toString(),
-    value: 'gasFee',
-    align: 'end',
-    class: 'text-no-wrap',
-    sortable: false
-  },
-  { text: '', value: 'data-table-expand', sortable: false }
+  }
 ];
 
 export default defineComponent({
   name: 'TransactionContent',
   components: {
+    TransactionDetail,
     BadgeDisplay,
     UpgradeRow,
-    TransactionsDetails,
+    TransactionEvents,
     IgnoreButtons,
     BlockchainAccountSelector,
     RefreshButton
@@ -224,15 +200,15 @@ export default defineComponent({
 
     const transactionStore = useTransactions();
     const { transactions } = storeToRefs(transactionStore);
+
     const { updateTransactionsPayload } = transactionStore;
 
     const { data, limit, found, total } =
       getCollectionData<EthTransactionEntry>(
         transactions as Ref<Collection<EthTransactionEntry>>
       );
-    const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
-    const expanded: Ref<EthTransactionEntry[]> = ref([]);
+    const { itemLength, showUpgradeRow } = setupEntryLimit(limit, found, total);
 
     const options: Ref<PaginationOptions | null> = ref(null);
     const account: Ref<GeneralAccount | null> = ref(null);
@@ -293,11 +269,12 @@ export default defineComponent({
     const getId = (item: EthTransactionEntry) => item.identifier;
     const selected: Ref<EthTransactionEntry[]> = ref([]);
 
-    const gasFee = (tx: EthTransaction) =>
-      toUnit(tx.gasPrice.multipliedBy(tx.gasUsed), Unit.ETH);
-    const toEth = (value: BigNumber) => toUnit(value, Unit.ETH);
+    const test = (item: EthTransactionEntry) => {
+      return item.ignoredInAccounting ? 'grey lighten-4' : '';
+    };
 
     return {
+      test,
       selected,
       account,
       tableHeaders,
@@ -309,10 +286,7 @@ export default defineComponent({
       fetch,
       showUpgradeRow,
       loading: isSectionLoading(Section.TX),
-      expanded,
       options,
-      gasFee,
-      toEth,
       updatePaginationHandler,
       ...setupIgnore(
         IgnoreActionType.ETH_TRANSACTIONS,
@@ -325,18 +299,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style scoped lang="scss">
-.table {
-  ::v-deep {
-    tbody {
-      tr {
-        > td {
-          padding-top: 16px !important;
-          padding-bottom: 16px !important;
-        }
-      }
-    }
-  }
-}
-</style>

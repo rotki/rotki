@@ -9,6 +9,9 @@
           v-on="on"
         >
           <v-chip label outlined class="labeled-address-display__chip">
+            <v-avatar size="24" class="mr-2">
+              <v-img :src="makeBlockie(address)" />
+            </v-avatar>
             <span v-if="!!label" class="text-truncate">
               {{
                 $t('labeled_address_display.label', {
@@ -45,6 +48,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import makeBlockie from 'ethereum-blockies-base64';
 import { setupThemeCheck } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
 import { truncateAddress, truncationPoints } from '@/filters';
@@ -128,7 +132,8 @@ export default defineComponent({
       label,
       displayAddress,
       shouldShowAmount,
-      address
+      address,
+      makeBlockie
     };
   }
 });
@@ -163,8 +168,6 @@ export default defineComponent({
 
   &__actions {
     height: 32px;
-    width: 70px;
-    max-width: 75px;
     background-color: var(--v-rotki-light-grey-base);
     border: 1px solid rgba(0, 0, 0, 0.12);
     border-left-width: 0;

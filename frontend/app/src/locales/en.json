@@ -2718,6 +2718,11 @@
   },
   "transactions": {
     "clear_selection": "Clear Selection",
+    "event_headers": {
+      "type": "Type",
+      "asset": "Asset",
+      "description": "Description"
+    },
     "filter": {
       "label": "Filter by account"
     },
@@ -2726,22 +2731,34 @@
     "title": "Ethereum Transactions",
     "refresh_tooltip": "Refresh ethereum transactions",
     "headers": {
-      "txhash": "Tx hash",
-      "block": "Block",
+      "tx_hash": "Tx Hash",
       "timestamp": "Date",
-      "from_address": "From",
-      "to_address": "To",
-      "value": "Value",
-      "gas_fee": "Fee",
       "ignored": "Ignored"
     },
     "label": "transactions",
-    "selected": "{count} transaction(s) selected"
+    "selected": "{count} transaction(s) selected",
+    "event_type": {
+      "gas_fee": "Gas Fee",
+      "send": "Send",
+      "receive": "Receive",
+      "approval": "Approval",
+      "deposit": "Deposit",
+      "withdraw": "Withdraw",
+      "airdrop": "Airdrop",
+      "borrow": "Borrow",
+      "repay": "Repay",
+      "deploy": "Deploy",
+      "bridge": "Bridge",
+      "governance_propose": "Governance Propose",
+      "unknown": "Unknown"
+    }
   },
   "transaction_details": {
+    "details": "Details",
     "title": "Transaction details",
     "nonce": "Nonce",
-    "gas": "Gas Limit",
+    "gas_fee": "Gas Fee",
+    "gas_limit": "Gas Limit",
     "gas_price": "Gas Price",
     "gas_used": "Gas Used",
     "input_data": "Input Data",

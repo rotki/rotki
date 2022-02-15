@@ -1,12 +1,43 @@
-import { NumericString } from '@rotki/common';
+import { Balance, NumericString } from '@rotki/common';
 import { z, ZodTypeAny } from 'zod';
 import { SUPPORTED_TRADE_LOCATIONS } from '@/data/defaults';
 import { SUPPORTED_EXCHANGES } from '@/types/exchanges';
 import { LedgerActionEnum } from '@/types/ledger-actions';
+import {
+  HistoryEventSubTypeEnum,
+  HistoryEventTypeEnum
+} from '@/types/transaction';
 
-// Common wrapper function
+export const EthTransactionEvent = z.object({
+  eventIdentifier: z.string(),
+  sequenceIndex: z.number(),
+  timestamp: z.number(),
+  location: z.string(),
+  locationLabel: z.string().nullable().optional(),
+  eventType: HistoryEventTypeEnum.nullable().optional(),
+  eventSubtype: HistoryEventSubTypeEnum.nullable().optional(),
+  asset: z.string(),
+  balance: Balance,
+  notes: z.string().nullable().optional(),
+  counterparty: z.string().nullable().optional(),
+  identifier: z.number().nullable().optional()
+});
+
+export type EthTransactionEvent = z.infer<typeof EthTransactionEvent>;
+
+export const EthTransactionEventWithMeta = z.object({
+  customized: z.boolean(),
+  entry: EthTransactionEvent
+});
+
+export type EthTransactionEventWithMeta = z.infer<
+  typeof EthTransactionEventWithMeta
+>;
+
 const EntryMeta = z.object({
-  ignoredInAccounting: z.boolean()
+  ignoredInAccounting: z.boolean().nullish(),
+  customized: z.boolean().nullish(),
+  decodedEvents: z.array(EthTransactionEventWithMeta).nullish()
 });
 
 export type EntryMeta = z.infer<typeof EntryMeta>;
@@ -15,6 +46,7 @@ export type EntryWithMeta<T> = {
   readonly entry: T;
 } & EntryMeta;
 
+// Common wrapper function
 function getEntryWithMeta(obj: ZodTypeAny) {
   return z
     .object({

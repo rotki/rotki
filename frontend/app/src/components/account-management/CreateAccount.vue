@@ -196,57 +196,51 @@
           </v-card-actions>
         </v-stepper-content>
         <v-stepper-content step="3">
-          <v-card
-            light
-            max-width="500"
-            class="mx-auto create-account__analytics"
-          >
-            <v-card-text>
-              <v-alert
-                outlined
-                prominent
-                color="primary"
-                class="mx-auto text-justify text-body-2 create-account__analytics__content"
-              >
-                {{ $t('create_account.usage_analytics.description') }}
-              </v-alert>
-              <v-alert v-if="error" type="error" outlined>
-                {{ error }}
-              </v-alert>
-              <v-row no-gutters>
-                <v-col>
-                  <v-checkbox
-                    v-model="submitUsageAnalytics"
-                    :disabled="loading"
-                    :label="$t('create_account.usage_analytics.label_confirm')"
-                  />
-                </v-col>
-              </v-row>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer />
-              <v-btn
-                color="primary"
-                class="create-account__analytics__button__back"
-                depressed
-                :disabled="loading"
-                outlined
-                @click="back"
-              >
-                {{ $t('create_account.usage_analytics.button_back') }}
-              </v-btn>
-              <v-btn
-                color="primary"
-                depressed
-                :disabled="loading"
-                :loading="loading"
-                class="create-account__analytics__button__confirm"
-                @click="confirm()"
-              >
-                {{ $t('create_account.usage_analytics.button_create') }}
-              </v-btn>
-            </v-card-actions>
-          </v-card>
+          <v-card-text>
+            <v-alert
+              outlined
+              prominent
+              color="primary"
+              class="mx-auto text-justify text-body-2 create-account__analytics__content"
+            >
+              {{ $t('create_account.usage_analytics.description') }}
+            </v-alert>
+            <v-alert v-if="error" type="error" outlined>
+              {{ error }}
+            </v-alert>
+            <v-row no-gutters>
+              <v-col>
+                <v-checkbox
+                  v-model="submitUsageAnalytics"
+                  :disabled="loading"
+                  :label="$t('create_account.usage_analytics.label_confirm')"
+                />
+              </v-col>
+            </v-row>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn
+              color="primary"
+              class="create-account__analytics__button__back"
+              depressed
+              :disabled="loading"
+              outlined
+              @click="back"
+            >
+              {{ $t('create_account.usage_analytics.button_back') }}
+            </v-btn>
+            <v-btn
+              color="primary"
+              depressed
+              :disabled="loading"
+              :loading="loading"
+              class="create-account__analytics__button__confirm"
+              @click="confirm()"
+            >
+              {{ $t('create_account.usage_analytics.button_create') }}
+            </v-btn>
+          </v-card-actions>
         </v-stepper-content>
       </v-stepper-items>
     </v-stepper>

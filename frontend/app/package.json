@@ -29,6 +29,7 @@
     "@vue/composition-api": "1.4.6",
     "@vueuse/core": "7.5.5",
     "axios": "0.25.0",
+    "ethereum-blockies-base64": "1.0.2",
     "chart.js": "2.9.4",
     "cleave.js": "1.6.0",
     "core-js": "3.20.3",
