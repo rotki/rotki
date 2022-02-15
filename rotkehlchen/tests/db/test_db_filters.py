@@ -23,7 +23,7 @@ def test_ethereum_transaction_filter():
         to_ts=Timestamp(999),
     )
     query, bindings = filter_query.prepare()
-    assert query == 'AS A LEFT OUTER JOIN ethx_address_mappings AS B WHERE A.tx_hash=b.tx_hash AND B.address IN (?) AND ((timestamp >= ? AND timestamp <= ?)) ORDER BY timestamp ASC LIMIT 10 OFFSET 10'  # noqa: E501
+    assert query == 'AS A LEFT OUTER JOIN ethtx_address_mappings AS B WHERE A.tx_hash=b.tx_hash AND B.address IN (?) AND ((timestamp >= ? AND timestamp <= ?)) ORDER BY timestamp ASC LIMIT 10 OFFSET 10'  # noqa: E501
     assert bindings == [
         addresses[0],
         filter_query.from_ts,
@@ -57,9 +57,9 @@ def test_filter_arguments(and_op, order_by, pagination):
     query, bindings = filter_query.prepare()
 
     if and_op:
-        expected_query = 'AS A LEFT OUTER JOIN ethx_address_mappings AS B WHERE A.tx_hash=b.tx_hash AND B.address IN (?,?) AND ((timestamp >= ? AND timestamp <= ?) AND (location=?))'  # noqa: E501
+        expected_query = 'AS A LEFT OUTER JOIN ethtx_address_mappings AS B WHERE A.tx_hash=b.tx_hash AND B.address IN (?,?) AND ((timestamp >= ? AND timestamp <= ?) AND (location=?))'  # noqa: E501
     else:
-        expected_query = 'AS A LEFT OUTER JOIN ethx_address_mappings AS B WHERE A.tx_hash=b.tx_hash AND B.address IN (?,?) AND ((timestamp >= ? AND timestamp <= ?) OR (location=?))'  # noqa: E501
+        expected_query = 'AS A LEFT OUTER JOIN ethtx_address_mappings AS B WHERE A.tx_hash=b.tx_hash AND B.address IN (?,?) AND ((timestamp >= ? AND timestamp <= ?) OR (location=?))'  # noqa: E501
 
     if order_by:
         expected_query += ' ORDER BY timestamp ASC'

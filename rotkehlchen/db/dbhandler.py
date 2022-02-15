@@ -59,6 +59,7 @@ from rotkehlchen.db.constants import (
     USER_CREDENTIAL_MAPPING_KEYS,
 )
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX
+from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -1469,6 +1470,14 @@ class DBHandler:
         May raise:
         - InputError if any of the given accounts to delete did not exist
         """
+        # First remove all transaction related information for this address.
+        # Needs to happen before the address is removed since removing the address
+        # will also remove ethtx_address_mappings, thus making it impossible
+        # to figure out which transactions are touched by this address
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            for address in accounts:
+                self.delete_data_for_ethereum_address(address)  # type: ignore
+
         tuples = [(blockchain.value, x) for x in accounts]
         account_tuples = [(x,) for x in accounts]
 
@@ -1488,11 +1497,6 @@ class DBHandler:
                 f'Tried to remove {len(accounts) - affected_rows} '
                 f'{blockchain.value} accounts that do not exist',
             )
-
-        # Also remove all ethereum address details saved in the DB
-        if blockchain == SupportedBlockchain.ETHEREUM:
-            for address in accounts:
-                self.delete_data_for_ethereum_address(address)  # type: ignore
 
         self.update_last_write()
 
@@ -2153,7 +2157,7 @@ class DBHandler:
             if relevant_address is not None:
                 mapping_tuples = [(relevant_address, x[0], 'ETH') for x in tuples]
                 cursor.executemany(
-                    'INSERT OR IGNORE INTO ethx_address_mappings(address, tx_hash, blockchain) '
+                    'INSERT OR IGNORE INTO ethtx_address_mappings(address, tx_hash, blockchain) '
                     'VALUES(?, ?, ?)',
                     mapping_tuples,
                 )
@@ -2166,7 +2170,7 @@ class DBHandler:
                     cursor.execute(query, entry)
                     if relevant_address is not None:
                         cursor.execute(
-                            'INSERT OR IGNORE INTO ethx_address_mappings '
+                            'INSERT OR IGNORE INTO ethtx_address_mappings '
                             '(address, tx_hash, blockchain) VALUES(?, ?, ?)',
                             (relevant_address, entry[0], 'ETH'),
                         )
@@ -2180,7 +2184,7 @@ class DBHandler:
                         # other and both accounts are being tracked.
                         if relevant_address is not None:
                             cursor.execute(
-                                'INSERT OR IGNORE INTO ethx_address_mappings '
+                                'INSERT OR IGNORE INTO ethtx_address_mappings '
                                 '(address, tx_hash, blockchain) VALUES(?, ?, ?)',
                                 (relevant_address, entry[0], 'ETH'),
                             )
@@ -2401,7 +2405,6 @@ class DBHandler:
             other_eth_accounts.remove(address)
 
         cursor = self.conn.cursor()
-        cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'ethtxs_{address}',))
         cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))
         cursor.execute(
             'DELETE FROM used_query_ranges WHERE name = ?',
@@ -2439,22 +2442,8 @@ class DBHandler:
         loopring = DBLoopring(self)
         loopring.remove_accountid_mapping(address)
 
-        # For transactions we need to delete all transactions where the address
-        # appears in either from or to, BUT no other tracked address is in
-        # from or to of the DB entry
-        questionmarks = '?' * len(other_eth_accounts)
-        # IN operator support in python sqlite is terrible :(
-        # https://stackoverflow.com/questions/31473451/sqlite3-in-clause
-        cursor.execute(
-            f'DELETE FROM ethereum_transactions WHERE '
-            f'from_address="{address}" AND to_address NOT IN ({",".join(questionmarks)});',
-            other_eth_accounts,
-        )
-        cursor.execute(
-            f'DELETE FROM ethereum_transactions WHERE '
-            f'to_address="{address}" AND from_address NOT IN ({",".join(questionmarks)});',
-            other_eth_accounts,
-        )
+        dbtx = DBEthTx(self)
+        dbtx.delete_transactions(address)
         cursor.execute('DELETE FROM amm_swaps WHERE address=?;', (address,))
         cursor.execute('DELETE FROM eth2_deposits WHERE from_address=?;', (address,))
 

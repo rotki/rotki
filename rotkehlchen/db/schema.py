@@ -481,7 +481,7 @@ CREATE TABLE IF NOT EXISTS ethtx_receipt_log_topics (
 """  # noqa: E501
 
 DB_CREATE_ETHTX_ADDRESS_MAPPINGS = """
-CREATE TABLE IF NOT EXISTS ethx_address_mappings (
+CREATE TABLE IF NOT EXISTS ethtx_address_mappings (
     address TEXT NOT NULL,
     tx_hash BLOB NOT NULL,
     blockchain TEXT NOT NULL,
@@ -605,6 +605,7 @@ CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
 
 DB_CREATE_HISTORY_EVENTS = """
 CREATE TABLE IF NOT EXISTS history_events (
+    identifier INTEGER NOT NULL PRIMARY KEY,
     event_identifier TEXT NOT NULL,
     sequence_index INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
@@ -619,6 +620,15 @@ CREATE TABLE IF NOT EXISTS history_events (
     counterparty TEXT
 );
 """
+
+DB_CREATE_HISTORY_EVENTS_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS history_events_mappings (
+    parent_identifier INTEGER NOT NULL,
+    value TEXT NOT NULL,
+    FOREIGN KEY(parent_identifier) references history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (parent_identifier, value)
+);
+"""  # noqa: E501
 
 DB_CREATE_ADEX_EVENTS = """
 CREATE TABLE IF NOT EXISTS adex_events (
@@ -821,6 +831,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_ETH2_DEPOSITS}
 {DB_CREATE_ETH2_DAILY_STAKING_DETAILS}
 {DB_CREATE_HISTORY_EVENTS}
+{DB_CREATE_HISTORY_EVENTS_MAPPINGS}
 {DB_CREATE_ADEX_EVENTS}
 {DB_CREATE_LEDGER_ACTION_TYPE}
 {DB_CREATE_LEDGER_ACTIONS}

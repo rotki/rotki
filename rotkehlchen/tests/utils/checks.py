@@ -96,27 +96,14 @@ def assert_serialized_dicts_equal(
             msg = f"{a_key} doesn't match. {afval} != {bfval}"
             assert afval.is_close(bfval, max_diff=max_diff), msg
 
-        elif isinstance(a_val, dict) and 'amount' in a_val and 'usd_value' in a_val:
-            assert 'amount' in b[a_key]
-            assert 'usd_value' in b[a_key]
-
-            try:
-                compare_val = FVal(b[a_key]['amount'])
-            except ValueError:
-                raise AssertionError(
-                    f'Could not turn {a_key} amount {b[a_key]} into an FVal',
-                ) from None
-            msg = f"{a_key} amount doesn't match. {compare_val} != {a_val['amount']}"
-            assert compare_val.is_close(a_val['amount'], max_diff=max_diff), msg
-
-            try:
-                compare_val = FVal(b[a_key]['usd_value'])
-            except ValueError:
-                raise AssertionError(
-                    f'Could not turn {a_key} usd_value {b[a_key]} into an FVal',
-                ) from None
-            msg = f"{a_key} usd_value doesn't match. {compare_val} != {a_val['usd_value']}"
-            assert compare_val.is_close(a_val['usd_value'], max_diff=max_diff), msg
+        elif isinstance(a_val, dict) and isinstance(b[a_key], dict):
+            assert_serialized_dicts_equal(
+                a=a_val,
+                b=b[a_key],
+                ignore_keys=ignore_keys,
+                length_list_keymap=length_list_keymap,
+                max_diff=max_diff, same_key_length=same_key_length,
+            )
         elif isinstance(a_val, list):
             max_length_to_check = None
             if length_list_keymap and a_key in length_list_keymap:

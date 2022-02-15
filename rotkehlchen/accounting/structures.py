@@ -431,6 +431,7 @@ class HistoryBaseEntry:
 
     def serialize(self) -> Dict[str, Any]:
         return {
+            'identifier': self.identifier,
             'event_identifier': self.event_identifier,
             'sequence_index': self.sequence_index,
             'timestamp': ts_ms_to_sec(self.timestamp),  # serialize to api in seconds MS

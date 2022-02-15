@@ -2453,9 +2453,11 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         msg_aggregator=msg_aggregator,
     )
     cursor = db.conn.cursor()
-    cursor.execute('SELECT subtype from history_events')
+    cursor.execute('SELECT subtype FROM history_events')
     subtypes = {row[0] for row in cursor}
     assert subtypes == {'staking deposit asset', 'staking receive asset', 'reward'}
+    result = cursor.execute('SELECT identifier FROM history_events')
+    assert [x[0] for x in result] == [1, 2, 3], 'identifier column should be added'
     # check used query range got delete and rest are intact
     result = cursor.execute('SELECT * from used_query_ranges').fetchall()
     assert result == [
@@ -2511,7 +2513,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     assert missing_tables == removed_tables
     assert tables_after_creation - tables_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'ethereum_internal_transactions', 'ethx_address_mappings', 'evm_tx_mappings'}  # noqa: E501
+    assert new_tables == {'ethereum_internal_transactions', 'ethtx_address_mappings', 'evm_tx_mappings', 'history_events_mappings'}  # noqa: E501
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

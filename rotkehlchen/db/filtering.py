@@ -89,7 +89,7 @@ class DBETHTransactionAddressFilter(DBFilter):
     def prepare(self) -> Tuple[List[str], List[Any]]:
         questionmarks = '?' * len(self.addresses)
         filters = [
-            f'AS A LEFT OUTER JOIN ethx_address_mappings AS B WHERE '
+            f'AS A LEFT OUTER JOIN ethtx_address_mappings AS B WHERE '
             f'A.tx_hash=b.tx_hash AND B.address IN ({",".join(questionmarks)})',
         ]
         bindings = self.addresses

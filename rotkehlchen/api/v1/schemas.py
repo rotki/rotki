@@ -126,6 +126,20 @@ class AsyncHistoricalQuerySchema(AsyncQueryArgumentSchema):
     to_timestamp = TimestampField(load_default=ts_now)
 
 
+class BalanceSchema(Schema):
+    amount = AmountField(required=True)
+    usd_value = AmountField(required=True)
+
+    @post_load
+    def make_balance_entry(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> Balance:
+        """Create a Balance struct. This should not raise since it's checked by Marshmallow"""
+        return Balance(amount=data['amount'], usd_value=data['usd_value'])
+
+
 class AsyncTasksQuerySchema(Schema):
     task_id = fields.Integer(strict=True, load_default=None)
 
@@ -323,13 +337,12 @@ class HistoryBaseEntrySchema(Schema):
     identifier = fields.Integer(load_default=None, required=False)
     event_identifier = fields.String(required=True)
     sequence_index = fields.Integer(required=True)
-    # This timestamp coming in from the API is in seconds, in contrast to what we save in the sruct
+    # Timestamp coming in from the API is in seconds, in contrast to what we save in the struct
     timestamp = TimestampField(ts_multiplier=1000, required=True)
     location = LocationField(required=True)
     event_type = SerializableEnumField(enum_class=HistoryEventType, required=True)
     asset = AssetField(required=True, form_with_incomplete_data=True)
-    amount = PositiveAmountField(required=True)
-    usd_value = PositiveAmountField(required=True)
+    balance = fields.Nested(BalanceSchema, required=True)
     location_label = fields.String(required=False)
     notes = fields.String(required=False)
     event_subtype = SerializableEnumField(
@@ -359,7 +372,6 @@ class HistoryBaseEntrySchema(Schema):
             data: Dict[str, Any],
             **_kwargs: Any,
     ) -> Dict[str, Any]:
-        data['balance'] = Balance(data.pop('amount'), data.pop('usd_value'))
         if data['event_subtype'] is None:
             data['event_subtype'] = HistoryEventSubType.NONE
 

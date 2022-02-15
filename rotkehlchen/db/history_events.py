@@ -5,6 +5,7 @@ from rotkehlchen.accounting.structures import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
+from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
@@ -29,8 +30,15 @@ class DBHistoryEvents():
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
-    def add_history_event(self, event: HistoryBaseEntry) -> int:
+    def add_history_event(
+            self,
+            event: HistoryBaseEntry,
+            mapping_value: Optional[str] = None,
+    ) -> int:
         """Insert a single history entry to the DB. Returns its identifier.
+
+        Optionally map it to a specific value used to map attributes
+        to some events
 
         May raise:
         - DeserializationError if the event could not be serialized for the DB
@@ -39,6 +47,14 @@ class DBHistoryEvents():
         cursor = self.db.conn.cursor()
         cursor.execute(HISTORY_INSERT, event.serialize_for_db())
         identifier = cursor.lastrowid
+
+        if mapping_value is not None:
+            cursor.execute(
+                'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, value) '
+                'VALUES(?, ?)',
+                (identifier, mapping_value),
+            )
+
         self.db.update_last_write()
         return identifier
 
@@ -64,11 +80,16 @@ class DBHistoryEvents():
         cursor.execute(
             'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
             'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
-            'type=?, subtype=?, counterparty=? WHERE rowid=?',
+            'type=?, subtype=?, counterparty=? WHERE identifier=?',
             (*event.serialize_for_db(), event.identifier),
         )
         if cursor.rowcount != 1:
             return False
+        cursor.execute(
+            'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, value) '
+            'VALUES(?, ?)',
+            (event.identifier, HISTORY_MAPPING_CUSTOMIZED),
+        )
 
         self.db.update_last_write()
         return True
@@ -84,7 +105,7 @@ class DBHistoryEvents():
         ids_len = len(identifiers)
         questionmarks = '?' * ids_len
         cursor.execute(
-            f'DELETE FROM history_events WHERE rowid IN ({",".join(questionmarks)})',
+            f'DELETE FROM history_events WHERE identifier IN ({",".join(questionmarks)})',
             identifiers,
         )
         affected_rows = cursor.rowcount
@@ -95,6 +116,15 @@ class DBHistoryEvents():
                 f'history events that do not exist'
             )
         return None
+
+    def get_customized_event_identifiers(self) -> List[int]:
+        """Returns the identifiers of all the events in the database that have been customized"""
+        cursor = self.db.conn.cursor()
+        result = cursor.execute(
+            'SELECT parent_identifier FROM history_events_mappings WHERE value=?',
+            (HISTORY_MAPPING_CUSTOMIZED,),
+        )
+        return [x[0] for x in result]
 
     def get_history_events(
         self,
@@ -108,10 +138,10 @@ class DBHistoryEvents():
         cursor = self.db.conn.cursor()
 
         if has_premium:
-            query = 'SELECT rowid, * from history_events ' + query
+            query = 'SELECT * from history_events ' + query
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT rowid, * from history_events ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            query = 'SELECT * FROM (SELECT * from history_events ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_HISTORY_EVENTS_LIMIT] + bindings)
 
         output = []
@@ -153,7 +183,7 @@ class DBHistoryEvents():
         Get missing prices for history base entries based on filter query
         """
         query, bindings = filter_query.prepare()
-        query = 'SELECT rowid, amount, asset, timestamp FROM history_events ' + query
+        query = 'SELECT identifier, amount, asset, timestamp FROM history_events ' + query
         result = []
         cursor = self.db.conn.cursor()
         cursor.execute(query, bindings)

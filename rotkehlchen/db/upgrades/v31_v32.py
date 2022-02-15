@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 def _upgrade_history_events(cursor: 'Cursor') -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS history_events_copy (
+        identifier INTEGER NOT NULL PRIMARY KEY,
         event_identifier TEXT NOT NULL,
         sequence_index INTEGER NOT NULL,
         timestamp INTEGER NOT NULL,
@@ -59,7 +60,7 @@ def _add_new_tables(cursor: 'Cursor') -> None:
     PRIMARY KEY(parent_tx_hash, trace_id)
 );""")  # noqa: E501
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS ethx_address_mappings (
+    CREATE TABLE IF NOT EXISTS ethtx_address_mappings (
     address TEXT NOT NULL,
     tx_hash BLOB NOT NULL,
     blockchain TEXT NOT NULL,
@@ -74,6 +75,13 @@ def _add_new_tables(cursor: 'Cursor') -> None:
     value TEXT NOT NULL,
     FOREIGN KEY(tx_hash) references ethereum_transactions(tx_hash) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (tx_hash, value)
+);""")  # noqa: E501
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS history_events_mappings (
+    parent_identifier INTEGER NOT NULL,
+    value TEXT NOT NULL,
+    FOREIGN KEY(parent_identifier) references history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (parent_identifier, value)
 );""")  # noqa: E501
 
 

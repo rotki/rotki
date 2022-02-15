@@ -1934,29 +1934,37 @@ Querying ethereum transactions
                },
                "ignored_in_accounting": false,
 	       "decoded_events": [{
-	           "asset": "ETH",
-		   "balance": {"amount": "0.00863351371344", "usd_value": "0"},
-		   "counterparty": "gas",
-		   "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-		   "event_subtype": "fee",
-		   "event_type": "spend",
-		   "location": "blockchain",
-		   "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-		   "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-                   "sequence_index": 0,
-		   "timestamp": 1642802807
+	           "entry": {
+		       "identifier": 1,
+		       "asset": "ETH",
+		       "balance": {"amount": "0.00863351371344", "usd_value": "0"},
+		       "counterparty": "gas",
+		       "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+		       "event_subtype": "fee",
+		       "event_type": "spend",
+		       "location": "blockchain",
+		       "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
+		       "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+		       "sequence_index": 0,
+		       "timestamp": 1642802807
+		   },
+		   "customized": false
 	       }, {
-		"asset": "ETH",
-		"balance": {"amount": "0.096809163374771208", "usd_value": "0"},
-		"counterparty": "0xA090e606E30bD747d4E6245a1517EbE430F0057e",
-		"event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-		"event_subtype": None,
-		"event_type": "spend",
-		"location": "blockchain",
-		"location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-		"notes": "Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e",  # noqa: E501
-		"sequence_index": 1,
-		"timestamp": 1642802807
+	        "entry": {
+		    "identifier": 2,
+		    "asset": "ETH",
+		    "balance": {"amount": "0.096809163374771208", "usd_value": "0"},
+		    "counterparty": "0xA090e606E30bD747d4E6245a1517EbE430F0057e",
+		    "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+		    "event_subtype": None,
+		    "event_type": "spend",
+		    "location": "blockchain",
+		    "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
+		    "notes": "Send 0.096809163374771208 ETH 0x6e15887E2CEC81434C16D587709f64603b39b545 -> 0xA090e606E30bD747d4E6245a1517EbE430F0057e",  # noqa: E501
+		    "sequence_index": 1,
+		    "timestamp": 1642802807
+		},
+		"customized": true
 	       }]
             }, {
                 "entry": {
@@ -1975,17 +1983,21 @@ Querying ethereum transactions
                 },
                 "ignored_in_accounting": true,
 		"decoded_events": [{
-	           "asset": "ETH",
-		   "balance": {"amount": "0.00863351371344", "usd_value": "0"},
-		   "counterparty": "gas",
-		   "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-		   "event_subtype": "fee",
-		   "event_type": "spend",
-		   "location": "blockchain",
-		   "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-		   "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
-                   "sequence_index": 0,
-		   "timestamp": 1642802807
+		   "entry": {
+		       "identifier": 3,
+		       "asset": "ETH",
+		       "balance": {"amount": "0.00863351371344", "usd_value": "0"},
+		       "counterparty": "gas",
+		       "event_identifier": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+		       "event_subtype": "fee",
+		       "event_type": "spend",
+		       "location": "blockchain",
+		       "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
+		       "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+		       "sequence_index": 0,
+		       "timestamp": 1642802807
+		   },
+		   "customized": false
 		}],
             }],
             "entries_found": 95,
@@ -1998,7 +2010,7 @@ Querying ethereum transactions
    :resjson object result: A list of transaction entries to return for the given filter.
    :resjson object entry: A single transaction entry
    :resjson bool ignored_in_accounting: A boolean indicating whether this transaction should be ignored in accounting or not
-   :resjson list decoded_events: A list of decoded events for the given transaction.
+   :resjson list decoded_events: A list of decoded events for the given transaction. Each even is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
    :resjson int entries_total: The number of total entries ignoring all filters.
@@ -4075,8 +4087,7 @@ Dealing with BaseHistoryEntry events
           "location": "blockchain",
           "event_type": "informational",
           "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
-          "amount": "1.542",
-          "usd_value": "1.675",
+          "balance": {"amount": "1.542", "usd_value": "1.675"},
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
           "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
           "event_subtype": "approve",
@@ -4091,8 +4102,7 @@ Dealing with BaseHistoryEntry events
    :reqjson string location: The location of the entry
    :reqjson string event_type: The main event type of the entry. Possible event types can be seen in HistoryEventType enum.
    :reqjson string asset: The asset identifier for this entry
-   :reqjson string amount: The amount of asset for this entry
-   :reqjson string usd_value: The usd value of the amount of asset for this entry. If not known can also be "0".
+   :reqjson object balance: The amount/usd value of the event. If not known usd_value can also be "0".
    :reqjson string location_label: location_label is a string field that allows to provide more information about the location. For example when we use this structure in blockchains can be used to specify the source address.
    :reqjson string notes: This is a description of the event entry in plain text explaining what is being done. This is supposed to be shown to the user.
    :reqjson string event_subtype: Optional. An optional subtype for the entry. Possible event types can be seen in HistoryEventSubType enum.
@@ -4136,8 +4146,7 @@ Dealing with BaseHistoryEntry events
           "location": "blockchain",
           "event_type": "informational",
           "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
-          "amount": "1.542",
-          "usd_value": "1.675",
+          "balance": {"amount": "1.542", "usd_value": "1.675"},
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
           "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
           "event_subtype": "approve",

@@ -95,7 +95,7 @@ TABLES_AT_INIT = [
     'ethtx_receipts',
     'ethtx_receipt_logs',
     'ethtx_receipt_log_topics',
-    'ethx_address_mappings',
+    'ethtx_address_mappings',
     'evm_tx_mappings',
     'manually_tracked_balances',
     'trade_type',
@@ -121,6 +121,7 @@ TABLES_AT_INIT = [
     'balancer_events',
     'nfts',
     'history_events',
+    'history_events_mappings',
 ]
 
 
