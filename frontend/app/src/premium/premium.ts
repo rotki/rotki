@@ -164,5 +164,7 @@ declare global {
     Vue: any;
     Chart: typeof Chart;
     '@vue/composition-api': any;
+    zod: any;
+    bn: any;
   }
 }

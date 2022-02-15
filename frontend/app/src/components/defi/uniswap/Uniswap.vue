@@ -28,13 +28,22 @@
       <v-col>
         <blockchain-account-selector
           v-model="selectedAccount"
-          hint
           :chains="chains"
           :usable-addresses="addresses"
+          flat
+          dense
+          outlined
+          no-padding
         />
       </v-col>
       <v-col>
-        <uniswap-pool-filter v-model="selectedPools" />
+        <uniswap-pool-filter
+          v-model="selectedPools"
+          flat
+          dense
+          outlined
+          no-padding
+        />
       </v-col>
     </v-row>
     <paginated-cards

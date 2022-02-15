@@ -6,6 +6,7 @@ import {
   VCol,
   VColorPicker,
   VContainer,
+  VDataTableHeader,
   VDialog,
   VDivider,
   VForm,
@@ -67,6 +68,7 @@ const vuetifyRegister = () => {
   Vue.component('VForm', VForm);
   Vue.component('VSpacer', VSpacer);
   Vue.component('VColorPicker', VColorPicker);
+  Vue.component('VDataTableHeader', VDataTableHeader);
 };
 
 export function registerComponents() {

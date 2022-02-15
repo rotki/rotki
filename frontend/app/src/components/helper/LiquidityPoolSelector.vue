@@ -1,17 +1,26 @@
 <template>
   <v-card v-bind="$attrs">
-    <div class="mx-4 pt-2">
+    <div
+      :class="{
+        'mx-4 pt-2': !noPadding
+      }"
+    >
       <v-autocomplete
         :value="value"
+        :label="$t('liquidity_pool_selector.label')"
         :items="pools"
+        :dense="dense"
+        :outlined="outlined"
+        :filter="filter"
+        :menu-props="{ closeOnContentClick: true }"
         multiple
         clearable
         deletable-chips
-        :label="$t('liquidity_pool_selector.label')"
-        :filter="filter"
+        single-line
+        hide-details
+        hide-selected
         item-value="address"
         chips
-        :menu-props="{ closeOnContentClick: true }"
         @input="input"
       >
         <template #selection="data">
@@ -41,22 +50,21 @@
         </template>
       </v-autocomplete>
     </div>
-    <v-card-text>
-      <slot />
-    </v-card-text>
   </v-card>
 </template>
 
 <script lang="ts">
 import { Pool } from '@rotki/common/lib/defi/balancer';
-
 import { defineComponent, PropType, toRefs } from '@vue/composition-api';
 
 export default defineComponent({
   name: 'LiquidityPoolSelector',
   props: {
     pools: { required: true, type: Array as PropType<Pool[]> },
-    value: { required: true, type: Array as PropType<string[]> }
+    value: { required: true, type: Array as PropType<string[]> },
+    outlined: { required: false, type: Boolean, default: false },
+    dense: { required: false, type: Boolean, default: false },
+    noPadding: { required: false, type: Boolean, default: false }
   },
   emits: ['input'],
   setup(props, { emit }) {
