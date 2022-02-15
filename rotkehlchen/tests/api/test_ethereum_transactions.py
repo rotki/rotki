@@ -509,7 +509,10 @@ def test_query_transactions_removed_address(
         rotkehlchen_api_server,
         ethereum_accounts,
 ):
-    """Make sure that if an address is removed so are the transactions from the DB"""
+    """Make sure that if an address is removed so are the transactions from the DB.
+    Also assure that a transaction is not deleted so long as it touches a tracked
+    address, even if one of the touched address is removed.
+    """
     start_ts = 0
     end_ts = 1598453214
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -538,7 +541,7 @@ def test_query_transactions_removed_address(
         gas_used=1,
         input_data=b'',
         nonce=1,
-    ), EthereumTransaction(  # should remain after deletining account[0]
+    ), EthereumTransaction(  # should remain after deleting account[0]
         tx_hash=b'3',
         timestamp=0,
         block_number=0,
@@ -550,7 +553,7 @@ def test_query_transactions_removed_address(
         gas_used=1,
         input_data=b'',
         nonce=55,
-    ), EthereumTransaction(  # should remain after deletining account[0]
+    ), EthereumTransaction(  # should remain after deleting account[0]
         tx_hash=b'4',
         timestamp=0,
         block_number=0,
@@ -562,7 +565,7 @@ def test_query_transactions_removed_address(
         gas_used=1,
         input_data=b'',
         nonce=0,
-    ), EthereumTransaction(  # should remain after deletining account[0]
+    ), EthereumTransaction(  # should remain after deleting account[0]
         tx_hash=b'5',
         timestamp=0,
         block_number=0,
@@ -598,12 +601,12 @@ def test_query_transactions_removed_address(
         setup.enter_ethereum_patches(stack)
         response = requests.delete(api_url_for(
             rotkehlchen_api_server,
-            "blockchainsaccountsresource",
+            'blockchainsaccountsresource',
             blockchain='ETH',
         ), json={'accounts': [ethereum_accounts[0]]})
     assert_proper_response_with_result(response)
 
-    # Check that only the 3 remanining transactions from the other account is returned
+    # Check that only the 3 remaining transactions from the other account are returned
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,

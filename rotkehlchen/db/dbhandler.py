@@ -1470,6 +1470,14 @@ class DBHandler:
         May raise:
         - InputError if any of the given accounts to delete did not exist
         """
+        # First remove all transaction related information for this address.
+        # Needs to happen before the address is removed since removing the address
+        # will also remove ethtx_address_mappings, thus making it impossible
+        # to figure out which transactions are touched by this address
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            for address in accounts:
+                self.delete_data_for_ethereum_address(address)  # type: ignore
+
         tuples = [(blockchain.value, x) for x in accounts]
         account_tuples = [(x,) for x in accounts]
 
@@ -1489,11 +1497,6 @@ class DBHandler:
                 f'Tried to remove {len(accounts) - affected_rows} '
                 f'{blockchain.value} accounts that do not exist',
             )
-
-        # Also remove all ethereum address details saved in the DB
-        if blockchain == SupportedBlockchain.ETHEREUM:
-            for address in accounts:
-                self.delete_data_for_ethereum_address(address)  # type: ignore
 
         self.update_last_write()
 

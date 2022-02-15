@@ -2,8 +2,9 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
-from rotkehlchen.db.constants import HISTORY_MAPPING_CUSTOMIZED, HISTORY_MAPPING_DECODED
+from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -311,24 +312,25 @@ class DBEthTx():
         So transactions, receipts, logs and decoded events
         """
         cursor = self.db.conn.cursor()
-        # Delete all relevant (by event_identifier) history events except those that are customized
         cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'ethtxs_{address}',))
-        cursor.execute(
-            """
-            DELETE FROM history_events WHERE event_identifier IN (
-                SELECT "0x"||LOWER(HEX(tx_hash)) from ethx_address_mappings WHERE address=? AND blockchain=?
-            ) AND identifier NOT IN (
-                SELECT parent_identifier FROM history_events_mappings WHERE value=?
-            )""",  # noqa: E501
-            (address, 'ETH', HISTORY_MAPPING_CUSTOMIZED),
+        # Get all tx_hashes that are touched by this address and no other address
+        result = cursor.execute(
+            'SELECT tx_hash from ethx_address_mappings WHERE address=? AND tx_hash NOT IN ( '
+            'SELECT tx_hash from ethx_address_mappings WHERE address!=?'
+            ')',
+            (address, address),
+        )
+        tx_hashes = [(x[0], '0x' + x[0].hex()) for x in result]
+        dbevents = DBHistoryEvents(self.db)
+        customized_event_ids = dbevents.get_customized_event_identifiers()
+        # Delete all relevant (by event_identifier) history events except those that are customized
+        cursor.executemany(
+            f'DELETE FROM history_events WHERE event_identifier=? AND identifier NOT IN '
+            f'({", ".join(["?"] * len(customized_event_ids))})',
+            [(x[1], *customized_event_ids) for x in tx_hashes],
         )
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)
-        result = cursor.execute(
-            'SELECT tx_hash from ethx_address_mappings WHERE address=? AND blockchain=?',
-            (address, 'ETH'),
-        )
-        tx_hashes = [(x[0], '0x' + x[0].hex()) for x in result]
         cursor.executemany(
             'DELETE FROM ethereum_transactions WHERE tx_hash=? AND ? NOT IN (SELECT event_identifier FROM history_events)',  # noqa: E501
             tx_hashes,
