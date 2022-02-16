@@ -155,16 +155,6 @@ export default class NavigationMenu extends Vue {
           route: Routes.HISTORY_LEDGER_ACTIONS,
           icon: 'mdi-book-open-variant',
           class: 'ledger'
-        },
-        {
-          type: 'item',
-          text: this.$t(
-            'navigation_menu.history_sub.gitcoin_grants'
-          ).toString(),
-          route: Routes.HISTORY_GITCOIN,
-          icon: '',
-          image: require('@/assets/images/gitcoin.svg'),
-          class: 'gitcoin'
         }
       ]
     },

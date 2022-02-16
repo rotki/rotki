@@ -20,10 +20,11 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import {
-  TimeFramePeriod,
   Timeframe,
+  TimeFramePeriod,
   Timeframes
 } from '@rotki/common/lib/settings/graphs';
+import { NetValue } from '@rotki/common/lib/statistics';
 import {
   Chart,
   ChartConfiguration,
@@ -42,7 +43,6 @@ import {
 import dayjs from 'dayjs';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
-import { NetValue } from '@/services/types-api';
 import { Currency } from '@/types/currency';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';

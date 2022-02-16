@@ -25,12 +25,6 @@ export interface Version {
 type SectionStatus = { [section: string]: Status };
 
 export interface RotkehlchenState {
-  newUser: boolean;
-  dataDirectory: string;
-  message: Message;
-  version: Version;
-  connected: boolean;
-  connectionFailure: boolean;
   status: SectionStatus;
   session?: SessionState;
   balances?: BalanceState;
@@ -38,10 +32,4 @@ export interface RotkehlchenState {
   defi?: DefiState;
   statistics?: StatisticsState;
   assets?: AssetState;
-}
-
-export interface Message {
-  readonly title: string;
-  readonly description: string;
-  readonly success: boolean;
 }

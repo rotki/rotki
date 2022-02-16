@@ -1,7 +1,7 @@
+import { NotificationData } from '@rotki/common/lib/messages';
 import { computed } from '@vue/composition-api';
 import { acceptHMRUpdate } from 'pinia';
 import { useNotifications } from '@/store/notifications';
-import { NotificationData } from '@/store/notifications/types';
 
 export const setupNotifications = () => {
   const store = useNotifications();

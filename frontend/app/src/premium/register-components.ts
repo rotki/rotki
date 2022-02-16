@@ -1,4 +1,22 @@
 import Vue from 'vue';
+import {
+  VAlert,
+  VBtn,
+  VBtnToggle,
+  VCol,
+  VColorPicker,
+  VContainer,
+  VDataTableHeader,
+  VDialog,
+  VDivider,
+  VForm,
+  VIcon,
+  VRow,
+  VSimpleTable,
+  VSpacer,
+  VTextField,
+  VTooltip
+} from 'vuetify/lib/components';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import DefiProtocolIcon from '@/components/defi/display/DefiProtocolIcon.vue';
@@ -29,6 +47,29 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+
+/**
+ * Vuetify components that are used in the premium components
+ */
+const vuetifyRegister = () => {
+  // version 17 - 1.24
+  Vue.component('VCol', VCol);
+  Vue.component('VRow', VRow);
+  Vue.component('VTooltip', VTooltip);
+  Vue.component('VTextField', VTextField);
+  Vue.component('VIcon', VIcon);
+  Vue.component('VBtn', VBtn);
+  Vue.component('VBtnToggle', VBtnToggle);
+  Vue.component('VAlert', VAlert);
+  Vue.component('VContainer', VContainer);
+  Vue.component('VSimpleTable', VSimpleTable);
+  Vue.component('VDialog', VDialog);
+  Vue.component('VDivider', VDivider);
+  Vue.component('VForm', VForm);
+  Vue.component('VSpacer', VSpacer);
+  Vue.component('VColorPicker', VColorPicker);
+  Vue.component('VDataTableHeader', VDataTableHeader);
+};
 
 export function registerComponents() {
   // Globally registered components are also provided to the premium components.
@@ -78,4 +119,6 @@ export function registerComponents() {
   Vue.component('StatisticsGraphSettings', StatisticsGraphSettings);
   // Version 16 - 1.23
   Vue.component('AmountInput', AmountInput);
+  // Version 17 - 1.24
+  vuetifyRegister();
 }

@@ -1,6 +1,7 @@
 import { AddressIndexed, Balance, BigNumber } from '@rotki/common';
 import { DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
+import { ProfitLossModel } from '@rotki/common/lib/defi';
 import {
   AaveBorrowingEventType,
   AaveEvent,
@@ -17,15 +18,7 @@ import {
   Pool
 } from '@rotki/common/lib/defi/balancer';
 import { DexTrade } from '@rotki/common/lib/defi/dex';
-import {
-  XswapBalance,
-  XswapEventDetails,
-  XswapPool,
-  XswapPoolProfit
-} from '@rotki/common/lib/defi/xswap';
 import sortBy from 'lodash/sortBy';
-import { storeToRefs } from 'pinia';
-import { explorerUrls } from '@/components/helper/asset-urls';
 import { truncateAddress } from '@/filters';
 import i18n from '@/i18n';
 import { ProtocolVersion } from '@/services/defi/consts';
@@ -37,7 +30,6 @@ import {
   YearnVaultProfitLoss,
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
-import { Trade } from '@/services/history/types';
 import { Section, Status } from '@/store/const';
 import {
   AAVE,
@@ -45,7 +37,6 @@ import {
   COMPOUND,
   getProtocolIcon,
   GETTER_BALANCER_BALANCES,
-  GETTER_UNISWAP_ASSETS,
   LIQUITY,
   MAKERDAO_DSR,
   MAKERDAO_VAULTS,
@@ -70,18 +61,10 @@ import {
   MakerDAOVaultModel,
   OverviewDefiProtocol,
   PoapDelivery,
-  ProfitLossModel,
   TokenInfo
 } from '@/store/defi/types';
+import { useUniswap } from '@/store/defi/uniswap';
 import { balanceUsdValueSum, toProfitLossModel } from '@/store/defi/utils';
-import {
-  getBalances,
-  getEventDetails,
-  getPoolProfit,
-  getPools
-} from '@/store/defi/xswap-utils';
-import { useHistory } from '@/store/history';
-import { SettingsState } from '@/store/settings/state';
 import { RotkehlchenState } from '@/store/types';
 import { Getters } from '@/store/typing';
 import { filterAddresses, getStatus } from '@/store/utils';
@@ -144,15 +127,9 @@ interface DefiGetters {
   yearnVaultsProfit: DefiGetterTypes.YearnVaultProfitType;
   yearnVaultsAssets: DefiGetterTypes.YearnVaultAssetType;
   aaveTotalEarned: (addresses: string[]) => ProfitLossModel[];
-  uniswapBalances: (addresses: string[]) => XswapBalance[];
-  basicDexTrades: (addresses: string[]) => Trade[];
-  uniswapPoolProfit: (addresses: string[]) => XswapPoolProfit[];
-  uniswapEvents: (addresses: string[]) => XswapEventDetails[];
-  uniswapAddresses: string[];
   dexTrades: (addresses: string[]) => DexTrade[];
   airdrops: (addresses: string[]) => Airdrop[];
   airdropAddresses: string[];
-  [GETTER_UNISWAP_ASSETS]: XswapPool[];
   [GETTER_BALANCER_BALANCES]: BalancerBalanceWithOwner[];
   balancerAddresses: string[];
   balancerEvents: (addresses: string[]) => BalancerEvent[];
@@ -1525,82 +1502,10 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
       return earned;
     },
-
-  uniswapBalances:
-    ({ uniswapBalances }) =>
-    (addresses: string[]): XswapBalance[] => {
-      return getBalances(uniswapBalances, addresses);
-    },
-  basicDexTrades:
-    ({ uniswapTrades, balancerTrades, sushiswap }, _r, { settings }) =>
-    (addresses): Trade[] => {
-      const historyStore = useHistory();
-      const { ignored } = storeToRefs(historyStore);
-      const ignoredTrades = ignored.value.trades ?? [];
-
-      const {
-        explorers: { ETH }
-      }: SettingsState = settings!;
-      const txUrl = ETH?.transaction ?? explorerUrls.ETH.transaction;
-      function transform(
-        trades: DexTrades,
-        location: 'uniswap' | 'balancer' | 'sushiswap'
-      ): Trade[] {
-        const simpleTrades: Trade[] = [];
-        for (const address in trades) {
-          if (addresses.length > 0 && !addresses.includes(address)) {
-            continue;
-          }
-          const dexTrade = trades[address];
-          const linkUrl = txUrl.endsWith('/')
-            ? `${txUrl}${dexTrade[0].txHash}`
-            : `${txUrl}/${dexTrade[0].txHash}`;
-          const convertedTrades: Trade[] = dexTrade.map(trade => ({
-            tradeId: trade.tradeId,
-            location: location,
-            amount: trade.amount,
-            fee: trade.fee,
-            feeCurrency: trade.feeCurrency,
-            timestamp: trade.timestamp,
-            baseAsset: trade.baseAsset,
-            quoteAsset: trade.quoteAsset,
-            rate: trade.rate,
-            tradeType: 'buy',
-            link: linkUrl,
-            notes: '',
-            ignoredInAccounting: ignoredTrades.includes(trade.tradeId)
-          }));
-          simpleTrades.push(...convertedTrades);
-        }
-        return simpleTrades;
-      }
-
-      const trades: Trade[] = [];
-      trades.push(...transform(uniswapTrades, 'uniswap'));
-      trades.push(...transform(balancerTrades, 'balancer'));
-      if (sushiswap) {
-        trades.push(...transform(sushiswap.trades, 'sushiswap'));
-      }
-      return sortBy(trades, 'timestamp').reverse();
-    },
-  uniswapPoolProfit:
-    ({ uniswapEvents }) =>
-    (addresses: string[]): XswapPoolProfit[] => {
-      return getPoolProfit(uniswapEvents, addresses);
-    },
-  uniswapEvents:
-    ({ uniswapEvents }) =>
-    (addresses): XswapEventDetails[] => {
-      return getEventDetails(uniswapEvents, addresses);
-    },
-  uniswapAddresses: ({ uniswapEvents, uniswapBalances }) => {
-    return Object.keys(uniswapBalances)
-      .concat(Object.keys(uniswapEvents))
-      .filter(uniqueStrings);
-  },
   dexTrades:
-    ({ uniswapTrades, balancerTrades, sushiswap }) =>
+    ({ balancerTrades, sushiswap }) =>
     (addresses): DexTrade[] => {
+      const { trades: uniswapTrades } = useUniswap();
       const trades: DexTrade[] = [];
       const addTrades = (
         dexTrades: DexTrades,
@@ -1614,7 +1519,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
           trades.push(...dexTrades[address]);
         }
       };
-      addTrades(uniswapTrades, addresses, trades);
+      addTrades(uniswapTrades as DexTrades, addresses, trades);
       addTrades(balancerTrades, addresses, trades);
       if (sushiswap) {
         addTrades(sushiswap.trades, addresses, trades);
@@ -1660,9 +1565,6 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       return data;
     },
   airdropAddresses: ({ airdrops }) => Object.keys(airdrops),
-  [GETTER_UNISWAP_ASSETS]: ({ uniswapEvents, uniswapBalances }) => {
-    return getPools(uniswapBalances, uniswapEvents);
-  },
   [GETTER_BALANCER_BALANCES]: ({ balancerBalances }) => {
     const balances: BalancerBalanceWithOwner[] = [];
     for (const address in balancerBalances) {

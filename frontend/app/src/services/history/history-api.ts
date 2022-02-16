@@ -1,19 +1,11 @@
 import { ActionResult } from '@rotki/common/lib/data';
-import {
-  GitcoinGrantEventsPayload,
-  GitcoinGrantReport,
-  GitcoinReportPayload
-} from '@rotki/common/lib/gitcoin';
 import { AxiosInstance, AxiosRequestTransformer } from 'axios';
 import {
   axiosSnakeCaseTransformer,
   getUpdatedKey,
   setupTransformer
 } from '@/services/axios-tranformers';
-import {
-  balanceAxiosTransformer,
-  basicAxiosTransformer
-} from '@/services/consts';
+import { basicAxiosTransformer } from '@/services/consts';
 import { IgnoredActions } from '@/services/history/const';
 import {
   AssetMovement,
@@ -271,42 +263,6 @@ export class HistoryApi {
     );
     const data = handleResponse(response);
     return ReportProgress.parse(data);
-  }
-
-  async gatherGitcoinGrandEvents(
-    payload: GitcoinGrantEventsPayload
-  ): Promise<PendingTask> {
-    return this.axios
-      .post<ActionResult<PendingTask>>(
-        '/gitcoin/events',
-        axiosSnakeCaseTransformer({ ...payload, asyncQuery: true }),
-        {
-          validateStatus: validStatus,
-          transformResponse: balanceAxiosTransformer
-        }
-      )
-      .then(handleResponse);
-  }
-
-  async deleteGitcoinGrantEvents(grantId: number): Promise<boolean> {
-    return this.axios
-      .delete<ActionResult<boolean>>('/gitcoin/events', {
-        data: axiosSnakeCaseTransformer({ grantId }),
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
-  }
-
-  async generateReport(
-    payload: GitcoinReportPayload
-  ): Promise<GitcoinGrantReport> {
-    return this.axios
-      .put<ActionResult<GitcoinGrantReport>>('/gitcoin/report', payload, {
-        validateStatus: validStatus,
-        transformResponse: setupTransformer(['total', 'amount', 'value']),
-        transformRequest: this.requestTransformer
-      })
-      .then(handleResponse);
   }
 
   fetchIgnored(): Promise<IgnoredActions> {

@@ -1,4 +1,5 @@
-﻿import { computed, ref, unref } from '@vue/composition-api';
+﻿import { Message } from '@rotki/common/lib/messages';
+import { computed, ref, unref } from '@vue/composition-api';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
@@ -12,12 +13,7 @@ import { session } from '@/store/session';
 import { settings } from '@/store/settings';
 import { staking } from '@/store/staking';
 import { statistics } from '@/store/statistics';
-import {
-  Message,
-  RotkehlchenState,
-  StatusPayload,
-  Version
-} from '@/store/types';
+import { RotkehlchenState, StatusPayload, Version } from '@/store/types';
 import { isLoading } from '@/store/utils';
 import { Nullable } from '@/types';
 import { CRITICAL, DEBUG, Level } from '@/utils/log-level';

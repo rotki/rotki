@@ -1,4 +1,4 @@
-import { NetValue } from '@/services/types-api';
+import { NetValue } from '@rotki/common/lib/statistics';
 
 export interface StatisticsState {
   netValue: NetValue;

@@ -1,4 +1,14 @@
-import { Severity } from '@/store/notifications/consts';
+export enum Severity {
+  WARNING = "warning",
+  ERROR = "error",
+  INFO = "info"
+}
+
+export interface Message {
+  readonly title: string;
+  readonly description: string;
+  readonly success: boolean;
+}
 
 interface NotificationBase {
   readonly title: string;

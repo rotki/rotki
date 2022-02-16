@@ -1,3 +1,4 @@
+import { Message } from '@rotki/common/lib/messages';
 import { computed, Ref, ref } from '@vue/composition-api';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import i18n from '@/i18n';
@@ -5,7 +6,6 @@ import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
 import store, { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
-import { Message } from '@/store/types';
 import {
   ProfitLossEvents,
   ProfitLossOverview,

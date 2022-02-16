@@ -1,4 +1,9 @@
 import { SemiPartial } from '@rotki/common';
+import {
+  NotificationData,
+  NotificationPayload,
+  Severity
+} from '@rotki/common/lib/messages';
 import { computed, ref } from '@vue/composition-api';
 import { defineStore } from 'pinia';
 import i18n from '@/i18n';
@@ -8,11 +13,6 @@ import {
   handleSnapshotError
 } from '@/services/websocket/message-handling';
 import { SocketMessageType } from '@/services/websocket/messages';
-import { Severity } from '@/store/notifications/consts';
-import {
-  NotificationData,
-  NotificationPayload
-} from '@/store/notifications/types';
 import { backoff } from '@/utils/backoff';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';

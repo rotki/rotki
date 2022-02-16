@@ -3,7 +3,6 @@ import {
   BalancerBalances,
   BalancerEvents
 } from '@rotki/common/lib/defi/balancer';
-import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
 import { MutationTree } from 'vuex';
 import {
   CompoundBalances,
@@ -80,15 +79,6 @@ export const mutations: MutationTree<DefiState> = {
     history: YearnVaultsHistory
   ) {
     state.yearnVaultsV2History = history;
-  },
-  uniswapBalances(state: DefiState, balances: XswapBalances) {
-    state.uniswapBalances = balances;
-  },
-  uniswapTrades(state: DefiState, trades: DexTrades) {
-    state.uniswapTrades = trades;
-  },
-  uniswapEvents(state: DefiState, events: XswapEvents) {
-    state.uniswapEvents = events;
   },
   airdrops(state: DefiState, airdrops: Airdrops) {
     state.airdrops = airdrops;

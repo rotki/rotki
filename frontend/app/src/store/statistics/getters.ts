@@ -1,9 +1,9 @@
 import { AssetBalance, BigNumber } from '@rotki/common';
 import { TimeUnit } from '@rotki/common/lib/settings';
 import { TimeFramePeriod, timeframes } from '@rotki/common/lib/settings/graphs';
+import { NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
 import { aggregateTotal } from '@/filters';
-import { NetValue } from '@/services/types-api';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { OverallPerformance, StatisticsState } from '@/store/statistics/types';
 import { RotkehlchenState } from '@/store/types';

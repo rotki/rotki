@@ -1,5 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Message, Severity } from '@rotki/common/lib/messages';
 import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
@@ -43,10 +44,9 @@ import {
 import { Section, Status } from '@/store/const';
 import { useHistory } from '@/store/history';
 import { useNotifications } from '@/store/notifications';
-import { Severity } from '@/store/notifications/consts';
 import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
-import { ActionStatus, Message, RotkehlchenState } from '@/store/types';
+import { ActionStatus, RotkehlchenState } from '@/store/types';
 import {
   getStatus,
   getStatusUpdater,

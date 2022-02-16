@@ -1,5 +1,5 @@
+import { NetValue } from '@rotki/common/lib/statistics';
 import { MutationTree } from 'vuex';
-import { NetValue } from '@/services/types-api';
 import { defaultState } from '@/store/statistics/state';
 import { StatisticsState } from '@/store/statistics/types';
 

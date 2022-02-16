@@ -1,8 +1,8 @@
+import { Severity } from '@rotki/common/lib/messages';
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import BackendMixin from '@/mixins/backend-mixin';
 import { useNotifications } from '@/store/notifications';
-import { Severity } from '@/store/notifications/consts';
 import { useMainStore } from '@/store/store';
 
 @Component({

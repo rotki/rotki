@@ -489,9 +489,6 @@
     "address": "Addresses",
     "chain_selector": "Blockchain"
   },
-  "gitcoin_grants": {
-    "text": "Gitcoin Grants"
-  },
   "help_sidebar": {
     "about": {
       "title": "About",
@@ -1826,8 +1823,7 @@
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
       "transactions": "Ethereum Transactions",
-      "ledger_actions": "Ledger Actions",
-      "gitcoin_grants": "Gitcoin Grants"
+      "ledger_actions": "Ledger Actions"
     }
   },
   "overview": {
@@ -2458,11 +2454,6 @@
           "message": "Failed to query {location} balances: {error}"
         }
       },
-      "gitcoin_grant": {
-        "task": {
-          "title": "Fetching events for Gitcoin grant {grant}"
-        }
-      },
       "historic_fetch_price": {
         "task": {
           "description": "Fetching rate from {fromAsset} to {toAsset} on {date}",
@@ -2679,7 +2670,6 @@
     "import_data": "Import Data",
     "history": "History",
     "history_sub": {
-      "gitcoin_grants": "Gitcoin Grants",
       "trades": "Trades",
       "deposits_withdrawals": "Deposits & Withdrawals",
       "ethereum_transactions": "Ethereum Transactions",
@@ -3200,10 +3190,6 @@
       "line_two": "BlockFi lets you export two different files. Trades will be imported from the file that only contains trades.",
       "note": "Important notes for importing data from {0}'s CSV exports.",
       "source_name": "BlockFi"
-    },
-    "gitcoin": {
-      "name": "Gitcoin",
-      "description": "Import the Gitcoin Grant events from a CSV file"
     },
     "nexo": {
       "import": "Import {0} from Nexo",

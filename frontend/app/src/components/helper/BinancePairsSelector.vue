@@ -51,6 +51,7 @@
 </template>
 
 <script lang="ts">
+import { Severity } from '@rotki/common/lib/messages';
 import {
   defineComponent,
   onMounted,
@@ -62,7 +63,6 @@ import { setupThemeCheck } from '@/composables/common';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
-import { Severity } from '@/store/notifications/consts';
 import { uniqueStrings } from '@/utils/data';
 
 export default defineComponent({

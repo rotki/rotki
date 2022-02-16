@@ -1,3 +1,4 @@
+import { Severity } from '@rotki/common/lib/messages';
 import i18n from '@/i18n';
 import {
   BalanceSnapshotError,
@@ -5,7 +6,6 @@ import {
   WebsocketMessage
 } from '@/services/websocket/messages';
 import { useNotifications } from '@/store/notifications';
-import { Severity } from '@/store/notifications/consts';
 
 export async function handleSnapshotError(
   message: WebsocketMessage<SocketMessageType>

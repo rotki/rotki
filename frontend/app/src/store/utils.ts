@@ -1,13 +1,13 @@
+import { Message, Severity } from '@rotki/common/lib/messages';
 import { inject, unref } from '@vue/composition-api';
 import * as logger from 'loglevel';
 import { ActionContext, Store } from 'vuex';
 import i18n from '@/i18n';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
-import { Severity } from '@/store/notifications/consts';
 import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
-import { Message, RotkehlchenState } from '@/store/types';
+import { RotkehlchenState } from '@/store/types';
 import { FetchPayload } from '@/store/typing';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

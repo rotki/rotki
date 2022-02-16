@@ -4,6 +4,12 @@ import {
   Eth2DailyStats,
   Eth2DailyStatsPayload
 } from '@rotki/common/lib/staking/eth2';
+import {
+  LocationData,
+  NetValue,
+  TimedAssetBalances,
+  TimedBalances
+} from '@rotki/common/lib/statistics';
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { SupportedCurrency } from '@/data/currencies';
 import { AssetApi } from '@/services/assets/asset-api';
@@ -25,14 +31,10 @@ import {
   AsyncQuery,
   BackendInfo,
   BtcAccountData,
-  DBAssetBalance,
   GeneralAccountData,
-  LocationData,
   Messages,
-  NetValue,
   PendingTask,
   PeriodicClientQueryResult,
-  SingleAssetBalance,
   SyncAction,
   TaskNotFoundError,
   TaskStatus
@@ -423,38 +425,48 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  queryTimedBalancesData(
+  async queryTimedBalancesData(
     asset: string,
-    startTs: number,
-    endTs: number
-  ): Promise<SingleAssetBalance[]> {
-    return this.axios
-      .get<ActionResult<SingleAssetBalance[]>>(`/statistics/balance/${asset}`, {
-        params: {
-          from_timestamp: startTs,
-          to_timestamp: endTs
-        },
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
+    fromTimestamp: number,
+    toTimestamp: number
+  ): Promise<TimedBalances> {
+    const balances = await this.axios.get<ActionResult<TimedBalances>>(
+      `/statistics/balance/${asset}`,
+      {
+        params: axiosSnakeCaseTransformer({
+          fromTimestamp,
+          toTimestamp
+        }),
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+
+    return TimedBalances.parse(handleResponse(balances));
   }
 
-  queryLatestLocationValueDistribution(): Promise<LocationData[]> {
-    return this.axios
-      .get<ActionResult<LocationData[]>>('/statistics/value_distribution', {
-        params: { distribution_by: 'location' },
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
+  async queryLatestLocationValueDistribution(): Promise<LocationData> {
+    const statistics = await this.axios.get<ActionResult<LocationData>>(
+      '/statistics/value_distribution',
+      {
+        params: axiosSnakeCaseTransformer({ distributionBy: 'location' }),
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return LocationData.parse(handleResponse(statistics));
   }
 
-  queryLatestAssetValueDistribution(): Promise<DBAssetBalance[]> {
-    return this.axios
-      .get<ActionResult<DBAssetBalance[]>>('/statistics/value_distribution', {
-        params: { distribution_by: 'asset' },
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
+  async queryLatestAssetValueDistribution(): Promise<TimedAssetBalances> {
+    const statistics = await this.axios.get<ActionResult<TimedAssetBalances>>(
+      '/statistics/value_distribution',
+      {
+        params: axiosSnakeCaseTransformer({ distributionBy: 'asset' }),
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return TimedAssetBalances.parse(handleResponse(statistics));
   }
 
   queryStatisticsRenderer(): Promise<string> {

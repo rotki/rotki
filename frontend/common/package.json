@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Rotki common frontend code",
   "main": "lib/index.js",
-  "module": "lib/index.es.js",
+  "module": "lib/index.js",
   "files": [
     "lib/"
   ],
@@ -39,5 +39,8 @@
   "dependencies": {
     "bignumber.js": "9.0.2",
     "zod": "3.11.6"
+  },
+  "peerDependencies": {
+    "@vue/composition-api": "1.4.6"
   }
 }
