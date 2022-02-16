@@ -3966,7 +3966,7 @@ class RestAPI():
             )
         except PermissionError as e:
             return api_response(
-                result=wrap_in_fail_result(f'Failed to create information file. {str(e)}'),
+                result=wrap_in_fail_result(f'Failed to create asset export file. {str(e)}'),
                 status_code=HTTPStatus.INSUFFICIENT_STORAGE,
             )
 
@@ -3996,4 +3996,4 @@ class RestAPI():
                 status_code=HTTPStatus.CONFLICT,
             )
 
-        return api_response(_wrap_in_ok_result(OK_RESULT), status_code=HTTPStatus.OK)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)

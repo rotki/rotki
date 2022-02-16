@@ -743,7 +743,7 @@ class Asset():
             'identifier': self.identifier,
             'name': self.name,
             'symbol': self.symbol,
-            'asset_type': self.asset_type.serialize_for_db(),
+            'asset_type': str(self.asset_type),
             'started': self.started,
             'forked': forked,
             'swapped_for': swapped_for,

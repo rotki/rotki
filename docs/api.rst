@@ -10233,11 +10233,11 @@ Export assets added by the user
       }
 
    :resjsonarr string action: Action performed on the endpoint
-   :resjsonarr string destination: Folder where the generated files will be saved. If none is chosed a temporary folder is used.
+   :resjsonarr string destination: Folder where the generated files will be saved. If none is chosen a temporary folder is used.
 
    :statuscode 200: Response file is correctly generated
    :statuscode 409: No user is logged in.
-   :statuscode 507: Failed to crete the file.
+   :statuscode 507: Failed to create the file.
 
 
 Import assets added by the user
@@ -10279,4 +10279,5 @@ Import assets added by the user
 
    :statuscode 200: Assets correctly imported
    :statuscode 409: No user is logged in, imported file is for an older version of the schema or file can't be loaded or format is not valid.
-   :statuscode 507: Internal rotki error
+   :statuscode 500: Internal rotki error
+   :statuscode 507: Filesystem error, probably related to size.

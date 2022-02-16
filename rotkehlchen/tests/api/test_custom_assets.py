@@ -13,7 +13,7 @@ from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier, strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
 from rotkehlchen.tests.utils.api import (
@@ -838,7 +838,7 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
 def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_custom_path):
     """Test that the endpoint for exporting custom assets works correctly"""
     eth_address = make_ethereum_address()
-    identifier = f'_ceth_{eth_address}'
+    identifier = ethaddress_to_identifier(eth_address)
     globaldb.add_asset(
         asset_id=identifier,
         asset_type=AssetType.ETHEREUM_TOKEN,
@@ -879,7 +879,7 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_cus
             'name': 'yabirtoken',
             'decimals': 18,
             'symbol': 'YAB',
-            'asset_type': 'C',
+            'asset_type': 'ethereum token',
             'started': None,
             'forked': None,
             'swapped_for': None,
@@ -889,10 +889,6 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_cus
             'underlying_tokens': None,
             'ethereum_address': eth_address,
         }
-        assets_file = Path(result['file'])
-        assets_directory = assets_file.parent
-        assets_file.unlink()
-        assets_directory.rmdir()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -919,9 +915,12 @@ def test_importing_custom_assets_list(rotkehlchen_api_server, method):
             files={'file': open(filepath, 'rb')},
         )
 
+    assert_simple_ok_response(response)
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     errors = rotki.msg_aggregator.consume_errors()
+    warnings = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
+    assert len(warnings) == 0
 
     assert_proper_response_with_result(response)
     stinch = EthereumToken('0xA0446D8804611944F1B527eCD37d7dcbE442caba')

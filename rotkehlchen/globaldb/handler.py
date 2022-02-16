@@ -1249,7 +1249,7 @@ class GlobalDBHandler():
                 msg = 'There are assets that can not be deleted. Check logs for more details.'
                 return False, msg
             # Check that versions match
-            query = cursor.execute('SELECT value from clean_db.settings WHERE name=="version";')
+            query = cursor.execute('SELECT value from clean_db.settings WHERE name="version";')
             version = query.fetchone()
             if int(version[0]) != _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION):
                 cursor.execute(detach_database)
@@ -1308,7 +1308,7 @@ class GlobalDBHandler():
         try:
             cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
             # Check that versions match
-            query = cursor.execute('SELECT value from clean_db.settings WHERE name=="version";')
+            query = cursor.execute('SELECT value from clean_db.settings WHERE name="version";')
             version = query.fetchone()
             if int(version[0]) != _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION):
                 cursor.execute(detach_database)
@@ -1386,7 +1386,7 @@ class GlobalDBHandler():
         only_owned: bool = False,
     ) -> Set[str]:
         """
-        Create a list of the assets indentifiers added by the user. If only_owned
+        Create a list of the asset identifiers added by the user. If only_owned
         the assets added by the user and at some point he had are returned.
         May raise:
         - sqlite3.Error if the user_db couldn't be correctly attached
@@ -1401,12 +1401,12 @@ class GlobalDBHandler():
             query = cursor.execute('SELECT asset_id from user_owned_assets;')
         else:
             query = cursor.execute('SELECT identifier from assets;')
-        user_ids = {tup[0] for tup in query.fetchall()}
+        user_ids = {tup[0] for tup in query}
         # Attach to the clean db packaged with rotki
         cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
         # Get built in identifiers
         query = cursor.execute('SELECT identifier from clean_db.assets;')
-        shipped_ids = {tup[0] for tup in query.fetchall()}
+        shipped_ids = {tup[0] for tup in query}
         return user_ids - shipped_ids
 
 

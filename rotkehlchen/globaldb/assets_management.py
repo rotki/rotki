@@ -10,7 +10,7 @@ from rotkehlchen.assets.typing import AssetData, AssetType
 from rotkehlchen.errors import InputError, UnknownAsset
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.validation.validation_schemas import ExportedAssetsSchema
+from rotkehlchen.serialization.schemas import ExportedAssetsSchema
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -36,14 +36,20 @@ def import_assets_from_file(
     with open(path) as f:
         data = ExportedAssetsSchema().loads(f.read())
 
-    # First assert that the version is correct
     if int(data['version']) != GLOBAL_DB_VERSION:
-        raise InputError('Provided file is for a different version of rotki')
+        raise InputError(
+            f'Provided file is for a different version of rotki. File version: '
+            f'{data["version"]} rotki version: {GLOBAL_DB_VERSION}',
+        )
+    if data['assets'] is None:
+        raise InputError('The imported file is missing a valid list of assets')
 
     identifiers = []
     for asset_data in data['assets']:
         # Check if we already have the asset with that name and symbol. It is possible that
-        # we have added a missing asset
+        # we have added a missing asset. Using check_asset_exists for non ethereum tokens and
+        # for ethereum tokens comparing by identifier. The edge case of a non-ethereum token
+        # with same name and symbol will make this fail.
         asset_type = asset_data['asset_type']
         asset_ref: Union[Optional[List[str]], Optional[AssetData]]
         if asset_type == AssetType.ETHEREUM_TOKEN:
@@ -75,9 +81,9 @@ def import_assets_from_file(
                 f'Failed to import asset with {asset_data["identifier"]=}',
                 f'{asset_type=} and {asset_data=}. {str(e)}',
             )
-            msg_aggregator.add_warning(
+            msg_aggregator.add_error(
                 f'Failed to save import with identifier '
-                f'{asset_data["identifier"]}.Check logs for more details',
+                f'{asset_data["identifier"]}. Check logs for more details',
             )
             continue
         identifiers.append(asset_data['identifier'])
@@ -108,7 +114,7 @@ def export_assets_from_file(
             log.error(e)
 
     cursor = GlobalDBHandler()._conn.cursor()
-    query = cursor.execute('SELECT value from clean_db.settings WHERE name=="version";')
+    query = cursor.execute('SELECT value from clean_db.settings WHERE name="version";')
     version = query.fetchone()[0]
     data = {
         'version': version,
