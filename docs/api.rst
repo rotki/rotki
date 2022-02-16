@@ -10207,3 +10207,86 @@ Staking events
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in, kraken is not active or some parameter for filters is not valid.
    :statuscode 500: Internal rotki error
+
+
+Export assets added by the user
+===============================
+
+.. http:put:: /api/(version)/assets/user
+
+   Calling this endpoint with PUT and action `download` will create a zip file with the assets that are not included by default with vanilla rotki.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/assets/user HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"action": "download", "destination": "/home/user/Downloads"}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+                "file": "/home/user/Downloads/assets.zip"
+          },
+          "message": ""
+      }
+
+   :resjsonarr string action: Action performed on the endpoint
+   :resjsonarr string destination: Folder where the generated files will be saved. If none is chosen a temporary folder is used.
+
+   :statuscode 200: Response file is correctly generated
+   :statuscode 409: No user is logged in.
+   :statuscode 507: Failed to create the file.
+
+
+Import assets added by the user
+===============================
+
+.. http:put:: /api/(version)/assets/user
+.. http:post:: /api/(version)/assets/user
+
+   Doing a put or a post to this endpoint will import the assets in the json file provided. The file has to follow the rotki expected format and will be verified.
+
+   .. note::
+      If doing a POST the `action` field is not required.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/assets/user HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"action": "upload", "file": "/tmp/assets.json"}
+
+   
+   :resjsonarr string action: Action performed on the endpoint
+   :resjsonarr string file: The path to the file to upload for PUT. The file itself for POST.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": True,
+          "message": ""
+      }
+
+   :statuscode 200: Assets correctly imported
+   :statuscode 409: No user is logged in, imported file is for an older version of the schema or file can't be loaded or format is not valid.
+   :statuscode 500: Internal rotki error
+   :statuscode 507: Filesystem error, probably related to size.

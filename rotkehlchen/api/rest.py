@@ -26,6 +26,7 @@ import gevent
 from flask import Response, make_response, send_file
 from gevent.event import Event
 from gevent.lock import Semaphore
+from marshmallow.exceptions import ValidationError
 from pysqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
 
@@ -107,6 +108,7 @@ from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb import GlobalDBHandler
+from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
@@ -3961,3 +3963,44 @@ class RestAPI():
         status_code = _get_status_code_from_async_response(response)
         result_dict = {'result': response['result'], 'message': response['message']}
         return api_response(process_result(result_dict), status_code=status_code)
+
+    @require_loggedin_user()
+    def get_user_added_assets(self, path: Optional[Path]) -> Response:
+        try:
+            zip_path = export_assets_from_file(
+                dirpath=path,
+                db_handler=self.rotkehlchen.data.db,
+            )
+        except PermissionError as e:
+            return api_response(
+                result=wrap_in_fail_result(f'Failed to create asset export file. {str(e)}'),
+                status_code=HTTPStatus.INSUFFICIENT_STORAGE,
+            )
+
+        return api_response(
+            _wrap_in_ok_result({'file': str(zip_path)}),
+            status_code=HTTPStatus.OK,
+        )
+
+    @require_loggedin_user()
+    def import_user_assets(self, path: Path) -> Response:
+        try:
+            import_assets_from_file(
+                path=path,
+                msg_aggregator=self.rotkehlchen.msg_aggregator,
+                db_handler=self.rotkehlchen.data.db,
+            )
+        except ValidationError as e:
+            return api_response(
+                result=wrap_in_fail_result(
+                    f'Provided file does not have the expected format. {str(e)}',
+                ),
+                status_code=HTTPStatus.CONFLICT,
+            )
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(f'{str(e)}'),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)

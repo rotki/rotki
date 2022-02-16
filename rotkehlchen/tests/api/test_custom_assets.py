@@ -1,22 +1,28 @@
+import json
+import tempfile
 from copy import deepcopy
 from http import HTTPStatus
+from pathlib import Path
 from typing import Any, Dict, List
+from zipfile import ZipFile
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures import BalanceType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier, strethaddress_to_identifier
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
+from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.typing import Location
 
 
@@ -824,3 +830,100 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
         contained_in_msg='Tried to initialize an asset out of a non-string identifier',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+@pytest.mark.parametrize('with_custom_path', [False, True])
+def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_custom_path):
+    """Test that the endpoint for exporting custom assets works correctly"""
+    eth_address = make_ethereum_address()
+    identifier = ethaddress_to_identifier(eth_address)
+    globaldb.add_asset(
+        asset_id=identifier,
+        asset_type=AssetType.ETHEREUM_TOKEN,
+        data=EthereumToken.initialize(
+            address=eth_address,
+            decimals=18,
+            name='yabirtoken',
+            symbol='YAB',
+            coingecko='YAB',
+            cryptocompare='YAB',
+        ),
+    )
+    with tempfile.TemporaryDirectory() as path:
+        if with_custom_path:
+            response = requests.put(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'userassetsresource',
+                ), json={'action': 'download', 'destination': path},
+            )
+        else:
+            response = requests.put(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'userassetsresource',
+                ), json={'action': 'download'},
+            )
+
+        result = assert_proper_response_with_result(response)
+        if with_custom_path:
+            assert path in result['file']
+        zip_file = ZipFile(result['file'])
+        data = json.loads(zip_file.read('assets.json'))
+        assert int(data['version']) == GLOBAL_DB_VERSION
+        assert len(data['assets']) == 1
+        assert data['assets'][0] == {
+            'identifier': identifier,
+            'name': 'yabirtoken',
+            'decimals': 18,
+            'symbol': 'YAB',
+            'asset_type': 'ethereum token',
+            'started': None,
+            'forked': None,
+            'swapped_for': None,
+            'cryptocompare': 'YAB',
+            'coingecko': 'YAB',
+            'protocol': None,
+            'underlying_tokens': None,
+            'ethereum_address': eth_address,
+        }
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+@pytest.mark.parametrize('method', ['post', 'put'])
+def test_importing_custom_assets_list(rotkehlchen_api_server, method):
+    """Test that the endpoint for importing custom assets works correctly"""
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'exported_assets.json'
+
+    if method == 'put':
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'userassetsresource',
+            ), json={'action': 'upload', 'file': str(filepath)},
+        )
+    else:
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'userassetsresource',
+            ), json={'action': 'upload'},
+            files={'file': open(filepath, 'rb')},
+        )
+
+    assert_simple_ok_response(response)
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    errors = rotki.msg_aggregator.consume_errors()
+    warnings = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    assert_proper_response_with_result(response)
+    stinch = EthereumToken('0xA0446D8804611944F1B527eCD37d7dcbE442caba')
+    assert stinch.symbol == 'st1INCH'
+    assert len(stinch.underlying_tokens) == 1
+    assert stinch.decimals == 18

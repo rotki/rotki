@@ -1918,3 +1918,30 @@ class AppInfoSchema(Schema):
 
 class IdentifiersListSchema(Schema):
     identifiers = fields.List(fields.Integer(), required=True)
+
+
+class AssetsImportingSchema(Schema):
+    file = FileField(allowed_extensions=['.json'], load_default=None)
+    destination = DirectoryField(load_default=None)
+    action = fields.String(
+        validate=webargs.validate.OneOf(choices=('upload', 'download')),
+        required=True,
+    )
+
+    @validates_schema
+    def validate_schema(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        file = data.get('file')
+        action = data.get('action')
+        if action == 'upload' and file is None:
+            raise ValidationError(
+                message='A file has to be provided when action is upload',
+                field_name='action',
+            )
+
+
+class AssetsImportingFromFormSchema(Schema):
+    file = FileField(allowed_extensions=['.json'], required=True)
