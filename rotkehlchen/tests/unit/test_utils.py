@@ -365,3 +365,9 @@ def test_jsonloads_list():
     with pytest.raises(JSONDecodeError) as e:
         jsonloads_list('{"foo": 1, "boo": "value"}')
     assert 'Returned json is not a list' in str(e.value)
+
+
+def test_retrieve_old_token_info(ethereum_manager):
+    info = ethereum_manager.get_basic_contract_info('0x2C4Bd064b998838076fa341A83d007FC2FA50957')
+    assert info['symbol'] == 'UNI-V1'
+    assert info['name'] == 'Uniswap V1'
