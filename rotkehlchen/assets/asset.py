@@ -294,6 +294,9 @@ WORLD_TO_KRAKEN = {
     strethaddress_to_identifier('0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE'): 'SHIB',
     'AVAX': 'AVAX',
     'KILT': 'KILT',
+    'STEP': 'STEP',
+    'UST': 'UST',
+    'MNGO': 'MNGO',
 }
 
 WORLD_TO_BINANCE = {

@@ -365,12 +365,16 @@ export const AIRDROP_FOX = 'fox';
 export const AIRDROP_ENS = 'ens';
 export const AIRDROP_PARASWAP = 'psp';
 export const AIRDROP_SADDLE = 'sdl';
+export const AIRDROP_COW_GNOSIS = 'cowGnosis';
+export const AIRDROP_COW_MAINNET = 'cowMainnet';
 
 export const AIRDROPS = [
   AIRDROP_1INCH,
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP,
   AIRDROP_CORNICHON,
+  AIRDROP_COW_GNOSIS,
+  AIRDROP_COW_MAINNET,
   AIRDROP_GRAIN,
   AIRDROP_LIDO,
   AIRDROP_FURUCOMBO,
