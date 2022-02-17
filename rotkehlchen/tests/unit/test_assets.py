@@ -174,6 +174,9 @@ def test_cryptocompare_asset_support(cryptocompare):
         'DFL',  # Defi land but another DFL in CC
         'CDEX',  # Codex but another CDEX in CC
         'MIMO',  # mimosa but another MIMO in CC
+        ethaddress_to_identifier('0x73d7c860998CA3c01Ce8c808F5577d94d545d1b4'),  # noqa: E501 # IXS token but IXS swap in CC
+        'TULIP',  # Solfarm but TULIP project in CC
+        'AIR',  # altair but another AIR in CC
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (

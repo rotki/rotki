@@ -220,6 +220,21 @@ DELISTED_ASSETS = [
     'SLR',
     'SXC',
     strethaddress_to_identifier('0x6fFF3806Bbac52A20e0d79BC538d527f6a22c96b'),
+    strethaddress_to_identifier('0x78B7FADA55A64dD895D8c8c35779DD8b67fA8a05'),
+    strethaddress_to_identifier('0x4D8fc1453a0F359e99c9675954e656D80d996FbF'),
+    strethaddress_to_identifier('0xFAd572db566E5234AC9Fc3d570c4EdC0050eAA92'),
+    strethaddress_to_identifier('0xBB49A51Ee5a66ca3a8CbE529379bA44Ba67E6771'),
+    strethaddress_to_identifier('0x2e071D2966Aa7D8dECB1005885bA1977D6038A65'),
+    strethaddress_to_identifier('0x6589fe1271A0F29346796C6bAf0cdF619e25e58e'),
+    strethaddress_to_identifier('0xDd6C68bb32462e01705011a4e2Ad1a60740f217F'),
+    strethaddress_to_identifier('0x13C2fab6354d3790D8ece4f0f1a3280b4A25aD96'),
+    strethaddress_to_identifier('0x5979F50f1D4c08f9A53863C2f39A7B0492C38d0f'),
+    strethaddress_to_identifier('0xaE73B38d1c9A8b274127ec30160a4927C4d71824'),
+    strethaddress_to_identifier('0x12e51E77DAAA58aA0E9247db7510Ea4B46F9bEAd'),
+    strethaddress_to_identifier('0xcbb20D755ABAD34cb4a9b5fF6Dd081C76769f62e'),
+    strethaddress_to_identifier('0xB4EaF48bD7f72356e1019C157e91b81A1C541073'),
+    strethaddress_to_identifier('0x2a093BcF0C98Ef744Bb6F69D74f2F85605324290'),
+
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [
