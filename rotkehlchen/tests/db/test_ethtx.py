@@ -28,8 +28,6 @@ def test_add_get_ethereum_transactions(data_dir, username):
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
     tx2_hash_b = b'.h\xdd\x82\x85\x94\xeaq\xfe\n\xfc\xcf\xadwH\xc9\x0f\xfc\xd0\xf1\xad\xd4M\r$\x9b\xf7\x98\x87\xda\x93\x18'  # noqa: E501
-    tx2_hash = '0x2e68dd828594ea71fe0afccfad7748c90ffcd0f1add44d0d249bf79887da9318'
-
     data.db.add_blockchain_accounts(
         blockchain=SupportedBlockchain.ETHEREUM,
         account_data=[
@@ -107,8 +105,6 @@ def test_add_get_ethereum_transactions(data_dir, username):
     # try transaction query by tx_hash
     result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash_b), has_premium=True)  # noqa: E501
     assert result == [tx2], 'querying transaction by hash in bytes failed'
-    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash), has_premium=True)  # noqa: E501
-    assert result == [tx2], 'querying transaction by hash string failed'
     result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=b'dsadsad'), has_premium=True)  # noqa: E501
     assert result == []
 

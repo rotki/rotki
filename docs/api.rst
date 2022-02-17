@@ -2021,6 +2021,48 @@ Querying ethereum transactions
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+
+Request transactions event decoding
+=======================================
+
+.. http:post:: /api/(version)/blockchains/ETH/transactions
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a POST on the transactions endpoint for ETH will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/blockchains/ETH/transactions HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": true, "hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"]}
+
+   :reqjson list hashes: The list of transaction hashes to request decoding for
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": true,
+        "message": ""
+      }
+
+
+   :statuscode 200: Transactions succesfully decoded.
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: One of the given hashes does not correspond to a transaction according to the nodes we contacted.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: Problem contacting a remote service
+
 Querying tags
 =================
 

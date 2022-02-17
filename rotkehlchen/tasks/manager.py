@@ -235,8 +235,7 @@ class TaskManager():
     def _run_ethereum_txreceipts_query(self, hash_results: List[Tuple]) -> None:
         dbethtx = DBEthTx(self.database)
         for entry in hash_results:
-            tx_hash = '0x' + entry[0].hex()
-            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=tx_hash)
+            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry[0])
             dbethtx.add_receipt_data(tx_receipt_data)
 
     def _maybe_schedule_ethereum_txreceipts(self) -> None:
@@ -377,7 +376,7 @@ class TaskManager():
                 task_name=task_name,
                 exception_is_error=True,
                 method=self.evm_tx_decoder.decode_transaction_hashes,
-                hashes=hashes,
+                tx_hashes=hashes,
             )
 
     def _schedule(self) -> None:

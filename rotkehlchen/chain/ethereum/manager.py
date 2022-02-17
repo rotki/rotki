@@ -417,7 +417,10 @@ class EthereumManager():
                     KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Probably fixed as written below, but no risking it. # noqa: E501
                     BadResponseFormat,  # should replace the above KeyError after https://github.com/ethereum/web3.py/pull/2188  # noqa: E501
             ) as e:
-                log.warning(f'Failed to query {node} for {str(method)} due to {str(e)}')
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key {str(e)}'
+                log.warning(f'Failed to query {node} for {str(method)} due to {msg}')
                 # Catch all possible errors here and just try next node call
                 continue
 
@@ -459,7 +462,6 @@ class EthereumManager():
         except (
                 requests.exceptions.RequestException,
                 BlockchainQueryError,
-                TransactionNotFound,
                 KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
         ):
             return None
@@ -768,7 +770,7 @@ class EthereumManager():
     def _get_transaction_receipt(
             self,
             web3: Optional[Web3],
-            tx_hash: str,
+            tx_hash: bytes,
     ) -> Dict[str, Any]:
         if web3 is None:
             tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
@@ -778,7 +780,7 @@ class EthereumManager():
                 tx_receipt['blockNumber'] = block_number
                 tx_receipt['cumulativeGasUsed'] = int(tx_receipt['cumulativeGasUsed'], 16)
                 tx_receipt['gasUsed'] = int(tx_receipt['gasUsed'], 16)
-                tx_receipt['status'] = int(tx_receipt['status'], 16)
+                tx_receipt['status'] = int(tx_receipt.get('status', '0x1'), 16)
                 tx_index = int(tx_receipt['transactionIndex'], 16)
                 tx_receipt['transactionIndex'] = tx_index
                 for receipt_log in tx_receipt['logs']:
@@ -788,9 +790,17 @@ class EthereumManager():
                         location='etherscan tx receipt',
                     )
                     receipt_log['transactionIndex'] = tx_index
-            except (DeserializationError, ValueError) as e:
+            except (DeserializationError, ValueError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'missing key {msg}'
+                log.error(
+                    f'Couldnt deserialize transaction receipt {tx_receipt} data from '
+                    f'etherscan due to {msg}',
+                )
                 raise RemoteError(
-                    f'Couldnt deserialize transaction receipt data from etherscan {tx_receipt}',
+                    f'Couldnt deserialize transaction receipt data from etherscan '
+                    f'due to {msg}. Check logs for details',
                 ) from e
             return tx_receipt
 
@@ -800,7 +810,7 @@ class EthereumManager():
 
     def get_transaction_receipt(
             self,
-            tx_hash: str,
+            tx_hash: bytes,
             call_order: Optional[Sequence[NodeName]] = None,
     ) -> Dict[str, Any]:
         return self.query(
@@ -812,8 +822,8 @@ class EthereumManager():
     def _get_transaction_by_hash(
             self,
             web3: Optional[Web3],
-            tx_hash: str,
-    ) -> Optional[EthereumTransaction]:
+            tx_hash: bytes,
+    ) -> EthereumTransaction:
         if web3 is None:
             tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
         else:
@@ -830,9 +840,9 @@ class EthereumManager():
 
     def get_transaction_by_hash(
             self,
-            tx_hash: str,
+            tx_hash: bytes,
             call_order: Optional[Sequence[NodeName]] = None,
-    ) -> Optional[EthereumTransaction]:
+    ) -> EthereumTransaction:
         return self.query(
             method=self._get_transaction_by_hash,
             call_order=call_order if call_order is not None else self.default_call_order(),

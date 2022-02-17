@@ -763,7 +763,7 @@ class Adex(EthereumModule):
         return generate_address_via_create2(
             address=IDENTITY_FACTORY_ADDR,
             salt=CREATE2_SALT,
-            init_code=IDENTITY_PROXY_INIT_CODE.format(signer_address=address),
+            init_code=IDENTITY_PROXY_INIT_CODE.format(signer_address=address.removeprefix('0x')),
         )
 
     def _update_events_value(

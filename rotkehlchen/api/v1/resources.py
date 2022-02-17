@@ -48,6 +48,7 @@ from rotkehlchen.api.v1.schemas import (
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
+    EthereumTransactionDecodingSchema,
     EthereumTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangeRatesSchema,
@@ -343,6 +344,7 @@ class AssociatedLocations(BaseResource):
 
 class EthereumTransactionsResource(BaseResource):
     get_schema = EthereumTransactionQuerySchema()
+    post_schema = EthereumTransactionDecodingSchema()
 
     @ignore_kwarg_parser.use_kwargs(get_schema, location='json_and_query_and_view_args')
     def get(
@@ -355,6 +357,16 @@ class EthereumTransactionsResource(BaseResource):
             async_query=async_query,
             only_cache=only_cache,
             filter_query=filter_query,
+        )
+
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
+            self,
+            async_query: bool, tx_hashes: List[bytes],
+    ) -> Response:
+        return self.rest_api.decode_ethereum_transactions(
+            async_query=async_query,
+            tx_hashes=tx_hashes,
         )
 
     def delete(self) -> Response:

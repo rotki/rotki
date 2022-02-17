@@ -437,6 +437,40 @@ class EthereumAddressField(fields.Field):
         return address
 
 
+class EVMTransactionHashField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: bytes,
+            attr: str,  # pylint: disable=unused-argument
+            obj: Any,  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> str:
+        return '0x' + value.hex()
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
+            **_kwargs: Any,
+    ) -> bytes:
+        # Make sure that given value is a transaction hash
+        if not isinstance(value, str):
+            raise ValidationError('Transaction hash should be a string')
+
+        try:
+            txhash = bytes.fromhex(value.removeprefix('0x'))
+        except ValueError as e:
+            raise ValidationError(f'Could not turn transaction hash {value} to bytes') from e
+
+        length = len(txhash)
+        if length != 32:
+            raise ValidationError(f'Transaction hashes should be 32 bytes in length. Given {length=}')  # noqa: E501
+
+        return txhash
+
+
 class AssetTypeField(fields.Field):
 
     def __init__(self, *, exclude_types: Optional[Sequence[AssetType]] = None, **kwargs: Any) -> None:  # noqa: E501

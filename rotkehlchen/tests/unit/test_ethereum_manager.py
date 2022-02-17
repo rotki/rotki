@@ -52,7 +52,7 @@ def test_get_transaction_receipt(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         ethereum=ethereum_manager,
     )
-    tx_hash = '0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89'
+    tx_hash = hexstring_to_bytes('0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89')  # noqa: E501
     result = ethereum_manager.get_transaction_receipt(tx_hash, call_order=call_order)
     block_hash = '0x6f3a7838a8788c3371b88df170c3643d19bad896c915a7368681292882b6ad61'
     assert result['blockHash'] == block_hash
@@ -77,11 +77,10 @@ def test_get_transaction_receipt(
             BlockchainAccountData(address=to_addy),
         ],
     )
-    tx_hash_bytes = hexstring_to_bytes(tx_hash)
     db = DBEthTx(database)
     db.add_ethereum_transactions(
         [EthereumTransaction(  # need to add the tx first
-            tx_hash=tx_hash_bytes,
+            tx_hash=tx_hash,
             timestamp=1,  # all other fields don't matter for this test
             block_number=1,
             from_address=from_addy,
@@ -99,9 +98,9 @@ def test_get_transaction_receipt(
     # also test receipt can be stored and retrieved from the DB.
     # This tests that all node types (say openethereum) are processed properly
     db.add_receipt_data(result)
-    receipt = db.get_receipt(tx_hash_bytes)
+    receipt = db.get_receipt(tx_hash)
     assert receipt == EthereumTxReceipt(
-        tx_hash=tx_hash_bytes,
+        tx_hash=tx_hash,
         contract_address=None,
         status=True,
         type=0,
@@ -132,7 +131,7 @@ def test_get_transaction_by_hash(ethereum_manager, call_order, ethereum_manager_
         ethereum=ethereum_manager,
     )
     result = ethereum_manager.get_transaction_by_hash(
-        '0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c',
+        hexstring_to_bytes('0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c'),
         call_order=call_order,
     )
     expected_tx = EthereumTransaction(
@@ -291,7 +290,7 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
     # Test getting the transaction receipt (also containing the log entries) does not raise
     # They seem to all be 0
     result = ethereum_manager.get_transaction_receipt(
-        '0x00eea6359d247c9433d32620358555a0fd3265378ff146b9511b7cff1ecb7829',
+        hexstring_to_bytes('0x00eea6359d247c9433d32620358555a0fd3265378ff146b9511b7cff1ecb7829'),
         call_order=call_order,
     )
     assert all(x['transactionIndex'] == 0 for x in result['logs'])

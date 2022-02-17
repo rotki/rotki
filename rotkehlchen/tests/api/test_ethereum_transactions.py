@@ -9,6 +9,7 @@ import gevent
 import pytest
 import requests
 
+from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
@@ -30,6 +31,7 @@ from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.typing import EthereumTransaction, Timestamp
+from rotkehlchen.utils.misc import hexstring_to_bytes
 
 EXPECTED_AFB7_TXS = [{
     'tx_hash': '0x13684203a4bf07aaed0112983cb380db6004acac772af2a5d46cb2a28245fbad',
@@ -226,6 +228,103 @@ def test_query_transactions(rotkehlchen_api_server):
     assert result_entries == EXPECTED_AFB7_TXS[2:4][::-1]
     msg = 'the transactions we ignored have not been ignored for accounting'
     assert all(x['ignored_in_accounting'] is True for x in result['entries']), msg
+
+    # Also check that we requesting decoding of tx_hashes gets receipts and decodes events
+    hashes = [EXPECTED_AFB7_TXS[0]['tx_hash'], EXPECTED_4193_TXS[0]['tx_hash']]
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ), json={
+            'async_query': async_query,
+            'tx_hashes': hashes,
+        },
+    )
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        assert outcome['message'] == ''
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
+    assert result is True
+
+    dbethtx = DBEthTx(rotki.data.db)
+    dbevents = DBHistoryEvents(rotki.data.db)
+    for tx_hash_hex in hashes:
+        receipt = dbethtx.get_receipt(hexstring_to_bytes(tx_hash_hex))
+        assert isinstance(receipt, EthereumTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
+        events = dbevents.get_history_events(
+            filter_query=HistoryEventFilterQuery.make(
+                event_identifier=tx_hash_hex,
+            ),
+            has_premium=True,  # for this function we don't limit. We only limit txs.
+        )
+        assert len(events) == 1
+
+
+def test_request_transaction_decoding_errors(rotkehlchen_api_server):
+    """Test that the request transaction decoding endpoint handles input errors"""
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ), json={
+            'async_query': False,
+            'tx_hashes': [1, '0xfc4f300f4d9e6436825ed0dc85716df4648a64a29570280c6e6261acf041aa4b'],  # noqa: E501
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Transaction hash should be a string',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ), json={
+            'async_query': False,
+            'tx_hashes': ['dasd', '0xfc4f300f4d9e6436825ed0dc85716df4648a64a29570280c6e6261acf041aa4b'],  # noqa: E501
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Could not turn transaction hash dasd to bytes',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ), json={
+            'async_query': False,
+            'tx_hashes': ['0x34af01', '0xfc4f300f4d9e6436825ed0dc85716df4648a64a29570280c6e6261acf041aa4b'],  # noqa: E501
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Transaction hashes should be 32 bytes in length',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    nonexisting_hash = '0x1c4f300f4d9e6436825ed0dc85716df4648a64a29570280c6e6261acf041aa41'
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ), json={
+            'async_query': False,
+            'tx_hashes': [nonexisting_hash],  # noqa: E501
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Hash {nonexisting_hash} does not correspond to a transaction',
+        status_code=HTTPStatus.CONFLICT,
+    )
 
 
 @pytest.mark.skipif(

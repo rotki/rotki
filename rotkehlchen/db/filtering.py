@@ -298,7 +298,7 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             addresses: Optional[List[ChecksumEthAddress]] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            tx_hash: Optional[Union[str, bytes]] = None,
+            tx_hash: Optional[bytes] = None,
     ) -> 'ETHTransactionsFilterQuery':
         filter_query = cls.create(
             and_op=and_op,

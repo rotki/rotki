@@ -326,14 +326,15 @@ class Etherscan(ExternalServiceWithApiKey):
 
         return block_data
 
-    def get_transaction_by_hash(self, tx_hash: str) -> Dict[str, Any]:
+    def get_transaction_by_hash(self, tx_hash: bytes) -> Dict[str, Any]:
         """
         Gets a transaction object by hash
 
         May raise:
         - RemoteError due to self._query().
         """
-        options = {'txhash': tx_hash}
+        tx_hash_hex = '0x' + tx_hash.hex()
+        options = {'txhash': tx_hash_hex}
         transaction_data = self._query(module='proxy', action='eth_getTransactionByHash', options=options)  # noqa: E501
         return transaction_data
 
@@ -347,16 +348,17 @@ class Etherscan(ExternalServiceWithApiKey):
         result = self._query(module='proxy', action='eth_getCode', options={'address': account})
         return result
 
-    def get_transaction_receipt(self, tx_hash: str) -> Dict[str, Any]:
+    def get_transaction_receipt(self, tx_hash: bytes) -> Dict[str, Any]:
         """Gets the receipt for the given transaction hash
 
         May raise:
         - RemoteError due to self._query().
         """
+        tx_hash_hex = '0x' + tx_hash.hex()
         result = self._query(
             module='proxy',
             action='eth_getTransactionReceipt',
-            options={'txhash': tx_hash},
+            options={'txhash': tx_hash_hex},
         )
         return result
 

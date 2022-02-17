@@ -14,6 +14,7 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.utils import decode_event_data_abi_str, token_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
@@ -25,7 +26,9 @@ from rotkehlchen.errors import (
     ConversionError,
     DecoderLoadingError,
     DeserializationError,
+    InputError,
     NotERC20Conformant,
+    RemoteError,
     UnknownAsset,
 )
 from rotkehlchen.fval import FVal
@@ -214,24 +217,31 @@ class EVMTransactionDecoder():
         self.database.update_last_write()
         return sorted(events, key=lambda x: x.sequence_index, reverse=False)
 
-    def decode_transaction_hashes(self, hashes: List[bytes]) -> None:
-        """Runs the decoding logic for a number of transaction hashes
+    def decode_transaction_hashes(self, tx_hashes: List[bytes]) -> None:
+        """Make sure that receipts are pulled + events decoded for the given transaction hashes
 
-        Caller must make sure that:
-        - The transaction hashes must exist in the DB for transactions
-        - The transaction hashes must also have the corresponding receipts in the DB
+        The transaction hashes must exist in the DB at the time of the call
+
+        May raise:
+        - DeserializationError if there is a problem with conacting a remote to get receipts
+        - RemoteError if there is a problem with conacting a remote to get receipts
+        - InputError if the transaction hash is not found in the DB
         """
         self.base.refresh_tracked_accounts()
+        tx_module = EthTransactions(ethereum=self.ethereum_manager, database=self.database)
 
-        # TODO: Change this if transaction filter query can accept multiple hashes
-        for tx_hash in hashes:
+        for tx_hash in tx_hashes:
+            try:
+                receipt = tx_module.get_or_query_transaction_receipt(tx_hash)
+            except RemoteError as e:
+                raise InputError(f'Hash {"0x"+tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
+
+            # TODO: Change this if transaction filter query can accept multiple hashes
             txs = self.dbethtx.get_ethereum_transactions(
                 filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
                 has_premium=True,  # ignore limiting here
             )
-            tx_receipt = self.dbethtx.get_receipt(tx_hash)
-            assert tx_receipt, 'The transaction receipt for {tx_hash.hex()} should be in the DB'
-            self.decode_transaction(transaction=txs[0], tx_receipt=tx_receipt)
+            self.decode_transaction(transaction=txs[0], tx_receipt=receipt)
 
     def get_or_decode_transaction_events(
             self,

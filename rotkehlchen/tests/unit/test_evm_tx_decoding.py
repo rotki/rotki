@@ -32,7 +32,7 @@ def test_tx_decode(evm_transaction_decoder, database):
     transactions = dbethtx.get_ethereum_transactions(
         filter_=ETHTransactionsFilterQuery.make(
             addresses=[addr1],
-            tx_hash='0x' + approve_tx_hash,
+            tx_hash=bytes.fromhex(approve_tx_hash),
         ),
         has_premium=True,
     )
