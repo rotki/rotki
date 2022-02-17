@@ -2040,7 +2040,7 @@ Request transactions event decoding
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": True, "hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"]}
+      {"async_query": true, "hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"]}
 
    :reqjson list hashes: The list of transaction hashes to request decoding for
 

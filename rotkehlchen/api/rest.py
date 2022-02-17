@@ -3121,7 +3121,7 @@ class RestAPI():
             tx_hashes: List[bytes],
     ) -> Dict[str, Any]:
         try:
-            self.rotkehlchen.evm_tx_decoder.decode_transaction_hashes(tx_hashes)
+            self.rotkehlchen.evm_tx_decoder.decode_transaction_hashes(tx_hashes=tx_hashes)
             return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
         except (RemoteError, DeserializationError) as e:
             status_code = HTTPStatus.BAD_GATEWAY

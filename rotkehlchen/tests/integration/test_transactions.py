@@ -17,10 +17,9 @@ def test_get_transaction_receipt(database, ethereum_manager, call_order, transac
         transaction_already_queried=transaction_already_queried,
         one_receipt_in_db=False,
     )
-    tx_hash = '0x' + transactions[0].tx_hash.hex()
     txmodule = EthTransactions(ethereum=ethereum_manager, database=database)
     receipt = txmodule.get_or_query_transaction_receipt(transactions[0].tx_hash)
     assert receipt == receipts[0]
-    results, _ = txmodule.query(ETHTransactionsFilterQuery.make(tx_hash=tx_hash), only_cache=True, has_premium=True)  # noqa: E501
+    results, _ = txmodule.query(ETHTransactionsFilterQuery.make(tx_hash=transactions[0].tx_hash), only_cache=True, has_premium=True)  # noqa: E501
     assert len(results) == 1
     assert results[0] == transactions[0]
