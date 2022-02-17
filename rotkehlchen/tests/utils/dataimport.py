@@ -784,17 +784,6 @@ def assert_nexo_results(rotki: Rotkehlchen):
         fee_asset=A_USD,
         fee=Fee(ZERO),
         link='NXT0000000003',
-    ), AssetMovement(
-        location=Location.NEXO,
-        category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1615024314),
-        address=None,
-        transaction_id=None,
-        asset=symbol_to_asset_or_token('USDC'),
-        amount=AssetAmount(FVal('1')),
-        fee_asset=A_USD,
-        fee=Fee(ZERO),
-        link='NXT0000000001',
     )]
 
     assert ledger_actions == expected_actions

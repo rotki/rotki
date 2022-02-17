@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`4059` Nexo importer won't consider `LockingTermDeposit` as another deposit. 
+
 * :release:`1.23.3 <2022-02-04>`
 * :bug:`4034` If a new premium user is created, with DB sync on, premium api keys being correct but wrong password is given then creating same user with right password will now work.
 * :bug:`4013` Fix Bitpanda icon missing in exchange selector.

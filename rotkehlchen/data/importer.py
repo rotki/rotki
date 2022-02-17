@@ -980,7 +980,7 @@ class DataImporter():
                 'since not enough information is provided about the trade.',
             )
             return
-        if entry_type in ('Deposit', 'ExchangeDepositedOn', 'LockingTermDeposit'):
+        if entry_type in ('Deposit', 'ExchangeDepositedOn'):
             asset_movement = AssetMovement(
                 location=Location.NEXO,
                 category=AssetMovementCategory.DEPOSIT,
