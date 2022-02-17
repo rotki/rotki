@@ -1283,7 +1283,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         toAsset,
         purgeOld
       );
-      const { result } = await awaitTask<boolean, TaskMeta>(
+      const { result } = await awaitTask<true, TaskMeta>(
         taskId,
         taskType,
         {

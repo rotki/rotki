@@ -291,18 +291,18 @@ export default class LedgerActionForm extends Vue {
       notes: this.notes ? this.notes : undefined
     };
 
-    const { success, message } = !this.id
+    const result = !this.id
       ? await this.saveData(ledgerActionPayload)
       : await this.saveData({ ...ledgerActionPayload, identifier: this.id });
 
-    if (success) {
+    if (result.success) {
       this.refresh();
       this.reset();
       return true;
     }
-    if (message) {
+    if (result.message) {
       this.errorMessages = convertKeys(
-        deserializeApiErrorMessage(message) ?? {},
+        deserializeApiErrorMessage(result.message) ?? {},
         true,
         false
       );

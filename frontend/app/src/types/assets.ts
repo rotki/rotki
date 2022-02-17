@@ -1,7 +1,5 @@
 import { SupportedAsset } from '@rotki/common/lib/data';
 
-export interface AssetState {}
-
 export interface AssetDBVersion {
   readonly local: number;
   readonly remote: number;

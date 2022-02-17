@@ -275,9 +275,9 @@ export class RotkehlchenApi {
     username: string,
     apiKey: string,
     apiSecret: string
-  ): Promise<boolean> {
+  ): Promise<true> {
     return this.axios
-      .patch<ActionResult<boolean>>(
+      .patch<ActionResult<true>>(
         `/users/${username}`,
         {
           premium_api_key: apiKey,
@@ -288,9 +288,9 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  deletePremiumCredentials(): Promise<boolean> {
+  deletePremiumCredentials(): Promise<true> {
     return this.axios
-      .delete<ActionResult<boolean>>('/premium', {
+      .delete<ActionResult<true>>('/premium', {
         validateStatus: validStatus
       })
       .then(handleResponse);
@@ -300,9 +300,9 @@ export class RotkehlchenApi {
     username: string,
     currentPassword: string,
     newPassword: string
-  ): Promise<boolean> {
+  ): Promise<true> {
     return this.axios
-      .patch<ActionResult<boolean>>(
+      .patch<ActionResult<true>>(
         `/users/${username}/password`,
         {
           name: username,
@@ -1073,33 +1073,32 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  downloadCSV(): Promise<ActionStatus> {
-    return this.axios
-      .get('/history/download/', {
+  async downloadCSV(): Promise<ActionStatus> {
+    try {
+      const response = await this.axios.get('/history/download/', {
         responseType: 'blob',
         validateStatus: validTaskStatus
-      })
-      .then(async response => {
-        if (response.status === 200) {
-          const url = window.URL.createObjectURL(response.data);
-          const link = document.createElement('a');
-          link.id = 'history-download-link';
-          link.href = url;
-          link.setAttribute('download', 'reports.zip');
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          return { success: true };
-        }
-
-        const body = await (response.data as Blob).text();
-        const result: ActionResult<null> = JSON.parse(body);
-
-        return { success: false, message: result.message };
-      })
-      .catch(reason => {
-        return { success: false, message: reason.message };
       });
+
+      if (response.status === 200) {
+        const url = window.URL.createObjectURL(response.data);
+        const link = document.createElement('a');
+        link.id = 'history-download-link';
+        link.href = url;
+        link.setAttribute('download', 'reports.zip');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return { success: true };
+      }
+
+      const body = await (response.data as Blob).text();
+      const result: ActionResult<null> = JSON.parse(body);
+
+      return { success: false, message: result.message };
+    } catch (e: any) {
+      return { success: false, message: e.message };
+    }
   }
 
   async airdrops(): Promise<PendingTask> {

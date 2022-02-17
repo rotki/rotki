@@ -493,63 +493,63 @@ export default class Accounting extends Mixins<
   }
 
   async onCalculatePastCostBasisChange(enabled: boolean) {
-    const { success, message } = await this.settingsUpdate({
+    const result = await this.settingsUpdate({
       calculatePastCostBasis: enabled
     });
     this.validateSettingChange(
       'calculatePastCostBasis',
-      success ? 'success' : 'error',
-      success
+      result.success ? 'success' : 'error',
+      result.success
         ? enabled
           ? this.$t('account_settings.messages.cost_basics.enabled').toString()
           : this.$t('account_settings.messages.cost_basics.disabled').toString()
         : this.$t('account_settings.messages.cost_basics.error', {
-            message
+            message: result.message
           }).toString()
     );
   }
 
   async addAsset() {
     const identifier = this.assetToIgnore;
-    const { message, success } = await this.ignoreAsset(identifier);
+    const result = await this.ignoreAsset(identifier);
     const asset = this.getSymbol(identifier);
 
-    const validationMessage = success
+    const validationMessage = result.success
       ? this.$tc('account_settings.messages.ignored_success', 0, { asset })
       : this.$tc('account_settings.messages.ignored_failure', 0, {
           asset,
-          message
+          message: result.message
         });
     this.validateSettingChange(
       'addIgnoreAsset',
-      success ? 'success' : 'error',
+      result.success ? 'success' : 'error',
       validationMessage
     );
 
-    if (success) {
+    if (result.success) {
       this.assetToIgnore = '';
     }
   }
 
   async removeAsset() {
     const identifier = this.assetToRemove;
-    const { message, success } = await this.unignoreAsset(identifier);
+    const result = await this.unignoreAsset(identifier);
     const asset = this.getSymbol(identifier);
 
-    const validationMessage = success
+    const validationMessage = result.success
       ? this.$tc('account_settings.messages.unignored_success', 0, { asset })
       : this.$tc('account_settings.messages.unignored_failure', 0, {
           asset,
-          message
+          message: result.message
         });
 
     this.validateSettingChange(
       'remIgnoreAsset',
-      success ? 'success' : 'error',
+      result.success ? 'success' : 'error',
       validationMessage
     );
 
-    if (success) {
+    if (result.success) {
       this.assetToRemove = '';
     }
   }

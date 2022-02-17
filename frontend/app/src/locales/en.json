@@ -135,6 +135,9 @@
   },
   "assets": {
     "amount": "Total Owned",
+    "backup": {
+      "missing_directory": "Please select a directory"
+    },
     "price": "Price",
     "value": "Value"
   },
@@ -609,6 +612,20 @@
     "stability_fee": "Stability fee",
     "total_lost": "Total lost due to interest"
   },
+  "manage_custom_assets": {
+    "backup": {
+      "button": "Backup",
+      "subtitle": "Create a backup of your custom assets",
+      "title": "Backup"
+    },
+    "restore": {
+      "button": "Restore",
+      "subtitle": "Restore custom assets from a backup",
+      "title": "Restore"
+    },
+    "title": "Backup/Restore Custom Assets",
+    "warning": "This functionality is designed to allow you to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result to errors."
+  },
   "merge_dialog": {
     "cancel": "Cancel",
     "close": "Close",
@@ -724,7 +741,7 @@
     "of": "of {length}"
   },
   "price_accuracy_hint": {
-    "tooltip": "These prices are based on the current exchange rate of historical USD\n      values"
+    "tooltip": "These prices are based on the current exchange rate of historical USD values"
   },
   "price_form": {
     "date": "Date",

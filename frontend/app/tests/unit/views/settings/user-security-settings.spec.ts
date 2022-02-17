@@ -60,12 +60,12 @@ describe('UserSecuritySettings.vue', () => {
   });
 
   test('displays no warning by default', async () => {
-    expect(wrapper.find('.v-alert').exists()).toBe(false);
+    expect(wrapper.find('[data-cy=premium-warning]').exists()).toBe(false);
   });
 
   test('displays warning if premium sync enabled', async () => {
     store.commit('session/premiumSync', true);
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-alert').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=premium-warning]').exists()).toBe(true);
   });
 });

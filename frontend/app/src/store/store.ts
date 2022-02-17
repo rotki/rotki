@@ -4,7 +4,6 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
-import { assets } from '@/store/assets';
 import { balances } from '@/store/balances';
 import { defiSections, Section, Status } from '@/store/const';
 import { storePlugins } from '@/store/debug';
@@ -218,8 +217,7 @@ const store: StoreOptions<RotkehlchenState> = {
     session,
     settings,
     statistics,
-    staking,
-    assets
+    staking
   },
   plugins: storePlugins()
 };

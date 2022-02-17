@@ -113,8 +113,8 @@ import {
   ConflictResolution,
   ConflictResolutionStrategy
 } from '@/services/assets/types';
-import { AssetUpdateConflictResult } from '@/store/assets/types';
 import { Writeable } from '@/types';
+import { AssetUpdateConflictResult } from '@/types/assets';
 import { uniqueStrings } from '@/utils/data';
 
 const getHeaders: (

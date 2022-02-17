@@ -106,6 +106,7 @@
 </template>
 
 <script lang="ts">
+import { mapActions as mapPiniaActions } from 'pinia';
 import { Component, Mixins, Prop } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
@@ -116,12 +117,13 @@ import {
   AssetUpdatePayload,
   ConflictResolution
 } from '@/services/assets/types';
+import { useAssets } from '@/store/assets';
+import { useMainStore } from '@/store/store';
 import {
   ApplyUpdateResult,
   AssetUpdateCheckResult,
   AssetUpdateConflictResult
-} from '@/store/assets/types';
-import { useMainStore } from '@/store/store';
+} from '@/types/assets';
 
 const SKIP_ASSET_DB_VERSION = 'rotki_skip_asset_db_version';
 
@@ -129,7 +131,7 @@ const SKIP_ASSET_DB_VERSION = 'rotki_skip_asset_db_version';
   name: 'AssetUpdate',
   components: { ConfirmDialog, Fragment, ConflictDialog },
   methods: {
-    ...mapActions('assets', ['checkForUpdate', 'applyUpdates']),
+    ...mapPiniaActions(useAssets, ['checkForUpdate', 'applyUpdates']),
     ...mapActions('session', ['logout'])
   }
 })

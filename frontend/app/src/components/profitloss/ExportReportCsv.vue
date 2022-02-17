@@ -77,10 +77,11 @@ export default defineComponent({
           }
           await createCsv(directory);
         } else {
-          const { success, message } = await api.downloadCSV();
-          if (!success) {
+          const result = await api.downloadCSV();
+          if (!result.success) {
             showMessage(
-              message ?? i18n.t('profit_loss_report.download_failed').toString()
+              result.message ??
+                i18n.t('profit_loss_report.download_failed').toString()
             );
           }
         }
