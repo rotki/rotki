@@ -906,7 +906,7 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_cus
 def test_importing_custom_assets_list(rotkehlchen_api_server, method):
     """Test that the endpoint for importing custom assets works correctly"""
     dir_path = Path(__file__).resolve().parent.parent
-    filepath = dir_path / 'data' / 'exported_assets.json'
+    filepath = dir_path / 'data' / 'exported_assets.zip'
 
     if method == 'put':
         response = requests.put(

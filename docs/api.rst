@@ -10268,7 +10268,7 @@ Import assets added by the user
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"action": "upload", "file": "/tmp/assets.json"}
+      {"action": "upload", "file": "/tmp/assets.zip"}
 
    
    :resjsonarr string action: Action performed on the endpoint

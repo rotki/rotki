@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import json
 import logging
+import tempfile
 import traceback
 from collections import defaultdict
 from functools import wraps
@@ -21,6 +22,7 @@ from typing import (
     overload,
 )
 from uuid import uuid4
+from zipfile import ZipFile
 
 import gevent
 from flask import Response, make_response, send_file
@@ -3984,23 +3986,30 @@ class RestAPI():
 
     @require_loggedin_user()
     def import_user_assets(self, path: Path) -> Response:
-        try:
-            import_assets_from_file(
-                path=path,
-                msg_aggregator=self.rotkehlchen.msg_aggregator,
-                db_handler=self.rotkehlchen.data.db,
-            )
-        except ValidationError as e:
-            return api_response(
-                result=wrap_in_fail_result(
-                    f'Provided file does not have the expected format. {str(e)}',
-                ),
-                status_code=HTTPStatus.CONFLICT,
-            )
-        except InputError as e:
-            return api_response(
-                result=wrap_in_fail_result(f'{str(e)}'),
-                status_code=HTTPStatus.CONFLICT,
-            )
+        zip_file = ZipFile(path)
+        with tempfile.TemporaryDirectory() as tempdir:
+            for file_name in zip_file.namelist():
+                if file_name.endswith('.json'):
+                    # Extract a single file from zip
+                    zip_file.extract(file_name, tempdir)
+                    file_path = Path(tempdir) / file_name
+                    try:
+                        import_assets_from_file(
+                            path=file_path,
+                            msg_aggregator=self.rotkehlchen.msg_aggregator,
+                            db_handler=self.rotkehlchen.data.db,
+                        )
+                    except ValidationError as e:
+                        return api_response(
+                            result=wrap_in_fail_result(
+                                f'Provided file does not have the expected format. {str(e)}',
+                            ),
+                            status_code=HTTPStatus.CONFLICT,
+                        )
+                    except InputError as e:
+                        return api_response(
+                            result=wrap_in_fail_result(f'{str(e)}'),
+                            status_code=HTTPStatus.CONFLICT,
+                        )
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
