@@ -890,6 +890,15 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_cus
             'ethereum_address': eth_address,
         }
 
+        # try to download again to see if the database is properly detached
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'userassetsresource',
+            ), json={'action': 'download'},
+        )
+        result = assert_proper_response_with_result(response)
+
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])

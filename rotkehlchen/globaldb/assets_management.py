@@ -3,7 +3,7 @@ import logging
 import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Union
-from zipfile import ZipFile
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.typing import AssetData, AssetType
@@ -114,7 +114,7 @@ def export_assets_from_file(
             log.error(e)
 
     cursor = GlobalDBHandler()._conn.cursor()
-    query = cursor.execute('SELECT value from clean_db.settings WHERE name="version";')
+    query = cursor.execute('SELECT value from settings WHERE name="version";')
     version = query.fetchone()[0]
     data = {
         'version': version,
@@ -122,7 +122,7 @@ def export_assets_from_file(
     }
 
     zip_path = dirpath / 'assets.zip'
-    with ZipFile(zip_path, 'w') as assets_zip:
+    with ZipFile(zip_path, 'w', ZIP_DEFLATED) as assets_zip:
         assets_zip.writestr(
             zinfo_or_arcname='assets.json',
             data=json.dumps(data),
