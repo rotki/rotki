@@ -1014,7 +1014,7 @@ class CSVExporter():
             (dirpath / FILENAME_ALL_CSV, FILENAME_ALL_CSV),
         ]
 
-        with ZipFile(dirpath / 'csv.zip', 'w', ZIP_DEFLATED) as csv_zip:
+        with ZipFile(file=dirpath / 'csv.zip', mode='w', compression=ZIP_DEFLATED) as csv_zip:
             for path, filename in files:
                 if not path.exists():
                     continue

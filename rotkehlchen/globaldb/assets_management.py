@@ -122,7 +122,7 @@ def export_assets_from_file(
     }
 
     zip_path = dirpath / 'assets.zip'
-    with ZipFile(zip_path, 'w', ZIP_DEFLATED) as assets_zip:
+    with ZipFile(file=zip_path, mode='w', compression=ZIP_DEFLATED) as assets_zip:
         assets_zip.writestr(
             zinfo_or_arcname='assets.json',
             data=json.dumps(data),
