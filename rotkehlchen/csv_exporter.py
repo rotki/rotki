@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
-from zipfile import ZipFile
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import DefiEvent, HistoryBaseEntry
@@ -1014,7 +1014,7 @@ class CSVExporter():
             (dirpath / FILENAME_ALL_CSV, FILENAME_ALL_CSV),
         ]
 
-        with ZipFile(dirpath / 'csv.zip', 'w') as csv_zip:
+        with ZipFile(dirpath / 'csv.zip', 'w', ZIP_DEFLATED) as csv_zip:
             for path, filename in files:
                 if not path.exists():
                     continue
