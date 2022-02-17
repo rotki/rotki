@@ -31,7 +31,7 @@ from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2 import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import multicall_2
-from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN
+from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN, UNIV1_LP_ABI
 from rotkehlchen.errors import (
     BlockchainQueryError,
     DeserializationError,
@@ -1132,14 +1132,29 @@ class EthereumManager():
             # If something happens in the connection the output should have
             # the same length as the tuple of properties
             output = [(False, b'')] * len(properties)
-
-        decoded = [
-            contract.decode(x[1], method_name)[0]  # pylint: disable=E1136
-            if x[0] and len(x[1]) else None
-            for (x, method_name) in zip(output, properties)
-        ]
+        try:
+            decoded = [
+                contract.decode(x[1], method_name)[0]  # pylint: disable=E1136
+                if x[0] and len(x[1]) else None
+                for (x, method_name) in zip(output, properties)
+            ]
+        except OverflowError as e:
+            # This can happen when contract follows the ERC20 standard methods
+            # but name and symbol return bytes instead of string. UNIV1 LP is in this case
+            log.error(
+                f'{address} failed to decode as ERC20 token. Trying UNIV1 LP token. {str(e)}',
+            )
+            contract = EthereumContract(address=address, abi=UNIV1_LP_ABI, deployed_block=0)
+            decoded = [
+                contract.decode(x[1], method_name)[0]  # pylint: disable=E1136
+                if x[0] and len(x[1]) else None
+                for (x, method_name) in zip(output, properties)
+            ]
+            log.debug(f'{address} was succesfuly decoded as ERC20 token')
 
         for prop, value in zip(properties, decoded):
+            if isinstance(value, bytes):
+                value = value.rstrip(b'\x00').decode()
             info[prop] = value
 
         self.contract_info_cache[address] = info
