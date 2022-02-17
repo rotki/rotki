@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
@@ -104,10 +104,7 @@ class EthTransactions(LockableQueryMixIn):
                 if len(result) != 0:
                     continue  # already got that transaction
 
-                txhash = '0x' + internal_tx.parent_tx_hash.hex()
-                transaction = self.ethereum.get_transaction_by_hash(txhash)
-                if transaction is None:
-                    continue  # hash does not correspond to a transaction
+                transaction = self.ethereum.get_transaction_by_hash(internal_tx.parent_tx_hash)
                 # add the parent transaction to the DB
                 dbethtx.add_ethereum_transactions([transaction], relevant_address=address)
 
@@ -135,17 +132,15 @@ class EthTransactions(LockableQueryMixIn):
 
         # and add them to the DB
         for tx_hash in erc20_tx_hashes:
+            tx_hash_bytes = hexstring_to_bytes(tx_hash)
             result = dbethtx.get_ethereum_transactions(
-                ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
+                ETHTransactionsFilterQuery.make(tx_hash=tx_hash_bytes),
                 has_premium=True,  # ignore limiting here
             )
             if len(result) != 0:
                 continue  # already got that transaction
 
-            transaction = self.ethereum.get_transaction_by_hash(tx_hash)
-            if transaction is None:
-                continue  # hash does not correspond to a transaction
-
+            transaction = self.ethereum.get_transaction_by_hash(tx_hash_bytes)
             dbethtx.add_ethereum_transactions([transaction], relevant_address=address)
 
         # finally also set the last queried timestamps for the address
@@ -200,8 +195,8 @@ class EthTransactions(LockableQueryMixIn):
 
     def get_or_query_transaction_receipt(
             self,
-            tx_hash: str,
-    ) -> Optional['EthereumTxReceipt']:
+            tx_hash: bytes,
+    ) -> 'EthereumTxReceipt':
         """
         Gets the receipt from the DB if it exists. If not queries the chain for it,
         saves it in the DB and then returns it.
@@ -211,28 +206,24 @@ class EthTransactions(LockableQueryMixIn):
         May raise:
 
         - DeserializationError
-        - RemoteError
+        - RemoteError if the transaction hash can't be found in any of the connected nodes
         """
-        tx_hash_b = hexstring_to_bytes(tx_hash)
         dbethtx = DBEthTx(self.database)
         # If the transaction is not in the DB then query it and add it
         result = dbethtx.get_ethereum_transactions(
-            filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash_b),
+            filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
             has_premium=True,  # we don't need any limiting here
         )
         if len(result) == 0:
             transaction = self.ethereum.get_transaction_by_hash(tx_hash)
-            if transaction is None:
-                return None  # hash does not correspond to a transaction
-
             dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
 
-        tx_receipt = dbethtx.get_receipt(tx_hash_b)
+        tx_receipt = dbethtx.get_receipt(tx_hash)
         if tx_receipt is not None:
             return tx_receipt
 
         # not in the DB, so we need to query the chain for it
         tx_receipt_data = self.ethereum.get_transaction_receipt(tx_hash=tx_hash)
         dbethtx.add_receipt_data(tx_receipt_data)
-        tx_receipt = dbethtx.get_receipt(tx_hash_b)
-        return tx_receipt
+        tx_receipt = dbethtx.get_receipt(tx_hash)
+        return tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there

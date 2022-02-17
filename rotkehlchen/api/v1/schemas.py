@@ -86,6 +86,7 @@ from .fields import (
     DerivationPathField,
     DirectoryField,
     EthereumAddressField,
+    EVMTransactionHashField,
     FeeField,
     FileField,
     FloatingPercentageField,
@@ -204,6 +205,10 @@ class EthereumTransactionQuerySchema(
             'only_cache': data['only_cache'],
             'filter_query': filter_query,
         }
+
+
+class EthereumTransactionDecodingSchema(AsyncQueryArgumentSchema):
+    tx_hashes = fields.List(EVMTransactionHashField(), required=True)
 
 
 class TradesQuerySchema(

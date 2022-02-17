@@ -132,7 +132,7 @@ def test_get_transaction_by_hash(ethereum_manager, call_order, ethereum_manager_
         ethereum=ethereum_manager,
     )
     result = ethereum_manager.get_transaction_by_hash(
-        '0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c',
+        hexstring_to_bytes('0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c'),
         call_order=call_order,
     )
     expected_tx = EthereumTransaction(
