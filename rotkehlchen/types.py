@@ -237,9 +237,6 @@ class EthereumTransaction(NamedTuple):
         return hash(self.identifier)
 
     def __eq__(self, other: Any) -> bool:
-        if other is None:
-            return False
-
         if not isinstance(other, EthereumTransaction):
             return False
 
@@ -270,9 +267,6 @@ class EthereumInternalTransaction(NamedTuple):
         return hash(self.identifier)
 
     def __eq__(self, other: Any) -> bool:
-        if other is None:
-            return False
-
         if not isinstance(other, EthereumInternalTransaction):
             return False
 
