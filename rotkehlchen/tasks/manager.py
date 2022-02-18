@@ -322,7 +322,7 @@ class TaskManager():
         new_query_filter.filters.append(
             DBIgnoreValuesFilter(
                 and_op=True,
-                column='rowid',
+                column='identifier',
                 values=list(self.base_entries_ignore_set),
             ),
         )
