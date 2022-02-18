@@ -188,7 +188,7 @@ class Etherscan(ExternalServiceWithApiKey):
                     transaction_endpoint_and_none_found = (
                         status == 0 and
                         json_ret['message'] == 'No transactions found' and
-                        'txlist' in action
+                        action in ('txlist', 'txlistinternal', 'tokentx')
                     )
                     logs_endpoint_and_none_found = (
                         status == 0 and
