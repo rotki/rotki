@@ -45,7 +45,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_poloniex_date,
     get_pair_position_str,
 )
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetMovementCategory,

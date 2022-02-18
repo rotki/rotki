@@ -9,7 +9,7 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.typing import EthereumTransaction
+from rotkehlchen.types import EthereumTransaction
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 

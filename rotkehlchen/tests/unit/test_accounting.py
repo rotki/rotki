@@ -11,7 +11,7 @@ from rotkehlchen.accounting.structures import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.accounting.typing import ACCOUNTING_EVENT_SCHEMA
+from rotkehlchen.accounting.types import ACCOUNTING_EVENT_SCHEMA
 from rotkehlchen.chain.ethereum.structures import AaveInterestEvent
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH, A_ETH2, A_KFEE, A_USDT, A_WBTC
@@ -22,11 +22,18 @@ from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.typing import AssetMovementCategory, EthereumTransaction, Fee, Location, Timestamp
+from rotkehlchen.types import (
+    AssetMovementCategory,
+    EthereumTransaction,
+    Fee,
+    Location,
+    Timestamp,
+    make_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import timestamp_to_date
 
 DUMMY_ADDRESS = '0x0'
-DUMMY_HASH = b''
+DUMMY_HASH = make_evm_tx_hash(b'')
 
 history1 = [
     {

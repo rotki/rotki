@@ -6,7 +6,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
-from rotkehlchen.typing import EthereumTransaction, Timestamp
+from rotkehlchen.types import EthereumTransaction, Timestamp
 
 TaxableAction = Union[  # TODO: At this point we perhaps should create an interface/superclass
     Trade,
@@ -82,7 +82,7 @@ def action_get_identifier(action: TaxableAction) -> str:
     ):
         return str(action.identifier)
     if isinstance(action, EthereumTransaction):
-        return '0x' + action.tx_hash.hex()
+        return action.tx_hash.hex()
     if isinstance(action, Loan):
         return 'loan_' + str(action.close_time)
     if isinstance(action, DefiEvent):

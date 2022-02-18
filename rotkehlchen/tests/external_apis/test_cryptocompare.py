@@ -30,9 +30,9 @@ from rotkehlchen.externalapis.cryptocompare import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.constants import A_DAO, A_SNGLS, A_XMR
-from rotkehlchen.typing import Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 
 
 def test_cryptocompare_query_pricehistorical(cryptocompare):

@@ -7,7 +7,7 @@ from rotkehlchen.db.upgrades.v6_v7 import (
     v6_generate_trade_id,
 )
 from rotkehlchen.errors import DBUpgradeError
-from rotkehlchen.typing import AssetMovementCategory, Location
+from rotkehlchen.types import AssetMovementCategory, Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

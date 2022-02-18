@@ -12,7 +12,7 @@ from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location, deserialize_evm_tx_hash
 
 
 def assert_events_equal(e1: HistoryBaseEntry, e2: HistoryBaseEntry) -> None:
@@ -28,11 +28,11 @@ def assert_events_equal(e1: HistoryBaseEntry, e2: HistoryBaseEntry) -> None:
 def test_tx_decode(evm_transaction_decoder, database):
     dbethtx = DBEthTx(database)
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
-    approve_tx_hash = '5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a'
+    approve_tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     transactions = dbethtx.get_ethereum_transactions(
         filter_=ETHTransactionsFilterQuery.make(
             addresses=[addr1],
-            tx_hash=bytes.fromhex(approve_tx_hash),
+            tx_hash=approve_tx_hash,
         ),
         has_premium=True,
     )
@@ -42,23 +42,26 @@ def test_tx_decode(evm_transaction_decoder, database):
             receipt = dbethtx.get_receipt(tx.tx_hash)
             assert receipt is not None, 'all receipts should be queried in the test DB'
             events = decoder.get_or_decode_transaction_events(tx, receipt)
-            if tx.tx_hash.hex() == approve_tx_hash:  # noqa: E501
+            if tx.tx_hash == approve_tx_hash:
                 assert len(events) == 2
                 assert_events_equal(events[0], HistoryBaseEntry(
-                    event_identifier='0x' + approve_tx_hash,
+                    # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
+                    event_identifier=approve_tx_hash.hex(),  # pylint: disable=no-member
                     sequence_index=0,
                     timestamp=1569924574000,
                     location=Location.BLOCKCHAIN,
                     location_label=addr1,
                     asset=A_ETH,
                     balance=Balance(amount=FVal('0.000030921')),
-                    notes=f'Burned 0.000030921 ETH in gas from {addr1} for transaction {"0x" + approve_tx_hash}',  # noqa: E501
+                    # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
+                    notes=f'Burned 0.000030921 ETH in gas from {addr1} for transaction {approve_tx_hash.hex()}',  # noqa: E501  # pylint: disable=no-member
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     counterparty='gas',
                 ))
                 assert_events_equal(events[1], HistoryBaseEntry(
-                    event_identifier='0x' + approve_tx_hash,
+                    # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
+                    event_identifier=approve_tx_hash.hex(),  # pylint: disable=no-member
                     sequence_index=162,
                     timestamp=1569924574000,
                     location=Location.BLOCKCHAIN,

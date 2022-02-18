@@ -13,7 +13,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Fee, Location, Timestamp, TradeType
+from rotkehlchen.types import AssetMovementCategory, Fee, Location, Timestamp, TradeType
 
 TEST_END_TS = Timestamp(1617382780)
 

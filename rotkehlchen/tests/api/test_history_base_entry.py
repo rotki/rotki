@@ -20,7 +20,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.typing import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 
 def entry_to_input_dict(entry: HistoryBaseEntry, include_identifier: bool) -> Dict[str, Any]:

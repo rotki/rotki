@@ -9,7 +9,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Location, Timestamp
+from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)

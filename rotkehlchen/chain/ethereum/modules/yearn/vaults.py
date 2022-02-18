@@ -56,7 +56,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import YEARN_VAULTS_V2_PROTOCOL, ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now

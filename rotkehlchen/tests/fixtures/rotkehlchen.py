@@ -28,7 +28,7 @@ from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
-from rotkehlchen.typing import AVAILABLE_MODULES_MAP, Location
+from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location
 
 
 @pytest.fixture(name='max_tasks_num')

@@ -16,7 +16,7 @@ from web3 import Web3
 from web3._utils.abi import get_abi_output_types
 from web3.types import BlockIdentifier
 
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName

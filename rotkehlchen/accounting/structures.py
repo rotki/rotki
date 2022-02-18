@@ -8,7 +8,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import combine_dicts, timestamp_to_date, ts_ms_to_sec
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin

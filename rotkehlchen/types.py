@@ -14,13 +14,15 @@ from typing import (
 )
 
 from eth_typing import ChecksumAddress
+from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.errors import DeserializationError  # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 from rotkehlchen.fval import FVal
+from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
-from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
+from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress  # isort:skip # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 
 ModuleName = Literal[
     'makerdao_dsr',
@@ -137,6 +139,34 @@ EthAddress = NewType('EthAddress', T_EthAddres)
 
 ChecksumEthAddress = ChecksumAddress
 
+T_EVMTxHash = HexBytes
+EVMTxHash = NewType('EVMTxHash', T_EVMTxHash)
+
+
+def deserialize_evm_tx_hash(val: Union[Web3HexBytes, bytearray, bytes, str]) -> EVMTxHash:
+    """Super lightweight wrapper to forward arguments to HexBytes and return an EVMTxHash
+
+    HexBytes constructor handles the deserialization from whatever is given as input.
+
+    May raise DeserializationError if there is an error at deserialization
+
+    NB: Does not actually check that it's 32 bytes. This should happen at reading
+    data from outside such as in the marshmallow field validation
+    """
+    return EVMTxHash(HexBytes(val))
+
+
+def make_evm_tx_hash(val: bytes) -> EVMTxHash:
+    """Super lightweight wrapper initialize an EVMTxHash from bytes
+
+    No deserialization happens here
+
+    NB: Does not actually check that it's 32 bytes. This should happen at reading
+    data from outside such as in the marshmallow field validation
+    """
+    return EVMTxHash(HexBytes(val))
+
+
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 
@@ -178,7 +208,7 @@ EventType = NewType('EventType', T_EventType)
 
 class EthereumTransaction(NamedTuple):
     """Represent an Ethereum transaction"""
-    tx_hash: bytes
+    tx_hash: EVMTxHash
     timestamp: Timestamp
     block_number: int
     from_address: ChecksumEthAddress
@@ -193,7 +223,7 @@ class EthereumTransaction(NamedTuple):
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result['identifier'] = self.identifier
-        result['tx_hash'] = '0x' + result['tx_hash'].hex()
+        result['tx_hash'] = result['tx_hash'].hex()
         result['input_data'] = '0x' + result['input_data'].hex()
 
         # Most integers are turned to string to be sent via the API
@@ -207,9 +237,6 @@ class EthereumTransaction(NamedTuple):
         return hash(self.identifier)
 
     def __eq__(self, other: Any) -> bool:
-        if other is None:
-            return False
-
         if not isinstance(other, EthereumTransaction):
             return False
 
@@ -217,12 +244,12 @@ class EthereumTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return '0x' + self.tx_hash.hex() + self.from_address + str(self.nonce)
+        return self.tx_hash.hex() + self.from_address + str(self.nonce)
 
 
 class EthereumInternalTransaction(NamedTuple):
     """Represent an internal Ethereum transaction"""
-    parent_tx_hash: bytes
+    parent_tx_hash: EVMTxHash
     trace_id: int
     timestamp: Timestamp
     block_number: int
@@ -232,7 +259,7 @@ class EthereumInternalTransaction(NamedTuple):
 
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
-        result['tx_hash'] = '0x' + result['tx_hash'].hex()
+        result['tx_hash'] = result['tx_hash'].hex()
         result['value'] = str(result['value'])
         return result
 
@@ -240,9 +267,6 @@ class EthereumInternalTransaction(NamedTuple):
         return hash(self.identifier)
 
     def __eq__(self, other: Any) -> bool:
-        if other is None:
-            return False
-
         if not isinstance(other, EthereumInternalTransaction):
             return False
 
@@ -250,7 +274,7 @@ class EthereumInternalTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return '0x' + self.parent_tx_hash.hex() + str(self.trace_id)
+        return self.parent_tx_hash.hex() + str(self.trace_id)
 
 
 class CovalentTransaction(NamedTuple):

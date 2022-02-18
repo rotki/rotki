@@ -18,10 +18,11 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_transaction,
     deserialize_int_from_str,
 )
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     ChecksumEthAddress,
     EthereumInternalTransaction,
     EthereumTransaction,
+    EVMTxHash,
     ExternalService,
     Timestamp,
 )
@@ -188,7 +189,7 @@ class Etherscan(ExternalServiceWithApiKey):
                     transaction_endpoint_and_none_found = (
                         status == 0 and
                         json_ret['message'] == 'No transactions found' and
-                        'txlist' in action
+                        action in ('txlist', 'txlistinternal', 'tokentx')
                     )
                     logs_endpoint_and_none_found = (
                         status == 0 and
@@ -326,15 +327,14 @@ class Etherscan(ExternalServiceWithApiKey):
 
         return block_data
 
-    def get_transaction_by_hash(self, tx_hash: bytes) -> Dict[str, Any]:
+    def get_transaction_by_hash(self, tx_hash: EVMTxHash) -> Dict[str, Any]:
         """
         Gets a transaction object by hash
 
         May raise:
         - RemoteError due to self._query().
         """
-        tx_hash_hex = '0x' + tx_hash.hex()
-        options = {'txhash': tx_hash_hex}
+        options = {'txhash': tx_hash.hex()}
         transaction_data = self._query(module='proxy', action='eth_getTransactionByHash', options=options)  # noqa: E501
         return transaction_data
 
@@ -348,17 +348,16 @@ class Etherscan(ExternalServiceWithApiKey):
         result = self._query(module='proxy', action='eth_getCode', options={'address': account})
         return result
 
-    def get_transaction_receipt(self, tx_hash: bytes) -> Dict[str, Any]:
+    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> Dict[str, Any]:
         """Gets the receipt for the given transaction hash
 
         May raise:
         - RemoteError due to self._query().
         """
-        tx_hash_hex = '0x' + tx_hash.hex()
         result = self._query(
             module='proxy',
             action='eth_getTransactionReceipt',
-            options={'txhash': tx_hash_hex},
+            options={'txhash': tx_hash.hex()},
         )
         return result
 

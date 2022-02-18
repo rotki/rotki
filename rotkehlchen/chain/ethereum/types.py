@@ -7,7 +7,13 @@ from eth_typing import HexAddress, HexStr
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import ChecksumEthAddress, Eth2PubKey, Timestamp
+from rotkehlchen.types import (
+    ChecksumEthAddress,
+    Eth2PubKey,
+    EVMTxHash,
+    Timestamp,
+    make_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import from_gwei
 
 
@@ -86,6 +92,9 @@ class ValidatorID(NamedTuple):
     index: Optional[int]  # type: ignore  # may be null if the index is not yet determined
     public_key: Eth2PubKey
     ownership_proportion: FVal
+
+    def __eq__(self, other: Any) -> bool:
+        return self.public_key == other.public_key
 
     def __hash__(self) -> int:
         return hash(self.public_key)
@@ -290,13 +299,13 @@ class Eth2Deposit(NamedTuple):
     pubkey: str  # hexstring
     withdrawal_credentials: str  # hexstring
     value: Balance
-    tx_hash: bytes  # the transaction hash in bytes
+    tx_hash: EVMTxHash
     tx_index: int
     timestamp: Timestamp
 
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
-        result['tx_hash'] = '0x' + self.tx_hash.hex()
+        result['tx_hash'] = self.tx_hash.hex()
         result['value'] = self.value.serialize()
         return result
 
@@ -319,7 +328,7 @@ class Eth2Deposit(NamedTuple):
         7 - usd_value
         """
         return cls(
-            tx_hash=deposit_tuple[0],
+            tx_hash=make_evm_tx_hash(deposit_tuple[0]),
             tx_index=int(deposit_tuple[1]),
             from_address=string_to_ethereum_address(deposit_tuple[2]),
             timestamp=Timestamp(int(deposit_tuple[3])),

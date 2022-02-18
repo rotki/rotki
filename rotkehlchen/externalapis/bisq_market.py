@@ -6,7 +6,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import DeserializationError, RemoteError
 from rotkehlchen.history.deserialization import deserialize_price
-from rotkehlchen.typing import Price
+from rotkehlchen.types import Price
 
 PRICE_API_URL = 'https://bisq.markets/api/ticker?market={symbol}_BTC'
 

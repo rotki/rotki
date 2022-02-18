@@ -30,7 +30,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp, TradeType
+from rotkehlchen.types import ApiKey, ApiSecret, Timestamp, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp
 

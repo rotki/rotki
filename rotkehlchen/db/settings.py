@@ -7,12 +7,9 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors import DeserializationError
-from rotkehlchen.history.typing import (
-    DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER,
-    HistoricalPriceOracle,
-)
+from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
-from rotkehlchen.typing import AVAILABLE_MODULES_MAP, DEFAULT_OFF_MODULES, ModuleName, Timestamp
+from rotkehlchen.types import AVAILABLE_MODULES_MAP, DEFAULT_OFF_MODULES, ModuleName, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 ROTKEHLCHEN_DB_VERSION = 32

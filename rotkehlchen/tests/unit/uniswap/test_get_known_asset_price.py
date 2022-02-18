@@ -2,7 +2,7 @@ import pytest
 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_WETH
-from rotkehlchen.typing import Price
+from rotkehlchen.types import Price
 
 from .utils import USD_PRICE_WETH
 

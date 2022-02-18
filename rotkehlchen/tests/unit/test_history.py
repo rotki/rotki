@@ -7,8 +7,8 @@ from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events import limit_trade_list_to_period
-from rotkehlchen.history.typing import HistoricalPriceOracle
-from rotkehlchen.typing import Location, TradeType
+from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.types import Location, TradeType
 
 
 def test_limit_trade_list_to_period():

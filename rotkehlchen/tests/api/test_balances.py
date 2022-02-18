@@ -42,7 +42,7 @@ from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC1_KSM_ADDR,
     SUBSTRATE_ACC2_KSM_ADDR,
 )
-from rotkehlchen.typing import Location, SupportedBlockchain, Timestamp
+from rotkehlchen.types import Location, SupportedBlockchain, Timestamp
 
 
 def assert_all_balances(

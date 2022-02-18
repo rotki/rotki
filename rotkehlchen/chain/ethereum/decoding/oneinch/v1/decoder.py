@@ -9,9 +9,9 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Location
+from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
@@ -109,7 +109,7 @@ class Oneinchv1Decoder(DecoderInterface):
         # And now create a new event for the fee
         fee_amount = asset_normalized_value(fee_raw, to_asset)
         fee_event = HistoryBaseEntry(
-            event_identifier='0x' + transaction.tx_hash.hex(),
+            event_identifier=transaction.tx_hash.hex(),
             sequence_index=tx_log.log_index,
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,

@@ -10,14 +10,14 @@ from marshmallow.utils import is_iterable_but_not_string
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, UnknownAsset, XPUBError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
-from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -26,17 +26,19 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_hex_color_code,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
     ChecksumEthAddress,
+    EVMTxHash,
     Fee,
     HexColorCode,
     Location,
     Price,
     SupportedBlockchain,
     Timestamp,
+    make_evm_tx_hash,
 )
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
@@ -441,12 +443,12 @@ class EVMTransactionHashField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: bytes,
+            value: EVMTxHash,
             attr: str,  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> str:
-        return '0x' + value.hex()
+        return value.hex()
 
     def _deserialize(
             self,
@@ -454,7 +456,7 @@ class EVMTransactionHashField(fields.Field):
             attr: Optional[str],  # pylint: disable=unused-argument
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> bytes:
+    ) -> EVMTxHash:
         # Make sure that given value is a transaction hash
         if not isinstance(value, str):
             raise ValidationError('Transaction hash should be a string')
@@ -468,7 +470,7 @@ class EVMTransactionHashField(fields.Field):
         if length != 32:
             raise ValidationError(f'Transaction hashes should be 32 bytes in length. Given {length=}')  # noqa: E501
 
-        return txhash
+        return make_evm_tx_hash(txhash)
 
 
 class AssetTypeField(fields.Field):

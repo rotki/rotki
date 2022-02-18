@@ -9,7 +9,7 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
@@ -23,7 +23,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_GLM
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 
 
 def mock_asset_updates(original_requests_get, latest: int, updates: Dict[str, Any], sql_actions: Dict[str, str]):  # noqa: E501

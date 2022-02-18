@@ -6,7 +6,7 @@ from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tupl
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
@@ -17,7 +17,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_token_from_db,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.types import AssetAmount, ChecksumEthAddress, Price, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

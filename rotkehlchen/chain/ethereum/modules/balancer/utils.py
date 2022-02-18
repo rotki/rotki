@@ -14,9 +14,9 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Location, Price, TradeType
+from rotkehlchen.types import AssetAmount, ChecksumEthAddress, Location, Price, TradeType
 
-from .typing import (
+from .types import (
     BalancerBPTEvent,
     BalancerBPTEventType,
     BalancerInvestEvent,

@@ -1,5 +1,5 @@
 from rotkehlchen.externalapis.covalent import convert_transaction_from_covalent
-from rotkehlchen.typing import CovalentTransaction
+from rotkehlchen.types import CovalentTransaction
 
 
 def test_deserialize_transaction_from_covalent():

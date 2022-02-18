@@ -12,7 +12,7 @@ from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     multicall,
@@ -75,7 +75,7 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Location
+from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
@@ -347,7 +347,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             proxy_address = hex_or_bytes_to_address(tx_log.data[0:32])
             notes = f'Create DSR proxy {proxy_address} with owner {owner_address}'
             event = HistoryBaseEntry(
-                event_identifier='0x' + transaction.tx_hash.hex(),
+                event_identifier=transaction.tx_hash.hex(),
                 sequence_index=tx_log.log_index,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.BLOCKCHAIN,
@@ -381,7 +381,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         cdp_id = hex_or_bytes_to_int(tx_log.topics[3])
         notes = f'Create MakerDAO vault with id {cdp_id} and owner {owner_address}'
         event = HistoryBaseEntry(
-            event_identifier='0x' + transaction.tx_hash.hex(),
+            event_identifier=transaction.tx_hash.hex(),
             sequence_index=tx_log.log_index,
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,

@@ -12,7 +12,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_optional_to_fval,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import ChecksumEthAddress, Eth2PubKey, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, Eth2PubKey, EVMTxHash, Timestamp
 
 AAVE_EVENT_TYPE = Literal['deposit', 'withdrawal', 'interest', 'borrow', 'repay', 'liquidation']
 AAVE_EVENT_DB_TUPLE = Tuple[
@@ -489,7 +489,7 @@ class EthereumTxReceiptLog:
 
 @dataclasses.dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class EthereumTxReceipt:
-    tx_hash: bytes
+    tx_hash: EVMTxHash
     contract_address: Optional[ChecksumEthAddress]
     status: bool
     type: int

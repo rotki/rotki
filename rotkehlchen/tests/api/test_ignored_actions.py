@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response_with_result,
 )
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 
 
 def _populate_ignored_actions(rotkehlchen_api_server) -> List[Tuple[str, List[str]]]:

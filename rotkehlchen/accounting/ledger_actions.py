@@ -10,7 +10,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_optional,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, Tuple
+from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, Tuple
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
 logger = logging.getLogger(__name__)

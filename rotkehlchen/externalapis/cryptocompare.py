@@ -51,9 +51,9 @@ from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
-from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ExternalService, Price, Timestamp
+from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import pairwise, timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from rotkehlchen.chain.substrate.manager import SubstrateManager
-from rotkehlchen.chain.substrate.typing import (
+from rotkehlchen.chain.substrate.types import (
     BlockNumber,
     KusamaNodeName,
     NodeNameAttributes,

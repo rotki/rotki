@@ -7,7 +7,7 @@ from eth_typing import ChecksumAddress
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.types import Timestamp
 
 # Pools data
 TOM_POOL_ID = '0x2ce0c96383fb229d9776f33846e983a956a7d95844fac57b180ed0071d93bb28'

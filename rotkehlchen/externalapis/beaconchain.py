@@ -7,7 +7,7 @@ import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.eth2_utils import ValidatorBalance
-from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorID, ValidatorPerformance
+from rotkehlchen.chain.ethereum.types import Eth2Deposit, ValidatorID, ValidatorPerformance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT, QUERY_RETRY_TIMES
@@ -17,9 +17,14 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.typing import ChecksumEthAddress, Eth2PubKey, ExternalService
+from rotkehlchen.types import (
+    ChecksumEthAddress,
+    Eth2PubKey,
+    ExternalService,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_gwei, get_chunks, hexstring_to_bytes
+from rotkehlchen.utils.misc import from_gwei, get_chunks
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -339,7 +344,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                         amount=amount,
                         usd_value=amount * usd_price,
                     ),
-                    tx_hash=hexstring_to_bytes(entry['tx_hash']),
+                    tx_hash=deserialize_evm_tx_hash(entry['tx_hash']),
                     tx_index=entry['tx_index'],
                     timestamp=entry['block_ts'],
                 ))

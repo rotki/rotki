@@ -4,19 +4,20 @@ from typing import Any, List, Literal, NamedTuple, Optional, Tuple, Union, cast
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures import HistoryEventSubType, HistoryEventType
-from rotkehlchen.accounting.typing import SchemaEventType
+from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     AssetMovementCategory,
     ChecksumEthAddress,
+    EVMTxHash,
     Location,
     Timestamp,
     TradeType,
 )
-from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
+from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -99,22 +100,13 @@ class DBETHTransactionAddressFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBETHTransactionHashFilter(DBFilter):
-    tx_hash: Optional[Union[bytes, str]] = None
+    tx_hash: Optional[EVMTxHash] = None
 
     def prepare(self) -> Tuple[List[str], List[Any]]:
         if self.tx_hash is None:
             return [], []
 
-        if isinstance(self.tx_hash, str):
-            try:
-                value = hexstring_to_bytes(self.tx_hash)
-            except DeserializationError as e:
-                log.error(f'Failed to filter a DB transaction query by tx_hash: {str(e)}')
-                return [], []
-        else:
-            value = self.tx_hash
-
-        return ['tx_hash=?'], [value]
+        return ['tx_hash=?'], [self.tx_hash]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -298,7 +290,7 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             addresses: Optional[List[ChecksumEthAddress]] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-            tx_hash: Optional[bytes] = None,
+            tx_hash: Optional[EVMTxHash] = None,
     ) -> 'ETHTransactionsFilterQuery':
         filter_query = cls.create(
             and_op=and_op,

@@ -16,7 +16,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     AssetAmount,
     AssetMovementCategory,
     ChecksumEthAddress,
@@ -27,13 +27,9 @@ from rotkehlchen.typing import (
     Optional,
     Timestamp,
     TradePair,
+    deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import (
-    convert_to_int,
-    create_timestamp,
-    hexstring_to_bytes,
-    iso8601ts_to_timestamp,
-)
+from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -539,7 +535,7 @@ def deserialize_ethereum_transaction(
     """
     source = 'etherscan' if ethereum is None else 'web3'
     try:
-        tx_hash = read_hash(data=data, key='hash', api=source)
+        tx_hash = deserialize_evm_tx_hash(data['hash'])
         block_number = read_integer(data, 'blockNumber', source)
         if 'timeStamp' not in data:
             if ethereum is None:
@@ -571,10 +567,8 @@ def deserialize_ethereum_transaction(
         if 'gasUsed' not in data:
             if ethereum is None:
                 raise DeserializationError('Got in deserialize ethereum transaction without gasUsed and without ethereum manager')  # noqa: E501
-            tx_hash_bytes = data['hash']
-            if isinstance(tx_hash_bytes, str):
-                tx_hash_bytes = hexstring_to_bytes(tx_hash_bytes)
-            receipt_data = ethereum.get_transaction_receipt(tx_hash_bytes)
+            tx_hash = deserialize_evm_tx_hash(data['hash'])
+            receipt_data = ethereum.get_transaction_receipt(tx_hash)
             gas_used = read_integer(receipt_data, 'gasUsed', source)
         else:
             gas_used = read_integer(data, 'gasUsed', source)

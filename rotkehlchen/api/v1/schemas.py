@@ -15,14 +15,14 @@ from rotkehlchen.accounting.structures import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.accounting.typing import SchemaEventType
+from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.ethereum.manager import EthereumManager
-from rotkehlchen.chain.substrate.typing import (
+from rotkehlchen.chain.substrate.types import (
     KusamaAddress,
     PolkadotAddress,
     SubstrateChain,
@@ -54,11 +54,11 @@ from rotkehlchen.errors import (
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     AssetMovementCategory,
     BTCAddress,
@@ -70,7 +70,8 @@ from rotkehlchen.typing import (
     Timestamp,
     TradeType,
 )
-from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import ts_now
 
 from .fields import (
     AmountField,

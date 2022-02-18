@@ -7,7 +7,7 @@ from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.graph import GRAPH_QUERY_LIMIT, Graph, format_query_indentation
 from rotkehlchen.chain.ethereum.interfaces.ammswap import UNISWAP_TRADES_PREFIX
 from rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap import AMMSwapPlatform
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AddressEvents,
     AddressEventsBalances,
     AddressToLPBalances,
@@ -28,7 +28,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_ethereum_address,
 )
-from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Location, Timestamp
+from rotkehlchen.types import AssetAmount, ChecksumEthAddress, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 

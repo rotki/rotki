@@ -1,13 +1,13 @@
 from rotkehlchen.chain.ethereum.modules.balancer import Balancer
 from rotkehlchen.chain.ethereum.modules.balancer.utils import get_trades_from_tx_swaps
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_REN, A_SNX, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.api.test_balancer import get_balancer_test_addr2_expected_trades
 from rotkehlchen.tests.utils.constants import A_AMPL
-from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
 
 TEST_SWAPS_TX_1 = [
     AMMSwap(

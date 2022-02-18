@@ -14,7 +14,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeTyp
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_AXS, A_TRY
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location
+from rotkehlchen.types import AssetMovementCategory, Location
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_list
 

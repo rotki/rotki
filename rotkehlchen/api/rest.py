@@ -46,7 +46,7 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
     add_manually_tracked_balances,
@@ -113,13 +113,13 @@ from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.typing import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.history.types import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     IMPORTABLE_LOCATIONS,
     ApiKey,
@@ -129,6 +129,7 @@ from rotkehlchen.typing import (
     ChecksumEthAddress,
     Eth2PubKey,
     EthereumTransaction,
+    EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -3056,10 +3057,9 @@ class RestAPI():
             entries_result = []
             dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
             for entry in transactions:
-                tx_hash_hex = '0x' + entry.tx_hash.hex()
                 events = dbevents.get_history_events(
                     filter_query=HistoryEventFilterQuery.make(
-                        event_identifier=tx_hash_hex,
+                        event_identifier=entry.tx_hash.hex(),
                     ),
                     has_premium=True,  # for this function we don't limit. We only limit txs.
                 )
@@ -3120,7 +3120,7 @@ class RestAPI():
 
     def _decode_ethereum_transactions(
             self,
-            tx_hashes: List[bytes],
+            tx_hashes: List[EVMTxHash],
     ) -> Dict[str, Any]:
         try:
             self.rotkehlchen.evm_tx_decoder.decode_transaction_hashes(tx_hashes=tx_hashes)
@@ -3137,7 +3137,7 @@ class RestAPI():
     def decode_ethereum_transactions(
             self,
             async_query: bool,
-            tx_hashes: List[bytes],
+            tx_hashes: List[EVMTxHash],
     ) -> Response:
         if async_query:
             return self._query_async(
@@ -4023,17 +4023,31 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    def _import_user_assets_file(self, file_path: Path) -> Optional[Response]:
+    @require_loggedin_user()
+    def import_user_assets(self, path: Path) -> Response:
         try:
-            import_assets_from_file(
-                path=file_path,
-                msg_aggregator=self.rotkehlchen.msg_aggregator,
-                db_handler=self.rotkehlchen.data.db,
-            )
+            if path.suffix == '.json':
+                import_assets_from_file(
+                    path=path,
+                    msg_aggregator=self.rotkehlchen.msg_aggregator,
+                    db_handler=self.rotkehlchen.data.db,
+                )
+            else:
+                zip_file = ZipFile(path)
+                with tempfile.TemporaryDirectory() as tempdir:
+                    for file_name in zip_file.namelist():
+                        if file_name.endswith('.json'):
+                            zip_file.extract(file_name, tempdir)
+                            file_path = Path(tempdir) / file_name
+                            import_assets_from_file(
+                                path=file_path,
+                                msg_aggregator=self.rotkehlchen.msg_aggregator,
+                                db_handler=self.rotkehlchen.data.db,
+                            )
         except ValidationError as e:
             return api_response(
                 result=wrap_in_fail_result(
-                    f'Provided file {file_path} does not have the expected format. {str(e)}',
+                    f'Provided file does not have the expected format. {str(e)}',
                 ),
                 status_code=HTTPStatus.CONFLICT,
             )
@@ -4042,23 +4056,5 @@ class RestAPI():
                 result=wrap_in_fail_result(f'{str(e)}'),
                 status_code=HTTPStatus.CONFLICT,
             )
-        return None
-
-    @require_loggedin_user()
-    def import_user_assets(self, path: Path) -> Response:
-        if path.suffix == '.json':
-            import_file = self._import_user_assets_file(path)
-            if import_file is not None:
-                return import_file
-        else:
-            zip_file = ZipFile(path)
-            with tempfile.TemporaryDirectory() as tempdir:
-                for file_name in zip_file.namelist():
-                    if file_name.endswith('.json'):
-                        zip_file.extract(file_name, tempdir)
-                        file_path = Path(tempdir) / file_name
-                        imported = self._import_user_assets_file(file_path)
-                        if imported is not None:
-                            return imported
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)

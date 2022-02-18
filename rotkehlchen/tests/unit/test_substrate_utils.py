@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.chain.substrate.typing import SubstrateChain
+from rotkehlchen.chain.substrate.types import SubstrateChain
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
     is_valid_kusama_address,

@@ -10,7 +10,7 @@ from rotkehlchen.db.filtering import (
     ETHTransactionsFilterQuery,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import Location, Timestamp
+from rotkehlchen.types import Location, Timestamp
 
 
 def test_ethereum_transaction_filter():

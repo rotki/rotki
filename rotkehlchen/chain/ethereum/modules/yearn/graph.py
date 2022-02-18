@@ -12,7 +12,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import ChecksumEthAddress, EthAddress, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, EthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:

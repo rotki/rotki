@@ -12,7 +12,7 @@ from rotkehlchen.errors import BlockchainQueryError, DeserializationError, Remot
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 

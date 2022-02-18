@@ -17,7 +17,7 @@ from rotkehlchen.tests.utils.exchanges import (
     assert_binance_asset_movements_result,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Location, Timestamp
+from rotkehlchen.types import Location, Timestamp
 
 
 def test_name():

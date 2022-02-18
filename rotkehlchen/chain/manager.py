@@ -53,9 +53,9 @@ from rotkehlchen.chain.ethereum.modules import (
 )
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.tokens import EthTokens
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
-from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress
+from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODE_CONNECTION_TIMEOUT,
     POLKADOT_NODE_CONNECTION_TIMEOUT,
@@ -88,7 +88,7 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     BTCAddress,
     ChecksumEthAddress,
     Eth2PubKey,
@@ -108,11 +108,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.nfts import Nfts
-    from rotkehlchen.chain.ethereum.typing import (
-        Eth2Deposit,
-        ValidatorDailyStats,
-        ValidatorDetails,
-    )
+    from rotkehlchen.chain.ethereum.types import Eth2Deposit, ValidatorDailyStats, ValidatorDetails
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain import BeaconChain

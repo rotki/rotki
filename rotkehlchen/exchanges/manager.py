@@ -9,7 +9,7 @@ from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.ftx import FTX_BASE_URL, FTXUS_BASE_URL
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     EXTERNAL_EXCHANGES,
     ApiKey,
     ApiSecret,

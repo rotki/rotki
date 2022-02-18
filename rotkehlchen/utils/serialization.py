@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Union
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location, TradeType
+from rotkehlchen.types import Location, TradeType
 
 
 class RKLEncoder(json.JSONEncoder):

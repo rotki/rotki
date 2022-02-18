@@ -18,16 +18,16 @@ from typing import (
 )
 
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
-from rotkehlchen.assets.typing import AssetData, AssetType
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.assets.types import AssetData, AssetType
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import CONSTANT_ASSETS
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
-from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, Location, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 from .schema import DB_SCRIPT_CREATE_TABLES

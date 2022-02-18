@@ -36,7 +36,7 @@ from rotkehlchen.serialization.deserialize import (
     get_pair_position_str,
     pair_get_assets,
 )
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetMovementCategory,

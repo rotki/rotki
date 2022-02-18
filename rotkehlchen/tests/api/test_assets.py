@@ -17,7 +17,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])

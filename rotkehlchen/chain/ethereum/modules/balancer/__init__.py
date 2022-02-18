@@ -10,7 +10,7 @@ __all__ = [
 ]
 
 from .balancer import Balancer
-from .typing import (
+from .types import (
     BALANCER_EVENTS_PREFIX,
     BALANCER_TRADES_PREFIX,
     BalancerBPTEventPoolToken,

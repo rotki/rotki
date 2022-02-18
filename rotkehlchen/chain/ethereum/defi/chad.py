@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Dict, List
 
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZerionSDK
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:

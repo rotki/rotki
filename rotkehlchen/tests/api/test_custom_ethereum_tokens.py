@@ -29,7 +29,7 @@ from rotkehlchen.tests.utils.globaldb import (
     underlying_address3,
     underlying_address4,
 )
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 
 
 def assert_token_entry_exists_in_result(

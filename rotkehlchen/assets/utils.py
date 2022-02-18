@@ -5,10 +5,10 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors import DeserializationError, NotERC20Conformant, UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 
 from .asset import Asset, EthereumToken, UnderlyingToken
-from .typing import AssetType
+from .types import AssetType
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager

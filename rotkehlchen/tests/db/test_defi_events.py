@@ -14,7 +14,7 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.aave import A_ADAI_V1
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 

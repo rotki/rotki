@@ -15,7 +15,7 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import ZERO_ETH_ADDRESS
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 
 
 class VaultTestData(NamedTuple):

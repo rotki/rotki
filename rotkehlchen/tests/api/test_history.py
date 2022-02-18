@@ -44,7 +44,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
-from rotkehlchen.typing import Location, Optional, Timestamp
+from rotkehlchen.types import Location, Optional, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, ts_now
 
 

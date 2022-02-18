@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Price
+from rotkehlchen.types import Price
 
 from .utils import A_CAR, A_SHL, TOKEN_DAY_DATA_CAR, TOKEN_DAY_DATA_SHL, store_call_args
 

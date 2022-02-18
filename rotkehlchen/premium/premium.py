@@ -20,7 +20,7 @@ from rotkehlchen.errors import (
     RemoteError,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import B64EncodedBytes, Timestamp
+from rotkehlchen.types import B64EncodedBytes, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 logger = logging.getLogger(__name__)

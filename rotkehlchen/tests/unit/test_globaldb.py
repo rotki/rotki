@@ -7,21 +7,21 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.typing import AssetData, AssetType
+from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_PICKLE
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
-from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.globaldb import INITIAL_TOKENS
-from rotkehlchen.typing import Location, Price, Timestamp, TradeType
+from rotkehlchen.types import Location, Price, Timestamp, TradeType
 
 selfkey_address = string_to_ethereum_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
 selfkey_id = ethaddress_to_identifier(selfkey_address)

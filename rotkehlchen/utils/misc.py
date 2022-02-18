@@ -25,7 +25,7 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.errors import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import ChecksumEthAddress, Fee, Timestamp, TimestampMS
+from rotkehlchen.types import ChecksumEthAddress, Fee, Timestamp, TimestampMS
 
 log = logging.getLogger(__name__)
 
@@ -224,14 +224,6 @@ def taxable_gain_for_sell(
         rate_in_profit_currency * taxable_amount -
         total_fee_in_profit_currency * (taxable_amount / selling_amount)
     )
-
-
-def hexstring_to_bytes(hexstr: str) -> bytes:
-    """May raise DeserializationError if it can't convert"""
-    try:
-        return bytes.fromhex(hexstr.removeprefix('0x'))
-    except ValueError as e:
-        raise DeserializationError(f'Failed to turn {hexstr} to bytes') from e
 
 
 def get_system_spec() -> Dict[str, str]:

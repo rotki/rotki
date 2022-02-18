@@ -6,8 +6,14 @@ from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Timestamp
-from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
+from rotkehlchen.types import (
+    ChecksumEthAddress,
+    EthereumTransaction,
+    EVMTxHash,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
@@ -132,7 +138,7 @@ class EthTransactions(LockableQueryMixIn):
 
         # and add them to the DB
         for tx_hash in erc20_tx_hashes:
-            tx_hash_bytes = hexstring_to_bytes(tx_hash)
+            tx_hash_bytes = deserialize_evm_tx_hash(tx_hash)
             result = dbethtx.get_ethereum_transactions(
                 ETHTransactionsFilterQuery.make(tx_hash=tx_hash_bytes),
                 has_premium=True,  # ignore limiting here
@@ -195,7 +201,7 @@ class EthTransactions(LockableQueryMixIn):
 
     def get_or_query_transaction_receipt(
             self,
-            tx_hash: bytes,
+            tx_hash: EVMTxHash,
     ) -> 'EthereumTxReceipt':
         """
         Gets the receipt from the DB if it exists. If not queries the chain for it,

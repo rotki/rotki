@@ -3,7 +3,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,

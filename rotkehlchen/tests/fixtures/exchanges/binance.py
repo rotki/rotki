@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.tests.utils.exchanges import create_test_binance
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 
 
 @pytest.fixture(name='binance_location')

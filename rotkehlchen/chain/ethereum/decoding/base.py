@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -15,7 +15,7 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import EthereumTransaction, Location
+from rotkehlchen.types import EthereumTransaction, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 from .constants import NAUGHTY_ERC721
@@ -118,7 +118,7 @@ class BaseDecoderTools():
                 notes = f'{verb} {token.name} with id {token_id} from {counterparty} to {location_label}'  # noqa: E501
 
         return HistoryBaseEntry(
-            event_identifier='0x' + transaction.tx_hash.hex(),
+            event_identifier=transaction.tx_hash.hex(),
             sequence_index=tx_log.log_index,
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,

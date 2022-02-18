@@ -31,13 +31,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import ChecksumEthAddress, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
 
 from .graph import BONDS_QUERY, CHANNEL_WITHDRAWS_QUERY, UNBOND_REQUESTS_QUERY, UNBONDS_QUERY
-from .typing import (
+from .types import (
     TOM_POOL_ID,
     AdexEvent,
     AdexEventType,
@@ -248,7 +248,6 @@ class Adex(EthereumModule):
             ) from e
 
         try:
-            # tx_hash:identity_address:log_index
             tx_hash, tx_address, tx_log_index = event_id.split(':')
             log_index = int(tx_log_index)
         except (AttributeError, ValueError) as e:
@@ -349,7 +348,6 @@ class Adex(EthereumModule):
             if case == 'bond':
                 tx_hash = event_id
             elif case in ('unbond', 'unbond_request'):
-                # tx_hash:address
                 tx_hash, tx_address = event_id.split(':')
             else:
                 raise AssertionError(f'Unexpected deserialization case: {case}.')

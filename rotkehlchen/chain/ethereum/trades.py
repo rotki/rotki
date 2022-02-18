@@ -9,7 +9,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_token_from_db,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     AssetAmount,
     ChecksumEthAddress,
     Fee,

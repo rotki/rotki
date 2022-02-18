@@ -30,7 +30,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_optional_to_optional_fval
-from rotkehlchen.typing import ChecksumEthAddress, ExternalService
+from rotkehlchen.types import ChecksumEthAddress, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:

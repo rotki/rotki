@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

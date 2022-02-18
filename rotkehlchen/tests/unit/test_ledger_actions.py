@@ -8,7 +8,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.typing import AssetAmount, Location
+from rotkehlchen.types import AssetAmount, Location
 
 
 def test_serialize_str():

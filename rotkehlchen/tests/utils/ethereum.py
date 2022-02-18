@@ -7,18 +7,19 @@ import gevent
 
 from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     BlockchainAccountData,
     EthereumTransaction,
     SupportedBlockchain,
     Timestamp,
+    deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import hexstring_to_bytes
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 NODE_CONNECTION_TIMEOUT = 10
 
@@ -121,7 +122,7 @@ def txreceipt_to_data(receipt: EthereumTxReceipt) -> Dict[str, Any]:
     serialization snake case would be used.
     """
     data: Dict[str, Any] = {
-        'transactionHash': '0x' + receipt.tx_hash.hex(),
+        'transactionHash': receipt.tx_hash.hex(),
         'type': hex(receipt.type),
         'contractAddress': receipt.contract_address,
         'status': int(receipt.status),
@@ -149,8 +150,7 @@ def setup_ethereum_transactions_test(
         one_receipt_in_db: bool = False,
 ) -> Tuple[List[EthereumTransaction], List[EthereumTxReceipt]]:
     dbethtx = DBEthTx(database)
-    tx_hash1 = '0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda'
-    tx_hash1_b = hexstring_to_bytes(tx_hash1)
+    tx_hash1 = deserialize_evm_tx_hash('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
     addr1 = string_to_ethereum_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
     addr2 = string_to_ethereum_address('0x442068F934BE670aDAb81242C87144a851d56d16')
     database.add_blockchain_accounts(
@@ -161,7 +161,7 @@ def setup_ethereum_transactions_test(
         ],
     )
     transaction1 = EthereumTransaction(
-        tx_hash=tx_hash1_b,
+        tx_hash=tx_hash1,
         timestamp=Timestamp(1630532276),
         block_number=13142218,
         from_address=addr1,
@@ -173,10 +173,9 @@ def setup_ethereum_transactions_test(
         input_data=hexstring_to_bytes('0x7ff36ab5000000000000000000000000000000000000000000000367469995d0723279510000000000000000000000000000000000000000000000000000000000000080000000000000000000000000443e1f9b1c866e54e914822b7d3d7165edb6e9ea00000000000000000000000000000000000000000000000000000000612ff9b50000000000000000000000000000000000000000000000000000000000000002000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000002a3bff78b79a009976eea096a51a948a3dc00e34'),  # noqa: E501
         nonce=13,
     )
-    tx_hash2 = '0x6beab9409a8f3bd11f82081e99e856466a7daf5f04cca173192f79e78ed53a77'
-    tx_hash2_b = hexstring_to_bytes(tx_hash2)
+    tx_hash2 = deserialize_evm_tx_hash('0x6beab9409a8f3bd11f82081e99e856466a7daf5f04cca173192f79e78ed53a77')  # noqa: E501
     transaction2 = EthereumTransaction(
-        tx_hash=tx_hash2_b,
+        tx_hash=tx_hash2,
         timestamp=Timestamp(1631013757),
         block_number=13178342,
         from_address=addr2,
@@ -196,7 +195,7 @@ def setup_ethereum_transactions_test(
         assert result == transactions
 
     expected_receipt1 = EthereumTxReceipt(
-        tx_hash=tx_hash1_b,
+        tx_hash=tx_hash1,
         contract_address=None,
         status=True,
         type=0,
@@ -250,7 +249,7 @@ def setup_ethereum_transactions_test(
         ],
     )
     expected_receipt2 = EthereumTxReceipt(
-        tx_hash=tx_hash2_b,
+        tx_hash=tx_hash2,
         contract_address=None,
         status=True,
         type=2,

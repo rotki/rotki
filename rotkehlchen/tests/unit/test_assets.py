@@ -5,7 +5,7 @@ from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import get_or_create_ethereum_token, symbol_to_ethereum_token
 from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier

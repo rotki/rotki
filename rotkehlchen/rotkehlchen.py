@@ -28,7 +28,7 @@ from rotkehlchen.chain.ethereum.manager import (
 )
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
-from rotkehlchen.chain.substrate.typing import SubstrateChain
+from rotkehlchen.chain.substrate.types import SubstrateChain
 from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
     POLKADOT_NODES_TO_CONNECT_AT_START,
@@ -58,14 +58,14 @@ from rotkehlchen.globaldb.updates import AssetsUpdater
 from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history.events import EventsHistorian
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.typing import HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter, configure_logging
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     BlockchainAccountData,

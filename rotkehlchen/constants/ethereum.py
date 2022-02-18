@@ -5,7 +5,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 
 MAX_BLOCKTIME_CACHE = 250  # 55 mins with 13 secs avg block time
 ZERO_ADDRESS = string_to_ethereum_address('0x0000000000000000000000000000000000000000')

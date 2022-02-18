@@ -9,7 +9,7 @@ import pytest
 import requests
 from eth_utils import to_checksum_address
 
-from rotkehlchen.chain.substrate.typing import KusamaAddress
+from rotkehlchen.chain.substrate.types import KusamaAddress
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -44,7 +44,7 @@ from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC1_KSM_ADDR,
     SUBSTRATE_ACC2_KSM_ADDR,
 )
-from rotkehlchen.typing import BlockchainAccountData, SupportedBlockchain
+from rotkehlchen.types import BlockchainAccountData, SupportedBlockchain
 from rotkehlchen.utils.misc import from_wei
 
 logger = logging.getLogger(__name__)

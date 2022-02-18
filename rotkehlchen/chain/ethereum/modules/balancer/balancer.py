@@ -26,7 +26,7 @@ from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Location, Price, Timestamp
+from rotkehlchen.types import AssetAmount, ChecksumEthAddress, Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
@@ -40,7 +40,7 @@ from .graph import (
     SWAPS_QUERY,
     TOKENPRICES_QUERY,
 )
-from .typing import (
+from .types import (
     BALANCER_EVENTS_PREFIX,
     BALANCER_TRADES_PREFIX,
     POOL_MAX_NUMBER_TOKENS,

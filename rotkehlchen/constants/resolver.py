@@ -1,4 +1,4 @@
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 
 ETHEREUM_DIRECTIVE = '_ceth_'
 ETHEREUM_DIRECTIVE_LENGTH = len(ETHEREUM_DIRECTIVE)

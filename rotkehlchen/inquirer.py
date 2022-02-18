@@ -72,9 +72,9 @@ from rotkehlchen.externalapis.xratescom import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     UNISWAP_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,

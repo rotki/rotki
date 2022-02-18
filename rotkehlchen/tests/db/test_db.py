@@ -57,7 +57,7 @@ from rotkehlchen.tests.utils.constants import (
     DEFAULT_TESTS_MAIN_CURRENCY,
 )
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances, add_starting_nfts
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,

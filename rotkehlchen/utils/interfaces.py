@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, List, Optional
 
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures import AssetBalance

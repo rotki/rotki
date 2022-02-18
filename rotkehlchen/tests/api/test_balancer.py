@@ -8,13 +8,13 @@ import requests
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
-from rotkehlchen.chain.ethereum.modules.balancer.typing import (
+from rotkehlchen.chain.ethereum.modules.balancer.types import (
     BalancerBPTEventType,
     BalancerEvent,
     BalancerPoolEventsBalance,
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_AAVE,
@@ -37,7 +37,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_API3, A_BAND, A_MFT, A_SYN
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
 
 # Top holder of WBTC-WETH pool (0x1eff8af5d577060ba4ac8a29a13525bb0ee2a3d5)
 BALANCER_TEST_ADDR1 = string_to_ethereum_address('0x49a2DcC237a65Cc1F412ed47E0594602f6141936')

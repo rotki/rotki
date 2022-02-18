@@ -7,14 +7,14 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType
 from rotkehlchen.chain.ethereum.modules.sushiswap import (
     SUSHISWAP_EVENTS_PREFIX,
     SushiswapPoolEvent,
     SushiswapPoolEventsBalance,
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -27,7 +27,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
 
 SWAP_ADDRESS = string_to_ethereum_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121')
 

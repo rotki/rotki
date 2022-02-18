@@ -11,7 +11,7 @@ from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.typing import Timestamp, TimestampMS, Tuple
+from rotkehlchen.types import Timestamp, TimestampMS, Tuple
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:

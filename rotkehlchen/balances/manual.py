@@ -6,7 +6,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.typing import Location, Price
+from rotkehlchen.types import Location, Price
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

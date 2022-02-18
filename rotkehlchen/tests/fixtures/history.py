@@ -5,7 +5,7 @@ from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.history.events import EventsHistorian
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.typing import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
+from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 
 

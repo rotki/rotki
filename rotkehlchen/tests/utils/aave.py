@@ -43,7 +43,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_ADAI
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.types import Timestamp
 
 A_AENJ_V1 = EthereumToken('0x712DB54daA836B53Ef1EcBb9c6ba3b9Efb073F40')
 A_ADAI_V1 = EthereumToken('0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d')

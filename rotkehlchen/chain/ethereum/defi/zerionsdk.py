@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
-from rotkehlchen.chain.ethereum.typing import NodeName, string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import NodeName, string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_DAI, A_USDC
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS, ZERION_ABI
@@ -21,7 +21,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer, get_underlying_asset_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.typing import ChecksumEthAddress, Price
+from rotkehlchen.types import ChecksumEthAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import get_chunks
 

@@ -1,15 +1,16 @@
 from typing import Any, Dict
 
-from hexbytes import HexBytes
+from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.errors import ConversionError, DeserializationError
-from rotkehlchen.utils.misc import convert_to_int, hexstring_to_bytes
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import convert_to_int
 
 DEFAULT_API = 'etherscan'
 
 
 def read_hash(data: Dict[str, Any], key: str, api: str = DEFAULT_API) -> bytes:
-    if isinstance(data[key], HexBytes):
+    if isinstance(data[key], Web3HexBytes):
         return bytes(data[key])
 
     try:

@@ -9,7 +9,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
+from rotkehlchen.types import AssetMovementCategory, Location, TradeType
 
 
 def test_name():

@@ -13,7 +13,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_date
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
+from rotkehlchen.types import AssetMovementCategory, Location, TradeType
 
 
 def test_deserialize_timestamp_from_bittrex_date():

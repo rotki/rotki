@@ -2,19 +2,19 @@ import functools
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     EventType,
     LiquidityPool,
     LiquidityPoolAsset,
     LiquidityPoolEvent,
     LiquidityPoolEventsBalance,
 )
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USDT, A_WETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED
-from rotkehlchen.typing import AssetAmount, Price, Timestamp
+from rotkehlchen.types import AssetAmount, Price, Timestamp
 
 # Logic: Get balances
 

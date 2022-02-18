@@ -13,7 +13,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.exchanges import mock_binance_balance_response, try_get_first_exchange
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])

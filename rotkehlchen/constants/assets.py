@@ -5,9 +5,9 @@
 from typing import List
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.typing import AssetType
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.assets.types import AssetType
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.types import Timestamp
 
 CONSTANT_ASSETS: List[Asset] = []
 

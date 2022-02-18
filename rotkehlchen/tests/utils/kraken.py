@@ -15,7 +15,7 @@ from rotkehlchen.tests.utils.factories import (
     make_random_timestamp,
     make_random_uppercasenumeric_string,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, Timestamp
+from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict

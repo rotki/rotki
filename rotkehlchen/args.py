@@ -96,7 +96,7 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     p.add_argument(
         '--loglevel',
         help='Choose the logging level',
-        choices=['debug', 'info', 'warn', 'error', 'critical'],
+        choices=['debug', 'info', 'warning', 'error', 'critical'],
         default='debug',
     )
     p.add_argument(

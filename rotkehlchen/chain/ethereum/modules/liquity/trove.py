@@ -31,7 +31,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_optional_to_fval,
 )
-from rotkehlchen.typing import AssetAmount, ChecksumEthAddress, Timestamp
+from rotkehlchen.types import AssetAmount, ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 

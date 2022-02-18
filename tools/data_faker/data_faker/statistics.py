@@ -10,7 +10,7 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location, Timestamp
+from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 

@@ -7,8 +7,8 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.modules.adex.typing import Bond, ChannelWithdraw, Unbond
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.modules.adex.types import Bond, ChannelWithdraw, Unbond
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_ADX
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (

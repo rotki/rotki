@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap import AMMSwapPlatform
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AddressEvents,
     AddressEventsBalances,
     AddressToLPBalances,
@@ -18,7 +18,7 @@ from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import ChecksumEthAddress, Location, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 

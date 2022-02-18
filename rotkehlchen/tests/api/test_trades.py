@@ -25,7 +25,7 @@ from rotkehlchen.tests.utils.history import (
     assert_poloniex_trades_result,
     mock_history_processing_and_exchanges,
 )
-from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])

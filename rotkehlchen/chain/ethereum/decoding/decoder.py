@@ -34,7 +34,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Location
+from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, EVMTxHash, Location
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     from_wei,
@@ -217,7 +217,7 @@ class EVMTransactionDecoder():
         self.database.update_last_write()
         return sorted(events, key=lambda x: x.sequence_index, reverse=False)
 
-    def decode_transaction_hashes(self, tx_hashes: List[bytes]) -> None:
+    def decode_transaction_hashes(self, tx_hashes: List[EVMTxHash]) -> None:
         """Make sure that receipts are pulled + events decoded for the given transaction hashes
 
         The transaction hashes must exist in the DB at the time of the call
@@ -234,7 +234,7 @@ class EVMTransactionDecoder():
             try:
                 receipt = tx_module.get_or_query_transaction_receipt(tx_hash)
             except RemoteError as e:
-                raise InputError(f'Hash {"0x"+tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
+                raise InputError(f'Hash {tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
 
             # TODO: Change this if transaction filter query can accept multiple hashes
             txs = self.dbethtx.get_ethereum_transactions(
@@ -249,7 +249,6 @@ class EVMTransactionDecoder():
             tx_receipt: EthereumTxReceipt,
     ) -> List[HistoryBaseEntry]:
         """Get a transaction's events if existing in the DB or decode them"""
-        tx_hex = '0x' + transaction.tx_hash.hex()
         cursor = self.database.conn.cursor()
         results = cursor.execute(
             'SELECT COUNT(*) from evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
@@ -258,7 +257,7 @@ class EVMTransactionDecoder():
         if results.fetchone()[0] != 0:  # already decoded and in the DB
             events = self.dbevents.get_history_events(
                 filter_query=HistoryEventFilterQuery.make(
-                    event_identifier=tx_hex,
+                    event_identifier=transaction.tx_hash.hex(),
                 ),
                 has_premium=True,  # for this function we don't limit anything
             )
@@ -275,7 +274,7 @@ class EVMTransactionDecoder():
     ) -> List[HistoryBaseEntry]:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
         events: List[HistoryBaseEntry] = []
-        tx_hash_hex = '0x' + tx.tx_hash.hex()
+        tx_hash_hex = tx.tx_hash.hex()
         ts_ms = ts_sec_to_ms(tx.timestamp)
 
         # check for internal transactions if the transaction is not canceled
@@ -341,7 +340,7 @@ class EVMTransactionDecoder():
                 return events
 
             events.append(HistoryBaseEntry(  # contract deployment
-                event_identifier='0x' + tx.tx_hash.hex(),
+                event_identifier=tx_hash_hex,
                 sequence_index=1,
                 timestamp=ts_ms,
                 location=Location.BLOCKCHAIN,
@@ -359,7 +358,7 @@ class EVMTransactionDecoder():
             return events
 
         events.append(HistoryBaseEntry(
-            event_identifier='0x' + tx.tx_hash.hex(),
+            event_identifier=tx_hash_hex,
             sequence_index=1,
             timestamp=ts_ms,
             location=Location.BLOCKCHAIN,
@@ -394,7 +393,7 @@ class EVMTransactionDecoder():
         amount = token_normalized_value(token_amount=amount_raw, token=token)
         notes = f'Approve {amount} {token.symbol} of {owner_address} for spending by {spender_address}'  # noqa: E501
         return HistoryBaseEntry(
-            event_identifier='0x' + transaction.tx_hash.hex(),
+            event_identifier=transaction.tx_hash.hex(),
             sequence_index=tx_log.log_index,
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
@@ -523,7 +522,7 @@ class EVMTransactionDecoder():
             proposal_text = decoded_data[8]
             notes = f'Create {governance_name} proposal {proposal_id}. {proposal_text}'
             return HistoryBaseEntry(
-                event_identifier='0x' + transaction.tx_hash.hex(),
+                event_identifier=transaction.tx_hash.hex(),
                 sequence_index=tx_log.log_index,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.BLOCKCHAIN,

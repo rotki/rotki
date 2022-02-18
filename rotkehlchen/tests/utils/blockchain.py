@@ -18,7 +18,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
+from rotkehlchen.types import BTCAddress, ChecksumEthAddress
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 

@@ -11,8 +11,15 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import ChecksumEthAddress, EthereumInternalTransaction, EthereumTransaction
-from rotkehlchen.utils.misc import hexstr_to_int, hexstring_to_bytes
+from rotkehlchen.types import (
+    ChecksumEthAddress,
+    EthereumInternalTransaction,
+    EthereumTransaction,
+    EVMTxHash,
+    make_evm_tx_hash,
+)
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import hexstr_to_int
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -110,7 +117,7 @@ class DBEthTx():
 
     def get_ethereum_internal_transactions(
             self,
-            parent_tx_hash: bytes,
+            parent_tx_hash: EVMTxHash,
     ) -> List[EthereumInternalTransaction]:
         """Get all internal transactions under a parent tx_hash"""
         cursor = self.db.conn.cursor()
@@ -121,7 +128,7 @@ class DBEthTx():
         transactions = []
         for result in results:
             tx = EthereumInternalTransaction(
-                parent_tx_hash=result[0],
+                parent_tx_hash=make_evm_tx_hash(result[0]),
                 trace_id=result[1],
                 timestamp=result[2],
                 block_number=result[3],
@@ -158,7 +165,7 @@ class DBEthTx():
         for result in results:
             try:
                 tx = EthereumTransaction(
-                    tx_hash=result[0],
+                    tx_hash=make_evm_tx_hash(result[0]),
                     timestamp=deserialize_timestamp(result[1]),
                     block_number=result[2],
                     from_address=result[3],
@@ -270,7 +277,7 @@ class DBEthTx():
         self.db.conn.commit()
         self.db.update_last_write()
 
-    def get_receipt(self, tx_hash: bytes) -> Optional[EthereumTxReceipt]:
+    def get_receipt(self, tx_hash: EVMTxHash) -> Optional[EthereumTxReceipt]:
         cursor = self.db.conn.cursor()
         results = cursor.execute('SELECT * from ethtx_receipts WHERE tx_hash=?', (tx_hash,))
         result = results.fetchone()
