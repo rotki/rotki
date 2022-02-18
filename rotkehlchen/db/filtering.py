@@ -344,7 +344,7 @@ class DBIgnoreValuesFilter(DBFilter):
     def prepare(self) -> Tuple[List[str], List[Any]]:
         if len(self.values) == 0:
             return [], []
-        return [f'{self.column} NOT IN ({", ".join(["?"] * len(self.values))})'], [self.values]
+        return [f'{self.column} NOT IN ({", ".join(["?"] * len(self.values))})'], self.values
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
