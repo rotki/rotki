@@ -11,13 +11,13 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.manual_price_oracle import ManualPriceOracle
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.typing import (
+from rotkehlchen.history.types import (
     DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER,
     HistoricalPrice,
     HistoricalPriceOracle,
 )
 from rotkehlchen.tests.utils.constants import A_GBP
-from rotkehlchen.typing import Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 
 
 @pytest.fixture(name='fake_price_historian')

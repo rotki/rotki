@@ -46,7 +46,7 @@ from rotkehlchen.tests.utils.history import (
     prepare_rotki_for_history_processing_test,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp, TradeType
+from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TradeType
 
 
 def mock_validate_api_key():

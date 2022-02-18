@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, List, Tuple
 
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

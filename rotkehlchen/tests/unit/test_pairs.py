@@ -6,7 +6,7 @@ from rotkehlchen.errors import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.exchanges.data_structures import trade_pair_from_assets
 from rotkehlchen.serialization.deserialize import get_pair_position_str, pair_get_assets
 from rotkehlchen.tests.utils.constants import A_RDN
-from rotkehlchen.typing import TradePair
+from rotkehlchen.types import TradePair
 
 
 def test_trade_pair_from_assets():

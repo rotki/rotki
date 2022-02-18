@@ -14,7 +14,7 @@ from rotkehlchen.tests.utils.constants import (
     ETH_ADDRESS3,
 )
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     AssetAmount,
     AssetMovementCategory,
     EthereumTransaction,

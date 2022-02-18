@@ -7,7 +7,7 @@ from eth_typing import HexAddress, HexStr
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import ChecksumEthAddress, Eth2PubKey, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, Eth2PubKey, Timestamp
 from rotkehlchen.utils.misc import from_gwei
 
 

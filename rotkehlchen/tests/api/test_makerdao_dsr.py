@@ -33,7 +33,7 @@ from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.makerdao import mock_proxies
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 
 mocked_prices = {
     'DAI': {

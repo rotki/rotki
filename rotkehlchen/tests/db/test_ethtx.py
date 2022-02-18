@@ -9,7 +9,7 @@ from rotkehlchen.tests.utils.constants import (
     MOCK_INPUT_DATA,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     BlockchainAccountData,
     EthereumInternalTransaction,
     EthereumTransaction,

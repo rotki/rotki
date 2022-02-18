@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
-from rotkehlchen.typing import ApiKey, ExternalService, Timestamp
+from rotkehlchen.types import ApiKey, ExternalService, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:

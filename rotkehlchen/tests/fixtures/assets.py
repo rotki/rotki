@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.tests.utils.mock import MockResponse
 

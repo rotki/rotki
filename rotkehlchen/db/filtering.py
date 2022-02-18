@@ -4,12 +4,12 @@ from typing import Any, List, Literal, NamedTuple, Optional, Tuple, Union, cast
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures import HistoryEventSubType, HistoryEventType
-from rotkehlchen.accounting.typing import SchemaEventType
+from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     AssetMovementCategory,
     ChecksumEthAddress,
     Location,

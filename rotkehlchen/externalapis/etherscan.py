@@ -18,7 +18,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_transaction,
     deserialize_int_from_str,
 )
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     ChecksumEthAddress,
     EthereumInternalTransaction,
     EthereumTransaction,

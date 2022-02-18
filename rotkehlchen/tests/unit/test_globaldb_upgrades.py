@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import (
     ETHEREUM_DIRECTIVE,
     ethaddress_to_identifier,

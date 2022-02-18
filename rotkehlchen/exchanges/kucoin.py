@@ -50,7 +50,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_str,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetMovementCategory,

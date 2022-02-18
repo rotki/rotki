@@ -7,7 +7,7 @@ from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import SubstrateRequestException
 
 from rotkehlchen.chain.substrate.manager import SubstrateManager
-from rotkehlchen.chain.substrate.typing import (
+from rotkehlchen.chain.substrate.types import (
     BlockNumber,
     DictNodeNameNodeAttributes,
     KusamaNodeName,

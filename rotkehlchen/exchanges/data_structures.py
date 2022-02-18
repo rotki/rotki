@@ -13,7 +13,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_optional,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     AssetAmount,
     AssetMovementCategory,
     Fee,

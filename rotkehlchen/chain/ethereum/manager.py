@@ -29,7 +29,7 @@ from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2 import ETH2_DEPOSIT
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN, UNIV1_LP_ABI
 from rotkehlchen.errors import (
@@ -49,7 +49,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_hex,
 )
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     ChecksumEthAddress,
     EthereumTransaction,
     SupportedBlockchain,
@@ -59,7 +59,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
 from rotkehlchen.utils.network import request_get_dict
 
-from .typing import NodeName
+from .types import NodeName
 from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import InputError
-from rotkehlchen.typing import AVAILABLE_MODULES_MAP, ChecksumAddress, ModuleName
+from rotkehlchen.types import AVAILABLE_MODULES_MAP, ChecksumAddress, ModuleName
 
 
 class QueriedAddresses():

@@ -7,7 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import EventType
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType
 from rotkehlchen.chain.ethereum.manager import NodeName
 from rotkehlchen.chain.ethereum.modules.uniswap import (
     UNISWAP_EVENTS_PREFIX,
@@ -15,7 +15,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap import (
     UniswapPoolEventsBalance,
 )
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_DAI, A_LEND, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -32,7 +32,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED, A_YAM_V1
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.typing import AssetAmount, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
 
 # Addresses
 # DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11

@@ -4,7 +4,7 @@ from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])

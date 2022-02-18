@@ -6,7 +6,7 @@ import sys
 from distutils.spawn import find_executable
 
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import get_system_spec
 
 """

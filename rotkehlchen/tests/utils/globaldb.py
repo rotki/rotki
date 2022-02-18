@@ -2,7 +2,7 @@ from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_MKR
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.types import Timestamp
 
 underlying_address1 = make_ethereum_address()
 underlying_address2 = make_ethereum_address()

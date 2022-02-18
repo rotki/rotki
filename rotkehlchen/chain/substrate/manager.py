@@ -35,7 +35,7 @@ from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import jsonloads_dict
 
-from .typing import (
+from .types import (
     BlockNumber,
     DictNodeNameNodeAttributes,
     NodeName,

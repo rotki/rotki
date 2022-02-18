@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.exchanges import (
 )
 from rotkehlchen.tests.utils.history import assert_poloniex_asset_movements
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp
+from rotkehlchen.types import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 TEST_RATE_STR = '0.00022999'

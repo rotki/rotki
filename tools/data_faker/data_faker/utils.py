@@ -5,7 +5,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.errors import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.types import Timestamp
 
 
 def assets_exist_at_time(

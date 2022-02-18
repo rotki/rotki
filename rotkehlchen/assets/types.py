@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
 if TYPE_CHECKING:
-    from rotkehlchen.typing import ChecksumEthAddress, Timestamp
+    from rotkehlchen.types import ChecksumEthAddress, Timestamp
 
 
 class AssetType(DBEnumMixIn):

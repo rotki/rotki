@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import ProtocolBalance
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import ProtocolBalance
 
 from .utils import (
     EXP_KNOWN_ASSETS_1,

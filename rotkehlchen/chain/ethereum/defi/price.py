@@ -50,7 +50,7 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Price
+from rotkehlchen.types import Price
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager

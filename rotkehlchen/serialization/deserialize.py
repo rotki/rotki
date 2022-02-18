@@ -16,7 +16,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     AssetAmount,
     AssetMovementCategory,
     ChecksumEthAddress,

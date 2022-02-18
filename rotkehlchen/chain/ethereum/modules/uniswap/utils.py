@@ -9,9 +9,9 @@ from web3.types import BlockIdentifier
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import LiquidityPool
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import _decode_result
-from rotkehlchen.chain.ethereum.typing import NodeName
+from rotkehlchen.chain.ethereum.types import NodeName
 from rotkehlchen.chain.ethereum.utils import multicall, multicall_2
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import UNISWAP_V2_LP_ABI, ZERION_ABI
@@ -20,7 +20,7 @@ from rotkehlchen.errors import RemoteError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, Price, Timestamp
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:

@@ -10,7 +10,7 @@ from rotkehlchen.tests.utils.exchanges import (
     mock_exchange_data_in_db,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     BlockchainAccountData,
     EthereumTransaction,
     Location,

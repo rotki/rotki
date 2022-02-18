@@ -18,7 +18,7 @@ from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro, coinbasepro_to_worldpair
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 
 PRODUCTS_RESPONSE = """[{
 "id": "BAT-ETH",

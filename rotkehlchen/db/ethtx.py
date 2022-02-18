@@ -11,7 +11,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.typing import ChecksumEthAddress, EthereumInternalTransaction, EthereumTransaction
+from rotkehlchen.types import ChecksumEthAddress, EthereumInternalTransaction, EthereumTransaction
 from rotkehlchen.utils.misc import hexstr_to_int, hexstring_to_bytes
 
 logger = logging.getLogger(__name__)

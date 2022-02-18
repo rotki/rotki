@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, List, Literal, Optional, Sequence
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
-from rotkehlchen.chain.ethereum.typing import Eth2Deposit, ValidatorDailyStats
+from rotkehlchen.chain.ethereum.types import Eth2Deposit, ValidatorDailyStats
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
@@ -12,7 +12,7 @@ from rotkehlchen.db.utils import form_query_to_filter_timestamps
 from rotkehlchen.errors import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ChecksumEthAddress, Timestamp, Tuple, Union
+from rotkehlchen.types import ChecksumEthAddress, Timestamp, Tuple, Union
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

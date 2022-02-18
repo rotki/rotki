@@ -29,7 +29,7 @@ from rotkehlchen.exchanges.data_structures import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Fee, Location, Timestamp
+from rotkehlchen.types import Fee, Location, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_list
 
 

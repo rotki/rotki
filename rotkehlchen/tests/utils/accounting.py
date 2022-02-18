@@ -10,7 +10,7 @@ from rotkehlchen.exchanges.data_structures import (
     trades_from_dictlist,
 )
 from rotkehlchen.exchanges.poloniex import process_polo_loans
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.types import Timestamp
 
 
 def accounting_history_process(

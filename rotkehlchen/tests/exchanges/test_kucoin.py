@@ -17,7 +17,7 @@ from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
+from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 

@@ -7,7 +7,7 @@ import gevent
 from rotkehlchen.accounting.structures import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.eth2_utils import scrape_validator_daily_stats
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
-from rotkehlchen.chain.ethereum.typing import (
+from rotkehlchen.chain.ethereum.types import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
     Eth2Deposit,
     ValidatorDailyStats,
@@ -24,7 +24,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.typing import ChecksumEthAddress, Eth2PubKey, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, Eth2PubKey, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import from_gwei, ts_now

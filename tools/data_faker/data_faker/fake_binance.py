@@ -11,7 +11,7 @@ from rotkehlchen.exchanges.data_structures import Trade, TradeType, trade_pair_f
 from rotkehlchen.exchanges.utils import create_binance_symbols_to_pair
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result, process_result_list
-from rotkehlchen.typing import Location, Timestamp, TradePair
+from rotkehlchen.types import Location, Timestamp, TradePair
 
 # Disallow some assets for simplicity
 DISALLOWED_ASSETS = (

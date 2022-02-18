@@ -1,4 +1,4 @@
-from rotkehlchen.chain.ethereum.interfaces.ammswap.typing import (  # noqa: F401
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (  # noqa: F401
     LiquidityPool as SushiswapPool,
     LiquidityPoolAsset as SushiswapPoolAsset,
     LiquidityPoolEvent as SushiswapPoolEvent,

@@ -11,7 +11,7 @@ from rotkehlchen.data_migrations.manager import (
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
-from rotkehlchen.typing import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
 
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])

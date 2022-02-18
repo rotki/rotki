@@ -12,7 +12,7 @@ from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 
 
 def assert_events_equal(e1: HistoryBaseEntry, e2: HistoryBaseEntry) -> None:

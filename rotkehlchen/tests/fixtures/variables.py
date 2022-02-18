@@ -3,7 +3,7 @@ from typing import Sequence
 import pytest
 
 from rotkehlchen.tests.utils.ports import get_free_port
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 
 
 @pytest.fixture(scope='session', name='port_generator')

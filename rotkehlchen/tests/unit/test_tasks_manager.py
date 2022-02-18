@@ -11,7 +11,7 @@ from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.tests.utils.ethereum import setup_ethereum_transactions_test
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
 
 

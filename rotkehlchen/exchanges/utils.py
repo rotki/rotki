@@ -14,7 +14,7 @@ from rotkehlchen.exchanges.data_structures import BinancePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Location, Timestamp
+from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)

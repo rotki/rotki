@@ -14,7 +14,7 @@ from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_TEST_PARAMETERS,
     wait_until_all_nodes_connected,
 )
-from rotkehlchen.typing import SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)

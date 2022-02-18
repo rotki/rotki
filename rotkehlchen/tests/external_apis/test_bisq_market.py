@@ -4,7 +4,7 @@ from rotkehlchen.constants.assets import A_3CRV, A_BSQ
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.externalapis.bisq_market import get_bisq_market_price
-from rotkehlchen.typing import Price
+from rotkehlchen.types import Price
 
 
 def test_market_request():

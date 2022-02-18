@@ -10,7 +10,7 @@ from rotkehlchen.api.v1.fields import (
 )
 from rotkehlchen.api.v1.schemas import UnderlyingTokenInfoSchema
 from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 
 
 class AssetDataSchema(Schema):

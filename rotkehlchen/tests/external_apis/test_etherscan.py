@@ -7,7 +7,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import EthereumTransaction, ExternalService, ExternalServiceApiCredentials
+from rotkehlchen.types import EthereumTransaction, ExternalService, ExternalServiceApiCredentials
 
 
 @pytest.fixture(scope='function', name='temp_etherscan')

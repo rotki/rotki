@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.modules.aave.common import asset_to_atoken
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.constants.ethereum import AAVE_V1_LENDING_POOL
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction
+from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 

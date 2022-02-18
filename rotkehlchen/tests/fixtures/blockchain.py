@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.decoding import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.manager import ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
-from rotkehlchen.chain.substrate.typing import KusamaAddress, PolkadotAddress, SubstrateChain
+from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress, SubstrateChain
 from rotkehlchen.constants.assets import A_DOT
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.db.utils import BlockchainAccounts
@@ -25,7 +25,7 @@ from rotkehlchen.tests.utils.substrate import (
     POLKADOT_SS58_FORMAT,
     wait_until_all_substrate_nodes_connected,
 )
-from rotkehlchen.typing import BTCAddress, ChecksumEthAddress
+from rotkehlchen.types import BTCAddress, ChecksumEthAddress
 
 
 @pytest.fixture(name='number_of_eth_accounts')

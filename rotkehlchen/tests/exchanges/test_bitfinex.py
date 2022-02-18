@@ -27,7 +27,7 @@ from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeTyp
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_GLM, A_NEO
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
+from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Price, Timestamp
 
 
 def test_name():

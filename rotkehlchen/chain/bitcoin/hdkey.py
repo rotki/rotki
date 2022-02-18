@@ -18,7 +18,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     pubkey_to_p2sh_p2wpkh_address,
 )
 from rotkehlchen.errors import DeserializationError, XPUBError
-from rotkehlchen.typing import BTCAddress
+from rotkehlchen.types import BTCAddress
 
 COMPRESSED_PUBKEY = True
 

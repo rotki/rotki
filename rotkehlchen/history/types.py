@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, NamedTuple, Tuple, Union
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.typing import Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 
 from .deserialization import deserialize_price

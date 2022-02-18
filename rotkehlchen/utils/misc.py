@@ -25,7 +25,7 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.errors import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import ChecksumEthAddress, Fee, Timestamp, TimestampMS
+from rotkehlchen.types import ChecksumEthAddress, Fee, Timestamp, TimestampMS
 
 log = logging.getLogger(__name__)
 

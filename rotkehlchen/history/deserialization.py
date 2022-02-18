@@ -1,6 +1,6 @@
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
-from rotkehlchen.typing import Price
+from rotkehlchen.types import Price
 
 
 def deserialize_price(amount: AcceptableFValInitInput) -> Price:

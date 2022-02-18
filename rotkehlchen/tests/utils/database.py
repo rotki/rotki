@@ -13,7 +13,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import BlockchainAccounts
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     ApiKey,
     BlockchainAccountData,
     ExternalService,

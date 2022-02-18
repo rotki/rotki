@@ -46,7 +46,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_str,
     deserialize_timestamp_from_bitstamp_date,
 )
-from rotkehlchen.typing import ApiKey, ApiSecret, AssetAmount, Location, Timestamp
+from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise

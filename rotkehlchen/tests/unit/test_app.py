@@ -6,7 +6,7 @@ from rotkehlchen.errors import SystemPermissionError
 from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 
 
 def test_initializing_exchanges(uninitialized_rotkehlchen):

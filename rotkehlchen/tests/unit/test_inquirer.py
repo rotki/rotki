@@ -6,7 +6,7 @@ import pytest
 import requests
 
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_CRV, A_ETH, A_EUR, A_KFEE, A_LINK, A_USD
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -15,7 +15,7 @@ from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
     CURRENT_PRICE_CACHE_SECS,
     DEFAULT_CURRENT_PRICE_ORACLES_ORDER,
@@ -25,7 +25,7 @@ from rotkehlchen.inquirer import (
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 UNDERLYING_ASSET_PRICES = {

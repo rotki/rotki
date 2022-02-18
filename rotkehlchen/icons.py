@@ -8,7 +8,7 @@ import gevent
 import requests
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors import RemoteError, UnsupportedAsset
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko

@@ -18,7 +18,7 @@ from rotkehlchen.tests.fixtures.exchanges.gemini import (
 )
 from rotkehlchen.tests.utils.constants import A_PAXG, A_ZEC
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp
+from rotkehlchen.types import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 

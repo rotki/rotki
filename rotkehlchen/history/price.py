@@ -10,11 +10,11 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.manual_price_oracle import ManualPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
 
-from .typing import HistoricalPriceOracle, HistoricalPriceOracleInstance
+from .types import HistoricalPriceOracle, HistoricalPriceOracleInstance
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures import Balance

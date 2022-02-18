@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Tuple
 
-from rotkehlchen.typing import ChecksumEthAddress
+from rotkehlchen.types import ChecksumEthAddress
 
 
 class DecoderInterface():

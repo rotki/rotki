@@ -54,7 +54,7 @@ from rotkehlchen.tests.utils.constants import (
 from rotkehlchen.tests.utils.exchanges import try_get_first_exchange
 from rotkehlchen.tests.utils.history import TEST_END_TS, prices
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory, Location, Timestamp, TradeType
+from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TradeType
 from rotkehlchen.utils.misc import ts_now
 
 

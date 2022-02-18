@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-from rotkehlchen.chain.substrate.typing import KusamaNodeName
+from rotkehlchen.chain.substrate.types import KusamaNodeName
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES, SUBSTRATE_ACC1_KSM_ADDR
 

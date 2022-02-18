@@ -6,7 +6,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_int_from_hex_or_int
-from rotkehlchen.typing import Location, TradeType
+from rotkehlchen.types import Location, TradeType
 from rotkehlchen.utils.serialization import pretty_json_dumps, rlk_jsondumps
 
 TEST_DATA = {

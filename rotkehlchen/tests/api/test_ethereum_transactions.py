@@ -30,7 +30,7 @@ from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.typing import EthereumTransaction, Timestamp
+from rotkehlchen.types import EthereumTransaction, Timestamp
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 EXPECTED_AFB7_TXS = [{

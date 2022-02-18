@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Union
 
 from rotkehlchen.crypto import sha3
 from rotkehlchen.errors import DBUpgradeError
-from rotkehlchen.typing import Location, TradeType
+from rotkehlchen.types import Location, TradeType
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

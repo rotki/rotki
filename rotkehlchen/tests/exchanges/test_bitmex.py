@@ -7,7 +7,7 @@ from rotkehlchen.exchanges.bitmex import Bitmex
 from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.typing import AssetMovementCategory
+from rotkehlchen.types import AssetMovementCategory
 from rotkehlchen.utils.misc import ts_now
 
 

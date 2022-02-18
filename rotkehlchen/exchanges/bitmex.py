@@ -24,14 +24,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_fee,
 )
-from rotkehlchen.typing import (
-    ApiKey,
-    ApiSecret,
-    AssetAmount,
-    AssetMovementCategory,
-    Fee,
-    Timestamp,
-)
+from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, AssetMovementCategory, Fee, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, satoshis_to_btc
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise

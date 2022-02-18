@@ -25,7 +25,7 @@ from rotkehlchen.tests.utils.ethereum import (
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import BlockchainAccountData, EthereumTransaction, SupportedBlockchain
+from rotkehlchen.types import BlockchainAccountData, EthereumTransaction, SupportedBlockchain
 from rotkehlchen.utils.misc import hexstring_to_bytes
 
 

@@ -10,7 +10,7 @@ from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.serialization.deserialize import pair_get_assets
-from rotkehlchen.typing import Location, Timestamp, TradePair
+from rotkehlchen.types import Location, Timestamp, TradePair
 
 STARTING_TIMESTAMP = 1464739200  # 01/06/2016
 NUMBER_OF_TRADES = 5

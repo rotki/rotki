@@ -6,7 +6,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
-from rotkehlchen.typing import EthereumTransaction, Timestamp
+from rotkehlchen.types import EthereumTransaction, Timestamp
 
 TaxableAction = Union[  # TODO: At this point we perhaps should create an interface/superclass
     Trade,

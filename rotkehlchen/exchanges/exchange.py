@@ -16,7 +16,7 @@ from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.typing import ApiKey, ApiSecret, Location, T_ApiKey, T_ApiSecret, Timestamp
+from rotkehlchen.types import ApiKey, ApiSecret, Location, T_ApiKey, T_ApiSecret, Timestamp
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 

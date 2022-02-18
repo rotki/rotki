@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.interfaces.ammswap import UNISWAP_TRADES_PREFIX
 from rotkehlchen.chain.ethereum.modules.adex.utils import ADEX_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.modules.balancer.typing import (
+from rotkehlchen.chain.ethereum.modules.balancer.types import (
     BALANCER_EVENTS_PREFIX,
     BALANCER_TRADES_PREFIX,
 )
@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX
 from rotkehlchen.constants.resolver import ETHEREUM_DIRECTIVE
 from rotkehlchen.exchanges.data_structures import hash_id
-from rotkehlchen.typing import AssetMovementCategory, Location, TradeType
+from rotkehlchen.types import AssetMovementCategory, Location, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:

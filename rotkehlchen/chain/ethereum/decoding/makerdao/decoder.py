@@ -12,7 +12,7 @@ from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
-from rotkehlchen.chain.ethereum.typing import string_to_ethereum_address
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     multicall,
@@ -75,7 +75,7 @@ from rotkehlchen.constants.ethereum import (
 )
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
-from rotkehlchen.typing import ChecksumEthAddress, EthereumTransaction, Location
+from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,

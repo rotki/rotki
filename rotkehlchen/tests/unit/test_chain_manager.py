@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.chain.manager import _module_name_to_class
-from rotkehlchen.typing import AVAILABLE_MODULES_MAP
+from rotkehlchen.types import AVAILABLE_MODULES_MAP
 
 
 @pytest.mark.parametrize('ethereum_modules', [[]])

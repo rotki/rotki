@@ -11,7 +11,7 @@ import requests
 
 from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, strethaddress_to_identifier
 from rotkehlchen.fval import FVal
@@ -23,7 +23,7 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

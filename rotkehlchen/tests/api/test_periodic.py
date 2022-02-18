@@ -7,7 +7,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.typing import Location
+from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import ts_now
 
 

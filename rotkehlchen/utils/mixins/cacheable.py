@@ -6,7 +6,7 @@ from rotkehlchen.utils.misc import ts_now
 from .common import function_sig_key
 
 if TYPE_CHECKING:
-    from rotkehlchen.typing import Timestamp
+    from rotkehlchen.types import Timestamp
 
 
 class ResultCache(NamedTuple):

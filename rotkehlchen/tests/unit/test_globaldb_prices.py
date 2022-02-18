@@ -1,8 +1,8 @@
 from rotkehlchen.constants.assets import A_BAL, A_BTC, A_ETH, A_USD
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.constants import A_EUR
-from rotkehlchen.typing import Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 
 
 def test_get_historical_price_range(globaldb, historical_price_test_data):  # pylint: disable=unused-argument  # noqa: E501

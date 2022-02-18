@@ -108,7 +108,7 @@ from rotkehlchen.api.v1.schemas import (
     XpubPatchSchema,
 )
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.db.filtering import (
@@ -120,8 +120,8 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.typing import HistoricalPriceOracle
-from rotkehlchen.typing import (
+from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.types import (
     IMPORTABLE_LOCATIONS,
     ApiKey,
     ApiSecret,

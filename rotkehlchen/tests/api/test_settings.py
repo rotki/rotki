@@ -16,7 +16,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.constants import A_JPY
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockWeb3
-from rotkehlchen.typing import ChecksumEthAddress, ModuleName
+from rotkehlchen.types import ChecksumEthAddress, ModuleName
 
 
 def test_querying_settings(rotkehlchen_api_server, username):

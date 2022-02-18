@@ -8,7 +8,7 @@ from rotkehlchen.db.filtering import TradesFilterQuery
 # from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.typing import Location, Price, TradeType
+from rotkehlchen.types import Location, Price, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
 

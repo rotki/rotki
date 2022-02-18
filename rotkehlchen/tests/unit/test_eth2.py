@@ -9,7 +9,7 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.chain.ethereum.eth2_utils import scrape_validator_daily_stats
 from rotkehlchen.chain.ethereum.modules.eth2 import REQUEST_DELTA_TS
 from rotkehlchen.chain.ethereum.structures import Eth2Validator
-from rotkehlchen.chain.ethereum.typing import (
+from rotkehlchen.chain.ethereum.types import (
     Eth2Deposit,
     ValidatorDailyStats,
     string_to_ethereum_address,
@@ -20,7 +20,7 @@ from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
 
 ADDR1 = string_to_ethereum_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')

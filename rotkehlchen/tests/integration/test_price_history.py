@@ -4,9 +4,9 @@ from rotkehlchen.constants.assets import A_BTC, A_CORN, A_EUR, A_USD
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.typing import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.constants import A_DASH, A_XMR
-from rotkehlchen.typing import Price, Timestamp
+from rotkehlchen.types import Price, Timestamp
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

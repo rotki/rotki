@@ -40,7 +40,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.ethereum import INFURA_TEST
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.typing import Timestamp
+from rotkehlchen.types import Timestamp
 
 TEST_ACC1 = '0x7780E86699e941254c8f4D9b7eB08FF7e96BBE10'
 TEST_V2_ACC2 = '0x915C4580dFFD112db25a6cf06c76cDd9009637b7'
