@@ -1926,7 +1926,7 @@ class IdentifiersListSchema(Schema):
 
 
 class AssetsImportingSchema(Schema):
-    file = FileField(allowed_extensions=['.json'], load_default=None)
+    file = FileField(allowed_extensions=['.zip', '.json'], load_default=None)
     destination = DirectoryField(load_default=None)
     action = fields.String(
         validate=webargs.validate.OneOf(choices=('upload', 'download')),
@@ -1949,4 +1949,4 @@ class AssetsImportingSchema(Schema):
 
 
 class AssetsImportingFromFormSchema(Schema):
-    file = FileField(allowed_extensions=['.json'], required=True)
+    file = FileField(allowed_extensions=['.zip', '.json'], required=True)

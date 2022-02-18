@@ -2072,7 +2072,7 @@ class UserAssetsResource(BaseResource):
     @use_kwargs(import_from_form, location='form_and_file')
     def post(self, file: FileStorage) -> Response:
         with TemporaryDirectory() as temp_directory:
-            filename = file.filename if file.filename else 'assets.json'
+            filename = file.filename if file.filename else 'assets.zip'
             filepath = Path(temp_directory) / filename
             file.save(str(filepath))
             response = self.rest_api.import_user_assets(path=filepath)

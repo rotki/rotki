@@ -890,14 +890,27 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_cus
             'ethereum_address': eth_address,
         }
 
+        # try to download again to see if the database is properly detached
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'userassetsresource',
+            ), json={'action': 'download'},
+        )
+        result = assert_proper_response_with_result(response)
+
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('method', ['post', 'put'])
-def test_importing_custom_assets_list(rotkehlchen_api_server, method):
+@pytest.mark.parametrize('file_type', ['zip', 'json'])
+def test_importing_custom_assets_list(rotkehlchen_api_server, method, file_type):
     """Test that the endpoint for importing custom assets works correctly"""
     dir_path = Path(__file__).resolve().parent.parent
-    filepath = dir_path / 'data' / 'exported_assets.json'
+    if file_type == 'zip':
+        filepath = dir_path / 'data' / 'exported_assets.zip'
+    else:
+        filepath = dir_path / 'data' / 'exported_assets.json'
 
     if method == 'put':
         response = requests.put(

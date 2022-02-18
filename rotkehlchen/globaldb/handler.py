@@ -1236,6 +1236,8 @@ class GlobalDBHandler():
         connection = GlobalDBHandler()._conn
         cursor = connection.cursor()
         user_db_cursor = user_db.conn.cursor()
+        root_dir = Path(__file__).resolve().parent.parent
+        builtin_database = root_dir / 'data' / 'global.db'
 
         # Update owned assets
         user_db.update_owned_assets_in_globaldb()
@@ -1245,9 +1247,9 @@ class GlobalDBHandler():
             # is not the empty set the operation is dangerous and the user should be notified.
             diff_ids = GlobalDBHandler().get_user_added_assets(user_db=user_db, only_owned=True)
             if len(diff_ids) != 0 and not force:
-                cursor.execute(detach_database)
                 msg = 'There are assets that can not be deleted. Check logs for more details.'
                 return False, msg
+            cursor.execute(f'ATTACH DATABASE "{builtin_database}" AS clean_db;')
             # Check that versions match
             query = cursor.execute('SELECT value from clean_db.settings WHERE name="version";')
             version = query.fetchone()
@@ -1340,9 +1342,9 @@ class GlobalDBHandler():
             cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
             cursor.execute('PRAGMA foreign_keys = ON;')
         except sqlite3.Error as e:
+            log.error(f'Failed to restore assets in globaldb due to {str(e)}')
             connection.rollback()
             cursor.execute(detach_database)
-            log.error(f'Failed to restore assets in globaldb due to {str(e)}')
             return False, 'Failed to restore assets. Read logs to get more information.'
 
         connection.commit()
@@ -1407,6 +1409,7 @@ class GlobalDBHandler():
         # Get built in identifiers
         query = cursor.execute('SELECT identifier from clean_db.assets;')
         shipped_ids = {tup[0] for tup in query}
+        cursor.execute('DETACH DATABASE clean_db;')
         return user_ids - shipped_ids
 
 

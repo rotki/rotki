@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import json
 import logging
+import tempfile
 import traceback
 from collections import defaultdict
 from functools import wraps
@@ -21,6 +22,7 @@ from typing import (
     overload,
 )
 from uuid import uuid4
+from zipfile import ZipFile
 
 import gevent
 from flask import Response, make_response, send_file
@@ -4021,18 +4023,17 @@ class RestAPI():
             status_code=HTTPStatus.OK,
         )
 
-    @require_loggedin_user()
-    def import_user_assets(self, path: Path) -> Response:
+    def _import_user_assets_file(self, file_path: Path) -> Optional[Response]:
         try:
             import_assets_from_file(
-                path=path,
+                path=file_path,
                 msg_aggregator=self.rotkehlchen.msg_aggregator,
                 db_handler=self.rotkehlchen.data.db,
             )
         except ValidationError as e:
             return api_response(
                 result=wrap_in_fail_result(
-                    f'Provided file does not have the expected format. {str(e)}',
+                    f'Provided file {file_path} does not have the expected format. {str(e)}',
                 ),
                 status_code=HTTPStatus.CONFLICT,
             )
@@ -4041,5 +4042,23 @@ class RestAPI():
                 result=wrap_in_fail_result(f'{str(e)}'),
                 status_code=HTTPStatus.CONFLICT,
             )
+        return None
+
+    @require_loggedin_user()
+    def import_user_assets(self, path: Path) -> Response:
+        if path.suffix == '.json':
+            import_file = self._import_user_assets_file(path)
+            if import_file is not None:
+                return import_file
+        else:
+            zip_file = ZipFile(path)
+            with tempfile.TemporaryDirectory() as tempdir:
+                for file_name in zip_file.namelist():
+                    if file_name.endswith('.json'):
+                        zip_file.extract(file_name, tempdir)
+                        file_path = Path(tempdir) / file_name
+                        imported = self._import_user_assets_file(file_path)
+                        if imported is not None:
+                            return imported
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
