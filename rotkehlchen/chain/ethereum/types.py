@@ -93,6 +93,9 @@ class ValidatorID(NamedTuple):
     public_key: Eth2PubKey
     ownership_proportion: FVal
 
+    def __eq__(self, other: Any) -> bool:
+        return self.public_key == other.public_key
+
     def __hash__(self) -> int:
         return hash(self.public_key)
 

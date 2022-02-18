@@ -15,6 +15,7 @@ from rotkehlchen.types import (
     EthereumTransaction,
     SupportedBlockchain,
     Timestamp,
+    make_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -27,7 +28,7 @@ def test_add_get_ethereum_transactions(data_dir, username):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator)
     data.unlock(username, '123', create_new=True)
-    tx2_hash_b = b'.h\xdd\x82\x85\x94\xeaq\xfe\n\xfc\xcf\xadwH\xc9\x0f\xfc\xd0\xf1\xad\xd4M\r$\x9b\xf7\x98\x87\xda\x93\x18'  # noqa: E501
+    tx2_hash = make_evm_tx_hash(b'.h\xdd\x82\x85\x94\xeaq\xfe\n\xfc\xcf\xadwH\xc9\x0f\xfc\xd0\xf1\xad\xd4M\r$\x9b\xf7\x98\x87\xda\x93\x18')  # noqa: E501
     data.db.add_blockchain_accounts(
         blockchain=SupportedBlockchain.ETHEREUM,
         account_data=[
@@ -38,7 +39,7 @@ def test_add_get_ethereum_transactions(data_dir, username):
     )
 
     tx1 = EthereumTransaction(
-        tx_hash=b'1',
+        tx_hash=make_evm_tx_hash(b'1'),
         timestamp=Timestamp(1451606400),
         block_number=1,
         from_address=ETH_ADDRESS1,
@@ -51,7 +52,7 @@ def test_add_get_ethereum_transactions(data_dir, username):
         nonce=1,
     )
     tx2 = EthereumTransaction(
-        tx_hash=tx2_hash_b,
+        tx_hash=tx2_hash,
         timestamp=Timestamp(1451706400),
         block_number=3,
         from_address=ETH_ADDRESS2,
@@ -64,7 +65,7 @@ def test_add_get_ethereum_transactions(data_dir, username):
         nonce=1,
     )
     tx3 = EthereumTransaction(
-        tx_hash=b'3',
+        tx_hash=make_evm_tx_hash(b'3'),
         timestamp=Timestamp(1452806400),
         block_number=5,
         from_address=ETH_ADDRESS3,
@@ -103,7 +104,7 @@ def test_add_get_ethereum_transactions(data_dir, username):
     dbethtx.add_ethereum_transactions([tx2], relevant_address=ETH_ADDRESS2)
 
     # try transaction query by tx_hash
-    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash_b), has_premium=True)  # noqa: E501
+    result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=tx2_hash), has_premium=True)  # noqa: E501
     assert result == [tx2], 'querying transaction by hash in bytes failed'
     result = dbethtx.get_ethereum_transactions(ETHTransactionsFilterQuery.make(tx_hash=b'dsadsad'), has_premium=True)  # noqa: E501
     assert result == []
@@ -133,7 +134,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
     )
 
     tx1 = EthereumTransaction(
-        tx_hash=b'1',
+        tx_hash=make_evm_tx_hash(b'1'),
         timestamp=Timestamp(1451606400),
         block_number=1,
         from_address=ETH_ADDRESS1,
@@ -146,7 +147,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
         nonce=1,
     )
     tx2 = EthereumTransaction(
-        tx_hash=b'2',
+        tx_hash=make_evm_tx_hash(b'2'),
         timestamp=Timestamp(1451706400),
         block_number=3,
         from_address=ETH_ADDRESS2,
@@ -159,7 +160,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
         nonce=1,
     )
     tx3 = EthereumTransaction(
-        tx_hash=b'3',
+        tx_hash=make_evm_tx_hash(b'3'),
         timestamp=Timestamp(1452806400),
         block_number=5,
         from_address=ETH_ADDRESS3,
@@ -172,7 +173,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
         nonce=3,
     )
     tx4 = EthereumTransaction(
-        tx_hash=b'4',
+        tx_hash=make_evm_tx_hash(b'4'),
         timestamp=Timestamp(1628064001),
         block_number=6,
         from_address=ETH_ADDRESS1,
@@ -185,7 +186,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
         nonce=55,
     )
     tx5 = EthereumTransaction(
-        tx_hash=b'5',
+        tx_hash=make_evm_tx_hash(b'5'),
         timestamp=Timestamp(1629064001),
         block_number=7,
         from_address=ETH_ADDRESS1,
@@ -198,7 +199,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
         nonce=55,
     )
     internal_tx1 = EthereumInternalTransaction(
-        parent_tx_hash=b'3',
+        parent_tx_hash=make_evm_tx_hash(b'3'),
         trace_id=1,
         timestamp=Timestamp(1452806400),
         block_number=5,
@@ -207,7 +208,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
         value=0,
     )
     internal_tx2 = EthereumInternalTransaction(
-        parent_tx_hash=b'5',
+        parent_tx_hash=make_evm_tx_hash(b'5'),
         trace_id=21,
         timestamp=Timestamp(1629064001),
         block_number=55,
@@ -216,7 +217,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
         value=0,
     )
     internal_tx3 = EthereumInternalTransaction(
-        parent_tx_hash=b'4',
+        parent_tx_hash=make_evm_tx_hash(b'4'),
         trace_id=25,
         timestamp=Timestamp(1628064001),
         block_number=6,
@@ -225,7 +226,7 @@ def test_query_also_internal_ethereum_transactions(data_dir, username):
         value=10,
     )
     internal_tx4 = EthereumInternalTransaction(
-        parent_tx_hash=b'4',
+        parent_tx_hash=make_evm_tx_hash(b'4'),
         trace_id=26,
         timestamp=Timestamp(1628064001),
         block_number=6,

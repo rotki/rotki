@@ -15,6 +15,7 @@ from rotkehlchen.types import (
     EthereumTransaction,
     Location,
     SupportedBlockchain,
+    make_evm_tx_hash,
 )
 
 
@@ -64,7 +65,7 @@ def test_purge_ethereum_transaction_data(rotkehlchen_api_server):
     db = DBEthTx(rotki.data.db)
     db.add_ethereum_transactions(
         [EthereumTransaction(
-            tx_hash=bytes(),
+            tx_hash=make_evm_tx_hash(bytes()),
             timestamp=1,
             block_number=1,
             from_address=addr1,

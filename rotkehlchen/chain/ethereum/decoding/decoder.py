@@ -234,7 +234,7 @@ class EVMTransactionDecoder():
             try:
                 receipt = tx_module.get_or_query_transaction_receipt(tx_hash)
             except RemoteError as e:
-                raise InputError(f'Hash {"0x"+tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
+                raise InputError(f'Hash {tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
 
             # TODO: Change this if transaction filter query can accept multiple hashes
             txs = self.dbethtx.get_ethereum_transactions(

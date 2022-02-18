@@ -16,6 +16,7 @@ from rotkehlchen.types import (
     EthereumInternalTransaction,
     EthereumTransaction,
     EVMTxHash,
+    make_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import hexstr_to_int
@@ -127,7 +128,7 @@ class DBEthTx():
         transactions = []
         for result in results:
             tx = EthereumInternalTransaction(
-                parent_tx_hash=result[0],
+                parent_tx_hash=make_evm_tx_hash(result[0]),
                 trace_id=result[1],
                 timestamp=result[2],
                 block_number=result[3],
@@ -164,7 +165,7 @@ class DBEthTx():
         for result in results:
             try:
                 tx = EthereumTransaction(
-                    tx_hash=result[0],
+                    tx_hash=make_evm_tx_hash(result[0]),
                     timestamp=deserialize_timestamp(result[1]),
                     block_number=result[2],
                     from_address=result[3],

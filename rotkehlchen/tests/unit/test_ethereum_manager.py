@@ -25,7 +25,13 @@ from rotkehlchen.tests.utils.ethereum import (
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
-from rotkehlchen.types import BlockchainAccountData, EthereumTransaction, SupportedBlockchain
+from rotkehlchen.types import (
+    BlockchainAccountData,
+    EthereumTransaction,
+    SupportedBlockchain,
+    deserialize_evm_tx_hash,
+    make_evm_tx_hash,
+)
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
@@ -52,7 +58,7 @@ def test_get_transaction_receipt(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         ethereum=ethereum_manager,
     )
-    tx_hash = hexstring_to_bytes('0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89')  # noqa: E501
     result = ethereum_manager.get_transaction_receipt(tx_hash, call_order=call_order)
     block_hash = '0x6f3a7838a8788c3371b88df170c3643d19bad896c915a7368681292882b6ad61'
     assert result['blockHash'] == block_hash
@@ -135,7 +141,7 @@ def test_get_transaction_by_hash(ethereum_manager, call_order, ethereum_manager_
         call_order=call_order,
     )
     expected_tx = EthereumTransaction(
-        tx_hash=b'[\x18\x0e=\xcc\x19\xcd)\xc9\x18\xb9\x8c\x87o\x199>\x07\xb7L\x07\xfdr\x81\x02\xebbA\xdb<-\\',  # noqa: E501
+        tx_hash=make_evm_tx_hash(b'[\x18\x0e=\xcc\x19\xcd)\xc9\x18\xb9\x8c\x87o\x199>\x07\xb7L\x07\xfdr\x81\x02\xebbA\xdb<-\\'),  # noqa: E501
         timestamp=1633128954,
         block_number=13336285,
         from_address='0x2F6789A208A05C762cA8d142A3df95d29C18b065',
