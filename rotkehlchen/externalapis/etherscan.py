@@ -22,6 +22,7 @@ from rotkehlchen.types import (
     ChecksumEthAddress,
     EthereumInternalTransaction,
     EthereumTransaction,
+    EVMTxHash,
     ExternalService,
     Timestamp,
 )
@@ -326,7 +327,7 @@ class Etherscan(ExternalServiceWithApiKey):
 
         return block_data
 
-    def get_transaction_by_hash(self, tx_hash: bytes) -> Dict[str, Any]:
+    def get_transaction_by_hash(self, tx_hash: EVMTxHash) -> Dict[str, Any]:
         """
         Gets a transaction object by hash
 
@@ -348,7 +349,7 @@ class Etherscan(ExternalServiceWithApiKey):
         result = self._query(module='proxy', action='eth_getCode', options={'address': account})
         return result
 
-    def get_transaction_receipt(self, tx_hash: bytes) -> Dict[str, Any]:
+    def get_transaction_receipt(self, tx_hash: EVMTxHash) -> Dict[str, Any]:
         """Gets the receipt for the given transaction hash
 
         May raise:

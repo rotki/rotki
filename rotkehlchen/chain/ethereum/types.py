@@ -7,7 +7,13 @@ from eth_typing import HexAddress, HexStr
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEthAddress, Eth2PubKey, Timestamp
+from rotkehlchen.types import (
+    ChecksumEthAddress,
+    Eth2PubKey,
+    EVMTxHash,
+    Timestamp,
+    make_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import from_gwei
 
 
@@ -290,7 +296,7 @@ class Eth2Deposit(NamedTuple):
     pubkey: str  # hexstring
     withdrawal_credentials: str  # hexstring
     value: Balance
-    tx_hash: bytes  # the transaction hash in bytes
+    tx_hash: EVMTxHash
     tx_index: int
     timestamp: Timestamp
 
@@ -319,7 +325,7 @@ class Eth2Deposit(NamedTuple):
         7 - usd_value
         """
         return cls(
-            tx_hash=deposit_tuple[0],
+            tx_hash=make_evm_tx_hash(deposit_tuple[0]),
             tx_index=int(deposit_tuple[1]),
             from_address=string_to_ethereum_address(deposit_tuple[2]),
             timestamp=Timestamp(int(deposit_tuple[3])),

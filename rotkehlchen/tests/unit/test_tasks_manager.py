@@ -12,7 +12,8 @@ from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.tests.utils.ethereum import setup_ethereum_transactions_test
 from rotkehlchen.types import Location
-from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import ts_now
 
 
 class MockPremiumSyncManager():

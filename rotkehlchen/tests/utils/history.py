@@ -39,7 +39,7 @@ from rotkehlchen.types import (
     Timestamp,
     TradeType,
 )
-from rotkehlchen.utils.misc import hexstring_to_bytes
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset

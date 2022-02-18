@@ -31,12 +31,14 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ChecksumEthAddress,
+    EVMTxHash,
     Fee,
     HexColorCode,
     Location,
     Price,
     SupportedBlockchain,
     Timestamp,
+    make_evm_tx_hash,
 )
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
@@ -454,7 +456,7 @@ class EVMTransactionHashField(fields.Field):
             attr: Optional[str],  # pylint: disable=unused-argument
             data: Optional[Mapping[str, Any]],  # pylint: disable=unused-argument
             **_kwargs: Any,
-    ) -> bytes:
+    ) -> EVMTxHash:
         # Make sure that given value is a transaction hash
         if not isinstance(value, str):
             raise ValidationError('Transaction hash should be a string')
@@ -468,7 +470,7 @@ class EVMTransactionHashField(fields.Field):
         if length != 32:
             raise ValidationError(f'Transaction hashes should be 32 bytes in length. Given {length=}')  # noqa: E501
 
-        return txhash
+        return make_evm_tx_hash(txhash)
 
 
 class AssetTypeField(fields.Field):

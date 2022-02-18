@@ -70,7 +70,8 @@ from rotkehlchen.types import (
     Timestamp,
     TradeType,
 )
-from rotkehlchen.utils.misc import hexstring_to_bytes, ts_now
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import ts_now
 
 from .fields import (
     AmountField,

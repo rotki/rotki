@@ -11,8 +11,14 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,
     deserialize_timestamp,
 )
-from rotkehlchen.types import ChecksumEthAddress, EthereumInternalTransaction, EthereumTransaction
-from rotkehlchen.utils.misc import hexstr_to_int, hexstring_to_bytes
+from rotkehlchen.types import (
+    ChecksumEthAddress,
+    EthereumInternalTransaction,
+    EthereumTransaction,
+    EVMTxHash,
+)
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import hexstr_to_int
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -110,7 +116,7 @@ class DBEthTx():
 
     def get_ethereum_internal_transactions(
             self,
-            parent_tx_hash: bytes,
+            parent_tx_hash: EVMTxHash,
     ) -> List[EthereumInternalTransaction]:
         """Get all internal transactions under a parent tx_hash"""
         cursor = self.db.conn.cursor()
@@ -270,7 +276,7 @@ class DBEthTx():
         self.db.conn.commit()
         self.db.update_last_write()
 
-    def get_receipt(self, tx_hash: bytes) -> Optional[EthereumTxReceipt]:
+    def get_receipt(self, tx_hash: EVMTxHash) -> Optional[EthereumTxReceipt]:
         cursor = self.db.conn.cursor()
         results = cursor.execute('SELECT * from ethtx_receipts WHERE tx_hash=?', (tx_hash,))
         result = results.fetchone()

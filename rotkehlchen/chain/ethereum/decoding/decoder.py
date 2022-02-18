@@ -34,7 +34,7 @@ from rotkehlchen.errors import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
+from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, EVMTxHash, Location
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     from_wei,
@@ -217,7 +217,7 @@ class EVMTransactionDecoder():
         self.database.update_last_write()
         return sorted(events, key=lambda x: x.sequence_index, reverse=False)
 
-    def decode_transaction_hashes(self, tx_hashes: List[bytes]) -> None:
+    def decode_transaction_hashes(self, tx_hashes: List[EVMTxHash]) -> None:
         """Make sure that receipts are pulled + events decoded for the given transaction hashes
 
         The transaction hashes must exist in the DB at the time of the call

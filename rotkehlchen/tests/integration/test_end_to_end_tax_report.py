@@ -21,6 +21,7 @@ from rotkehlchen.types import (
     Fee,
     Location,
     Timestamp,
+    make_evm_tx_hash,
 )
 
 DUMMY_HASH = b''
@@ -283,7 +284,7 @@ eth_tx_list = [
     EthereumTransaction(
         timestamp=Timestamp(1463184190),  # 14/05/2016
         block_number=1512689,  # cryptocompare hourtly ETH/EUR: 9.186
-        tx_hash=b'1',
+        tx_hash=make_evm_tx_hash(b'1'),
         from_address=ETH_ADDRESS1,
         to_address=ETH_ADDRESS3,
         value=12323,
@@ -295,7 +296,7 @@ eth_tx_list = [
     ), EthereumTransaction(  # ((2000000000 * 1000000) / (10 ** 18)) * 47.5 = 0.095
         timestamp=Timestamp(1491062063),  # 01/04/2017
         block_number=3458409,  # cryptocompare hourly ETH/EUR: 47.5
-        tx_hash=b'2',
+        tx_hash=make_evm_tx_hash(b'2'),
         from_address=ETH_ADDRESS2,
         to_address=ETH_ADDRESS3,
         value=12323,
@@ -307,7 +308,7 @@ eth_tx_list = [
     ), EthereumTransaction(  # ((2200000000 * 2500000) / (10 ** 18)) * 393.955 = 2.1667525
         timestamp=Timestamp(1511626623),  # 25/11/2017
         block_number=4620323,  # cryptocompare hourly ETH/EUR: 393.955
-        tx_hash=b'3',
+        tx_hash=make_evm_tx_hash(b'3'),
         from_address=ETH_ADDRESS3,
         to_address=ETH_ADDRESS1,
         value=12323,
@@ -319,7 +320,7 @@ eth_tx_list = [
     ), EthereumTransaction(  # after query period -- should not matter
         timestamp=Timestamp(1523399409),  # 10/04/2018
         block_number=5417790,
-        tx_hash=b'4',
+        tx_hash=make_evm_tx_hash(b'4'),
         from_address=ETH_ADDRESS2,
         to_address=ETH_ADDRESS1,
         value=12323,

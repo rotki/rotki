@@ -129,6 +129,7 @@ from rotkehlchen.types import (
     ChecksumEthAddress,
     Eth2PubKey,
     EthereumTransaction,
+    EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -3120,7 +3121,7 @@ class RestAPI():
 
     def _decode_ethereum_transactions(
             self,
-            tx_hashes: List[bytes],
+            tx_hashes: List[EVMTxHash],
     ) -> Dict[str, Any]:
         try:
             self.rotkehlchen.evm_tx_decoder.decode_transaction_hashes(tx_hashes=tx_hashes)
@@ -3137,7 +3138,7 @@ class RestAPI():
     def decode_ethereum_transactions(
             self,
             async_query: bool,
-            tx_hashes: List[bytes],
+            tx_hashes: List[EVMTxHash],
     ) -> Response:
         if async_query:
             return self._query_async(

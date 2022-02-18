@@ -248,7 +248,6 @@ class Adex(EthereumModule):
             ) from e
 
         try:
-            # tx_hash:identity_address:log_index
             tx_hash, tx_address, tx_log_index = event_id.split(':')
             log_index = int(tx_log_index)
         except (AttributeError, ValueError) as e:
@@ -349,7 +348,6 @@ class Adex(EthereumModule):
             if case == 'bond':
                 tx_hash = event_id
             elif case in ('unbond', 'unbond_request'):
-                # tx_hash:address
                 tx_hash, tx_address = event_id.split(':')
             else:
                 raise AssertionError(f'Unexpected deserialization case: {case}.')

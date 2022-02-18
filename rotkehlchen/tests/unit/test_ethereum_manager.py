@@ -26,7 +26,7 @@ from rotkehlchen.tests.utils.ethereum import (
 )
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.types import BlockchainAccountData, EthereumTransaction, SupportedBlockchain
-from rotkehlchen.utils.misc import hexstring_to_bytes
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)

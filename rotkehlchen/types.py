@@ -14,9 +14,11 @@ from typing import (
 )
 
 from eth_typing import ChecksumAddress
+from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.errors import DeserializationError  # lgtm [py/unsafe-cyclic-import]  # noqa: E501
 from rotkehlchen.fval import FVal
+from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
@@ -137,6 +139,34 @@ EthAddress = NewType('EthAddress', T_EthAddres)
 
 ChecksumEthAddress = ChecksumAddress
 
+T_EVMTxHash = HexBytes
+EVMTxHash = NewType('EVMTxHash', T_EVMTxHash)
+
+
+def deserialize_evm_tx_hash(val: Union[Web3HexBytes, bytearray, bytes, str]) -> EVMTxHash:
+    """Super lightweight wrapper to forward arguments to HexBytes and return an EVMTxHash
+
+    HexBytes constructor handles the deserialization from whatever is given as input.
+
+    May raise DeserializationError if there is an error at deserialization
+
+    NB: Does not actually check that it's 32 bytes. This should happen at reading
+    data from outside such as in the marshmallow field validation
+    """
+    return EVMTxHash(HexBytes(val))
+
+
+def make_evm_tx_hash(val: bytes) -> EVMTxHash:
+    """Super lightweight wrapper initialize an EVMTxHash from bytes
+
+    No deserialization happens here
+
+    NB: Does not actually check that it's 32 bytes. This should happen at reading
+    data from outside such as in the marshmallow field validation
+    """
+    return EVMTxHash(HexBytes(val))
+
+
 T_BTCAddress = str
 BTCAddress = NewType('BTCAddress', T_BTCAddress)
 
@@ -178,7 +208,7 @@ EventType = NewType('EventType', T_EventType)
 
 class EthereumTransaction(NamedTuple):
     """Represent an Ethereum transaction"""
-    tx_hash: bytes
+    tx_hash: EVMTxHash
     timestamp: Timestamp
     block_number: int
     from_address: ChecksumEthAddress
@@ -222,7 +252,7 @@ class EthereumTransaction(NamedTuple):
 
 class EthereumInternalTransaction(NamedTuple):
     """Represent an internal Ethereum transaction"""
-    parent_tx_hash: bytes
+    parent_tx_hash: EVMTxHash
     trace_id: int
     timestamp: Timestamp
     block_number: int

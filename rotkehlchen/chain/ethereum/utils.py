@@ -24,7 +24,7 @@ from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAs
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress
-from rotkehlchen.utils.misc import hexstring_to_bytes
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName

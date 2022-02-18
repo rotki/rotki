@@ -129,6 +129,7 @@ from rotkehlchen.types import (
     BlockchainAccountData,
     ChecksumEthAddress,
     Eth2PubKey,
+    EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
     Fee,
@@ -362,7 +363,7 @@ class EthereumTransactionsResource(BaseResource):
     @use_kwargs(post_schema, location='json_and_query')
     def post(
             self,
-            async_query: bool, tx_hashes: List[bytes],
+            async_query: bool, tx_hashes: List[EVMTxHash],
     ) -> Response:
         return self.rest_api.decode_ethereum_transactions(
             async_query=async_query,
