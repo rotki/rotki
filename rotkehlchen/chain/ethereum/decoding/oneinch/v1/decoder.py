@@ -109,7 +109,7 @@ class Oneinchv1Decoder(DecoderInterface):
         # And now create a new event for the fee
         fee_amount = asset_normalized_value(fee_raw, to_asset)
         fee_event = HistoryBaseEntry(
-            event_identifier='0x' + transaction.tx_hash.hex(),
+            event_identifier=transaction.tx_hash.hex(),
             sequence_index=tx_log.log_index,
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,

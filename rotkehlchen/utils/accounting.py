@@ -82,7 +82,7 @@ def action_get_identifier(action: TaxableAction) -> str:
     ):
         return str(action.identifier)
     if isinstance(action, EthereumTransaction):
-        return '0x' + action.tx_hash.hex()
+        return action.tx_hash.hex()
     if isinstance(action, Loan):
         return 'loan_' + str(action.close_time)
     if isinstance(action, DefiEvent):

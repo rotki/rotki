@@ -223,7 +223,7 @@ class EthereumTransaction(NamedTuple):
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result['identifier'] = self.identifier
-        result['tx_hash'] = '0x' + result['tx_hash'].hex()
+        result['tx_hash'] = result['tx_hash'].hex()
         result['input_data'] = '0x' + result['input_data'].hex()
 
         # Most integers are turned to string to be sent via the API
@@ -247,7 +247,7 @@ class EthereumTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return '0x' + self.tx_hash.hex() + self.from_address + str(self.nonce)
+        return self.tx_hash.hex() + self.from_address + str(self.nonce)
 
 
 class EthereumInternalTransaction(NamedTuple):
@@ -262,7 +262,7 @@ class EthereumInternalTransaction(NamedTuple):
 
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
-        result['tx_hash'] = '0x' + result['tx_hash'].hex()
+        result['tx_hash'] = result['tx_hash'].hex()
         result['value'] = str(result['value'])
         return result
 
@@ -280,7 +280,7 @@ class EthereumInternalTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return '0x' + self.parent_tx_hash.hex() + str(self.trace_id)
+        return self.parent_tx_hash.hex() + str(self.trace_id)
 
 
 class CovalentTransaction(NamedTuple):

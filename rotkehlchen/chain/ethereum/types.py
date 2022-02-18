@@ -302,7 +302,7 @@ class Eth2Deposit(NamedTuple):
 
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
-        result['tx_hash'] = '0x' + self.tx_hash.hex()
+        result['tx_hash'] = self.tx_hash.hex()
         result['value'] = self.value.serialize()
         return result
 

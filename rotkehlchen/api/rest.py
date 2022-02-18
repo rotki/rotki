@@ -3057,10 +3057,9 @@ class RestAPI():
             entries_result = []
             dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
             for entry in transactions:
-                tx_hash_hex = '0x' + entry.tx_hash.hex()
                 events = dbevents.get_history_events(
                     filter_query=HistoryEventFilterQuery.make(
-                        event_identifier=tx_hash_hex,
+                        event_identifier=entry.tx_hash.hex(),
                     ),
                     has_premium=True,  # for this function we don't limit. We only limit txs.
                 )

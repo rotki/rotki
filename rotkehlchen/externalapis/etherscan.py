@@ -334,8 +334,7 @@ class Etherscan(ExternalServiceWithApiKey):
         May raise:
         - RemoteError due to self._query().
         """
-        tx_hash_hex = '0x' + tx_hash.hex()
-        options = {'txhash': tx_hash_hex}
+        options = {'txhash': tx_hash.hex()}
         transaction_data = self._query(module='proxy', action='eth_getTransactionByHash', options=options)  # noqa: E501
         return transaction_data
 
@@ -355,11 +354,10 @@ class Etherscan(ExternalServiceWithApiKey):
         May raise:
         - RemoteError due to self._query().
         """
-        tx_hash_hex = '0x' + tx_hash.hex()
         result = self._query(
             module='proxy',
             action='eth_getTransactionReceipt',
-            options={'txhash': tx_hash_hex},
+            options={'txhash': tx_hash.hex()},
         )
         return result
 

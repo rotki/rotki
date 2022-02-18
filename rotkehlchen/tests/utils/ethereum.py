@@ -122,7 +122,7 @@ def txreceipt_to_data(receipt: EthereumTxReceipt) -> Dict[str, Any]:
     serialization snake case would be used.
     """
     data: Dict[str, Any] = {
-        'transactionHash': '0x' + receipt.tx_hash.hex(),
+        'transactionHash': receipt.tx_hash.hex(),
         'type': hex(receipt.type),
         'contractAddress': receipt.contract_address,
         'status': int(receipt.status),

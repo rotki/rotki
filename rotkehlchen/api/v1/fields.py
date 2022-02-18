@@ -443,12 +443,12 @@ class EVMTransactionHashField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: bytes,
+            value: EVMTxHash,
             attr: str,  # pylint: disable=unused-argument
             obj: Any,  # pylint: disable=unused-argument
             **_kwargs: Any,
     ) -> str:
-        return '0x' + value.hex()
+        return value.hex()
 
     def _deserialize(
             self,

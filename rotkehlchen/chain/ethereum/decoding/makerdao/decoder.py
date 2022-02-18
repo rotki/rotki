@@ -347,7 +347,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             proxy_address = hex_or_bytes_to_address(tx_log.data[0:32])
             notes = f'Create DSR proxy {proxy_address} with owner {owner_address}'
             event = HistoryBaseEntry(
-                event_identifier='0x' + transaction.tx_hash.hex(),
+                event_identifier=transaction.tx_hash.hex(),
                 sequence_index=tx_log.log_index,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.BLOCKCHAIN,
@@ -381,7 +381,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         cdp_id = hex_or_bytes_to_int(tx_log.topics[3])
         notes = f'Create MakerDAO vault with id {cdp_id} and owner {owner_address}'
         event = HistoryBaseEntry(
-            event_identifier='0x' + transaction.tx_hash.hex(),
+            event_identifier=transaction.tx_hash.hex(),
             sequence_index=tx_log.log_index,
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,

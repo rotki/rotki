@@ -118,7 +118,7 @@ class BaseDecoderTools():
                 notes = f'{verb} {token.name} with id {token_id} from {counterparty} to {location_label}'  # noqa: E501
 
         return HistoryBaseEntry(
-            event_identifier='0x' + transaction.tx_hash.hex(),
+            event_identifier=transaction.tx_hash.hex(),
             sequence_index=tx_log.log_index,
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
