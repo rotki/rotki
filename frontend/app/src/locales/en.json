@@ -616,6 +616,7 @@
     "backup": {
       "button": "Backup",
       "subtitle": "Create a backup of your custom assets",
+      "success": "The backup was successful",
       "title": "Backup"
     },
     "restore": {
@@ -1106,7 +1107,7 @@
   },
   "file_upload": {
     "drop_area": "Drop the file or",
-    "inputted_file": "Inputted file: {name}",
+    "selected_file": "Selected file: {name}",
     "import_complete": "Import was completed successfully.",
     "select_file": "Select file",
     "change_file": "Change file",

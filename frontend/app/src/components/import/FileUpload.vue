@@ -34,7 +34,7 @@
           <div class="mt-2 text-center">
             <div v-if="file">
               <i18n
-                path="file_upload.inputted_file"
+                path="file_upload.selected_file"
                 class="text-caption text--secondary"
                 tag="div"
               >
@@ -89,10 +89,9 @@ import {
   PropType,
   ref,
   toRefs,
-  unref,
   watch
 } from '@vue/composition-api';
-import { useCounter } from '@vueuse/core';
+import { get, set, useCounter } from '@vueuse/core';
 import i18n from '@/i18n';
 
 const SOURCES = [
@@ -139,7 +138,7 @@ export default defineComponent({
         return;
       }
 
-      if (unref(source) !== 'icon') {
+      if (get(source) !== 'icon') {
         check(event.dataTransfer.files);
       } else {
         selected(event.dataTransfer.files[0]);
@@ -155,7 +154,7 @@ export default defineComponent({
     const onLeave = (event: DragEvent) => {
       event.preventDefault();
       dec();
-      if (unref(count) === 0) {
+      if (get(count) === 0) {
         active.value = false;
       }
     };
@@ -165,7 +164,7 @@ export default defineComponent({
       if (!target || !target.files) {
         return;
       }
-      if (!['icon', 'zip'].includes(unref(source))) {
+      if (!['icon', 'zip'].includes(get(source))) {
         check(target.files);
       } else {
         selected(target.files[0]);
@@ -180,7 +179,7 @@ export default defineComponent({
     };
 
     const removeFile = () => {
-      const inputFile = unref(select);
+      const inputFile = get(select);
       if (inputFile) {
         inputFile.value = '';
       }
@@ -188,7 +187,7 @@ export default defineComponent({
     };
 
     const check = (files: FileList) => {
-      if (unref(error) || unref(uploaded)) {
+      if (get(error) || get(uploaded)) {
         return;
       }
 
@@ -201,18 +200,19 @@ export default defineComponent({
         onError(
           i18n
             .t('file_upload.only_files', {
-              fileFilter: unref(fileFilter)
+              fileFilter: get(fileFilter)
             })
             .toString()
         );
         return;
       }
 
-      file.value = files[0];
+      set(file, files[0]);
     };
 
-    const selected = (file: File | null) => {
-      emit('selected', file);
+    const selected = (selected: File | null) => {
+      set(file, selected);
+      emit('selected', selected);
     };
 
     const updateUploaded = (value: boolean) => {
@@ -223,6 +223,7 @@ export default defineComponent({
       if (!uploaded) {
         return;
       }
+      set(file, null);
       setTimeout(() => {
         updateUploaded(false);
       }, 4000);

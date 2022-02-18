@@ -11,14 +11,20 @@
       <div class="text-subtitle-1">
         {{ $t('manage_custom_assets.backup.subtitle') }}
       </div>
-      <v-btn
-        color="primary"
-        class="mt-4"
-        :loading="downloading"
-        @click="backup"
-      >
-        {{ $t('manage_custom_assets.backup.button') }}
-      </v-btn>
+      <v-alert v-if="backupError" type="error" outlined dense>
+        {{ backupError }}
+      </v-alert>
+      <div class="d-flex flex-row align-center mt-4">
+        <v-btn color="primary" :loading="downloading" @click="backup">
+          {{ $t('manage_custom_assets.backup.button') }}
+        </v-btn>
+        <v-icon v-if="downloaded" class="ms-4" color="success">
+          mdi-check-circle
+        </v-icon>
+        <span v-if="downloaded" class="ms-2">
+          {{ $t('manage_custom_assets.backup.success') }}
+        </span>
+      </div>
     </v-sheet>
 
     <v-sheet outlined class="pa-4 mt-4" rounded>
@@ -33,6 +39,7 @@
         :uploaded="uploaded"
         :error-message="restoreError"
         @selected="zip = $event"
+        @update:uploaded="uploaded = $event"
       />
       <v-btn
         color="primary"
@@ -48,7 +55,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, unref } from '@vue/composition-api';
+import { computed, defineComponent, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { useAssets } from '@/store/assets';
 import { assert } from '@/utils/assertions';
@@ -61,46 +69,49 @@ export default defineComponent({
     const restoreError = ref('');
     const backupError = ref('');
     const downloading = ref(false);
+    const downloaded = ref(false);
     const uploading = ref(false);
     const uploaded = ref(false);
 
     const { restoreCustomAssets, backupCustomAssets } = useAssets();
 
-    const restoreDisabled = computed(() => {
-      return !unref(zip);
-    });
+    const restoreDisabled = computed(() => !get(zip));
 
     const restore = async () => {
-      const file = unref(zip);
+      const file = get(zip);
       assert(file);
-      uploading.value = true;
+      set(uploading, true);
       const result = await restoreCustomAssets(file);
       if (result.success) {
-        uploaded.value = true;
+        set(uploaded, true);
       } else {
-        restoreError.value = result.message;
+        set(restoreError, result.message);
       }
-      uploading.value = false;
-      zip.value = null;
+      set(uploading, false);
+      set(zip, null);
     };
 
     const backup = async () => {
-      if (unref(downloading)) {
+      if (get(downloading)) {
         return;
       }
-      downloading.value = true;
-      let sucess = await backupCustomAssets();
-      if (sucess.success) {
-        //TODO
+      set(downloading, true);
+      let result = await backupCustomAssets();
+      if (result.success) {
+        set(downloaded, true);
+        setTimeout(() => {
+          set(downloaded, false);
+        }, 4000);
       } else {
-        backupError.value = sucess.message;
+        set(backupError, result.message);
       }
-      downloading.value = false;
+      set(downloading, false);
     };
 
     return {
       zip,
       downloading,
+      downloaded,
       uploading,
       uploaded,
       backupError,

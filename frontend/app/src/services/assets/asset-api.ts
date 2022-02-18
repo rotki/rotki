@@ -24,6 +24,7 @@ import {
   validWithSessionAndExternalService
 } from '@/services/utils';
 import { ActionStatus } from '@/store/types';
+import { assert } from '@/utils/assertions';
 
 export class AssetApi {
   private readonly axios: AxiosInstance;
@@ -409,14 +410,18 @@ export class AssetApi {
 
         return { success: false, message: result.message };
       }
-      const response = await this.axios.put(
+      const response = await this.axios.put<ActionResult<{ file: string }>>(
         '/assets/user',
         { action: 'download', destination: directory },
         {
           validateStatus: validFileOperationStatus
         }
       );
-      return handleResponse(response);
+      const data = handleResponse(response);
+      assert(data.file);
+      return {
+        success: true
+      };
     } catch (e: any) {
       return { success: false, message: e.message };
     }

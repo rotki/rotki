@@ -116,32 +116,42 @@ export const useAssets = defineStore('assets', () => {
 
   const restoreCustomAssets = async (file: File): Promise<ActionStatus> => {
     const isLocal = interop.isPackaged && api.defaultBackend;
-    const { message, result: success } = await api.assets.restoreCustom(
-      file,
-      !isLocal
-    );
-    return {
-      success,
-      message
-    };
+    try {
+      await api.assets.restoreCustom(file, !isLocal);
+      return {
+        success: true
+      };
+    } catch (e: any) {
+      return {
+        success: false,
+        message: e.message
+      };
+    }
   };
 
   const backupCustomAssets = async (): Promise<ActionStatus> => {
-    const isLocal = interop.isPackaged && api.defaultBackend;
-    let file: string | undefined = undefined;
-    if (isLocal) {
-      const directory = await interop.openDirectory(
-        i18n.t('profit_loss_report.select_directory').toString()
-      );
-      if (!directory) {
-        return {
-          success: false,
-          message: i18n.t('assets.backup.missing_directory').toString()
-        };
+    try {
+      const isLocal = interop.isPackaged && api.defaultBackend;
+      let file: string | undefined = undefined;
+      if (isLocal) {
+        const directory = await interop.openDirectory(
+          i18n.t('profit_loss_report.select_directory').toString()
+        );
+        if (!directory) {
+          return {
+            success: false,
+            message: i18n.t('assets.backup.missing_directory').toString()
+          };
+        }
+        file = directory;
       }
-      file = directory;
+      return await api.assets.backupCustom(file);
+    } catch (e: any) {
+      return {
+        success: false,
+        message: e.message
+      };
     }
-    return await api.assets.backupCustom(file);
   };
 
   return {
