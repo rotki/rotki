@@ -462,6 +462,7 @@ WORLD_TO_COINBASE_PRO = {
     strethaddress_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF'): 'IMX',
     strethaddress_to_identifier('0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784'): 'TRU',
     strethaddress_to_identifier('0xa0246c9032bC3A600820415aE600c6388619A14D'): 'FARM',
+    'STX-2': 'STX',
 }
 
 WORLD_TO_COINBASE = {
@@ -472,6 +473,7 @@ WORLD_TO_COINBASE = {
     strethaddress_to_identifier('0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F'): 'GTC',
     strethaddress_to_identifier('0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784'): 'TRU',
     strethaddress_to_identifier('0xa0246c9032bC3A600820415aE600c6388619A14D'): 'FARM',
+    'STX-2': 'STX',
 }
 
 WORLD_TO_UPHOLD = {
