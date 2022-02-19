@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`4077` stkAave balance should no longer be double counted. Also unclaimed stkAave will appear in the balance (as Aave).
 * :bug:`4059` Nexo importer won't consider `LockingTermDeposit` as another deposit. 
 
 * :release:`1.23.3 <2022-02-04>`
