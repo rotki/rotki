@@ -13,12 +13,12 @@ from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 logger = logging.getLogger(__name__)
@@ -33,13 +33,11 @@ DONATION_SENT = b';\xb7B\x8b%\xf9\xbd\xad\x9b\xd2\xfa\xa4\xc6\xa7\xa9\xe5\xd5\x8
 class GitcoinDecoder(DecoderInterface):
     def __init__(
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
             base_tools: 'BaseDecoderTools',
-            msg_aggregator: MessagesAggregator,
+            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
-        self.ethereum_manager = ethereum_manager
         self.base = base_tools
-        self.msg_aggregator = msg_aggregator
 
     def _decode_donation_sent(
             self,
@@ -49,6 +47,9 @@ class GitcoinDecoder(DecoderInterface):
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+        if tx_log.topics[0] != DONATION_SENT:
+            return None, None
+
         donor = hex_or_bytes_to_address(tx_log.topics[3])
         if not self.base.is_tracked(donor):
             return None, None

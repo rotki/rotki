@@ -76,7 +76,6 @@ from rotkehlchen.constants.ethereum import (
 from rotkehlchen.errors import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
@@ -87,6 +86,8 @@ from rotkehlchen.utils.misc import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 GENERIC_JOIN = b';M\xa6\x9f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
@@ -105,10 +106,11 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self,
             ethereum_manager: 'EthereumManager',
             base_tools: 'BaseDecoderTools',
-            msg_aggregator: MessagesAggregator,
+            msg_aggregator: 'MessagesAggregator',
     ) -> None:
         self.base = base_tools
-        super().__init__(
+        HasDSProxy.__init__(
+            self,
             ethereum_manager=ethereum_manager,
             database=self.base.database,
             premium=None,  # not used here

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures import (
     HistoryBaseEntry,
@@ -12,26 +12,12 @@ from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
 from rotkehlchen.constants.ethereum import AAVE_V1_LENDING_POOL
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 DEPOSIT = b'\xc1,W\xb1\xc7:,:.\xa4a>\x94v\xab\xb3\xd8\xd1F\x85z\xabs)\xe2BC\xfbYq\x0c\x82'
 
 
 class Aavev1Decoder(DecoderInterface):
-    def __init__(
-            self,
-            ethereum_manager: 'EthereumManager',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: MessagesAggregator,
-    ) -> None:
-        self.ethereum_manager = ethereum_manager
-        self.base = base_tools
-        self.msg_aggregator = msg_aggregator
 
     def decode_pool_event(  # pylint: disable=no-self-use
             self,
