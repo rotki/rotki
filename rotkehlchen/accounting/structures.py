@@ -313,6 +313,7 @@ class HistoryEventSubType(SerializableEnumMixin):
     RECEIVE_WRAPPED = auto()
     # return a wrapped asset of something in any protocol. eg. CDAI to DAI
     RETURN_WRAPPED = auto()
+    DONATE = auto()
 
     def serialize_or_none(self) -> Optional[str]:
         """Serializes the subtype but for the subtype None it returns None"""
@@ -449,12 +450,6 @@ class HistoryBaseEntry:
         return (
             f'{self.event_subtype} event at {self.location} and time '
             f'{timestamp_to_date(ts_ms_to_sec(self.timestamp))} using {self.asset}'
-        )
-
-    def __repr__(self) -> str:
-        return (
-            f'History entry from {self.location} at {self.timestamp} of type '
-            f'{self.event_type} and subtype {self.event_subtype}'
         )
 
     def get_timestamp_in_sec(self) -> Timestamp:

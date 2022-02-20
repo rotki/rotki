@@ -444,9 +444,10 @@ class EVMTransactionDecoder():
         if transfer is None:
             return None
 
-        for action_item in action_items:
+        for idx, action_item in enumerate(action_items):
             if action_item.asset == found_token and action_item.amount == transfer.balance.amount and action_item.from_event_type == transfer.event_type and action_item.from_event_subtype == transfer.event_subtype:  # noqa: E501
                 if action_item.action == 'skip':
+                    action_items.pop(idx)
                     return None
 
                 # else atm only transform
@@ -459,6 +460,7 @@ class EVMTransactionDecoder():
                 if action_item.to_counterparty is not None:
                     transfer.counterparty = action_item.to_counterparty
 
+                action_items.pop(idx)
                 break  # found an action item and acted on it
 
         return transfer
