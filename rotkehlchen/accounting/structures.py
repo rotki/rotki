@@ -292,6 +292,7 @@ class HistoryEventType(SerializableEnumMixin):
     # An informational event. For kraken entries it means an unknown event
     INFORMATIONAL = auto()
     MIGRATE = auto()
+    RENEW = auto()
 
 
 class HistoryEventSubType(SerializableEnumMixin):
@@ -314,6 +315,8 @@ class HistoryEventSubType(SerializableEnumMixin):
     # return a wrapped asset of something in any protocol. eg. CDAI to DAI
     RETURN_WRAPPED = auto()
     DONATE = auto()
+    # subtype for ENS and other NFTs
+    NFT = auto()
 
     def serialize_or_none(self) -> Optional[str]:
         """Serializes the subtype but for the subtype None it returns None"""

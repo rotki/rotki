@@ -42,6 +42,7 @@ from rotkehlchen.utils.misc import (
     hex_or_bytes_to_int,
     ts_sec_to_ms,
 )
+from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .base import BaseDecoderTools
 from .constants import (
@@ -135,6 +136,13 @@ class EVMTransactionDecoder():
         self.address_mappings = address_result
         self.event_rules.extend(rules_result)
 
+    def reload_from_db(self) -> None:
+        """Reload all related settings from DB so that decoding happens with latest"""
+        self.base.refresh_tracked_accounts()
+        for _, decoder in self.decoders.items():
+            if isinstance(decoder, CustomizableDateMixin):
+                decoder.reload_settings()
+
     def try_all_rules(
             self,
             token: Optional[EthereumToken],
@@ -227,7 +235,7 @@ class EVMTransactionDecoder():
         - RemoteError if there is a problem with conacting a remote to get receipts
         - InputError if the transaction hash is not found in the DB
         """
-        self.base.refresh_tracked_accounts()
+        self.reload_from_db()
         tx_module = EthTransactions(ethereum=self.ethereum_manager, database=self.database)
 
         for tx_hash in tx_hashes:
