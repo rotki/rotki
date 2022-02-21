@@ -114,10 +114,10 @@ export const useAssets = defineStore('assets', () => {
     }
   };
 
-  const restoreCustomAssets = async (file: File): Promise<ActionStatus> => {
+  const importCustomAssets = async (file: File): Promise<ActionStatus> => {
     const isLocal = interop.isPackaged && api.defaultBackend;
     try {
-      await api.assets.restoreCustom(file, !isLocal);
+      await api.assets.importCustom(file, !isLocal);
       return {
         success: true
       };
@@ -129,7 +129,7 @@ export const useAssets = defineStore('assets', () => {
     }
   };
 
-  const backupCustomAssets = async (): Promise<ActionStatus> => {
+  const exportCustomAssets = async (): Promise<ActionStatus> => {
     try {
       const isLocal = interop.isPackaged && api.defaultBackend;
       let file: string | undefined = undefined;
@@ -145,7 +145,7 @@ export const useAssets = defineStore('assets', () => {
         }
         file = directory;
       }
-      return await api.assets.backupCustom(file);
+      return await api.assets.exportCustom(file);
     } catch (e: any) {
       return {
         success: false,
@@ -158,8 +158,8 @@ export const useAssets = defineStore('assets', () => {
     checkForUpdate,
     applyUpdates,
     mergeAssets,
-    restoreCustomAssets,
-    backupCustomAssets
+    importCustomAssets,
+    exportCustomAssets
   };
 });
 

@@ -357,7 +357,7 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  async restoreCustom(
+  async importCustom(
     file: File,
     upload: boolean = false
   ): Promise<ActionResult<boolean>> {
@@ -383,7 +383,7 @@ export class AssetApi {
     return handleResponse(response);
   }
 
-  async backupCustom(directory?: string): Promise<ActionStatus> {
+  async exportCustom(directory?: string): Promise<ActionStatus> {
     try {
       if (!directory) {
         const response = await this.axios.put(
