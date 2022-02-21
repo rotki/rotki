@@ -2,20 +2,20 @@ import { Component, Vue } from 'vue-property-decorator';
 import { loadUserOptions, saveUserOptions } from '@/composables/backend';
 import { BackendOptions } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/store';
-import { CRITICAL, DEBUG, Level } from '@/utils/log-level';
-import { setLevel } from '@/utils/logging';
+import { LogLevel } from '@/utils/log-level';
+import { getDefaultLogLevel, setLevel } from '@/utils/logging';
 
 @Component({
   name: 'BackendMixin'
 })
 export default class BackendMixin extends Vue {
-  loglevel: Level = this.defaultLogLevel;
+  loglevel: LogLevel = this.defaultLogLevel;
   fileConfig: Partial<BackendOptions> = {};
   userOptions: Partial<BackendOptions> = {};
   defaultLogDirectory: string = '';
 
-  get defaultLogLevel(): Level {
-    return process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL;
+  get defaultLogLevel(): LogLevel {
+    return getDefaultLogLevel();
   }
 
   get options(): Partial<BackendOptions> {
@@ -50,11 +50,10 @@ export default class BackendMixin extends Vue {
   loaded() {}
 
   async saveOptions(options: Partial<BackendOptions>) {
-    const { logDirectory, dataDirectory, loglevel } = this.userOptions;
+    const { logDirectory, dataDirectory } = this.userOptions;
     const updatedOptions = {
       logDirectory,
       dataDirectory,
-      loglevel,
       ...options
     };
     saveUserOptions(updatedOptions);

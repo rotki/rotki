@@ -1,22 +1,7 @@
-export const TRACE = 'trace';
-export const DEBUG = 'debug';
-export const INFO = 'info';
-export const WARN = 'warn';
-export const ERROR = 'error';
-export const SILENT = 'silent';
-export const CRITICAL = 'critical';
-
-export const levels = [
-  TRACE,
-  DEBUG,
-  INFO,
-  WARN,
-  ERROR,
-  SILENT,
-  CRITICAL
-] as const;
-
-export const levelsOptions = [DEBUG, INFO, WARN, ERROR, CRITICAL];
-
-export type Level = typeof levels[number];
-export const LOG_LEVEL = 'log_level';
+export enum LogLevel {
+  CRITICAL = 'critical',
+  ERROR = 'error',
+  WARNING = 'warning',
+  INFO = 'info',
+  DEBUG = 'debug'
+}

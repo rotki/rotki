@@ -322,15 +322,14 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  info(checkForUpdates: boolean = false): Promise<BackendInfo> {
-    return this.axios
-      .get<ActionResult<BackendInfo>>('/info', {
-        params: axiosSnakeCaseTransformer({
-          checkForUpdates
-        }),
-        transformResponse: basicAxiosTransformer
-      })
-      .then(handleResponse);
+  async info(checkForUpdates: boolean = false): Promise<BackendInfo> {
+    const response = await this.axios.get<ActionResult<BackendInfo>>('/info', {
+      params: axiosSnakeCaseTransformer({
+        checkForUpdates
+      }),
+      transformResponse: basicAxiosTransformer
+    });
+    return BackendInfo.parse(handleResponse(response));
   }
 
   async setSettings(settings: SettingsUpdate): Promise<UserSettingsModel> {

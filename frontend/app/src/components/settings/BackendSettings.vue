@@ -173,15 +173,7 @@ import { BackendOptions } from '@/electron-main/ipc';
 import BackendMixin from '@/mixins/backend-mixin';
 import { useMainStore } from '@/store/store';
 import { Writeable } from '@/types';
-import {
-  CRITICAL,
-  DEBUG,
-  ERROR,
-  INFO,
-  Level,
-  levelsOptions,
-  WARN
-} from '@/utils/log-level';
+import { LogLevel } from '@/utils/log-level';
 
 @Component({
   name: 'BackendSettings',
@@ -199,7 +191,7 @@ export default class BackendSettings extends Mixins(BackendMixin) {
   maxLogSize: string = '';
   maxLogFiles: string = '';
 
-  readonly levels = levelsOptions;
+  readonly levels = Object.values(LogLevel);
   selecting: boolean = false;
   confirmReset: boolean = false;
 
@@ -252,16 +244,16 @@ export default class BackendSettings extends Mixins(BackendMixin) {
     return options;
   }
 
-  icon(level: Level): string {
-    if (level === DEBUG) {
+  icon(level: LogLevel): string {
+    if (level === LogLevel.DEBUG) {
       return 'mdi-bug';
-    } else if (level === INFO) {
+    } else if (level === LogLevel.INFO) {
       return 'mdi-information';
-    } else if (level === WARN) {
+    } else if (level === LogLevel.WARNING) {
       return 'mdi-alert';
-    } else if (level === ERROR) {
+    } else if (level === LogLevel.ERROR) {
       return 'mdi-alert-circle';
-    } else if (level === CRITICAL) {
+    } else if (level === LogLevel.CRITICAL) {
       return 'mdi-alert-decagram';
     }
     throw new Error(`Invalid option: ${level}`);

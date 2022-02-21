@@ -3,26 +3,22 @@ import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/store';
 import { Writeable } from '@/types';
-import { CRITICAL, DEBUG, Level, LOG_LEVEL } from '@/utils/log-level';
-import { setLevel } from '@/utils/logging';
+import { LogLevel } from '@/utils/log-level';
+import { getDefaultLogLevel, setLevel } from '@/utils/logging';
 
-const isDevelopment = process.env.NODE_ENV === 'development';
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 
 export const loadUserOptions: () => Partial<BackendOptions> = () => {
   const defaultConfig: Partial<BackendOptions> = {
-    loglevel: isDevelopment ? DEBUG : CRITICAL
+    loglevel: getDefaultLogLevel()
   };
   try {
     const opts = localStorage.getItem(BACKEND_OPTIONS);
-    const options: Writeable<Partial<BackendOptions>> = opts
-      ? JSON.parse(opts)
-      : defaultConfig;
-    const loglevel = localStorage.getItem(LOG_LEVEL);
-    if (loglevel) {
-      options.loglevel = loglevel as Level;
-      saveUserOptions(options);
-      localStorage.removeItem(LOG_LEVEL);
+    let options: Writeable<Partial<BackendOptions>>;
+    if (opts) {
+      options = BackendOptions.parse(JSON.parse(opts));
+    } else {
+      options = defaultConfig;
     }
     return options;
   } catch (e) {
@@ -38,10 +34,8 @@ export const saveUserOptions = (config: Partial<BackendOptions>) => {
 export const setupBackendManagement = (loaded: () => void = () => {}) => {
   const interop = useInterop();
 
-  const defaultLogLevel = computed<Level>(() =>
-    isDevelopment ? DEBUG : CRITICAL
-  );
-  const logLevel = ref<Level>(defaultLogLevel.value);
+  const defaultLogLevel = computed<LogLevel>(() => getDefaultLogLevel());
+  const logLevel = ref<LogLevel>(defaultLogLevel.value);
   const userOptions = ref<Partial<BackendOptions>>({});
   const fileConfig = ref<Partial<BackendOptions>>({});
   const defaultLogDirectory = ref('');
