@@ -28,7 +28,6 @@ import { HistoryApi } from '@/services/history/history-api';
 import { ReportsApi } from '@/services/reports/reports-api';
 import { SessionApi } from '@/services/session/session-api';
 import {
-  AsyncQuery,
   BackendInfo,
   BtcAccountData,
   GeneralAccountData,
@@ -316,10 +315,11 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  async ping(): Promise<AsyncQuery> {
-    return this.axios
-      .get<ActionResult<AsyncQuery>>('/ping') // no validate status here since defaults work
-      .then(handleResponse);
+  async ping(): Promise<PendingTask> {
+    const ping = await this.axios.get<ActionResult<PendingTask>>('/ping', {
+      transformResponse: basicAxiosTransformer
+    }); // no validate status here since defaults work
+    return handleResponse(ping);
   }
 
   async info(checkForUpdates: boolean = false): Promise<BackendInfo> {
@@ -363,16 +363,21 @@ export class RotkehlchenApi {
       .then(handleResponse);
   }
 
-  queryBalancesAsync(payload: Partial<AllBalancePayload>): Promise<AsyncQuery> {
-    return this.axios
-      .get<ActionResult<AsyncQuery>>('/balances/', {
+  async queryBalancesAsync(
+    payload: Partial<AllBalancePayload>
+  ): Promise<PendingTask> {
+    const response = await this.axios.get<ActionResult<PendingTask>>(
+      '/balances/',
+      {
         params: axiosSnakeCaseTransformer({
           asyncQuery: true,
           ...payload
         }),
-        validateStatus: validStatus
-      })
-      .then(handleResponse);
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer
+      }
+    );
+    return handleResponse(response);
   }
 
   queryTasks(): Promise<TaskStatus> {

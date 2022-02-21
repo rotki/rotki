@@ -16,10 +16,6 @@ export interface SupportedAssets {
 
 export class TaskNotFoundError extends Error {}
 
-export interface AsyncQuery {
-  readonly task_id: number;
-}
-
 export interface PendingTask {
   readonly taskId: number;
 }
