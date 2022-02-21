@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, List, Optional
+from typing import Callable, List, Optional
 
 from rotkehlchen.accounting.structures import (
     HistoryBaseEntry,

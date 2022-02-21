@@ -31,7 +31,7 @@ DONATION_SENT = b';\xb7B\x8b%\xf9\xbd\xad\x9b\xd2\xfa\xa4\xc6\xa7\xa9\xe5\xd5\x8
 
 
 class GitcoinDecoder(DecoderInterface):
-    def __init__(
+    def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
             base_tools: 'BaseDecoderTools',

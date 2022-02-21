@@ -24,7 +24,7 @@ SWAPPED = b'\xe2\xce\xe3\xf6\x83`Y\x82\x0bg9C\x85:\xfe\xbd\x9b0&\x12]\xab\rwB\x8
 
 
 class Oneinchv1Decoder(DecoderInterface):
-    def __init__(
+    def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
             base_tools: 'BaseDecoderTools',

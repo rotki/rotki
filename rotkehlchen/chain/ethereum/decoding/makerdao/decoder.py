@@ -86,7 +86,6 @@ from rotkehlchen.utils.misc import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -102,7 +101,7 @@ CDPMANAGER_FROB = b'E\xe6\xbd\xcd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0
 
 
 class MakerdaoDecoder(DecoderInterface, HasDSProxy):
-    def __init__(
+    def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',
             base_tools: 'BaseDecoderTools',

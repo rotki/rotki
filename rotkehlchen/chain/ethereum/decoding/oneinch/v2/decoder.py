@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.structures import (
-    Balance,
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
@@ -11,8 +10,8 @@ from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
+from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
@@ -23,7 +22,7 @@ SWAPPED = b'v\xaf"J\x148e\xa5\x0bAIn\x1asb&\x98i,V\\\x12\x14\xbc\x86/\x18\xe2-\x
 
 
 class Oneinchv2Decoder(DecoderInterface):
-    def __init__(
+    def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
             base_tools: 'BaseDecoderTools',
@@ -31,11 +30,10 @@ class Oneinchv2Decoder(DecoderInterface):
     ) -> None:
         self.base = base_tools
 
-
     def _decode_swapped(  # pylint: disable=no-self-use
             self,
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,
+            transaction: EthereumTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:

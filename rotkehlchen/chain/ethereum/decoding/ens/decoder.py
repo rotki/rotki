@@ -35,10 +35,10 @@ NAME_RENEWED_ABI = '{"anonymous":false,"inputs":[{"indexed":false,"internalType"
 
 
 class EnsDecoder(DecoderInterface, CustomizableDateMixin):
-    def __init__(
+    def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
-            base_tools: 'BaseDecoderTools',  # pylint: disable=unused-argument
+            base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
         CustomizableDateMixin.__init__(self, base_tools.database)

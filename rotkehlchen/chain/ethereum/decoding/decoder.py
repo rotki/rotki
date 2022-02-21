@@ -12,10 +12,11 @@ from rotkehlchen.accounting.structures import (
 )
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
+from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.chain.ethereum.utils import decode_event_data_abi_str, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
 from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED

@@ -101,4 +101,4 @@ class EthereumContract(NamedTuple):
             event_name=event_name,
             argument_names=argument_names,
         )
-        return decode_event_data_abi(tx_log=tx_log, event_abi=event_abi)
+        return decode_event_data_abi(tx_log=tx_log, event_abi=event_abi)  # type: ignore
