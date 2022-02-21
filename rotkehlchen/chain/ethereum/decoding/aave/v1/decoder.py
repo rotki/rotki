@@ -15,11 +15,12 @@ from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 DEPOSIT = b'\xc1,W\xb1\xc7:,:.\xa4a>\x94v\xab\xb3\xd8\xd1F\x85z\xabs)\xe2BC\xfbYq\x0c\x82'
+REDEEM_UNDERLYING = b'\x9cN\xd5\x99\xcd\x85U\xb9\xc1\xe8\xcdvC$\r}q\xebv\xb7\x92\x94\x8cI\xfc\xb4\xd4\x11\xf7\xb6\xb3\xc6'  # noqa: E501
 
 
 class Aavev1Decoder(DecoderInterface):
 
-    def decode_pool_event(  # pylint: disable=no-self-use
+    def _decode_pool_event(  # pylint: disable=no-self-use
             self,
             tx_log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,  # pylint: disable=unused-argument
@@ -27,9 +28,21 @@ class Aavev1Decoder(DecoderInterface):
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: List[ActionItem],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
-        if tx_log.topics[0] != DEPOSIT:
-            return None, None
+        if tx_log.topics[0] == DEPOSIT:
+            return self._decode_deposit_event(tx_log, transaction, decoded_events, all_logs, action_items)  # noqa: E501
+        if tx_log.topics[0] == REDEEM_UNDERLYING:
+            return self._decode_redeem_underlying_event(tx_log, transaction, decoded_events, all_logs, action_items)  # noqa: E501
 
+        return None, None
+
+    def _decode_deposit_event(  # pylint: disable=no-self-use
+            self,
+            tx_log: EthereumTxReceiptLog,
+            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: List[ActionItem],  # pylint: disable=unused-argument
+    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         reserve_address = hex_or_bytes_to_address(tx_log.topics[1])
         reserve_asset = ethaddress_to_asset(reserve_address)
         if reserve_asset is None:
@@ -37,7 +50,7 @@ class Aavev1Decoder(DecoderInterface):
         user_address = hex_or_bytes_to_address(tx_log.topics[2])
         raw_amount = hex_or_bytes_to_int(tx_log.data[0:32])
         amount = asset_normalized_value(raw_amount, reserve_asset)
-        atoken = asset_to_atoken(reserve_asset, 1)
+        atoken = asset_to_atoken(asset=reserve_asset, version=1)
         if atoken is None:
             return None, None
 
@@ -56,7 +69,41 @@ class Aavev1Decoder(DecoderInterface):
 
         return None, None
 
+    def _decode_redeem_underlying_event(  # pylint: disable=no-self-use
+            self,
+            tx_log: EthereumTxReceiptLog,
+            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            decoded_events: List[HistoryBaseEntry],  # pylint: disable=unused-argument
+            all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
+            action_items: List[ActionItem],  # pylint: disable=unused-argument
+    ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
+        reserve_address = hex_or_bytes_to_address(tx_log.topics[1])
+        reserve_asset = ethaddress_to_asset(reserve_address)
+        if reserve_asset is None:
+            return None, None
+        user_address = hex_or_bytes_to_address(tx_log.topics[2])
+        raw_amount = hex_or_bytes_to_int(tx_log.data[0:32])
+        amount = asset_normalized_value(raw_amount, reserve_asset)
+        atoken = asset_to_atoken(asset=reserve_asset, version=1)
+        if atoken is None:
+            return None, None
+
+        for event in decoded_events:
+            if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and reserve_asset == event.asset:  # noqa: E501
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.counterparty = 'aave-v1'
+                event.notes = f'Withdraw {amount} {reserve_asset.symbol} from aave-v1'
+            elif event.event_type == HistoryEventType.SPEND and event.location_label == user_address and amount == event.balance.amount and atoken == event.asset:  # noqa: E501
+                # find the redeem aToken transfer
+                event.event_type = HistoryEventType.SPEND
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                event.counterparty = 'aave-v1'
+                event.notes = f'Return {amount} {atoken.symbol} to aave-v1'
+
+        return None, None
+
     def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
         return {
-            AAVE_V1_LENDING_POOL.address: (self.decode_pool_event,),  # noqa: E501
+            AAVE_V1_LENDING_POOL.address: (self._decode_pool_event,),  # noqa: E501
         }

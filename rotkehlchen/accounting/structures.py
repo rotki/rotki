@@ -317,6 +317,8 @@ class HistoryEventSubType(SerializableEnumMixin):
     DONATE = auto()
     # subtype for ENS and other NFTs
     NFT = auto()
+    # for DXDAO Mesa, Gnosis cowswap etc.
+    PLACE_ORDER = auto()
 
     def serialize_or_none(self) -> Optional[str]:
         """Serializes the subtype but for the subtype None it returns None"""
