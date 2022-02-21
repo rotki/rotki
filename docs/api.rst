@@ -10256,7 +10256,7 @@ Export assets added by the user
 
 .. http:put:: /api/(version)/assets/user
 
-   Calling this endpoint with PUT and action `download` will create a zip file with the assets that are not included by default with vanilla rotki.
+   Calling this endpoint with PUT and action `download` will create a zip file with the assets that are not included by default with vanilla rotki. If no destination folder is provided the generated file is returned with headers `application/zip`.
 
    **Example Request**:
 
@@ -10284,7 +10284,7 @@ Export assets added by the user
       }
 
    :resjsonarr string action: Action performed on the endpoint
-   :resjsonarr string destination: Folder where the generated files will be saved. If none is chosen a temporary folder is used.
+   :resjsonarr string destination: Folder where the generated files will be saved
 
    :statuscode 200: Response file is correctly generated
    :statuscode 409: No user is logged in.

@@ -4007,6 +4007,11 @@ class RestAPI():
 
     @require_loggedin_user()
     def get_user_added_assets(self, path: Optional[Path]) -> Response:
+        """
+        Creates a zip file with the list of assets added by the user. If path is not None the zip
+        file is saved in that folder and a json response including the path is returned.
+        If path is None the zip file is returned with header application/zip
+        """
         try:
             zip_path = export_assets_from_file(
                 dirpath=path,
@@ -4016,6 +4021,14 @@ class RestAPI():
             return api_response(
                 result=wrap_in_fail_result(f'Failed to create asset export file. {str(e)}'),
                 status_code=HTTPStatus.INSUFFICIENT_STORAGE,
+            )
+
+        if path is None:
+            return send_file(
+                path_or_file=zip_path,
+                mimetype='application/zip',
+                as_attachment=True,
+                download_name='assets.zip',
             )
 
         return api_response(
