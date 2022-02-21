@@ -106,6 +106,9 @@ export default class PyHandler {
   }
 
   get logDir(): string {
+    if (process.env.VUE_APP_DEV_LOGS) {
+      return path.join('..', 'logs');
+    }
     return this.logDirectory ?? this.defaultLogDirectory;
   }
 
