@@ -16,10 +16,12 @@ from web3 import Web3
 from web3._utils.abi import get_abi_output_types
 from web3.types import BlockIdentifier
 
+from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
 from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
+    from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 
 WEB3 = Web3()
 
@@ -82,3 +84,21 @@ class EthereumContract(NamedTuple):
         )
         output_types = get_abi_output_types(fn_abi)
         return WEB3.codec.decode_abi(output_types, result)
+
+    def decode_event(
+            self,
+            tx_log: 'EthereumTxReceiptLog',
+            event_name: str,
+            argument_names: Sequence[str],
+    ) -> Tuple[List, List]:
+        """Decodes an event by finding the event ABI in the given contract's abi
+
+        Perhaps we can have a faster version of this method where instead of name
+        and argument names we just give the index of event abi in the list if we know it
+        """
+        contract = WEB3.eth.contract(address=self.address, abi=self.abi)
+        event_abi = contract._find_matching_event_abi(
+            event_name=event_name,
+            argument_names=argument_names,
+        )
+        return decode_event_data_abi(tx_log=tx_log, event_abi=event_abi)  # type: ignore

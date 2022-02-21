@@ -14,12 +14,12 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import A_COMP
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 MINT_COMPOUND_TOKEN = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n\x1co\xef&9OL\x03\x82\x1cO'  # noqa: E501
@@ -27,15 +27,13 @@ REDEEM_COMPOUND_TOKEN = b'\xe5\xb7T\xfb\x1a\xbb\x7f\x01\xb4\x99y\x1d\x0b\x82\n\x
 
 
 class CompoundDecoder(DecoderInterface):
-    def __init__(
+    def __init__(  # pylint: disable=super-init-not-called
             self,
-            ethereum_manager: 'EthereumManager',
+            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
             base_tools: 'BaseDecoderTools',
-            msg_aggregator: MessagesAggregator,
+            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
-        self.ethereum_manager = ethereum_manager
         self.base = base_tools
-        self.msg_aggregator = msg_aggregator
 
     def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
         compound_tokens = GlobalDBHandler().get_ethereum_tokens(protocol='compound')

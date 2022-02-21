@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, List, Optional
+from typing import Callable, List, Optional
 
 from rotkehlchen.accounting.structures import (
     HistoryBaseEntry,
@@ -10,12 +10,7 @@ from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.types import EthereumTransaction
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 # https://github.com/Uniswap/v1-contracts/blob/c10c08d81d6114f694baa8bd32f555a40f6264da/contracts/uniswap_exchange.vy#L13
 TOKEN_PURCHASE = b'\xcd`\xaau\xde\xa3\x07/\xbc\x07\xaem}\x85k]\xc5\xf4\xee\xe8\x88T\xf5\xb4\xab\xf7\xb6\x80\xef\x8b\xc5\x0f'  # noqa: E501
@@ -24,15 +19,6 @@ ETH_PURCHASE = b'\x7f@\x91\xb4l3\xe9\x18\xa0\xf3\xaaB0vA\xd1{\xb6p)BzSi\xe5K59\x
 
 
 class Uniswapv1Decoder(DecoderInterface):
-    def __init__(
-            self,
-            ethereum_manager: 'EthereumManager',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: MessagesAggregator,
-    ) -> None:
-        self.ethereum_manager = ethereum_manager
-        self.base = base_tools
-        self.msg_aggregator = msg_aggregator
 
     def _maybe_decode_swap(  # pylint: disable=no-self-use
             self,
