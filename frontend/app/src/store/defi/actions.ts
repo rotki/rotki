@@ -24,6 +24,7 @@ import { ALL_MODULES } from '@/services/session/consts';
 import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL, dexTradeNumericKeys } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
+import { useLiquityStore } from '@/store/defi/liquity';
 import { DefiMutations } from '@/store/defi/mutation-types';
 import { defaultCompoundHistory } from '@/store/defi/state';
 import {
@@ -434,6 +435,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     await dispatch('fetchDefiBalances', refresh);
     setStatus(Status.PARTIALLY_LOADED, section);
 
+    const { fetchBalances: fetchLiquityBalances } = useLiquityStore();
     await Promise.all([
       dispatch('fetchAaveBalances', refresh),
       dispatch('fetchDSRBalances', refresh),
@@ -447,7 +449,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         refresh,
         version: ProtocolVersion.V2
       }),
-      dispatch('liquity/fetchBalances', refresh)
+      fetchLiquityBalances(refresh)
     ]);
 
     setStatus(Status.LOADED, section);
@@ -579,6 +581,11 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
     const currentStatus = getStatus(section);
     const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
 
+    const {
+      fetchBalances: fetchLiquityBalances,
+      fetchEvents: fetchLiquityEvents
+    } = useLiquityStore();
+
     if (
       !isLoading(currentStatus) ||
       (currentStatus === Status.LOADED && refresh)
@@ -594,7 +601,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
         dispatch('fetchAaveBalances', refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         }),
-        dispatch('liquity/fetchBalances', refresh).then(() => {
+        fetchLiquityBalances(refresh).then(() => {
           setStatus(Status.PARTIALLY_LOADED, section);
         })
       ]);
@@ -618,7 +625,7 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       dispatch('fetchMakerDAOVaultDetails', refresh),
       dispatch('fetchCompoundHistory', refresh),
       dispatch('fetchAaveHistory', refresh),
-      dispatch('liquity/fetchEvents', refresh)
+      fetchLiquityEvents(refresh)
     ]);
 
     setStatus(Status.LOADED, premiumSection);
@@ -1112,6 +1119,8 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
       clearBalancerState();
     } else if (Module.SUSHISWAP) {
       dispatch('sushiswap/purge');
+    } else if (Module.LIQUITY) {
+      useLiquityStore().purge();
     } else if (module === ALL_MODULES) {
       clearDSRState();
       clearMakerDAOVaultState();

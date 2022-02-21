@@ -43,6 +43,7 @@ import {
   YEARN_FINANCE_VAULTS,
   YEARN_FINANCE_VAULTS_V2
 } from '@/store/defi/const';
+import { useLiquityStore } from '@/store/defi/liquity';
 import { LiquityLoan } from '@/store/defi/liquity/types';
 import {
   AaveLoan,
@@ -321,8 +322,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         aaveHistory,
         makerDAOVaults,
         compoundBalances,
-        compoundHistory: { events },
-        liquity
+        compoundHistory: { events }
       }: DefiState,
       _dg,
       _rs,
@@ -426,8 +426,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (showAll || protocols.includes(DefiProtocol.LIQUITY)) {
-        assert(liquity);
-        const { events, balances } = liquity;
+        const { events, balances } = useLiquityStore();
         const balanceAddress = Object.keys(balances);
         const eventAddresses = Object.keys(events);
 
@@ -460,8 +459,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
         aaveBalances,
         aaveHistory,
         compoundBalances,
-        compoundHistory: { events },
-        liquity
+        compoundHistory: { events }
       }: DefiState,
       { loans }
     ) =>
@@ -630,10 +628,9 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (loan.protocol === DefiProtocol.LIQUITY) {
-        assert(liquity);
         assert(loan.owner);
         const { owner } = loan;
-        const { balances, events } = liquity;
+        const { balances, events } = useLiquityStore();
 
         return {
           owner: owner,
@@ -647,7 +644,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
     },
 
   loanSummary:
-    ({ makerDAOVaults, aaveBalances, compoundBalances, liquity }: DefiState) =>
+    ({ makerDAOVaults, aaveBalances, compoundBalances }: DefiState) =>
     (protocols: DefiProtocol[]): LoanSummary => {
       let totalCollateralUsd = Zero;
       let totalDebt = Zero;
@@ -695,7 +692,7 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       }
 
       if (showAll || protocols.includes(DefiProtocol.LIQUITY)) {
-        const balances = liquity!!.balances;
+        const { balances } = useLiquityStore();
         for (const address in balances) {
           const balance = balances[address];
           const { collateral, debt } = balance;

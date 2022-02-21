@@ -30,7 +30,7 @@ import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDe
 import { setupStatusChecking } from '@/composables/common';
 import { getPremium, setupModuleEnabled } from '@/composables/session';
 import { Section } from '@/store/const';
-import { useStore } from '@/store/utils';
+import { useLiquityStore } from '@/store/defi/liquity';
 import { Module } from '@/types/modules';
 
 export default defineComponent({
@@ -44,11 +44,11 @@ export default defineComponent({
   },
   setup() {
     const { isModuleEnabled } = setupModuleEnabled();
-    const store = useStore();
+    const { fetchStaking, fetchStakingEvents } = useLiquityStore();
 
     async function load() {
-      await store.dispatch('defi/liquity/fetchStaking');
-      await store.dispatch('defi/liquity/fetchStakingEvents');
+      await fetchStaking();
+      await fetchStakingEvents();
     }
 
     onMounted(async () => await load());
