@@ -9,7 +9,7 @@
   <div v-else>
     <sushi
       class="mt-4"
-      :refreshing="anyRefreshing"
+      :refreshing="primaryRefreshing || secondaryRefreshing"
       :secondary-loading="secondaryRefreshing"
     >
       <template #modules>
@@ -20,17 +20,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
-import { mapActions } from 'vuex';
+import { defineComponent, onMounted } from '@vue/composition-api';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
-import ModuleMixin from '@/mixins/module-mixin';
-import PremiumMixin from '@/mixins/premium-mixin';
-import StatusMixin from '@/mixins/status-mixin';
+import { setupStatusChecking } from '@/composables/common';
+import { getPremium, setupModuleEnabled } from '@/composables/session';
 import { Sushi } from '@/premium/premium';
 import { Section } from '@/store/const';
+import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { Module } from '@/types/modules';
 
 export default defineComponent({
@@ -42,28 +41,30 @@ export default defineComponent({
     ProgressScreen,
     ModuleNotActive
   },
-  mixins: [StatusMixin, ModuleMixin, PremiumMixin],
-  data() {
+  setup() {
     const section = Section.DEFI_SUSHISWAP_BALANCES;
     const secondSection = Section.DEFI_SUSHISWAP_EVENTS;
     const modules: Module[] = [Module.SUSHISWAP];
+
+    const { fetchBalances, fetchEvents } = useSushiswapStore();
+    const { isModuleEnabled } = setupModuleEnabled();
+    const { shouldShowLoadingScreen, isSectionRefreshing } =
+      setupStatusChecking();
+    const premium = getPremium();
+
+    onMounted(async () => {
+      await Promise.all([fetchBalances(false), fetchEvents(false)]);
+    });
     return {
       section,
       secondSection,
-      modules
+      modules,
+      premium,
+      primaryRefreshing: isSectionRefreshing(section),
+      secondaryRefreshing: isSectionRefreshing(secondSection),
+      loading: shouldShowLoadingScreen(section),
+      isEnabled: isModuleEnabled(modules[0])
     };
-  },
-  computed: {
-    isEnabled(): boolean {
-      const mixin = this as any as ModuleMixin;
-      return mixin.isModuleEnabled(Module.SUSHISWAP);
-    }
-  },
-  async mounted() {
-    await Promise.all([this.fetchBalances(false), this.fetchEvents(false)]);
-  },
-  methods: {
-    ...mapActions('defi/sushiswap', ['fetchBalances', 'fetchEvents'])
   }
 });
 </script>

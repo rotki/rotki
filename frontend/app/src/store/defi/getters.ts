@@ -45,6 +45,7 @@ import {
 } from '@/store/defi/const';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { LiquityLoan } from '@/store/defi/liquity/types';
+import { useSushiswapStore } from '@/store/defi/sushiswap';
 import {
   AaveLoan,
   Airdrop,
@@ -1500,9 +1501,10 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       return earned;
     },
   dexTrades:
-    ({ balancerTrades, sushiswap }) =>
+    ({ balancerTrades }) =>
     (addresses): DexTrade[] => {
       const { trades: uniswapTrades } = useUniswap();
+      const { trades: sushiswapTrades } = useSushiswapStore();
       const trades: DexTrade[] = [];
       const addTrades = (
         dexTrades: DexTrades,
@@ -1518,8 +1520,8 @@ export const getters: Getters<DefiState, DefiGetters, RotkehlchenState, any> = {
       };
       addTrades(uniswapTrades as DexTrades, addresses, trades);
       addTrades(balancerTrades, addresses, trades);
-      if (sushiswap) {
-        addTrades(sushiswap.trades, addresses, trades);
+      if (sushiswapTrades) {
+        addTrades(sushiswapTrades as DexTrades, addresses, trades);
       }
 
       return sortBy(trades, 'timestamp').reverse();

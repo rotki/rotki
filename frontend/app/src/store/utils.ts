@@ -1,18 +1,17 @@
 import { Message, Severity } from '@rotki/common/lib/messages';
-import { inject, Ref, unref } from '@vue/composition-api';
+import { Ref, unref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import * as logger from 'loglevel';
 import { ActionContext, Store } from 'vuex';
 import i18n from '@/i18n';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
-import { useMainStore } from '@/store/store';
+import store, { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
 import { FetchData, FetchPayload } from '@/store/typing';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { assert } from '@/utils/assertions';
 
 export async function fetchAsync<S, T extends TaskMeta, R>(
   { commit, rootState: { session } }: ActionContext<S, RotkehlchenState>,
@@ -200,11 +199,7 @@ export function filterAddresses<T>(
   }
 }
 
-export function useStore(): Store<RotkehlchenState> {
-  const store = inject<Store<RotkehlchenState>>('vuex-store');
-  assert(store);
-  return store;
-}
+export const useStore = (): Store<RotkehlchenState> => store;
 
 const KEY_ANIMATIONS_ENABLED = 'rotki.animations_enabled' as const;
 export function isAnimationsEnabled(): boolean {

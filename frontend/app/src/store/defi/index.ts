@@ -1,5 +1,4 @@
 import { Module } from 'vuex';
-import { sushiswap } from '@/store/defi/sushiswap';
 import { DefiState } from '@/store/defi/types';
 import { RotkehlchenState } from '@/store/types';
 import { actions } from './actions';
@@ -14,8 +13,5 @@ export const defi: Module<DefiState, RotkehlchenState> = {
   mutations,
   actions,
   state,
-  getters,
-  modules: {
-    sushiswap
-  }
+  getters
 };
