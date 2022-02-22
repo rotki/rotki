@@ -22,12 +22,7 @@
         </div>
       </template>
       <span>
-        {{
-          $t('asset_icon.tooltip', {
-            symbol: getAssetSymbol(identifier),
-            name: getAssetName(identifier)
-          })
-        }}
+        {{ $t('asset_icon.tooltip', tooltip) }}
       </span>
     </v-tooltip>
   </adaptive-wrapper>
@@ -42,6 +37,7 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import { setupAssetInfoRetrieval } from '@/composables/balances';
@@ -63,51 +59,57 @@ export default defineComponent({
     const { symbol, changeable, identifier } = toRefs(props);
     const error = ref<boolean>(false);
 
-    const { getAssetSymbol, getAssetName, getAssetIdentifierForSymbol } =
+    const { assetSymbol, assetName, getAssetIdentifierForSymbol } =
       setupAssetInfoRetrieval();
 
-    watch([symbol, changeable, identifier], () => {
-      error.value = false;
-    });
+    watch([symbol, changeable, identifier], () => set(error, false));
 
     const currency = computed<string | undefined>(() => {
-      if (
-        [Blockchain.BTC, Blockchain.ETH].includes(
-          identifier.value as Blockchain
-        )
-      ) {
+      const id = get(identifier);
+      if ([Blockchain.BTC, Blockchain.ETH].includes(id as Blockchain)) {
         return undefined;
       }
-      return currencies.find(
-        ({ tickerSymbol }) => tickerSymbol === identifier.value
-      )?.unicodeSymbol;
+      return currencies.find(({ tickerSymbol }) => tickerSymbol === id)
+        ?.unicodeSymbol;
     });
 
     const displayAsset = computed<string>(() => {
-      if (error.value && symbol.value) {
-        return symbol.value;
+      const id = get(identifier);
+      const matchedSymbol = get(assetSymbol(id));
+      if (get(error)) {
+        return get(symbol) || matchedSymbol;
       }
-      return currency.value || identifier.value;
+      return get(currency) || matchedSymbol || id;
+    });
+
+    const tooltip = computed(() => {
+      const id = get(identifier);
+      return {
+        symbol: get(assetSymbol(id)),
+        name: get(assetName(id))
+      };
     });
 
     const url = computed<string>(() => {
+      let id = get(identifier);
       if (
-        symbol.value === 'WETH' ||
-        getAssetIdentifierForSymbol('WETH') === identifier.value
+        get(symbol) === 'WETH' ||
+        getAssetIdentifierForSymbol('WETH') === id
       ) {
         return require(`@/assets/images/defi/weth.svg`);
       }
-      const url = `${api.serverUrl}/api/1/assets/${identifier.value}/icon`;
-      return changeable.value ? `${url}?t=${Date.now()}` : url;
+      const url = `${api.serverUrl}/api/1/assets/${id}/icon`;
+      return get(changeable) ? `${url}?t=${Date.now()}` : url;
     });
 
     return {
       currency,
       error,
       displayAsset,
+      tooltip,
       url,
-      getAssetSymbol,
-      getAssetName
+      assetSymbol,
+      assetName
     };
   }
 });

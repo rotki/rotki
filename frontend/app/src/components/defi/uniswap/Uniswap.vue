@@ -96,11 +96,7 @@
             justify="end"
           >
             <v-col cols="auto">
-              <asset-icon
-                :identifier="asset.asset"
-                :symbol="getSymbol(asset.asset)"
-                size="32px"
-              />
+              <asset-icon :identifier="asset.asset" size="32px" />
             </v-col>
             <v-col class="d-flex" cols="auto">
               <div>

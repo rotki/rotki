@@ -26,7 +26,7 @@
       />
     </div>
     <asset-link v-if="!noIcon" class="ml-1" icon :asset="asset">
-      <asset-icon :identifier="asset" :symbol="getSymbol(asset)" size="24px" />
+      <asset-icon :identifier="asset" size="24px" />
     </asset-link>
   </div>
 </template>

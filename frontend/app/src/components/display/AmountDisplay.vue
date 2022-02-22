@@ -86,6 +86,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import {
   setupAssetInfoRetrieval,
@@ -158,14 +159,15 @@ export default defineComponent({
       valueRoundingMode
     } = setupSettings();
 
-    const { getAssetSymbol } = setupAssetInfoRetrieval();
+    const { assetSymbol } = setupAssetInfoRetrieval();
 
     const symbol = computed<string>(() => {
-      if (!asset.value) {
+      const identifier = get(asset);
+      if (!identifier) {
         return '';
       }
 
-      return getAssetSymbol(asset.value);
+      return get(assetSymbol(identifier));
     });
 
     const copied = ref<boolean>(false);

@@ -115,7 +115,14 @@ export const setupAssetInfoRetrieval = () => {
   const getTokenAddress = (identifier: string) => {
     return getAssetInfo(identifier)?.ethereumAddress ?? '';
   };
+
+  const assetSymbol = (identifier: string) =>
+    computed(() => getAssetSymbol(identifier));
+  const assetName = (identifier: string) =>
+    computed(() => getAssetName(identifier));
   return {
+    assetSymbol,
+    assetName,
     getAssetInfo,
     getAssetIdentifierForSymbol,
     getAssetSymbol,

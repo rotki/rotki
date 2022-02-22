@@ -2,7 +2,7 @@
   <v-container class="pb-12">
     <v-row align="center" class="mt-12">
       <v-col cols="auto">
-        <asset-icon :identifier="icon" size="48px" :symbol="symbol" />
+        <asset-icon :identifier="icon" size="48px" />
       </v-col>
       <v-col class="d-flex flex-column" cols="auto">
         <span class="text-h5 font-weight-medium">{{ symbol }}</span>
