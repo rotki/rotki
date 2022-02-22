@@ -4,7 +4,6 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
 import { api } from '@/services/rotkehlchen-api';
-import { assets } from '@/store/assets';
 import { balances } from '@/store/balances';
 import { defiSections, Section, Status } from '@/store/const';
 import { storePlugins } from '@/store/debug';
@@ -16,8 +15,8 @@ import { statistics } from '@/store/statistics';
 import { RotkehlchenState, StatusPayload, Version } from '@/store/types';
 import { isLoading } from '@/store/utils';
 import { Nullable } from '@/types';
-import { CRITICAL, DEBUG, Level } from '@/utils/log-level';
-import { logger, setLevel } from '@/utils/logging';
+import { LogLevel } from '@/utils/log-level';
+import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 
 Vue.use(Vuex);
 
@@ -31,9 +30,7 @@ export const useMainStore = defineStore('main', () => {
   const connectionFailure = ref(false);
   const status = ref<Partial<Record<Section, Status>>>({});
   const dataDirectory = ref('');
-  const logLevel = ref<Level>(
-    process.env.NODE_ENV === 'development' ? DEBUG : CRITICAL
-  );
+  const logLevel = ref<LogLevel>(getDefaultLogLevel());
 
   const updateNeeded = computed(() => {
     const { version: appVersion, downloadUrl } = version.value;
@@ -73,12 +70,12 @@ export const useMainStore = defineStore('main', () => {
   };
 
   const getInfo = async (): Promise<void> => {
-    const { dataDirectory: appDataDirectory, logLevel: appLogLevel } =
-      await api.info(false);
+    const { dataDirectory: appDataDirectory, logLevel: level } = await api.info(
+      false
+    );
     dataDirectory.value = appDataDirectory;
-    const formattedAppLogLevel = appLogLevel.toLowerCase() as Level;
-    logLevel.value = formattedAppLogLevel;
-    setLevel(formattedAppLogLevel);
+    logLevel.value = level;
+    setLevel(level);
   };
 
   const connect = async (payload?: string | null): Promise<void> => {
@@ -218,8 +215,7 @@ const store: StoreOptions<RotkehlchenState> = {
     session,
     settings,
     statistics,
-    staking,
-    assets
+    staking
   },
   plugins: storePlugins()
 };

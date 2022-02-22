@@ -52,7 +52,7 @@ import {
 } from '@/services/session/consts';
 import { Purgeable } from '@/services/session/types';
 import { ACTION_PURGE_CACHED_DATA } from '@/store/session/const';
-import { ActionStatus } from '@/store/types';
+import { SuccessMessage } from '@/store/types';
 import { SUPPORTED_EXCHANGES, SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
 
@@ -64,7 +64,7 @@ import { Module } from '@/types/modules';
 })
 export default class DataManagement extends Vue {
   source: Purgeable = ALL_TRANSACTIONS;
-  status: ActionStatus | null = null;
+  status: SuccessMessage | null = null;
   confirm: boolean = false;
   pending: boolean = false;
   sourceLabel: string = '';

@@ -5,6 +5,7 @@
     <v-form ref="form">
       <v-alert
         v-if="premiumSync"
+        data-cy="premium-warning"
         type="warning"
         prominent
         outlined

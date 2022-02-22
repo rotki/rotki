@@ -196,10 +196,10 @@ export default class PremiumSettings extends Vue {
       apiKey: this.apiKey.trim(),
       apiSecret: this.apiSecret.trim()
     };
-    const { success, message } = await this.setupPremium(payload);
-    if (!success) {
+    const result = await this.setupPremium(payload);
+    if (!result.success) {
       this.errorMessages.push(
-        message ?? this.$tc('premium_settings.error.setting_failed')
+        result.message ?? this.$tc('premium_settings.error.setting_failed')
       );
       return;
     }
@@ -213,10 +213,10 @@ export default class PremiumSettings extends Vue {
     if (!this.premium) {
       return;
     }
-    const { success, message } = await this.deletePremium();
-    if (!success) {
+    const result = await this.deletePremium();
+    if (!result.success) {
       this.errorMessages.push(
-        message ?? this.$tc('premium_settings.error.removing_failed')
+        result.message ?? this.$tc('premium_settings.error.removing_failed')
       );
       return;
     }

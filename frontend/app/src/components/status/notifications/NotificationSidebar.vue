@@ -10,57 +10,66 @@
     hide-overlay
     @input="input($event)"
   >
-    <v-row align="center" no-gutters class="pl-2 pr-2 pt-1 pb-2">
-      <v-col cols="auto">
-        <v-tooltip bottom>
-          <template #activator="{ on }">
-            <v-btn text icon v-on="on" @click="close()">
-              <v-icon>mdi-chevron-right</v-icon>
-            </v-btn>
-          </template>
-          <span>{{ $t('notification_sidebar.close_tooltip') }}</span>
-        </v-tooltip>
-      </v-col>
-      <v-col>
-        <span
-          class="text-uppercase text--secondary text-caption font-weight-medium pl-1"
+    <div v-if="visible" :class="$style.container">
+      <v-row align="center" no-gutters class="pl-2 pr-2 pt-1 pb-2">
+        <v-col cols="auto">
+          <v-tooltip bottom>
+            <template #activator="{ on }">
+              <v-btn text icon v-on="on" @click="close()">
+                <v-icon>mdi-chevron-right</v-icon>
+              </v-btn>
+            </template>
+            <span>{{ $t('notification_sidebar.close_tooltip') }}</span>
+          </v-tooltip>
+        </v-col>
+        <v-col>
+          <span
+            class="text-uppercase text--secondary text-caption font-weight-medium pl-1"
+          >
+            {{ $t('notification_sidebar.title') }}
+          </span>
+        </v-col>
+        <v-col cols="auto">
+          <v-btn
+            text
+            class="text-caption text-lowercase"
+            color="accent"
+            :disabled="notifications.length === 0"
+            @click="confirmClear = true"
+          >
+            {{ $t('notification_sidebar.clear_tooltip') }}
+          </v-btn>
+        </v-col>
+      </v-row>
+      <div
+        v-if="!hasRunningTasks && notifications.length === 0"
+        :class="$style['no-messages']"
+      >
+        <v-icon size="64px" color="primary">mdi-information</v-icon>
+        <div :class="$style.label">
+          {{ $t('notification_sidebar.no_messages') }}
+        </div>
+      </div>
+      <div v-else :class="$style.messages">
+        <pending-tasks />
+        <div
+          v-if="notifications.length > 0"
+          class="pl-2"
+          :class="$style.content"
         >
-          {{ $t('notification_sidebar.title') }}
-        </span>
-      </v-col>
-      <v-col cols="auto">
-        <v-btn
-          text
-          class="text-caption text-lowercase"
-          color="accent"
-          :disabled="notifications.length === 0"
-          @click="confirmClear = true"
-        >
-          {{ $t('notification_sidebar.clear_tooltip') }}
-        </v-btn>
-      </v-col>
-    </v-row>
-    <div
-      v-if="!hasRunningTasks && notifications.length === 0"
-      :class="$style['no-messages']"
-    >
-      <v-icon size="64px" color="primary">mdi-information</v-icon>
-      <div :class="$style.label">
-        {{ $t('notification_sidebar.no_messages') }}
+          <v-virtual-scroll :items="notifications" item-height="130px">
+            <template #default="{ item }">
+              <notification
+                class="mb-2 mt-2"
+                :notification="item"
+                @dismiss="remove($event)"
+              />
+            </template>
+          </v-virtual-scroll>
+        </div>
       </div>
     </div>
-    <div v-else :class="$style.messages">
-      <pending-tasks />
-      <div v-if="notifications.length > 0" class="pl-2">
-        <notification
-          v-for="notification in notifications"
-          :key="notification.id"
-          class="mb-2"
-          :notification="notification"
-          @dismiss="remove($event)"
-        />
-      </div>
-    </div>
+
     <confirm-dialog
       :display="confirmClear"
       :title="$t('notification_sidebar.confirmation.title')"
@@ -178,8 +187,9 @@ export default NotificationSidebar;
   color: rgb(0, 0, 0, 0.6);
 }
 
-.messages {
+.container,
+.messages,
+.content {
   height: calc(100% - 64px);
-  overflow-y: scroll !important;
 }
 </style>

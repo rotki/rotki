@@ -106,7 +106,7 @@ export default defineComponent({
     const { dark } = setupThemeCheck();
 
     const displayText = computed<string>(() => {
-      if (scrambleData.value) {
+      if (!scrambleData.value) {
         return text.value;
       }
       const length = tx.value ? 64 : 40;
@@ -137,21 +137,7 @@ export default defineComponent({
     });
 
     const copyText = (text: string) => {
-      if (!navigator.clipboard) {
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed'; //avoid scrolling to bottom
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-          document.execCommand('copy');
-        } finally {
-          document.body.removeChild(textArea);
-        }
-      } else {
-        navigator.clipboard.writeText(text);
-      }
+      navigator.clipboard.writeText(text);
     };
 
     const url = computed<string>(() => {

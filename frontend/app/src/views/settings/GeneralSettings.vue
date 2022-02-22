@@ -542,14 +542,16 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
     setting: SettingsEntries,
     baseMessage: BaseMessage
   ): Promise<boolean> {
-    const { message, success } = await this.settingsUpdate(update);
+    const result = await this.settingsUpdate(update);
 
     this.validateSettingChange(
       setting,
-      success ? 'success' : 'error',
-      success ? baseMessage.success : `${baseMessage.error}: ${message}`
+      result.success ? 'success' : 'error',
+      result.success
+        ? baseMessage.success
+        : `${baseMessage.error}: ${result.message}`
     );
-    return success;
+    return result.success;
   }
 
   async onSelectedCurrencyChange(currency: Currency) {

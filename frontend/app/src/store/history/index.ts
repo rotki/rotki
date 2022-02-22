@@ -102,7 +102,7 @@ export const useHistory = defineStore('history', () => {
   const ignoreInAccounting = async (
     { actionIds, type }: IgnoreActionPayload,
     ignore: boolean
-  ) => {
+  ): Promise<ActionStatus> => {
     try {
       ignore
         ? await api.ignoreActions(actionIds, type)
@@ -131,7 +131,7 @@ export const useHistory = defineStore('history', () => {
         title,
         description
       });
-      return { success: false };
+      return { success: false, message: 'failed' };
     }
 
     return { success: true };

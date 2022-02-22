@@ -34,7 +34,7 @@
           <div class="mt-2 text-center">
             <div v-if="file">
               <i18n
-                path="file_upload.inputted_file"
+                path="file_upload.selected_file"
                 class="text-caption text--secondary"
                 tag="div"
               >
@@ -84,131 +84,165 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import {
+  defineComponent,
+  PropType,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
+import { get, set, useCounter } from '@vueuse/core';
+import i18n from '@/i18n';
 
 const SOURCES = [
   'cointracking.info',
   'cryptocom',
   'icon',
+  'zip',
   'nexo',
   'blockfi-transactions',
   'blockfi-trades',
   'shapeshift-trades',
   'uphold',
   'bisq'
-];
+] as const;
 
-@Component({})
-export default class FileUpload extends Vue {
-  @Prop({
-    required: true,
-    type: String,
-    validator: value => SOURCES.includes(value)
-  })
-  source!: string;
-  @Prop({ required: false, default: '.csv' })
-  fileFilter!: string;
+export default defineComponent({
+  name: 'FileUpload',
+  props: {
+    source: {
+      required: true,
+      type: String as PropType<typeof SOURCES[number]>,
+      validator: (value: typeof SOURCES[number]) => {
+        return SOURCES.includes(value);
+      }
+    },
+    fileFilter: { required: false, type: String, default: '.csv' },
+    uploaded: { required: false, type: Boolean, default: false },
+    errorMessage: { required: false, type: String, default: '' }
+  },
+  emits: ['selected'],
+  setup(props, { emit }) {
+    const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
 
-  @Emit()
-  selected(_file: File) {}
+    const error = ref('');
+    const active = ref(false);
+    const file = ref<File | null>(null);
+    const select = ref<HTMLInputElement>();
+    const { count, inc, dec, reset } = useCounter(0, { min: 0 });
 
-  error: string = '';
-  active: boolean = false;
-  count: number = 0;
-  uploaded: boolean = false;
+    const onDrop = (event: DragEvent) => {
+      event.preventDefault();
+      active.value = false;
+      if (!event.dataTransfer?.files?.length) {
+        return;
+      }
 
-  file: File | null = null;
+      if (get(source) !== 'icon') {
+        check(event.dataTransfer.files);
+      } else {
+        selected(event.dataTransfer.files[0]);
+      }
+    };
 
-  done() {
-    this.uploaded = true;
-    setTimeout(() => {
-      this.uploaded = false;
-    }, 4000);
+    const onEnter = (event: DragEvent) => {
+      event.preventDefault();
+      inc();
+      active.value = true;
+    };
+
+    const onLeave = (event: DragEvent) => {
+      event.preventDefault();
+      dec();
+      if (get(count) === 0) {
+        active.value = false;
+      }
+    };
+
+    const onSelect = (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      if (!target || !target.files) {
+        return;
+      }
+      if (!['icon', 'zip'].includes(get(source))) {
+        check(target.files);
+      } else {
+        selected(target.files[0]);
+      }
+    };
+
+    const onError = (message: string) => {
+      error.value = message;
+      reset();
+      active.value = false;
+      removeFile();
+    };
+
+    const removeFile = () => {
+      const inputFile = get(select);
+      if (inputFile) {
+        inputFile.value = '';
+      }
+      file.value = null;
+    };
+
+    const check = (files: FileList) => {
+      if (get(error) || get(uploaded)) {
+        return;
+      }
+
+      if (files.length !== 1) {
+        onError(i18n.t('file_upload.many_files_selected').toString());
+        return;
+      }
+
+      if (!files[0].name.endsWith('.csv')) {
+        onError(
+          i18n
+            .t('file_upload.only_files', {
+              fileFilter: get(fileFilter)
+            })
+            .toString()
+        );
+        return;
+      }
+
+      set(file, files[0]);
+    };
+
+    const selected = (selected: File | null) => {
+      set(file, selected);
+      emit('selected', selected);
+    };
+
+    const updateUploaded = (value: boolean) => {
+      emit('update:uploaded', value);
+    };
+
+    watch(uploaded, uploaded => {
+      if (!uploaded) {
+        return;
+      }
+      set(file, null);
+      setTimeout(() => {
+        updateUploaded(false);
+      }, 4000);
+    });
+
+    watch(errorMessage, message => onError(message));
+
+    return {
+      file,
+      error,
+      active,
+      select,
+      onDrop,
+      onEnter,
+      onLeave,
+      onSelect
+    };
   }
-
-  onDrop(event: DragEvent) {
-    event.preventDefault();
-    this.active = false;
-    if (!event.dataTransfer?.files?.length) {
-      return;
-    }
-
-    if (this.source !== 'icon') {
-      this.check(event.dataTransfer.files);
-    } else {
-      this.selected(event.dataTransfer.files[0]);
-    }
-  }
-
-  onEnter(event: DragEvent) {
-    event.preventDefault();
-    this.count++;
-    this.active = true;
-  }
-
-  onLeave(event: DragEvent) {
-    event.preventDefault();
-    this.count--;
-
-    if (this.count === 0) {
-      this.active = false;
-    }
-  }
-
-  onSelect(event: Event) {
-    const target = event.target as HTMLInputElement;
-    if (!target || !target.files) {
-      return;
-    }
-    if (this.source !== 'icon') {
-      this.check(target.files);
-    } else {
-      this.selected(target.files[0]);
-    }
-  }
-
-  onError(message: string) {
-    this.error = message;
-    this.count = 0;
-    this.active = false;
-    this.removeFile();
-  }
-
-  removeFile() {
-    const inputFile = this.$refs.select as any;
-    if (inputFile) {
-      inputFile.value = null;
-    }
-    this.file = null;
-  }
-
-  @Watch('file')
-  onFileChange(file: File) {
-    this.selected(file);
-  }
-
-  check(files: FileList) {
-    if (this.error || this.uploaded) {
-      return;
-    }
-
-    if (files.length !== 1) {
-      this.onError(this.$tc('file_upload.many_files_selected'));
-      return;
-    }
-
-    if (!files[0].name.endsWith('.csv')) {
-      this.onError(
-        this.$t('file_upload.only_files', {
-          fileFilter: this.fileFilter
-        }).toString()
-      );
-      return;
-    }
-
-    this.file = files[0];
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

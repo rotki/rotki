@@ -528,18 +528,18 @@ export default class ExternalTradeForm extends Mixins(AssetMixin) {
       tradeType: this.type
     };
 
-    const { success, message } = !this.id
+    const result = !this.id
       ? await this.saveData(tradePayload)
       : await this.saveData({ ...tradePayload, tradeId: this.id });
 
-    if (success) {
+    if (result.success) {
       this.reset();
       return true;
     }
 
-    if (message) {
+    if (result.message) {
       this.errorMessages = convertKeys(
-        deserializeApiErrorMessage(message) ?? {},
+        deserializeApiErrorMessage(result.message) ?? {},
         true,
         false
       );

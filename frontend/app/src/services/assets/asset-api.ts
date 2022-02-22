@@ -17,11 +17,14 @@ import {
 import { PendingTask, SupportedAssets } from '@/services/types-api';
 import {
   handleResponse,
+  validFileOperationStatus,
   validStatus,
   validTaskStatus,
   validWithoutSessionStatus,
   validWithSessionAndExternalService
 } from '@/services/utils';
+import { ActionStatus } from '@/store/types';
+import { assert } from '@/utils/assertions';
 
 export class AssetApi {
   private readonly axios: AxiosInstance;
@@ -233,17 +236,23 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  mergeAssets(sourceIdentifier: string, targetAsset: string): Promise<boolean> {
+  async mergeAssets(
+    sourceIdentifier: string,
+    targetAsset: string
+  ): Promise<true> {
     const data = axiosSnakeCaseTransformer({
       sourceIdentifier,
       targetAsset
     });
-    return this.axios
-      .put<ActionResult<boolean>>('/assets/replace', data, {
+    const response = await this.axios.put<ActionResult<true>>(
+      '/assets/replace',
+      data,
+      {
         validateStatus: validStatus,
         transformResponse: this.baseTransformer
-      })
-      .then(handleResponse);
+      }
+    );
+    return handleResponse(response);
   }
 
   historicalPrices(
@@ -346,5 +355,75 @@ export class AssetApi {
         }
       )
       .then(handleResponse);
+  }
+
+  async importCustom(
+    file: File,
+    upload: boolean = false
+  ): Promise<ActionResult<boolean>> {
+    if (upload) {
+      const data = new FormData();
+      data.append('file', file);
+      const response = await this.axios.post('/assets/user', data, {
+        validateStatus: validFileOperationStatus,
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return handleResponse(response);
+    }
+
+    const response = await this.axios.put(
+      '/assets/user',
+      { action: 'upload', file: file.path },
+      {
+        validateStatus: validFileOperationStatus
+      }
+    );
+    return handleResponse(response);
+  }
+
+  async exportCustom(directory?: string): Promise<ActionStatus> {
+    try {
+      if (!directory) {
+        const response = await this.axios.put(
+          '/assets/user',
+          { action: 'download' },
+          {
+            responseType: 'blob',
+            validateStatus: validFileOperationStatus
+          }
+        );
+        if (response.status === 200) {
+          const url = window.URL.createObjectURL(response.data);
+          const link = document.createElement('a');
+          link.id = 'custom-assets-link';
+          link.href = url;
+          link.setAttribute('download', 'assets.zip');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          return { success: true };
+        }
+        const body = await (response.data as Blob).text();
+        const result: ActionResult<null> = JSON.parse(body);
+
+        return { success: false, message: result.message };
+      }
+      const response = await this.axios.put<ActionResult<{ file: string }>>(
+        '/assets/user',
+        { action: 'download', destination: directory },
+        {
+          validateStatus: validFileOperationStatus
+        }
+      );
+      const data = handleResponse(response);
+      assert(data.file);
+      return {
+        success: true
+      };
+    } catch (e: any) {
+      return { success: false, message: e.message };
+    }
   }
 }

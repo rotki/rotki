@@ -1,5 +1,7 @@
 import { SupportedAsset } from '@rotki/common/lib/data';
 import { AxiosInstance, AxiosResponseTransformer } from 'axios';
+import { z } from 'zod';
+import { ActiveLogLevel } from '@/electron-main/ipc';
 
 export const SYNC_UPLOAD = 'upload';
 export const SYNC_DOWNLOAD = 'download';
@@ -13,10 +15,6 @@ export interface SupportedAssets {
 }
 
 export class TaskNotFoundError extends Error {}
-
-export interface AsyncQuery {
-  readonly task_id: number;
-}
 
 export interface PendingTask {
   readonly taskId: number;
@@ -34,17 +32,19 @@ export interface PeriodicClientQueryResult {
   readonly lastDataUploadTs: number;
 }
 
-export interface BackendVersion {
-  readonly ourVersion?: string;
-  readonly latestVersion?: string;
-  readonly downloadUrl?: string;
-}
+const BackendVersion = z.object({
+  ourVersion: z.string().optional(),
+  latestVersion: z.string().nullish(),
+  downloadUrl: z.string().nullish()
+});
 
-export interface BackendInfo {
-  readonly logLevel: string;
-  readonly version: BackendVersion;
-  readonly dataDirectory: string;
-}
+export const BackendInfo = z.object({
+  logLevel: ActiveLogLevel,
+  version: BackendVersion,
+  dataDirectory: z.string()
+});
+
+export type BackendInfo = z.infer<typeof BackendInfo>;
 
 export interface GeneralAccountData {
   readonly address: string;

@@ -6,9 +6,11 @@
       </div>
       <v-form ref="form" v-model="valid">
         <file-upload
-          ref="fileUploadInput"
+          :uploaded="uploaded"
           :source="source"
+          :error-message="errorMessage"
           @selected="upload($event)"
+          @update:uploaded="uploaded = $event"
         />
         <v-switch
           :value="dateInputFormat !== null"
@@ -93,7 +95,8 @@ export default defineComponent({
   setup(props) {
     const { source } = toRefs(props);
     const dateInputFormat = ref<string | null>(null);
-    const fileUploadInput = ref(null);
+    const uploaded = ref(false);
+    const errorMessage = ref('');
     const valid = ref<boolean>(true);
     const formatHelp = ref<boolean>(false);
     const file = ref<File | null>(null);
@@ -123,25 +126,22 @@ export default defineComponent({
     });
 
     const uploadPackaged = async (file: string) => {
-      const fileInput: FileUpload = fileUploadInput.value!;
       try {
         await api.importDataFrom(
           source.value,
           file,
           dateInputFormat.value || null
         );
-        fileInput?.done();
+        uploaded.value = true;
       } catch (e: any) {
-        fileInput?.onError(e.message);
+        errorMessage.value = e.message;
       }
     };
 
-    const uploadFile = () => {
-      const fileInput: FileUpload = fileUploadInput.value!;
-
+    const uploadFile = async () => {
       if (file.value) {
         if (interop.isPackaged && api.defaultBackend) {
-          uploadPackaged(file.value.path);
+          await uploadPackaged(file.value.path);
         } else {
           const formData = new FormData();
           formData.append('source', source.value);
@@ -149,10 +149,12 @@ export default defineComponent({
           if (dateInputFormat.value) {
             formData.append('timestamp_format', dateInputFormat.value);
           }
-          api
-            .importFile(formData)
-            .catch(({ message }) => fileInput.onError(message))
-            .then(fileInput.done);
+          try {
+            await api.importFile(formData);
+            uploaded.value = true;
+          } catch (e: any) {
+            errorMessage.value = e.message;
+          }
         }
       }
     };
@@ -166,15 +168,16 @@ export default defineComponent({
     };
 
     return {
-      fileUploadInput,
+      file,
+      valid,
+      errorMessage,
+      formatHelp,
+      uploaded,
       dateInputFormat,
       dateFormatRules,
       dateInputFormatExample,
-      valid,
-      formatHelp,
       upload,
       uploadFile,
-      file,
       changeShouldCustomDateFormat
     };
   }

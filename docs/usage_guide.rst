@@ -392,6 +392,23 @@ To delete a backup you can press the trash can icon on the database row.
 The download button provides an easy way to save the backups locally, and it can be
 especially helpful if you run the docker instance on a remote machine.
 
+Exporting and importing custom assets
+-------------------------------------
+
+When migrating from one computer to another you will also need to move your custom assets entries.
+To do this you can use the export/import function provided by rotki.
+
+This function will create a zip archive of all your custom assets. You can then use the import function
+in a different instance of rotki to easily transfer your custom asset entries.
+
+.. image:: images/sc_custom_import_export.png
+   :alt: Importing
+   :align: center
+
+.. warning::
+    This archive cannot be used as a backup/restore across different versions of rotki since there is
+    absolutely no guarantee that there will be no breaking format changes across versions.
+
 Purging data
 -----------------
 

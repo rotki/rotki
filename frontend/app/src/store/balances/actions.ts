@@ -127,8 +127,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       return;
     }
     try {
-      const { task_id } = await api.queryBalancesAsync(payload);
-      await addTask(task_id, TaskType.QUERY_BALANCES, {
+      const { taskId } = await api.queryBalancesAsync(payload);
+      await addTask(taskId, TaskType.QUERY_BALANCES, {
         title: i18n.t('actions.balances.all_balances.task.title').toString(),
         ignoreResult: true
       });
@@ -1283,7 +1283,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         toAsset,
         purgeOld
       );
-      const { result } = await awaitTask<boolean, TaskMeta>(
+      const { result } = await awaitTask<true, TaskMeta>(
         taskId,
         taskType,
         {

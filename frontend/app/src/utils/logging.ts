@@ -1,10 +1,35 @@
+import * as log from 'loglevel';
 import { LogLevelNumbers } from 'loglevel';
 import { interop } from '@/electron-interop';
 import IndexedDb from '@/utils/indexed-db';
-import { CRITICAL, DEBUG, ERROR, Level, levels } from '@/utils/log-level';
+import { LogLevel } from '@/utils/log-level';
 
 const logger = require('loglevel');
-logger.setDefaultLevel(process.env.NODE_ENV === 'development' ? DEBUG : ERROR);
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+export const getDefaultLogLevel = () => {
+  return isDevelopment ? LogLevel.DEBUG : LogLevel.CRITICAL;
+};
+
+export const getDefaultFrontendLogLevel = () => {
+  return isDevelopment ? log.levels.DEBUG : log.levels.SILENT;
+};
+
+const mapping = {
+  [LogLevel.CRITICAL]: log.levels.SILENT,
+  [LogLevel.ERROR]: log.levels.ERROR,
+  [LogLevel.WARNING]: log.levels.WARN,
+  [LogLevel.INFO]: log.levels.INFO,
+  [LogLevel.DEBUG]: log.levels.DEBUG
+};
+
+export const mapToFrontendLogLevel = (logLevel?: LogLevel) => {
+  if (!logLevel) {
+    return getDefaultFrontendLogLevel();
+  }
+  return mapping[logLevel] ?? getDefaultLogLevel();
+};
+logger.setDefaultLevel(getDefaultFrontendLogLevel());
 
 const loggerDb = new IndexedDb('db', 1, 'logs');
 
@@ -22,7 +47,7 @@ logger.methodFactory = function (
 
     if (
       loggerName !== 'console-only' &&
-      levels.indexOf(methodName as Level) >= logLevel
+      Object.values(LogLevel).indexOf(methodName as LogLevel) >= logLevel
     ) {
       if (interop.isPackaged) {
         interop.logToFile(`(${methodName}): ${message.join('')}`);
@@ -37,10 +62,8 @@ logger.methodFactory = function (
 
 logger.setLevel(logger.getLevel());
 
-const setLevel = (loglevel?: Level, persist: boolean = true) => {
-  const level: Exclude<Level, 'critical'> =
-    !loglevel || loglevel === CRITICAL ? ERROR : loglevel;
-  logger.setLevel(level, persist);
+const setLevel = (loglevel?: LogLevel, persist: boolean = true) => {
+  logger.setLevel(mapToFrontendLogLevel(loglevel), persist);
 };
 
 export { logger, setLevel };

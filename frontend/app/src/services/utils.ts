@@ -103,6 +103,18 @@ export function validStatus(status: number): boolean {
 
 /**
  * Used to validate a status. This validation considers valid responses the following
+ * codes 200, 400, 409, or 507. This validation method should be used with requests that take
+ * perform a file operation, take parameters, and that require a logged in user (code 409).
+ *
+ * @param status The status code received in the backend's response
+ * @return The validity of the status code
+ */
+export function validFileOperationStatus(status: number): boolean {
+  return isValid([200, 400, 409, 507], status);
+}
+
+/**
+ * Used to validate a status. This validation considers valid responses the following
  * codes 200 or 400. This validation method should be used with requests that take
  * parameters or body payload (code 400).
  *

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { BackendOptions } from '@/electron-main/ipc';
 import { Writeable } from '@/types';
-import { levels } from '@/utils/log-level';
+import { LogLevel } from '@/utils/log-level';
 
 const CONFIG_FILE = 'rotki_config.json';
 
@@ -25,8 +25,8 @@ export function loadConfig(): Partial<BackendOptions> {
     const config = JSON.parse(configFile.toString());
 
     if (LOGLEVEL in config) {
-      const configLogLevel = config[LOGLEVEL].toLocaleLowerCase();
-      if (levels.includes(configLogLevel)) {
+      const configLogLevel = config[LOGLEVEL];
+      if (Object.values(LogLevel).includes(configLogLevel)) {
         options.loglevel = configLogLevel;
       }
     }

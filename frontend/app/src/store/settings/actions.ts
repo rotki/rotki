@@ -20,8 +20,6 @@ export const actions: ActionTree<SettingsState, RotkehlchenState> & Actions = {
   ): Promise<ActionStatus> {
     const props = Object.entries(payload);
     assert(props.length > 0, 'Payload must be not-empty');
-    let success = false;
-    let message: string | undefined;
 
     for (const [prop, value] of props) {
       commit(prop, value);
@@ -31,13 +29,15 @@ export const actions: ActionTree<SettingsState, RotkehlchenState> & Actions = {
       await api.setSettings({
         frontendSettings: JSON.stringify(axiosSnakeCaseTransformer(state))
       });
-      success = true;
+
+      return {
+        success: true
+      };
     } catch (e: any) {
-      message = e.message;
+      return {
+        success: false,
+        message: e.message
+      };
     }
-    return {
-      success,
-      message
-    };
   }
 };

@@ -266,10 +266,10 @@ export default defineComponent({
     const createNewAccount = async (payload: CreateAccountPayload) => {
       loading.value = true;
       accountCreationError.value = '';
-      const { message, success } = await createAccount(payload);
+      const result = await createAccount(payload);
       loading.value = false;
 
-      if (success) {
+      if (result.success) {
         accountCreation.value = false;
 
         if (logged.value) {
@@ -278,21 +278,22 @@ export default defineComponent({
         }
       } else {
         accountCreationError.value =
-          message ?? i18n.t('account_management.creation.error').toString();
+          result.message ??
+          i18n.t('account_management.creation.error').toString();
       }
     };
 
     const userLogin = async (credentials: LoginCredentials) => {
       const { username, password, syncApproval } = credentials;
       loading.value = true;
-      const { message } = await login({
+      const result = await login({
         username,
         password,
         syncApproval
       });
 
-      if (message) {
-        errors.value = [message];
+      if (!result.success) {
+        errors.value = [result.message];
       }
       loading.value = false;
       if (logged.value) {
