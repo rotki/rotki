@@ -18,7 +18,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
 
-EXECUTE_TRADE = b"\x18I\xbdj\x03\n\x1b\xca(\xb847\xfd=\xe9o='\xa5\xd1r\xfa~\x9cx\xe7\xb6\x14h\x92\x8a9"  # noqa: E501
+KYBER_TRADE_LEGACY = b"\xd3\x0c\xa3\x99\xcbCP~\xce\xc6\xa6)\xa3\\\xf4^\xb9\x8c\xdaU\x0c'im\xcb\r\x8cJ8s\xcel"  # noqa: E501
+KYBER_TRADE_LEGACY_UPGRADED = b'\xf7$\xb4\xdff\x17G6\x12\xb5=\x7f\x88\xec\xc6\xea\x980t\xb3\t`\xa0I\xfc\xd0e\x7f\xfe\x80\x80\x83'  # noqa: E501
 
 
 class KyberDecoder(DecoderInterface):
@@ -32,10 +33,11 @@ class KyberDecoder(DecoderInterface):
         self.base = base_tools
         self.msg_aggregator = msg_aggregator
 
-    def _decode_old_swap(  # pylint: disable=no-self-use
+    def _decode_legacy_trade(  # pylint: disable=no-self-use
             self,
             tx_log: EthereumTxReceiptLog,
             decoded_events: List[HistoryBaseEntry],
+            upgraded: bool,
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
         sender = hex_or_bytes_to_address(tx_log.topics[1])
         source_token_address = hex_or_bytes_to_address(tx_log.data[:32])
@@ -48,8 +50,13 @@ class KyberDecoder(DecoderInterface):
         if destination_token is None:
             return None, None
 
-        spent_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
-        return_amount_raw = hex_or_bytes_to_int(tx_log.data[96:128])
+        if upgraded:
+            spent_amount_raw = hex_or_bytes_to_int(tx_log.data[96:128])
+            return_amount_raw = hex_or_bytes_to_int(tx_log.data[128:160])
+        else:
+            spent_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
+            return_amount_raw = hex_or_bytes_to_int(tx_log.data[96:128])
+
         spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_token)
         return_amount = asset_normalized_value(amount=return_amount_raw, asset=destination_token)
 
@@ -57,12 +64,12 @@ class KyberDecoder(DecoderInterface):
             if event.event_type == HistoryEventType.SPEND and event.location_label == sender and event.asset == source_token and event.balance.amount == spent_amount:  # noqa: E501
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
-                event.counterparty = 'kyber'
+                event.counterparty = 'kyber legacy'
                 event.notes = f'Swap {event.balance.amount} {event.asset.symbol} in kyber'
             elif event.event_type == HistoryEventType.RECEIVE and event.location_label == sender and event.balance.amount == return_amount and destination_token == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.counterparty = 'kyber'
+                event.counterparty = 'kyber legacy'
                 event.notes = f'Receive {event.balance.amount} {event.asset.symbol} from kyber swap'  # noqa: E501
 
         return None, None
@@ -75,12 +82,14 @@ class KyberDecoder(DecoderInterface):
             all_logs: List[EthereumTxReceiptLog],  # pylint: disable=unused-argument
             action_items: Optional[List[ActionItem]],  # pylint: disable=unused-argument
     ) -> Tuple[Optional[HistoryBaseEntry], Optional[ActionItem]]:
-        if tx_log.topics[0] == EXECUTE_TRADE:
-            return self._decode_old_swap(tx_log=tx_log, decoded_events=decoded_events)
-
+        if tx_log.topics[0] == KYBER_TRADE_LEGACY:
+            return self._decode_legacy_trade(tx_log=tx_log, decoded_events=decoded_events, upgraded=False)  # noqa: E501
+        if tx_log.topics[0] == KYBER_TRADE_LEGACY_UPGRADED:
+            return self._decode_legacy_trade(tx_log=tx_log, decoded_events=decoded_events, upgraded=True)  # noqa: E501
         return None, None
 
     def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
         return {
-            string_to_ethereum_address('0x818E6FECD516Ecc3849DAf6845e3EC868087B755'): (self.decode_action,),  # noqa: E501
+            string_to_ethereum_address('0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950'): (self.decode_action,),  # noqa: E501
+            string_to_ethereum_address('0x9AAb3f75489902f3a48495025729a0AF77d4b11e'): (self.decode_action,),  # noqa: E501
         }
