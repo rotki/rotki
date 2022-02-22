@@ -867,35 +867,39 @@ def test_exporting_custom_assets_list(rotkehlchen_api_server, globaldb, with_cus
                 ), json={'action': 'download'},
             )
 
-        result = assert_proper_response_with_result(response)
         if with_custom_path:
-            assert path in result['file']
-        zip_file = ZipFile(result['file'])
-        data = json.loads(zip_file.read('assets.json'))
-        assert int(data['version']) == GLOBAL_DB_VERSION
-        assert len(data['assets']) == 1
-        assert data['assets'][0] == {
-            'identifier': identifier,
-            'name': 'yabirtoken',
-            'decimals': 18,
-            'symbol': 'YAB',
-            'asset_type': 'ethereum token',
-            'started': None,
-            'forked': None,
-            'swapped_for': None,
-            'cryptocompare': 'YAB',
-            'coingecko': 'YAB',
-            'protocol': None,
-            'underlying_tokens': None,
-            'ethereum_address': eth_address,
-        }
+            result = assert_proper_response_with_result(response)
+            if with_custom_path:
+                assert path in result['file']
+            zip_file = ZipFile(result['file'])
+            data = json.loads(zip_file.read('assets.json'))
+            assert int(data['version']) == GLOBAL_DB_VERSION
+            assert len(data['assets']) == 1
+            assert data['assets'][0] == {
+                'identifier': identifier,
+                'name': 'yabirtoken',
+                'decimals': 18,
+                'symbol': 'YAB',
+                'asset_type': 'ethereum token',
+                'started': None,
+                'forked': None,
+                'swapped_for': None,
+                'cryptocompare': 'YAB',
+                'coingecko': 'YAB',
+                'protocol': None,
+                'underlying_tokens': None,
+                'ethereum_address': eth_address,
+            }
+        else:
+            assert response.status_code == HTTPStatus.OK
+            assert response.headers['Content-Type'] == 'application/zip'
 
         # try to download again to see if the database is properly detached
         response = requests.put(
             api_url_for(
                 rotkehlchen_api_server,
                 'userassetsresource',
-            ), json={'action': 'download'},
+            ), json={'action': 'download', 'destination': path},
         )
         result = assert_proper_response_with_result(response)
 
