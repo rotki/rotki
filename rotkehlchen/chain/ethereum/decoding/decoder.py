@@ -250,7 +250,7 @@ class EVMTransactionDecoder():
                 filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
                 has_premium=True,  # ignore limiting here
             )
-            self.decode_transaction(transaction=txs[0], tx_receipt=receipt)
+            self.get_or_decode_transaction_events(transaction=txs[0], tx_receipt=receipt)
 
     def get_or_decode_transaction_events(
             self,
