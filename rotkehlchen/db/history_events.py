@@ -96,25 +96,37 @@ class DBHistoryEvents():
 
     def delete_history_events_by_identifier(self, identifiers: List[int]) -> Optional[str]:
         """
-        Delete the history events with the given identifiers.
+        Delete the history events with the given identifiers. If deleting an event
+        makes it the last event of a transaction hash then do not allow deletion.
 
         If any identifier is missing the entire call fails and an error message
         is returned. Otherwise None is returned.
         """
         cursor = self.db.conn.cursor()
-        ids_len = len(identifiers)
-        questionmarks = '?' * ids_len
-        cursor.execute(
-            f'DELETE FROM history_events WHERE identifier IN ({",".join(questionmarks)})',
-            identifiers,
-        )
-        affected_rows = cursor.rowcount
-        if affected_rows != ids_len:
-            self.db.conn.rollback()
-            return (
-                f'Tried to remove {ids_len - affected_rows} '
-                f'history events that do not exist'
+        for identifier in identifiers:
+            result = cursor.execute(
+                'SELECT COUNT(*) FROM history_events WHERE event_identifier=('
+                'SELECT event_identifier FROM history_events WHERE identifier=?)',
+                (identifier,),
             )
+            if result.fetchone()[0] == 1:
+                self.db.conn.rollback()
+                return (
+                    f'Tried to remove history event with id {identifier} '
+                    f'which was the last event of a transaction'
+                )
+
+            cursor.execute(
+                'DELETE FROM history_events WHERE identifier=?', (identifier,),
+            )
+            affected_rows = cursor.rowcount
+            if affected_rows != 1:
+                self.db.conn.rollback()
+                return (
+                    f'Tried to remove history event with id {identifier} which does not exist'
+                )
+
+        self.db.update_last_write()
         return None
 
     def delete_events_by_tx_hash(self, tx_hashes: List[EVMTxHash]) -> None:

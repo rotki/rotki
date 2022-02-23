@@ -4218,7 +4218,7 @@ Dealing with BaseHistoryEntry events
 
 .. http:delete:: /api/(version)/history/events
 
-   Doing a DELETE on this endpoint deletes a set of history entry events from the DB for the currently logged in user. If any of the identifiers is not found in the DB the entire call fails.
+   Doing a DELETE on this endpoint deletes a set of history entry events from the DB for the currently logged in user. If any of the identifiers is not found in the DB the entire call fails. If any of the identifiers are the last for their transaction hash the call fails.
 
    **Example Request**:
 
@@ -4246,7 +4246,7 @@ Dealing with BaseHistoryEntry events
 
    :statuscode 200: Event was succesfully removed.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in or one of the identifiers to delete did not correspond to an event in the DB.
+   :statuscode 409: No user is logged in or one of the identifiers to delete did not correspond to an event in the DB or one of the identifiers was for the last event in the corresponding transaction hash.
    :statuscode 500: Internal rotki error
 
 Querying messages to show to the user

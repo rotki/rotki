@@ -45,6 +45,18 @@ def _add_entries(server) -> List[HistoryBaseEntry]:
         event_subtype=HistoryEventSubType.APPROVE,
         counterparty='0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
     ), HistoryBaseEntry(
+        event_identifier='0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e',
+        sequence_index=163,
+        timestamp=TimestampMS(1569924574000),
+        location=Location.BLOCKCHAIN,
+        event_type=HistoryEventType.INFORMATIONAL,
+        asset=A_USDT,
+        balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
+        location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        notes='Approve 1 USDT of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',  # noqa: E501
+        event_subtype=HistoryEventSubType.APPROVE,
+        counterparty='0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
+    ), HistoryBaseEntry(
         event_identifier='0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc',
         sequence_index=2,
         timestamp=TimestampMS(1619924574000),
@@ -56,6 +68,18 @@ def _add_entries(server) -> List[HistoryBaseEntry]:
         notes='Burned 0.0001 ETH in gas from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for transaction 0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc',  # noqa: E501
         event_subtype=HistoryEventSubType.FEE,
         counterparty='gas',
+    ), HistoryBaseEntry(
+        event_identifier='0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc',
+        sequence_index=3,
+        timestamp=TimestampMS(1619924574000),
+        location=Location.BLOCKCHAIN,
+        event_type=HistoryEventType.DEPOSIT,
+        asset=A_ETH,
+        balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
+        location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        notes='Deposit something somewhere',
+        event_subtype=HistoryEventSubType.NONE,
+        counterparty='somewhere',
     ), HistoryBaseEntry(
         event_identifier='0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023',
         sequence_index=55,
@@ -92,7 +116,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
     for idx, event in enumerate(saved_events):
         assert event == entries[idx]
 
-    entry = entries[1]
+    entry = entries[2]
     # test editing unknown fails
     unknown_id = 42
     json_data = entry_to_input_dict(entry, include_identifier=True)
@@ -106,9 +130,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
         contained_in_msg=f'Tried to edit event with id {unknown_id} but could not find it in the DB',  # noqa: E501
         status_code=HTTPStatus.CONFLICT,
     )
-
     # test editing works
-    entry.event_identifier = '0x6d9fc1bf73deb590da508051de41923984cba1a3463e0d3829c45ef54404da92'  # noqa: E501
     entry.sequence_index = 4
     entry.timestamp = Timestamp(1639924575000)
     entry.location = Location.UNISWAP
@@ -128,29 +150,45 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
     saved_events = db.get_history_events(HistoryEventFilterQuery.make(), True)
+    assert len(saved_events) == 5
     for idx, event in enumerate(saved_events):
         assert event == entries[idx]
 
     # test deleting unknown fails
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
-        json={'identifiers': [1, 4, 3]},
+        json={'identifiers': [19, 1, 3]},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Tried to remove 1 history events that do not exist',
+        contained_in_msg='Tried to remove history event with id 19 which does not exist',
         status_code=HTTPStatus.CONFLICT,
     )
     saved_events = db.get_history_events(HistoryEventFilterQuery.make(), True)
+    assert len(saved_events) == 5
     for idx, event in enumerate(saved_events):
         assert event == entries[idx]
 
     # test deleting works
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
-        json={'identifiers': [1, 3]},
+        json={'identifiers': [2, 4]},
     )
     result = assert_proper_response_with_result(response)
     assert result is True
     saved_events = db.get_history_events(HistoryEventFilterQuery.make(), True)
-    assert saved_events == [entry]
+    # entry is now last since the timestamp was modified
+    assert saved_events == [entries[0], entries[3], entry]
+
+    # test that deleting last event of a transaction hash fails
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+        json={'identifiers': [1]},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Tried to remove history event with id 1 which was the last event of a transaction',  # noqa: E501
+        status_code=HTTPStatus.CONFLICT,
+    )
+    saved_events = db.get_history_events(HistoryEventFilterQuery.make(), True)
+    assert saved_events == [entries[0], entries[3], entry]
