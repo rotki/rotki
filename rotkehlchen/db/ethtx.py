@@ -328,7 +328,7 @@ class DBEthTx():
             ')',
             (address, address),
         )
-        tx_hashes = [make_evm_tx_hash(x) for x in result]
+        tx_hashes = [make_evm_tx_hash(x[0]) for x in result]
         dbevents.delete_events_by_tx_hash(tx_hashes)
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)

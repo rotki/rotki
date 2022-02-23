@@ -138,9 +138,9 @@ class DBHistoryEvents():
         querystr = 'DELETE FROM history_events WHERE event_identifier=?'
         if length != 0:
             querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
-            bindings = [(x.hex(), customized_event_ids) for x in tx_hashes]
+            bindings = [(x.hex(), *customized_event_ids) for x in tx_hashes]
         else:
-            bindings = [(x.hex(),) for x in tx_hashes]  # type: ignore
+            bindings = [(x.hex(),) for x in tx_hashes]
 
         cursor.executemany(querystr, bindings)
 
