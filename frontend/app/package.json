@@ -23,6 +23,7 @@
     "test:integration": "start-server-and-test serve:backend http://localhost:22221/api/1/ping test:e2e",
     "test:integration-ci": "start-server-and-test serve:backend http://localhost:22221/api/1/ping test:e2e-ci"
   },
+  "main": "background.js",
   "dependencies": {
     "@rotki/common": "1.0.0",
     "@vue/composition-api": "1.4.6",
