@@ -98,14 +98,10 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
 .date-format-help {
   &__content {
     max-height: 300px;
     overflow-y: scroll;
-
-    @extend .themed-scrollbar;
   }
 
   &__directive {

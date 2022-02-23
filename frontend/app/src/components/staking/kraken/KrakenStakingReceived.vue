@@ -89,14 +89,10 @@ export default defineComponent({
 </script>
 
 <style lang="scss" module>
-@import '~@/scss/scroll';
-
 .received {
   max-height: 155px;
   overflow-y: scroll;
   overflow-x: hidden;
-
-  @extend .themed-scrollbar;
 }
 
 .amount {

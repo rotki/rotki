@@ -157,8 +157,6 @@ export default defineComponent({
 </script>
 
 <style module lang="scss">
-@import '~@/scss/scroll';
-
 .overview {
   min-height: 250px !important;
   min-width: 300px;
@@ -166,7 +164,5 @@ export default defineComponent({
 
 .details {
   height: 300px;
-
-  @extend .themed-scrollbar;
 }
 </style>

@@ -335,14 +335,10 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
 .v-navigation-drawer {
   &--is-mobile {
     padding-top: 60px !important;
   }
-
-  @extend .themed-scrollbar;
 }
 
 ::v-deep {
@@ -457,8 +453,6 @@ export default defineComponent({
       left: 300px;
       width: calc(100vw - 300px);
     }
-
-    @extend .themed-scrollbar;
   }
 }
 </style>

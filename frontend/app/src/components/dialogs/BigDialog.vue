@@ -89,8 +89,6 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
 .big-dialog {
   height: calc(100vh - 80px);
 
@@ -101,7 +99,6 @@ export default defineComponent({
   &__content {
     height: calc(100% - 85px);
     overflow-y: scroll;
-    @extend .themed-scrollbar;
   }
 }
 

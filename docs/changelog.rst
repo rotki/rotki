@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`4078` Adjust scrollbar color in dark mode for better visibility.
 * :feature:`4071` Add option to reduce the animations effect.
 * :feature:`3669` Users can export and import their custom assets.
 * :feature:`4068` Introduces location overview page.
