@@ -2,14 +2,12 @@
   <div class="pa-1" :class="$style.asset">
     <asset-icon
       :class="$style.icon"
-      :identifier="getTokenIdentifier(assets[0])"
-      :symbol="getTokenSymbol(assets[0])"
+      :identifier="assets[0].token"
       size="22px"
     />
     <asset-icon
       :class="[$style.icon, $style.bottom]"
-      :identifier="getTokenIdentifier(assets[1])"
-      :symbol="getTokenSymbol(assets[1])"
+      :identifier="assets[1].token"
       size="22px"
       :styled="{
         'padding-left': '20px'
@@ -21,29 +19,14 @@
 <script lang="ts">
 import { BalancerUnderlyingToken } from '@rotki/common/lib/defi/balancer';
 import { defineComponent, PropType } from '@vue/composition-api';
-import AssetMixin from '@/mixins/asset-mixin';
 
 export default defineComponent({
   name: 'BalancerPoolAsset',
-  mixins: [AssetMixin],
   props: {
     assets: {
       required: true,
-      type: Array as PropType<BalancerUnderlyingToken[] | string[]>,
+      type: Array as PropType<BalancerUnderlyingToken[]>,
       validator: value => Array.isArray(value) && value.length >= 2
-    }
-  },
-  methods: {
-    getTokenIdentifier(token: BalancerUnderlyingToken | string): string {
-      if (typeof token === 'string') {
-        return token;
-      }
-      return token.token;
-    },
-
-    getTokenSymbol(token: BalancerUnderlyingToken | string): string {
-      const identifier = typeof token === 'string' ? token : token.token;
-      return (this as unknown as AssetMixin).getSymbol(identifier);
     }
   }
 });
