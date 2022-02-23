@@ -319,6 +319,7 @@ class DBEthTx():
         So transactions, receipts, logs and decoded events
         """
         cursor = self.db.conn.cursor()
+        dbevents = DBHistoryEvents(self.db)
         cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'ethtxs_{address}',))
         # Get all tx_hashes that are touched by this address and no other address
         result = cursor.execute(
@@ -327,23 +328,16 @@ class DBEthTx():
             ')',
             (address, address),
         )
-        tx_hashes = [(x[0], '0x' + x[0].hex()) for x in result]
-        dbevents = DBHistoryEvents(self.db)
-        customized_event_ids = dbevents.get_customized_event_identifiers()
-        # Delete all relevant (by event_identifier) history events except those that are customized
-        cursor.executemany(
-            f'DELETE FROM history_events WHERE event_identifier=? AND identifier NOT IN '
-            f'({", ".join(["?"] * len(customized_event_ids))})',
-            [(x[1], *customized_event_ids) for x in tx_hashes],
-        )
+        tx_hashes = [make_evm_tx_hash(x[0]) for x in result]
+        dbevents.delete_events_by_tx_hash(tx_hashes)
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)
         cursor.executemany(
             'DELETE FROM ethereum_transactions WHERE tx_hash=? AND ? NOT IN (SELECT event_identifier FROM history_events)',  # noqa: E501
-            tx_hashes,
+            [(x, x.hex()) for x in tx_hashes],
         )
         # Delete all remaining evm_tx_mappings so decoding can happen again for customized events
         cursor.executemany(
             'DELETE FROM evm_tx_mappings WHERE tx_hash=? AND blockchain=? AND value=?',
-            [(x[0], 'ETH', HISTORY_MAPPING_DECODED) for x in tx_hashes],
+            [(x, 'ETH', HISTORY_MAPPING_DECODED) for x in tx_hashes],
         )

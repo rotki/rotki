@@ -66,7 +66,7 @@ class CompoundDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = 'compound'
-                event.notes = f'Deposit {mint_amount} {underlying_token} to compound'
+                event.notes = f'Deposit {mint_amount} {underlying_token.symbol} to compound'
                 break
 
         # also create an action item for the receive of the cTokens

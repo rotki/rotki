@@ -2032,7 +2032,7 @@ Request transactions event decoding
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a POST on the transactions endpoint for ETH will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events.
+   Doing a POST on the transactions endpoint for ETH will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events. If events are already queried and ignore_cache is true they will be deleted and requeried.
 
    **Example Request**:
 
@@ -2042,9 +2042,11 @@ Request transactions event decoding
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": true, "hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"]}
+      {"async_query": true, "hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"], "ignore_cache": false}
 
    :reqjson list hashes: The list of transaction hashes to request decoding for
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not. This is always false by default. If true is given then the decoded events will be deleted and requeried.
 
 
    **Example Response**:
@@ -4218,7 +4220,7 @@ Dealing with BaseHistoryEntry events
 
 .. http:delete:: /api/(version)/history/events
 
-   Doing a DELETE on this endpoint deletes a set of history entry events from the DB for the currently logged in user. If any of the identifiers is not found in the DB the entire call fails.
+   Doing a DELETE on this endpoint deletes a set of history entry events from the DB for the currently logged in user. If any of the identifiers is not found in the DB the entire call fails. If any of the identifiers are the last for their transaction hash the call fails.
 
    **Example Request**:
 
@@ -4246,7 +4248,7 @@ Dealing with BaseHistoryEntry events
 
    :statuscode 200: Event was successfully removed.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in or one of the identifiers to delete did not correspond to an event in the DB.
+   :statuscode 409: No user is logged in or one of the identifiers to delete did not correspond to an event in the DB or one of the identifiers was for the last event in the corresponding transaction hash.
    :statuscode 500: Internal rotki error
 
 Querying messages to show to the user

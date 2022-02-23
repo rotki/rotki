@@ -208,7 +208,7 @@ class EthereumTransactionQuerySchema(
         }
 
 
-class EthereumTransactionDecodingSchema(AsyncQueryArgumentSchema):
+class EthereumTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     tx_hashes = fields.List(EVMTransactionHashField(), required=True)
 
 
