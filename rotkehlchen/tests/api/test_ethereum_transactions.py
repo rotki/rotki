@@ -252,6 +252,7 @@ def test_query_transactions(rotkehlchen_api_server):
 
     dbethtx = DBEthTx(rotki.data.db)
     dbevents = DBHistoryEvents(rotki.data.db)
+    event_ids = set()
     for tx_hash_hex in hashes:
         receipt = dbethtx.get_receipt(hexstring_to_bytes(tx_hash_hex))
         assert isinstance(receipt, EthereumTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
@@ -261,6 +262,7 @@ def test_query_transactions(rotkehlchen_api_server):
             ),
             has_premium=True,  # for this function we don't limit. We only limit txs.
         )
+        event_ids.add(events[0].identifier)
         assert len(events) == 1
 
     # see that if same transaction hash is requested for decoding events are not re-decoded
@@ -284,6 +286,31 @@ def test_query_transactions(rotkehlchen_api_server):
             has_premium=True,  # for this function we don't limit. We only limit txs.
         )
         assert len(events) == 1
+        assert events[0].identifier in event_ids
+
+    # Check that force re-requesting the events works
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereumtransactionsresource',
+        ), json={
+            'async_query': False,
+            'ignore_cache': True,
+            'tx_hashes': hashes,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    for tx_hash_hex in hashes:
+        receipt = dbethtx.get_receipt(hexstring_to_bytes(tx_hash_hex))
+        assert isinstance(receipt, EthereumTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
+        events = dbevents.get_history_events(
+            filter_query=HistoryEventFilterQuery.make(
+                event_identifier=tx_hash_hex,
+            ),
+            has_premium=True,  # for this function we don't limit. We only limit txs.
+        )
+        assert len(events) == 1
+        assert events[0].identifier not in event_ids
 
 
 def test_request_transaction_decoding_errors(rotkehlchen_api_server):

@@ -376,6 +376,7 @@ class TaskManager():
                 task_name=task_name,
                 exception_is_error=True,
                 method=self.evm_tx_decoder.decode_transaction_hashes,
+                ignore_cache=False,
                 tx_hashes=hashes,
             )
 

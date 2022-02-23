@@ -363,10 +363,13 @@ class EthereumTransactionsResource(BaseResource):
     @use_kwargs(post_schema, location='json_and_query')
     def post(
             self,
-            async_query: bool, tx_hashes: List[EVMTxHash],
+            async_query: bool,
+            ignore_cache: bool,
+            tx_hashes: List[EVMTxHash],
     ) -> Response:
         return self.rest_api.decode_ethereum_transactions(
             async_query=async_query,
+            ignore_cache=ignore_cache,
             tx_hashes=tx_hashes,
         )
 

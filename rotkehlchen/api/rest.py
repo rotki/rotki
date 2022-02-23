@@ -3120,10 +3120,11 @@ class RestAPI():
 
     def _decode_ethereum_transactions(
             self,
+            ignore_cache: bool,
             tx_hashes: List[EVMTxHash],
     ) -> Dict[str, Any]:
         try:
-            self.rotkehlchen.evm_tx_decoder.decode_transaction_hashes(tx_hashes=tx_hashes)
+            self.rotkehlchen.evm_tx_decoder.decode_transaction_hashes(ignore_cache=ignore_cache, tx_hashes=tx_hashes)  # noqa: E501
             return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
         except (RemoteError, DeserializationError) as e:
             status_code = HTTPStatus.BAD_GATEWAY
@@ -3137,15 +3138,17 @@ class RestAPI():
     def decode_ethereum_transactions(
             self,
             async_query: bool,
+            ignore_cache: bool,
             tx_hashes: List[EVMTxHash],
     ) -> Response:
         if async_query:
             return self._query_async(
                 command='_decode_ethereum_transactions',
+                ignore_cache=ignore_cache,
                 tx_hashes=tx_hashes,
             )
 
-        response = self._decode_ethereum_transactions(tx_hashes)
+        response = self._decode_ethereum_transactions(ignore_cache, tx_hashes)
         result = response['result']
         msg = response['message']
         status_code = _get_status_code_from_async_response(response)

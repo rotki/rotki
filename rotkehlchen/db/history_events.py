@@ -11,7 +11,7 @@ from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import Timestamp, TimestampMS, Tuple
+from rotkehlchen.types import EVMTxHash, Timestamp, TimestampMS, Tuple
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -116,6 +116,21 @@ class DBHistoryEvents():
                 f'history events that do not exist'
             )
         return None
+
+    def delete_events_by_tx_hash(self, tx_hashes: List[EVMTxHash]) -> None:
+        """Delete all relevant (by event_identifier) history events except those that
+        are customized"""
+        cursor = self.db.conn.cursor()
+        customized_event_ids = self.get_customized_event_identifiers()
+        length = len(customized_event_ids)
+        querystr = 'DELETE FROM history_events WHERE event_identifier=?'
+        if length != 0:
+            querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
+            bindings = [(x.hex(), customized_event_ids) for x in tx_hashes]
+        else:
+            bindings = [(x.hex(),) for x in tx_hashes]  # type: ignore
+
+        cursor.executemany(querystr, bindings)
 
     def get_customized_event_identifiers(self) -> List[int]:
         """Returns the identifiers of all the events in the database that have been customized"""

@@ -2030,7 +2030,7 @@ Request transactions event decoding
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a POST on the transactions endpoint for ETH will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events.
+   Doing a POST on the transactions endpoint for ETH will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events. If events are already queried and ignore_cache is true they will be deleted and requeried.
 
    **Example Request**:
 
@@ -2040,9 +2040,11 @@ Request transactions event decoding
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": true, "hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"]}
+      {"async_query": true, "hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"], "ignore_cache": false}
 
    :reqjson list hashes: The list of transaction hashes to request decoding for
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not. This is always false by default. If true is given then the decoded events will be deleted and requeried.
 
 
    **Example Response**:
