@@ -329,7 +329,9 @@ def test_query_history_external_exchanges(rotkehlchen_api_server):
         prepare_mocks=False,
     )
     assert len(events_result['entries']) == 2
-    assert FVal(report_result['entries'][0]['total_taxable_profit_loss']) == FVal('5278.03086')
+    assert FVal('5278.03086').is_close(
+        FVal(report_result['entries'][0]['total_taxable_profit_loss']),
+    )
 
 
 @pytest.mark.parametrize(
