@@ -1,48 +1,82 @@
 <template>
   <table-expand-container
     visible
-    :colspan="colspan - 2"
+    :colspan="colspan - 1"
     :padded="false"
-    :offset="2"
+    :offset="1"
   >
     <template #append>
-      <div class="my-n4">
-        <data-table
-          class="transparent"
-          :class="$style.table"
-          :headers="headers"
-          :items="events"
-          item-key="identifier"
-          hide-default-footer
-          hide-default-header
-          :mobile-breakpoint="0"
-        >
-          <template #item.type="{ item }">
-            <transaction-event-type-wrapper :event="item">
-              <div class="grey--text">
-                <hash-link :text="item.locationLabel" />
+      <v-expansion-panels
+        v-model="panel"
+        :class="$style['expansions-panels']"
+        multiple
+      >
+        <v-expansion-panel>
+          <v-expansion-panel-header
+            v-if="transaction.ignoredInAccounting && events.length > 0"
+          >
+            <template #default="{ open }">
+              <div class="primary--text font-weight-bold">
+                {{
+                  open
+                    ? $t('transactions.events.view.hide')
+                    : $t('transactions.events.view.show', {
+                        length: events.length
+                      })
+                }}
               </div>
-            </transaction-event-type-wrapper>
-          </template>
-          <template #item.asset="{ item }">
-            <transaction-event-asset :event="item" />
-          </template>
-          <template #item.description="{ item }">
-            <template v-for="(note, index) in formatNotes(item.notes)">
-              <span v-if="note.isAddress" :key="index" class="d-inline-flex">
-                <hash-link
-                  :class="$style.description__address"
-                  :text="note.word"
-                  :tx="note.isTransaction"
-                />
-              </span>
-              <span v-else :key="index">
-                {{ note.word }}
-              </span>
             </template>
-          </template>
-        </data-table>
-      </div>
+          </v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <div class="my-n4">
+              <data-table
+                class="transparent"
+                :class="$style.table"
+                :headers="headers"
+                :items="events"
+                item-key="identifier"
+                hide-default-footer
+                hide-default-header
+                :no-data-text="$t('transactions.events.loading')"
+                :mobile-breakpoint="0"
+              >
+                <template #item.type="{ item }">
+                  <transaction-event-type :event="item" />
+                </template>
+                <template #item.asset="{ item }">
+                  <transaction-event-asset :event="item" />
+                </template>
+                <template #item.description="{ item }">
+                  <template v-for="(note, index) in formatNotes(item.notes)">
+                    <span
+                      v-if="note.isAddress"
+                      :key="index"
+                      class="d-inline-flex"
+                    >
+                      <hash-link
+                        :class="$style['row__description__address']"
+                        :text="note.word"
+                        :tx="note.isTransaction"
+                      />
+                    </span>
+                    <span v-else :key="index">
+                      {{ note.word }}
+                    </span>
+                  </template>
+                </template>
+                <template #item.actions="{ item }">
+                  <row-actions
+                    :edit-tooltip="$t('transactions.events.actions.edit')"
+                    :delete-tooltip="$t('transactions.events.actions.delete')"
+                    @edit-click="editEvent(item)"
+                    @delete-click="deleteEvent(item)"
+                  />
+                </template>
+              </data-table>
+            </div>
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
     </template>
   </table-expand-container>
 </template>
@@ -52,13 +86,16 @@ import {
   computed,
   defineComponent,
   PropType,
+  ref,
   toRefs,
-  unref
+  unref,
+  watch
 } from '@vue/composition-api';
 import { DataTableHeader } from 'vuetify';
+import RowActions from '@/components/helper/RowActions.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import TransactionEventAsset from '@/components/history/transactions/TransactionEventAsset.vue';
-import TransactionEventTypeWrapper from '@/components/history/transactions/TransactionEventTypeWrapper.vue';
+import TransactionEventType from '@/components/history/transactions/TransactionEventType.vue';
 import { useProxy } from '@/composables/common';
 import i18n from '@/i18n';
 import { EthTransactionEventWithMeta } from '@/services/history/types';
@@ -71,7 +108,8 @@ import { transformEntryWithMeta } from '@/store/history/utils';
 export default defineComponent({
   name: 'TransactionEvents',
   components: {
-    TransactionEventTypeWrapper,
+    RowActions,
+    TransactionEventType,
     TransactionEventAsset,
     TableExpandContainer
   },
@@ -82,7 +120,8 @@ export default defineComponent({
     },
     colspan: { required: true, type: Number }
   },
-  setup(props) {
+  emits: ['edit:event', 'delete:event'],
+  setup(props, { emit }) {
     const { transaction } = toRefs(props);
 
     // @ts-ignore
@@ -90,22 +129,28 @@ export default defineComponent({
 
     const headers: DataTableHeader[] = [
       {
-        text: i18n.t('transactions.event_headers.type').toString(),
+        text: i18n.t('transactions.events.headers.type').toString(),
         value: 'type',
         sortable: false,
-        cellClass: `${$style.type} pl-0`
+        cellClass: $style['row__type']
       },
       {
-        text: i18n.t('transactions.event_headers.asset').toString(),
+        text: i18n.t('transactions.events.headers.asset').toString(),
         value: 'asset',
         sortable: false
       },
       {
-        text: i18n.t('transactions.event_headers.description').toString(),
+        text: i18n.t('transactions.events.headers.description').toString(),
         value: 'description',
         sortable: false,
-        width: '50%',
-        cellClass: `${$style.description} pl-0`
+        cellClass: $style['row__description']
+      },
+      {
+        text: '',
+        value: 'actions',
+        align: 'end',
+        sortable: false,
+        cellClass: $style['row__actions']
       }
     ];
 
@@ -135,10 +180,30 @@ export default defineComponent({
       });
     };
 
+    const editEvent = (item: EthTransactionEventEntry) =>
+      emit('edit:event', item);
+    const deleteEvent = (item: EthTransactionEventEntry) =>
+      emit('delete:event', item);
+
+    const panel = ref<number[]>(
+      unref(transaction).ignoredInAccounting ? [] : [0]
+    );
+
+    watch(transaction, (current, old) => {
+      if (old.ignoredInAccounting && !current.ignoredInAccounting) {
+        panel.value = [0];
+      } else if (!old.ignoredInAccounting && current.ignoredInAccounting) {
+        panel.value = [];
+      }
+    });
+
     return {
+      panel,
       formatNotes,
       events,
-      headers
+      headers,
+      editEvent,
+      deleteEvent
     };
   }
 });
@@ -162,21 +227,55 @@ export default defineComponent({
   }
 }
 
-.type {
-  width: 250px;
+.row {
+  &__type {
+    width: 250px;
+    padding-left: 0 !important;
+  }
+
+  &__description {
+    width: 40%;
+    min-width: 300px;
+    line-height: 1.5rem;
+    word-break: break-word;
+
+    &__address {
+      background: var(--v-rotki-light-grey-darken1);
+      padding: 0 4px 0 8px;
+      border-radius: 50px;
+      margin: 2px;
+    }
+  }
+
+  &__actions {
+    width: 1px;
+    padding-right: 0 !important;
+  }
 }
 
-.description {
-  width: 50%;
-  min-width: 300px;
-  line-height: 1.5rem;
-  word-break: break-word;
+.expansions {
+  &-panels {
+    :global {
+      .v-expansion-panel {
+        background: transparent !important;
 
-  &__address {
-    background: var(--v-rotki-light-grey-darken1);
-    padding: 0 4px 0 8px;
-    border-radius: 50px;
-    margin: 2px;
+        &::before {
+          box-shadow: none;
+        }
+
+        &-header {
+          padding: 0;
+          min-height: auto;
+          width: auto;
+        }
+
+        &-content {
+          &__wrap {
+            padding: 0;
+          }
+        }
+      }
+    }
   }
 }
 </style>

@@ -10,20 +10,25 @@ import {
 
 export const EthTransactionEvent = z.object({
   eventIdentifier: z.string(),
-  sequenceIndex: z.number(),
+  sequenceIndex: z.number().or(z.string()),
   timestamp: z.number(),
   location: z.string(),
-  locationLabel: z.string().nullable().optional(),
-  eventType: HistoryEventTypeEnum.nullable().optional(),
-  eventSubtype: HistoryEventSubTypeEnum.nullable().optional(),
+  locationLabel: z.string().nullish(),
+  eventType: HistoryEventTypeEnum.nullish(),
+  eventSubtype: HistoryEventSubTypeEnum.nullish(),
   asset: z.string(),
   balance: Balance,
-  notes: z.string().nullable().optional(),
-  counterparty: z.string().nullable().optional(),
-  identifier: z.number().nullable().optional()
+  notes: z.string().nullish(),
+  counterparty: z.string().nullish(),
+  identifier: z.number().nullish()
 });
 
 export type EthTransactionEvent = z.infer<typeof EthTransactionEvent>;
+
+export type NewEthTransactionEvent = Omit<
+  EthTransactionEvent,
+  'identifier' | 'ignoredInAccounting' | 'customized'
+>;
 
 export const EthTransactionEventWithMeta = z.object({
   customized: z.boolean(),
@@ -91,10 +96,10 @@ export const Trade = z.object({
   tradeType: TradeType,
   amount: NumericString,
   rate: NumericString,
-  fee: NumericString.nullable().optional(),
-  feeCurrency: z.string().nullable().optional(),
-  link: z.string().nullable().optional(),
-  notes: z.string().nullable().optional()
+  fee: NumericString.nullish(),
+  feeCurrency: z.string().nullish(),
+  link: z.string().nullish(),
+  notes: z.string().nullish()
 });
 
 export type Trade = z.infer<typeof Trade>;
@@ -160,7 +165,7 @@ export const EthTransaction = z.object({
   timestamp: z.number(),
   blockNumber: z.number(),
   fromAddress: z.string(),
-  toAddress: z.string().nullable().optional(),
+  toAddress: z.string().nullish(),
   value: NumericString,
   gas: NumericString,
   gasPrice: NumericString,
@@ -182,6 +187,11 @@ export type TransactionRequestPayload = {
   readonly address?: string;
 } & HistoryRequestPayload;
 
+export type TransactionEventRequestPayload = {
+  readonly txHashes: string[];
+  readonly ignoreCache: boolean;
+};
+
 // Ledger Actions
 export const LedgerAction = z.object({
   identifier: z.number(),
@@ -190,10 +200,10 @@ export const LedgerAction = z.object({
   location: TradeLocation,
   amount: NumericString,
   asset: z.string(),
-  rate: NumericString.nullable().optional(),
-  rateAsset: z.string().nullable().optional(),
-  link: z.string().nullable().optional(),
-  notes: z.string().nullable().optional()
+  rate: NumericString.nullish(),
+  rateAsset: z.string().nullish(),
+  link: z.string().nullish(),
+  notes: z.string().nullish()
 });
 
 export type LedgerAction = z.infer<typeof LedgerAction>;

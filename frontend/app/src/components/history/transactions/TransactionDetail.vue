@@ -1,12 +1,12 @@
 <template>
   <card>
     <template #title>
-      {{ $t('transaction_details.title') }}
+      {{ $t('transactions.details.title') }}
     </template>
     <div class="pt-4">
       <v-row class="pb-2">
         <v-col cols="2" class="font-weight-medium">
-          {{ $t('transaction_details.gas_fee') }}
+          {{ $t('transactions.details.gas_fee') }}
         </v-col>
         <v-col cols="10">
           <amount-display :value="gasFee" asset="ETH" />
@@ -15,7 +15,7 @@
       <v-divider class="pb-2" />
       <v-row class="pb-2">
         <v-col cols="2" class="font-weight-medium">
-          {{ $t('transaction_details.gas_limit') }}
+          {{ $t('transactions.details.gas_limit') }}
         </v-col>
         <v-col cols="10">
           <amount-display :value="transaction.gas" integer />
@@ -24,7 +24,7 @@
       <v-divider class="pb-2" />
       <v-row class="pb-2">
         <v-col cols="2" class="font-weight-medium">
-          {{ $t('transaction_details.gas_used') }}
+          {{ $t('transactions.details.gas_used') }}
         </v-col>
         <v-col cols="10">
           <amount-display :value="transaction.gasUsed" integer />
@@ -33,7 +33,7 @@
       <v-divider class="pb-2" />
       <v-row class="pb-2">
         <v-col cols="2" class="font-weight-medium">
-          {{ $t('transaction_details.gas_price') }}
+          {{ $t('transactions.details.gas_price') }}
         </v-col>
         <v-col cols="10">
           <amount-display :value="toGwei(transaction.gasPrice)" asset="Gwei" />
@@ -42,14 +42,14 @@
       <v-divider class="pb-2" />
       <v-row class="pb-2">
         <v-col cols="2" class="font-weight-medium">
-          {{ $t('transaction_details.nonce') }}
+          {{ $t('transactions.details.nonce') }}
         </v-col>
         <v-col cols="10">{{ transaction.nonce }}</v-col>
       </v-row>
       <v-divider class="pb-2" />
       <v-row class="pb-2">
         <v-col cols="2" class="font-weight-medium">
-          {{ $t('transaction_details.input_data') }}
+          {{ $t('transactions.details.input_data') }}
         </v-col>
         <v-col cols="10">
           <textarea
@@ -104,8 +104,6 @@ export default defineComponent({
 });
 </script>
 <style module lang="scss">
-@import '~@/scss/scroll';
-
 .input-data {
   background-color: var(--v-rotki-light-grey-lighten1);
   border: var(--v-rotki-light-grey-darken1) solid thin;
@@ -115,6 +113,5 @@ export default defineComponent({
   height: 80px;
   padding: 16px;
   font-size: 14px;
-  @extend .themed-scrollbar;
 }
 </style>

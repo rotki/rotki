@@ -37,7 +37,7 @@ export const getEventTypeData = (
     label:
       event.eventSubtype ||
       event.eventType ||
-      i18n.t('transactions.event_type.unknown').toString(),
+      i18n.t('transactions.events.type.unknown').toString(),
     icon: 'mdi-help',
     color: 'red'
   };

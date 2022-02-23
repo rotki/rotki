@@ -84,7 +84,6 @@ import {
   getDateInputISOFormat,
   isValidDate
 } from '@/utils/date';
-import { logger } from '@/utils/logging';
 
 const defaultDateFormat = 'YYYY-MM-DD';
 
@@ -279,7 +278,6 @@ export default defineComponent({
       format: DateFormat = unref(dateInputFormat)
     ) => {
       if (isValid(value, format, unref(seconds))) {
-        logger.debug(value, format, 'was valid');
         const formattedDate = changeDateFormat(
           value,
           format,

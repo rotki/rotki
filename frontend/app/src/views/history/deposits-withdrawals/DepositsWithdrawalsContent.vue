@@ -51,6 +51,7 @@
       item-key="identifier"
       show-expand
       single-expand
+      :item-class="item => (item.ignoredInAccounting ? 'darken-row' : '')"
       @update:options="updatePaginationHandler($event)"
     >
       <template #item.ignoredInAccounting="{ item, isMobile }">

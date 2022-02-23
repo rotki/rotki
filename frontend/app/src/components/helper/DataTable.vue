@@ -90,7 +90,7 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-/* stylelint-disable selector-class-pattern,selector-nested-pattern */
+/* stylelint-disable selector-class-pattern,selector-nested-pattern,no-descending-specificity */
 
 ::v-deep {
   .v-data-table {
@@ -116,5 +116,19 @@ export default defineComponent({
     }
   }
 }
-/* stylelint-enable selector-class-pattern,selector-nested-pattern */
+
+.theme {
+  &--dark {
+    ::v-deep {
+      .v-data-table {
+        &__expanded {
+          &__content {
+            background-color: var(--v-dark-lighten1) !important;
+          }
+        }
+      }
+    }
+  }
+}
+/* stylelint-enable selector-class-pattern,selector-nested-pattern,no-descending-specificity */
 </style>

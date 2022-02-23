@@ -60,6 +60,7 @@
         class="closed-trades"
         :single-select="false"
         :show-select="!locationOverview"
+        :item-class="item => (item.ignoredInAccounting ? 'darken-row' : '')"
         item-key="tradeId"
         show-expand
         single-expand
@@ -201,13 +202,15 @@ import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import ExternalTradeForm from '@/components/ExternalTradeForm.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import Fragment from '@/components/helper/Fragment';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import ExternalTradeForm, {
+  ExternalTradeFormInstance
+} from '@/components/history/ExternalTradeForm.vue';
 import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import {
   MatchedKeyword,
@@ -326,7 +329,7 @@ const tableHeaders = (locationOverview: string): DataTableHeader[] => {
       value: 'actions',
       align: 'center',
       sortable: false,
-      width: '50'
+      width: '1px'
     },
     { text: '', value: 'data-table-expand', sortable: false }
   ];
@@ -398,7 +401,7 @@ export default defineComponent({
     const confirmationMessage: Ref<string> = ref('');
     const expanded: Ref<TradeEntry[]> = ref([]);
     const valid: Ref<boolean> = ref(false);
-    const form = ref<ExternalTradeForm | null>(null);
+    const form = ref<ExternalTradeFormInstance | null>(null);
 
     const newExternalTrade = () => {
       dialogTitle.value = i18n.t('closed_trades.dialog.add.title').toString();

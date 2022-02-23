@@ -51,67 +51,203 @@ export const ledgerActionsData: ActionDataEntry[] = [
   }
 ];
 
+export const historyEventTypeData: ActionDataEntry[] = [
+  {
+    identifier: HistoryEventType.TRADE,
+    label: i18n.t('transactions.events.history_event_type.trade').toString()
+  },
+  {
+    identifier: HistoryEventType.STAKING,
+    label: i18n.t('transactions.events.history_event_type.staking').toString()
+  },
+  {
+    identifier: HistoryEventType.DEPOSIT,
+    label: i18n.t('transactions.events.history_event_type.deposit').toString()
+  },
+  {
+    identifier: HistoryEventType.WITHDRAWAL,
+    label: i18n
+      .t('transactions.events.history_event_type.withdrawal')
+      .toString()
+  },
+  {
+    identifier: HistoryEventType.TRANSFER,
+    label: i18n.t('transactions.events.history_event_type.transfer').toString()
+  },
+  {
+    identifier: HistoryEventType.SPEND,
+    label: i18n.t('transactions.events.history_event_type.spend').toString()
+  },
+  {
+    identifier: HistoryEventType.RECEIVE,
+    label: i18n.t('transactions.events.history_event_type.receive').toString()
+  },
+  {
+    identifier: HistoryEventType.ADJUSTMENT,
+    label: i18n
+      .t('transactions.events.history_event_type.adjustment')
+      .toString()
+  },
+  {
+    identifier: HistoryEventType.UNKNOWN,
+    label: i18n.t('transactions.events.history_event_type.unknown').toString()
+  },
+  {
+    identifier: HistoryEventType.INFORMATIONAL,
+    label: i18n
+      .t('transactions.events.history_event_type.informational')
+      .toString()
+  },
+  {
+    identifier: HistoryEventType.MIGRATE,
+    label: i18n.t('transactions.events.history_event_type.migrate').toString()
+  }
+];
+
+export const historyEventSubTypeData: ActionDataEntry[] = [
+  {
+    identifier: HistoryEventSubType.REWARD,
+    label: i18n.t('transactions.events.history_event_subtype.reward').toString()
+  },
+  {
+    identifier: HistoryEventSubType.DEPOSIT_ASSET,
+    label: i18n
+      .t('transactions.events.history_event_subtype.deposit_asset')
+      .toString()
+  },
+  {
+    identifier: HistoryEventSubType.REMOVE_ASSET,
+    label: i18n
+      .t('transactions.events.history_event_subtype.remove_asset')
+      .toString()
+  },
+  {
+    identifier: HistoryEventSubType.FEE,
+    label: i18n.t('transactions.events.history_event_subtype.fee').toString()
+  },
+  {
+    identifier: HistoryEventSubType.SPEND,
+    label: i18n.t('transactions.events.history_event_subtype.spend').toString()
+  },
+  {
+    identifier: HistoryEventSubType.RECEIVE,
+    label: i18n
+      .t('transactions.events.history_event_subtype.receive')
+      .toString()
+  },
+  {
+    identifier: HistoryEventSubType.APPROVE,
+    label: i18n
+      .t('transactions.events.history_event_subtype.approve')
+      .toString()
+  },
+  {
+    identifier: HistoryEventSubType.DEPLOY,
+    label: i18n.t('transactions.events.history_event_subtype.deploy').toString()
+  },
+  {
+    identifier: HistoryEventSubType.AIRDROP,
+    label: i18n
+      .t('transactions.events.history_event_subtype.airdrop')
+      .toString()
+  },
+  {
+    identifier: HistoryEventSubType.BRIDGE,
+    label: i18n.t('transactions.events.history_event_subtype.bridge').toString()
+  },
+  {
+    identifier: HistoryEventSubType.GOVERNANCE_PROPOSE,
+    label: i18n
+      .t('transactions.events.history_event_subtype.governance_propose')
+      .toString()
+  },
+  {
+    identifier: HistoryEventSubType.GENERATE_DEBT,
+    label: i18n
+      .t('transactions.events.history_event_subtype.generate_debt')
+      .toString()
+  },
+  {
+    identifier: HistoryEventSubType.PAYBACK_DEBT,
+    label: i18n
+      .t('transactions.events.history_event_subtype.payback_debt')
+      .toString()
+  },
+  {
+    identifier: HistoryEventSubType.RECEIVE_WRAPPED,
+    label: i18n
+      .t('transactions.events.history_event_subtype.receive_wrapped')
+      .toString()
+  },
+  {
+    identifier: HistoryEventSubType.RETURN_WRAPPED,
+    label: i18n
+      .t('transactions.events.history_event_subtype.return_wrapped')
+      .toString()
+  }
+];
+
 export const transactionEventTypeData: ActionDataEntry[] = [
   {
     identifier: TransactionEventType.GAS,
-    label: i18n.t('transactions.event_type.gas_fee').toString(),
+    label: i18n.t('transactions.events.type.gas_fee').toString(),
     icon: 'mdi-fire'
   },
   {
     identifier: TransactionEventType.SEND,
-    label: i18n.t('transactions.event_type.send').toString(),
+    label: i18n.t('transactions.events.type.send').toString(),
     icon: 'mdi-arrow-up'
   },
   {
     identifier: TransactionEventType.RECEIVE,
-    label: i18n.t('transactions.event_type.receive').toString(),
+    label: i18n.t('transactions.events.type.receive').toString(),
     icon: 'mdi-arrow-down',
     color: 'green'
   },
   {
     identifier: TransactionEventType.APPROVAL,
-    label: i18n.t('transactions.event_type.approval').toString(),
+    label: i18n.t('transactions.events.type.approval').toString(),
     icon: 'mdi-lock-open-outline'
   },
   {
     identifier: TransactionEventType.DEPOSIT,
-    label: i18n.t('transactions.event_type.deposit').toString(),
+    label: i18n.t('transactions.events.type.deposit').toString(),
     icon: 'mdi-arrow-expand-up',
     color: 'green'
   },
   {
     identifier: TransactionEventType.WITHDRAW,
-    label: i18n.t('transactions.event_type.withdraw').toString(),
+    label: i18n.t('transactions.events.type.withdraw').toString(),
     icon: 'mdi-arrow-expand-down'
   },
   {
     identifier: TransactionEventType.AIRDROP,
-    label: i18n.t('transactions.event_type.airdrop').toString(),
+    label: i18n.t('transactions.events.type.airdrop').toString(),
     icon: 'mdi-airballoon-outline'
   },
   {
     identifier: TransactionEventType.BORROW,
-    label: i18n.t('transactions.event_type.borrow').toString(),
+    label: i18n.t('transactions.events.type.borrow').toString(),
     icon: 'mdi-hand-coin-outline'
   },
   {
     identifier: TransactionEventType.REPAY,
-    label: i18n.t('transactions.event_type.repay').toString(),
+    label: i18n.t('transactions.events.type.repay').toString(),
     icon: 'mdi-history'
   },
   {
     identifier: TransactionEventType.DEPLOY,
-    label: i18n.t('transactions.event_type.deploy').toString(),
+    label: i18n.t('transactions.events.type.deploy').toString(),
     icon: 'mdi-swap-horizontal'
   },
   {
     identifier: TransactionEventType.BRIDGE,
-    label: i18n.t('transactions.event_type.bridge').toString(),
+    label: i18n.t('transactions.events.type.bridge').toString(),
     icon: 'mdi-bridge'
   },
   {
     identifier: TransactionEventType.GOVERNANCE_PROPOSE,
-    label: i18n.t('transactions.event_type.governance_propose').toString(),
+    label: i18n.t('transactions.events.type.governance_propose').toString(),
     icon: 'mdi-bank'
   }
 ];

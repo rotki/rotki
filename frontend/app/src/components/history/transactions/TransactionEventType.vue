@@ -38,7 +38,17 @@
     </v-avatar>
     <div class="ml-4">
       <div class="font-weight-bold text-uppercase">{{ attrs.label }}</div>
-      <slot />
+      <div class="grey--text">
+        <hash-link :text="event.locationLabel" />
+      </div>
+      <div v-if="event.customized" class="pt-1">
+        <v-chip small label color="primary accent-1">
+          <v-icon x-small> mdi-file-document-edit </v-icon>
+          <div class="pl-2 text-caption font-weight-bold">
+            {{ $t('transactions.events.customized_event') }}
+          </div>
+        </v-chip>
+      </div>
     </div>
   </div>
 </template>
@@ -56,7 +66,7 @@ import { EthTransactionEventEntry } from '@/store/history/types';
 import { getEventCounterpartyData, getEventTypeData } from '@/utils/history';
 
 export default defineComponent({
-  name: 'TransactionEventTypeWrapper',
+  name: 'TransactionEventType',
   props: {
     event: {
       required: true,

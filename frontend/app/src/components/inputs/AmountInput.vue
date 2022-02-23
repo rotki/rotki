@@ -28,11 +28,12 @@ export default defineComponent({
   name: 'AmountInput',
   inheritAttrs: false,
   props: {
+    integer: { required: false, type: Boolean, default: false },
     value: { required: false, type: String, default: '' }
   },
   emits: ['input'],
   setup(props, { emit }) {
-    const { value } = toRefs(props);
+    const { integer, value } = toRefs(props);
 
     const textInput = ref(null);
 
@@ -67,7 +68,7 @@ export default defineComponent({
         numeral: true,
         delimiter: thousandSeparator.value,
         numeralDecimalMark: decimalSeparator.value,
-        numeralDecimalScale: 100,
+        numeralDecimalScale: integer.value ? 0 : 100,
         onValueChanged
       });
     });
