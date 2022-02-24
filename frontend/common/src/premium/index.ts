@@ -1,4 +1,4 @@
-import { ComputedRef } from "@vue/composition-api";
+import { Ref } from "@vue/composition-api";
 import { SupportedAsset } from "../data";
 import { ProfitLossModel } from "../defi";
 import { BalancerBalanceWithOwner, BalancerEvent, BalancerProfitLoss, Pool } from "../defi/balancer";
@@ -26,13 +26,13 @@ export interface StatisticsApi {
     end: number
   ): Promise<TimedBalances>;
   fetchNetValue(): Promise<void>
-  netValue: (startingData: number) => ComputedRef<NetValue>
+  netValue: (startingData: number) => Ref<NetValue>
 }
 
 export interface AdexApi {
-  fetchAdex(ComputedRefresh: boolean): Promise<void>
-  adexHistory: ComputedRef<AdexHistory>
-  adexBalances: ComputedRef<AdexBalances>
+  fetchAdex(refresh: boolean): Promise<void>
+  adexHistory: Ref<AdexHistory>
+  adexBalances: Ref<AdexBalances>
 }
 
 export interface DateUtilities {
@@ -46,43 +46,43 @@ export interface DateUtilities {
 }
 
 export type DexTradesApi = {
-  fetchUniswapTrades: (ComputedRefresh: boolean) => Promise<void>
-  fetchBalancerTrades: (ComputedRefresh: boolean) => Promise<void>
-  fetchSushiswapTrades: (ComputedRefresh: boolean) => Promise<void>
-  dexTrades: (addresses: string[]) => ComputedRef<DexTrade[]>
+  fetchUniswapTrades: (refresh: boolean) => Promise<void>
+  fetchBalancerTrades: (refresh: boolean) => Promise<void>
+  fetchSushiswapTrades: (refresh: boolean) => Promise<void>
+  dexTrades: (addresses: string[]) => Ref<DexTrade[]>
 };
 
 export type CompoundApi = {
-  compoundRewards: ComputedRef<ProfitLossModel[]>
-  compoundDebtLoss: ComputedRef<ProfitLossModel[]>
-  compoundLiquidationProfit: ComputedRef<ProfitLossModel[]>
-  compoundInterestProfit: ComputedRef<ProfitLossModel[]>
+  compoundRewards: Ref<ProfitLossModel[]>
+  compoundDebtLoss: Ref<ProfitLossModel[]>
+  compoundLiquidationProfit: Ref<ProfitLossModel[]>
+  compoundInterestProfit: Ref<ProfitLossModel[]>
 };
 
 export type BalancerApi = {
-  balancerProfitLoss: (addresses: string[]) => ComputedRef<BalancerProfitLoss[]>,
-  balancerEvents: (addresses: string[]) => ComputedRef<BalancerEvent[]>,
-  balancerBalances: ComputedRef<BalancerBalanceWithOwner[]>,
-  balancerPools: ComputedRef<Pool[]>,
-  balancerAddresses: ComputedRef<string[]>,
-  fetchBalancerBalances: (ComputedRefresh: boolean) => Promise<void>,
-  fetchBalancerEvents: (ComputedRefresh: boolean) => Promise<void>
+  balancerProfitLoss: (addresses: string[]) => Ref<BalancerProfitLoss[]>,
+  balancerEvents: (addresses: string[]) => Ref<BalancerEvent[]>,
+  balancerBalances: Ref<BalancerBalanceWithOwner[]>,
+  balancerPools: Ref<Pool[]>,
+  balancerAddresses: Ref<string[]>,
+  fetchBalancerBalances: (refresh: boolean) => Promise<void>,
+  fetchBalancerEvents: (refresh: boolean) => Promise<void>
 };
 
 export type SushiApi = {
-  balances: (addresses: string[]) => ComputedRef<XswapBalance[]>
-  events: (addresses: string[]) => ComputedRef<XswapEventDetails[]>;
-  poolProfit: (addresses: string[]) => ComputedRef<XswapPoolProfit[]>
-  addresses: ComputedRef<string[]>
-  pools: ComputedRef<XswapPool[]>
-  fetchBalances: (ComputedRefresh: boolean) => Promise<void>
-  fetchEvents: (ComputedRefresh: boolean) => Promise<void>
+  balances: (addresses: string[]) => Ref<XswapBalance[]>
+  events: (addresses: string[]) => Ref<XswapEventDetails[]>;
+  poolProfit: (addresses: string[]) => Ref<XswapPoolProfit[]>
+  addresses: Ref<string[]>
+  pools: Ref<XswapPool[]>
+  fetchBalances: (refresh: boolean) => Promise<void>
+  fetchEvents: (refresh: boolean) => Promise<void>
 }
 
 export type BalancesApi = {
-  byLocation: ComputedRef<Record<string, BigNumber>>
-  aggregatedBalances: ComputedRef<AssetBalanceWithPrice[]>
-  exchangeRate: (currency: string) => ComputedRef<number>
+  byLocation: Ref<Record<string, BigNumber>>
+  aggregatedBalances: Ref<AssetBalanceWithPrice[]>
+  exchangeRate: (currency: string) => Ref<number>
 };
 
 export type AssetsApi = {
@@ -107,14 +107,14 @@ export interface DataUtilities {
 }
 
 export type UserSettingsApi = {
-  currencySymbol: ComputedRef<string>
-  floatingPrecision: ComputedRef<number>
-  shouldShowAmount: ComputedRef<boolean>
-  shouldShowPercentage: ComputedRef<boolean>
-  scrambleData: ComputedRef<boolean>
-  darkModeEnabled: ComputedRef<boolean>
-  privacyMode: ComputedRef<boolean>
-  graphZeroBased: ComputedRef<boolean>
+  currencySymbol: Ref<string>
+  floatingPrecision: Ref<number>
+  shouldShowAmount: Ref<boolean>
+  shouldShowPercentage: Ref<boolean>
+  scrambleData: Ref<boolean>
+  darkModeEnabled: Ref<boolean>
+  privacyMode: Ref<boolean>
+  graphZeroBased: Ref<boolean>
 };
 
 export interface SettingsApi {

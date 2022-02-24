@@ -31,6 +31,7 @@ import PremiumMixin from '@/mixins/premium-mixin';
 import StatusMixin from '@/mixins/status-mixin';
 import { DexTradesTable } from '@/premium/premium';
 import { Section } from '@/store/const';
+import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswap } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';
 
@@ -45,7 +46,7 @@ import { Module } from '@/types/modules';
   methods: {
     ...mapPiniaActions(useUniswap, { fetchUniswapTrades: 'fetchTrades' }),
     ...mapActions('defi', ['fetchBalancerTrades']),
-    ...mapActions('defi/sushiswap', {
+    ...mapPiniaActions(useSushiswapStore, {
       fetchSushiswapTrades: 'fetchTrades'
     })
   }

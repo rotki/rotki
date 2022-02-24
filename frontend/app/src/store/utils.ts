@@ -1,17 +1,17 @@
 import { Message, Severity } from '@rotki/common/lib/messages';
-import { inject, unref } from '@vue/composition-api';
+import { Ref, unref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import * as logger from 'loglevel';
 import { ActionContext, Store } from 'vuex';
 import i18n from '@/i18n';
 import { Section, Status } from '@/store/const';
 import { useNotifications } from '@/store/notifications';
-import { useMainStore } from '@/store/store';
+import store, { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import { RotkehlchenState } from '@/store/types';
-import { FetchPayload } from '@/store/typing';
+import { FetchData, FetchPayload } from '@/store/typing';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { assert } from '@/utils/assertions';
 
 export async function fetchAsync<S, T extends TaskMeta, R>(
   { commit, rootState: { session } }: ActionContext<S, RotkehlchenState>,
@@ -59,6 +59,47 @@ export async function fetchAsync<S, T extends TaskMeta, R>(
     });
   }
   setStatus(Status.LOADED, section);
+}
+
+export async function fetchDataAsync<T extends TaskMeta, R>(
+  data: FetchData<T, R>,
+  state: Ref<R>
+): Promise<void> {
+  if (
+    !get(data.state.activeModules).includes(data.requires.module) ||
+    (data.requires.premium && !get(data.state.isPremium))
+  ) {
+    logger.debug('module inactive or not premium');
+    return;
+  }
+
+  const task = data.task;
+  const { getStatus, loading, setStatus } = getStatusUpdater(task.section);
+
+  if (loading() || (getStatus() === Status.LOADED && !data.refresh)) {
+    logger.debug(`${Section[data.task.section]} is already loading`);
+    return;
+  }
+
+  setStatus(data.refresh ? Status.REFRESHING : Status.LOADING);
+
+  const { awaitTask } = useTasks();
+
+  try {
+    const { taskId } = await task.query();
+    const { result } = await awaitTask<R, T>(taskId, task.type, task.meta);
+    set(state, task.parser ? task.parser(result) : result);
+  } catch (e: any) {
+    logger.error(`action failure for task ${TaskType[task.type]}:`, e);
+    const { notify } = useNotifications();
+    notify({
+      title: task.onError.title,
+      message: task.onError.error(e.message),
+      severity: Severity.ERROR,
+      display: true
+    });
+  }
+  setStatus(Status.LOADED);
 }
 
 export function showError(description: string, title?: string) {
@@ -158,11 +199,7 @@ export function filterAddresses<T>(
   }
 }
 
-export function useStore(): Store<RotkehlchenState> {
-  const store = inject<Store<RotkehlchenState>>('vuex-store');
-  assert(store);
-  return store;
-}
+export const useStore = (): Store<RotkehlchenState> => store;
 
 const KEY_ANIMATIONS_ENABLED = 'rotki.animations_enabled' as const;
 export function isAnimationsEnabled(): boolean {

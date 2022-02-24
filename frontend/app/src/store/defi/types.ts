@@ -31,8 +31,6 @@ import {
   YearnVaultsHistory
 } from '@/services/defi/types/yearn';
 import { AIRDROP_POAP, AIRDROPS, OVERVIEW_PROTOCOLS } from '@/store/defi/const';
-import { LiquityState } from '@/store/defi/liquity/types';
-import { SushiswapState } from '@/store/defi/sushiswap/types';
 
 export type OverviewDefiProtocol = typeof OVERVIEW_PROTOCOLS[number];
 
@@ -54,8 +52,6 @@ export interface DefiState {
   yearnVaultsV2Balances: YearnVaultsBalances;
   yearnVaultsV2History: YearnVaultsHistory;
   airdrops: Airdrops;
-  sushiswap?: SushiswapState;
-  liquity?: LiquityState;
 }
 
 export interface PoapDeliveryDetails {

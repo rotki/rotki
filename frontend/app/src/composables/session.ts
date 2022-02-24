@@ -24,7 +24,8 @@ export const setupModuleEnabled = () => {
         const { activeModules } = sessionState.generalSettings;
         return activeModules.includes(module);
       });
-    }
+    },
+    activeModules: computed(() => sessionState.generalSettings.activeModules)
   };
 };
 

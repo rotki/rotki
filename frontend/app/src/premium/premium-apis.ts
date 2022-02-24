@@ -25,8 +25,10 @@ import {
   TimedBalances
 } from '@rotki/common/lib/statistics';
 import { computed } from '@vue/composition-api';
+import { toRefs } from '@vueuse/core';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
+import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswap } from '@/store/defi/uniswap';
 import { useStore } from '@/store/utils';
 
@@ -165,33 +167,32 @@ export const compoundApi = (): CompoundApi => {
 
 export const dexTradeApi = (): DexTradesApi => {
   const store = useStore();
-  const { fetchTrades } = useUniswap();
+  const { fetchTrades: fetchUniswapTrades } = useUniswap();
+  const { fetchTrades: fetchSushiswapTrades } = useSushiswapStore();
   return {
     dexTrades: addresses =>
       computed(() => store.getters['defi/dexTrades'](addresses)),
     fetchBalancerTrades: refresh =>
       store.dispatch('defi/fetchBalancerTrades', refresh),
-    fetchSushiswapTrades: refresh =>
-      store.dispatch('defi/fetchSushiswapTrades', refresh),
-    fetchUniswapTrades: refresh => fetchTrades(refresh)
+    fetchSushiswapTrades,
+    fetchUniswapTrades
   };
 };
 
 export const sushiApi = (): SushiApi => {
-  const store = useStore();
+  const store = useSushiswapStore();
+  const { addresses, pools } = toRefs(store);
+
+  const { balanceList, eventList, fetchBalances, fetchEvents, poolProfit } =
+    store;
   return {
-    addresses: computed(() => store.getters['defi/sushiswap/addresses']),
-    pools: computed(() => store.getters['defi/sushiswap/pools']),
-    events: addresses =>
-      computed(() => store.getters['defi/sushiswap/events'](addresses)),
-    balances: addresses =>
-      computed(() => store.getters['defi/sushiswap/balances'](addresses)),
-    poolProfit: addresses =>
-      computed(() => store.getters['defi/sushiswap/poolProfit'](addresses)),
-    fetchEvents: refresh =>
-      store.dispatch('defi/sushiswap/fetchEvents', refresh),
-    fetchBalances: refresh =>
-      store.dispatch('defi/sushiswap/fetchBalances', refresh)
+    addresses,
+    pools,
+    events: eventList,
+    balances: balanceList,
+    poolProfit,
+    fetchEvents,
+    fetchBalances
   };
 };
 
