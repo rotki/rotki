@@ -114,8 +114,6 @@ export default Card;
 </script>
 
 <style module lang="scss">
-@import '~@/scss/scroll';
-
 .title {
   margin-top: -22px;
 }
@@ -131,8 +129,6 @@ export default Card;
 .contained {
   max-height: calc(100vh - 206px);
   overflow-y: scroll;
-
-  @extend .themed-scrollbar;
 }
 
 .no-radius-bottom {

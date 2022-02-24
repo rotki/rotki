@@ -76,8 +76,6 @@ export default class TransactionDetails extends Vue {
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
 .transaction-details {
   &__data {
     background-color: var(--v-rotki-light-grey-lighten1);
@@ -88,7 +86,6 @@ export default class TransactionDetails extends Vue {
     height: 80px;
     padding: 16px;
     font-size: 14px;
-    @extend .themed-scrollbar;
   }
 }
 </style>

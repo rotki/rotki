@@ -186,8 +186,6 @@ export default class QueriedAddressDialog extends Vue {
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
 .queried-address-dialog {
   &__list {
     overflow-y: scroll;
@@ -195,8 +193,6 @@ export default class QueriedAddressDialog extends Vue {
     width: 99%;
     padding: 8px;
     height: 250px;
-
-    @extend .themed-scrollbar;
   }
 
   &__empty {

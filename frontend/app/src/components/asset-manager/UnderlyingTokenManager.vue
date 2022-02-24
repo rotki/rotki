@@ -156,16 +156,12 @@ export default class UnderlyingTokenManager extends Vue {
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
 .underlying-tokens {
   ::v-deep {
     tbody {
       height: 200px;
       overflow-y: scroll;
       overflow-x: hidden;
-
-      @extend .themed-scrollbar;
     }
 
     thead,

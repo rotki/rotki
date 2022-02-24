@@ -129,8 +129,6 @@ export default class ModuleAddressSelector extends Vue {
 
 <!--suppress Stylelint -->
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
 .module-address-selector {
   border: none !important;
   box-shadow: none !important;
@@ -148,8 +146,6 @@ export default class ModuleAddressSelector extends Vue {
         hr {
           display: none;
         }
-
-        @extend .themed-scrollbar;
       }
 
       &__step {

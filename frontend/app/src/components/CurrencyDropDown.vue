@@ -123,8 +123,6 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
 ::v-deep {
   .currency-dropdown {
     font-size: 1.6em !important;
@@ -133,8 +131,6 @@ export default defineComponent({
     &__list {
       max-height: 400px;
       overflow-y: scroll;
-
-      @extend .themed-scrollbar;
     }
   }
 }

@@ -178,20 +178,6 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
-::v-deep {
-  .v-dialog {
-    &__content {
-      .v-dialog {
-        &--active {
-          @extend .themed-scrollbar;
-        }
-      }
-    }
-  }
-}
-
 .tag-manager {
   overflow: auto;
   height: 100%;

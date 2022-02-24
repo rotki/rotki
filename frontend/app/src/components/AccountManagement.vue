@@ -336,8 +336,6 @@ export default defineComponent({
 </script>
 
 <style module lang="scss">
-@import '~@/scss/scroll';
-
 @keyframes scrollLarge {
   0% {
     transform: rotate(-13deg) translateY(0px);
@@ -390,8 +388,6 @@ export default defineComponent({
   z-index: 5;
   max-height: calc(100vh - 140px);
   overflow: auto;
-
-  @extend .themed-scrollbar;
 }
 
 .icon {
