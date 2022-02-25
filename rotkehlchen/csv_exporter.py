@@ -36,7 +36,8 @@ from rotkehlchen.types import (
     Location,
     Timestamp,
 )
-from rotkehlchen.utils.misc import taxable_gain_for_sell, timestamp_to_date
+from rotkehlchen.utils.misc import taxable_gain_for_sell
+from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
@@ -94,7 +95,7 @@ def _dict_to_csv_file(path: Path, dictionary_list: List) -> None:
             raise CSVWriteError(f'Failed to write {path} CSV due to {str(e)}') from e
 
 
-class CSVExporter():
+class CSVExporter(CustomizableDateMixin):
 
     def __init__(
             self,
@@ -102,6 +103,7 @@ class CSVExporter():
             user_directory: Path,
             create_csv: bool,
     ):
+        super().__init__(database=database)
         self.user_directory = user_directory
         self.database = database
         self.create_csv = create_csv
@@ -129,9 +131,8 @@ class CSVExporter():
         """Resets the CSVExporter and prepares it for a new profit/loss run"""
         # TODO: Further specify the types here in more detail. Get rid of "Any"
         self.profit_currency = self.database.get_main_currency()
+        self.reload_settings()
         db_settings = self.database.get_settings()
-        self.dateformat = db_settings.date_display_format
-        self.datelocaltime = db_settings.display_date_in_localtime
         self.should_export_formulas = db_settings.pnl_csv_with_formulas
         self.should_have_summary = db_settings.pnl_csv_have_summary
         if self.create_csv:
@@ -167,13 +168,6 @@ class CSVExporter():
             settings=settings,
         )
         return self.report_id
-
-    def timestamp_to_date(self, timestamp: Timestamp) -> str:
-        return timestamp_to_date(
-            timestamp,
-            formatstr=self.dateformat,
-            treat_as_local=self.datelocaltime,
-        )
 
     def _add_if_formula(
             self,
