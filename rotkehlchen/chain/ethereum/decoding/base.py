@@ -27,6 +27,24 @@ class BaseDecoderTools():
     def __init__(self, database: 'DBHandler') -> None:
         self.database = database
         self.tracked_accounts = self.database.get_blockchain_accounts()
+        self.sequence_counter = 0
+
+    def reset_sequence_counter(self) -> None:
+        self.sequence_counter = 0
+
+    def get_next_sequence_counter(self) -> int:
+        """Returns current counter and also increases it.
+        Meant to be called for all transaction events that do not have a corresponding log index"""
+        value = self.sequence_counter
+        self.sequence_counter += 1
+        return value
+
+    def get_sequence_index(self, tx_log: EthereumTxReceiptLog) -> int:
+        """Get the value that should go for this event's sequence index
+
+        This function exists to calculate the index bases on the pre-calculated
+        sequence index and the event's log index"""
+        return self.sequence_counter + tx_log.log_index
 
     def refresh_tracked_accounts(self) -> None:
         self.tracked_accounts = self.database.get_blockchain_accounts()
@@ -119,7 +137,7 @@ class BaseDecoderTools():
 
         return HistoryBaseEntry(
             event_identifier=transaction.tx_hash.hex(),
-            sequence_index=tx_log.log_index,
+            sequence_index=self.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
             location_label=location_label,

@@ -153,7 +153,7 @@ class DxdaomesaDecoder(DecoderInterface):
 
         event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash.hex(),
-            sequence_index=tx_log.log_index,
+            sequence_index=self.base.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
             location_label=user,
@@ -202,7 +202,7 @@ class DxdaomesaDecoder(DecoderInterface):
         sell_amount = asset_normalized_value(amount=log_data[4], asset=sell_token)
         event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash.hex(),
-            sequence_index=tx_log.log_index,
+            sequence_index=self.base.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
             location_label=owner,

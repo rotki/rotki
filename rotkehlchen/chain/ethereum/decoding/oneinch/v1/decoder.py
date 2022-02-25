@@ -108,7 +108,7 @@ class Oneinchv1Decoder(DecoderInterface):
         fee_amount = asset_normalized_value(fee_raw, to_asset)
         fee_event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash.hex(),
-            sequence_index=tx_log.log_index,
+            sequence_index=self.base.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
             location_label=sender_address,

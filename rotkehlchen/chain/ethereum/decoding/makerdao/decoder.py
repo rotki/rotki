@@ -349,7 +349,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             notes = f'Create DSR proxy {proxy_address} with owner {owner_address}'
             event = HistoryBaseEntry(
                 event_identifier=transaction.tx_hash.hex(),
-                sequence_index=tx_log.log_index,
+                sequence_index=self.base.get_sequence_index(tx_log),
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.BLOCKCHAIN,
                 location_label=owner_address,
@@ -383,7 +383,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         notes = f'Create MakerDAO vault with id {cdp_id} and owner {owner_address}'
         event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash.hex(),
-            sequence_index=tx_log.log_index,
+            sequence_index=self.base.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
             location_label=owner_address,
