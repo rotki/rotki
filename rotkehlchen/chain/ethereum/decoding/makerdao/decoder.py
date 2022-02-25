@@ -182,7 +182,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 amount=raw_amount,
                 asset=vault_asset,
             )
-# Go through decoded events to find and edit the transfer event
+            # Go through decoded events to find and edit the transfer event
             for event in decoded_events:
                 if event.event_type == HistoryEventType.SPEND and event.asset == vault_asset and event.balance.amount == amount:  # noqa: E501
                     event.sequence_index = tx_log.log_index  # to better position it in the list
