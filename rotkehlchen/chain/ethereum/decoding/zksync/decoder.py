@@ -18,7 +18,7 @@ DEPOSIT = b'\xb6\x86k\x02\x9f:\xa2\x9c\xd9\xe2\xbf\xf8\x15\x9a\x8c\xca\xa48\x9fz
 ZKSYNC_BRIDGE = string_to_ethereum_address('0xaBEA9132b05A70803a4E85094fD0e1800777fBEF')
 
 
-class ZksyncDecoder(DecoderInterface):
+class ZksyncDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def _decode_event(  # pylint: disable=no-self-use
             self,

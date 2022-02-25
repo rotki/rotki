@@ -934,7 +934,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'location': 'blockchain',
         'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
         'notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
-        'sequence_index': 307,
+        'sequence_index': 308,
         'timestamp': 1642802735,
     }, 'customized': False}]
     assert entries[1]['decoded_events'] == tx2_events
@@ -949,7 +949,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         'location': 'blockchain',
         'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
         'notes': 'Receive 0.125 ETH 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf -> 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
-        'sequence_index': 1,
+        'sequence_index': 0,
         'timestamp': 1642802651,
     }, 'customized': False}]
     assert entries[2]['decoded_events'] == tx3_events

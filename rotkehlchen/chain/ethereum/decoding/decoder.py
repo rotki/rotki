@@ -200,6 +200,7 @@ class EVMTransactionDecoder():
     ) -> List[HistoryBaseEntry]:
         """Decodes an ethereum transaction and its receipt and saves result in the DB"""
         cursor = self.database.conn.cursor()
+        self.base.reset_sequence_counter()
         # check if any eth transfer happened in the transaction, including in internal transactions
         events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
         action_items: List[ActionItem] = []
@@ -317,7 +318,7 @@ class EVMTransactionDecoder():
                 event_type, location_label, counterparty, verb = direction_result
                 events.append(HistoryBaseEntry(
                     event_identifier=tx_hash_hex,
-                    sequence_index=internal_tx.trace_id,
+                    sequence_index=self.base.get_next_sequence_counter(),
                     timestamp=ts_ms,
                     location=Location.BLOCKCHAIN,
                     location_label=location_label,
@@ -339,7 +340,7 @@ class EVMTransactionDecoder():
             eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
             events.append(HistoryBaseEntry(
                 event_identifier=tx_hash_hex,
-                sequence_index=0,
+                sequence_index=self.base.get_next_sequence_counter(),
                 timestamp=ts_ms,
                 location=Location.BLOCKCHAIN,
                 location_label=location_label,
@@ -362,7 +363,7 @@ class EVMTransactionDecoder():
 
             events.append(HistoryBaseEntry(  # contract deployment
                 event_identifier=tx_hash_hex,
-                sequence_index=1,
+                sequence_index=self.base.get_next_sequence_counter(),
                 timestamp=ts_ms,
                 location=Location.BLOCKCHAIN,
                 location_label=tx.from_address,
@@ -380,7 +381,7 @@ class EVMTransactionDecoder():
 
         events.append(HistoryBaseEntry(
             event_identifier=tx_hash_hex,
-            sequence_index=1,
+            sequence_index=self.base.get_next_sequence_counter(),
             timestamp=ts_ms,
             location=Location.BLOCKCHAIN,
             location_label=location_label,
@@ -415,7 +416,7 @@ class EVMTransactionDecoder():
         notes = f'Approve {amount} {token.symbol} of {owner_address} for spending by {spender_address}'  # noqa: E501
         return HistoryBaseEntry(
             event_identifier=transaction.tx_hash.hex(),
-            sequence_index=tx_log.log_index,
+            sequence_index=self.base.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
             location_label=owner_address,
@@ -546,7 +547,7 @@ class EVMTransactionDecoder():
             notes = f'Create {governance_name} proposal {proposal_id}. {proposal_text}'
             return HistoryBaseEntry(
                 event_identifier=transaction.tx_hash.hex(),
-                sequence_index=tx_log.log_index,
+                sequence_index=self.base.get_sequence_index(tx_log),
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.BLOCKCHAIN,
                 location_label=transaction.from_address,

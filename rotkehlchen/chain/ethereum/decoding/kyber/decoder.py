@@ -69,7 +69,7 @@ def _maybe_update_events_legacy_contrats(
             event.notes = f'Receive {event.balance.amount} {event.asset.symbol} from kyber swap'  # noqa: E501
 
 
-class KyberDecoder(DecoderInterface):
+class KyberDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',

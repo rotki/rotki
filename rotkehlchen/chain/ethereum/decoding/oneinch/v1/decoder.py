@@ -23,7 +23,7 @@ HISTORY = b'\x89M\xbf\x12b\x19\x9c$\xe1u\x02\x98\xa3\x84\xc7\t\x16\x0fI\xd1cB,\x
 SWAPPED = b'\xe2\xce\xe3\xf6\x83`Y\x82\x0bg9C\x85:\xfe\xbd\x9b0&\x12]\xab\rwB\x84\xe6\xf2\x8aHU\xbe'  # noqa: E501
 
 
-class Oneinchv1Decoder(DecoderInterface):
+class Oneinchv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
@@ -108,7 +108,7 @@ class Oneinchv1Decoder(DecoderInterface):
         fee_amount = asset_normalized_value(fee_raw, to_asset)
         fee_event = HistoryBaseEntry(
             event_identifier=transaction.tx_hash.hex(),
-            sequence_index=tx_log.log_index,
+            sequence_index=self.base.get_sequence_index(tx_log),
             timestamp=ts_sec_to_ms(transaction.timestamp),
             location=Location.BLOCKCHAIN,
             location_label=sender_address,

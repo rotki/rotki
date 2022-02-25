@@ -30,7 +30,7 @@ GITCOIN_BULK_CHECKOUT = string_to_ethereum_address('0x7d655c57f71464B6f83811C55D
 DONATION_SENT = b';\xb7B\x8b%\xf9\xbd\xad\x9b\xd2\xfa\xa4\xc6\xa7\xa9\xe5\xd5\x88&W\xe9l\x1d$\xccA\xc1\xd6\xc1\x91\n\x98'  # noqa: E501
 
 
-class GitcoinDecoder(DecoderInterface):
+class GitcoinDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument

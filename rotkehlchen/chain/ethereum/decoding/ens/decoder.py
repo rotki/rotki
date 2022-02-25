@@ -34,7 +34,7 @@ NAME_RENEWED = b'=\xa2L\x02E\x82\x93\x1c\xfa\xf8&}\x8e\xd2M\x13\xa8*\x80h\xd5\xb
 NAME_RENEWED_ABI = '{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"name","type":"string"},{"indexed":true,"internalType":"bytes32","name":"label","type":"bytes32"},{"indexed":false,"internalType":"uint256","name":"cost","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"expires","type":"uint256"}],"name":"NameRenewed","type":"event"}'  # noqa: E501
 
 
-class EnsDecoder(DecoderInterface, CustomizableDateMixin):
+class EnsDecoder(DecoderInterface, CustomizableDateMixin):  # lgtm[py/missing-call-to-init]
     def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
