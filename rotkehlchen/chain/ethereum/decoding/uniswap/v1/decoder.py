@@ -18,7 +18,7 @@ TOKEN_PURCHASE = b'\xcd`\xaau\xde\xa3\x07/\xbc\x07\xaem}\x85k]\xc5\xf4\xee\xe8\x
 ETH_PURCHASE = b'\x7f@\x91\xb4l3\xe9\x18\xa0\xf3\xaaB0vA\xd1{\xb6p)BzSi\xe5K59\x84#\x87\x05'  # noqa: E501
 
 
-class Uniswapv1Decoder(DecoderInterface):
+class Uniswapv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def _maybe_decode_swap(  # pylint: disable=no-self-use
             self,

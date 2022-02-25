@@ -31,7 +31,7 @@ WITHDRAW_REQUEST = b',bE\xafPo\x0f\xc1\x08\x99\x18\xc0,\x1d\x01\xbd\xe9\xcc\x80v
 WITHDRAW = b'\x9b\x1b\xfa\x7f\xa9\xeeB\n\x16\xe1$\xf7\x94\xc3Z\xc9\xf9\x04r\xac\xc9\x91@\xeb/dG\xc7\x14\xca\xd8\xeb'  # noqa: E501
 
 
-class DxdaomesaDecoder(DecoderInterface):
+class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def __init__(  # pylint: disable=super-init-not-called
             self,

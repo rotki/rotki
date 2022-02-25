@@ -24,7 +24,7 @@ ONEINCH = string_to_ethereum_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe
 ONEINCH_CLAIMED = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 
 
-class AirdropsDecoder(DecoderInterface):
+class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
 
     def _decode_uniswap_claim(  # pylint: disable=no-self-use
             self,
