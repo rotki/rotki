@@ -1,7 +1,6 @@
 import os
 import random
 from contextlib import ExitStack
-from copy import deepcopy
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -970,7 +969,6 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
     assert entries[3]['decoded_events'] == tx4_events
 
     # Now let's edit 1 event and add another one
-    tx2_event_before_edit = deepcopy(tx2_events[1])
     event = tx2_events[1]['entry']
     event['asset'] = A_DAI.identifier
     event['balance'] = {'amount': '2500', 'usd_value': '2501.1'}
@@ -1032,12 +1030,9 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
     assert customized_events[1].serialize() == tx2_events[1]['entry']
 
     # requery all transactions and events and assert they are the same (different event id though)
-    tx2_events.insert(0, deepcopy(tx2_events[1]))
-    tx2_events[2] = tx2_event_before_edit
     result = query_transactions(rotki, tx_module)
     entries = result['entries']
     assert len(entries) == 4
-    # assert_serialized_dicts_equal(entries[0]['decoded_events'], tx1_events, ignore_keys='identifier')  # noqa: E501
 
     assert_serialized_lists_equal(entries[0]['decoded_events'], tx1_events, ignore_keys='identifier')  # noqa: E501
     assert_serialized_lists_equal(entries[1]['decoded_events'], tx2_events, ignore_keys='identifier')  # noqa: E501

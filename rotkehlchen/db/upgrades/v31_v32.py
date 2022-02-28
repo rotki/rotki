@@ -21,7 +21,8 @@ def _upgrade_history_events(cursor: 'Cursor') -> None:
         notes TEXT,
         type TEXT NOT NULL,
         subtype TEXT,
-        counterparty TEXT
+        counterparty TEXT,
+        UNIQUE(event_identifier, sequence_index)
     );""")
     cursor.execute("""
     INSERT INTO history_events_copy (event_identifier, sequence_index, timestamp, location,
