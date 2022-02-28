@@ -1,5 +1,12 @@
 <template>
-  <tab-navigation :tab-contents="tabs" data-cy="history-tab" />
+  <div
+    :class="{
+      [$style.history]: true,
+      [$style['history--dark']]: dark
+    }"
+  >
+    <tab-navigation :tab-contents="tabs" data-cy="history-tab" />
+  </div>
 </template>
 
 <script lang="ts">
@@ -7,6 +14,7 @@ import { defineComponent } from '@vue/composition-api';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
+import { setupThemeCheck } from '@/composables/common';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 
@@ -33,7 +41,26 @@ export default defineComponent({
   name: 'History',
   components: { TabNavigation },
   setup() {
-    return { tabs };
+    const { dark } = setupThemeCheck();
+    return { dark, tabs };
   }
 });
 </script>
+
+<style module lang="scss">
+.history {
+  :global {
+    .darken-row {
+      background: #eeeeee;
+    }
+  }
+
+  &--dark {
+    :global {
+      .darken-row {
+        background: #616161;
+      }
+    }
+  }
+}
+</style>

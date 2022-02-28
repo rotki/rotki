@@ -24,6 +24,7 @@
       persistent-hint
       required
       seconds
+      limit-now
       data-cy="datetime"
       :hint="$t('ledger_action_form.date.hint')"
       :error-messages="errorMessages['timestamp']"
@@ -68,7 +69,7 @@
           v-model="actionType"
           outlined
           :label="$t('ledger_action_form.type.label')"
-          :items="typeData"
+          :items="ledgerActionsData"
           item-value="identifier"
           item-text="label"
           required
@@ -139,178 +140,200 @@
 </template>
 
 <script lang="ts">
+import {
+  defineComponent,
+  onMounted,
+  PropType,
+  ref,
+  toRefs,
+  unref,
+  watch
+} from '@vue/composition-api';
+import { useLocalStorage } from '@vueuse/core';
 import dayjs from 'dayjs';
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import i18n from '@/i18n';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import {
-  LedgerAction,
-  NewLedgerAction,
-  TradeLocation
-} from '@/services/history/types';
+import { LedgerAction, NewLedgerAction } from '@/services/history/types';
 import { ledgerActionsData } from '@/store/history/consts';
 import { LedgerActionEntry } from '@/store/history/types';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
 import { LedgerActionType } from '@/types/ledger-actions';
-import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { bigNumberifyFromRef, Zero } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
-const LAST_LOCATION = 'rotki.ledger_action.location';
-
-function setLastSelectedLocation(location: TradeLocation) {
-  localStorage.setItem(LAST_LOCATION, location);
-}
-
-function lastSelectedLocation(): TradeLocation {
-  const item = localStorage.getItem(LAST_LOCATION);
-  if (item) {
-    return item as TradeLocation;
-  }
-  return TRADE_LOCATION_EXTERNAL;
-}
-
-@Component({
-  components: { LocationSelector }
-})
-export default class LedgerActionForm extends Vue {
-  @Prop({ required: false, type: Boolean, default: false })
-  value!: boolean;
-
-  @Prop({ required: false, default: null })
-  edit!: LedgerAction | null;
-
-  @Prop({ required: true, type: Function })
-  saveData!: (
-    trade: NewLedgerAction | LedgerActionEntry
-  ) => Promise<ActionStatus>;
-
-  @Emit()
-  input(_valid: boolean) {}
-
-  @Emit()
-  refresh() {}
-
-  errorMessages: {
-    [field: string]: string[];
-  } = {};
-
-  readonly typeData = ledgerActionsData;
-  readonly amountRules = [
-    (v: string) =>
-      !!v ||
-      this.$t('ledger_action_form.amount.validation.non_empty').toString()
-  ];
-  readonly assetRules = [
-    (v: string) =>
-      !!v || this.$t('ledger_action_form.asset.validation.non_empty').toString()
-  ];
-
-  readonly locationRules = [
-    (v: string) =>
-      !!v ||
-      this.$t('ledger_action_form.location.validation.non_empty').toString()
-  ];
-
-  id: number | null = null;
-  location: string = '';
-  datetime: string = '';
-  asset: string = '';
-  amount: string = '';
-  actionType: string = '';
-  rate: string = '';
-  rateAsset: string = '';
-  link: string = '';
-  notes: string = '';
-
-  mounted() {
-    this.setEditMode();
-  }
-
-  @Watch('edit')
-  onEdit() {
-    this.setEditMode();
-  }
-
-  private setEditMode() {
-    if (!this.edit) {
-      this.reset();
-      return;
+const LedgerActionForm = defineComponent({
+  name: 'LedgerActionForm',
+  components: { LocationSelector },
+  props: {
+    value: { required: false, type: Boolean, default: false },
+    edit: {
+      required: false,
+      type: Object as PropType<LedgerAction>,
+      default: null
+    },
+    saveData: {
+      required: true,
+      type: Function as PropType<
+        (trade: NewLedgerAction | LedgerActionEntry) => Promise<ActionStatus>
+      >
     }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { edit } = toRefs(props);
+    const { saveData } = props;
 
-    const ledgerAction: LedgerAction = this.edit;
+    const input = (valid: boolean) => emit('input', valid);
 
-    this.location = ledgerAction.location;
-    this.datetime = convertFromTimestamp(ledgerAction.timestamp, true);
-    this.asset = ledgerAction.asset;
-    this.amount = ledgerAction.amount.toString();
-    this.actionType = ledgerAction.actionType.toString();
-    this.rate = ledgerAction.rate?.toString() ?? '';
-    this.rateAsset = ledgerAction.rateAsset ?? '';
-    this.link = ledgerAction.link ?? '';
-    this.notes = ledgerAction.notes ?? '';
-    this.id = ledgerAction.identifier;
-  }
+    const lastLocation = useLocalStorage(
+      'rotki.ledger_action.location',
+      TRADE_LOCATION_EXTERNAL
+    );
 
-  @Watch('location')
-  onLocationUpdate(location: string) {
-    if (location) {
-      setLastSelectedLocation(location);
-    }
-  }
+    const id = ref<number | null>(null);
+    const location = ref<string>('');
+    const datetime = ref<string>('');
+    const asset = ref<string>('');
+    const amount = ref<string>('');
+    const actionType = ref<string>('');
+    const rate = ref<string>('');
+    const rateAsset = ref<string>('');
+    const link = ref<string>('');
+    const notes = ref<string>('');
 
-  reset() {
-    this.id = null;
-    this.location = lastSelectedLocation();
-    this.datetime = convertFromTimestamp(dayjs().unix(), true);
-    this.asset = '';
-    this.amount = '0';
-    this.actionType = LedgerActionType.ACTION_INCOME;
-    this.rate = '';
-    this.rateAsset = '';
-    this.link = '';
-    this.notes = '';
-    this.errorMessages = {};
-  }
+    const errorMessages = ref<{ [field: string]: string[] }>({});
 
-  async save(): Promise<boolean> {
-    const amount = bigNumberify(this.amount);
-    const rate = bigNumberify(this.rate);
+    const amountRules = [
+      (v: string) =>
+        !!v ||
+        i18n.t('ledger_action_form.amount.validation.non_empty').toString()
+    ];
+    const assetRules = [
+      (v: string) =>
+        !!v ||
+        i18n.t('ledger_action_form.asset.validation.non_empty').toString()
+    ];
+    const locationRules = [
+      (v: string) =>
+        !!v ||
+        i18n.t('ledger_action_form.location.validation.non_empty').toString()
+    ];
 
-    const ledgerActionPayload: Writeable<NewLedgerAction> = {
-      location: this.location,
-      timestamp: convertToTimestamp(this.datetime),
-      asset: this.asset,
-      amount: amount.isNaN() ? Zero : amount,
-      actionType: this.actionType as LedgerActionType,
-      rate: rate.isNaN() || rate.isZero() ? undefined : rate,
-      rateAsset: this.rateAsset ? this.rateAsset : undefined,
-      link: this.link ? this.link : undefined,
-      notes: this.notes ? this.notes : undefined
+    const reset = () => {
+      id.value = null;
+      location.value = unref(lastLocation);
+      datetime.value = convertFromTimestamp(dayjs().unix(), true);
+      asset.value = '';
+      amount.value = '0';
+      actionType.value = LedgerActionType.ACTION_INCOME;
+      rate.value = '';
+      rateAsset.value = '';
+      link.value = '';
+      notes.value = '';
+      errorMessages.value = {};
     };
 
-    const result = !this.id
-      ? await this.saveData(ledgerActionPayload)
-      : await this.saveData({ ...ledgerActionPayload, identifier: this.id });
+    const setEditMode = () => {
+      if (!unref(edit)) {
+        reset();
+        return;
+      }
 
-    if (result.success) {
-      this.refresh();
-      this.reset();
-      return true;
-    }
-    if (result.message) {
-      this.errorMessages = convertKeys(
-        deserializeApiErrorMessage(result.message) ?? {},
-        true,
-        false
-      );
-    }
+      const ledgerAction: LedgerAction = unref(edit);
 
-    return false;
+      location.value = ledgerAction.location;
+      datetime.value = convertFromTimestamp(ledgerAction.timestamp, true);
+      asset.value = ledgerAction.asset;
+      amount.value = ledgerAction.amount.toString();
+      actionType.value = ledgerAction.actionType.toString();
+      rate.value = ledgerAction.rate?.toString() ?? '';
+      rateAsset.value = ledgerAction.rateAsset ?? '';
+      link.value = ledgerAction.link ?? '';
+      notes.value = ledgerAction.notes ?? '';
+      id.value = ledgerAction.identifier;
+    };
+
+    const save = async (): Promise<boolean> => {
+      const numericAmount = bigNumberifyFromRef(amount).value;
+      const numericRate = bigNumberifyFromRef(rate).value;
+
+      const ledgerActionPayload: Writeable<NewLedgerAction> = {
+        location: unref(location),
+        timestamp: convertToTimestamp(unref(datetime)),
+        asset: unref(asset),
+        amount: numericAmount.isNaN() ? Zero : numericAmount,
+        actionType: unref(actionType) as LedgerActionType,
+        rate:
+          numericRate.isNaN() || numericRate.isZero() ? undefined : numericRate,
+        rateAsset: unref(rateAsset) ? unref(rateAsset) : undefined,
+        link: unref(link) ? unref(link) : undefined,
+        notes: unref(notes) ? unref(notes) : undefined
+      };
+
+      const result = !unref(id)
+        ? await saveData(ledgerActionPayload)
+        : await saveData({ ...ledgerActionPayload, identifier: unref(id)! });
+
+      if (result.success) {
+        reset();
+        return true;
+      }
+
+      if (result.message) {
+        errorMessages.value = convertKeys(
+          deserializeApiErrorMessage(result.message) ?? {},
+          true,
+          false
+        );
+      }
+
+      return false;
+    };
+
+    watch(edit, () => {
+      setEditMode();
+    });
+
+    watch(location, (location: string) => {
+      if (location) {
+        lastLocation.value = location;
+      }
+    });
+
+    onMounted(() => {
+      setEditMode();
+    });
+
+    return {
+      ledgerActionsData,
+      input,
+      id,
+      location,
+      datetime,
+      asset,
+      amount,
+      actionType,
+      rate,
+      rateAsset,
+      link,
+      notes,
+      errorMessages,
+      amountRules,
+      assetRules,
+      locationRules,
+      save,
+      reset
+    };
   }
-}
+});
+
+export type LedgerActionFormInstance = InstanceType<typeof LedgerActionForm>;
+
+export default LedgerActionForm;
 </script>
 
 <style scoped lang="scss">
@@ -324,18 +347,13 @@ export default class LedgerActionForm extends Vue {
           max-height: 60px !important;
         }
       }
-    }
-  }
 
-  ::v-deep {
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators,rule-empty-line-before */
-    .v-select.v-text-field--outlined:not(.v-text-field--single-line) {
-      .v-select__selections {
-        padding: 0 !important;
+      .v-select {
+        &__selections {
+          padding: 0 !important;
+        }
       }
     }
-
-    /* stylelint-enable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators,rule-empty-line-before */
   }
 }
 </style>

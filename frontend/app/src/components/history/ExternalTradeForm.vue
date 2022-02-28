@@ -15,6 +15,7 @@
               outlined
               class="pt-1"
               seconds
+              limit-now
               data-cy="date"
               :label="$t('external_trade_form.date.label')"
               persistent-hint
@@ -162,10 +163,10 @@
                   </strong>
                 </template>
                 <template #base>
-                  <strong>{{ getSymbol(base) }}</strong>
+                  <strong>{{ getAssetSymbol(base) }}</strong>
                 </template>
                 <template #quote>
-                  <strong>{{ getSymbol(quote) }}</strong>
+                  <strong>{{ getAssetSymbol(quote) }}</strong>
                 </template>
                 <template #rate>
                   <strong>
@@ -187,10 +188,10 @@
                   </strong>
                 </template>
                 <template #base>
-                  <strong>{{ getSymbol(base) }}</strong>
+                  <strong>{{ getAssetSymbol(base) }}</strong>
                 </template>
                 <template #quote>
-                  <strong>{{ getSymbol(quote) }}</strong>
+                  <strong>{{ getAssetSymbol(quote) }}</strong>
                 </template>
                 <template #rate>
                   <strong>
@@ -261,313 +262,336 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { SupportedAsset } from '@rotki/common/lib/data';
-import { Ref } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  nextTick,
+  onMounted,
+  PropType,
+  ref,
+  toRefs,
+  unref,
+  watch
+} from '@vue/composition-api';
 import dayjs from 'dayjs';
-import { mapState as mapPiniaState } from 'pinia';
-import { Component, Emit, Mixins, Prop, Watch } from 'vue-property-decorator';
-import { mapActions, mapState } from 'vuex';
-import DateTimePicker from '@/components/dialogs/DateTimePicker.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import AssetMixin from '@/mixins/asset-mixin';
+import {
+  setupAssetInfoRetrieval,
+  setupGeneralBalances
+} from '@/composables/balances';
+import i18n from '@/i18n';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { NewTrade, Trade, TradeType } from '@/services/history/types';
-import { HistoricPricePayload } from '@/store/balances/types';
 import { TradeEntry } from '@/store/history/types';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
 import { Writeable } from '@/types';
 import { TaskType } from '@/types/task-type';
-import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { bigNumberifyFromRef, Zero } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
-@Component({
-  components: { AssetSelect, DateTimePicker },
-  computed: {
-    ...mapPiniaState(useTasks, ['isTaskRunning']),
-    ...mapState('balances', ['supportedAssets'])
+const ExternalTradeForm = defineComponent({
+  name: 'ExternalTradeForm',
+  props: {
+    value: { required: false, type: Boolean, default: false },
+    edit: { required: false, type: Object as PropType<Trade>, default: null },
+    saveData: {
+      required: true,
+      type: Function as PropType<
+        (trade: NewTrade | TradeEntry) => Promise<ActionStatus>
+      >
+    }
   },
-  methods: {
-    ...mapActions('balances', ['fetchHistoricPrice'])
-  }
-})
-export default class ExternalTradeForm extends Mixins(AssetMixin) {
-  @Prop({ required: false, type: Boolean, default: false })
-  value!: boolean;
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { edit } = toRefs(props);
+    const { saveData } = props;
 
-  @Prop({ required: false, default: null })
-  edit!: Trade | null;
+    const { getAssetSymbol } = setupAssetInfoRetrieval();
+    const input = (valid: boolean) => emit('input', valid);
 
-  @Prop({ required: true, type: Function })
-  saveData!: (trade: NewTrade | TradeEntry) => Promise<ActionStatus>;
+    const { isTaskRunning } = useTasks();
+    const { fetchHistoricPrice } = setupGeneralBalances();
 
-  supportedAssets!: SupportedAsset[];
+    const id = ref<string>('');
+    const base = ref<string>('');
+    const quote = ref<string>('');
+    const datetime = ref<string>('');
+    const amount = ref<string>('');
+    const rate = ref<string>('');
+    const quoteAmount = ref<string>('');
+    const selectedCalculationInput = ref<'rate' | 'quoteAmount'>('rate');
+    const fee = ref<string>('');
+    const feeCurrency = ref<string>('');
+    const link = ref<string>('');
+    const notes = ref<string>('');
+    const type = ref<TradeType>('buy');
 
-  @Emit()
-  input(_valid: boolean) {}
+    const errorMessages = ref<{ [field: string]: string[] }>({});
 
-  errorMessages: {
-    [field: string]: string[];
-  } = {};
-  isTaskRunning!: (type: TaskType) => Ref<boolean>;
-  fetchHistoricPrice!: (payload: HistoricPricePayload) => Promise<BigNumber>;
+    const quoteAmountInput = ref<any>(null);
+    const rateInput = ref<any>(null);
 
-  readonly baseRules = [
-    (v: string) =>
-      !!v || this.$t('external_trade_form.validation.non_empty_base')
-  ];
-  readonly quoteRules = [
-    (v: string) =>
-      !!v || this.$t('external_trade_form.validation.non_empty_quote')
-  ];
-  readonly amountRules = [
-    (v: string) =>
-      !!v || this.$t('external_trade_form.validation.non_empty_amount')
-  ];
-  readonly rateRules = [
-    (v: string) =>
-      !!v || this.$t('external_trade_form.validation.non_empty_rate')
-  ];
-  readonly quoteAmountRules = [
-    (v: string) =>
-      !!v || this.$t('external_trade_form.validation.non_empty_quote_amount')
-  ];
+    const baseRules = [
+      (v: string) =>
+        !!v || i18n.t('external_trade_form.validation.non_empty_base')
+    ];
+    const quoteRules = [
+      (v: string) =>
+        !!v || i18n.t('external_trade_form.validation.non_empty_quote')
+    ];
+    const amountRules = [
+      (v: string) =>
+        !!v || i18n.t('external_trade_form.validation.non_empty_amount')
+    ];
+    const rateRules = [
+      (v: string) =>
+        !!v || i18n.t('external_trade_form.validation.non_empty_rate')
+    ];
+    const quoteAmountRules = [
+      (v: string) =>
+        !!v || i18n.t('external_trade_form.validation.non_empty_quote_amount')
+    ];
 
-  base: string = '';
-  quote: string = '';
-
-  get baseHint(): string {
-    return this.type === 'buy'
-      ? this.$t('external_trade_form.buy_base').toString()
-      : this.$t('external_trade_form.sell_base').toString();
-  }
-
-  get quoteHint(): string {
-    return this.type === 'buy'
-      ? this.$t('external_trade_form.buy_quote').toString()
-      : this.$t('external_trade_form.sell_quote').toString();
-  }
-
-  get shouldRenderSummary(): boolean {
-    return !!(this.type && this.base && this.quote && this.amount && this.rate);
-  }
-
-  rateMessages: string[] = [];
-
-  id: string = '';
-  datetime: string = '';
-  amount: string = '';
-  rate: string = '';
-  quoteAmount: string = '';
-  selectedCalculationInput: 'rate' | 'quoteAmount' = 'rate';
-  fee: string = '';
-  feeCurrency: string = '';
-  link: string = '';
-  notes: string = '';
-  type: TradeType = 'buy';
-
-  get fetching(): boolean {
-    return this.isTaskRunning(TaskType.FETCH_HISTORIC_PRICE).value;
-  }
-
-  get numericAmount(): BigNumber {
-    return bigNumberify(this.amount);
-  }
-
-  get numericRate(): BigNumber {
-    return bigNumberify(this.rate);
-  }
-
-  get numeridFee(): BigNumber {
-    return bigNumberify(this.fee);
-  }
-
-  mounted() {
-    this.setEditMode();
-  }
-
-  @Watch('edit')
-  onEdit() {
-    this.setEditMode();
-  }
-
-  @Watch('datetime')
-  async onDateChange() {
-    await this.fetchPrice();
-  }
-
-  @Watch('quote')
-  async onQuoteChange() {
-    await this.fetchPrice();
-  }
-
-  @Watch('base')
-  async onBaseChange() {
-    await this.fetchPrice();
-  }
-
-  @Watch('amount')
-  async onAmountChange() {
-    this.onRateChange();
-    this.onQuoteAmountChange();
-  }
-
-  @Watch('rate')
-  onRateChange() {
-    this.updateRate();
-  }
-
-  updateRate(forceUpdate: boolean = false) {
-    if (
-      this.amount &&
-      this.rate &&
-      (this.selectedCalculationInput === 'rate' || forceUpdate)
-    ) {
-      this.quoteAmount = new BigNumber(this.amount)
-        .multipliedBy(new BigNumber(this.rate))
-        .toString();
-    }
-  }
-
-  @Watch('quoteAmount')
-  onQuoteAmountChange() {
-    if (
-      this.amount &&
-      this.quoteAmount &&
-      this.selectedCalculationInput === 'quoteAmount'
-    ) {
-      this.rate = new BigNumber(this.quoteAmount)
-        .div(new BigNumber(this.amount))
-        .toString();
-    }
-  }
-
-  async fetchPrice() {
-    if (
-      (this.rate && this.edit) ||
-      !this.datetime ||
-      !this.base ||
-      !this.quote
-    ) {
-      return;
-    }
-
-    const timestamp = convertToTimestamp(this.datetime);
-    const fromAsset = this.base;
-    const toAsset = this.quote;
-
-    const rate = await this.fetchHistoricPrice({
-      timestamp,
-      fromAsset,
-      toAsset
+    const baseHint = computed<string>(() => {
+      return unref(type) === 'buy'
+        ? i18n.t('external_trade_form.buy_base').toString()
+        : i18n.t('external_trade_form.sell_base').toString();
     });
-    if (rate.gt(0)) {
-      this.rate = rate.toString();
-      this.updateRate(true);
-    } else if (!this.rate) {
-      this.errorMessages = {
-        rate: [this.$t('external_trade_form.rate_not_found').toString()]
-      };
-      setTimeout(() => {
-        this.errorMessages = {};
-      }, 4000);
-    }
-  }
 
-  private setEditMode() {
-    if (!this.edit) {
-      this.reset();
-      return;
-    }
+    const quoteHint = computed<string>(() => {
+      return unref(type) === 'buy'
+        ? i18n.t('external_trade_form.buy_quote').toString()
+        : i18n.t('external_trade_form.sell_quote').toString();
+    });
 
-    const trade: Trade = this.edit;
+    const shouldRenderSummary = computed<boolean>(() => {
+      return !!(
+        unref(type) &&
+        unref(base) &&
+        unref(quote) &&
+        unref(amount) &&
+        unref(rate)
+      );
+    });
 
-    this.base = trade.baseAsset;
-    this.quote = trade.quoteAsset;
-    this.datetime = convertFromTimestamp(trade.timestamp, true);
-    this.amount = trade.amount.toString();
-    this.rate = trade.rate.toString();
-    this.fee = trade.fee?.toString() ?? '';
-    this.feeCurrency = trade.feeCurrency ? trade.feeCurrency : '';
-    this.link = trade.link ?? '';
-    this.notes = trade.notes ?? '';
-    this.type = trade.tradeType;
-    this.id = trade.tradeId;
-  }
+    const fetching = computed<boolean>(() => {
+      return isTaskRunning(TaskType.FETCH_HISTORIC_PRICE).value;
+    });
 
-  reset() {
-    this.id = '';
-    this.datetime = convertFromTimestamp(dayjs().unix(), true);
-    this.amount = '';
-    this.rate = '';
-    this.fee = '';
-    this.feeCurrency = '';
-    this.link = '';
-    this.notes = '';
-    this.type = 'buy';
-    this.errorMessages = {};
-  }
+    const numericAmount = bigNumberifyFromRef(amount);
+    const numericFee = bigNumberifyFromRef(fee);
+    const numericRate = bigNumberifyFromRef(rate);
 
-  async save(): Promise<boolean> {
-    const amount = this.numericAmount;
-    const fee = this.numeridFee;
-    const rate = this.numericRate;
-
-    const tradePayload: Writeable<NewTrade> = {
-      amount: amount.isNaN() ? Zero : amount,
-      fee: fee.isNaN() ? undefined : fee,
-      feeCurrency: this.feeCurrency ? this.feeCurrency : undefined,
-      link: this.link ? this.link : undefined,
-      notes: this.notes ? this.notes : undefined,
-      baseAsset: this.base,
-      quoteAsset: this.quote,
-      rate: rate.isNaN() ? Zero : rate,
-      location: 'external',
-      timestamp: convertToTimestamp(this.datetime),
-      tradeType: this.type
+    const reset = () => {
+      id.value = '';
+      datetime.value = convertFromTimestamp(dayjs().unix(), true);
+      amount.value = '';
+      rate.value = '';
+      fee.value = '';
+      feeCurrency.value = '';
+      link.value = '';
+      notes.value = '';
+      type.value = 'buy';
+      errorMessages.value = {};
     };
 
-    const result = !this.id
-      ? await this.saveData(tradePayload)
-      : await this.saveData({ ...tradePayload, tradeId: this.id });
+    const setEditMode = () => {
+      if (!unref(edit)) {
+        reset();
+        return;
+      }
 
-    if (result.success) {
-      this.reset();
-      return true;
-    }
+      const trade: Trade = unref(edit);
 
-    if (result.message) {
-      this.errorMessages = convertKeys(
-        deserializeApiErrorMessage(result.message) ?? {},
-        true,
-        false
-      );
-    }
+      base.value = trade.baseAsset;
+      quote.value = trade.quoteAsset;
+      datetime.value = convertFromTimestamp(trade.timestamp, true);
+      amount.value = trade.amount.toString();
+      rate.value = trade.rate.toString();
+      fee.value = trade.fee?.toString() ?? '';
+      feeCurrency.value = trade.feeCurrency ? trade.feeCurrency : '';
+      link.value = trade.link ?? '';
+      notes.value = trade.notes ?? '';
+      type.value = trade.tradeType;
+      id.value = trade.tradeId;
+    };
 
-    return false;
-  }
+    const save = async (): Promise<boolean> => {
+      const amount = unref(numericAmount);
+      const fee = unref(numericFee);
+      const rate = unref(numericRate);
 
-  swapAmountInput() {
-    if (this.selectedCalculationInput === 'rate') {
-      this.selectedCalculationInput = 'quoteAmount';
-      this.$nextTick(() => {
-        const quoteAmountInput = this.$refs.quoteAmountInput as any;
-        if (quoteAmountInput) {
-          quoteAmountInput.focus();
-        }
+      const tradePayload: Writeable<NewTrade> = {
+        amount: amount.isNaN() ? Zero : amount,
+        fee: fee.isNaN() ? undefined : fee,
+        feeCurrency: unref(feeCurrency) ? unref(feeCurrency) : undefined,
+        link: unref(link) ? unref(link) : undefined,
+        notes: unref(notes) ? unref(notes) : undefined,
+        baseAsset: unref(base),
+        quoteAsset: unref(quote),
+        rate: rate.isNaN() ? Zero : rate,
+        location: 'external',
+        timestamp: convertToTimestamp(unref(datetime)),
+        tradeType: unref(type)
+      };
+
+      const result = !unref(id)
+        ? await saveData(tradePayload)
+        : await saveData({ ...tradePayload, tradeId: unref(id) });
+
+      if (result.success) {
+        reset();
+        return true;
+      }
+
+      if (result.message) {
+        errorMessages.value = convertKeys(
+          deserializeApiErrorMessage(result.message) ?? {},
+          true,
+          false
+        );
+      }
+
+      return false;
+    };
+
+    const swapAmountInput = () => {
+      if (unref(selectedCalculationInput) === 'rate') {
+        selectedCalculationInput.value = 'quoteAmount';
+        nextTick(() => {
+          quoteAmountInput.value?.focus();
+        });
+      } else {
+        selectedCalculationInput.value = 'rate';
+        nextTick(() => {
+          rateInput.value?.focus();
+        });
+      }
+    };
+
+    const updateRate = (forceUpdate: boolean = false) => {
+      if (
+        unref(amount) &&
+        unref(rate) &&
+        (unref(selectedCalculationInput) === 'rate' || forceUpdate)
+      ) {
+        quoteAmount.value = new BigNumber(unref(amount))
+          .multipliedBy(new BigNumber(unref(rate)))
+          .toString();
+      }
+    };
+
+    const fetchPrice = async () => {
+      if (
+        (unref(rate) && unref(edit)) ||
+        !unref(datetime) ||
+        !unref(base) ||
+        !unref(quote)
+      ) {
+        return;
+      }
+
+      const timestamp = convertToTimestamp(unref(datetime));
+      const fromAsset = unref(base);
+      const toAsset = unref(quote);
+
+      const rateFromHistoricPrice = await fetchHistoricPrice({
+        timestamp,
+        fromAsset,
+        toAsset
       });
-    } else {
-      this.selectedCalculationInput = 'rate';
-      this.$nextTick(() => {
-        const rateInput = this.$refs.rateInput as any;
-        if (rateInput) {
-          rateInput.focus();
-        }
-      });
-    }
+      if (rateFromHistoricPrice.gt(0)) {
+        rate.value = rateFromHistoricPrice.toString();
+        updateRate(true);
+      } else if (!unref(rate)) {
+        errorMessages.value = {
+          rate: [i18n.t('external_trade_form.rate_not_found').toString()]
+        };
+        setTimeout(() => {
+          errorMessages.value = {};
+        }, 4000);
+      }
+    };
+
+    const onQuoteAmountChange = () => {
+      if (
+        unref(amount) &&
+        unref(quoteAmount) &&
+        unref(selectedCalculationInput) === 'quoteAmount'
+      ) {
+        rate.value = new BigNumber(unref(quoteAmount))
+          .div(new BigNumber(unref(amount)))
+          .toString();
+      }
+    };
+
+    watch(edit, () => {
+      setEditMode();
+    });
+
+    watch([datetime, quote, base], () => {
+      fetchPrice();
+    });
+
+    watch(rate, () => {
+      updateRate();
+    });
+
+    watch(amount, () => {
+      updateRate();
+      onQuoteAmountChange();
+    });
+
+    watch(quoteAmount, () => {
+      onQuoteAmountChange();
+    });
+
+    onMounted(() => {
+      setEditMode();
+    });
+
+    return {
+      getAssetSymbol,
+      input,
+      id,
+      base,
+      quote,
+      datetime,
+      amount,
+      rate,
+      quoteAmount,
+      selectedCalculationInput,
+      fee,
+      feeCurrency,
+      link,
+      notes,
+      type,
+      rateInput,
+      quoteAmountInput,
+      errorMessages,
+      baseRules,
+      quoteRules,
+      amountRules,
+      rateRules,
+      quoteAmountRules,
+      baseHint,
+      quoteHint,
+      shouldRenderSummary,
+      fetching,
+      numericAmount,
+      numericRate,
+      numericFee,
+      swapAmountInput,
+      save,
+      reset
+    };
   }
-}
+});
+
+export type ExternalTradeFormInstance = InstanceType<typeof ExternalTradeForm>;
+
+export default ExternalTradeForm;
 </script>
 
 <style scoped lang="scss">

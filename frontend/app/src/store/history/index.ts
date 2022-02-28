@@ -15,6 +15,7 @@ import {
   LedgerAction,
   LedgerActionCollectionResponse,
   LedgerActionRequestPayload,
+  NewEthTransactionEvent,
   NewLedgerAction,
   NewTrade,
   Trade,
@@ -667,6 +668,82 @@ export const useTransactions = defineStore('history/transactions', () => {
     }
   };
 
+  const addTransactionEvent = async (
+    event: NewEthTransactionEvent
+  ): Promise<ActionStatus> => {
+    let success = false;
+    let message = '';
+    try {
+      await api.history.addTransactionEvent(event);
+      success = true;
+    } catch (e: any) {
+      message = e.message;
+    }
+
+    await fetchTransactions();
+
+    return { success, message };
+  };
+
+  const editTransactionEvent = async (
+    event: NewEthTransactionEvent
+  ): Promise<ActionStatus> => {
+    let success = false;
+    let message = '';
+    try {
+      await api.history.editTransactionEvent(event);
+      success = true;
+    } catch (e: any) {
+      message = e.message;
+    }
+
+    await fetchTransactions();
+    return { success, message };
+  };
+
+  const deleteTransactionEvent = async (
+    eventId: number
+  ): Promise<ActionStatus> => {
+    let success = false;
+    let message = '';
+    try {
+      success = await api.history.deleteTransactionEvent([eventId]);
+    } catch (e: any) {
+      message = e.message;
+    }
+
+    await fetchTransactions();
+    return { success, message };
+  };
+
+  const fetchTransactionEvents = async (
+    txHashes: string[],
+    ignoreCache: boolean = false
+  ) => {
+    if (txHashes.length === 0) return;
+
+    const { awaitTask } = useTasks();
+
+    const taskType = TaskType.TX_EVENTS;
+    const { taskId } = await api.history.fetchEthTransactionEvents({
+      txHashes,
+      ignoreCache
+    });
+    const taskMeta = {
+      title: i18n.t('actions.transactions_events.task.title').toString(),
+      description: i18n
+        .t('actions.transactions_events.task.description')
+        .toString(),
+      numericKeys: []
+    };
+
+    const { result } = await awaitTask(taskId, taskType, taskMeta);
+
+    if (result) {
+      await fetchTransactions();
+    }
+  };
+
   const reset = () => {
     transactions.value = defaultHistoricState<EthTransactionEntry>();
   };
@@ -676,6 +753,10 @@ export const useTransactions = defineStore('history/transactions', () => {
     transactionsPayload,
     updateTransactionsPayload,
     fetchTransactions,
+    fetchTransactionEvents,
+    addTransactionEvent,
+    editTransactionEvent,
+    deleteTransactionEvent,
     reset
   };
 });

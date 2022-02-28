@@ -1,5 +1,8 @@
 ﻿<template>
   <div class="d-flex flex-row shrink align-center">
+    <v-avatar v-if="showIcon" size="24" class="mr-2">
+      <v-img :src="makeBlockie(displayText)" />
+    </v-avatar>
     <span v-if="!linkOnly & !buttons">
       <span v-if="fullAddress" :class="{ 'blur-content': !shouldShowAmount }">
         {{ displayText }}
@@ -11,7 +14,7 @@
             v-bind="attrs"
             v-on="on"
           >
-            {{ truncateAddress(displayText) }}
+            {{ truncateAddress(displayText, truncateLength) }}
           </span>
         </template>
         <span> {{ displayText }} </span>
@@ -69,6 +72,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import makeBlockie from 'ethereum-blockies-base64';
 import {
   Chains,
   ExplorerUrls,
@@ -84,6 +88,7 @@ import { randomHex } from '@/utils/data';
 export default defineComponent({
   name: 'HashLink',
   props: {
+    showIcon: { required: false, type: Boolean, default: false },
     text: { required: false, type: String, default: '' },
     fullAddress: { required: false, type: Boolean, default: false },
     linkOnly: { required: false, type: Boolean, default: false },
@@ -96,7 +101,8 @@ export default defineComponent({
     },
     tx: { required: false, type: Boolean, default: false },
     buttons: { required: false, type: Boolean, default: false },
-    small: { required: false, type: Boolean, default: false }
+    small: { required: false, type: Boolean, default: false },
+    truncateLength: { required: false, type: Number, default: 4 }
   },
   setup(props) {
     const { text, baseUrl, chain, tx } = toRefs(props);
@@ -165,6 +171,7 @@ export default defineComponent({
     };
 
     return {
+      makeBlockie,
       url,
       truncateAddress,
       shouldShowAmount,

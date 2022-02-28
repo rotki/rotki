@@ -63,6 +63,7 @@
         item-key="identifier"
         show-expand
         single-expand
+        :item-class="item => (item.ignoredInAccounting ? 'darken-row' : '')"
         @update:options="updatePaginationHandler($event)"
       >
         <template #item.ignoredInAccounting="{ item, isMobile }">
@@ -185,7 +186,9 @@ import {
   SearchMatcher
 } from '@/components/history/filtering/types';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
-import LedgerActionForm from '@/components/history/LedgerActionForm.vue';
+import LedgerActionForm, {
+  LedgerActionFormInstance
+} from '@/components/history/LedgerActionForm.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import {
@@ -347,7 +350,7 @@ export default defineComponent({
     const confirmationMessage: Ref<string> = ref('');
     const expanded: Ref<LedgerActionEntry[]> = ref([]);
     const valid: Ref<boolean> = ref(false);
-    const form = ref<LedgerActionForm | null>(null);
+    const form = ref<LedgerActionFormInstance | null>(null);
 
     const newLedgerAction = () => {
       dialogTitle.value = i18n.t('ledger_actions.dialog.add.title').toString();

@@ -17,12 +17,14 @@ import {
   LedgerAction,
   LedgerActionCollectionResponse,
   LedgerActionRequestPayload,
+  NewEthTransactionEvent,
   NewLedgerAction,
   NewTrade,
   Trade,
   TradeCollectionResponse,
   TradeLocation,
   TradeRequestPayload,
+  TransactionEventRequestPayload,
   TransactionRequestPayload
 } from '@/services/history/types';
 import { PendingTask } from '@/services/types-api';
@@ -182,6 +184,54 @@ export class HistoryApi {
     >(payload, false);
 
     return EthTransactionCollectionResponse.parse(response);
+  }
+
+  async fetchEthTransactionEvents(
+    payload: TransactionEventRequestPayload
+  ): Promise<PendingTask> {
+    return this.axios
+      .post<ActionResult<PendingTask>>(
+        'blockchains/ETH/transactions',
+        axiosSnakeCaseTransformer({
+          asyncQuery: true,
+          ...payload
+        }),
+        {
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async addTransactionEvent(
+    event: NewEthTransactionEvent
+  ): Promise<{ identifier: number }> {
+    return this.axios
+      .put<ActionResult<{ identifier: number }>>('/history/events', event, {
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer,
+        transformRequest: this.requestTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async editTransactionEvent(event: NewEthTransactionEvent): Promise<boolean> {
+    return this.axios
+      .patch<ActionResult<boolean>>('/history/events', event, {
+        validateStatus: validStatus,
+        transformResponse: basicAxiosTransformer,
+        transformRequest: this.requestTransformer
+      })
+      .then(handleResponse);
+  }
+
+  async deleteTransactionEvent(identifiers: number[]): Promise<boolean> {
+    return this.axios
+      .delete<ActionResult<boolean>>('/history/events', {
+        data: axiosSnakeCaseTransformer({ identifiers }),
+        validateStatus: validStatus
+      })
+      .then(handleResponse);
   }
 
   async internalLedgerActions<T>(

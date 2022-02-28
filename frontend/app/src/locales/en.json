@@ -2168,8 +2168,8 @@
         "description": "Retrieving trades for {exchange}"
       },
       "error": {
-        "description": "Failed query for {exchange}: {error}",
-        "title": "Trades for {exchange}"
+        "title": "Trades for {exchange}",
+        "description": "Failed query for {exchange}: {error}"
       }
     },
     "transactions": {
@@ -2178,8 +2178,14 @@
         "description": "Retrieving txns for {address}"
       },
       "error": {
-        "description": "Failed query for {address}: {error}",
-        "title": "Ethereum Transactions Query"
+        "title": "Ethereum Transactions Query",
+        "description": "Failed query for {address}: {error}"
+      }
+    },
+    "transactions_events": {
+      "task": {
+        "title": "Ethereum Transactions Events",
+        "description": "Retrieving transactions events"
       }
     },
     "defi": {
@@ -2717,35 +2723,171 @@
     "transaction": "TX:"
   },
   "transactions": {
-    "clear_selection": "Clear Selection",
+    "actions": {
+      "details": "Details",
+      "redecode_events": "Redecode events",
+      "add_event": "Add a new event"
+    },
+    "details": {
+      "title": "Transaction details",
+      "nonce": "Nonce",
+      "gas_fee": "Gas Fee",
+      "gas_limit": "Gas Limit",
+      "gas_price": "Gas Price",
+      "gas_used": "Gas Used",
+      "input_data": "Input Data",
+      "internal_transaction": "Internal"
+    },
+    "events": {
+      "actions": {
+        "edit": "Edit event",
+        "delete": "Delete event"
+      },
+      "confirmation": {
+        "delete": {
+          "title": "Delete Event",
+          "message": "Are you sure you want to delete the event?",
+          "action": "Confirm"
+        },
+        "ignore": {
+          "title": "Cannot Delete Event",
+          "message": "A transaction requires at least 1 event. Do you want to ignore the transaction in accounting instead?",
+          "action": "Yes, Ignore the Transaction"
+        }
+      },
+      "customized_event": "Customized event",
+      "dialog": {
+        "save": "Save",
+        "add": {
+          "title": "Add Event"
+        },
+        "edit": {
+          "title": "Edit Event"
+        }
+      },
+      "form": {
+        "asset": {
+          "validation": {
+            "non_empty": "The asset field cannot be empty"
+          }
+        },
+        "amount": {
+          "label": "Amount",
+          "validation": {
+            "non_empty": "The amount field cannot be empty."
+          }
+        },
+        "counterparty": {
+          "label": "Counterparty"
+        },
+        "datetime": {
+          "hint": "The date & time of when the event happened",
+          "label": "Date & time"
+        },
+        "event_type": {
+          "label": "Event Type"
+        },
+        "event_subtype": {
+          "label": "Event Subtype"
+        },
+        "location": {
+          "label": "Location",
+          "validation": {
+            "non_empty": "The location field cannot be empty."
+          }
+        },
+        "location_label": {
+          "label": "Location Label"
+        },
+        "notes": {
+          "label": "Notes",
+          "hint": "[Optional] Additional notes to store for the action"
+        },
+        "usd_value": {
+          "label": "USD Value",
+          "validation": {
+            "non_empty": "The usd value field cannot be empty."
+          }
+        },
+        "sequence_index": {
+          "label": "Sequence Index",
+          "validation": {
+            "non_empty": "The sequence index field cannot be empty."
+          }
+        }
+      },
+      "headers": {
+        "type": "Type",
+        "asset": "Asset",
+        "description": "Description"
+      },
+      "history_event_type": {
+        "trade": "Trade",
+        "staking": "Staking",
+        "deposit": "Deposit",
+        "withdrawal": "Withdrawal",
+        "transfer": "Transfer",
+        "spend": "Spend",
+        "receive": "Receive",
+        "adjustment": "Adjustment",
+        "unknown": "Unknown",
+        "informational": "Informational",
+        "migrate": "Migrate"
+      },
+      "history_event_subtype": {
+        "reward": "Reward",
+        "deposit_asset": "Deposit Asset",
+        "remove_asset": "Remove Asset",
+        "fee": "Fee",
+        "spend": "Spend",
+        "receive": "Receive",
+        "approve": "Approve",
+        "deploy": "Deploy",
+        "airdrop": "Airdrop",
+        "bridge": "Bridge",
+        "governance_propose": "Governance Propose",
+        "generate_debt": "Generate Debt",
+        "payback_debt": "Payback Debt",
+        "receive_wrapped": "Receive Wrapped",
+        "return_wrapped": "Return Wrapped"
+      },
+      "loading": "Loading events...",
+      "type": {
+        "gas_fee": "Gas Fee",
+        "send": "Send",
+        "receive": "Receive",
+        "approval": "Approval",
+        "deposit": "Deposit",
+        "withdraw": "Withdraw",
+        "airdrop": "Airdrop",
+        "borrow": "Borrow",
+        "repay": "Repay",
+        "deploy": "Deploy",
+        "bridge": "Bridge",
+        "governance_propose": "Governance Propose",
+        "unknown": "Unknown"
+      },
+      "view": {
+        "hide": "Hide events",
+        "show": "Show events ({length})"
+      }
+    },
     "filter": {
       "label": "Filter by account"
     },
     "loading": "Please wait while your transactions are getting loaded...",
     "loading_subtitle": "The loading of transactions might take a while depending on the number of actions you performed.",
     "title": "Ethereum Transactions",
+    "redecode_all_events": "Redecode All Events",
     "refresh_tooltip": "Refresh ethereum transactions",
     "headers": {
-      "txhash": "Tx hash",
-      "block": "Block",
+      "tx_hash": "Tx Hash",
       "timestamp": "Date",
-      "from_address": "From",
-      "to_address": "To",
-      "value": "Value",
-      "gas_fee": "Fee",
-      "ignored": "Ignored"
+      "ignored": "Ignored in Accounting"
     },
-    "label": "transactions",
-    "selected": "{count} transaction(s) selected"
-  },
-  "transaction_details": {
-    "title": "Transaction details",
-    "nonce": "Nonce",
-    "gas": "Gas Limit",
-    "gas_price": "Gas Price",
-    "gas_used": "Gas Used",
-    "input_data": "Input Data",
-    "internal_transaction": "Internal"
+    "ignore": "Ignore Tx in Accounting",
+    "unignore": "Unignore Tx in Accounting",
+    "label": "transactions"
   },
   "hash_link": {
     "copy": "Copy to clipboard",

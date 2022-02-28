@@ -10,6 +10,7 @@
     :expanded="expanded"
     :footer-props="footerProps"
     :items-per-page="itemsPerPage"
+    :hide-default-footer="hideDefaultFooter"
     v-on="$listeners"
     @update:items-per-page="onItemsPerPageChange($event)"
     @update:page="scrollToTop"
@@ -25,7 +26,10 @@
       <slot :name="slot" v-bind="scope" />
     </template>
 
-    <template #top="{ pagination, options, updateOptions }">
+    <template
+      v-if="!hideDefaultFooter"
+      #top="{ pagination, options, updateOptions }"
+    >
       <v-data-footer
         v-bind="footerProps"
         :pagination="pagination"
@@ -52,7 +56,8 @@ export default defineComponent({
     items: { required: true, type: Array },
     headers: { required: true, type: Array as PropType<DataTableHeader[]> },
     expanded: { required: false, type: Array, default: () => [] },
-    itemClass: { required: false, type: [String, Function], default: () => '' }
+    itemClass: { required: false, type: [String, Function], default: () => '' },
+    hideDefaultFooter: { required: false, type: Boolean, default: false }
   },
   setup() {
     const { itemsPerPage, updateSetting } = setupSettings();
@@ -85,20 +90,45 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-/* stylelint-disable selector-class-pattern,selector-nested-pattern */
+/* stylelint-disable selector-class-pattern,selector-nested-pattern,no-descending-specificity */
 
-.v-data-table--mobile {
-  ::v-deep {
-    .v-data-table__wrapper {
-      tbody {
-        .v-data-table__expanded__content,
-        .table-expand-container {
-          height: auto !important;
-          display: block;
+::v-deep {
+  .v-data-table {
+    &__expanded {
+      &__content {
+        background-color: var(--v-rotki-light-grey-base) !important;
+        box-shadow: none !important;
+      }
+    }
+
+    &--mobile {
+      .v-data-table {
+        &__wrapper {
+          tbody {
+            .v-data-table__expanded__content,
+            .table-expand-container {
+              height: auto !important;
+              display: block;
+            }
+          }
         }
       }
     }
   }
 }
-/* stylelint-enable selector-class-pattern,selector-nested-pattern */
+
+.theme {
+  &--dark {
+    ::v-deep {
+      .v-data-table {
+        &__expanded {
+          &__content {
+            background-color: var(--v-dark-lighten1) !important;
+          }
+        }
+      }
+    }
+  }
+}
+/* stylelint-enable selector-class-pattern,selector-nested-pattern,no-descending-specificity */
 </style>

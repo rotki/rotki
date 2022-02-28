@@ -7,24 +7,6 @@
     :custom-sort="sortItems"
     sort-by="usdValue"
   >
-    <template #header.usdValue>
-      <div class="text-no-wrap">
-        {{
-          $t('asset_balances.headers.value', {
-            currency
-          })
-        }}
-      </div>
-    </template>
-    <template #header.usdPrice>
-      <div class="text-no-wrap">
-        {{
-          $t('asset_balances.headers.price', {
-            currency
-          })
-        }}
-      </div>
-    </template>
     <template #item.asset="{ item }">
       <asset-details opens-details :asset="item.asset" />
     </template>
@@ -105,7 +87,7 @@ const tableHeaders = (currency: Ref<string>) => {
         text: i18n.t('asset_balances.headers.amount').toString(),
         value: 'amount',
         align: 'end',
-        width: '50%'
+        width: '99%'
       },
       {
         text: i18n

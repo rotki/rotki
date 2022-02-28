@@ -1,4 +1,4 @@
-import { AssetBalanceWithPrice } from '@rotki/common';
+import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SupportedAsset } from '@rotki/common/lib/data';
@@ -15,6 +15,7 @@ import {
   BlockchainAccountWithBalance,
   ExchangeRateGetter,
   FetchPricePayload,
+  HistoricPricePayload,
   IdentifierForSymbolGetter
 } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
@@ -30,6 +31,13 @@ export const setupExchangeRateGetter = () => {
 
 export const setupGeneralBalances = () => {
   const store = useStore();
+
+  const fetchHistoricPrice: (
+    payload: HistoricPricePayload
+  ) => Promise<BigNumber> = async payload => {
+    return await store.dispatch('balances/fetchHistoricPrice', payload);
+  };
+
   const refreshPrices: (
     payload: FetchPricePayload
   ) => Promise<void> = async payload => {
@@ -37,6 +45,7 @@ export const setupGeneralBalances = () => {
   };
 
   return {
+    fetchHistoricPrice,
     refreshPrices
   };
 };

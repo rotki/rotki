@@ -1,11 +1,11 @@
 <template>
   <table-expand-container visible :colspan="colspan">
     <template #title>
-      {{ $t('transaction_details.title') }}
+      {{ $t('transactions.details.title') }}
     </template>
     <v-row class="pb-2">
       <v-col cols="2" class="font-weight-medium">
-        {{ $t('transaction_details.gas') }}
+        {{ $t('transactions.details.gas_fee') }}
       </v-col>
       <v-col cols="10">
         <amount-display :value="transaction.gas" integer />
@@ -14,7 +14,7 @@
     <v-divider class="pb-2" />
     <v-row class="pb-2">
       <v-col cols="2" class="font-weight-medium">
-        {{ $t('transaction_details.gas_used') }}
+        {{ $t('transactions.details.gas_used') }}
       </v-col>
       <v-col cols="10">
         <amount-display :value="transaction.gasUsed" integer />
@@ -23,7 +23,7 @@
     <v-divider class="pb-2" />
     <v-row class="pb-2">
       <v-col cols="2" class="font-weight-medium">
-        {{ $t('transaction_details.gas_price') }}
+        {{ $t('transactions.details.gas_price') }}
       </v-col>
       <v-col cols="10">
         <amount-display :value="toGwei(transaction.gasPrice)" asset="Gwei" />
@@ -32,14 +32,14 @@
     <v-divider class="pb-2" />
     <v-row class="pb-2">
       <v-col cols="2" class="font-weight-medium">
-        {{ $t('transaction_details.nonce') }}
+        {{ $t('transactions.details.nonce') }}
       </v-col>
       <v-col cols="10">{{ transaction.nonce }}</v-col>
     </v-row>
     <v-divider class="pb-2" />
     <v-row class="pb-2">
       <v-col cols="2" class="font-weight-medium">
-        {{ $t('transaction_details.input_data') }}
+        {{ $t('transactions.details.input_data') }}
       </v-col>
       <v-col cols="10">
         <textarea
