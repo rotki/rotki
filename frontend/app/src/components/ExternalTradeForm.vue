@@ -15,6 +15,7 @@
               outlined
               class="pt-1"
               seconds
+              limit-now
               data-cy="date"
               :label="$t('external_trade_form.date.label')"
               persistent-hint
