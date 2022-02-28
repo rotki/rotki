@@ -24,6 +24,7 @@
       persistent-hint
       required
       seconds
+      limit-now
       data-cy="datetime"
       :hint="$t('ledger_action_form.date.hint')"
       :error-messages="errorMessages['timestamp']"
