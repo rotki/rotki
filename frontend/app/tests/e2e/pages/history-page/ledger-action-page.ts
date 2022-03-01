@@ -19,7 +19,9 @@ export class LedgerActionPage {
 
     return () => {
       // Wait for response.status to be 200
-      cy.wait('@apiCall').its('response.statusCode').should('equal', 200);
+      cy.wait('@apiCall', { timeout: 30000 })
+        .its('response.statusCode')
+        .should('equal', 200);
       cy.wait(500);
     };
   }
