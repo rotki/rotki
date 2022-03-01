@@ -126,11 +126,13 @@ class CurrentPriceOracle(SerializableEnumMixin):
     """Supported oracles for querying current prices"""
     COINGECKO = 1
     CRYPTOCOMPARE = 2
+    UNISWAP_V3 = 3
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
     CurrentPriceOracle.COINGECKO,
     CurrentPriceOracle.CRYPTOCOMPARE,
+    #CurrentPriceOracle.UNISWAP_V3,
 ]
 
 
