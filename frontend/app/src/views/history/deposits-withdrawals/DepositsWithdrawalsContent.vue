@@ -145,10 +145,6 @@ import {
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import {
-  setupAssetInfoRetrieval,
-  setupSupportedAssets
-} from '@/composables/balances';
 import { isSectionLoading } from '@/composables/common';
 import {
   getCollectionData,
@@ -164,6 +160,7 @@ import {
   MovementCategory,
   TradeLocation
 } from '@/services/history/types';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import { useAssetMovements, useHistory } from '@/store/history';
 import {
@@ -280,6 +277,10 @@ export default defineComponent({
 
     const historyStore = useHistory();
     const assetMovementStore = useAssetMovements();
+    const assetInfoRetrievalStore = useAssetInfoRetrieval();
+    const { supportedAssets } = toRefs(assetInfoRetrievalStore);
+    const { getAssetSymbol, getAssetIdentifierForSymbol } =
+      assetInfoRetrievalStore;
 
     const { associatedLocations } = storeToRefs(historyStore);
     const { assetMovements } = storeToRefs(assetMovementStore);
@@ -294,15 +295,11 @@ export default defineComponent({
 
     const expanded: Ref<TradeEntry[]> = ref([]);
 
-    const { getAssetSymbol, getAssetIdentifierForSymbol } =
-      setupAssetInfoRetrieval();
-
     const { dateInputFormat } = setupSettings();
 
     const options: Ref<PaginationOptions | null> = ref(null);
     const filters: Ref<MatchedKeyword<AssetMovementFilterValueKeys>> = ref({});
 
-    const { supportedAssets } = setupSupportedAssets();
     const availableAssets = computed<string[]>(() => {
       return supportedAssets.value
         .map(value => getAssetSymbol(value.identifier))

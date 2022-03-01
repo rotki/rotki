@@ -22,6 +22,7 @@ import {
   WatcherTypes
 } from '@/services/session/types';
 import { SYNC_DOWNLOAD, SyncAction } from '@/services/types-api';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL } from '@/store/defi/const';
 import { useHistory } from '@/store/history';
@@ -126,7 +127,8 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
       monitor.start();
       commit('tags', await api.getTags());
       commit('login', { username, newAccount });
-      dispatch('balances/fetchSupportedAssets', null, { root: true });
+      const { fetchSupportedAssets } = useAssetInfoRetrieval();
+      fetchSupportedAssets();
 
       if (!newAccount || sync) {
         await dispatch('refreshData', exchanges);

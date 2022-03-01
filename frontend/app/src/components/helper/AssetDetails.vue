@@ -11,8 +11,9 @@
 
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
+import { useAssetInfoRetrieval } from '@/store/assets';
 
 export default defineComponent({
   name: 'AssetDetails',
@@ -32,14 +33,14 @@ export default defineComponent({
   setup(props) {
     const { asset } = toRefs(props);
 
-    const { getAssetInfo } = setupAssetInfoRetrieval();
+    const { assetInfo } = useAssetInfoRetrieval();
 
     const currentAsset = computed(() => {
-      const details = getAssetInfo(asset.value);
+      const details = get(assetInfo(get(asset)));
       return {
-        symbol: details ? details.symbol : asset.value,
-        name: details ? details.name : asset.value,
-        identifier: details ? details.identifier : asset.value
+        symbol: details ? details.symbol : get(asset),
+        name: details ? details.name : get(asset),
+        identifier: details ? details.identifier : get(asset)
       };
     });
 

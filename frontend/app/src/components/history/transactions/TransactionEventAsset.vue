@@ -17,7 +17,7 @@
         </div>
       </div>
       <div v-else>
-        {{ getAssetSymbol(event.asset) }}
+        {{ symbol }}
       </div>
     </div>
   </div>
@@ -30,7 +30,8 @@ import {
   toRefs,
   unref
 } from '@vue/composition-api';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
+import { get } from '@vueuse/core';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { EthTransactionEventEntry } from '@/store/history/types';
 import { TransactionEventType } from '@/types/transaction';
 import { getEventType } from '@/utils/history';
@@ -46,7 +47,8 @@ export default defineComponent({
 
   setup(props) {
     const { event } = toRefs(props);
-    const { getAssetSymbol } = setupAssetInfoRetrieval();
+
+    const { assetSymbol } = useAssetInfoRetrieval();
 
     const showBalance = computed<boolean>(() => {
       const type = getEventType(unref(event));
@@ -54,9 +56,13 @@ export default defineComponent({
       return type !== TransactionEventType.APPROVAL;
     });
 
+    const symbol = computed<string>(() => {
+      return get(assetSymbol(get(event).asset));
+    });
+
     return {
       showBalance,
-      getAssetSymbol
+      symbol
     };
   }
 });

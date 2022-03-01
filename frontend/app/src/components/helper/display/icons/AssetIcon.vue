@@ -40,9 +40,9 @@ import {
 import { get, set } from '@vueuse/core';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { currencies } from '@/data/currencies';
 import { api } from '@/services/rotkehlchen-api';
+import { useAssetInfoRetrieval } from '@/store/assets';
 
 export default defineComponent({
   name: 'AssetIcon',
@@ -59,8 +59,8 @@ export default defineComponent({
     const { symbol, changeable, identifier } = toRefs(props);
     const error = ref<boolean>(false);
 
-    const { assetSymbol, assetName, getAssetIdentifierForSymbol } =
-      setupAssetInfoRetrieval();
+    const { assetSymbol, assetName, assetIdentifierForSymbol } =
+      useAssetInfoRetrieval();
 
     watch([symbol, changeable, identifier], () => set(error, false));
 
@@ -94,7 +94,7 @@ export default defineComponent({
       let id = get(identifier);
       if (
         get(symbol) === 'WETH' ||
-        getAssetIdentifierForSymbol('WETH') === id
+        get(assetIdentifierForSymbol('WETH')) === id
       ) {
         return require(`@/assets/images/defi/weth.svg`);
       }

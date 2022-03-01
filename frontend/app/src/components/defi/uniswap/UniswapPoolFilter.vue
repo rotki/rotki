@@ -66,7 +66,7 @@
 <script lang="ts">
 import { XswapPool } from '@rotki/common/lib/defi/xswap';
 import { defineComponent, PropType, toRefs, unref } from '@vue/composition-api';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { useUniswap } from '@/store/defi/uniswap';
 
 export default defineComponent({
@@ -81,7 +81,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const { value } = toRefs(props);
     const { poolAssets } = useUniswap();
-    const { getAssetSymbol: getSymbol } = setupAssetInfoRetrieval();
+    const { getAssetSymbol: getSymbol } = useAssetInfoRetrieval();
 
     const input = (value: string[]) => {
       emit('input', value);

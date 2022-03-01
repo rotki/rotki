@@ -75,9 +75,9 @@ import {
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import Fragment from '@/components/helper/Fragment';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { capitalize } from '@/filters';
 import i18n from '@/i18n';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { BlockchainTotal } from '@/store/balances/types';
 import { L2_LOOPRING, SupportedL2Protocol } from '@/types/protocols';
 
@@ -90,7 +90,7 @@ export default defineComponent({
   setup(props) {
     const { total } = toRefs(props);
 
-    const { getAssetIdentifierForSymbol } = setupAssetInfoRetrieval();
+    const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
 
     const name = computed<string>(() => {
       const chain = unref(total).chain;

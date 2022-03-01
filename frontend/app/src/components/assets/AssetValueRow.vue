@@ -49,7 +49,7 @@
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { AssetPriceInfo } from '@/store/balances/types';
 
 export default defineComponent({
@@ -61,10 +61,10 @@ export default defineComponent({
   },
   setup(props) {
     const { identifier } = toRefs(props);
-    const { getAssetPriceInfo } = setupAssetInfoRetrieval();
+    const { assetPriceInfo } = useAssetInfoRetrieval();
 
     const info = computed<AssetPriceInfo>(() => {
-      return getAssetPriceInfo(get(identifier));
+      return get(assetPriceInfo(get(identifier)));
     });
 
     return { info };

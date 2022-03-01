@@ -59,7 +59,6 @@ export interface BalanceState {
   ksmAccounts: GeneralAccountData[];
   dotAccounts: GeneralAccountData[];
   avaxAccounts: GeneralAccountData[];
-  supportedAssets: SupportedAsset[];
   manualBalances: ManualBalanceWithValue[];
   manualLiabilities: ManualBalanceWithValue[];
   manualBalanceByLocation: BalanceByLocation;

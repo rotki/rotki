@@ -191,10 +191,6 @@ import LedgerActionForm, {
 } from '@/components/history/LedgerActionForm.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import {
-  setupAssetInfoRetrieval,
-  setupSupportedAssets
-} from '@/composables/balances';
 import { isSectionLoading } from '@/composables/common';
 import {
   getCollectionData,
@@ -210,6 +206,7 @@ import {
   NewLedgerAction,
   TradeLocation
 } from '@/services/history/types';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import { useHistory, useLedgerActions } from '@/store/history';
 import { IgnoreActionType, LedgerActionEntry } from '@/store/history/types';
@@ -326,6 +323,10 @@ export default defineComponent({
 
     const historyStore = useHistory();
     const ledgerActionStore = useLedgerActions();
+    const assetInfoRetrievalStore = useAssetInfoRetrieval();
+    const { supportedAssets } = toRefs(assetInfoRetrievalStore);
+    const { getAssetSymbol, getAssetIdentifierForSymbol } =
+      assetInfoRetrievalStore;
 
     const { associatedLocations } = storeToRefs(historyStore);
     const { ledgerActions } = storeToRefs(ledgerActionStore);
@@ -368,9 +369,6 @@ export default defineComponent({
         .toString();
       openDialog.value = true;
     };
-
-    const { getAssetSymbol, getAssetIdentifierForSymbol } =
-      setupAssetInfoRetrieval();
 
     const promptForDelete = (ledgerAction: LedgerActionEntry) => {
       confirmationMessage.value = i18n
@@ -427,7 +425,6 @@ export default defineComponent({
     const options: Ref<PaginationOptions | null> = ref(null);
     const filters: Ref<MatchedKeyword<LedgerActionFilterValueKeys>> = ref({});
 
-    const { supportedAssets } = setupSupportedAssets();
     const availableAssets = computed<string[]>(() => {
       return supportedAssets.value
         .map(value => getAssetSymbol(value.identifier))

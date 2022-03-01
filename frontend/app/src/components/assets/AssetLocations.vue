@@ -11,7 +11,7 @@
       </v-row>
     </template>
     <data-table
-      :headers="headers"
+      :headers="tableHeaders"
       :items="visibleAssetLocations"
       sort-by="balance.amount"
       :loading="detailsLoading"
@@ -46,107 +46,128 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { GeneralAccount } from '@rotki/common/lib/account';
-import { mapState } from 'pinia';
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { computed, defineComponent, ref, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
-import { mapGetters } from 'vuex';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
+import { setupBlockchainAccounts } from '@/composables/balances';
+import { setupGeneralSettings } from '@/composables/session';
 import { CURRENCY_USD } from '@/data/currencies';
-import { AssetBreakdown, AssetPriceInfo } from '@/store/balances/types';
+import i18n from '@/i18n';
+import { useAssetInfoRetrieval } from '@/store/assets';
+import { AssetBreakdown } from '@/store/balances/types';
 import { useMainStore } from '@/store/store';
+import { useStore } from '@/store/utils';
 
-@Component({
+export default defineComponent({
+  name: 'AssetLocations',
   components: {
     DataTable,
     LabeledAddressDisplay,
-    CardTitle,
     TagDisplay,
     TagFilter
   },
-  computed: {
-    ...mapGetters('balances', ['assetBreakdown', 'account', 'assetPriceInfo']),
-    ...mapGetters('session', ['currencySymbol']),
-    ...mapState(useMainStore, ['detailsLoading'])
-  }
-})
-export default class AssetLocations extends Vue {
-  get headers(): DataTableHeader[] {
-    return [
+  props: {
+    identifier: { required: true, type: String }
+  },
+  setup(props) {
+    const { identifier } = toRefs(props);
+
+    const { currencySymbol } = setupGeneralSettings();
+    const { account } = setupBlockchainAccounts();
+    const { detailsLoading } = toRefs(useMainStore());
+    const { assetPriceInfo } = useAssetInfoRetrieval();
+
+    const store = useStore();
+
+    const assetBreakdown = (asset: string) =>
+      computed<AssetBreakdown[]>(() => {
+        return store.getters['balances/assetBreakdown'](asset);
+      });
+
+    const tableHeaders: DataTableHeader[] = [
       {
-        text: this.$t('asset_locations.header.location').toString(),
+        text: i18n.t('asset_locations.header.location').toString(),
         value: 'location',
         align: 'center',
         width: '120px'
       },
       {
-        text: this.$t('asset_locations.header.account').toString(),
+        text: i18n.t('asset_locations.header.account').toString(),
         value: 'label'
       },
       {
-        text: this.$t('asset_locations.header.amount').toString(),
+        text: i18n.t('asset_locations.header.amount').toString(),
         value: 'balance.amount',
         align: 'end'
       },
       {
-        text: this.$t('asset_locations.header.value', {
-          symbol: this.currencySymbol ?? CURRENCY_USD
-        }).toString(),
+        text: i18n
+          .t('asset_locations.header.value', {
+            symbol: get(currencySymbol) ?? CURRENCY_USD
+          })
+          .toString(),
         value: 'balance.usdValue',
         align: 'end'
       },
       {
-        text: this.$t('asset_locations.header.percentage').toString(),
+        text: i18n.t('asset_locations.header.percentage').toString(),
         value: 'percentage',
         sortable: false,
         align: 'end'
       }
     ];
-  }
 
-  @Prop({ required: true, type: String })
-  identifier!: string;
+    const onlyTags = ref<string[]>([]);
 
-  assetBreakdown!: (asset: string) => AssetBreakdown[];
-  account!: (address: string) => GeneralAccount | undefined;
-  currencySymbol!: string;
-  detailsLoading!: boolean;
-  assetPriceInfo!: (asset: string) => AssetPriceInfo;
-  onlyTags: string[] = [];
-
-  get totalUsdValue(): BigNumber {
-    return this.assetPriceInfo(this.identifier).usdValue;
-  }
-
-  get assetLocations(): (AssetBreakdown & { readonly label: string })[] {
-    return this.assetBreakdown(this.identifier).map(value => ({
-      label: this.account(value.address)?.label ?? '',
-      ...value
-    }));
-  }
-
-  get visibleAssetLocations(): (AssetBreakdown & { readonly label: string })[] {
-    if (this.onlyTags.length === 0) {
-      return this.assetLocations;
-    }
-    return this.assetLocations.filter(assetLocation => {
-      if (assetLocation.tags) {
-        return this.onlyTags.every(tag => assetLocation.tags?.includes(tag));
-      }
+    const totalUsdValue = computed<BigNumber>(() => {
+      return get(assetPriceInfo(get(identifier))).usdValue;
     });
-  }
 
-  getPercentage(usdValue: BigNumber): string {
-    const percentage = this.totalUsdValue.isZero()
-      ? 0
-      : usdValue.div(this.totalUsdValue).multipliedBy(100);
-    return percentage.toFixed(2);
+    const assetLocations = computed<
+      (AssetBreakdown & { readonly label: string })[]
+    >(() => {
+      return get(assetBreakdown(get(identifier))).map(value => ({
+        label: get(account(value.address))?.label ?? '',
+        ...value
+      }));
+    });
+
+    const visibleAssetLocations = computed<
+      (AssetBreakdown & { readonly label: string })[]
+    >(() => {
+      if (get(onlyTags).length === 0) {
+        return get(assetLocations);
+      }
+
+      return get(assetLocations).filter(assetLocation => {
+        if (assetLocation.tags) {
+          return get(onlyTags).every(tag => assetLocation.tags?.includes(tag));
+        }
+      });
+    });
+
+    const getPercentage = (usdValue: BigNumber): string => {
+      const percentage = get(totalUsdValue).isZero()
+        ? 0
+        : usdValue.div(get(totalUsdValue)).multipliedBy(100);
+
+      return percentage.toFixed(2);
+    };
+
+    return {
+      onlyTags,
+      tableHeaders,
+      visibleAssetLocations,
+      detailsLoading,
+      account,
+      getPercentage
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

@@ -87,12 +87,12 @@ import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import { setupSupportedAssets } from '@/composables/balances';
 import { useRouter } from '@/composables/common';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { ManagedAsset } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { showError } from '@/store/utils';
 import { Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
@@ -113,7 +113,7 @@ export default defineComponent({
   setup(props) {
     const { identifier } = toRefs(props);
 
-    const { supportedAssets, fetchSupportedAssets } = setupSupportedAssets();
+    const { supportedAssets, fetchSupportedAssets } = useAssetInfoRetrieval();
 
     const loading = ref<boolean>(false);
     const tokens = ref<ManagedAsset[]>([]);

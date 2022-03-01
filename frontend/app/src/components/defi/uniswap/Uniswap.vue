@@ -141,10 +141,10 @@ import UniswapPoolFilter from '@/components/defi/uniswap/UniswapPoolFilter.vue';
 import UniswapPoolAsset from '@/components/display/icons/UniswapPoolAsset.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
 import { getPremium, setupModuleEnabled } from '@/composables/session';
 import { UniswapDetails } from '@/premium/premium';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import { useUniswap } from '@/store/defi/uniswap';
 import { Module } from '@/types/modules';
@@ -175,7 +175,7 @@ export default defineComponent({
     } = useUniswap();
     const { isModuleEnabled } = setupModuleEnabled();
     const { getAssetSymbol: getSymbol, getTokenAddress } =
-      setupAssetInfoRetrieval();
+      useAssetInfoRetrieval();
     const { isSectionRefreshing, shouldShowLoadingScreen } =
       setupStatusChecking();
 

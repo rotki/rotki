@@ -220,10 +220,6 @@ import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeDetails from '@/components/history/TradeDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import {
-  setupAssetInfoRetrieval,
-  setupSupportedAssets
-} from '@/composables/balances';
 import { isSectionLoading } from '@/composables/common';
 import {
   getCollectionData,
@@ -240,6 +236,7 @@ import {
   TradeRequestPayload,
   TradeType
 } from '@/services/history/types';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import { useHistory, useTrades } from '@/store/history';
 import { IgnoreActionType, TradeEntry } from '@/store/history/types';
@@ -376,6 +373,10 @@ export default defineComponent({
 
     const historyStore = useHistory();
     const tradeStore = useTrades();
+    const assetInfoRetrievalStore = useAssetInfoRetrieval();
+    const { supportedAssets } = toRefs(assetInfoRetrievalStore);
+    const { getAssetSymbol, getAssetIdentifierForSymbol } =
+      assetInfoRetrievalStore;
 
     const { associatedLocations } = storeToRefs(historyStore);
     const { trades } = storeToRefs(tradeStore);
@@ -417,9 +418,6 @@ export default defineComponent({
         .toString();
       openDialog.value = true;
     };
-
-    const { getAssetSymbol, getAssetIdentifierForSymbol } =
-      setupAssetInfoRetrieval();
 
     const promptForDelete = (trade: TradeEntry) => {
       const prep = (
@@ -485,7 +483,6 @@ export default defineComponent({
     const options: Ref<PaginationOptions | null> = ref(null);
     const filters: Ref<MatchedKeyword<TradeFilterValueKeys>> = ref({});
 
-    const { supportedAssets } = setupSupportedAssets();
     const availableAssets = computed<string[]>(() => {
       return supportedAssets.value
         .map(value => getAssetSymbol(value.identifier))

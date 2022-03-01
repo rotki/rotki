@@ -28,7 +28,6 @@ export const defaultState = (): BalanceState => ({
     entriesLimit: 0,
     entriesFound: 0
   },
-  supportedAssets: [],
   manualBalances: [],
   manualLiabilities: [],
   manualBalanceByLocation: {},

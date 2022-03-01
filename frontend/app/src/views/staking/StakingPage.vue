@@ -132,23 +132,23 @@ import {
 import { useLocalStorage } from '@vueuse/core';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupThemeCheck, useRouter } from '@/composables/common';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import AdexPage from '@/views/staking/AdexPage.vue';
 import Eth2Page from '@/views/staking/Eth2Page.vue';
 import KrakenPage from '@/views/staking/KrakenPage.vue';
 import LiquityPage from '@/views/staking/LiquityPage.vue';
 
-type StakinInfo = {
+type StakingInfo = {
   id: string;
   icon: string;
   name: string;
   img?: boolean;
 };
 
-const staking: StakinInfo[] = [
+const staking: StakingInfo[] = [
   {
     id: 'eth2',
     icon: 'ETH',
@@ -192,7 +192,7 @@ export default defineComponent({
   setup(props) {
     const { location } = toRefs(props);
     const { dark } = setupThemeCheck();
-    const { getAssetIdentifierForSymbol } = setupAssetInfoRetrieval();
+    const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
 
     const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 

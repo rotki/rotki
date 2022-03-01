@@ -7,7 +7,7 @@
       <v-col class="d-flex flex-column" cols="auto">
         <span class="text-h5 font-weight-medium">{{ symbol }}</span>
         <span class="text-subtitle-2 text--secondary">
-          {{ assetName }}
+          {{ name }}
         </span>
       </v-col>
       <v-col cols="auto">
@@ -33,10 +33,10 @@ import { get } from '@vueuse/core';
 import { RawLocation } from 'vue-router/types/router';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { getPremium } from '@/composables/session';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
+import { useAssetInfoRetrieval } from '@/store/assets';
 
 export default defineComponent({
   name: 'Assets',
@@ -58,20 +58,20 @@ export default defineComponent({
 
     const premium = getPremium();
 
-    const { getAssetName, getAssetSymbol } = setupAssetInfoRetrieval();
+    const { assetName, assetSymbol } = useAssetInfoRetrieval();
 
-    const assetName = computed<string>(() => {
-      return getAssetName(get(identifier));
+    const name = computed<string>(() => {
+      return get(assetName(get(identifier)));
     });
 
     const symbol = computed<string>(() => {
-      return getAssetSymbol(get(identifier));
+      return get(assetSymbol(get(identifier)));
     });
 
     return {
       premium,
       editRoute,
-      assetName,
+      name,
       symbol
     };
   }

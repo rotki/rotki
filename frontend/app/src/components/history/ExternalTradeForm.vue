@@ -274,14 +274,12 @@ import {
   watch
 } from '@vue/composition-api';
 import dayjs from 'dayjs';
-import {
-  setupAssetInfoRetrieval,
-  setupGeneralBalances
-} from '@/composables/balances';
+import { setupGeneralBalances } from '@/composables/balances';
 import i18n from '@/i18n';
 import { convertKeys } from '@/services/axios-tranformers';
 import { deserializeApiErrorMessage } from '@/services/converters';
 import { NewTrade, Trade, TradeType } from '@/services/history/types';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { TradeEntry } from '@/store/history/types';
 import { useTasks } from '@/store/tasks';
 import { ActionStatus } from '@/store/types';
@@ -307,7 +305,7 @@ const ExternalTradeForm = defineComponent({
     const { edit } = toRefs(props);
     const { saveData } = props;
 
-    const { getAssetSymbol } = setupAssetInfoRetrieval();
+    const { getAssetSymbol } = useAssetInfoRetrieval();
     const input = (valid: boolean) => emit('input', valid);
 
     const { isTaskRunning } = useTasks();

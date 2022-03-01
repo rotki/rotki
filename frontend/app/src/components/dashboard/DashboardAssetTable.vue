@@ -115,15 +115,13 @@ import { DataTableHeader } from 'vuetify';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import {
-  setupAssetInfoRetrieval,
-  setupExchangeRateGetter
-} from '@/composables/balances';
+import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import { totalNetWorthUsd } from '@/composables/statistics';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { Nullable } from '@/types';
 import {
   DashboardTablesVisibleColumns,
@@ -243,7 +241,7 @@ const DashboardAssetTable = defineComponent({
       );
     });
 
-    const { getAssetSymbol, getAssetName } = setupAssetInfoRetrieval();
+    const { getAssetSymbol, getAssetName } = useAssetInfoRetrieval();
 
     const assetFilter = (
       _value: Nullable<string>,
@@ -276,7 +274,7 @@ const DashboardAssetTable = defineComponent({
       return calculatePercentage(value, totalInUsd.value);
     };
 
-    const { getAssetInfo } = setupAssetInfoRetrieval();
+    const { getAssetInfo } = useAssetInfoRetrieval();
 
     const { dashboardTablesVisibleColumns } = setupSettings();
 

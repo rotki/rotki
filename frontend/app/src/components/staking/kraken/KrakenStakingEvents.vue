@@ -83,12 +83,12 @@ import {
   SearchMatcher
 } from '@/components/history/filtering/types';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupThemeCheck } from '@/composables/common';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import { SupportedCurrency } from '@/data/currencies';
 import i18n from '@/i18n';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import {
   KrakenStakingEvents,
   KrakenStakingEventType,
@@ -142,7 +142,7 @@ enum KrakenStakingValueKeys {
 }
 
 const useMatchers = (events: Ref<KrakenStakingEvents>) => {
-  const { getAssetIdentifierForSymbol } = setupAssetInfoRetrieval();
+  const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
   const { dateInputFormat } = setupSettings();
   return computed<SearchMatcher<KrakenStakingKeys, KrakenStakingValueKeys>[]>(
     () => [
