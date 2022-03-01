@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, List, Optional
 
+from pysqlcipher3 import dbapi2 as sqlcipher
+
 from rotkehlchen.accounting.structures import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
@@ -74,17 +76,26 @@ class DBHistoryEvents():
         )
         self.db.update_last_write()
 
-    def edit_history_event(self, event: HistoryBaseEntry) -> bool:
+    def edit_history_event(self, event: HistoryBaseEntry) -> Tuple[bool, str]:
         """Edit a history entry to the DB. Returns the edited entry"""
         cursor = self.db.conn.cursor()
-        cursor.execute(
-            'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
-            'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
-            'type=?, subtype=?, counterparty=? WHERE identifier=?',
-            (*event.serialize_for_db(), event.identifier),
-        )
+        try:
+            cursor.execute(
+                'UPDATE history_events SET event_identifier=?, sequence_index=?, timestamp=?, '
+                'location=?, location_label=?, asset=?, amount=?, usd_value=?, notes=?, '
+                'type=?, subtype=?, counterparty=? WHERE identifier=?',
+                (*event.serialize_for_db(), event.identifier),
+            )
+        except sqlcipher.IntegrityError:  # pylint: disable=no-member
+            msg = (
+                f'Tried to edit event to have event_identifier {event.event_identifier} and '
+                f'sequence_index {event.sequence_index} but it already exists'
+            )
+            return False, msg
+
         if cursor.rowcount != 1:
-            return False
+            msg = f'Tried to edit event with id {event.identifier} but could not find it in the DB'
+            return False, msg
         cursor.execute(
             'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, value) '
             'VALUES(?, ?)',
@@ -92,7 +103,7 @@ class DBHistoryEvents():
         )
 
         self.db.update_last_write()
-        return True
+        return True, ''
 
     def delete_history_events_by_identifier(self, identifiers: List[int]) -> Optional[str]:
         """

@@ -130,6 +130,32 @@ def test_add_edit_delete_entries(rotkehlchen_api_server):
         contained_in_msg=f'Tried to edit event with id {unknown_id} but could not find it in the DB',  # noqa: E501
         status_code=HTTPStatus.CONFLICT,
     )
+    # test editing by making sequence index same as an existing one fails
+    entry.sequence_index = 3
+    entry.timestamp = Timestamp(1649924575000)
+    json_data = entry_to_input_dict(entry, include_identifier=True)
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+        json=json_data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Tried to edit event to have event_identifier 0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc and sequence_index 3 but it already exists',  # noqa: E501
+        status_code=HTTPStatus.CONFLICT,
+    )
+    # test adding event with  sequence index same as an existing one fails
+    entry.sequence_index = 3
+    entry.timestamp = Timestamp(1649924575000)
+    json_data = entry_to_input_dict(entry, include_identifier=True)
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'historybaseentryresource'),
+        json=json_data,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Failed to add event to the DB due to a DB error: UNIQUE constraint failed: history_events.event_identifier, history_events.sequence_index',  # noqa: E501
+        status_code=HTTPStatus.CONFLICT,
+    )
     # test editing works
     entry.sequence_index = 4
     entry.timestamp = Timestamp(1639924575000)
