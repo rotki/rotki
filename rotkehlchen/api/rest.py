@@ -1059,11 +1059,9 @@ class RestAPI():
     @require_loggedin_user()
     def edit_history_event(self, event: HistoryBaseEntry) -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
-        if not db.edit_history_event(event):
-            error_msg = (
-                f'Tried to edit event with id {event.identifier} but could not find it in the DB'
-            )
-            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
+        result, msg = db.edit_history_event(event)
+        if result is False:
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 

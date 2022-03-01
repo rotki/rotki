@@ -4215,7 +4215,7 @@ Dealing with BaseHistoryEntry events
 
    :statuscode 200: Event was successfully edited.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in. Or event to edit was not found in the DB.
+   :statuscode 409: No user is logged in. Or event to edit was not found in the DB or edit is not allowed.
    :statuscode 500: Internal rotki error
 
 .. http:delete:: /api/(version)/history/events
