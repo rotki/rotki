@@ -38,7 +38,7 @@
     </v-avatar>
     <div class="ml-4">
       <div class="font-weight-bold text-uppercase">{{ attrs.label }}</div>
-      <div class="grey--text">
+      <div v-if="event.locationLabel" class="grey--text">
         <hash-link :text="event.locationLabel" />
       </div>
       <div v-if="event.customized" class="pt-1">

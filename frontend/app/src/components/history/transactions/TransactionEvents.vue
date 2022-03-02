@@ -163,8 +163,10 @@ export default defineComponent({
     });
 
     const formatNotes = (
-      notes: string
+      notes: string | null
     ): { word: string; isAddress: boolean; isTransaction: boolean }[] => {
+      if (!notes) return [];
+
       // label each word from notes whether it is an address or not
       const words = notes.split(' ');
 
