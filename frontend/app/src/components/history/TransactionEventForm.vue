@@ -66,16 +66,26 @@
 
       <v-col cols="12" md="4">
         <amount-input
-          v-model="usdValue"
+          v-model="fiatValue"
           outlined
           required
-          data-cy="usdValue"
-          :rules="usdValueRules"
+          data-cy="fiatValue"
+          :rules="fiatValueRules"
           :loading="fetching"
-          :label="$t('transactions.events.form.usd_value.label')"
+          :label="
+            $t('transactions.events.form.fiat_value.label', {
+              currency: currencySymbol
+            })
+          "
           :error-messages="errorMessages['usdValue']"
           @focus="delete errorMessages['usdValue']"
-        />
+        >
+          <template #append>
+            <div class="pt-1">
+              <value-accuracy-hint />
+            </div>
+          </template>
+        </amount-input>
       </v-col>
     </v-row>
 
@@ -165,13 +175,17 @@ import {
   PropType,
   ref,
   toRefs,
-  unref,
   watch
 } from '@vue/composition-api';
-import { useLocalStorage } from '@vueuse/core';
+import { get, set, useLocalStorage } from '@vueuse/core';
 import dayjs from 'dayjs';
+import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import { setupGeneralBalances } from '@/composables/balances';
+import {
+  setupExchangeRateGetter,
+  setupGeneralBalances
+} from '@/composables/balances';
+import { setupGeneralSettings } from '@/composables/session';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
 import { convertKeys } from '@/services/axios-tranformers';
@@ -198,7 +212,7 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 const TransactionEventForm = defineComponent({
   name: 'TransactionEventForm',
-  components: { LocationSelector },
+  components: { ValueAccuracyHint, LocationSelector },
   props: {
     value: { required: false, type: Boolean, default: false },
     edit: {
@@ -229,6 +243,8 @@ const TransactionEventForm = defineComponent({
 
     const { isTaskRunning } = useTasks();
     const { fetchHistoricPrice } = setupGeneralBalances();
+    const { currencySymbol } = setupGeneralSettings();
+    const exchangeRate = setupExchangeRateGetter();
 
     const lastLocation = useLocalStorage(
       'rotki.ledger_action.location',
@@ -244,7 +260,7 @@ const TransactionEventForm = defineComponent({
     const eventSubtype = ref<string | null>();
     const asset = ref<string>('');
     const amount = ref<string>('');
-    const usdValue = ref<string>('');
+    const fiatValue = ref<string>('');
     const locationLabel = ref<string>('');
     const notes = ref<string>('');
     const counterparty = ref<string>('');
@@ -274,11 +290,13 @@ const TransactionEventForm = defineComponent({
           .toString()
     ];
 
-    const usdValueRules = [
+    const fiatValueRules = [
       (v: string) =>
         !!v ||
         i18n
-          .t('transactions.events.form.usd_value.validation.non_empty')
+          .t('transactions.events.form.fiat_value.validation.non_empty', {
+            currency: get(currencySymbol)
+          })
           .toString()
     ];
 
@@ -291,81 +309,100 @@ const TransactionEventForm = defineComponent({
     ];
 
     const fetching = computed<boolean>(() => {
-      return isTaskRunning(TaskType.FETCH_HISTORIC_PRICE).value;
+      return get(isTaskRunning(TaskType.FETCH_HISTORIC_PRICE));
     });
 
     const reset = () => {
-      identifier.value = null;
-      eventIdentifier.value = unref(transaction)?.txHash || '';
-      sequenceIndex.value = '0';
-      datetime.value = convertFromTimestamp(
-        unref(transaction)?.timestamp || dayjs().unix(),
-        true
+      set(identifier, null);
+      set(eventIdentifier, get(transaction)?.txHash || '');
+      set(sequenceIndex, '0');
+      set(
+        datetime,
+        convertFromTimestamp(
+          get(transaction)?.timestamp || dayjs().unix(),
+          true
+        )
       );
-      location.value = '';
-      eventType.value = null;
-      eventSubtype.value = null;
-      asset.value = '';
-      amount.value = '0';
-      usdValue.value = '0';
-      location.value = unref(lastLocation);
-      notes.value = '';
-      counterparty.value = '';
-      rate.value = '';
-      errorMessages.value = {};
+      set(location, '');
+      set(eventType, null);
+      set(eventSubtype, null);
+      set(asset, '');
+      set(amount, '0');
+      set(fiatValue, '0');
+      set(location, get(lastLocation));
+      set(notes, '');
+      set(counterparty, '');
+      set(rate, '');
+      set(errorMessages, {});
     };
 
+    const fiatExchangeRate = computed<BigNumber>(() => {
+      return exchangeRate(get(currencySymbol)) ?? new BigNumber(1);
+    });
+
     const setEditMode = () => {
-      if (!unref(edit)) {
+      if (!get(edit)) {
         reset();
         return;
       }
 
-      const event: EthTransactionEvent = unref(edit);
+      const event: EthTransactionEvent = get(edit);
 
-      identifier.value = event.identifier ?? null;
-      eventIdentifier.value = event.eventIdentifier;
-      sequenceIndex.value = event.sequenceIndex?.toString() ?? '';
-      datetime.value = convertFromTimestamp(event.timestamp, true);
-      location.value = event.location;
-      eventType.value = event.eventType;
-      eventSubtype.value = event.eventSubtype;
-      asset.value = event.asset;
-      amount.value = event.balance?.amount?.toString() ?? '';
-      usdValue.value = event.balance?.usdValue?.toString() ?? '';
-      locationLabel.value = event.locationLabel ?? '';
-      notes.value = event.notes ?? '';
-      counterparty.value = event.counterparty ?? '';
+      const convertedFiatValue =
+        get(currencySymbol) === 'USD'
+          ? event.balance.usdValue.toString()
+          : event.balance.usdValue
+              .multipliedBy(get(fiatExchangeRate))
+              .toString();
+
+      set(identifier, event.identifier ?? null);
+      set(eventIdentifier, event.eventIdentifier);
+      set(sequenceIndex, event.sequenceIndex?.toString() ?? '');
+      set(datetime, convertFromTimestamp(event.timestamp, true));
+      set(location, event.location);
+      set(eventType, event.eventType);
+      set(eventSubtype, event.eventSubtype);
+      set(asset, event.asset);
+      set(amount, event.balance.amount.toString());
+      set(fiatValue, convertedFiatValue);
+      set(locationLabel, event.locationLabel ?? '');
+      set(notes, event.notes ?? '');
+      set(counterparty, event.counterparty ?? '');
 
       fetchPrice();
     };
 
     const save = async (): Promise<boolean> => {
-      const numericAmount = bigNumberifyFromRef(amount).value;
-      const numericUsdValue = bigNumberifyFromRef(usdValue).value;
+      const numericAmount = get(bigNumberifyFromRef(amount));
+      const numericFiatValue = get(bigNumberifyFromRef(fiatValue));
+
+      const convertedUsdValue =
+        get(currencySymbol) === 'USD'
+          ? numericFiatValue
+          : numericFiatValue.dividedBy(get(fiatExchangeRate));
 
       const transactionEventPayload: Writeable<NewEthTransactionEvent> = {
-        eventIdentifier: unref(eventIdentifier),
-        sequenceIndex: unref(sequenceIndex) || '0',
-        timestamp: convertToTimestamp(unref(datetime)),
-        location: unref(location),
-        eventType: unref(eventType) as HistoryEventType,
-        eventSubtype: unref(eventSubtype) as HistoryEventSubType,
-        asset: unref(asset),
+        eventIdentifier: get(eventIdentifier),
+        sequenceIndex: get(sequenceIndex) || '0',
+        timestamp: convertToTimestamp(get(datetime)),
+        location: get(location),
+        eventType: get(eventType) as HistoryEventType,
+        eventSubtype: get(eventSubtype) as HistoryEventSubType,
+        asset: get(asset),
         balance: {
           amount: numericAmount.isNaN() ? Zero : numericAmount,
-          usdValue: numericUsdValue.isNaN() ? Zero : numericUsdValue
+          usdValue: convertedUsdValue.isNaN() ? Zero : convertedUsdValue
         },
-        locationLabel: unref(locationLabel) ? unref(locationLabel) : undefined,
-        notes: unref(notes) ? unref(notes) : undefined,
-        counterparty: unref(counterparty) ? unref(counterparty) : undefined
+        locationLabel: get(locationLabel) ? get(locationLabel) : undefined,
+        notes: get(notes) ? get(notes) : undefined,
+        counterparty: get(counterparty) ? get(counterparty) : undefined
       };
 
-      const result = !unref(identifier)
+      const result = !get(identifier)
         ? await saveData(transactionEventPayload)
         : await saveData({
             ...transactionEventPayload,
-            identifier: unref(identifier)!
+            identifier: get(identifier)!
           });
 
       if (result.success) {
@@ -374,10 +411,13 @@ const TransactionEventForm = defineComponent({
       }
 
       if (result.message) {
-        errorMessages.value = convertKeys(
-          deserializeApiErrorMessage(result.message) ?? {},
-          true,
-          false
+        set(
+          errorMessages,
+          convertKeys(
+            deserializeApiErrorMessage(result.message) ?? {},
+            true,
+            false
+          )
         );
       }
 
@@ -385,25 +425,24 @@ const TransactionEventForm = defineComponent({
     };
 
     const updateUsdValue = () => {
-      if (unref(amount) && unref(rate)) {
-        usdValue.value = new BigNumber(unref(amount))
-          .multipliedBy(new BigNumber(unref(rate)))
-          .toString();
+      if (get(amount) && get(rate)) {
+        set(
+          fiatValue,
+          new BigNumber(get(amount))
+            .multipliedBy(new BigNumber(get(rate)))
+            .toString()
+        );
       }
     };
 
     const fetchPrice = async () => {
-      if (
-        (unref(usdValue) && unref(edit)) ||
-        !unref(datetime) ||
-        !unref(asset)
-      ) {
+      if ((get(fiatValue) && get(edit)) || !get(datetime) || !get(asset)) {
         return;
       }
 
-      const timestamp = convertToTimestamp(unref(datetime));
-      const fromAsset = unref(asset);
-      const toAsset = 'USD';
+      const timestamp = convertToTimestamp(get(datetime));
+      const fromAsset = get(asset);
+      const toAsset = get(currencySymbol);
 
       const rateFromHistoricPrice = await fetchHistoricPrice({
         timestamp,
@@ -412,7 +451,7 @@ const TransactionEventForm = defineComponent({
       });
 
       if (rateFromHistoricPrice.gt(0)) {
-        rate.value = rateFromHistoricPrice.toString();
+        set(rate, rateFromHistoricPrice.toString());
         updateUsdValue();
       }
     };
@@ -430,12 +469,12 @@ const TransactionEventForm = defineComponent({
     });
 
     watch(transaction, transaction => {
-      eventIdentifier.value = transaction?.txHash || '';
+      set(eventIdentifier, transaction?.txHash || '');
     });
 
     watch(location, (location: string) => {
       if (location) {
-        lastLocation.value = location;
+        set(lastLocation, location);
       }
     });
 
@@ -444,6 +483,7 @@ const TransactionEventForm = defineComponent({
     });
 
     return {
+      currencySymbol,
       historyEventTypeData,
       historyEventSubTypeData,
       input,
@@ -454,7 +494,7 @@ const TransactionEventForm = defineComponent({
       eventSubtype,
       asset,
       amount,
-      usdValue,
+      fiatValue,
       locationLabel,
       notes,
       counterparty,
@@ -462,7 +502,7 @@ const TransactionEventForm = defineComponent({
       locationRules,
       assetRules,
       amountRules,
-      usdValueRules,
+      fiatValueRules,
       sequenceIndexRules,
       fetching,
       save,

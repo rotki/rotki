@@ -2790,6 +2790,12 @@
         "event_subtype": {
           "label": "Event Subtype"
         },
+        "fiat_value": {
+          "label": "{currency} Value",
+          "validation": {
+            "non_empty": "The {currency} value field cannot be empty."
+          }
+        },
         "location": {
           "label": "Location",
           "validation": {
@@ -2802,12 +2808,6 @@
         "notes": {
           "label": "Notes",
           "hint": "[Optional] Additional notes to store for the action"
-        },
-        "usd_value": {
-          "label": "USD Value",
-          "validation": {
-            "non_empty": "The usd value field cannot be empty."
-          }
         },
         "sequence_index": {
           "label": "Sequence Index",
