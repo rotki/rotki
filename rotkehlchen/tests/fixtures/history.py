@@ -67,7 +67,13 @@ def price_historian(
 
 
 @pytest.fixture
-def events_historian(database, data_dir, function_scope_messages_aggregator, blockchain):
+def events_historian(
+        database,
+        data_dir,
+        function_scope_messages_aggregator,
+        blockchain,
+        evm_transaction_decoder,
+):
     exchange_manager = ExchangeManager(msg_aggregator=function_scope_messages_aggregator)
     historian = EventsHistorian(
         user_directory=data_dir,
@@ -75,5 +81,6 @@ def events_historian(database, data_dir, function_scope_messages_aggregator, blo
         msg_aggregator=function_scope_messages_aggregator,
         exchange_manager=exchange_manager,
         chain_manager=blockchain,
+        evm_tx_decoder=evm_transaction_decoder,
     )
     return historian

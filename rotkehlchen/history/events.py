@@ -99,6 +99,7 @@ class EventsHistorian():
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
             chain_manager: 'ChainManager',
+            evm_tx_decoder: 'EVMTransactionDecoder',
     ) -> None:
 
         self.msg_aggregator = msg_aggregator
@@ -106,6 +107,7 @@ class EventsHistorian():
         self.db = db
         self.exchange_manager = exchange_manager
         self.chain_manager = chain_manager
+        self.evm_tx_decoder = evm_tx_decoder
         db_settings = self.db.get_settings()
         self.dateformat = db_settings.date_display_format
         self.datelocaltime = db_settings.display_date_in_localtime
@@ -399,20 +401,20 @@ class EventsHistorian():
             )
             step = self._increase_progress(step, total_steps)
 
+        self.processing_state_name = 'Querying ethereum transactions history'
+        tx_filter_query = ETHTransactionsFilterQuery.make(
+            order_ascending=True,  # for history processing we need oldest first
+            limit=None,
+            offset=None,
+            addresses=None,
+            # We need to have history of transactions since before the range
+            from_ts=Timestamp(0),
+            to_ts=end_ts,
+        )
+        ethtx_module = EthTransactions(ethereum=self.chain_manager.ethereum, database=self.db)
         try:
-            self.processing_state_name = 'Querying ethereum transactions history'
-            filter_query = ETHTransactionsFilterQuery.make(
-                order_ascending=True,  # for history processing we need oldest first
-                limit=None,
-                offset=None,
-                addresses=None,
-                # We need to have history of transactions since before the range
-                from_ts=Timestamp(0),
-                to_ts=end_ts,
-            )
-            ethtx_module = EthTransactions(ethereum=self.chain_manager.ethereum, database=self.db)
             eth_transactions, _ = ethtx_module.query(
-                filter_query=filter_query,
+                filter_query=tx_filter_query,
                 has_premium=True,  # at the moment ignore the limit for historical processing
                 only_cache=False,
             )
@@ -424,6 +426,22 @@ class EventsHistorian():
                 f'The final history result will not include ethereum transactions',
             )
             empty_or_error += '\n' + msg
+        step = self._increase_progress(step, total_steps)
+
+        self.processing_state_name = 'Querying ethereum transaction receipts'
+        dbethtx = DBEthTx(self.db)
+        hashes_result = dbethtx.get_transaction_hashes_no_receipt(
+            tx_filter_query=tx_filter_query,
+            limit=None,
+        )
+        for entry in hashes_result:
+            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry[0])
+            dbethtx.add_receipt_data(tx_receipt_data)
+        step = self._increase_progress(step, total_steps)
+
+        self.processing_state_name = 'Decoding raw transactions'
+        hashes = dbethtx.get_transaction_hashes_not_decoded(limit=None)
+        self.evm_tx_decoder.decode_transaction_hashes(ignore_cache=False, tx_hashes=hashes)
         step = self._increase_progress(step, total_steps)
 
         # Include all external trades and trades from external exchanges

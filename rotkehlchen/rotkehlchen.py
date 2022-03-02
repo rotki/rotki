@@ -317,6 +317,7 @@ class Rotkehlchen():
             msg_aggregator=self.msg_aggregator,
             exchange_manager=self.exchange_manager,
             chain_manager=self.chain_manager,
+            evm_tx_decoder=self.evm_tx_decoder,
         )
         self.task_manager = TaskManager(
             max_tasks_num=DEFAULT_MAX_TASKS_NUM,

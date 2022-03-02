@@ -248,11 +248,8 @@ class TaskManager():
 
     def _maybe_schedule_ethereum_txreceipts(self) -> None:
         """Schedules the ethereum transaction receipts query task"""
-        cursor = self.database.conn.cursor()
-        result = cursor.execute(
-            'SELECT tx_hash from ethereum_transactions WHERE tx_hash NOT IN '
-            '(SELECT tx_hash from ethtx_receipts) LIMIT 500;',
-        ).fetchall()
+        dbethtx = DBEthTx(self.database)
+        result = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=500)
         if len(result) == 0:
             return
 
@@ -370,12 +367,8 @@ class TaskManager():
         self.database.update_last_write()
 
     def _maybe_decode_evm_transactions(self) -> None:
-        cursor = self.database.conn.cursor()
-        cursor.execute(
-            'SELECT A.tx_hash from ethtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B '
-            'ON A.tx_hash=B.tx_hash WHERE B.tx_hash is NULL LIMIT 200',
-        )
-        hashes = [x[0] for x in cursor]
+        dbethtx = DBEthTx(self.database)
+        hashes = dbethtx.get_transaction_hashes_not_decoded(limit=200)
         if len(hashes) > 0:
             task_name = 'Periodically decode evm trasactions'
             log.debug(f'Scheduling task to {task_name}')
