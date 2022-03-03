@@ -9,6 +9,7 @@ import { api } from '@/services/rotkehlchen-api';
 import {
   AddAccountsPayload,
   AssetInfoGetter,
+  AssetPriceInfo,
   AssetPrices,
   AssetSymbolGetter,
   BlockchainAccountPayload,
@@ -56,7 +57,11 @@ export const setupSupportedAssets = () => {
     return store.state.balances!.supportedAssets;
   });
 
-  return { supportedAssets };
+  const fetchSupportedAssets = async (refresh: boolean) => {
+    await store.dispatch('balances/fetchSupportedAssets', refresh);
+  };
+
+  return { supportedAssets, fetchSupportedAssets };
 };
 
 export type BlockchainData = {
@@ -121,6 +126,8 @@ export const setupAssetInfoRetrieval = () => {
     const asset = getAssetInfo(identifier);
     return asset ? (asset.name ? asset.name : '') : '';
   };
+  const getAssetPriceInfo: (asset: string) => AssetPriceInfo =
+    store.getters['balances/assetPriceInfo'];
   const getTokenAddress = (identifier: string) => {
     return getAssetInfo(identifier)?.ethereumAddress ?? '';
   };
@@ -136,6 +143,7 @@ export const setupAssetInfoRetrieval = () => {
     getAssetIdentifierForSymbol,
     getAssetSymbol,
     getAssetName,
+    getAssetPriceInfo,
     getTokenAddress
   };
 };

@@ -14,7 +14,7 @@
           :hint="$t('rounding_settings.amount_rounding_hint')"
           @change="setAmountRoundingMode($event)"
         >
-          <amount-display class="ms-2" :value="amountExample" />
+          <amount-display class="ms-2" :value="numberExample" />
         </rounding-selector>
       </v-col>
       <v-col cols="12" md="6">
@@ -26,7 +26,7 @@
         >
           <amount-display
             class="ms-2"
-            :value="valueExample"
+            :value="numberExample"
             fiat-currency="USD"
           />
         </rounding-selector>
@@ -37,10 +37,9 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import { Component, Mixins } from 'vue-property-decorator';
-import { mapState } from 'vuex';
+import { defineComponent } from '@vue/composition-api';
 import RoundingSelector from '@/components/settings/explorers/RoundingSelector.vue';
-import SettingsMixin from '@/mixins/settings-mixin';
+import { setupSettings } from '@/composables/settings';
 import {
   AMOUNT_ROUNDING_MODE,
   RoundingMode,
@@ -48,29 +47,34 @@ import {
 } from '@/types/frontend-settings';
 import { bigNumberify } from '@/utils/bignumbers';
 
-@Component({
+export default defineComponent({
+  name: 'RoundingSettings',
   components: { RoundingSelector },
-  computed: {
-    ...mapState('settings', [AMOUNT_ROUNDING_MODE, VALUE_ROUNDING_MODE])
-  }
-})
-export default class RoundingSettings extends Mixins(SettingsMixin) {
-  amountRoundingMode!: RoundingMode;
-  valueRoundingMode!: RoundingMode;
+  setup() {
+    const { amountRoundingMode, valueRoundingMode, updateSetting } =
+      setupSettings();
 
-  readonly amountExample: BigNumber = bigNumberify(0.0815);
-  readonly valueExample: BigNumber = bigNumberify(0.0815);
+    const numberExample: BigNumber = bigNumberify(0.0815);
 
-  async setAmountRoundingMode(mode: RoundingMode) {
-    await this.updateSetting({
-      [AMOUNT_ROUNDING_MODE]: mode
-    });
-  }
+    const setAmountRoundingMode = async (mode: RoundingMode) => {
+      await updateSetting({
+        [AMOUNT_ROUNDING_MODE]: mode
+      });
+    };
 
-  async setValueRoundingMode(mode: RoundingMode) {
-    await this.updateSetting({
-      [VALUE_ROUNDING_MODE]: mode
-    });
+    const setValueRoundingMode = async (mode: RoundingMode) => {
+      await updateSetting({
+        [VALUE_ROUNDING_MODE]: mode
+      });
+    };
+
+    return {
+      amountRoundingMode,
+      valueRoundingMode,
+      numberExample,
+      setAmountRoundingMode,
+      setValueRoundingMode
+    };
   }
-}
+});
 </script>

@@ -14,17 +14,22 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 
-@Component({
-  components: { ErrorScreen }
-})
-export default class StartupErrorScreen extends Vue {
-  terminate() {
-    this.$interop.closeApp();
+import { interop } from '@/electron-interop';
+
+export default defineComponent({
+  name: 'StartupErrorScreen',
+  components: { ErrorScreen },
+  setup() {
+    const terminate = () => {
+      interop.closeApp();
+    };
+
+    return { terminate };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

@@ -30,15 +30,14 @@
   </v-row>
 </template>
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 
-@Component({})
-export default class StatusButton extends Vue {
-  @Prop({ required: true })
-  successMessage!: string;
-  @Prop({ required: true })
-  errorMessage!: string;
-  @Prop({ required: false, type: String, default: '' })
-  tooltip!: string;
-}
+export default defineComponent({
+  name: 'StatusButton',
+  props: {
+    successMessage: { required: true, type: String },
+    errorMessage: { required: true, type: String },
+    tooltip: { required: false, type: String, default: '' }
+  }
+});
 </script>

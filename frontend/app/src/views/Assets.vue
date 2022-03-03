@@ -2,7 +2,7 @@
   <v-container class="pb-12">
     <v-row align="center" class="mt-12">
       <v-col cols="auto">
-        <asset-icon :identifier="icon" size="48px" />
+        <asset-icon :identifier="identifier" size="48px" />
       </v-col>
       <v-col class="d-flex flex-column" cols="auto">
         <span class="text-h5 font-weight-medium">{{ symbol }}</span>
@@ -28,40 +28,52 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins, Prop } from 'vue-property-decorator';
+import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
+import { RawLocation } from 'vue-router/types/router';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
-import AssetMixin from '@/mixins/asset-mixin';
-import PremiumMixin from '@/mixins/premium-mixin';
+import { setupAssetInfoRetrieval } from '@/composables/balances';
+import { getPremium } from '@/composables/session';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
 
-@Component({
-  components: { AssetLocations, AssetValueRow, AssetAmountAndValueOverTime }
-})
-export default class Assets extends Mixins(PremiumMixin, AssetMixin) {
-  @Prop({ required: true, type: String })
-  identifier!: string;
+export default defineComponent({
+  name: 'Assets',
+  components: { AssetLocations, AssetValueRow, AssetAmountAndValueOverTime },
+  props: {
+    identifier: { required: true, type: String }
+  },
+  setup(props) {
+    const { identifier } = toRefs(props);
 
-  get editRoute() {
+    const editRoute = computed<RawLocation>(() => {
+      return {
+        path: Routes.ASSET_MANAGER,
+        query: {
+          id: get(identifier)
+        }
+      };
+    });
+
+    const premium = getPremium();
+
+    const { getAssetName, getAssetSymbol } = setupAssetInfoRetrieval();
+
+    const assetName = computed<string>(() => {
+      return getAssetName(get(identifier));
+    });
+
+    const symbol = computed<string>(() => {
+      return getAssetSymbol(get(identifier));
+    });
+
     return {
-      path: Routes.ASSET_MANAGER,
-      query: {
-        id: this.identifier
-      }
+      premium,
+      editRoute,
+      assetName,
+      symbol
     };
   }
-
-  get assetName(): string {
-    return this.getAssetName(this.identifier);
-  }
-
-  get icon(): string {
-    return this.identifier;
-  }
-
-  get symbol(): string {
-    return this.getSymbol(this.identifier);
-  }
-}
+});
 </script>

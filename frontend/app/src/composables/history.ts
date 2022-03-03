@@ -1,11 +1,11 @@
 import { computed, Ref } from '@vue/composition-api';
+import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { EntryMeta } from '@/services/history/types';
 import { useHistory } from '@/store/history';
 import { IgnoreActionPayload, IgnoreActionType } from '@/store/history/types';
 import { useMainStore } from '@/store/store';
 import { ActionStatus } from '@/store/types';
-import { useStore } from '@/store/utils';
 import { Collection } from '@/types/collection';
 import { uniqueStrings } from '@/utils/data';
 
@@ -30,11 +30,7 @@ export const setupEntryLimit = (
   found: Ref<number>,
   total: Ref<number>
 ) => {
-  const store = useStore();
-
-  const premium = computed(() => {
-    return store.state.session!!.premium;
-  });
+  const premium = getPremium();
 
   const itemLength = computed(() => {
     const isPremium = premium.value;

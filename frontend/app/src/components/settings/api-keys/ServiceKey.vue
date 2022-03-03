@@ -53,7 +53,7 @@
         depressed
         color="primary"
         :disabled="(editMode && currentValue === '') || loading"
-        @click="save()"
+        @click="saveHandler()"
         v-text="
           editMode
             ? $t('service_key.actions.save')
@@ -73,84 +73,92 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
+import {
+  defineComponent,
+  onMounted,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import { trimOnPaste } from '@/utils/event';
 
-@Component({
-  components: {
-    RevealableInput
+export default defineComponent({
+  name: 'ServiceKey',
+  components: { RevealableInput },
+  props: {
+    value: { required: true, type: String },
+    title: { required: true, type: String },
+    description: { required: false, type: String, default: '' },
+    loading: { required: false, type: Boolean, default: false },
+    tooltip: { required: false, type: String, default: '' },
+    hint: { required: false, type: String, default: '' },
+    label: { required: false, type: String, default: '' }
+  },
+  emits: ['input', 'delete-key', 'save'],
+  setup(props, { emit }) {
+    const { value } = toRefs(props);
+
+    const deleteKey = () => emit('delete-key');
+    const save = (value: string) => emit('save', value);
+
+    const currentValue = ref<string>('');
+    const editMode = ref<boolean>(false);
+    const cancellable = ref<boolean>(false);
+
+    const onPaste = (event: ClipboardEvent) => {
+      const paste = trimOnPaste(event);
+      if (paste) {
+        set(currentValue, paste);
+      }
+    };
+
+    const updateStatus = () => {
+      if (get(value) === '') {
+        set(cancellable, false);
+        set(editMode, true);
+      } else {
+        set(cancellable, true);
+        set(editMode, false);
+      }
+      set(currentValue, get(value));
+    };
+
+    const saveHandler = () => {
+      if (get(editMode)) {
+        save(get(currentValue));
+        set(editMode, false);
+        set(cancellable, true);
+      } else {
+        set(editMode, true);
+      }
+    };
+
+    const cancel = () => {
+      set(editMode, false);
+      set(currentValue, get(value));
+    };
+
+    onMounted(() => {
+      updateStatus();
+    });
+
+    watch(value, () => {
+      updateStatus();
+    });
+
+    return {
+      editMode,
+      currentValue,
+      onPaste,
+      deleteKey,
+      saveHandler,
+      cancellable,
+      cancel
+    };
   }
-})
-export default class ServiceKey extends Vue {
-  @Prop({ required: true })
-  value!: string;
-  @Prop({ required: true })
-  title!: string;
-  @Prop({ required: false, default: '' })
-  description!: string;
-  @Prop({ required: false, default: false })
-  loading!: boolean;
-  @Prop({ required: false, default: '' })
-  tooltip!: string;
-  @Prop({ required: false, default: '' })
-  hint!: string;
-  @Prop({ required: false, default: '' })
-  label!: string;
-
-  currentValue: string = '';
-
-  editMode: boolean = false;
-  cancellable: boolean = false;
-
-  onPaste(event: ClipboardEvent) {
-    const paste = trimOnPaste(event);
-    if (paste) {
-      this.currentValue = paste;
-    }
-  }
-
-  mounted() {
-    this.updateStatus();
-  }
-
-  @Watch('value')
-  onValueChange() {
-    this.updateStatus();
-  }
-
-  private updateStatus() {
-    if (this.value === '') {
-      this.cancellable = false;
-      this.editMode = true;
-    } else {
-      this.cancellable = true;
-      this.editMode = false;
-    }
-    this.currentValue = this.value;
-  }
-
-  @Emit()
-  deleteKey() {}
-
-  save() {
-    if (this.editMode) {
-      this.$emit('save', this.currentValue);
-      this.editMode = false;
-      this.cancellable = true;
-    } else {
-      this.editMode = true;
-    }
-  }
-
-  cancel() {
-    this.editMode = false;
-    this.currentValue = this.value;
-  }
-
-  @Emit()
-  input(_value: string) {}
-}
+});
 </script>
 
 <style scoped lang="scss">

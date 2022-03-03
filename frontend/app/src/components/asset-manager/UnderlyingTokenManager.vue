@@ -18,7 +18,7 @@
           type="number"
           max="100"
           min="1"
-          :rules="rules"
+          :rules="weightRules"
           persistent-hint
           :hint="$t('underlying_token_manager.hint')"
           outlined
@@ -67,92 +67,109 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import Fragment from '@/components/helper/Fragment';
+import { defineComponent, PropType, ref, toRefs } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import RowActions from '@/components/helper/RowActions.vue';
+import i18n from '@/i18n';
 import { UnderlyingToken } from '@/services/assets/types';
 
-@Component({
-  components: { Fragment, RowActions }
-})
-export default class UnderlyingTokenManager extends Vue {
-  @Prop({ required: true, type: Array })
-  value!: UnderlyingToken[];
-  @Emit()
-  input(_value: UnderlyingToken[]) {}
+export default defineComponent({
+  name: 'UnderlyingTokenManager',
+  components: { RowActions },
+  props: {
+    value: { required: true, type: Array as PropType<UnderlyingToken[]> }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { value } = toRefs(props);
 
-  valid: boolean = false;
+    const input = (value: UnderlyingToken[]) => emit('input', value);
 
-  underlyingAddress: string = '';
-  underlyingWeight: string = '';
+    const valid = ref<boolean>(false);
+    const underlyingAddress = ref<string>('');
+    const underlyingWeight = ref<string>('');
+    const form = ref<any>(null);
 
-  readonly addressRules = [
-    (v: string) =>
-      !!v ||
-      this.$t(
-        'underlying_token_manager.validation.address_non_empty'
-      ).toString()
-  ];
+    const addressRules = [
+      (v: string) =>
+        !!v ||
+        i18n
+          .t('underlying_token_manager.validation.address_non_empty')
+          .toString()
+    ];
 
-  readonly rules = [
-    (v: string) => {
-      if (!v) {
-        return this.$t(
-          'underlying_token_manager.validation.non_empty'
-        ).toString();
+    const weightRules = [
+      (v: string) => {
+        if (!v) {
+          return i18n
+            .t('underlying_token_manager.validation.non_empty')
+            .toString();
+        }
+        const number = parseInt(v);
+        if (isNaN(number)) {
+          return i18n
+            .t('underlying_token_manager.validation.not_valid')
+            .toString();
+        }
+
+        if (number < 1 || number > 100) {
+          return i18n
+            .t('underlying_token_manager.validation.out_of_range')
+            .toString();
+        }
+
+        return true;
       }
-      const number = parseInt(v);
-      if (isNaN(number)) {
-        return this.$t(
-          'underlying_token_manager.validation.not_valid'
-        ).toString();
+    ];
+
+    const addToken = () => {
+      const underlyingTokens = [...get(value)];
+      const index = underlyingTokens.findIndex(
+        ({ address }) => address === get(underlyingAddress)
+      );
+
+      const token = {
+        address: get(underlyingAddress),
+        weight: get(underlyingWeight)
+      };
+
+      if (index >= 0) {
+        underlyingTokens[index] = token;
+      } else {
+        underlyingTokens.push(token);
       }
 
-      if (number < 1 || number > 100) {
-        return this.$t(
-          'underlying_token_manager.validation.out_of_range'
-        ).toString();
-      }
-
-      return true;
-    }
-  ];
-
-  addToken() {
-    const underlyingTokens = [...this.value];
-    const index = underlyingTokens.findIndex(
-      ({ address }) => address === this.underlyingAddress
-    );
-
-    const token = {
-      address: this.underlyingAddress,
-      weight: this.underlyingWeight
+      (get(form) as any)?.reset();
+      input(underlyingTokens);
     };
 
-    if (index >= 0) {
-      underlyingTokens[index] = token;
-    } else {
-      underlyingTokens.push(token);
-    }
+    const editToken = (token: UnderlyingToken) => {
+      set(underlyingAddress, token.address);
+      set(underlyingWeight, token.weight);
+    };
 
-    (this.$refs.form as any).reset();
-    this.input(underlyingTokens);
-  }
+    const deleteToken = (address: string) => {
+      const underlyingTokens = [...get(value)];
+      input(
+        underlyingTokens.filter(
+          ({ address: tokenAddress }) => tokenAddress !== address
+        )
+      );
+    };
 
-  editToken(token: UnderlyingToken) {
-    this.underlyingAddress = token.address;
-    this.underlyingWeight = token.weight;
+    return {
+      form,
+      valid,
+      underlyingAddress,
+      underlyingWeight,
+      addressRules,
+      weightRules,
+      addToken,
+      editToken,
+      deleteToken
+    };
   }
-
-  deleteToken(address: string) {
-    const underlyingTokens = [...this.value];
-    this.input(
-      underlyingTokens.filter(
-        ({ address: tokenAddress }) => tokenAddress !== address
-      )
-    );
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

@@ -72,22 +72,33 @@
 </template>
 
 <script lang="ts">
-import { SupportedAsset } from '@rotki/common/lib/data';
-import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions, mapState } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import AssetForm from '@/components/asset-manager/AssetForm.vue';
 import AssetTable from '@/components/asset-manager/AssetTable.vue';
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import { setupSupportedAssets } from '@/composables/balances';
+import { useRouter } from '@/composables/common';
+import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { ManagedAsset } from '@/services/assets/types';
+import { api } from '@/services/rotkehlchen-api';
 import { showError } from '@/store/utils';
 import { Nullable } from '@/types';
 import { assert } from '@/utils/assertions';
 
-@Component({
+export default defineComponent({
+  name: 'AssetManagement',
   components: {
     RestoreAssetDbButton,
     MergeDialog,
@@ -96,140 +107,160 @@ import { assert } from '@/utils/assertions';
     BigDialog,
     AssetTable
   },
-  computed: {
-    ...mapState('balances', ['supportedAssets'])
+  props: {
+    identifier: { required: false, type: String, default: null }
   },
-  methods: {
-    ...mapActions('session', ['logout'])
-  }
-})
-export default class AssetManagement extends Vue {
-  @Prop({
-    type: String,
-    required: false,
-    default: null
-  })
-  identifier!: Nullable<string>;
+  setup(props) {
+    const { identifier } = toRefs(props);
 
-  @Watch('identifier')
-  onIdentifierChange(value: Nullable<string>) {
-    this.editAsset(value);
-  }
+    const { supportedAssets, fetchSupportedAssets } = setupSupportedAssets();
 
-  loading: boolean = false;
-  tokens: ManagedAsset[] = [];
-  validForm: boolean = false;
-  showForm: boolean = false;
-  saving: boolean = false;
-  token: Nullable<ManagedAsset> = null;
-  supportedAssets!: SupportedAsset[];
-  toDeleteAsset: Nullable<ManagedAsset> = null;
-  mergeTool: boolean = false;
-  logout!: () => Promise<void>;
-  restoreMode: string = 'soft';
+    const loading = ref<boolean>(false);
+    const tokens = ref<ManagedAsset[]>([]);
+    const validForm = ref<boolean>(false);
+    const showForm = ref<boolean>(false);
+    const saving = ref<boolean>(false);
+    const token = ref<Nullable<ManagedAsset>>(null);
+    const toDeleteAsset = ref<Nullable<ManagedAsset>>(null);
+    const mergeTool = ref<boolean>(false);
+    const restoreMode = ref<string>('soft');
+    const form = ref<AssetForm | null>(null);
 
-  get deleteAssetSymbol(): string {
-    return this.toDeleteAsset?.symbol ?? '';
-  }
+    const deleteAssetSymbol = computed<string>(() => {
+      return get(toDeleteAsset)?.symbol ?? '';
+    });
 
-  get dialogTitle(): string {
-    return this.token
-      ? this.$t('asset_management.edit_title').toString()
-      : this.$t('asset_management.add_title').toString();
-  }
+    const dialogTitle = computed<string>(() => {
+      return get(token)
+        ? i18n.t('asset_management.edit_title').toString()
+        : i18n.t('asset_management.add_title').toString();
+    });
 
-  async mounted() {
-    await this.refresh();
-    const identifier = this.identifier;
-    this.editAsset(identifier);
-  }
+    const add = () => {
+      set(token, null);
+      set(showForm, true);
+    };
 
-  private editAsset(identifier: string | null) {
-    if (identifier) {
-      const token = this.tokens.find(({ identifier: id }) => id === identifier);
-      if (token) {
-        this.edit(token);
+    const edit = (tokenToEdit: ManagedAsset) => {
+      set(token, tokenToEdit);
+      set(showForm, true);
+    };
+
+    const editAsset = (identifier: Nullable<string>) => {
+      if (identifier) {
+        const token = get(tokens).find(
+          ({ identifier: id }) => id === identifier
+        );
+        if (token) {
+          edit(token);
+        }
       }
-    }
-  }
+    };
 
-  private async refresh() {
-    this.loading = true;
-    await this.$store.dispatch('balances/fetchSupportedAssets', true);
-    const assets = this.supportedAssets.filter(
-      ({ assetType }) => assetType !== 'ethereum token'
-    );
-    this.tokens = [...(await this.$api.assets.ethereumTokens()), ...assets];
-    this.loading = false;
-  }
-
-  add() {
-    this.token = null;
-    this.showForm = true;
-  }
-
-  edit(token: ManagedAsset) {
-    this.token = token;
-    this.showForm = true;
-  }
-
-  async save() {
-    this.saving = true;
-    const success = await (this.$refs.form as any).save();
-    if (success) {
-      this.showForm = false;
-      await this.refresh();
-      this.token = null;
-    }
-    this.saving = false;
-  }
-
-  async confirmDelete() {
-    const asset = this.toDeleteAsset;
-    this.toDeleteAsset = null;
-    assert(asset !== null);
-    if ('assetType' in asset) {
-      await this.deleteAsset(asset.identifier);
-    } else {
-      await this.deleteToken(asset.address);
-    }
-  }
-
-  async deleteToken(address: string) {
-    try {
-      const success = await this.$api.assets.deleteEthereumToken(address);
-      if (success) {
-        await this.refresh();
-      }
-    } catch (e: any) {
-      showError(
-        this.$t('asset_management.delete_error', {
-          address,
-          message: e.message
-        }).toString()
+    const refresh = async () => {
+      set(loading, true);
+      await fetchSupportedAssets(true);
+      const assets = get(supportedAssets).filter(
+        ({ assetType }) => assetType !== 'ethereum token'
       );
-    }
-  }
+      set(tokens, [...(await api.assets.ethereumTokens()), ...assets]);
+      set(loading, false);
+    };
 
-  async deleteAsset(identifier: string) {
-    try {
-      const success = await this.$api.assets.deleteAsset(identifier);
+    const save = async () => {
+      set(saving, true);
+      const success = await get(form)?.save();
       if (success) {
-        await this.refresh();
+        set(showForm, false);
+        refresh();
+        set(token, null);
       }
-    } catch (e: any) {
-      showError(
-        this.$t('asset_management.delete_error', {
-          address: identifier,
-          message: e.message
-        }).toString()
-      );
-    }
-  }
+      set(saving, false);
+    };
 
-  async closeDialog() {
-    this.showForm = false;
-    await this.$router.push(Routes.ASSET_MANAGER);
+    const deleteToken = async (address: string) => {
+      try {
+        const success = await api.assets.deleteEthereumToken(address);
+        if (success) {
+          await refresh();
+        }
+      } catch (e: any) {
+        showError(
+          i18n
+            .t('asset_management.delete_error', {
+              address,
+              message: e.message
+            })
+            .toString()
+        );
+      }
+    };
+
+    const deleteAsset = async (identifier: string) => {
+      try {
+        const success = await api.assets.deleteAsset(identifier);
+        if (success) {
+          await refresh();
+        }
+      } catch (e: any) {
+        showError(
+          i18n
+            .t('asset_management.delete_error', {
+              address: identifier,
+              message: e.message
+            })
+            .toString()
+        );
+      }
+    };
+
+    const confirmDelete = async () => {
+      const asset = get(toDeleteAsset);
+      set(toDeleteAsset, null);
+      assert(asset !== null);
+      if ('assetType' in asset) {
+        await deleteAsset(asset.identifier);
+      } else {
+        await deleteToken(asset.address);
+      }
+    };
+
+    const $router = useRouter();
+
+    const closeDialog = async () => {
+      set(showForm, false);
+      $router.push(Routes.ASSET_MANAGER);
+    };
+
+    onMounted(async () => {
+      await refresh();
+      editAsset(get(identifier));
+    });
+
+    watch(identifier, identifier => {
+      editAsset(identifier);
+    });
+
+    return {
+      loading,
+      refresh,
+      tokens,
+      validForm,
+      showForm,
+      saving,
+      token,
+      toDeleteAsset,
+      mergeTool,
+      restoreMode,
+      form,
+      add,
+      edit,
+      dialogTitle,
+      save,
+      closeDialog,
+      deleteAssetSymbol,
+      confirmDelete
+    };
   }
-}
+});
 </script>

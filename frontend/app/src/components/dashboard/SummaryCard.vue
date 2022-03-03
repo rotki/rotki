@@ -7,10 +7,10 @@
     <v-card-title
       class="font-weight-medium text-capitalize px-4 pt-3 pb-0 secondary--text summary-card__header"
     >
-      <card-title :class="navigatesTo ? 'summary-card--navigates' : null">
-        <span @click="navigatesTo ? navigate() : null">
+      <card-title>
+        <navigator-link :enabled="!!navigatesTo" :to="{ path: navigatesTo }">
           {{ $t('summary_card.title', { name }) }}
-        </span>
+        </navigator-link>
       </card-title>
       <v-tooltip v-if="$slots.tooltip" bottom max-width="300px">
         <template #activator="{ on }">
@@ -53,37 +53,33 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
+import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 
-@Component({})
-export default class SummaryCard extends Vue {
-  @Prop({ required: true })
-  name!: string;
-  @Prop({ required: false, default: false })
-  isLoading!: boolean;
-  @Prop({ required: false, default: false, type: Boolean })
-  canRefresh!: boolean;
-  @Prop({ required: false, default: '', type: String })
-  navigatesTo!: string;
+export default defineComponent({
+  name: 'SummaryCard',
+  components: { NavigatorLink },
+  props: {
+    name: { required: true, type: String },
+    isLoading: { required: false, type: Boolean, default: false },
+    canRefresh: { required: false, type: Boolean, default: false },
+    navigatesTo: { required: false, type: String, default: '' }
+  },
+  emits: ['refresh'],
+  setup(_, { emit }) {
+    const refresh = (balanceSource: string) => {
+      emit('refresh', balanceSource.toLowerCase());
+    };
 
-  refresh(balanceSource: string) {
-    this.$emit('refresh', balanceSource.toLowerCase());
+    return {
+      refresh
+    };
   }
-
-  navigate() {
-    this.$router.push({
-      path: this.navigatesTo
-    });
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">
 .summary-card {
-  &--navigates {
-    cursor: pointer;
-  }
-
   .v-list-item {
     font-size: 0.8em;
     max-height: 48px;

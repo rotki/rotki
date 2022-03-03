@@ -58,10 +58,8 @@ import MakerDaoVaultCollateral from '@/components/defi/loan/loans/makerdao/Maker
 import MakerDaoVaultDebtDetails from '@/components/defi/loan/loans/makerdao/MakerDaoVaultDebtDetails.vue';
 import MakerDaoVaultLiquidation from '@/components/defi/loan/loans/makerdao/MakerDaoVaultLiquidation.vue';
 import PremiumCard from '@/components/display/PremiumCard.vue';
-import { getPremium } from '@/composables/session';
+import { getPremium, setupDisplayData } from '@/composables/session';
 import { interop } from '@/electron-interop';
-import AssetMixin from '@/mixins/asset-mixin';
-import ScrambleMixin from '@/mixins/scramble-mixin';
 import { VaultEventsList } from '@/premium/premium';
 import { MakerDAOVaultModel } from '@/store/defi/types';
 import { Zero } from '@/utils/bignumbers';
@@ -77,7 +75,6 @@ export default defineComponent({
     LoanHeader,
     VaultEventsList
   },
-  mixins: [ScrambleMixin, AssetMixin],
   props: {
     vault: {
       required: true,
@@ -86,6 +83,7 @@ export default defineComponent({
   },
   setup(props) {
     const { vault } = toRefs(props);
+    const { scrambleData } = setupDisplayData();
     const premium = getPremium();
 
     const openLink = (url: string) => {
@@ -100,6 +98,7 @@ export default defineComponent({
     });
 
     return {
+      scrambleData,
       totalInterestOwed,
       premium,
       openLink

@@ -14,12 +14,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
+import { defineComponent } from '@vue/composition-api';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 
-@Component({
+export default defineComponent({
   name: 'ThemeManagerLock',
   components: { PremiumLock }
-})
-export default class ThemeManagerLock extends Vue {}
+});
 </script>
