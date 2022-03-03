@@ -8,6 +8,7 @@ import {
 } from '@rotki/common/lib/defi/balancer';
 import {
   AdexApi,
+  AssetsApi,
   BalancerApi,
   BalancesApi,
   CompoundApi,
@@ -28,9 +29,18 @@ import { computed } from '@vue/composition-api';
 import { toRefs } from '@vueuse/core';
 import { truncateAddress } from '@/filters';
 import { api } from '@/services/rotkehlchen-api';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { useSushiswapStore } from '@/store/defi/sushiswap';
 import { useUniswap } from '@/store/defi/uniswap';
 import { useStore } from '@/store/utils';
+
+export const assetsApi = (): AssetsApi => {
+  const { getAssetInfo, getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
+  return {
+    assetInfo: getAssetInfo,
+    getIdentifierForSymbol: getAssetIdentifierForSymbol
+  };
+};
 
 export const statisticsApi = (): StatisticsApi => {
   const store = useStore();

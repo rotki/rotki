@@ -20,6 +20,7 @@ import { displayDateFormatter } from '@/data/date_formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
   adexApi,
+  assetsApi,
   balancerApi,
   balancesApi,
   compoundApi,
@@ -61,14 +62,7 @@ const date: DateUtilities = {
 };
 
 const data = (): DataUtilities => ({
-  assets: {
-    assetInfo: (identifier: string) => {
-      return store.getters['balances/assetInfo'](identifier);
-    },
-    getIdentifierForSymbol: (symbol: string) => {
-      return store.getters['balances/getIdentifierForSymbol'](symbol);
-    }
-  },
+  assets: assetsApi(),
   statistics: statisticsApi(),
   adex: adexApi(),
   balances: balancesApi(),

@@ -1,4 +1,3 @@
-import { SupportedAsset } from '@rotki/common/lib/data';
 import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
 import { MutationTree } from 'vuex';
 import {
@@ -122,9 +121,6 @@ export const mutations: MutationTree<BalanceState> = {
   },
   eth2Validators(state: BalanceState, eth2Validators: Eth2Validators) {
     state.eth2Validators = eth2Validators;
-  },
-  supportedAssets(state: BalanceState, supportedAssets: SupportedAsset[]) {
-    state.supportedAssets = supportedAssets;
   },
   manualBalances(
     state: BalanceState,

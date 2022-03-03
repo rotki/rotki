@@ -7,24 +7,22 @@ import {
 } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { SupportedAsset } from '@rotki/common/lib/data';
+import { toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { BlockchainAssetBalances } from '@/services/balances/types';
 import { GeneralAccountData } from '@/services/types-api';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import {
   AccountAssetBalances,
   AssetBreakdown,
-  AssetInfoGetter,
-  AssetPriceInfo,
-  AssetSymbolGetter,
   BalanceByLocation,
   BalanceState,
   BlockchainAccountWithBalance,
   BlockchainTotal,
   ExchangeRateGetter,
-  IdentifierForSymbolGetter,
   L2Totals,
   LocationBalance,
   NonFungibleBalance
@@ -67,14 +65,10 @@ export interface BalanceGetters {
   manualLabels: string[];
   accounts: GeneralAccount[];
   account: (address: string) => GeneralAccount | undefined;
-  assetInfo: AssetInfoGetter;
-  assetSymbol: AssetSymbolGetter;
   isEthereumToken: (asset: string) => boolean;
-  assetPriceInfo: (asset: string) => AssetPriceInfo;
   assetBreakdown: (asset: string) => AssetBreakdown[];
   loopringBalances: (address: string) => AssetBalance[];
   blockchainAssets: AssetBalanceWithPrice[];
-  getIdentifierForSymbol: IdentifierForSymbolGetter;
   locationBreakdown: (location: string) => AssetBalanceWithPrice[];
   byLocation: BalanceByLocation;
   exchangeNonce: (exchange: SupportedExchange) => number;
@@ -639,25 +633,6 @@ export const getters: Getters<
     return balances.map(value => value.label);
   },
 
-  assetInfo: (asset: BalanceState) => (identifier: string) => {
-    if (identifier.startsWith('_nft_')) {
-      for (const address in asset.nonFungibleBalances) {
-        const nfb = asset.nonFungibleBalances[address];
-        for (const balance of nfb) {
-          if (balance.id === identifier) {
-            return {
-              identifier: balance.id,
-              symbol: balance.name,
-              name: balance.name,
-              assetType: 'ethereum_token'
-            } as SupportedAsset;
-          }
-        }
-      }
-    }
-    return asset.supportedAssets.find(asset => asset.identifier === identifier);
-  },
-
   accounts: (
     _,
     { ethAccounts, btcAccounts, kusamaBalances, polkadotBalances, avaxAccounts }
@@ -681,32 +656,21 @@ export const getters: Getters<
     return accounts.find(acc => acc.address === address);
   },
 
-  isEthereumToken:
-    ({ supportedAssets }) =>
-    (asset: string) => {
-      const match = supportedAssets.find(
-        supportedAsset => supportedAsset.identifier === asset
-      );
-      if (match) {
-        return match.assetType === 'ethereum token';
-      }
-      return false;
-    },
+  isEthereumToken: () => (asset: string) => {
+    const { supportedAssets } = toRefs(useAssetInfoRetrieval());
+    const match = get(supportedAssets).find(
+      supportedAsset => supportedAsset.identifier === asset
+    );
+    if (match) {
+      return match.assetType === 'ethereum token';
+    }
+    return false;
+  },
   aggregatedAssets: (_, getters) => {
     const liabilities = getters.liabilities.map(({ asset }) => asset);
     const assets = getters.aggregatedBalances.map(({ asset }) => asset);
     assets.push(...liabilities);
     return assets.filter(uniqueStrings);
-  },
-  assetPriceInfo: (state, getters1) => asset => {
-    const assetValue = getters1.aggregatedBalances.find(
-      value => value.asset === asset
-    );
-    return {
-      usdPrice: state.prices[asset] ?? Zero,
-      amount: assetValue?.amount ?? Zero,
-      usdValue: assetValue?.usdValue ?? Zero
-    };
   },
   assetBreakdown:
     ({
@@ -938,16 +902,6 @@ export const getters: Getters<
     }
     return blockchainTotal;
   },
-  getIdentifierForSymbol: state => symbol => {
-    const asset = state.supportedAssets.find(asset => asset.symbol === symbol);
-    return asset?.identifier;
-  },
-  assetSymbol:
-    (_bs, { assetInfo }) =>
-    identifier => {
-      const asset = assetInfo(identifier);
-      return asset?.symbol ?? identifier;
-    },
   locationBreakdown:
     (
       {

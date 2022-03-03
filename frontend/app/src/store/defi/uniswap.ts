@@ -3,6 +3,7 @@ import { computed, Ref, ref, unref } from '@vue/composition-api';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section, Status } from '@/store/const';
 import {
   dexTradeNumericKeys,
@@ -30,6 +31,7 @@ export const useUniswap = defineStore('defi/uniswap', () => {
   const events = ref<XswapEvents>({}) as Ref<XswapEvents>;
 
   const store = useStore();
+  const { fetchSupportedAssets } = useAssetInfoRetrieval();
 
   const uniswapBalances = (addresses: string[]) =>
     computed(() => {
@@ -104,7 +106,8 @@ export const useUniswap = defineStore('defi/uniswap', () => {
       });
     }
     setStatus(Status.LOADED, section);
-    await store.dispatch('balances/fetchSupportedAssets', true, { root: true });
+
+    await fetchSupportedAssets(true);
   };
 
   const fetchTrades = async (refresh: boolean = false) => {
@@ -155,7 +158,8 @@ export const useUniswap = defineStore('defi/uniswap', () => {
       });
     }
     setStatus(Status.LOADED, section);
-    await store.dispatch('balances/fetchSupportedAssets', true, { root: true });
+
+    await fetchSupportedAssets(true);
   };
 
   const fetchEvents = async (refresh: boolean = false) => {
@@ -207,7 +211,8 @@ export const useUniswap = defineStore('defi/uniswap', () => {
       });
     }
     setStatus(Status.LOADED, section);
-    await store.dispatch('balances/fetchSupportedAssets', true, { root: true });
+
+    await fetchSupportedAssets(true);
   };
 
   return {

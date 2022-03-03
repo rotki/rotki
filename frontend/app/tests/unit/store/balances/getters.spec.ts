@@ -1,5 +1,4 @@
 import { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
-import { SupportedAsset } from '@rotki/common/lib/data';
 import sortBy from 'lodash/sortBy';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { BalanceType, BtcBalances } from '@/services/balances/types';
@@ -168,25 +167,6 @@ describe('balances:getters', () => {
         manualLiabilities: []
       })
     ).toMatchObject(['My monero wallet', 'My Bank Account']);
-  });
-
-  test('assetInfo', () => {
-    const eth: SupportedAsset = {
-      identifier: 'ETH',
-      name: 'Ethereum',
-      started: 1438214400,
-      symbol: 'ETH',
-      coingecko: '',
-      cryptocompare: '',
-      assetType: 'own chain'
-    };
-
-    // @ts-ignore
-    const actual = getters.assetInfo({
-      supportedAssets: [eth]
-    });
-    expect(actual('ETH')).toMatchObject(eth);
-    expect(actual('BTC')).toBeUndefined();
   });
 
   test('btcAccounts', () => {

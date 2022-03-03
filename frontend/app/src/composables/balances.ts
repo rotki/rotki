@@ -1,23 +1,20 @@
 import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { SupportedAsset } from '@rotki/common/lib/data';
 import { computed, Ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { tradeLocations } from '@/components/history/consts';
 import { ManualBalance } from '@/services/balances/types';
 import { api } from '@/services/rotkehlchen-api';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import {
   AddAccountsPayload,
-  AssetInfoGetter,
-  AssetPriceInfo,
   AssetPrices,
-  AssetSymbolGetter,
   BlockchainAccountPayload,
   BlockchainAccountWithBalance,
   ExchangeRateGetter,
   FetchPricePayload,
-  HistoricPricePayload,
-  IdentifierForSymbolGetter
+  HistoricPricePayload
 } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
@@ -49,19 +46,6 @@ export const setupGeneralBalances = () => {
     fetchHistoricPrice,
     refreshPrices
   };
-};
-
-export const setupSupportedAssets = () => {
-  const store = useStore();
-  const supportedAssets = computed<SupportedAsset[]>(() => {
-    return store.state.balances!.supportedAssets;
-  });
-
-  const fetchSupportedAssets = async (refresh: boolean) => {
-    await store.dispatch('balances/fetchSupportedAssets', refresh);
-  };
-
-  return { supportedAssets, fetchSupportedAssets };
 };
 
 export type BlockchainData = {
@@ -115,50 +99,17 @@ export const setupBlockchainData = (): BlockchainData => {
   };
 };
 
-export const setupAssetInfoRetrieval = () => {
-  const store = useStore();
-  const getAssetInfo: AssetInfoGetter = store.getters['balances/assetInfo'];
-  const getAssetSymbol: AssetSymbolGetter =
-    store.getters['balances/assetSymbol'];
-  const getAssetIdentifierForSymbol: IdentifierForSymbolGetter =
-    store.getters['balances/getIdentifierForSymbol'];
-  const getAssetName = (identifier: string) => {
-    const asset = getAssetInfo(identifier);
-    return asset ? (asset.name ? asset.name : '') : '';
-  };
-  const getAssetPriceInfo: (asset: string) => AssetPriceInfo =
-    store.getters['balances/assetPriceInfo'];
-  const getTokenAddress = (identifier: string) => {
-    return getAssetInfo(identifier)?.ethereumAddress ?? '';
-  };
-
-  const assetSymbol = (identifier: string) =>
-    computed(() => getAssetSymbol(identifier));
-  const assetName = (identifier: string) =>
-    computed(() => getAssetName(identifier));
-  return {
-    assetSymbol,
-    assetName,
-    getAssetInfo,
-    getAssetIdentifierForSymbol,
-    getAssetSymbol,
-    getAssetName,
-    getAssetPriceInfo,
-    getTokenAddress
-  };
-};
-
 export const setupLocationInfo = () => {
   const isSupportedBlockchain = (identifier: string): boolean => {
     return Object.values(Blockchain).includes(identifier as any);
   };
 
   const getLocation = (identifier: string) => {
-    const { getAssetName } = setupAssetInfoRetrieval();
+    const { assetName } = useAssetInfoRetrieval();
 
     if (isSupportedBlockchain(identifier)) {
       return {
-        name: getAssetName(identifier),
+        name: get(assetName(identifier)),
         identifier: identifier,
         exchange: false,
         imageIcon: true,

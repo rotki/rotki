@@ -14,7 +14,6 @@ import {
   ManualBalanceWithValue
 } from '@/services/balances/types';
 import { balanceKeys } from '@/services/consts';
-import { convertSupportedAssets } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { GeneralAccountData, XpubAccountData } from '@/services/types-api';
 import { BalanceActions } from '@/store/balances/action-types';
@@ -876,29 +875,6 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
           .t('actions.balances.net_value.error.message', { message: e.message })
           .toString(),
         display: false
-      });
-    }
-  },
-
-  async fetchSupportedAssets({ commit, state }, refresh: boolean) {
-    if (state.supportedAssets.length > 0 && !refresh) {
-      return;
-    }
-    try {
-      const supportedAssets = await api.assets.allAssets();
-      commit('supportedAssets', convertSupportedAssets(supportedAssets));
-    } catch (e: any) {
-      const { notify } = useNotifications();
-      notify({
-        title: i18n
-          .t('actions.balances.supported_assets.error.title')
-          .toString(),
-        message: i18n
-          .t('actions.balances.supported_assets.error.message', {
-            message: e.message
-          })
-          .toString(),
-        display: true
       });
     }
   },

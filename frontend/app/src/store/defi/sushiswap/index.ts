@@ -5,6 +5,7 @@ import { acceptHMRUpdate, defineStore } from 'pinia';
 import { getPremium, setupModuleEnabled } from '@/composables/session';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section } from '@/store/const';
 import {
   dexTradeNumericKeys,
@@ -19,7 +20,7 @@ import {
   getPools
 } from '@/store/defi/xswap-utils';
 import { OnError } from '@/store/typing';
-import { fetchDataAsync, getStatusUpdater, useStore } from '@/store/utils';
+import { fetchDataAsync, getStatusUpdater } from '@/store/utils';
 import { Module } from '@/types/modules';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -32,7 +33,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
 
   const isPremium = getPremium();
   const { activeModules } = setupModuleEnabled();
-  const store = useStore();
+  const { fetchSupportedAssets } = useAssetInfoRetrieval();
 
   const balanceList = (addresses: string[]) =>
     computed(() => getBalances(get(balances) as XswapBalances, addresses));
@@ -87,9 +88,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
       balances
     );
 
-    await store.dispatch('balances/fetchSupportedAssets', true, {
-      root: true
-    });
+    await fetchSupportedAssets(true);
   }
 
   async function fetchTrades(refresh: boolean = false) {
@@ -131,9 +130,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
       trades
     );
 
-    await store.dispatch('balances/fetchSupportedAssets', true, {
-      root: true
-    });
+    await fetchSupportedAssets(true);
   }
 
   async function fetchEvents(refresh: boolean = false) {
@@ -174,9 +171,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
       events
     );
 
-    await store.dispatch('balances/fetchSupportedAssets', true, {
-      root: true
-    });
+    await fetchSupportedAssets(true);
   }
 
   async function purge() {

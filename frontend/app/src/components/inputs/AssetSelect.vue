@@ -60,7 +60,7 @@ import {
 } from '@vue/composition-api';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { setupSupportedAssets } from '@/composables/balances';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { compareAssets } from '@/utils/assets';
 
 export default defineComponent({
@@ -90,7 +90,8 @@ export default defineComponent({
   emits: ['input'],
   setup(props, { emit }) {
     const { items } = toRefs(props);
-    const { supportedAssets } = setupSupportedAssets();
+    const assetInfoRetrievalStore = useAssetInfoRetrieval();
+    const { supportedAssets } = toRefs(assetInfoRetrievalStore);
 
     const input = (_value: string) => emit('input', _value);
 

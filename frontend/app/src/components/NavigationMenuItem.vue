@@ -62,9 +62,10 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { VueConstructor } from 'vue';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupThemeCheck } from '@/composables/common';
+import { useAssetInfoRetrieval } from '@/store/assets';
 
 export default defineComponent({
   name: 'NavigationMenuItem',
@@ -83,10 +84,10 @@ export default defineComponent({
   },
   setup(props) {
     const { cryptoIcon } = toRefs(props);
-    const { getAssetIdentifierForSymbol } = setupAssetInfoRetrieval();
+    const { assetIdentifierForSymbol } = useAssetInfoRetrieval();
 
     const identifier = computed<string>(() => {
-      return getAssetIdentifierForSymbol(cryptoIcon.value) ?? cryptoIcon.value;
+      return get(assetIdentifierForSymbol(get(cryptoIcon))) ?? get(cryptoIcon);
     });
 
     const { dark } = setupThemeCheck();

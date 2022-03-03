@@ -1,35 +1,32 @@
+import { Ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
+import { mapActions } from 'pinia';
 import { Component, Vue } from 'vue-property-decorator';
-import { mapGetters } from 'vuex';
-import {
-  AssetInfoGetter,
-  AssetSymbolGetter,
-  IdentifierForSymbolGetter
-} from '@/store/balances/types';
+import { useAssetInfoRetrieval } from '@/store/assets';
 
 @Component({
-  computed: {
-    ...mapGetters('balances', [
-      'assetInfo',
-      'getIdentifierForSymbol',
-      'assetSymbol'
+  methods: {
+    ...mapActions(useAssetInfoRetrieval, [
+      'assetName',
+      'assetSymbol',
+      'tokenAddress'
     ])
   }
 })
 export default class AssetMixin extends Vue {
-  getIdentifierForSymbol!: IdentifierForSymbolGetter;
-  assetInfo!: AssetInfoGetter;
-  assetSymbol!: AssetSymbolGetter;
+  assetName!: (identifier: string) => Ref<string>;
+  assetSymbol!: (identifier: string) => Ref<string>;
+  tokenAddress!: (identifier: string) => Ref<string>;
 
   getSymbol(identifier: string): string {
-    return this.assetSymbol(identifier);
+    return get(this.assetSymbol(identifier));
   }
 
   getTokenAddress(identifier: string): string {
-    return this.assetInfo(identifier)?.ethereumAddress ?? '';
+    return get(this.tokenAddress(identifier));
   }
 
   getAssetName(identifier: string): string {
-    const asset = this.assetInfo(identifier);
-    return asset ? (asset.name ? asset.name : '') : '';
+    return get(this.assetName(identifier));
   }
 }

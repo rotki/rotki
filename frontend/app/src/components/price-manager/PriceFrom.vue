@@ -67,10 +67,10 @@ import {
   ref,
   watch
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import AssetMixin from '@/mixins/asset-mixin';
 import { HistoricalPrice } from '@/services/assets/types';
-import { AssetSymbolGetter } from '@/store/balances/types';
-import { useStore } from '@/store/utils';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { bigNumberify } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
@@ -89,16 +89,15 @@ export default defineComponent({
   },
   emits: ['input', 'valid'],
   setup(props, { emit }) {
-    const store = useStore();
-    const getSymbol = store!.getters[
-      'balances/assetSymbol'
-    ] as AssetSymbolGetter;
+    const { assetSymbol } = useAssetInfoRetrieval();
     const valid = ref(false);
     const date = computed(({ value }) =>
       value.timestamp ? convertFromTimestamp(value.timestamp, true) : ''
     );
-    const fromAsset = computed(({ value }) => getSymbol(value.fromAsset));
-    const toAsset = computed(({ value }) => getSymbol(value.toAsset));
+    const fromAsset = computed(({ value }) =>
+      get(assetSymbol(value.fromAsset))
+    );
+    const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));
     const price = ref('');
     const input = (price: Partial<HistoricalPrice>) => {
       emit('input', { ...props.value, ...price });

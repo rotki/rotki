@@ -21,6 +21,7 @@ import {
 } from '@/services/defi/types/yearn';
 import { api } from '@/services/rotkehlchen-api';
 import { ALL_MODULES } from '@/services/session/consts';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { Section, Status } from '@/store/const';
 import { ACTION_PURGE_PROTOCOL, dexTradeNumericKeys } from '@/store/defi/const';
 import { convertMakerDAOVaults } from '@/store/defi/converters';
@@ -955,9 +956,9 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
             .toString()
       }
     });
-    await context.dispatch('balances/fetchSupportedAssets', true, {
-      root: true
-    });
+
+    const { fetchSupportedAssets } = useAssetInfoRetrieval();
+    await fetchSupportedAssets(true);
   },
   async fetchBalancerTrades(
     context: ActionContext<DefiState, RotkehlchenState>,
@@ -987,9 +988,9 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
             .toString()
       }
     });
-    await context.dispatch('balances/fetchSupportedAssets', true, {
-      root: true
-    });
+
+    const { fetchSupportedAssets } = useAssetInfoRetrieval();
+    await fetchSupportedAssets(true);
   },
   async fetchBalancerEvents(
     context: ActionContext<DefiState, RotkehlchenState>,
@@ -1024,9 +1025,9 @@ export const actions: ActionTree<DefiState, RotkehlchenState> = {
             .toString()
       }
     });
-    await context.dispatch('balances/fetchSupportedAssets', true, {
-      root: true
-    });
+
+    const { fetchSupportedAssets } = useAssetInfoRetrieval();
+    await fetchSupportedAssets(true);
   },
   async [ACTION_PURGE_PROTOCOL](
     { commit, dispatch },

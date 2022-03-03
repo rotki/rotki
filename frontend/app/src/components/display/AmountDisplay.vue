@@ -88,13 +88,11 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
-import {
-  setupAssetInfoRetrieval,
-  setupExchangeRateGetter
-} from '@/composables/balances';
+import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupDisplayData, setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import { displayAmountFormatter } from '@/data/amount_formatter';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { bigNumberify } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
 
@@ -159,7 +157,7 @@ export default defineComponent({
       valueRoundingMode
     } = setupSettings();
 
-    const { assetSymbol } = setupAssetInfoRetrieval();
+    const { assetSymbol } = useAssetInfoRetrieval();
 
     const symbol = computed<string>(() => {
       const identifier = get(asset);

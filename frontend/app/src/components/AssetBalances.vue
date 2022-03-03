@@ -61,10 +61,10 @@ import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import { setupAssetInfoRetrieval } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
 import { balanceSum } from '@/filters';
 import i18n from '@/i18n';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { getSortItems } from '@/utils/assets';
 
 const tableHeaders = (currency: Ref<string>) => {
@@ -122,8 +122,8 @@ const AssetBalancesTable = defineComponent({
     });
 
     const { currencySymbol } = setupGeneralSettings();
+    const { getAssetInfo } = useAssetInfoRetrieval();
 
-    const { getAssetInfo } = setupAssetInfoRetrieval();
     return {
       total,
       tableHeaders: tableHeaders(currencySymbol),
