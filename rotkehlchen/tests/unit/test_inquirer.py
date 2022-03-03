@@ -7,8 +7,20 @@ import requests
 
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
+from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_CRV, A_ETH, A_EUR, A_KFEE, A_LINK, A_USD
+from rotkehlchen.constants.assets import (
+    A_1INCH,
+    A_AAVE,
+    A_BTC,
+    A_CRV,
+    A_ETH,
+    A_EUR,
+    A_KFEE,
+    A_LINK,
+    A_USD,
+)
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -213,6 +225,12 @@ def test_all_common_methods_implemented():
             instance = Coingecko
         elif oracle == CurrentPriceOracle.CRYPTOCOMPARE:
             instance = Cryptocompare
+        elif oracle == CurrentPriceOracle.UNISWAPV2:
+            instance = UniswapV2Oracle
+        elif oracle == CurrentPriceOracle.UNISWAPV3:
+            instance = UniswapV3Oracle
+        elif oracle == CurrentPriceOracle.SADDLE:
+            instance = SaddleOracle
         else:
             raise AssertionError(
                 f'Unexpected current price oracle: {oracle}. Update this test',
@@ -341,14 +359,14 @@ def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_curve_lp_token_price(inquirer, ethereum_manager):
+def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
     address = '0xb19059ebb43466C323583928285a49f558E572Fd'
-    inquirer.inject_ethereum(ethereum_manager)
+    inquirer_defi.inject_ethereum(ethereum_manager)
 
-    price = inquirer.find_curve_pool_price(EthereumToken(address))
+    price = inquirer_defi.find_curve_pool_price(EthereumToken(address))
     assert price is not None
     # Check that the protocol is correctly caught by the inquirer
-    assert price == inquirer.find_usd_price(EthereumToken(address))
+    assert price == inquirer_defi.find_usd_price(EthereumToken(address))
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -356,3 +374,25 @@ def test_find_curve_lp_token_price(inquirer, ethereum_manager):
 def test_find_kfee_price(inquirer):
     price = inquirer.find_usd_price(A_KFEE)
     assert FVal(price) == FVal(0.01)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_asset_with_no_api_oracles(inquirer_defi):
+    """
+    Test that uniswap oracles correctly query USD price of assets
+    """
+    price = inquirer_defi.find_usd_price(A_1INCH, ignore_cache=True)
+    inquirer_defi.set_oracles_order(
+        oracles=[CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.CRYPTOCOMPARE],
+    )
+    price_uni_v2 = inquirer_defi.find_usd_price(A_1INCH, ignore_cache=True)
+    inquirer_defi.set_oracles_order(
+        oracles=[CurrentPriceOracle.UNISWAPV3, CurrentPriceOracle.CRYPTOCOMPARE],
+    )
+    price_uni_v3 = inquirer_defi.find_usd_price(A_1INCH, ignore_cache=True)
+
+    assert price != Price(ZERO)
+    assert price != price_uni_v2
+    assert price.is_close(price_uni_v2, max_diff='0.03')
+    assert price.is_close(price_uni_v3, max_diff='0.03')

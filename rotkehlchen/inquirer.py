@@ -84,6 +84,8 @@ from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
+    from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
@@ -104,7 +106,13 @@ ASSETS_UNDERLYING_BTC = (
 )
 
 
-CurrentPriceOracleInstance = Union['Coingecko', 'Cryptocompare']
+CurrentPriceOracleInstance = Union[
+    'Coingecko',
+    'Cryptocompare',
+    'UniswapV3Oracle',
+    'UniswapV2Oracle',
+    'SaddleOracle',
+]
 
 
 def _check_curve_contract_call(decoded: Tuple[Any, ...]) -> bool:
@@ -126,13 +134,17 @@ class CurrentPriceOracle(SerializableEnumMixin):
     """Supported oracles for querying current prices"""
     COINGECKO = 1
     CRYPTOCOMPARE = 2
-    UNISWAP_V3 = 3
+    UNISWAPV3 = 3
+    UNISWAPV2 = 4
+    SADDLE = 5
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
     CurrentPriceOracle.COINGECKO,
     CurrentPriceOracle.CRYPTOCOMPARE,
-    #CurrentPriceOracle.UNISWAP_V3,
+    CurrentPriceOracle.UNISWAPV2,
+    CurrentPriceOracle.UNISWAPV3,
+    CurrentPriceOracle.SADDLE,
 ]
 
 
@@ -227,6 +239,9 @@ class Inquirer():
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
+    _uniswapv2: Optional['UniswapV2Oracle'] = None
+    _uniswapv3: Optional['UniswapV3Oracle'] = None
+    _saddle: Optional['SaddleOracle'] = None
     _ethereum: Optional['EthereumManager'] = None
     _oracles: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
@@ -288,6 +303,16 @@ class Inquirer():
     @staticmethod
     def inject_ethereum(ethereum: 'EthereumManager') -> None:
         Inquirer()._ethereum = ethereum
+
+    @staticmethod
+    def add_defi_oracles(
+        uniswap_v2: Optional['UniswapV2Oracle'],
+        uniswap_v3: Optional['UniswapV3Oracle'],
+        saddle: Optional['SaddleOracle'],
+    ) -> None:
+        Inquirer()._uniswapv2 = uniswap_v2
+        Inquirer()._uniswapv3 = uniswap_v3
+        Inquirer()._saddle = saddle
 
     @staticmethod
     def get_cached_current_price_entry(cache_key: Tuple[Asset, Asset]) -> Optional[CachedPriceEntry]:  # noqa: E501

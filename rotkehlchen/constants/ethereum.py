@@ -160,5 +160,8 @@ PICKLE_DILL_REWARDS = EthereumConstants().contract('DILL_REWARDS')
 PICKLE_DILL = EthereumConstants().contract('DILL')
 
 UNISWAP_V3_FACTORY = EthereumConstants().contract('UNISWAP_V3_FACTORY')
+UNISWAP_V2_FACTORY = EthereumConstants().contract('UNISWAP_V2_FACTORY')
+
+SADDLE_ALETH_POOL = EthereumConstants().contract('SADDLE_ALETH_POOL')
 
 RAY_DIGITS = 27

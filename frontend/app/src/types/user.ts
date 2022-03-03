@@ -8,7 +8,14 @@ import { FrontendSettings } from '@/types/frontend-settings';
 import { LedgerActionEnum } from '@/types/ledger-actions';
 import { ModuleEnum } from '@/types/modules';
 
-export const PriceOracle = z.enum(['cryptocompare', 'coingecko', 'manual']);
+export const PriceOracle = z.enum([
+  'cryptocompare',
+  'coingecko',
+  'manual',
+  'uniswapv3',
+  'uniswapv2',
+  'saddle'
+]);
 export type PriceOracle = z.infer<typeof PriceOracle>;
 
 const OtherSettings = z.object({

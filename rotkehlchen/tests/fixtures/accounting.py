@@ -7,6 +7,8 @@ from typing import Optional
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
+from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
+from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -165,6 +167,7 @@ def create_inquirer(
         should_mock_current_price_queries,
         mocked_prices,
         current_price_oracles_order,
+        ethereum_manager,
         ignore_mocked_prices_for=None,
 ) -> Inquirer:
     # Since this is a singleton and we want it initialized everytime the fixture
@@ -179,6 +182,16 @@ def create_inquirer(
         cryptocompare=cryptocompare,
         coingecko=gecko,
     )
+    if ethereum_manager is not None:
+        inquirer.inject_ethereum(ethereum_manager)
+        uniswap_v2_oracle = UniswapV2Oracle(ethereum_manager)
+        uniswap_v3_oracle = UniswapV3Oracle(ethereum_manager)
+        saddle_oracle = SaddleOracle(ethereum_manager)
+        Inquirer().add_defi_oracles(
+            uniswap_v2=uniswap_v2_oracle,
+            uniswap_v3=uniswap_v3_oracle,
+            saddle=saddle_oracle,
+        )
     inquirer.set_oracles_order(current_price_oracles_order)
 
     if not should_mock_current_price_queries:
@@ -234,6 +247,7 @@ def fixture_inquirer(
         should_mock_current_price_queries=should_mock_current_price_queries,
         mocked_prices=mocked_current_prices,
         current_price_oracles_order=current_price_oracles_order,
+        ethereum_manager=None,
         ignore_mocked_prices_for=ignore_mocked_prices_for,
     )
 
@@ -250,4 +264,24 @@ def session_inquirer(
         should_mock_current_price_queries=session_should_mock_current_price_queries,
         mocked_prices=session_mocked_current_prices,
         current_price_oracles_order=session_current_price_oracles_order,
+        ethereum_manager=None,
+    )
+
+
+@pytest.fixture(name='inquirer_defi')
+def fixture_inquirer_defi(
+        data_dir,
+        should_mock_current_price_queries,
+        mocked_current_prices,
+        current_price_oracles_order,
+        ignore_mocked_prices_for,
+        ethereum_manager,
+):
+    return create_inquirer(
+        data_directory=data_dir,
+        should_mock_current_price_queries=should_mock_current_price_queries,
+        mocked_prices=mocked_current_prices,
+        current_price_oracles_order=current_price_oracles_order,
+        ethereum_manager=ethereum_manager,
+        ignore_mocked_prices_for=ignore_mocked_prices_for,
     )
