@@ -198,14 +198,7 @@
 
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
-import {
-  computed,
-  defineComponent,
-  Ref,
-  ref,
-  unref,
-  watch
-} from '@vue/composition-api';
+import { defineComponent, Ref, ref, unref, watch } from '@vue/composition-api';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -518,12 +511,8 @@ export default defineComponent({
       updatePaginationHandler(newOptions);
     });
 
-    const sectionLoading = isSectionLoading(Section.TX);
+    const loading = isSectionLoading(Section.TX);
     const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
-
-    const loading = computed<boolean>(() => {
-      return sectionLoading.value || eventTaskLoading.value;
-    });
 
     return {
       isDevelopment,
@@ -536,9 +525,8 @@ export default defineComponent({
       itemLength,
       fetch,
       showUpgradeRow,
-      sectionLoading,
-      eventTaskLoading,
       loading,
+      eventTaskLoading,
       dialogTitle,
       openDialog,
       editableItem,

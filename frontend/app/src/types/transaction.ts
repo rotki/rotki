@@ -11,7 +11,8 @@ export enum HistoryEventType {
   ADJUSTMENT = 'adjustment',
   UNKNOWN = 'unknown',
   INFORMATIONAL = 'informational',
-  MIGRATE = 'migrate'
+  MIGRATE = 'migrate',
+  RENEW = 'renew'
 }
 
 export const HistoryEventTypeEnum = z.nativeEnum(HistoryEventType);
@@ -32,7 +33,10 @@ export enum HistoryEventSubType {
   GENERATE_DEBT = 'generate debt',
   PAYBACK_DEBT = 'payback debt',
   RECEIVE_WRAPPED = 'receive wrapped',
-  RETURN_WRAPPED = 'return wrapped'
+  RETURN_WRAPPED = 'return wrapped',
+  DONATE = 'donate',
+  NFT = 'nft',
+  PLACE_ORDER = 'place order'
 }
 
 export const HistoryEventSubTypeEnum = z.nativeEnum(HistoryEventSubType);
@@ -50,7 +54,9 @@ export enum TransactionEventType {
   REPAY = 'repay',
   DEPLOY = 'deploy',
   BRIDGE = 'bridge',
-  GOVERNANCE_PROPOSE = 'governance_propose'
+  GOVERNANCE_PROPOSE = 'governance_propose',
+  DONATE = 'donate',
+  NFT = 'nft'
 }
 
 export const TransactionEventTypeEnum = z.nativeEnum(TransactionEventType);
@@ -64,5 +70,6 @@ export enum TransactionEventProtocol {
   UNISWAP = 'uniswap',
   AAVE = 'aave',
   XDAI = 'xdai',
+  ZKSYNC = 'zksync',
   '1INCH' = '1inch'
 }
