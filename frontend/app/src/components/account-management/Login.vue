@@ -330,14 +330,6 @@ export default defineComponent({
       return syncConflict.value.payload?.remoteLastModified ?? 0;
     });
 
-    const localSize = computed<string>(() => {
-      return syncConflict.value.payload?.localSize ?? '';
-    });
-
-    const remoteSize = computed<string>(() => {
-      return syncConflict.value.payload?.remoteSize ?? '';
-    });
-
     const serverColor = computed<string | null>(() => {
       if (customBackendSessionOnly.value) {
         return 'primary';
@@ -453,8 +445,6 @@ export default defineComponent({
       isLoggedInError,
       localLastModified,
       remoteLastModified,
-      localSize,
-      remoteSize,
       serverColor,
       saveCustomBackend,
       clearCustomBackend
