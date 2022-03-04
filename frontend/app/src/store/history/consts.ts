@@ -184,6 +184,10 @@ export const historyEventSubTypeData: ActionDataEntry[] = [
     label: i18n
       .t('transactions.events.history_event_subtype.return_wrapped')
       .toString()
+  },
+  {
+    identifier: HistoryEventSubType.REWARD,
+    label: i18n.t('transactions.events.history_event_subtype.reward').toString()
   }
 ];
 
@@ -272,6 +276,7 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.RECEIVE_WRAPPED]: TransactionEventType.RECEIVE,
     [HistoryEventSubType.RETURN_WRAPPED]: TransactionEventType.RECEIVE,
     [HistoryEventSubType.AIRDROP]: TransactionEventType.AIRDROP,
+    [HistoryEventSubType.REWARD]: TransactionEventType.RECEIVE,
     null: TransactionEventType.RECEIVE
   },
   [HistoryEventType.INFORMATIONAL]: {
@@ -348,5 +353,10 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     identifier: TransactionEventProtocol.ZKSYNC,
     label: 'zkSync',
     image: require('@/assets/images/zksync.jpg')
+  },
+  {
+    identifier: TransactionEventProtocol.VOTIUM,
+    label: 'Votium',
+    image: require('@/assets/images/defi/votium.png')
   }
 ];

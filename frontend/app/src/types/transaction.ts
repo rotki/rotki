@@ -71,5 +71,6 @@ export enum TransactionEventProtocol {
   AAVE = 'aave',
   XDAI = 'xdai',
   ZKSYNC = 'zksync',
-  '1INCH' = '1inch'
+  '1INCH' = '1inch',
+  VOTIUM = 'votium'
 }
