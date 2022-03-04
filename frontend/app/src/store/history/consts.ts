@@ -249,6 +249,11 @@ export const transactionEventTypeData: ActionDataEntry[] = [
     identifier: TransactionEventType.GOVERNANCE_PROPOSE,
     label: i18n.t('transactions.events.type.governance_propose').toString(),
     icon: 'mdi-bank'
+  },
+  {
+    identifier: TransactionEventType.DONATE,
+    label: i18n.t('transactions.events.type.donate').toString(),
+    icon: 'mdi-hand-heart-outline'
   }
 ];
 
@@ -259,6 +264,7 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.FEE]: TransactionEventType.GAS,
     [HistoryEventSubType.PAYBACK_DEBT]: TransactionEventType.REPAY,
     [HistoryEventSubType.RETURN_WRAPPED]: TransactionEventType.SEND,
+    [HistoryEventSubType.DONATE]: TransactionEventType.DONATE,
     null: TransactionEventType.SEND
   },
   [HistoryEventType.RECEIVE]: {
@@ -286,7 +292,8 @@ export const transactionEventTypeMapping: {
     [HistoryEventSubType.GENERATE_DEBT]: TransactionEventType.BORROW
   },
   [HistoryEventType.DEPOSIT]: {
-    [HistoryEventSubType.DEPOSIT_ASSET]: TransactionEventType.DEPOSIT
+    [HistoryEventSubType.DEPOSIT_ASSET]: TransactionEventType.DEPOSIT,
+    [HistoryEventSubType.BRIDGE]: TransactionEventType.DEPOSIT
   },
   [HistoryEventType.MIGRATE]: {
     [HistoryEventSubType.SPEND]: TransactionEventType.SEND,
@@ -336,5 +343,10 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     image: require('@/assets/images/defi/1inch.svg'),
     matcher: (identifier: string) =>
       identifier.toLowerCase().startsWith('1inch')
+  },
+  {
+    identifier: TransactionEventProtocol.ZKSYNC,
+    label: 'zkSync',
+    image: require('@/assets/images/zksync.jpg')
   }
 ];

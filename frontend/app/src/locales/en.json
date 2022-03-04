@@ -2863,6 +2863,7 @@
         "deploy": "Deploy",
         "bridge": "Bridge",
         "governance_propose": "Governance Propose",
+        "donate": "Donate",
         "unknown": "Unknown"
       },
       "view": {

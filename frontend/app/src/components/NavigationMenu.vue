@@ -36,7 +36,7 @@
               />
             </template>
             <div
-              class="navigation__submenu"
+              class="navigation-submenu"
               :class="{ 'navigation-submenu--mini': isMini }"
             >
               <v-list-item
@@ -305,7 +305,7 @@ export default defineComponent({
 }
 
 .navigation-submenu {
-  padding-left: 0.75rem;
+  padding-left: 1rem;
 
   &--mini {
     padding-left: 0;

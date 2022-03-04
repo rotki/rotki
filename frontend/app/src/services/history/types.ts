@@ -3,10 +3,6 @@ import { z, ZodTypeAny } from 'zod';
 import { SUPPORTED_TRADE_LOCATIONS } from '@/data/defaults';
 import { SUPPORTED_EXCHANGES } from '@/types/exchanges';
 import { LedgerActionEnum } from '@/types/ledger-actions';
-import {
-  HistoryEventSubTypeEnum,
-  HistoryEventTypeEnum
-} from '@/types/transaction';
 
 export const EthTransactionEvent = z.object({
   eventIdentifier: z.string(),
@@ -14,8 +10,8 @@ export const EthTransactionEvent = z.object({
   timestamp: z.number(),
   location: z.string(),
   locationLabel: z.string().nullish(),
-  eventType: HistoryEventTypeEnum.nullish(),
-  eventSubtype: HistoryEventSubTypeEnum.nullish(),
+  eventType: z.string().nullish(),
+  eventSubtype: z.string().nullish(),
   asset: z.string(),
   balance: Balance,
   notes: z.string().nullish(),
