@@ -21,6 +21,8 @@ from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+BUFFERSIZE = 64 * 1024
+
 
 class DataHandler():
 
@@ -189,18 +191,25 @@ class DataHandler():
 
         Returns a b64 encoded binary blob"""
         log.info('Compress and encrypt DB')
+        compressor = zlib.compressobj(level=9)
         with tempfile.TemporaryDirectory() as tmpdirname:
             tempdb = Path(tmpdirname) / 'temp.db'
             self.db.export_unencrypted(tempdb)
-            with open(tempdb, 'rb') as f:
-                data_blob = f.read()
+            source_data = bytearray()
+            compressed_data = bytearray()
+            with open(tempdb, 'rb') as src_f:
+                block = src_f.read(BUFFERSIZE)
+                while block:
+                    source_data += block
+                    compressed_data += compressor.compress(block)
+                    block = src_f.read(BUFFERSIZE)
+
+                compressed_data += compressor.flush()
 
         original_data_hash = base64.b64encode(
-            hashlib.sha256(data_blob).digest(),
+            hashlib.sha256(source_data).digest(),
         ).decode()
-        compressed_data = zlib.compress(data_blob, level=9)
-        encrypted_data = encrypt(password.encode(), compressed_data)
-
+        encrypted_data = encrypt(password.encode(), bytes(compressed_data))
         return B64EncodedBytes(encrypted_data.encode()), original_data_hash
 
     def decompress_and_decrypt_db(self, password: str, encrypted_data: B64EncodedString) -> None:

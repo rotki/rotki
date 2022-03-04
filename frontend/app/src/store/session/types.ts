@@ -41,8 +41,6 @@ export interface SessionState {
 }
 
 export const SyncConflictPayload = z.object({
-  localSize: z.string(),
-  remoteSize: z.string(),
   localLastModified: z.number(),
   remoteLastModified: z.number()
 });

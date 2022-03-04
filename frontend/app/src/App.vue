@@ -67,7 +67,7 @@
             class="app__app-bar__button"
             @click="showNotificationBar = !showNotificationBar"
           />
-          <currency-drop-down class="red--text app__app-bar__button" />
+          <currency-drop-down class="app__app-bar__button" />
           <user-dropdown class="app__app-bar__button" />
           <help-indicator
             v-if="!xsOnly"

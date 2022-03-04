@@ -16,6 +16,7 @@
         id="dashboard-asset-table__column-filter"
         transition="slide-y-transition"
         max-width="250px"
+        nudge-bottom="20"
         offset-y
       >
         <template #activator="{ on }">

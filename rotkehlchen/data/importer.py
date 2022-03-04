@@ -902,10 +902,10 @@ class DataImporter():
         trade = Trade(
             timestamp=timestamp,
             location=Location.BLOCKFI,
-            base_asset=buy_asset,
-            quote_asset=sold_asset,
-            trade_type=TradeType.BUY,
-            amount=buy_amount,
+            base_asset=sold_asset,
+            quote_asset=buy_asset,
+            trade_type=TradeType.SELL,
+            amount=sold_amount,
             rate=rate,
             fee=None,  # BlockFI doesn't provide this information
             fee_currency=None,
@@ -980,7 +980,7 @@ class DataImporter():
                 'since not enough information is provided about the trade.',
             )
             return
-        if entry_type in ('Deposit', 'ExchangeDepositedOn', 'LockingTermDeposit'):
+        if entry_type in ('Deposit', 'ExchangeDepositedOn'):
             asset_movement = AssetMovement(
                 location=Location.NEXO,
                 category=AssetMovementCategory.DEPOSIT,

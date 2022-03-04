@@ -44,6 +44,5 @@ export default defineComponent({
 
 .tooltip-menu-button {
   display: block;
-  height: 100%;
 }
 </style>

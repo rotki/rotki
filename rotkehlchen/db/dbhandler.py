@@ -261,7 +261,6 @@ class DBHandler:
             self.set_settings(initial_settings)
         self.update_owned_assets_in_globaldb()
         self.add_globaldb_assetids()
-        self.ensure_data_integrity()
 
     def __del__(self) -> None:
         if hasattr(self, 'conn') and self.conn:
@@ -2049,7 +2048,15 @@ class DBHandler:
                 continue
 
             passphrase = None if entry[4] is None else entry[4]
-            location = Location.deserialize_from_db(entry[1])
+            try:
+                location = Location.deserialize_from_db(entry[1])
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Found unknown location {entry[1]} for exchange {entry[0]} at '
+                    f'get_exchange_credentials. This could mean that you are opening '
+                    f'the app with an older version. {str(e)}',
+                )
+                continue
             credentials[location].append(ExchangeApiCredentials(
                 name=entry[0],
                 location=location,

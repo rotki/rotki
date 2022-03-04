@@ -632,10 +632,10 @@ def assert_blockfi_trades_import_results(rotki: Rotkehlchen):
     expected_trades = [Trade(
         timestamp=Timestamp(1612051199),
         location=Location.BLOCKFI,
-        base_asset=symbol_to_asset_or_token('USDC'),
-        quote_asset=symbol_to_asset_or_token('LTC'),
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('6404.6')),
+        base_asset=symbol_to_asset_or_token('LTC'),
+        quote_asset=symbol_to_asset_or_token('USDC'),
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal('42.23878904')),
         rate=Price(FVal('151.6283999982779809352223797')),
         fee=None,
         fee_currency=None,
@@ -784,17 +784,6 @@ def assert_nexo_results(rotki: Rotkehlchen):
         fee_asset=A_USD,
         fee=Fee(ZERO),
         link='NXT0000000003',
-    ), AssetMovement(
-        location=Location.NEXO,
-        category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1615024314),
-        address=None,
-        transaction_id=None,
-        asset=symbol_to_asset_or_token('USDC'),
-        amount=AssetAmount(FVal('1')),
-        fee_asset=A_USD,
-        fee=Fee(ZERO),
-        link='NXT0000000001',
     )]
 
     assert ledger_actions == expected_actions

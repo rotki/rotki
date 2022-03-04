@@ -183,6 +183,14 @@ class Rotkehlchen():
         # unlock or create the DB
         self.password = password
         self.user_directory = self.data.unlock(user, password, create_new, initial_settings)
+        # Run the DB integrity check due to https://github.com/rotki/rotki/issues/3010
+        # TODO: Hopefully onece 3010 is handled this can go away
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='user DB data integrity check',
+            exception_is_error=False,
+            method=self.data.db.ensure_data_integrity,
+        )
         self.data_importer = DataImporter(db=self.data.db)
         self.last_data_upload_ts = self.data.db.get_last_data_upload_ts()
         self.premium_sync_manager = PremiumSyncManager(data=self.data, password=password)

@@ -54,8 +54,6 @@ class PremiumSyncManager():
         if self.premium is None:
             return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
-        b64_encoded_data, our_hash = self.data.compress_and_encrypt_db(self.password)
-
         try:
             metadata = self.premium.query_last_data_metadata()
         except RemoteError as e:
@@ -69,32 +67,16 @@ class PremiumSyncManager():
             # If it's not a new account and the db setting for premium syncing is off stop
             return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
-        log.debug(
-            'CAN_PULL',
-            ours=our_hash,
-            theirs=metadata.data_hash,
-        )
-        if our_hash == metadata.data_hash:
-            log.debug('sync from server stopped -- same hash')
-            # same hash -- no need to get anything
-            return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
-
         our_last_write_ts = self.data.db.get_last_write_ts()
-        data_bytes_size = len(base64.b64decode(b64_encoded_data))
-
         local_more_recent = our_last_write_ts >= metadata.last_modify_ts
-
         if local_more_recent:
             log.debug('sync from server stopped -- local is newer')
             return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
-        # else remote is bigger
         return SyncCheckResult(
             can_sync=CanSync.ASK_USER,
-            message='Detected remote database with bigger size than the local one. ',
+            message='Detected remote database more recent than local. ',
             payload={
-                'local_size': data_bytes_size,
-                'remote_size': metadata.data_size,
                 'local_last_modified': our_last_write_ts,
                 'remote_last_modified': metadata.last_modify_ts,
             },
