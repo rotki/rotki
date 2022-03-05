@@ -47,16 +47,22 @@
                   <transaction-event-asset :event="item" />
                 </template>
                 <template #item.description="{ item }">
-                  <template v-for="(note, index) in formatNotes(item.notes)">
+                  <template v-for="(note, index) in formatNotes(item)">
                     <span
-                      v-if="note.isAddress"
+                      v-if="note.type === 'address' || note.type === 'tx'"
                       :key="index"
                       class="d-inline-flex"
                     >
                       <hash-link
                         :class="$style['row__description__address']"
-                        :text="note.word"
-                        :tx="note.isTransaction"
+                        :text="note.address"
+                        :tx="note.type === 'tx'"
+                      />
+                    </span>
+                    <span v-else-if="note.type === 'amount'" :key="index">
+                      <amount-display
+                        :value="note.amount"
+                        :asset="note.asset"
                       />
                     </span>
                     <span v-else :key="index">
@@ -82,15 +88,16 @@
 </template>
 
 <script lang="ts">
+import { BigNumber } from '@rotki/common';
 import {
   computed,
   defineComponent,
   PropType,
   ref,
   toRefs,
-  unref,
   watch
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
@@ -99,11 +106,28 @@ import TransactionEventType from '@/components/history/transactions/TransactionE
 import { useProxy } from '@/composables/common';
 import i18n from '@/i18n';
 import { EthTransactionEventWithMeta } from '@/services/history/types';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import {
   EthTransactionEntry,
   EthTransactionEventEntry
 } from '@/store/history/types';
 import { transformEntryWithMeta } from '@/store/history/utils';
+import { bigNumberify } from '@/utils/bignumbers';
+
+enum NoteType {
+  ADDRESS = 'address',
+  TX = 'tx',
+  AMOUNT = 'amount',
+  WORD = 'word'
+}
+
+type NoteFormat = {
+  type: NoteType;
+  word?: string;
+  address?: string;
+  amount?: BigNumber;
+  asset?: string;
+};
 
 export default defineComponent({
   name: 'TransactionEvents',
@@ -155,31 +179,64 @@ export default defineComponent({
     ];
 
     const events = computed<EthTransactionEventEntry[]>(() => {
-      return unref(transaction).decodedEvents!.map(
+      return get(transaction).decodedEvents!.map(
         (event: EthTransactionEventWithMeta) => {
           return transformEntryWithMeta(event);
         }
       );
     });
 
-    const formatNotes = (
-      notes: string | null
-    ): { word: string; isAddress: boolean; isTransaction: boolean }[] => {
+    const formatNotes = (event: EthTransactionEventEntry): NoteFormat[] => {
+      const { assetSymbol } = useAssetInfoRetrieval();
+
+      const notes = event.notes;
+      const amount = event.balance.amount;
+      const asset = get(assetSymbol(event.asset));
+
       if (!notes) return [];
+
+      const formats: NoteFormat[] = [];
+      let skip = false;
 
       // label each word from notes whether it is an address or not
       const words = notes.split(' ');
 
-      return words.map((word, index) => {
+      words.forEach((word, index) => {
+        if (skip) {
+          skip = false;
+          return;
+        }
+
         const isAddress = word.startsWith('0x') && word.length >= 42;
         const isTransaction =
           isAddress && index !== 0 && words[index - 1] === 'transaction';
-        return {
-          word,
-          isAddress,
-          isTransaction
-        };
+
+        if (isAddress) {
+          if (isTransaction) {
+            formats.push({ type: NoteType.TX, address: word });
+          } else {
+            formats.push({ type: NoteType.ADDRESS, address: word });
+          }
+          return;
+        }
+
+        const isAmount =
+          !isNaN(parseFloat(word)) &&
+          bigNumberify(word).eq(amount) &&
+          amount.gt(0) &&
+          index < words.length - 1 &&
+          words[index + 1] === asset;
+
+        if (isAmount) {
+          formats.push({ type: NoteType.AMOUNT, amount, asset });
+          skip = true;
+          return;
+        }
+
+        formats.push({ type: NoteType.WORD, word });
       });
+
+      return formats;
     };
 
     const editEvent = (item: EthTransactionEventEntry) =>
@@ -188,7 +245,7 @@ export default defineComponent({
       emit('delete:event', item);
 
     const panel = ref<number[]>(
-      unref(transaction).ignoredInAccounting ? [] : [0]
+      get(transaction).ignoredInAccounting ? [] : [0]
     );
 
     watch(transaction, (current, old) => {

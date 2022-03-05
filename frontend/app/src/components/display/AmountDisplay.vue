@@ -41,7 +41,9 @@
                   (!!fiatCurrency ||
                     renderValueDecimalPlaces <= floatingPrecision) &&
                   !tooltip
-                ) || isPriceAsset
+                ) ||
+                isPriceAsset ||
+                showExponential
               "
               class="amount-display__full-value"
             >
@@ -86,7 +88,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
-import { get } from '@vueuse/core';
+import { get, set, useClipboard, useTimeoutFn } from '@vueuse/core';
 import AmountCurrency from '@/components/display/AmountCurrency.vue';
 import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupDisplayData, setupGeneralSettings } from '@/composables/session';
@@ -171,21 +173,21 @@ export default defineComponent({
     const copied = ref<boolean>(false);
 
     const shownCurrency = computed<ShownCurrency>(() => {
-      return showCurrency.value === 'none' && !!fiatCurrency.value
+      return get(showCurrency) === 'none' && !!get(fiatCurrency)
         ? 'symbol'
-        : showCurrency.value;
+        : get(showCurrency);
     });
 
     const isPriceAsset = computed<boolean>(() => {
-      return currencySymbol.value === priceAsset.value;
+      return get(currencySymbol) === get(priceAsset);
     });
 
     const renderValue = computed<BigNumber>(() => {
       const multiplier = [10, 100, 1000];
       let valueToRender;
 
-      // return a random number if scrambeData is on
-      if (scrambleData.value) {
+      // return a random number if scrambleData is on
+      if (get(scrambleData)) {
         return BigNumber.random()
           .multipliedBy(
             multiplier[Math.floor(Math.random() * multiplier.length)]
@@ -193,10 +195,10 @@ export default defineComponent({
           .plus(BigNumber.random(2));
       }
 
-      if (amount.value && fiatCurrency.value === currencySymbol.value) {
-        valueToRender = amount.value;
+      if (get(amount) && get(fiatCurrency) === get(currencySymbol)) {
+        valueToRender = get(amount);
       } else {
-        valueToRender = value.value;
+        valueToRender = get(value);
       }
 
       // in certain cases where what is passed as a value is a string and not BigNumber, convert it
@@ -206,41 +208,59 @@ export default defineComponent({
       return valueToRender;
     });
 
-    const isRenderValueNaN = computed<boolean>(() => renderValue.value.isNaN());
+    const isRenderValueNaN = computed<boolean>(() => get(renderValue).isNaN());
 
     const renderValueDecimalPlaces = computed<number>(() =>
-      renderValue.value.decimalPlaces()
+      get(renderValue).decimalPlaces()
     );
 
     const convertFiat = computed<boolean>(() => {
-      return (
-        !!fiatCurrency.value && fiatCurrency.value !== currencySymbol.value
-      );
+      return !!get(fiatCurrency) && get(fiatCurrency) !== get(currencySymbol);
+    });
+
+    // Set exponential notation when the number is too big
+    const showExponential = computed<boolean>(() => {
+      return get(renderValue).gt(1e15);
     });
 
     const formatValue = (value: BigNumber): string => {
-      const floatingPrecisionUsed = integer.value ? 0 : floatingPrecision.value;
-      const price = convertFiat.value ? convertValue(value) : value;
+      const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
+      const price = get(convertFiat) ? convertValue(value) : value;
 
       if (price.isNaN()) {
         return '-';
       }
-
-      const formattedValue = displayAmountFormatter.format(
-        price,
-        floatingPrecisionUsed,
-        thousandSeparator.value,
-        decimalSeparator.value,
-        rounding.value
-      );
+      let formattedValue = '';
+      if (get(showExponential)) {
+        let exponentialValue = price.toExponential(
+          floatingPrecisionUsed,
+          get(rounding)
+        );
+        if (get(thousandSeparator) !== ',' || get(decimalSeparator) !== '.') {
+          exponentialValue = exponentialValue.replace(/[,.]/g, $1 => {
+            if ($1 === ',') return get(thousandSeparator);
+            if ($1 === '.') return get(decimalSeparator);
+            return $1;
+          });
+        }
+        formattedValue = exponentialValue;
+      } else {
+        formattedValue = displayAmountFormatter.format(
+          price,
+          floatingPrecisionUsed,
+          get(thousandSeparator),
+          get(decimalSeparator),
+          get(rounding)
+        );
+      }
 
       const hiddenDecimals = price.decimalPlaces() > floatingPrecisionUsed;
-      if (hiddenDecimals && rounding.value === BigNumber.ROUND_UP) {
+      if (hiddenDecimals && get(rounding) === BigNumber.ROUND_UP) {
         return `< ${formattedValue}`;
       } else if (
         price.lt(1) &&
         hiddenDecimals &&
-        rounding.value === BigNumber.ROUND_DOWN
+        get(rounding) === BigNumber.ROUND_DOWN
       ) {
         return `> ${formattedValue}`;
       }
@@ -248,52 +268,66 @@ export default defineComponent({
     };
 
     const formattedValue = computed(() => {
-      if (isPriceAsset.value) {
-        return bigNumberify(1).toFormat(floatingPrecision.value);
+      if (get(isPriceAsset)) {
+        return bigNumberify(1).toFormat(get(floatingPrecision));
       }
-      return formatValue(renderValue.value);
+      return formatValue(get(renderValue));
     });
 
     const convertValue = (value: BigNumber): BigNumber => {
-      const rate = exchangeRate(currencySymbol.value);
+      const rate = exchangeRate(get(currencySymbol));
       return rate ? value.multipliedBy(rate) : value;
     };
 
     const fullValue = computed<BigNumber>(() => {
-      return convertFiat.value
-        ? convertValue(renderValue.value)
-        : renderValue.value;
+      return get(convertFiat)
+        ? convertValue(get(renderValue))
+        : get(renderValue);
     });
 
     const fullFormattedValue = computed<string>(() => {
-      return fullValue.value.toFormat(fullValue.value.decimalPlaces());
+      return get(fullValue).toFormat(get(fullValue).decimalPlaces());
     });
 
     const rounding = computed<RoundingMode | undefined>(() => {
-      const isValue = fiatCurrency.value === currencySymbol.value;
+      const isValue = get(fiatCurrency) === get(currencySymbol);
       let rounding: RoundingMode | undefined = undefined;
       if (isValue) {
-        rounding = valueRoundingMode.value;
-      } else if (!convertFiat.value) {
-        rounding = amountRoundingMode.value;
+        rounding = get(valueRoundingMode);
+      } else if (!get(convertFiat)) {
+        rounding = get(amountRoundingMode);
       }
       return rounding;
     });
 
-    const copiedTimeout = ref<any>(0);
+    const { copy: copyText } = useClipboard({
+      source: get(fullValue).toString()
+    });
+
+    const { start, stop, isPending } = useTimeoutFn(
+      () => {
+        set(copied, false);
+      },
+      4000,
+      { immediate: false }
+    );
+
+    const { start: startAnimation } = useTimeoutFn(
+      () => {
+        set(copied, true);
+        start();
+      },
+      100,
+      { immediate: false }
+    );
 
     const copy = () => {
-      navigator.clipboard.writeText(fullValue.value.toString());
-      if (copiedTimeout.value) {
-        clearTimeout(copiedTimeout.value);
-        copied.value = false;
+      copyText();
+      if (get(isPending)) {
+        stop();
+        set(copied, false);
       }
-      setTimeout(() => {
-        copied.value = true;
-        copiedTimeout.value = setTimeout(() => {
-          copied.value = false;
-        }, 4000);
-      }, 50);
+      startAnimation();
     };
 
     return {
@@ -308,6 +342,7 @@ export default defineComponent({
       isPriceAsset,
       formattedValue,
       fullFormattedValue,
+      showExponential,
       copied,
       copy
     };
