@@ -611,7 +611,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
   async onThousandSeparatorChange(thousandSeparator: string) {
     if (
       thousandSeparator === this.decimalSeparator ||
-      /[0-9]/.test(thousandSeparator)
+      /[0-9+e]/.test(thousandSeparator)
     ) {
       const state = this.$store.state;
       this.thousandSeparator = state.settings![THOUSAND_SEPARATOR];
@@ -645,7 +645,7 @@ export default class General extends Mixins<SettingsMixin<SettingsEntries>>(
             'general_settings.decimal_separator.validation.cannot_be_the_same'
           ).toString();
         }
-        if (/[0-9]/.test(v)) {
+        if (/[0-9+e]/.test(v)) {
           return this.$t(
             'general_settings.decimal_separator.validation.cannot_be_numeric_character'
           ).toString();

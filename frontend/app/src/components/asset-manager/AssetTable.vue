@@ -189,13 +189,17 @@ export default defineComponent({
       isPending: isTimeoutPending,
       start,
       stop
-    } = useTimeoutFn(() => {
-      set(search, get(pendingSearch));
-    }, 600);
+    } = useTimeoutFn(
+      () => {
+        set(search, get(pendingSearch));
+      },
+      600,
+      { immediate: false }
+    );
 
     const onSearchTermChange = (term: string) => {
       set(pendingSearch, term);
-      if (!get(isTimeoutPending)) {
+      if (get(isTimeoutPending)) {
         stop();
       }
       start();
