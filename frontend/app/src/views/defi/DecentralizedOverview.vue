@@ -12,6 +12,18 @@
     <progress-screen v-if="loading">
       <template #message>{{ $t('decentralized_overview.loading') }}</template>
     </progress-screen>
+    <no-data-screen
+      v-else-if="defiOverview.length === 0"
+      :full="false"
+      class="mt-16"
+    >
+      <template #title>
+        {{ $t('decentralized_overview.empty_title') }}
+      </template>
+      <span class="text-subtitle-2 text--secondary">
+        {{ $t('decentralized_overview.empty_subtitle') }}
+      </span>
+    </no-data-screen>
     <v-row class="mt-4">
       <v-col
         v-for="summary in defiOverview"
@@ -28,6 +40,7 @@
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
+import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import Overview from '@/components/defi/Overview.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
@@ -37,6 +50,7 @@ import { DefiProtocolSummary } from '@/store/defi/types';
 
 @Component({
   components: {
+    NoDataScreen,
     ProgressScreen,
     Overview,
     RefreshHeader

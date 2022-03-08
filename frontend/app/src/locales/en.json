@@ -3100,7 +3100,9 @@
   },
   "decentralized_overview": {
     "loading": "Please wait while your defi balances are getting loaded...",
-    "title": "Defi Overview"
+    "title": "Defi Overview",
+    "empty_title": "No DeFi overview can be shown",
+    "empty_subtitle": "Please add at least one ETH account that have DeFi balances"
   },
   "validator_display": {
     "validator_index": "Validator Index:"
