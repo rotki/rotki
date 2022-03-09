@@ -45,6 +45,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import CopyButton from '@/components/helper/CopyButton.vue';
 
 export default defineComponent({
@@ -62,8 +63,8 @@ export default defineComponent({
     const { error, message } = toRefs(props);
 
     const errorText = computed(() => {
-      const errorText = error.value;
-      const errorMessage = message.value;
+      const errorText = get(error);
+      const errorMessage = get(message);
       return !errorText ? errorMessage : `${errorMessage}\n\n${errorText}`;
     });
 

@@ -29,6 +29,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { setupDisplayData } from '@/composables/session';
 import { truncateAddress } from '@/filters';
@@ -45,8 +46,8 @@ export default defineComponent({
     const { scrambleData, shouldShowAmount } = setupDisplayData();
 
     const address = computed<string>(() => {
-      if (!scrambleData.value) {
-        return account.value.address;
+      if (!get(scrambleData)) {
+        return get(account).address;
       }
       return randomHex();
     });

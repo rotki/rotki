@@ -51,6 +51,7 @@
 </template>
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 
 export default defineComponent({
@@ -62,7 +63,7 @@ export default defineComponent({
   setup(props) {
     const { progress } = toRefs(props);
     const percentage = computed(() => {
-      const currentProgress = progress.value;
+      const currentProgress = get(progress);
       try {
         const number = parseFloat(currentProgress);
         return number.toFixed(2);

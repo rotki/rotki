@@ -37,13 +37,8 @@
 
 <script lang="ts">
 import { Balance } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  ref,
-  unref
-} from '@vue/composition-api';
+import { computed, defineComponent, PropType, ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import { usePrices } from '@/composables/balances';
 import { ReceivedAmount } from '@/types/staking';
@@ -62,21 +57,21 @@ export default defineComponent({
     const { prices } = usePrices();
     const current = ref(true);
     const pricesAreLoading = computed(() => {
-      return Object.keys(unref(prices)).length === 0;
+      return Object.keys(get(prices)).length === 0;
     });
     const getBalance = ({
       amount,
       asset,
       usdValue
     }: ReceivedAmount): Balance => {
-      const assetPrices = unref(prices);
+      const assetPrices = get(prices);
 
       const currentPrice = assetPrices[asset]
         ? assetPrices[asset].times(amount)
         : Zero;
       return {
         amount,
-        usdValue: unref(current) ? currentPrice : usdValue
+        usdValue: get(current) ? currentPrice : usdValue
       };
     };
     return {

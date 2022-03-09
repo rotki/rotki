@@ -132,9 +132,9 @@ import {
   onBeforeMount,
   ref,
   toRefs,
-  unref,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import About from '@/components/About.vue';
 import AccountManagement from '@/components/AccountManagement.vue';
 import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
@@ -214,32 +214,32 @@ export default defineComponent({
     const openSite = navigateToRotki;
     const dismissMessage = () => setMessage();
     const toggleDrawer = () => {
-      if (!showDrawer.value) {
-        showDrawer.value = !showDrawer.value;
-        isMini.value = false;
+      if (!get(showDrawer)) {
+        set(showDrawer, !get(showDrawer));
+        set(isMini, false);
       } else {
-        isMini.value = !isMini.value;
+        set(isMini, !get(isMini));
       }
     };
 
     const { isMobile, dark, currentBreakpoint } = setupThemeCheck();
-    const xsOnly = computed(() => unref(currentBreakpoint).xsOnly);
+    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
     const route = useRoute();
     const router = useRouter();
 
     const canNavigateBack = computed(() => {
-      const canNavigateBack = route.value.meta?.canNavigateBack ?? false;
+      const canNavigateBack = get(route).meta?.canNavigateBack ?? false;
       return canNavigateBack && window.history.length > 1;
     });
 
     const isDevelopment = process.env.NODE_ENV === 'development';
     const isPlayground = computed(() => {
-      return isDevelopment && route.value.name === 'playground';
+      return isDevelopment && get(route).name === 'playground';
     });
 
     const appBarColor = computed(() => {
-      if (!dark.value) {
+      if (!get(dark)) {
         return 'white';
       }
       return null;
@@ -250,7 +250,7 @@ export default defineComponent({
     const logged = computed(() => state.session?.logged ?? false);
     const username = computed(() => state.session?.username ?? '');
     const loginComplete = computed(() => state.session?.loginComplete ?? false);
-    const loginIn = computed(() => logged.value && loginComplete.value);
+    const loginIn = computed(() => get(logged) && get(loginComplete));
     const overall = computed<OverallPerformance>(
       () => getters['statistics/overall']
     );
@@ -262,17 +262,17 @@ export default defineComponent({
     onBeforeMount(async () => {
       onError((backendOutput: string, code: BackendCode) => {
         if (code === BackendCode.TERMINATED) {
-          startupErrorMessage.value = backendOutput;
+          set(startupErrorMessage, backendOutput);
         } else if (code === BackendCode.MACOS_VERSION) {
-          isMacOsVersionUnsupported.value = true;
+          set(isMacOsVersionUnsupported, true);
         } else {
           logger.error(backendOutput, code);
         }
       });
-      onAbout(() => (showAbout.value = true));
+      onAbout(() => set(showAbout, true));
 
       await connect();
-      if (isDevelopment && logged.value) {
+      if (isDevelopment && get(logged)) {
         monitor.start();
       }
       const search = window.location.search;
@@ -293,10 +293,10 @@ export default defineComponent({
       if (!logged) {
         await completeLogin(false);
       } else {
-        showDrawer.value = !isMobile.value;
+        set(showDrawer, !get(isMobile));
       }
 
-      if (route.value.name !== 'dashboard') {
+      if (get(route).name !== 'dashboard') {
         router.push({ name: 'dashboard' });
       }
     });

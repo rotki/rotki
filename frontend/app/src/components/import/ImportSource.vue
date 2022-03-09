@@ -73,6 +73,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, ref, toRefs } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { interop } from '@/electron-interop';
@@ -102,7 +103,7 @@ export default defineComponent({
     const file = ref<File | null>(null);
 
     const upload = (selectedFile: File) => {
-      file.value = selectedFile;
+      set(file, selectedFile);
     };
 
     const dateFormatRules = [
@@ -121,49 +122,49 @@ export default defineComponent({
 
     const dateInputFormatExample = computed(() => {
       const now = new Date();
-      if (!dateInputFormat.value) return '';
-      return displayDateFormatter.format(now, dateInputFormat.value);
+      if (!get(dateInputFormat)) return '';
+      return displayDateFormatter.format(now, get(dateInputFormat)!);
     });
 
     const uploadPackaged = async (file: string) => {
       try {
         await api.importDataFrom(
-          source.value,
+          get(source),
           file,
-          dateInputFormat.value || null
+          get(dateInputFormat) || null
         );
-        uploaded.value = true;
+        set(uploaded, true);
       } catch (e: any) {
-        errorMessage.value = e.message;
+        set(errorMessage, e.message);
       }
     };
 
     const uploadFile = async () => {
-      if (file.value) {
+      if (get(file)) {
         if (interop.isPackaged && api.defaultBackend) {
-          await uploadPackaged(file.value.path);
+          await uploadPackaged(get(file)!.path);
         } else {
           const formData = new FormData();
-          formData.append('source', source.value);
-          formData.append('file', file.value);
-          if (dateInputFormat.value) {
-            formData.append('timestamp_format', dateInputFormat.value);
+          formData.append('source', get(source));
+          formData.append('file', get(file)!);
+          if (get(dateInputFormat)) {
+            formData.append('timestamp_format', get(dateInputFormat)!);
           }
           try {
             await api.importFile(formData);
-            uploaded.value = true;
+            set(uploaded, true);
           } catch (e: any) {
-            errorMessage.value = e.message;
+            set(errorMessage, e.message);
           }
         }
       }
     };
 
     const changeShouldCustomDateFormat = () => {
-      if (dateInputFormat.value === null) {
-        dateInputFormat.value = DateFormat.DateMonthYearHourMinuteSecond;
+      if (get(dateInputFormat) === null) {
+        set(dateInputFormat, DateFormat.DateMonthYearHourMinuteSecond);
       } else {
-        dateInputFormat.value = null;
+        set(dateInputFormat, null);
       }
     };
 

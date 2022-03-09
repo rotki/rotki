@@ -54,6 +54,7 @@ import {
   onUnmounted,
   ref
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -87,25 +88,25 @@ export default defineComponent({
     const route = useRoute();
     let firstPage = true;
 
-    const currentRoute = route.value;
+    const currentRoute = get(route);
     const reportId = parseInt(currentRoute.params.id);
     const exportable = canExport(reportId);
 
     onMounted(async () => {
-      if (reports.value.entries.length === 0) {
+      if (get(reports).entries.length === 0) {
         await fetchReports();
       }
       const success = await fetchReport(reportId);
       if (!success) {
         router.push(Routes.PROFIT_LOSS_REPORTS);
       }
-      loading.value = false;
+      set(loading, false);
     });
 
     const showUpgradeMessage = computed(
       () =>
-        report.value.entriesLimit > 0 &&
-        report.value.entriesLimit < report.value.entriesFound
+        get(report).entriesLimit > 0 &&
+        get(report).entriesLimit < get(report).entriesFound
     );
 
     onUnmounted(() => clearReport());
@@ -123,9 +124,9 @@ export default defineComponent({
         firstPage = false;
         return;
       }
-      refreshing.value = true;
+      set(refreshing, true);
       await fetchReport(reportId, { limit, offset });
-      refreshing.value = false;
+      set(refreshing, false);
     };
 
     return {

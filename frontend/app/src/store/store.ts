@@ -1,5 +1,6 @@
 ﻿import { Message } from '@rotki/common/lib/messages';
-import { computed, ref, unref } from '@vue/composition-api';
+import { computed, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import Vue from 'vue';
 import Vuex, { StoreOptions } from 'vuex';
@@ -33,25 +34,25 @@ export const useMainStore = defineStore('main', () => {
   const logLevel = ref<LogLevel>(getDefaultLogLevel());
 
   const updateNeeded = computed(() => {
-    const { version: appVersion, downloadUrl } = version.value;
+    const { version: appVersion, downloadUrl } = get(version);
     return appVersion.indexOf('dev') >= 0 ? false : !!downloadUrl;
   });
 
   const detailsLoading = computed(() => {
     return (
-      isLoading(unref(getStatus(Section.BLOCKCHAIN_ETH))) ||
-      isLoading(unref(getStatus(Section.BLOCKCHAIN_BTC))) ||
-      isLoading(unref(getStatus(Section.BLOCKCHAIN_KSM))) ||
-      isLoading(unref(getStatus(Section.BLOCKCHAIN_AVAX))) ||
-      isLoading(unref(getStatus(Section.EXCHANGES))) ||
-      isLoading(unref(getStatus(Section.MANUAL_BALANCES)))
+      isLoading(get(getStatus(Section.BLOCKCHAIN_ETH))) ||
+      isLoading(get(getStatus(Section.BLOCKCHAIN_BTC))) ||
+      isLoading(get(getStatus(Section.BLOCKCHAIN_KSM))) ||
+      isLoading(get(getStatus(Section.BLOCKCHAIN_AVAX))) ||
+      isLoading(get(getStatus(Section.EXCHANGES))) ||
+      isLoading(get(getStatus(Section.MANUAL_BALANCES)))
     );
   });
 
-  const showMessage = computed(() => message.value.title.length > 0);
+  const showMessage = computed(() => get(message).title.length > 0);
 
   const appVersion = computed(() => {
-    const { version: appVersion } = version.value;
+    const { version: appVersion } = get(version);
     const indexOfDev = appVersion.indexOf('dev');
     return indexOfDev > 0
       ? appVersion.substring(0, indexOfDev + 3)
@@ -61,11 +62,11 @@ export const useMainStore = defineStore('main', () => {
   const getVersion = async (): Promise<void> => {
     const { version: appVersion } = await api.info(true);
     if (appVersion) {
-      version.value = {
+      set(version, {
         version: appVersion.ourVersion || '',
         latestVersion: appVersion.latestVersion || '',
         downloadUrl: appVersion.downloadUrl || ''
-      };
+      });
     }
   };
 
@@ -73,8 +74,8 @@ export const useMainStore = defineStore('main', () => {
     const { dataDirectory: appDataDirectory, logLevel: level } = await api.info(
       false
     );
-    dataDirectory.value = appDataDirectory;
-    logLevel.value = level;
+    set(dataDirectory, appDataDirectory);
+    set(logLevel, level);
     setLevel(level);
   };
 
@@ -103,10 +104,10 @@ export const useMainStore = defineStore('main', () => {
         if (isConnected) {
           const accounts = await api.users();
           if (accounts.length === 0) {
-            newUser.value = true;
+            set(newUser, true);
           }
           clearInterval(intervalId);
-          connected.value = isConnected;
+          set(connected, isConnected);
 
           await getInfo();
           await getVersion();
@@ -117,16 +118,16 @@ export const useMainStore = defineStore('main', () => {
         count++;
         if (count > 20) {
           clearInterval(intervalId);
-          connectionFailure.value = true;
+          set(connectionFailure, true);
         }
       }
     };
     intervalId = setInterval(attemptConnect, 2000);
-    connectionFailure.value = false;
+    set(connectionFailure, false);
   };
 
   const setMessage = (msg: Message = emptyMessage()) => {
-    message.value = msg;
+    set(message, msg);
   };
 
   const resetDefiStatus = () => {
@@ -137,36 +138,36 @@ export const useMainStore = defineStore('main', () => {
   };
 
   const setStatus = ({ section, status: newStatus }: StatusPayload) => {
-    const statuses = status.value;
+    const statuses = get(status);
     if (statuses[section] === newStatus) {
       return;
     }
-    status.value = { ...statuses, [section]: newStatus };
+    set(status, { ...statuses, [section]: newStatus });
   };
 
   const getStatus = (section: Section) =>
     computed<Status>(() => {
-      return status.value[section] ?? Status.NONE;
+      return get(status)[section] ?? Status.NONE;
     });
 
   const setConnected = (isConnected: boolean) => {
-    connected.value = isConnected;
+    set(connected, isConnected);
   };
 
   const setNewUser = (isNew: boolean) => {
-    newUser.value = isNew;
+    set(newUser, isNew);
   };
 
   const setConnectionFailure = (failed: boolean) => {
-    connectionFailure.value = failed;
+    set(connectionFailure, failed);
   };
 
   const reset = () => {
-    newUser.value = false;
-    message.value = emptyMessage();
-    version.value = defaultVersion();
-    connectionFailure.value = false;
-    status.value = {};
+    set(newUser, false);
+    set(message, emptyMessage());
+    set(version, defaultVersion());
+    set(connectionFailure, false);
+    set(status, {});
   };
 
   return {

@@ -46,6 +46,7 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 
 export default defineComponent({
   name: 'MessageDialog',
@@ -60,11 +61,11 @@ export default defineComponent({
     const visible = ref<boolean>(false);
 
     watch(message, message => {
-      visible.value = message.length > 0;
+      set(visible, message.length > 0);
     });
 
     const icon = computed<string>(() => {
-      return success.value ? 'mdi-check-circle ' : 'mdi-alert-circle';
+      return get(success) ? 'mdi-check-circle ' : 'mdi-alert-circle';
     });
 
     const dismiss = () => emit('dismiss');

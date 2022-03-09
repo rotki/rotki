@@ -13,6 +13,7 @@
 
 <script lang="ts">
 import { defineComponent, onMounted, ref } from '@vue/composition-api';
+import { set } from '@vueuse/core';
 import { useProxy } from '@/composables/common';
 
 export default defineComponent({
@@ -22,7 +23,7 @@ export default defineComponent({
     const proxy = useProxy();
     onMounted(() => {
       const { top: topBound } = proxy.$el.getBoundingClientRect();
-      top.value = topBound;
+      set(top, topBound);
     });
 
     return {

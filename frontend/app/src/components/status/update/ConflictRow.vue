@@ -19,6 +19,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 
 const ConflictRow = defineComponent({
   props: {
@@ -29,8 +30,8 @@ const ConflictRow = defineComponent({
   setup(props) {
     const { field } = toRefs(props);
 
-    const isStarted = computed(() => field.value === 'started');
-    const isAddress = computed(() => field.value === 'ethereumAddress');
+    const isStarted = computed(() => get(field) === 'started');
+    const isAddress = computed(() => get(field) === 'ethereumAddress');
 
     return {
       isStarted,

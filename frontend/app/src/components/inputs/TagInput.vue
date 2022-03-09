@@ -91,6 +91,7 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import TagManager from '@/components/tags/TagManager.vue';
 import { setupTags } from '@/composables/session';
@@ -139,11 +140,13 @@ export default defineComponent({
     const colorScheme = ref(randomScheme());
 
     const tagExists = (tagName: string): boolean => {
-      return tags.value.map(({ name }) => name).includes(tagName);
+      return get(tags)
+        .map(({ name }) => name)
+        .includes(tagName);
     };
 
     const createTag = async (name: string) => {
-      const { backgroundColor, foregroundColor } = colorScheme.value;
+      const { backgroundColor, foregroundColor } = get(colorScheme);
       const tag: Tag = {
         name,
         description: '',
@@ -154,7 +157,7 @@ export default defineComponent({
     };
 
     const remove = (tag: string) => {
-      const tags = value.value;
+      const tags = get(value);
       const index = tags.indexOf(tag);
       input([...tags.slice(0, index), ...tags.slice(index + 1)]);
     };
@@ -187,20 +190,20 @@ export default defineComponent({
 
     watch(search, (keyword: string | null, previous: string | null) => {
       if (keyword && !previous) {
-        colorScheme.value = randomScheme();
+        set(colorScheme, randomScheme());
       }
     });
 
     const newTagBackground = computed<string>(() => {
-      return `#${colorScheme.value.backgroundColor}`;
+      return `#${get(colorScheme).backgroundColor}`;
     });
 
     const newTagForeground = computed<string>(() => {
-      return `#${colorScheme.value.foregroundColor}`;
+      return `#${get(colorScheme).foregroundColor}`;
     });
 
     const values = computed<Tag[]>(() => {
-      return tags.value.filter(({ name }) => value.value.includes(name));
+      return get(tags).filter(({ name }) => get(value).includes(name));
     });
 
     return {

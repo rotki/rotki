@@ -112,6 +112,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
@@ -120,6 +121,7 @@ import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import { totalNetWorthUsd } from '@/composables/statistics';
+import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
@@ -139,7 +141,7 @@ const tableHeaders = (
   tableType: Ref<DashboardTableType>
 ) =>
   computed<DataTableHeader[]>(() => {
-    const visibleColumns = dashboardTablesVisibleColumns.value[tableType.value];
+    const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
 
     const headers: DataTableHeader[] = [
       {
@@ -150,7 +152,7 @@ const tableHeaders = (
       {
         text: i18n
           .t('dashboard_asset_table.headers.price', {
-            symbol: currencySymbol.value
+            symbol: get(currencySymbol)
           })
           .toString(),
         value: 'usdPrice',
@@ -166,7 +168,7 @@ const tableHeaders = (
       {
         text: i18n
           .t('dashboard_asset_table.headers.value', {
-            symbol: currencySymbol.value
+            symbol: get(currencySymbol)
           })
           .toString(),
         value: 'usdValue',
@@ -177,7 +179,7 @@ const tableHeaders = (
 
     if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
       headers.push({
-        text: totalNetWorthUsd.value.gt(0)
+        text: get(totalNetWorthUsd).gt(0)
           ? i18n
               .t('dashboard_asset_table.headers.percentage_of_total_net_value')
               .toString()
@@ -198,7 +200,7 @@ const tableHeaders = (
           .t(
             'dashboard_asset_table.headers.percentage_of_total_current_group',
             {
-              group: title.value
+              group: get(title)
             }
           )
           .toString(),
@@ -233,11 +235,11 @@ const DashboardAssetTable = defineComponent({
 
     const exchangeRate = setupExchangeRateGetter();
     const totalInUsd = computed(() => {
-      return aggregateTotal(balances.value, 'USD', new BigNumber(1));
+      return aggregateTotal(get(balances), CURRENCY_USD, new BigNumber(1));
     });
     const total = computed(() => {
-      const mainCurrency = currencySymbol.value;
-      return totalInUsd.value.multipliedBy(
+      const mainCurrency = get(currencySymbol);
+      return get(totalInUsd).multipliedBy(
         exchangeRate(mainCurrency) ?? new BigNumber(1)
       );
     });
@@ -266,13 +268,13 @@ const DashboardAssetTable = defineComponent({
     };
 
     const percentageOfTotalNetValue = (value: BigNumber) => {
-      const netWorth = totalNetWorthUsd.value;
-      const total = netWorth.lt(0) ? totalInUsd.value : netWorth;
+      const netWorth = get(totalNetWorthUsd);
+      const total = netWorth.lt(0) ? get(totalInUsd) : netWorth;
       return calculatePercentage(value, total);
     };
 
     const percentageOfCurrentGroup = (value: BigNumber) => {
-      return calculatePercentage(value, totalInUsd.value);
+      return calculatePercentage(value, get(totalInUsd));
     };
 
     const { getAssetInfo } = useAssetInfoRetrieval();

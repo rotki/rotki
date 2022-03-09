@@ -66,6 +66,7 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import FilterEntry from '@/components/history/filtering/FilterEntry.vue';
 import {
   SearchMatcher,
@@ -154,7 +155,7 @@ export default defineComponent({
     const { selectedSuggestion } = toRefs(props);
 
     function updateSuggestion(value: string[], index: number) {
-      lastSuggestion.value = value[index];
+      set(lastSuggestion, value[index]);
       emit('suggest', {
         suggestion: value[index],
         index: index,
@@ -163,15 +164,15 @@ export default defineComponent({
     }
 
     watch(selectedSuggestion, index => {
-      updateSuggestion(suggest.value, index);
+      updateSuggestion(get(suggest), index);
     });
     watch(suggest, value => {
       if (value.length > 0) {
-        if (lastSuggestion.value !== value[0]) {
+        if (get(lastSuggestion) !== value[0]) {
           updateSuggestion(value, 0);
         }
       } else {
-        lastSuggestion.value = '';
+        set(lastSuggestion, '');
         emit('suggest', { suggestion: '', index: 0, total: 0 } as Suggestion);
       }
     });

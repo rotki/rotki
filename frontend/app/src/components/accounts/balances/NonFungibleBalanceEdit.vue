@@ -38,6 +38,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { assert } from '@/utils/assertions';
 
@@ -55,17 +56,17 @@ export default defineComponent({
     const asset = ref<string | null>(null);
     const price = ref<string | null>(null);
     const valid = computed(() => {
-      return asset.value && price.value && !isNaN(parseInt(price.value));
+      return get(asset) && get(price) && !isNaN(parseInt(get(price)!));
     });
     const close = () => emit('close');
     const save = () => {
-      assert(asset.value);
-      assert(price.value);
-      emit('save', { asset: asset.value, price: price.value });
+      assert(get(asset));
+      assert(get(price));
+      emit('save', { asset: get(asset), price: get(price) });
     };
     onMounted(() => {
-      asset.value = value.value.priceAsset;
-      price.value = value.value.priceInAsset.toString();
+      set(asset, get(value).priceAsset);
+      set(price, get(value).priceInAsset.toString());
     });
     return {
       valid,

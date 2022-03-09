@@ -10,6 +10,7 @@
 
 <script lang="ts">
 import { defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
 export default defineComponent({
@@ -23,7 +24,7 @@ export default defineComponent({
     const { visible } = toRefs(props);
 
     const toggleVisibility = () => {
-      emit('visible:update', !visible.value);
+      emit('visible:update', !get(visible));
     };
 
     return {

@@ -70,9 +70,9 @@ import {
   Ref,
   ref,
   toRefs,
-  unref,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -119,7 +119,7 @@ const useHeaders = (currencySymbol: Ref<SupportedCurrency>) => {
     {
       text: i18n
         .t('kraken_staking_events.column.value', {
-          symbol: unref(currencySymbol)
+          symbol: get(currencySymbol)
         })
         .toString(),
       value: 'usdValue',
@@ -150,8 +150,8 @@ const useMatchers = (events: Ref<KrakenStakingEvents>) => {
         key: KrakenStakingKeys.ASSET,
         keyValue: KrakenStakingValueKeys.ASSET,
         description: i18n.t('kraken_staking_events.filter.asset').toString(),
-        suggestions: () => events.value.assets,
-        validate: (asset: string) => events.value.assets.includes(asset),
+        suggestions: () => get(events).assets,
+        validate: (asset: string) => get(events).assets.includes(asset),
         transformer: (asset: string) =>
           getAssetIdentifierForSymbol(asset) ?? asset
       },
@@ -172,17 +172,17 @@ const useMatchers = (events: Ref<KrakenStakingEvents>) => {
         suggestions: () => [],
         hint: i18n
           .t('kraken_staking_events.filter.date_hint', {
-            format: getDateInputISOFormat(dateInputFormat.value)
+            format: getDateInputISOFormat(get(dateInputFormat))
           })
           .toString(),
         validate: value => {
           return (
             value.length > 0 &&
-            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
           );
         },
         transformer: (date: string) =>
-          convertToTimestamp(date, dateInputFormat.value).toString()
+          convertToTimestamp(date, get(dateInputFormat)).toString()
       },
       {
         key: KrakenStakingKeys.END,
@@ -191,17 +191,17 @@ const useMatchers = (events: Ref<KrakenStakingEvents>) => {
         suggestions: () => [],
         hint: i18n
           .t('kraken_staking_events.filter.date_hint', {
-            format: getDateInputISOFormat(dateInputFormat.value)
+            format: getDateInputISOFormat(get(dateInputFormat))
           })
           .toString(),
         validate: value => {
           return (
             value.length > 0 &&
-            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
           );
         },
         transformer: (date: string) =>
-          convertToTimestamp(date, dateInputFormat.value).toString()
+          convertToTimestamp(date, get(dateInputFormat)).toString()
       }
     ]
   );
@@ -239,13 +239,13 @@ export default defineComponent({
 
     const options = ref<KrakenStakingPaginationOptions>({
       page: 1,
-      itemsPerPage: unref(itemsPerPage),
+      itemsPerPage: get(itemsPerPage),
       sortBy: ['timestamp'],
       sortDesc: [true]
     });
 
     const showUpgradeRow = computed(() => {
-      const { entriesLimit, entriesTotal } = events.value;
+      const { entriesLimit, entriesTotal } = get(events);
       return entriesLimit <= entriesTotal && entriesLimit > 0;
     });
 
@@ -255,8 +255,7 @@ export default defineComponent({
       sortBy,
       sortDesc
     }: KrakenStakingPaginationOptions) => {
-      const { asset, eventSubtypes, fromTimestamp, toTimestamp } =
-        filters.value;
+      const { asset, eventSubtypes, fromTimestamp, toTimestamp } = get(filters);
       const pagination: KrakenStakingPagination = {
         ascending: sortDesc[0],
         orderByAttribute: sortBy[0],
@@ -271,8 +270,8 @@ export default defineComponent({
     };
 
     const updateFilter = (matchers: MatchedKeyword<KrakenStakingValueKeys>) => {
-      filters.value = matchers;
-      options.value = { ...options.value, page: 1 };
+      set(filters, matchers);
+      set(options, { ...get(options), page: 1 });
     };
 
     const refresh = () => emit('refresh');

@@ -13,6 +13,7 @@
 
 <script lang="ts">
 import { computed, defineComponent } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { setupGeneralBalances } from '@/composables/balances';
 import { setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
@@ -30,10 +31,10 @@ export default defineComponent({
 
     const loadingData = computed<boolean>(() => {
       return (
-        isTaskRunning(TaskType.QUERY_BALANCES).value ||
-        isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES).value ||
-        isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES).value ||
-        isTaskRunning(TaskType.MANUAL_BALANCES).value
+        get(isTaskRunning(TaskType.QUERY_BALANCES)) ||
+        get(isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)) ||
+        get(isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES)) ||
+        get(isTaskRunning(TaskType.MANUAL_BALANCES))
       );
     });
 

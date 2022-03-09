@@ -18,9 +18,9 @@ import {
   computed,
   defineComponent,
   onBeforeMount,
-  onUnmounted,
-  ref
+  onUnmounted
 } from '@vue/composition-api';
+import { get, useIntervalFn } from '@vueuse/core';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import OpenTrades from '@/components/history/OpenTrades.vue';
@@ -47,25 +47,26 @@ export default defineComponent({
 
     const openTrades: TradeEntry[] = [];
 
-    const refreshInterval = ref<any>(null);
+    const period = get(refreshPeriod) * 60 * 1000;
+
+    const { pause, resume, isActive } = useIntervalFn(
+      () => {
+        fetchTrades(true);
+      },
+      period,
+      { immediate: false }
+    );
 
     onBeforeMount(async () => {
       await fetchTrades();
 
-      const period = refreshPeriod.value * 60 * 1000;
-
       if (period > 0) {
-        refreshInterval.value = setInterval(
-          async () => fetchTrades(true),
-          period
-        );
+        resume();
       }
     });
 
     onUnmounted(() => {
-      if (refreshInterval.value) {
-        clearInterval(refreshInterval.value);
-      }
+      if (isActive) pause();
     });
 
     const { shouldShowLoadingScreen } = setupStatusChecking();

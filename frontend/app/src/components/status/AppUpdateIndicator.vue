@@ -10,7 +10,14 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, toRefs, watch } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  toRefs,
+  watch
+} from '@vue/composition-api';
+import { get, useIntervalFn } from '@vueuse/core';
 import { useInterop } from '@/electron-interop';
 import { useMainStore } from '@/store/store';
 import { useStore } from '@/store/utils';
@@ -18,7 +25,6 @@ import { useStore } from '@/store/utils';
 export default defineComponent({
   name: 'AppUpdateIndicator',
   setup() {
-    let refreshInterval: any = undefined;
     const mainStore = useMainStore();
     const store = useStore();
     const { version, updateNeeded } = toRefs(mainStore);
@@ -28,9 +34,9 @@ export default defineComponent({
     const versionUpdateCheckFrequency = computed(
       () => store.state.settings!.versionUpdateCheckFrequency
     );
-    const appVersion = computed(() => version.value.latestVersion);
+    const appVersion = computed(() => get(version).latestVersion);
 
-    const openLink = () => openUrl(version.value.downloadUrl);
+    const openLink = () => openUrl(get(version).downloadUrl);
     const openUpdatePopup = async () => {
       await store.dispatch('session/openUpdatePopup');
     };
@@ -43,17 +49,26 @@ export default defineComponent({
       }
     };
 
+    const period = get(versionUpdateCheckFrequency) * 60 * 60 * 1000;
+
+    const { pause, resume, isActive } = useIntervalFn(
+      () => {
+        getVersion();
+      },
+      period,
+      { immediate: false }
+    );
+
     const setVersionUpdateCheckInterval = () => {
-      clearInterval(refreshInterval);
-      const period = versionUpdateCheckFrequency.value * 60 * 60 * 1000;
+      if (isActive) pause();
       if (period > 0) {
-        refreshInterval = setInterval(async () => {
-          await getVersion();
-        }, period);
+        resume();
       }
     };
 
-    setVersionUpdateCheckInterval();
+    onMounted(() => {
+      setVersionUpdateCheckInterval();
+    });
 
     watch(versionUpdateCheckFrequency, () => setVersionUpdateCheckInterval());
 

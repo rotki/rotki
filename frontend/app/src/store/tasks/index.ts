@@ -1,5 +1,6 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { computed, ref, Ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import find from 'lodash/find';
 import toArray from 'lodash/toArray';
@@ -17,7 +18,7 @@ export interface TaskMap<T extends TaskMeta> {
 }
 
 const unlockTask = (lockedTasks: Ref<number[]>, taskId: number) => {
-  const locked = [...lockedTasks.value];
+  const locked = [...get(lockedTasks)];
   const idIndex = locked.findIndex(value => value === taskId);
   locked.splice(idIndex, 1);
   return locked;
@@ -60,28 +61,28 @@ export const useTasks = defineStore('tasks', () => {
   const add = (task: Task<TaskMeta>) => {
     const update: TaskMap<TaskMeta> = {};
     update[task.id] = task;
-    tasks.value = { ...tasks.value, ...update };
+    set(tasks, { ...get(tasks), ...update });
   };
   const lock = (taskId: number) => {
-    locked.value = [...locked.value, taskId];
+    set(locked, [...get(locked), taskId]);
   };
   const unlock = (taskId: number) => {
-    locked.value = unlockTask(locked, taskId);
+    set(locked, unlockTask(locked, taskId));
   };
   const remove = (taskId: number) => {
-    const remainingTasks = { ...tasks.value };
+    const remainingTasks = { ...get(tasks) };
     delete remainingTasks[taskId];
-    tasks.value = remainingTasks;
-    locked.value = unlockTask(locked, taskId);
+    set(tasks, remainingTasks);
+    set(locked, unlockTask(locked, taskId));
   };
 
   const isTaskRunning = (type: TaskType) =>
     computed(() => {
-      return !!find(tasks.value, item => item.type === type);
+      return !!find(get(tasks), item => item.type === type);
     });
 
   const metadata = <T extends TaskMeta>(type: TaskType) => {
-    const task = find(tasks.value, item => item.type === type);
+    const task = find(get(tasks), item => item.type === type);
     if (task) {
       return task.meta as T;
     }
@@ -89,10 +90,10 @@ export const useTasks = defineStore('tasks', () => {
   };
 
   const hasRunningTasks = computed(() => {
-    return Object.keys(tasks.value).length > 0;
+    return Object.keys(get(tasks)).length > 0;
   });
 
-  const taskList = computed(() => toArray(tasks.value));
+  const taskList = computed(() => toArray(get(tasks)));
 
   function addTask<M extends TaskMeta>(id: number, type: TaskType, meta: M) {
     assert(
@@ -134,8 +135,8 @@ export const useTasks = defineStore('tasks', () => {
   }
 
   function filterOutUnprocessable(taskIds: number[]): number[] {
-    const lockedTasks = locked.value;
-    const pendingTasks = tasks.value;
+    const lockedTasks = get(locked);
+    const pendingTasks = get(tasks);
     return taskIds.filter(
       id =>
         !lockedTasks.includes(id) &&
@@ -145,7 +146,7 @@ export const useTasks = defineStore('tasks', () => {
   }
 
   async function handleTasks(ids: number[]) {
-    return Promise.allSettled(ids.map(id => processTask(tasks.value[id])));
+    return Promise.allSettled(ids.map(id => processTask(get(tasks)[id])));
   }
 
   function handleResult(result: ActionResult<any>, task: Task<TaskMeta>) {
@@ -194,7 +195,7 @@ export const useTasks = defineStore('tasks', () => {
   }
 
   const monitor = async () => {
-    if (!hasRunningTasks.value || isRunning) {
+    if (!get(hasRunningTasks) || isRunning) {
       return;
     }
 
@@ -210,8 +211,8 @@ export const useTasks = defineStore('tasks', () => {
   };
 
   const reset = () => {
-    tasks.value = {};
-    locked.value = [];
+    set(tasks, {});
+    set(locked, []);
   };
 
   return {

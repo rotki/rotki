@@ -133,7 +133,7 @@ export default defineComponent({
 
     const onDrop = (event: DragEvent) => {
       event.preventDefault();
-      active.value = false;
+      set(active, false);
       if (!event.dataTransfer?.files?.length) {
         return;
       }
@@ -148,14 +148,14 @@ export default defineComponent({
     const onEnter = (event: DragEvent) => {
       event.preventDefault();
       inc();
-      active.value = true;
+      set(active, true);
     };
 
     const onLeave = (event: DragEvent) => {
       event.preventDefault();
       dec();
       if (get(count) === 0) {
-        active.value = false;
+        set(active, false);
       }
     };
 
@@ -172,9 +172,9 @@ export default defineComponent({
     };
 
     const onError = (message: string) => {
-      error.value = message;
+      set(error, message);
       reset();
-      active.value = false;
+      set(active, false);
       removeFile();
     };
 
@@ -183,7 +183,7 @@ export default defineComponent({
       if (inputFile) {
         inputFile.value = '';
       }
-      file.value = null;
+      set(file, null);
     };
 
     const check = (files: FileList) => {

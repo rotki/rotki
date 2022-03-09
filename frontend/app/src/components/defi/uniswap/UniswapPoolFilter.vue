@@ -65,7 +65,8 @@
 
 <script lang="ts">
 import { XswapPool } from '@rotki/common/lib/defi/xswap';
-import { defineComponent, PropType, toRefs, unref } from '@vue/composition-api';
+import { defineComponent, PropType, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { useUniswap } from '@/store/defi/uniswap';
 
@@ -96,7 +97,7 @@ export default defineComponent({
     };
 
     const remove = (asset: XswapPool) => {
-      const addresses = [...unref(value)];
+      const addresses = [...get(value)];
       const index = addresses.findIndex(address => address === asset.address);
       addresses.splice(index, 1);
       input(addresses);

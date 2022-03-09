@@ -129,9 +129,9 @@ import {
   computed,
   defineComponent,
   onMounted,
-  ref,
-  unref
+  ref
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -188,32 +188,32 @@ export default defineComponent({
     );
 
     const selectedAddresses = computed(() => {
-      let account = unref(selectedAccount);
+      let account = get(selectedAccount);
       return account ? [account.address] : [];
     });
 
     const balances = computed(() => {
-      const addresses = unref(selectedAddresses);
-      const pools = unref(selectedPools);
-      const balances = unref(uniswapBalances(addresses));
+      const addresses = get(selectedAddresses);
+      const pools = get(selectedPools);
+      const balances = get(uniswapBalances(addresses));
       return pools.length === 0
         ? balances
         : balances.filter(({ address }) => pools.includes(address));
     });
 
     const events = computed(() => {
-      const addresses = unref(selectedAddresses);
-      const pools = unref(selectedPools);
-      const events = unref(uniswapEvents(addresses));
+      const addresses = get(selectedAddresses);
+      const pools = get(selectedPools);
+      const events = get(uniswapEvents(addresses));
       return pools.length === 0
         ? events
         : events.filter(({ address }) => pools.includes(address));
     });
 
     const poolProfit = computed(() => {
-      const addresses = unref(selectedAddresses);
-      const pools = unref(selectedPools);
-      const profit = unref(uniswapPoolProfit(addresses));
+      const addresses = get(selectedAddresses);
+      const pools = get(selectedPools);
+      const profit = get(uniswapPoolProfit(addresses));
       return pools.length === 0
         ? profit
         : profit.filter(({ poolAddress }) => pools.includes(poolAddress));

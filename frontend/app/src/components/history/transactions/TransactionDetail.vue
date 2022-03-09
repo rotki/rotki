@@ -70,9 +70,9 @@ import {
   computed,
   defineComponent,
   PropType,
-  toRefs,
-  unref
+  toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { EthTransactionEntry } from '@/store/history/types';
 import { toUnit, Unit } from '@/utils/calculation';
 
@@ -92,7 +92,7 @@ export default defineComponent({
     };
 
     const gasFee = computed<BigNumber>(() => {
-      const tx = unref(transaction);
+      const tx = get(transaction);
       return toUnit(tx.gasPrice.multipliedBy(tx.gasUsed), Unit.ETH);
     });
 

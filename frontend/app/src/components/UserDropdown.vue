@@ -104,6 +104,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
@@ -151,16 +152,16 @@ export default defineComponent({
         await interop.clearPassword();
       }
 
-      confirmLogout.value = false;
+      set(confirmLogout, false);
       await logout();
 
-      if (route.value.path !== '/') {
+      if (get(route).path !== '/') {
         router.replace('/');
       }
     };
 
     const privacyModeIcon = computed<string>(() => {
-      return ['mdi-eye-off', 'mdi-eye-minus', 'mdi-eye'][privacyMode.value];
+      return ['mdi-eye', 'mdi-eye-minus', 'mdi-eye-off'][get(privacyMode)];
     });
 
     return {

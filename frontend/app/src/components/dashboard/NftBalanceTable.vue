@@ -97,6 +97,7 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { computed, defineComponent, Ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
@@ -123,8 +124,9 @@ const tableHeaders = (
   dashboardTablesVisibleColumns: Ref<DashboardTablesVisibleColumns>
 ) => {
   return computed<DataTableHeader[]>(() => {
-    const visibleColumns =
-      dashboardTablesVisibleColumns.value[DashboardTableType.NFT];
+    const visibleColumns = get(dashboardTablesVisibleColumns)[
+      DashboardTableType.NFT
+    ];
 
     const headers: DataTableHeader[] = [
       {
@@ -142,7 +144,7 @@ const tableHeaders = (
       {
         text: i18n
           .t('nft_balance_table.column.price', {
-            currency: currency.value
+            currency: get(currency)
           })
           .toString(),
         value: 'usdPrice',
@@ -211,11 +213,11 @@ export default defineComponent({
     };
 
     const percentageOfTotalNetValue = (value: BigNumber) => {
-      return calculatePercentage(value, totalNetWorthUsd.value);
+      return calculatePercentage(value, get(totalNetWorthUsd));
     };
 
     const percentageOfCurrentGroup = (value: BigNumber) => {
-      return calculatePercentage(value, total.value);
+      return calculatePercentage(value, get(total));
     };
 
     const refresh = async () => {
@@ -226,7 +228,7 @@ export default defineComponent({
     };
 
     const total = computed(() => {
-      return balances.value.reduce(
+      return get(balances).reduce(
         (sum, value) => sum.plus(value.usdPrice),
         Zero
       );
@@ -235,7 +237,7 @@ export default defineComponent({
     const { dashboardTablesVisibleColumns } = setupSettings();
 
     const mappedBalances = computed(() => {
-      return balances.value.map(balance => {
+      return get(balances).map(balance => {
         return {
           ...balance,
           imageUrl:

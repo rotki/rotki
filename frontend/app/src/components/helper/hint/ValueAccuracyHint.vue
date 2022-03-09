@@ -10,8 +10,10 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, unref } from '@vue/composition-api';
+import { computed, defineComponent } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { setupGeneralSettings } from '@/composables/session';
+import { CURRENCY_USD } from '@/data/currencies';
 
 export default defineComponent({
   name: 'ValueAccuracyHint',
@@ -19,7 +21,7 @@ export default defineComponent({
     const { currencySymbol } = setupGeneralSettings();
 
     const notUsd = computed(() => {
-      return unref(currencySymbol) !== 'USD';
+      return get(currencySymbol) !== CURRENCY_USD;
     });
 
     return { notUsd };

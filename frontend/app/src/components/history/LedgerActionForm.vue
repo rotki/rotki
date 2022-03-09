@@ -146,10 +146,9 @@ import {
   PropType,
   ref,
   toRefs,
-  unref,
   watch
 } from '@vue/composition-api';
-import { useLocalStorage } from '@vueuse/core';
+import { get, set, useLocalStorage } from '@vueuse/core';
 import dayjs from 'dayjs';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
@@ -224,59 +223,59 @@ const LedgerActionForm = defineComponent({
     ];
 
     const reset = () => {
-      id.value = null;
-      location.value = unref(lastLocation);
-      datetime.value = convertFromTimestamp(dayjs().unix(), true);
-      asset.value = '';
-      amount.value = '0';
-      actionType.value = LedgerActionType.ACTION_INCOME;
-      rate.value = '';
-      rateAsset.value = '';
-      link.value = '';
-      notes.value = '';
-      errorMessages.value = {};
+      set(id, null);
+      set(location, get(lastLocation));
+      set(datetime, convertFromTimestamp(dayjs().unix(), true));
+      set(asset, '');
+      set(amount, '0');
+      set(actionType, LedgerActionType.ACTION_INCOME);
+      set(rate, '');
+      set(rateAsset, '');
+      set(link, '');
+      set(notes, '');
+      set(errorMessages, {});
     };
 
     const setEditMode = () => {
-      if (!unref(edit)) {
+      if (!get(edit)) {
         reset();
         return;
       }
 
-      const ledgerAction: LedgerAction = unref(edit);
+      const ledgerAction: LedgerAction = get(edit);
 
-      location.value = ledgerAction.location;
-      datetime.value = convertFromTimestamp(ledgerAction.timestamp, true);
-      asset.value = ledgerAction.asset;
-      amount.value = ledgerAction.amount.toString();
-      actionType.value = ledgerAction.actionType.toString();
-      rate.value = ledgerAction.rate?.toString() ?? '';
-      rateAsset.value = ledgerAction.rateAsset ?? '';
-      link.value = ledgerAction.link ?? '';
-      notes.value = ledgerAction.notes ?? '';
-      id.value = ledgerAction.identifier;
+      set(location, ledgerAction.location);
+      set(datetime, convertFromTimestamp(ledgerAction.timestamp, true));
+      set(asset, ledgerAction.asset);
+      set(amount, ledgerAction.amount.toString());
+      set(actionType, ledgerAction.actionType.toString());
+      set(rate, ledgerAction.rate?.toString() ?? '');
+      set(rateAsset, ledgerAction.rateAsset ?? '');
+      set(link, ledgerAction.link ?? '');
+      set(notes, ledgerAction.notes ?? '');
+      set(id, ledgerAction.identifier);
     };
 
     const save = async (): Promise<boolean> => {
-      const numericAmount = bigNumberifyFromRef(amount).value;
-      const numericRate = bigNumberifyFromRef(rate).value;
+      const numericAmount = get(bigNumberifyFromRef(amount));
+      const numericRate = get(bigNumberifyFromRef(rate));
 
       const ledgerActionPayload: Writeable<NewLedgerAction> = {
-        location: unref(location),
-        timestamp: convertToTimestamp(unref(datetime)),
-        asset: unref(asset),
+        location: get(location),
+        timestamp: convertToTimestamp(get(datetime)),
+        asset: get(asset),
         amount: numericAmount.isNaN() ? Zero : numericAmount,
-        actionType: unref(actionType) as LedgerActionType,
+        actionType: get(actionType) as LedgerActionType,
         rate:
           numericRate.isNaN() || numericRate.isZero() ? undefined : numericRate,
-        rateAsset: unref(rateAsset) ? unref(rateAsset) : undefined,
-        link: unref(link) ? unref(link) : undefined,
-        notes: unref(notes) ? unref(notes) : undefined
+        rateAsset: get(rateAsset) ? get(rateAsset) : undefined,
+        link: get(link) ? get(link) : undefined,
+        notes: get(notes) ? get(notes) : undefined
       };
 
-      const result = !unref(id)
+      const result = !get(id)
         ? await saveData(ledgerActionPayload)
-        : await saveData({ ...ledgerActionPayload, identifier: unref(id)! });
+        : await saveData({ ...ledgerActionPayload, identifier: get(id)! });
 
       if (result.success) {
         reset();
@@ -284,10 +283,13 @@ const LedgerActionForm = defineComponent({
       }
 
       if (result.message) {
-        errorMessages.value = convertKeys(
-          deserializeApiErrorMessage(result.message) ?? {},
-          true,
-          false
+        set(
+          errorMessages,
+          convertKeys(
+            deserializeApiErrorMessage(result.message) ?? {},
+            true,
+            false
+          )
         );
       }
 
@@ -300,7 +302,7 @@ const LedgerActionForm = defineComponent({
 
     watch(location, (location: string) => {
       if (location) {
-        lastLocation.value = location;
+        set(lastLocation, location);
       }
     });
 

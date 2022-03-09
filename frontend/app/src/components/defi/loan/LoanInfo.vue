@@ -13,6 +13,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import AaveLending from '@/components/defi/loan/loans/AaveLending.vue';
 import CompoundLending from '@/components/defi/loan/loans/CompoundLending.vue';
 import LiquityLending from '@/components/defi/loan/loans/LiquityLending.vue';
@@ -41,7 +42,7 @@ export default defineComponent({
     const { loan } = toRefs(props);
 
     const create = (protocol: DefiProtocol) =>
-      computed(() => loan.value?.protocol === protocol);
+      computed(() => get(loan)?.protocol === protocol);
     const isVault = create(DefiProtocol.MAKERDAO_VAULTS);
     const isAave = create(DefiProtocol.AAVE);
     const isCompound = create(DefiProtocol.COMPOUND);

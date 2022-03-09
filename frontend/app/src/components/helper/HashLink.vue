@@ -72,6 +72,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get, useClipboard } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
 import {
   Chains,
@@ -112,27 +113,28 @@ export default defineComponent({
     const { dark } = setupThemeCheck();
 
     const displayText = computed<string>(() => {
-      if (!scrambleData.value) {
-        return text.value;
+      if (!get(scrambleData)) {
+        return get(text);
       }
-      const length = tx.value ? 64 : 40;
+      const length = get(tx) ? 64 : 40;
       return randomHex(length);
     });
 
     const base = computed<string>(() => {
-      if (baseUrl.value) {
-        return baseUrl.value;
+      if (get(baseUrl)) {
+        return get(baseUrl);
       }
 
-      const defaultSetting: ExplorerUrls = explorerUrls[chain.value];
+      const defaultSetting: ExplorerUrls = explorerUrls[get(chain)];
       let formattedBaseUrl: string;
-      if (chain.value === 'zksync') {
-        formattedBaseUrl = tx.value
+      if (get(chain) === 'zksync') {
+        formattedBaseUrl = get(tx)
           ? defaultSetting.transaction
           : defaultSetting.address;
       } else {
-        const explorersSetting = explorers.value[chain.value];
-        formattedBaseUrl = tx.value
+        const explorersSetting =
+          get(explorers)[get(chain) as Exclude<Chains, 'zksync'>];
+        formattedBaseUrl = get(tx)
           ? explorersSetting?.transaction ?? defaultSetting.transaction
           : explorersSetting?.address ?? defaultSetting.address;
       }
@@ -143,11 +145,12 @@ export default defineComponent({
     });
 
     const copyText = (text: string) => {
-      navigator.clipboard.writeText(text);
+      const { copy } = useClipboard({ source: text });
+      copy();
     };
 
     const url = computed<string>(() => {
-      return base.value + text.value;
+      return get(base) + get(text);
     });
 
     const href = computed<string | undefined>(() => {
@@ -155,7 +158,7 @@ export default defineComponent({
         return undefined;
       }
 
-      return url.value;
+      return get(url);
     });
 
     const target = computed<string | undefined>(() => {
@@ -167,7 +170,7 @@ export default defineComponent({
     });
 
     const openLink = () => {
-      interop.openUrl(url.value);
+      interop.openUrl(get(url));
     };
 
     return {

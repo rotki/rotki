@@ -47,6 +47,7 @@
 <script lang="ts">
 import { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 import { defineComponent, PropType, ref, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import ValidatorDisplay from '@/components/helper/display/icons/ValidatorDisplay.vue';
 import { setupThemeCheck } from '@/composables/common';
 
@@ -90,7 +91,7 @@ export default defineComponent({
     };
 
     const removeValidator = (publicKey: string) => {
-      const selection = [...value.value];
+      const selection = [...get(value)];
       const index = selection.indexOf(publicKey);
       if (index >= 0) {
         selection.splice(index, 1);

@@ -141,6 +141,7 @@
 import { AssetBalance, Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { mapState as mapPiniaState } from 'pinia';
@@ -422,8 +423,8 @@ export default class AccountBalanceTable extends Mixins(StatusMixin) {
 
   get accountOperation(): boolean {
     return (
-      this.isTaskRunning(TaskType.ADD_ACCOUNT).value ||
-      this.isTaskRunning(TaskType.REMOVE_ACCOUNT).value
+      get(this.isTaskRunning(TaskType.ADD_ACCOUNT)) ||
+      get(this.isTaskRunning(TaskType.REMOVE_ACCOUNT))
     );
   }
 

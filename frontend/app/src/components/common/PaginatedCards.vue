@@ -25,6 +25,7 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { setupThemeCheck } from '@/composables/common';
 
 type GetKey = (item: any) => string;
@@ -46,24 +47,24 @@ export default defineComponent({
     const { breakpoint } = setupThemeCheck();
     const page = ref(1);
     const itemsPerPage = computed(() => {
-      if (breakpoint.value === 'xs') {
+      if (get(breakpoint) === 'xs') {
         return 1;
-      } else if (['sm', 'lg', 'md'].includes(breakpoint.value)) {
+      } else if (['sm', 'lg', 'md'].includes(get(breakpoint))) {
         return 4;
       }
       return 6;
     });
 
     const pages = computed(() => {
-      return Math.ceil(items.value.length / itemsPerPage.value);
+      return Math.ceil(get(items).length / get(itemsPerPage));
     });
 
     const visible = computed(() => {
-      const start = (page.value - 1) * itemsPerPage.value;
-      return items.value.slice(start, start + itemsPerPage.value);
+      const start = (get(page) - 1) * get(itemsPerPage);
+      return get(items).slice(start, start + get(itemsPerPage));
     });
 
-    watch(items, () => (page.value = 1));
+    watch(items, () => set(page, 1));
 
     return {
       page,

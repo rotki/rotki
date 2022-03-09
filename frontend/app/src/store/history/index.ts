@@ -1,4 +1,5 @@
 import { computed, Ref, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { exchangeName } from '@/components/history/consts';
@@ -72,7 +73,7 @@ export const useHistory = defineStore('history', () => {
   const associatedLocations = ref<TradeLocation[]>([]);
 
   const fetchAssociatedLocations = async () => {
-    associatedLocations.value = await api.history.associatedLocations();
+    set(associatedLocations, await api.history.associatedLocations());
   };
 
   // Ignored
@@ -92,7 +93,7 @@ export const useHistory = defineStore('history', () => {
       });
     };
     try {
-      ignored.value = await api.history.fetchIgnored();
+      set(ignored, await api.history.fetchIgnored());
     } catch (e: any) {
       notify(e);
     }
@@ -161,8 +162,8 @@ export const useHistory = defineStore('history', () => {
 
   // Reset
   const reset = () => {
-    associatedLocations.value = [];
-    ignored.value = {};
+    set(associatedLocations, []);
+    set(ignored, {});
     useTrades().reset();
     useAssetMovements().reset();
     useTransactions().reset();
@@ -217,7 +218,7 @@ export const useTrades = defineStore('history/trades', () => {
 
       const payload: TradeRequestPayload = Object.assign(
         defaults,
-        parameters ?? tradesPayload.value
+        parameters ?? get(tradesPayload)
       );
 
       if (onlyCache) {
@@ -247,7 +248,7 @@ export const useTrades = defineStore('history/trades', () => {
       >(taskId, taskType, taskMeta, true);
 
       setStatus(
-        isTaskRunning(taskType).value ? Status.REFRESHING : Status.LOADED
+        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
       );
 
       const parsedResult = TradeCollectionResponse.parse(result);
@@ -259,7 +260,7 @@ export const useTrades = defineStore('history/trades', () => {
     try {
       const firstLoad = isFirstLoad();
       const onlyCache = firstLoad ? false : !refresh;
-      if ((isTaskRunning(taskType).value || loading()) && !onlyCache) {
+      if ((get(isTaskRunning(taskType)) || loading()) && !onlyCache) {
         return;
       }
 
@@ -268,7 +269,7 @@ export const useTrades = defineStore('history/trades', () => {
       }
 
       const fetchOnlyCache = async () => {
-        trades.value = await fetchTradesHandler(true);
+        set(trades, await fetchTradesHandler(true));
       };
 
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
@@ -302,7 +303,7 @@ export const useTrades = defineStore('history/trades', () => {
       }
 
       setStatus(
-        isTaskRunning(taskType).value ? Status.REFRESHING : Status.LOADED
+        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
       );
     } catch (e) {
       logger.error(e);
@@ -311,8 +312,8 @@ export const useTrades = defineStore('history/trades', () => {
   };
 
   const updateTradesPayload = (newPayload: Partial<TradeRequestPayload>) => {
-    if (!isEqual(tradesPayload.value, newPayload)) {
-      tradesPayload.value = newPayload;
+    if (!isEqual(get(tradesPayload), newPayload)) {
+      set(tradesPayload, newPayload);
       fetchTrades().then();
     }
   };
@@ -364,7 +365,7 @@ export const useTrades = defineStore('history/trades', () => {
   };
 
   const reset = () => {
-    trades.value = defaultHistoricState<TradeEntry>();
+    set(trades, defaultHistoricState<TradeEntry>());
   };
 
   return {
@@ -415,7 +416,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
 
       const payload: AssetMovementRequestPayload = Object.assign(
         defaults,
-        parameters ?? assetMovementsPayload.value
+        parameters ?? get(assetMovementsPayload)
       );
 
       if (onlyCache) {
@@ -449,7 +450,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
       >(taskId, taskType, taskMeta, true);
 
       setStatus(
-        isTaskRunning(taskType).value ? Status.REFRESHING : Status.LOADED
+        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
       );
 
       const parsedResult = AssetMovementCollectionResponse.parse(result);
@@ -461,7 +462,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
     try {
       const firstLoad = isFirstLoad();
       const onlyCache = firstLoad ? false : !refresh;
-      if ((isTaskRunning(taskType).value || loading()) && !onlyCache) {
+      if ((get(isTaskRunning(taskType)) || loading()) && !onlyCache) {
         return;
       }
 
@@ -470,7 +471,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
       }
 
       const fetchOnlyCache = async () => {
-        assetMovements.value = await fetchAssetMovementsHandler(true);
+        set(assetMovements, await fetchAssetMovementsHandler(true));
       };
 
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
@@ -508,7 +509,7 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
       }
 
       setStatus(
-        isTaskRunning(taskType).value ? Status.REFRESHING : Status.LOADED
+        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
       );
     } catch (e) {
       logger.error(e);
@@ -519,14 +520,14 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
   const updateAssetMovementsPayload = (
     newPayload: Partial<AssetMovementRequestPayload>
   ) => {
-    if (!isEqual(assetMovementsPayload.value, newPayload)) {
-      assetMovementsPayload.value = newPayload;
+    if (!isEqual(get(assetMovementsPayload), newPayload)) {
+      set(assetMovementsPayload, newPayload);
       fetchAssetMovements().then();
     }
   };
 
   const reset = () => {
-    assetMovements.value = defaultHistoricState<AssetMovementEntry>();
+    set(assetMovements, defaultHistoricState<AssetMovementEntry>());
   };
 
   return {
@@ -573,7 +574,7 @@ export const useTransactions = defineStore('history/transactions', () => {
 
       const payload: TransactionRequestPayload = Object.assign(
         defaults,
-        parameters ?? transactionsPayload.value
+        parameters ?? get(transactionsPayload)
       );
 
       if (onlyCache) {
@@ -604,7 +605,7 @@ export const useTransactions = defineStore('history/transactions', () => {
       >(taskId, taskType, taskMeta, true);
 
       setStatus(
-        isTaskRunning(taskType).value ? Status.REFRESHING : Status.LOADED
+        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
       );
 
       const parsedResult = EthTransactionCollectionResponse.parse(result);
@@ -616,12 +617,12 @@ export const useTransactions = defineStore('history/transactions', () => {
     try {
       const firstLoad = isFirstLoad();
       const onlyCache = firstLoad ? false : !refresh;
-      if ((isTaskRunning(taskType).value || loading()) && !onlyCache) {
+      if ((get(isTaskRunning(taskType)) || loading()) && !onlyCache) {
         return;
       }
 
       const fetchOnlyCache = async () => {
-        transactions.value = await fetchTransactionsHandler(true);
+        set(transactions, await fetchTransactionsHandler(true));
       };
 
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
@@ -631,7 +632,7 @@ export const useTransactions = defineStore('history/transactions', () => {
       if (!onlyCache) {
         setStatus(Status.REFRESHING);
         const { notify } = useNotifications();
-        const refreshAddressTxs = ethAddresses.value.map((address: string) =>
+        const refreshAddressTxs = get(ethAddresses).map((address: string) =>
           fetchTransactionsHandler(false).catch(error => {
             notify({
               title: i18n.t('actions.transactions.error.title').toString(),
@@ -651,7 +652,7 @@ export const useTransactions = defineStore('history/transactions', () => {
       }
 
       setStatus(
-        isTaskRunning(taskType).value ? Status.REFRESHING : Status.LOADED
+        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
       );
     } catch (e) {
       logger.error(e);
@@ -662,8 +663,8 @@ export const useTransactions = defineStore('history/transactions', () => {
   const updateTransactionsPayload = (
     newPayload: Partial<TransactionRequestPayload>
   ) => {
-    if (!isEqual(transactionsPayload.value, newPayload)) {
-      transactionsPayload.value = newPayload;
+    if (!isEqual(get(transactionsPayload), newPayload)) {
+      set(transactionsPayload, newPayload);
       fetchTransactions().then();
     }
   };
@@ -745,7 +746,7 @@ export const useTransactions = defineStore('history/transactions', () => {
   };
 
   const reset = () => {
-    transactions.value = defaultHistoricState<EthTransactionEntry>();
+    set(transactions, defaultHistoricState<EthTransactionEntry>());
   };
 
   return {
@@ -797,7 +798,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
 
       const payload: LedgerActionRequestPayload = Object.assign(
         defaults,
-        parameters ?? ledgerActionsPayload.value
+        parameters ?? get(ledgerActionsPayload)
       );
 
       if (onlyCache) {
@@ -831,7 +832,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
       >(taskId, taskType, taskMeta, true);
 
       setStatus(
-        isTaskRunning(taskType).value ? Status.REFRESHING : Status.LOADED
+        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
       );
 
       const parsedResult = LedgerActionCollectionResponse.parse(result);
@@ -843,7 +844,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
     try {
       const firstLoad = isFirstLoad();
       const onlyCache = firstLoad ? false : !refresh;
-      if ((isTaskRunning(taskType).value || loading()) && !onlyCache) {
+      if ((get(isTaskRunning(taskType)) || loading()) && !onlyCache) {
         return;
       }
 
@@ -852,7 +853,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
       }
 
       const fetchOnlyCache = async () => {
-        ledgerActions.value = await fetchLedgerActionsHandler(true);
+        set(ledgerActions, await fetchLedgerActionsHandler(true));
       };
 
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
@@ -890,7 +891,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
       }
 
       setStatus(
-        isTaskRunning(taskType).value ? Status.REFRESHING : Status.LOADED
+        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED
       );
     } catch (e) {
       logger.error(e);
@@ -901,8 +902,8 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
   const updateLedgerActionsPayload = (
     newPayload: Partial<LedgerActionRequestPayload>
   ) => {
-    if (!isEqual(ledgerActionsPayload.value, newPayload)) {
-      ledgerActionsPayload.value = newPayload;
+    if (!isEqual(get(ledgerActionsPayload), newPayload)) {
+      set(ledgerActionsPayload, newPayload);
       fetchLedgerActions().then();
     }
   };
@@ -955,7 +956,7 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
   };
 
   const reset = () => {
-    ledgerActions.value = defaultHistoricState<LedgerActionEntry>();
+    set(ledgerActions, defaultHistoricState<LedgerActionEntry>());
   };
 
   return {

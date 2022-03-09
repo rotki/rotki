@@ -114,6 +114,7 @@ import {
   Ref,
   ref
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import NonFungibleBalanceEdit from '@/components/accounts/balances/NonFungibleBalanceEdit.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
@@ -151,7 +152,7 @@ const tableHeaders = (currency: Ref<string>) => {
       },
       {
         text: i18n
-          .t('non_fungible_balance.column.price', { currency: currency.value })
+          .t('non_fungible_balance.column.price', { currency: get(currency) })
           .toString(),
         value: 'usdPrice',
         align: 'end',
@@ -176,8 +177,8 @@ const tableHeaders = (currency: Ref<string>) => {
 const setupEdit = (refresh: () => Promise<void>) => {
   const edit = ref<NonFungibleBalance | null>(null);
   const setPrice = async (price: string, toAsset: string) => {
-    const nft = edit.value;
-    edit.value = null;
+    const nft = get(edit);
+    set(edit, null);
     assert(nft);
     try {
       await api.assets.setCurrentPrice(nft.id, toAsset, price);
@@ -201,9 +202,9 @@ const setupEdit = (refresh: () => Promise<void>) => {
 const setupConfirm = (refresh: () => Promise<void>) => {
   const confirmDelete = ref<NonFungibleBalance | null>(null);
   const deletePrice = async () => {
-    const price = confirmDelete.value;
+    const price = get(confirmDelete);
     assert(price);
-    confirmDelete.value = null;
+    set(confirmDelete, null);
     try {
       await api.assets.deleteCurrentPrice(price.id);
       await refresh();
@@ -262,14 +263,14 @@ export default defineComponent({
     const refreshBalances = setupRefresh();
 
     const total = computed(() => {
-      return balances.value.reduce(
+      return get(balances).reduce(
         (sum, value) => sum.plus(value.usdPrice),
         Zero
       );
     });
 
     const mappedBalances = computed(() => {
-      return balances.value.map(balance => {
+      return get(balances).map(balance => {
         return {
           ...balance,
           imageUrl:

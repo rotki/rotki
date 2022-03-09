@@ -36,6 +36,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { setupThemeCheck } from '@/composables/common';
 
 export default defineComponent({
@@ -56,7 +57,7 @@ export default defineComponent({
     const items = computed(() => {
       const items: number[] = [];
 
-      for (let i = 1; i <= length.value; i++) {
+      for (let i = 1; i <= get(length); i++) {
         items.push(i);
       }
       return items;
@@ -79,14 +80,14 @@ export default defineComponent({
     };
 
     const nextPage = () => {
-      if (value.value < length.value) {
-        changePage(value.value + 1);
+      if (get(value) < get(length)) {
+        changePage(get(value) + 1);
       }
     };
 
     const previousPage = () => {
-      if (value.value > 1) {
-        changePage(value.value - 1);
+      if (get(value) > 1) {
+        changePage(get(value) - 1);
       }
     };
 

@@ -102,6 +102,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
@@ -127,44 +128,44 @@ export default defineComponent({
   setup(props, { emit }) {
     const { items } = toRefs(props);
     const { breakpoint, currentBreakpoint } = setupThemeCheck();
-    const xsOnly = computed(() => currentBreakpoint.value.xsOnly);
+    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
     const { shouldShowAmount } = setupDisplayData();
 
     const mobileClass = computed<string | null>(() => {
-      return xsOnly.value ? 'v-data-table__mobile-row' : null;
+      return get(xsOnly) ? 'v-data-table__mobile-row' : null;
     });
 
     const xpub = computed<XpubAccountWithBalance>(() => {
-      return items.value.filter(item => !item.address)[0];
+      return get(items).filter(item => !item.address)[0];
     });
 
     const label = computed<string>(() => {
-      return xpub.value.label;
+      return get(xpub).label;
     });
 
     const xpubTags = computed<string[]>(() => {
-      return xpub.value.tags;
+      return get(xpub).tags;
     });
 
     const displayXpub = computed<string>(() => {
       return truncateAddress(
-        xpub.value.xpub,
-        truncationPoints[breakpoint.value] ?? 4
+        get(xpub).xpub,
+        truncationPoints[get(breakpoint)] ?? 4
       );
     });
 
     const sum = computed<BigNumber>(() => {
-      return balanceSum(items.value.map(({ balance: { amount } }) => amount));
+      return balanceSum(get(items).map(({ balance: { amount } }) => amount));
     });
 
     const usdSum = computed<BigNumber>(() => {
-      return balanceUsdValueSum(items.value);
+      return balanceUsdValueSum(get(items));
     });
 
     const balance = computed<Balance>(() => {
       return {
-        amount: sum.value,
-        usdValue: usdSum.value
+        amount: get(sum),
+        usdValue: get(usdSum)
       };
     });
 

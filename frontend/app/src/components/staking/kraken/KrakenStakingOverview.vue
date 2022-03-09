@@ -74,9 +74,9 @@ import {
   computed,
   defineComponent,
   PropType,
-  toRefs,
-  unref
+  toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import { usePrices } from '@/composables/balances';
 import { ReceivedAmount } from '@/types/staking';
@@ -94,12 +94,12 @@ export default defineComponent({
     const { earned } = toRefs(props);
     const { prices } = usePrices();
     const pricesAreLoading = computed(() => {
-      const assetPrices = unref(prices);
+      const assetPrices = get(prices);
       return Object.keys(assetPrices).length === 0;
     });
     const totalUsdCurrent = computed<BigNumber>(() => {
-      const earnedAssets = unref(earned);
-      const assetPrices = unref(prices);
+      const earnedAssets = get(earned);
+      const assetPrices = get(prices);
       if (Object.keys(assetPrices).length === 0) {
         return Zero;
       }

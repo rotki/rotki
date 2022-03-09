@@ -55,6 +55,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, ref } from '@vue/composition-api';
+import { get, set, useTimeoutFn } from '@vueuse/core';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { setupGeneralSettings, setupSession } from '@/composables/session';
 import { currencies } from '@/data/currencies';
@@ -71,10 +72,9 @@ export default defineComponent({
 
     const filter = ref<string>('');
     const visible = ref<boolean>(false);
-    const pendingTimeout = ref<any>(0);
 
     const filteredCurrencies = computed<Currency[]>(() => {
-      const filterValue = filter.value.toLocaleLowerCase();
+      const filterValue = get(filter).toLocaleLowerCase();
       if (!filterValue) {
         return currencies;
       }
@@ -89,24 +89,32 @@ export default defineComponent({
     });
 
     const onSelected = async (newCurrency: Currency) => {
-      visible.value = false;
-      if (newCurrency.tickerSymbol === currency.value.tickerSymbol) {
+      set(visible, false);
+      if (newCurrency.tickerSymbol === get(currency).tickerSymbol) {
         return;
       }
 
       await updateSettings({ mainCurrency: newCurrency.tickerSymbol });
     };
 
+    const { start, stop, isPending } = useTimeoutFn(
+      () => {
+        set(filter, '');
+      },
+      400,
+      { immediate: false }
+    );
+
     const selectFirst = async () => {
-      const currencies = filteredCurrencies.value;
+      const currencies = get(filteredCurrencies);
       if (currencies.length === 0) {
         return;
       }
       await onSelected(currencies[0]);
-      if (pendingTimeout.value) {
-        clearTimeout(pendingTimeout.value);
+      if (get(isPending)) {
+        stop();
       }
-      pendingTimeout.value = setTimeout(() => (filter.value = ''), 400);
+      start();
     };
 
     return {

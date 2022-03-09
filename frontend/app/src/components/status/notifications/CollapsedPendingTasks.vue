@@ -21,6 +21,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 
 export default defineComponent({
   name: 'CollapsedPendingTasks',
@@ -38,7 +39,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const { value } = toRefs(props);
     const input = () => {
-      emit('input', !value.value);
+      emit('input', !get(value));
     };
     return {
       input

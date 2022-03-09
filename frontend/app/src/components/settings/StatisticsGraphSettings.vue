@@ -53,6 +53,7 @@ import {
   ref,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { RotkehlchenState } from '@/store/types';
 import { useStore } from '@/store/utils';
@@ -66,20 +67,20 @@ export default defineComponent({
     const multiplier = ref('0');
     const visible = ref(false);
     const numericMultiplier = computed(() => {
-      const multi = parseInt(multiplier.value);
+      const multi = parseInt(get(multiplier));
       return isNaN(multi) ? 0 : multi;
     });
     const invalid = computed(() => {
-      const numericValue = parseInt(multiplier.value);
+      const numericValue = parseInt(get(multiplier));
       return isNaN(numericValue) || numericValue < 0;
     });
     const store = useStore();
     const updateSetting = async () => {
       await store.dispatch('session/settingsUpdate', {
-        ssf0graphMultiplier: numericMultiplier.value
+        ssf0graphMultiplier: get(numericMultiplier)
       } as SettingsUpdate);
       emit('updated');
-      visible.value = false;
+      set(visible, false);
     };
 
     const multiplierSetting = computed(() => {
@@ -91,7 +92,7 @@ export default defineComponent({
     const period = computed(() => {
       const { session }: RotkehlchenState = store.state;
       const { balanceSaveFrequency } = session!!.generalSettings;
-      const multi = numericMultiplier.value;
+      const multi = get(numericMultiplier);
       if (multi <= 0) {
         return 0;
       }
@@ -99,10 +100,10 @@ export default defineComponent({
     });
 
     onMounted(() => {
-      multiplier.value = multiplierSetting.value;
+      set(multiplier, get(multiplierSetting));
     });
 
-    watch(multiplierSetting, value => (multiplier.value = value.toString()));
+    watch(multiplierSetting, value => set(multiplier, value.toString()));
 
     return {
       invalid,

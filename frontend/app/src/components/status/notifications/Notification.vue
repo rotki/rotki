@@ -54,6 +54,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { setupThemeCheck } from '@/composables/common';
 
@@ -74,7 +75,7 @@ const Notification = defineComponent({
     };
 
     const icon = computed(() => {
-      switch (notification.value.severity) {
+      switch (get(notification).severity) {
         case Severity.ERROR:
           return 'mdi-alert-circle';
         case Severity.INFO:
@@ -86,7 +87,7 @@ const Notification = defineComponent({
     });
 
     const color = computed(() => {
-      switch (notification.value.severity) {
+      switch (get(notification).severity) {
         case Severity.ERROR:
           return 'error';
         case Severity.INFO:
@@ -98,11 +99,11 @@ const Notification = defineComponent({
     });
 
     const date = computed(() => {
-      return dayjs(notification.value.date).format('LLL');
+      return dayjs(get(notification).date).format('LLL');
     });
 
     const copy = () => {
-      navigator.clipboard.writeText(notification.value.message);
+      navigator.clipboard.writeText(get(notification).message);
     };
 
     const { fontStyle } = setupThemeCheck();

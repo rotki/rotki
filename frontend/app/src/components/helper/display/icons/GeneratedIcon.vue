@@ -14,6 +14,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { invertColor } from '@/utils/Color';
 
 type Style = { [key: string]: string };
@@ -32,7 +33,7 @@ export default defineComponent({
     const { size, backgroundColor, asset, currency } = toRefs(props);
 
     const dimensions = computed<Dimension>(() => {
-      const match: RegExpMatchArray | null = size.value.match(
+      const match: RegExpMatchArray | null = get(size).match(
         /^(\d+(?:\.\d)?)(\w+|%)?$/
       );
       const value: string = match?.[1] ?? '0';
@@ -44,8 +45,8 @@ export default defineComponent({
     });
 
     const textStyle = computed<Style>(() => {
-      const { value } = dimensions.value;
-      const scale = currency.value || asset.value.length <= 2 ? 1 : 0.58;
+      const { value } = get(dimensions);
+      const scale = get(currency) || get(asset).length <= 2 ? 1 : 0.58;
 
       const lineHeight = value - 4;
       return {
@@ -55,30 +56,30 @@ export default defineComponent({
     });
 
     const textColor = computed<string>(() => {
-      return `#${invertColor(backgroundColor.value, true)}`;
+      return `#${invertColor(get(backgroundColor), true)}`;
     });
 
     const wrapperStyle = computed<Style>(() => {
       return {
-        width: size.value,
-        height: size.value,
-        background: backgroundColor.value,
-        color: textColor.value
+        width: get(size),
+        height: get(size),
+        background: get(backgroundColor),
+        color: get(textColor)
       };
     });
 
     const circle = computed<Style>(() => {
       return {
-        width: size.value,
-        height: size.value
+        width: get(size),
+        height: get(size)
       };
     });
 
     const text = computed<string>(() => {
-      if (asset.value.length > 3) {
-        return asset.value.substr(0, 3);
+      if (get(asset).length > 3) {
+        return get(asset).substr(0, 3);
       }
-      return asset.value;
+      return get(asset);
     });
 
     return {

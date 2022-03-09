@@ -249,6 +249,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, Ref, toRefs, watch } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import PremiumCredentials from '@/components/account-management/PremiumCredentials.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
@@ -319,11 +320,11 @@ export default defineComponent({
     const form: Ref<any> = ref(null);
 
     const updateConfirmationError = () => {
-      if (errorMessages.value.length > 0) {
+      if (get(errorMessages).length > 0) {
         return;
       }
 
-      errorMessages.value.push(
+      get(errorMessages).push(
         i18n
           .t(
             'create_account.select_credentials.validation.password_confirmation_mismatch'
@@ -338,33 +339,33 @@ export default defineComponent({
         if (passwordValue && passwordValue !== passwordConfirmValue) {
           updateConfirmationError();
         } else {
-          errorMessages.value.pop();
+          get(errorMessages).pop();
         }
       }
     );
 
     watch(displayed, () => {
-      username.value = '';
-      password.value = '';
-      passwordConfirm.value = '';
+      set(username, '');
+      set(password, '');
+      set(passwordConfirm, '');
 
-      form.value?.reset();
+      get(form)?.reset();
     });
 
     const confirm = () => {
       const payload: CreateAccountPayload = {
         credentials: {
-          username: username.value,
-          password: password.value
+          username: get(username),
+          password: get(password)
         }
       };
 
-      if (premiumEnabled.value) {
+      if (get(premiumEnabled)) {
         payload.premiumSetup = {
-          apiKey: apiKey.value,
-          apiSecret: apiSecret.value,
-          submitUsageAnalytics: submitUsageAnalytics.value,
-          syncDatabase: syncDatabase.value
+          apiKey: get(apiKey),
+          apiSecret: get(apiSecret),
+          submitUsageAnalytics: get(submitUsageAnalytics),
+          syncDatabase: get(syncDatabase)
         };
       }
 
@@ -376,8 +377,8 @@ export default defineComponent({
     const errorClear = () => emit('error:clear');
 
     const back = () => {
-      step.value = Math.max(step.value - 1, 1);
-      if (error.value) {
+      set(step, Math.max(get(step) - 1, 1));
+      if (get(error)) {
         errorClear();
       }
     };

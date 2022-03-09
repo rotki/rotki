@@ -26,7 +26,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
-import { debouncedWatch } from '@vueuse/core';
+import { debouncedWatch, get, set } from '@vueuse/core';
 import Cleave from 'cleave.js';
 import { useStore } from '@/store/utils';
 
@@ -48,7 +48,7 @@ export default defineComponent({
 
     const textInput = ref(null);
 
-    const currentValue = ref(value.value);
+    const currentValue = ref(get(value));
 
     const cleave = ref<Cleave | null>(null);
 
@@ -67,34 +67,37 @@ export default defineComponent({
       target: { rawValue: string; value: string };
     }) => {
       let value = target.rawValue;
-      currentValue.value = target.value;
+      set(currentValue, target.value);
       emit('input', value);
     };
 
     onMounted(() => {
-      const inputWrapper = textInput.value as any;
+      const inputWrapper = get(textInput) as any;
       const input = inputWrapper.$el.querySelector('input') as HTMLElement;
 
-      cleave.value = new Cleave(input, {
-        numeral: true,
-        delimiter: thousandSeparator.value,
-        numeralDecimalMark: decimalSeparator.value,
-        numeralDecimalScale: integer.value ? 0 : 100,
-        onValueChanged
-      });
+      set(
+        cleave,
+        new Cleave(input, {
+          numeral: true,
+          delimiter: get(thousandSeparator),
+          numeralDecimalMark: get(decimalSeparator),
+          numeralDecimalScale: get(integer) ? 0 : 100,
+          onValueChanged
+        })
+      );
     });
 
     debouncedWatch(
       value,
       value => {
-        currentValue.value = value;
-        cleave.value?.setRawValue(value);
+        set(currentValue, value);
+        get(cleave)?.setRawValue(value);
       },
       { debounce: 400 }
     );
 
     const focus = () => {
-      const inputWrapper = textInput.value as any;
+      const inputWrapper = get(textInput) as any;
       if (inputWrapper) {
         inputWrapper.focus();
       }

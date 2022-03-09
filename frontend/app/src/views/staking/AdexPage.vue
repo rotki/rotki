@@ -18,7 +18,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onBeforeMount, unref } from '@vue/composition-api';
+import { defineComponent, onBeforeMount } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
@@ -38,7 +39,7 @@ export default defineComponent({
 
     const { dispatch } = useStore();
     onBeforeMount(() => {
-      if (!unref(enabled)) {
+      if (!get(enabled)) {
         return;
       }
       dispatch('staking/fetchAdex', false);

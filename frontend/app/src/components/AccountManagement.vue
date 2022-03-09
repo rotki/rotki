@@ -117,7 +117,7 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
-import { useLocalStorage } from '@vueuse/core';
+import { get, set, useLocalStorage } from '@vueuse/core';
 import ConnectionFailure from '@/components/account-management/ConnectionFailure.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import CreateAccount from '@/components/account-management/CreateAccount.vue';
@@ -175,12 +175,12 @@ export default defineComponent({
     );
 
     const toggleAnimationEnabled = () => {
-      animationEnabled.value = !animationEnabled.value;
+      set(animationEnabled, !get(animationEnabled));
     };
 
     watch(newUser, newUser => {
       if (newUser) {
-        accountCreation.value = true;
+        set(accountCreation, true);
       }
     });
 
@@ -192,19 +192,19 @@ export default defineComponent({
     };
 
     const { currentBreakpoint } = setupThemeCheck();
-    const xsOnly = computed(() => currentBreakpoint.value.xsOnly);
+    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
     const premium = getPremium();
 
     const displayPremium = computed(
-      () => !premium.value && !message.value.title && premiumVisible.value
+      () => !get(premium) && !get(message).title && get(premiumVisible)
     );
 
     const showPremiumDialog = () => {
-      if (premium.value) {
+      if (get(premium)) {
         loginComplete();
         return;
       }
-      premiumVisible.value = true;
+      set(premiumVisible, true);
     };
 
     const { syncConflict, login, createAccount } = setupSession();
@@ -216,7 +216,7 @@ export default defineComponent({
     };
 
     const showGetPremiumButton = () => {
-      interop.premiumUserLoggedIn(premium.value);
+      interop.premiumUserLoggedIn(get(premium));
     };
 
     const { restartBackend } = setupBackendManagement();
@@ -228,20 +228,20 @@ export default defineComponent({
         await restartBackend();
       }
 
-      autolog.value = true;
+      set(autolog, true);
       await login({ username: '', password: '' });
-      if (logged.value) {
+      if (get(logged)) {
         showPremiumDialog();
         showGetPremiumButton();
       }
-      autolog.value = false;
-      if (newUser.value) {
-        accountCreation.value = true;
+      set(autolog, false);
+      if (get(newUser)) {
+        set(accountCreation, true);
       }
     });
 
     const setupBackend = async () => {
-      if (connected.value) {
+      if (get(connected)) {
         return;
       }
 
@@ -264,28 +264,30 @@ export default defineComponent({
     setupBackend().then();
 
     const createNewAccount = async (payload: CreateAccountPayload) => {
-      loading.value = true;
-      accountCreationError.value = '';
+      set(loading, true);
+      set(accountCreationError, '');
       const result = await createAccount(payload);
-      loading.value = false;
+      set(loading, false);
 
       if (result.success) {
-        accountCreation.value = false;
+        set(accountCreation, false);
 
-        if (logged.value) {
+        if (get(logged)) {
           showGetPremiumButton();
           loginComplete();
         }
       } else {
-        accountCreationError.value =
+        set(
+          accountCreationError,
           result.message ??
-          i18n.t('account_management.creation.error').toString();
+            i18n.t('account_management.creation.error').toString()
+        );
       }
     };
 
     const userLogin = async (credentials: LoginCredentials) => {
       const { username, password, syncApproval } = credentials;
-      loading.value = true;
+      set(loading, true);
       const result = await login({
         username,
         password,
@@ -293,10 +295,10 @@ export default defineComponent({
       });
 
       if (!result.success) {
-        errors.value = [result.message];
+        set(errors, [result.message]);
       }
-      loading.value = false;
-      if (logged.value) {
+      set(loading, false);
+      if (get(logged)) {
         setLastLogin(username);
         showPremiumDialog();
         showGetPremiumButton();
@@ -304,7 +306,7 @@ export default defineComponent({
     };
 
     const dismissPremiumModal = () => {
-      premiumVisible.value = false;
+      set(premiumVisible, false);
     };
 
     return {

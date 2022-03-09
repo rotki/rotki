@@ -198,7 +198,8 @@
 
 <script lang="ts">
 import { GeneralAccount } from '@rotki/common/lib/account';
-import { defineComponent, Ref, ref, unref, watch } from '@vue/composition-api';
+import { defineComponent, Ref, ref, watch } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -313,7 +314,7 @@ export default defineComponent({
 
     const checkEmptyEvents = async () => {
       await fetchTransactionEvents(
-        unref(data)
+        get(data)
           .filter(item => item.decodedEvents!.length === 0)
           .map(item => item.txHash)
       );
@@ -321,7 +322,7 @@ export default defineComponent({
 
     const redecodeAllEvents = async () => {
       await fetchTransactionEvents(
-        unref(data).map(item => item.txHash),
+        get(data).map(item => item.txHash),
         true
       );
     };
@@ -357,24 +358,26 @@ export default defineComponent({
     );
 
     const toggleIgnore = (item: EthTransactionEntry) => {
-      selected.value = [item];
+      set(selected, [item]);
       ignore(!item.ignoredInAccounting);
     };
 
     const addEvent = (item: EthTransactionEntry) => {
-      selectedTransaction.value = item;
-      dialogTitle.value = i18n
-        .t('transactions.events.dialog.add.title')
-        .toString();
-      openDialog.value = true;
+      set(selectedTransaction, item);
+      set(
+        dialogTitle,
+        i18n.t('transactions.events.dialog.add.title').toString()
+      );
+      set(openDialog, true);
     };
 
     const editEventHandler = (event: EthTransactionEventEntry) => {
-      editableItem.value = event;
-      dialogTitle.value = i18n
-        .t('transactions.events.dialog.edit.title')
-        .toString();
-      openDialog.value = true;
+      set(editableItem, event);
+      set(
+        dialogTitle,
+        i18n.t('transactions.events.dialog.edit.title').toString()
+      );
+      set(openDialog, true);
     };
 
     const promptForDelete = (
@@ -384,62 +387,68 @@ export default defineComponent({
       const canDelete = item.decodedEvents!.length > 1;
 
       if (canDelete) {
-        confirmationTitle.value = i18n
-          .t('transactions.events.confirmation.delete.title')
-          .toString();
-        confirmationMessage.value = i18n
-          .t('transactions.events.confirmation.delete.message')
-          .toString();
-        confirmationPrimaryAction.value = i18n
-          .t('transactions.events.confirmation.delete.action')
-          .toString();
-        eventToDelete.value = event;
+        set(
+          confirmationTitle,
+          i18n.t('transactions.events.confirmation.delete.title').toString()
+        );
+        set(
+          confirmationMessage,
+          i18n.t('transactions.events.confirmation.delete.message').toString()
+        );
+        set(
+          confirmationPrimaryAction,
+          i18n.t('transactions.events.confirmation.delete.action').toString()
+        );
+        set(eventToDelete, event);
       } else {
-        confirmationTitle.value = i18n
-          .t('transactions.events.confirmation.ignore.title')
-          .toString();
-        confirmationMessage.value = i18n
-          .t('transactions.events.confirmation.ignore.message')
-          .toString();
-        confirmationPrimaryAction.value = i18n
-          .t('transactions.events.confirmation.ignore.action')
-          .toString();
-        transactionToIgnore.value = item;
+        set(
+          confirmationTitle,
+          i18n.t('transactions.events.confirmation.ignore.title').toString()
+        );
+        set(
+          confirmationMessage,
+          i18n.t('transactions.events.confirmation.ignore.message').toString()
+        );
+        set(
+          confirmationPrimaryAction,
+          i18n.t('transactions.events.confirmation.ignore.action').toString()
+        );
+        set(transactionToIgnore, item);
       }
     };
 
     const deleteEventHandler = async () => {
-      if (transactionToIgnore.value) {
-        selected.value = [transactionToIgnore.value];
+      if (get(transactionToIgnore)) {
+        set(selected, [get(transactionToIgnore)]);
         ignore(true);
       }
 
-      if (eventToDelete.value?.identifier) {
+      if (get(eventToDelete)?.identifier) {
         const { success } = await deleteTransactionEvent(
-          eventToDelete.value.identifier
+          get(eventToDelete)!.identifier!
         );
 
         if (!success) {
           return;
         }
       }
-      eventToDelete.value = null;
-      transactionToIgnore.value = null;
-      confirmationTitle.value = '';
-      confirmationMessage.value = '';
-      confirmationPrimaryAction.value = '';
+      set(eventToDelete, null);
+      set(transactionToIgnore, null);
+      set(confirmationTitle, '');
+      set(confirmationMessage, '');
+      set(confirmationPrimaryAction, '');
     };
 
     const clearDialog = () => {
-      form.value?.reset();
+      get(form)?.reset();
 
-      openDialog.value = false;
-      editableItem.value = null;
+      set(openDialog, false);
+      set(editableItem, null);
     };
 
     const confirmSave = async () => {
-      if (form.value) {
-        const success = await form.value?.save();
+      if (get(form)) {
+        const success = await get(form)?.save();
         if (success) {
           clearDialog();
         }
@@ -460,16 +469,16 @@ export default defineComponent({
 
     const updatePayloadHandler = () => {
       let paginationOptions = {};
-      if (options.value) {
-        options.value = {
-          ...options.value,
-          sortBy:
-            options.value.sortBy.length > 0 ? [options.value.sortBy[0]] : [],
+      const optionsVal = get(options);
+      if (optionsVal) {
+        set(options, {
+          ...optionsVal,
+          sortBy: optionsVal.sortBy.length > 0 ? [optionsVal.sortBy[0]] : [],
           sortDesc:
-            options.value.sortDesc.length > 0 ? [options.value.sortDesc[0]] : []
-        };
+            optionsVal.sortDesc.length > 0 ? [optionsVal.sortDesc[0]] : []
+        });
 
-        const { itemsPerPage, page, sortBy, sortDesc } = options.value;
+        const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
         const offset = (page - 1) * itemsPerPage;
 
         paginationOptions = {
@@ -481,9 +490,9 @@ export default defineComponent({
       }
 
       let filterAddress = {};
-      if (account.value) {
+      if (get(account)) {
         filterAddress = {
-          address: account.value?.address
+          address: get(account)!.address
         };
       }
       const payload: Partial<TransactionRequestPayload> = {
@@ -495,15 +504,15 @@ export default defineComponent({
     };
 
     const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
-      options.value = newOptions;
+      set(options, newOptions);
       updatePayloadHandler();
     };
 
     watch(account, () => {
       let newOptions = null;
-      if (options.value) {
+      if (get(options)) {
         newOptions = {
-          ...options.value,
+          ...get(options)!,
           page: 1
         };
       }

@@ -169,6 +169,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -354,57 +355,60 @@ export default defineComponent({
     const form = ref<LedgerActionFormInstance | null>(null);
 
     const newLedgerAction = () => {
-      dialogTitle.value = i18n.t('ledger_actions.dialog.add.title').toString();
-      dialogSubtitle.value = i18n
-        .t('ledger_actions.dialog.add.subtitle')
-        .toString();
-      openDialog.value = true;
+      set(dialogTitle, i18n.t('ledger_actions.dialog.add.title').toString());
+      set(
+        dialogSubtitle,
+        i18n.t('ledger_actions.dialog.add.subtitle').toString()
+      );
+      set(openDialog, true);
     };
 
     const editLedgerActionHandler = (ledgerAction: LedgerActionEntry) => {
-      editableItem.value = ledgerAction;
-      dialogTitle.value = i18n.t('ledger_actions.dialog.edit.title').toString();
-      dialogSubtitle.value = i18n
-        .t('ledger_actions.dialog.edit.subtitle')
-        .toString();
-      openDialog.value = true;
+      set(editableItem, ledgerAction);
+      set(dialogTitle, i18n.t('ledger_actions.dialog.edit.title').toString());
+      set(
+        dialogSubtitle,
+        i18n.t('ledger_actions.dialog.edit.subtitle').toString()
+      );
+      set(openDialog, true);
     };
 
     const promptForDelete = (ledgerAction: LedgerActionEntry) => {
-      confirmationMessage.value = i18n
-        .t('ledger_actions.delete.message')
-        .toString();
-      ledgerActionToDelete.value = ledgerAction;
+      set(
+        confirmationMessage,
+        i18n.t('ledger_actions.delete.message').toString()
+      );
+      set(ledgerActionToDelete, ledgerAction);
     };
 
     const deleteLedgerActionHandler = async () => {
-      if (!ledgerActionToDelete.value) {
+      if (!get(ledgerActionToDelete)) {
         return;
       }
 
       const { success } = await deleteLedgerAction(
-        ledgerActionToDelete.value?.identifier
+        get(ledgerActionToDelete)!.identifier!
       );
 
       if (!success) {
         return;
       }
 
-      ledgerActionToDelete.value = null;
-      confirmationMessage.value = '';
+      set(ledgerActionToDelete, null);
+      set(confirmationMessage, '');
       fetch();
     };
 
     const clearDialog = () => {
-      form.value?.reset();
+      get(form)?.reset();
 
-      openDialog.value = false;
-      editableItem.value = null;
+      set(openDialog, false);
+      set(editableItem, null);
     };
 
     const confirmSave = async () => {
-      if (form.value) {
-        const success = await form.value?.save();
+      if (get(form)) {
+        const success = await get(form)?.save();
         if (success) {
           clearDialog();
         }
@@ -426,13 +430,13 @@ export default defineComponent({
     const filters: Ref<MatchedKeyword<LedgerActionFilterValueKeys>> = ref({});
 
     const availableAssets = computed<string[]>(() => {
-      return supportedAssets.value
+      return get(supportedAssets)
         .map(value => getAssetSymbol(value.identifier))
         .filter(uniqueStrings);
     });
 
     const availableLocations = computed<TradeLocation[]>(() => {
-      return associatedLocations.value;
+      return get(associatedLocations);
     });
 
     const matchers = computed<
@@ -442,8 +446,8 @@ export default defineComponent({
         key: LedgerActionFilterKeys.ASSET,
         keyValue: LedgerActionFilterValueKeys.ASSET,
         description: i18n.t('ledger_actions.filter.asset').toString(),
-        suggestions: () => availableAssets.value,
-        validate: (asset: string) => availableAssets.value.includes(asset),
+        suggestions: () => get(availableAssets),
+        validate: (asset: string) => get(availableAssets).includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
       },
       {
@@ -461,17 +465,17 @@ export default defineComponent({
         suggestions: () => [],
         hint: i18n
           .t('ledger_actions.filter.date_hint', {
-            format: getDateInputISOFormat(dateInputFormat.value)
+            format: getDateInputISOFormat(get(dateInputFormat))
           })
           .toString(),
         validate: value => {
           return (
             value.length > 0 &&
-            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
           );
         },
         transformer: (date: string) =>
-          convertToTimestamp(date, dateInputFormat.value).toString()
+          convertToTimestamp(date, get(dateInputFormat)).toString()
       },
       {
         key: LedgerActionFilterKeys.END,
@@ -480,39 +484,40 @@ export default defineComponent({
         suggestions: () => [],
         hint: i18n
           .t('ledger_actions.filter.date_hint', {
-            format: getDateInputISOFormat(dateInputFormat.value)
+            format: getDateInputISOFormat(get(dateInputFormat))
           })
           .toString(),
         validate: value => {
           return (
             value.length > 0 &&
-            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
           );
         },
         transformer: (date: string) =>
-          convertToTimestamp(date, dateInputFormat.value).toString()
+          convertToTimestamp(date, get(dateInputFormat)).toString()
       },
       {
         key: LedgerActionFilterKeys.LOCATION,
         keyValue: LedgerActionFilterValueKeys.LOCATION,
         description: i18n.t('ledger_actions.filter.location').toString(),
-        suggestions: () => availableLocations.value,
-        validate: location => availableLocations.value.includes(location as any)
+        suggestions: () => get(availableLocations),
+        validate: location => get(availableLocations).includes(location as any)
       }
     ]);
 
     const updatePayloadHandler = () => {
       let paginationOptions = {};
-      if (options.value) {
-        options.value = {
-          ...options.value,
-          sortBy:
-            options.value.sortBy.length > 0 ? [options.value.sortBy[0]] : [],
-          sortDesc:
-            options.value.sortDesc.length > 0 ? [options.value.sortDesc[0]] : []
-        };
 
-        const { itemsPerPage, page, sortBy, sortDesc } = options.value;
+      const optionsVal = get(options);
+      if (optionsVal) {
+        set(options, {
+          ...optionsVal,
+          sortBy: optionsVal.sortBy.length > 0 ? [optionsVal.sortBy[0]] : [],
+          sortDesc:
+            optionsVal.sortDesc.length > 0 ? [optionsVal.sortDesc[0]] : []
+        });
+
+        const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
         const offset = (page - 1) * itemsPerPage;
 
         paginationOptions = {
@@ -523,12 +528,12 @@ export default defineComponent({
         };
       }
 
-      if (locationOverview.value) {
-        filters.value.location = locationOverview.value as TradeLocation;
+      if (get(locationOverview)) {
+        filters.value.location = get(locationOverview) as TradeLocation;
       }
 
       const payload: Partial<LedgerActionRequestPayload> = {
-        ...filters.value,
+        ...get(filters),
         ...paginationOptions
       };
 
@@ -536,19 +541,19 @@ export default defineComponent({
     };
 
     const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
-      options.value = newOptions;
+      set(options, newOptions);
       updatePayloadHandler();
     };
 
     const updateFilterHandler = (
       newFilters: MatchedKeyword<LedgerActionFilterKeys>
     ) => {
-      filters.value = newFilters;
+      set(filters, newFilters);
 
       let newOptions = null;
-      if (options.value) {
+      if (get(options)) {
         newOptions = {
-          ...options.value,
+          ...get(options)!,
           page: 1
         };
       }
@@ -564,7 +569,7 @@ export default defineComponent({
     return {
       pageRoute,
       selected,
-      tableHeaders: tableHeaders(locationOverview.value),
+      tableHeaders: tableHeaders(get(locationOverview)),
       data,
       limit,
       found,

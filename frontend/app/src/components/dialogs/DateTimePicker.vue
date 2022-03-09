@@ -70,9 +70,9 @@ import {
   Ref,
   ref,
   toRefs,
-  unref,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { setupSettings } from '@/composables/settings';
 import { timezones } from '@/data/timezones';
@@ -112,14 +112,14 @@ const useRules = (
   allowEmpty: Ref<boolean>
 ) => {
   const dateFormatRule = (date: string) => {
-    const format = unref(dateInputFormat);
+    const format = get(dateInputFormat);
     const dateFormat = getDateInputISOFormat(format);
 
-    if (unref(allowEmpty) && !date) {
+    if (get(allowEmpty) && !date) {
       return true;
     }
 
-    if (unref(seconds)) {
+    if (get(seconds)) {
       return (
         isValid(date, format, true) ||
         i18n
@@ -139,7 +139,7 @@ const useRules = (
     );
   };
 
-  const allRules = computed(() => unref(rules).concat(dateFormatRule));
+  const allRules = computed(() => get(rules).concat(dateFormatRule));
   const timezoneRule = computed(() => [
     (v: string) =>
       !!v || i18n.t('date_time_picker.timezone_field.non_empty').toString()
@@ -180,7 +180,7 @@ export default defineComponent({
     const { seconds, rules, limitNow, value, allowEmpty } = toRefs(props);
     const timeFormat = computed(() => {
       let format = 'HH:mm';
-      if (unref(seconds)) {
+      if (get(seconds)) {
         format += ':ss';
       }
       return format;
@@ -188,20 +188,20 @@ export default defineComponent({
     const showMenu = ref(false);
     const inputtedDate = ref('');
     const selectedTimezone = ref('');
-    const timeModel = ref(dayjs().format(timeFormat.value));
+    const timeModel = ref(dayjs().format(get(timeFormat)));
     const dateModel = ref('');
     const inputField = ref();
 
     const maxDate = computed(() => {
-      if (unref(limitNow)) {
+      if (get(limitNow)) {
         return dayjs().format(defaultDateFormat);
       }
       return '';
     });
 
     const maxTime = computed(() => {
-      if (unref(limitNow) && dayjs(unref(dateModel)).isToday()) {
-        return dayjs().format(unref(timeFormat));
+      if (get(limitNow) && dayjs(get(dateModel)).isToday()) {
+        return dayjs().format(get(timeFormat));
       }
       return '';
     });
@@ -211,35 +211,38 @@ export default defineComponent({
         value,
         DateFormat.DateMonthYearHourMinuteSecond,
         dayjs.tz.guess(),
-        unref(selectedTimezone)
+        get(selectedTimezone)
       );
-      inputtedDate.value = changeDateFormat(
-        changedDateTimezone,
-        DateFormat.DateMonthYearHourMinuteSecond,
-        unref(dateInputFormat)
+      set(
+        inputtedDate,
+        changeDateFormat(
+          changedDateTimezone,
+          DateFormat.DateMonthYearHourMinuteSecond,
+          get(dateInputFormat)
+        )
       );
 
       if (!value) {
-        dateModel.value = '';
-        timeModel.value = '';
+        set(dateModel, '');
+        set(timeModel, '');
       } else if (
-        isValid(value, DateFormat.DateMonthYearHourMinuteSecond, unref(seconds))
+        isValid(value, DateFormat.DateMonthYearHourMinuteSecond, get(seconds))
       ) {
         const [date, time] = changedDateTimezone.split(' ');
         const [day, month, year] = date.split('/');
         const formattedDate = `${year}-${month}-${day}`;
-        if (formattedDate !== unref(dateModel)) {
-          dateModel.value = formattedDate;
+        if (formattedDate !== get(dateModel)) {
+          set(dateModel, formattedDate);
         }
-        if (time !== unref(timeModel)) {
-          timeModel.value = time;
+        if (time !== get(timeModel)) {
+          set(timeModel, time);
         }
       }
     }
 
     watch(value, onValueChange);
-    watch(selectedTimezone, () => onValueChange(unref(value)));
-    onMounted(() => onValueChange(unref(value)));
+    watch(selectedTimezone, () => onValueChange(get(value)));
+    onMounted(() => onValueChange(get(value)));
 
     const getDefaultTimezoneName = (offset: number) => {
       let hour = offset / 60;
@@ -257,9 +260,10 @@ export default defineComponent({
         timezone => timezone === guessedTimezone
       );
 
-      selectedTimezone.value = doesTimezoneExist
-        ? guessedTimezone
-        : getDefaultTimezoneName(offset);
+      set(
+        selectedTimezone,
+        doesTimezoneExist ? guessedTimezone : getDefaultTimezoneName(offset)
+      );
     };
 
     const formatDate = (date: string) => {
@@ -275,9 +279,9 @@ export default defineComponent({
 
     const emitIfValid = (
       value: string,
-      format: DateFormat = unref(dateInputFormat)
+      format: DateFormat = get(dateInputFormat)
     ) => {
-      if (isValid(value, format, unref(seconds))) {
+      if (isValid(value, format, get(seconds))) {
         const formattedDate = changeDateFormat(
           value,
           format,
@@ -287,7 +291,7 @@ export default defineComponent({
           convertDateByTimezone(
             formattedDate,
             DateFormat.DateMonthYearHourMinuteSecond,
-            unref(selectedTimezone),
+            get(selectedTimezone),
             dayjs.tz.guess()
           )
         );
@@ -295,8 +299,8 @@ export default defineComponent({
     };
 
     const updateActualDate = () => {
-      let value = formatDate(unref(dateModel));
-      const time = unref(timeModel);
+      let value = formatDate(get(dateModel));
+      const time = get(timeModel);
       if (time) {
         value += ` ${time}`;
       }
@@ -305,24 +309,24 @@ export default defineComponent({
     };
 
     const onTimeChange = (time: string) => {
-      timeModel.value = time;
+      set(timeModel, time);
       updateActualDate();
     };
 
     const onDateChange = (date: string) => {
-      dateModel.value = date;
+      set(dateModel, date);
       updateActualDate();
     };
 
     const setNow = () => {
       const now = dayjs();
-      timeModel.value = now.format(unref(timeFormat));
-      dateModel.value = now.format(defaultDateFormat);
+      set(timeModel, now.format(get(timeFormat)));
+      set(dateModel, now.format(defaultDateFormat));
       updateActualDate();
     };
 
     const reset = () => {
-      const field = unref(inputField);
+      const field = get(inputField);
       field?.reset();
     };
 

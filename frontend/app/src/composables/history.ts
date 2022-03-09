@@ -1,4 +1,5 @@
 import { computed, Ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
 import { EntryMeta } from '@/services/history/types';
@@ -11,11 +12,11 @@ import { uniqueStrings } from '@/utils/data';
 
 export const getCollectionData = <T>(collection: Ref<Collection<T>>) => {
   const data = computed<T[]>(() => {
-    return collection.value.data as T[];
+    return get(collection).data as T[];
   });
-  const limit = computed<number>(() => collection.value.limit);
-  const found = computed<number>(() => collection.value.found);
-  const total = computed<number>(() => collection.value.total);
+  const limit = computed<number>(() => get(collection).limit);
+  const found = computed<number>(() => get(collection).found);
+  const total = computed<number>(() => get(collection).total);
 
   return {
     data,
@@ -33,18 +34,18 @@ export const setupEntryLimit = (
   const premium = getPremium();
 
   const itemLength = computed(() => {
-    const isPremium = premium.value;
-    const totalFound = found.value;
+    const isPremium = get(premium);
+    const totalFound = get(found);
     if (isPremium) {
       return totalFound;
     }
 
-    const entryLimit = limit.value;
+    const entryLimit = get(limit);
     return Math.min(totalFound, entryLimit);
   });
 
   const showUpgradeRow = computed(() => {
-    return limit.value <= total.value && limit.value > 0;
+    return get(limit) <= get(total) && get(limit) > 0;
   });
 
   return {
@@ -77,13 +78,15 @@ export const setupIgnore = <T extends EntryMeta>(
   };
 
   const ignore = async (ignored: boolean) => {
-    const ids = items.value
+    const ids = get(items)
       .filter(item => {
         const { ignoredInAccounting } = item;
         const identifier = getIdentifier(item);
         return (
           (ignored ? !ignoredInAccounting : ignoredInAccounting) &&
-          selected.value.map(item => getIdentifier(item)).includes(identifier)
+          get(selected)
+            .map(item => getIdentifier(item))
+            .includes(identifier)
         );
       })
       .map(item => getIdentifier(item))
@@ -112,7 +115,7 @@ export const setupIgnore = <T extends EntryMeta>(
 
     if (status.success) {
       refresh();
-      selected.value = [];
+      set(selected, []);
     }
   };
 

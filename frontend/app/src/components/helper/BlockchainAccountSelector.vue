@@ -86,10 +86,10 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { uniqueId } from 'lodash';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-
 import { setupBlockchainAccounts } from '@/composables/balances';
 import { setupThemeCheck } from '@/composables/common';
 import i18n from '@/i18n';
@@ -129,8 +129,8 @@ export default defineComponent({
     const search = ref('');
     const { accounts } = setupBlockchainAccounts();
     const selectableAccounts = computed(() => {
-      const filteredChains = chains.value;
-      const blockchainAccounts = accounts.value;
+      const filteredChains = get(chains);
+      const blockchainAccounts = get(accounts);
       if (filteredChains.length === 0) {
         return blockchainAccounts;
       }
@@ -141,7 +141,7 @@ export default defineComponent({
 
     const hintText = computed(() => {
       const all = i18n.t('blockchain_account_selector.all').toString();
-      const selection = value.value;
+      const selection = get(value);
       if (Array.isArray(selection)) {
         return selection.length > 0 ? selection.length.toString() : all;
       }
@@ -149,12 +149,12 @@ export default defineComponent({
     });
 
     const displayedAccounts = computed(() => {
-      const addresses = usableAddresses.value;
-      const accounts = selectableAccounts.value;
+      const addresses = get(usableAddresses);
+      const accounts = get(selectableAccounts);
       if (addresses.length > 0) {
         return accounts.filter(({ address }) => addresses.includes(address));
       }
-      return hideOnEmptyUsable.value ? [] : accounts;
+      return get(hideOnEmptyUsable) ? [] : accounts;
     });
 
     const filter = (item: GeneralAccount, queryText: string) => {

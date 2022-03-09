@@ -19,6 +19,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { setupDisplayData } from '@/composables/session';
 import i18n from '@/i18n';
 
@@ -42,8 +43,8 @@ export default defineComponent({
     };
 
     const identifier = computed<string>(() => {
-      const { identifier } = item.value;
-      if (scrambleData.value) {
+      const { identifier } = get(item);
+      if (get(scrambleData)) {
         if (parseInt(identifier)) {
           return i18n.t('defi_selector_item.vault').toString();
         } else if (identifier.includes('-')) {

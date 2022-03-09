@@ -3,6 +3,7 @@ import { TimeUnit } from '@rotki/common/lib/settings';
 import { TimeFramePeriod, timeframes } from '@rotki/common/lib/settings/graphs';
 import { NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
+import { CURRENCY_USD } from '@/data/currencies';
 import { aggregateTotal } from '@/filters';
 import { NonFungibleBalance } from '@/store/balances/types';
 import { OverallPerformance, StatisticsState } from '@/store/statistics/types';
@@ -40,7 +41,7 @@ export const getters: Getters<
             ? bigNumberify(value)
             : value;
         const convertedValue =
-          currency === 'USD'
+          currency === CURRENCY_USD
             ? bigNumber
             : bigNumber.multipliedBy(exchangeRate(currency));
         return convertedValue.toNumber();

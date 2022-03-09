@@ -6,6 +6,7 @@
 
 <script lang="ts">
 import { defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { useRouter } from '@/composables/common';
 import { Routes } from '@/router/routes';
 
@@ -21,7 +22,7 @@ export default defineComponent({
     const router = useRouter();
     const navigateToDetails = () => {
       router.push({
-        path: Routes.ASSETS.replace(':identifier', asset.value)
+        path: Routes.ASSETS.replace(':identifier', get(asset))
       });
     };
 

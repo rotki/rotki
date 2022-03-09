@@ -225,11 +225,11 @@ export default defineComponent({
       }
     };
 
-    const $router = useRouter();
+    const router = useRouter();
 
     const closeDialog = async () => {
       set(showForm, false);
-      $router.push(Routes.ASSET_MANAGER);
+      router.push(Routes.ASSET_MANAGER);
     };
 
     onMounted(async () => {

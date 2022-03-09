@@ -63,6 +63,7 @@ import {
   ref,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
@@ -101,7 +102,7 @@ const Eth2Page = defineComponent({
     const { load, updatePagination } = store;
 
     onMounted(async () => {
-      if (enabled.value) {
+      if (get(enabled)) {
         await refresh();
       }
     });
@@ -115,7 +116,7 @@ const Eth2Page = defineComponent({
     );
 
     const { eth2Validators } = setupBlockchainAccounts();
-    watch(filterType, () => (selection.value = []));
+    watch(filterType, () => set(selection, []));
 
     const refresh = async () => await load(true);
 

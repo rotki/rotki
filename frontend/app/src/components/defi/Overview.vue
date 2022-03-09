@@ -107,6 +107,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import DefiAsset from '@/components/defi/DefiAsset.vue';
 import InfoRow from '@/components/defi/display/InfoRow.vue';
 import StatCard from '@/components/display/StatCard.vue';
@@ -125,7 +126,7 @@ export default defineComponent({
     const details = ref(false);
     const { summary } = toRefs(props);
     const icon = computed(() => {
-      const { protocol } = summary.value;
+      const { protocol } = get(summary);
       if (!protocol.icon) {
         return '';
       }
@@ -133,7 +134,7 @@ export default defineComponent({
     });
 
     const assets = computed(() => {
-      const { assets } = summary.value;
+      const { assets } = get(summary);
       return assets.sort(
         (
           { balance: { usdValue } },

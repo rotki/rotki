@@ -1,9 +1,5 @@
-import {
-  computed,
-  getCurrentInstance,
-  toRefs,
-  unref
-} from '@vue/composition-api';
+import { computed, getCurrentInstance, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { Section, Status } from '@/store/const';
 import { useMainStore } from '@/store/store';
 import { getStatus } from '@/store/utils';
@@ -34,7 +30,7 @@ export const setupThemeCheck = () => {
   const width = computed(() => $vuetify.breakpoint.width);
   const fontStyle = computed(() => {
     return {
-      color: dark.value ? 'rgba(255,255,255,0.87)' : 'rgba(0,0,0,0.87)'
+      color: get(dark) ? 'rgba(255,255,255,0.87)' : 'rgba(0,0,0,0.87)'
     };
   });
   return {
@@ -53,7 +49,7 @@ export const setupStatusChecking = () => {
   const isSectionRefreshing = (section: Section) => {
     const sectionStatus = getStatus(section);
     return computed(() => {
-      const status = unref(sectionStatus);
+      const status = get(sectionStatus);
       return (
         status === Status.LOADING ||
         status === Status.REFRESHING ||
@@ -65,7 +61,7 @@ export const setupStatusChecking = () => {
   const shouldShowLoadingScreen = (section: Section) => {
     const sectionStatus = getStatus(section);
     return computed(() => {
-      const status = unref(sectionStatus);
+      const status = get(sectionStatus);
       return (
         status !== Status.LOADED &&
         status !== Status.PARTIALLY_LOADED &&

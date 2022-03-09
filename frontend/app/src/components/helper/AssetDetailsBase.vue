@@ -26,6 +26,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import ListItem from '@/components/helper/ListItem.vue';
 import { useRouter } from '@/composables/common';
@@ -47,20 +48,20 @@ const AssetDetailsBase = defineComponent({
   setup(props) {
     const { asset, opensDetails } = toRefs(props);
     const identifier = computed(() => {
-      const supportedAsset = asset.value;
+      const supportedAsset = get(asset);
       if ('ethereumAddress' in supportedAsset) {
         return `_ceth_${supportedAsset.ethereumAddress}`;
       }
       return supportedAsset.identifier;
     });
-    const symbol = computed(() => asset.value.symbol);
-    const name = computed(() => asset.value.name);
+    const symbol = computed(() => get(asset).symbol);
+    const name = computed(() => get(asset).name);
     const router = useRouter();
     const navigate = () => {
-      if (!opensDetails.value) {
+      if (!get(opensDetails)) {
         return;
       }
-      const id = identifier.value ?? symbol.value;
+      const id = get(identifier) ?? get(symbol);
       router.push({
         path: Routes.ASSETS.replace(':identifier', id)
       });

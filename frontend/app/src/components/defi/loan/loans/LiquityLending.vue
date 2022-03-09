@@ -56,6 +56,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import LiquityCollateral from '@/components/defi/loan/loans/liquity/LiquityCollateral.vue';
@@ -85,14 +86,12 @@ export default defineComponent({
   },
   setup(props) {
     const { loan } = toRefs(props);
-    const debt = computed<AssetBalance>(() => loan.value.balance.debt);
+    const debt = computed<AssetBalance>(() => get(loan).balance.debt);
     const collateral = computed<AssetBalance>(
-      () => loan.value.balance.collateral
+      () => get(loan).balance.collateral
     );
-    const ratio = computed(() => loan.value.balance.collateralizationRatio);
-    const liquidationPrice = computed(
-      () => loan.value.balance.liquidationPrice
-    );
+    const ratio = computed(() => get(loan).balance.collateralizationRatio);
+    const liquidationPrice = computed(() => get(loan).balance.liquidationPrice);
     const premium = getPremium();
     const loadingEvents = isSectionLoading(Section.DEFI_LIQUITY_EVENTS);
     return {

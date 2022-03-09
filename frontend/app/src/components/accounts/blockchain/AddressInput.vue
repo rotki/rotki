@@ -56,9 +56,9 @@ import {
   PropType,
   ref,
   toRefs,
-  unref,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import i18n from '@/i18n';
 import { trimOnPaste } from '@/utils/event';
 
@@ -100,7 +100,7 @@ export default defineComponent({
     const userAddresses = ref('');
     const multiple = ref(false);
     const entries = computed(() => {
-      const allAddresses = userAddresses.value
+      const allAddresses = get(userAddresses)
         .split(',')
         .map(value => value.trim())
         .filter(entry => entry.length > 0);
@@ -117,7 +117,7 @@ export default defineComponent({
     });
 
     watch(multiple, () => {
-      userAddresses.value = '';
+      set(userAddresses, '');
     });
 
     const onPasteMulti = (event: ClipboardEvent) => {
@@ -130,12 +130,12 @@ export default defineComponent({
     const onPasteAddress = (event: ClipboardEvent) => {
       const paste = trimOnPaste(event);
       if (paste) {
-        address.value = paste;
+        set(address, paste);
       }
     };
 
     const errors = computed(() => {
-      const messages = unref(errorMessages);
+      const messages = get(errorMessages);
       return messages['address'];
     });
 
@@ -150,12 +150,12 @@ export default defineComponent({
 
     const setAddress = (addresses: string[]) => {
       if (addresses.length === 1) {
-        address.value = addresses[0];
+        set(address, addresses[0]);
       }
     };
 
     watch(addresses, addresses => setAddress(addresses));
-    onMounted(() => setAddress(unref(addresses)));
+    onMounted(() => setAddress(get(addresses)));
 
     return {
       address,
