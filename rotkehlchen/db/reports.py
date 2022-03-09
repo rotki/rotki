@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import DeserializationError, InputError
+from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -57,25 +58,29 @@ class DBAccountingReports():
         query = """
         INSERT INTO pnl_reports(
             timestamp, start_ts, end_ts, first_processed_timestamp,
-            profit_currency, taxfree_after_period, include_crypto2crypto,
-            calculate_past_cost_basis, include_gas_costs, account_for_assets_movements,
             last_processed_timestamp, processed_actions, total_actions
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        VALUES (?, ?, ?, ?, ?, ?, ?)"""
         cursor.execute(
             query,
             (timestamp, start_ts, end_ts, first_processed_timestamp,
-             profit_currency.identifier, settings.taxfree_after_period,
-             int(settings.include_crypto2crypto),
-             int(settings.calculate_past_cost_basis),
-             int(settings.include_gas_costs),
-             int(settings.account_for_assets_movements),
              0, 0, 0,  # will be set later
              ),
         )
-        identifier = cursor.lastrowid
+        report_id = cursor.lastrowid
+        cursor.executemany(
+            'INSERT OR IGNORE INTO pnl_report_settings(report_id, name, type, value) '
+            'VALUES(?, ?, ?, ?)',
+            [
+                (report_id, 'profit_currency', 'string', profit_currency.identifier),
+                (report_id, 'taxfree_after_period', 'integer', settings.taxfree_after_period),
+                (report_id, 'include_crypto2crypto', 'bool', settings.include_crypto2crypto),
+                (report_id, 'calculate_past_cost_basis', 'bool', settings.calculate_past_cost_basis),  # noqa: E501
+                (report_id, 'include_gas_costs', 'bool', settings.include_gas_costs),
+                (report_id, 'account_for_assets_movements', 'bool', settings.account_for_assets_movements),  # noqa: E501
+            ])
         self.db.conn_transient.commit()
-        return identifier
+        return report_id
 
     def add_report_overview(
             self,
@@ -83,18 +88,7 @@ class DBAccountingReports():
             last_processed_timestamp: Timestamp,
             processed_actions: int,
             total_actions: int,
-            ledger_actions_profit_loss: str,
-            defi_profit_loss: str,
-            loan_profit: str,
-            margin_positions_profit_loss: str,
-            settlement_losses: str,
-            ethereum_transaction_gas_costs: str,
-            staking_profit: str,
-            asset_movement_fees: str,
-            general_trade_profit_loss: str,
-            taxable_trade_profit_loss: str,
-            total_taxable_profit_loss: str,
-            total_profit_loss: str,
+            pnls: Dict[str, FVal],
     ) -> None:
         """Inserts the report overview data
 
@@ -103,24 +97,19 @@ class DBAccountingReports():
         """
         cursor = self.db.conn_transient.cursor()
         cursor.execute(
-            'UPDATE pnl_reports SET ledger_actions_profit_loss=?, defi_profit_loss=?, '
-            'loan_profit=?, margin_positions_profit_loss=?, settlement_losses=?, '
-            'ethereum_transaction_gas_costs=?, asset_movement_fees=?, staking_profit=?,'
-            ' general_trade_profit_loss=?, taxable_trade_profit_loss=?,'
-            ' total_taxable_profit_loss=?, total_profit_loss=?, last_processed_timestamp=?,'
+            'UPDATE pnl_reports SET last_processed_timestamp=?,'
             ' processed_actions=?, total_actions=? WHERE identifier=?',
-            (ledger_actions_profit_loss, defi_profit_loss, loan_profit,
-             margin_positions_profit_loss, settlement_losses,
-             ethereum_transaction_gas_costs, asset_movement_fees,
-             staking_profit, general_trade_profit_loss, taxable_trade_profit_loss,
-             total_taxable_profit_loss, total_profit_loss,
-             last_processed_timestamp, processed_actions, total_actions, report_id),
+            (last_processed_timestamp, processed_actions, total_actions, report_id),
         )
         if cursor.rowcount != 1:
             raise InputError(
                 f'Could not insert overview for {report_id}. '
                 f'Report id could not be found in the DB',
             )
+        cursor.executemany(
+            'INSERT OR IGNORE INTO pnl_report_totals(report_id, name, value) VALUES(?, ?, ?)',
+            [(report_id, name, str(value)) for name, value in pnls.items()],
+        )
         self.db.conn_transient.commit()
 
     def _get_report_size(self, report_id: int) -> int:
@@ -165,6 +154,24 @@ class DBAccountingReports():
         for report in results:
             this_report_id = report[0]
             size_result = self._get_report_size(this_report_id)
+            other_cursor = self.db.conn_transient.cursor()
+            other_cursor.execute(
+                'SELECT name, value FROM pnl_report_totals WHERE report_id=?',
+                (this_report_id,),
+            )
+            overview = {x[0]: x[1] for x in other_cursor}
+            other_cursor.execute(
+                'SELECT name, type, value FROM pnl_report_settings WHERE report_id=?',
+                (this_report_id,),
+            )
+            settings = {}
+            for x in other_cursor:
+                if x[1] == 'integer':
+                    settings[x[0]] = int(x[2])
+                elif x[1] == 'bool':
+                    settings[x[0]] = x[2] == 'True'
+                else:
+                    settings[x[0]] = x[2]
             reports.append({
                 'identifier': this_report_id,
                 'timestamp': report[1],
@@ -172,27 +179,11 @@ class DBAccountingReports():
                 'end_ts': report[3],
                 'first_processed_timestamp': report[4],
                 'size_on_disk': size_result,
-                'ledger_actions_profit_loss': report[5],
-                'defi_profit_loss': report[6],
-                'loan_profit': report[7],
-                'margin_positions_profit_loss': report[8],
-                'settlement_losses': report[9],
-                'ethereum_transaction_gas_costs': report[10],
-                'asset_movement_fees': report[11],
-                'staking_profit': report[12],
-                'general_trade_profit_loss': report[13],
-                'taxable_trade_profit_loss': report[14],
-                'total_taxable_profit_loss': report[15],
-                'total_profit_loss': report[16],
-                'last_processed_timestamp': report[17],
-                'processed_actions': report[18],
-                'total_actions': report[19],
-                'profit_currency': report[20],
-                'taxfree_after_period': report[21],
-                'include_crypto2crypto': bool(report[22]),
-                'calculate_past_cost_basis': bool(report[23]),
-                'include_gas_costs': bool(report[24]),
-                'account_for_assets_movements': bool(report[25]),
+                'last_processed_timestamp': report[5],
+                'processed_actions': report[6],
+                'total_actions': report[7],
+                'overview': overview,
+                'settings': settings,
             })
 
         if report_id is not None:

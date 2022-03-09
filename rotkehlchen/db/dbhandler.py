@@ -67,6 +67,7 @@ from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
     DEFAULT_PREMIUM_SHOULD_SYNC,
     ROTKEHLCHEN_DB_VERSION,
+    ROTKEHLCHEN_TRANSIENT_DB_VERSION,
     DBSettings,
     ModifiableDBSettings,
     db_settings_from_dict,
@@ -302,7 +303,24 @@ class DBHandler:
         self._connect(password, conn_attribute='conn_transient')
         # creating tables if necessary
         if hasattr(self, 'conn_transient') and self.conn_transient:
+            transient_version = 0
+            cursor = self.conn_transient.cursor()
+            try:
+                result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
+                if result is not None:
+                    transient_version = int(result[0])
+            except sqlcipher.DatabaseError:
+                pass   # not created yet
+
+            if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
+                # "upgrade" transient DB
+                tables = list(cursor.execute('select name from sqlite_master where type is "table"'))  # noqa: E501
+                cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))  # noqa: E501
             self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
+            cursor.execute(
+                'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
+                ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
+            )
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
