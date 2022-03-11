@@ -13,6 +13,8 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
+from rotkehlchen.chain.ethereum.decoding.pickle.constants import PICKLE_CONTRACTS
+from rotkehlchen.chain.ethereum.decoding.pickle.decoder import enrich_pickle_transfers
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
@@ -86,7 +88,6 @@ class EVMTransactionDecoder():
         self.event_rules = [  # rules to try for all tx receipt logs decoding
             self._maybe_decode_erc20_approve,
             self._maybe_decode_erc20_721_transfer,
-            self._maybe_enrich_transfers,
             self._maybe_decode_governance,
         ]
         self.initialize_all_decoders()
@@ -218,6 +219,7 @@ class EVMTransactionDecoder():
             event = self.try_all_rules(token=token, tx_log=tx_log, transaction=transaction, decoded_events=events, action_items=action_items)  # noqa: E501
             if event:
                 events.append(event)
+                self._maybe_enrich_transfers(token=token, tx_log=tx_log, transaction=transaction, decoded_events=events, action_items=action_items)  # noqa: E501
 
         self.dbevents.add_history_events(events)
         cursor.execute(
@@ -489,11 +491,11 @@ class EVMTransactionDecoder():
 
     def _maybe_enrich_transfers(  # pylint: disable=no-self-use
             self,
-            token: Optional[EthereumToken],  # pylint: disable=unused-argument
+            token: Optional[EthereumToken],
             tx_log: EthereumTxReceiptLog,
-            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            transaction: EthereumTransaction,
             decoded_events: List[HistoryBaseEntry],
-            action_items: List[ActionItem],  # pylint: disable=unused-argument
+            action_items: List[ActionItem],
     ) -> Optional[HistoryBaseEntry]:
         if tx_log.topics[0] == GTC_CLAIM and tx_log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
             for event in decoded_events:
@@ -519,6 +521,21 @@ class EVMTransactionDecoder():
                     event.notes = (
                         f'Bridge {event.balance.amount} {event.asset.symbol} from XDAI'
                     )
+
+        if (
+            tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+            (
+                hex_or_bytes_to_address(tx_log.topics[2]) in PICKLE_CONTRACTS or
+                hex_or_bytes_to_address(tx_log.topics[1]) in PICKLE_CONTRACTS or
+                tx_log.address in PICKLE_CONTRACTS
+            )
+        ):
+            enrich_pickle_transfers(
+                token=token, tx_log=tx_log,
+                transaction=transaction,
+                decoded_events=decoded_events,
+                action_items=action_items,
+            )
 
         return None
 
