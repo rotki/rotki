@@ -1,4 +1,4 @@
-mypy==0.931
+mypy==0.940
 mypy-extensions==0.4.3
 pylint==2.12.2
 astroid==2.9.0  # engine of pylint, upgrade them together
@@ -16,7 +16,7 @@ isort==5.10.1
 # type packages used by mypy
 # pinned here so that we can have reproducible mypy runs
 types-chardet==4.0.3
-types-cryptography==3.3.15
+types-cryptography==3.3.18
 types-enum34==1.1.8
 types-ipaddress==1.0.8
 types-pkg-resources==0.1.3
