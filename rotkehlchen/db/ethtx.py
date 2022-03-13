@@ -1,4 +1,5 @@
 import logging
+from sqlite3 import Cursor
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
@@ -219,12 +220,12 @@ class DBEthTx():
             self,
             tx_filter_query: Optional[ETHTransactionsFilterQuery],
             limit: Optional[int],
-    ) -> List[Tuple]:
+    ) -> Cursor:
         cursor = self.db.conn.cursor()
         querystr = 'SELECT tx_hash FROM ethereum_transactions '
         bindings = ()
         if tx_filter_query is not None:
-            filter_query, bindings = tx_filter_query.prepare()  # type: ignore
+            filter_query, bindings = tx_filter_query.prepare(with_order=False, with_pagination=False)  # type: ignore  # noqa: E501
             querystr += filter_query + ' AND '
         else:
             querystr += ' WHERE '

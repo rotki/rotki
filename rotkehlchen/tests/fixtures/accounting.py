@@ -101,6 +101,7 @@ def fixture_accountant(
         function_scope_messages_aggregator,
         start_with_logged_in_user,
         accounting_initialize_parameters,
+        evm_transaction_decoder,
         start_with_valid_premium,
         rotki_premium_credentials,
 ) -> Optional[Accountant]:
@@ -114,6 +115,7 @@ def fixture_accountant(
     accountant = Accountant(
         db=database,
         user_directory=data_dir,
+        evm_tx_decoder=evm_transaction_decoder,
         msg_aggregator=function_scope_messages_aggregator,
         create_csv=accounting_create_csv,
         premium=premium,

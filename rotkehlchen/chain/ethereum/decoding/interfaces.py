@@ -4,6 +4,7 @@ from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.ethereum.decoding.structures import TxEventSettings
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -31,5 +32,17 @@ class DecoderInterface():
         """
         Subclasses implement this to add new generic decoding rules to be attemped
         by the decoding process
+        """
+        return []
+
+    def event_settings(self) -> Dict[str, 'TxEventSettings']:  # pylint: disable=no-self-use
+        """
+        Subclasses implement this to specify rules/settings for their created events
+        """
+        return {}
+
+    def counterparties(self) -> List[str]:  # pylint: disable=no-self-use
+        """
+        Subclasses implement this to specify which counterparty values are introduced by the module
         """
         return []

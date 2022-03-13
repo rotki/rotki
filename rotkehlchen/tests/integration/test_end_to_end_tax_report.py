@@ -385,7 +385,6 @@ def test_end_to_end_tax_report(accountant):
         history_list=trades_history,
         loans_list=loans_list,
         asset_movements_list=asset_movements_list,
-        eth_transaction_list=eth_tx_list,
         margin_list=margin_history,
     )
     # Make sure that the "currently_processing_timestamp" is the ts of the last
@@ -438,7 +437,6 @@ def test_end_to_end_tax_report_in_period(accountant):
         history_list=trades_history,
         loans_list=loans_list,
         asset_movements_list=asset_movements_list,
-        eth_transaction_list=eth_tx_list,
         margin_list=margin_history,
     )
     # Make sure that the "currently_processing_timestamp" is the ts of the last
@@ -631,7 +629,6 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
         history_list=bad_trades,
         loans_list=[],
         asset_movements_list=[],
-        eth_transaction_list=[],
         margin_list=[],
     )
     errors = accountant.msg_aggregator.consume_errors()

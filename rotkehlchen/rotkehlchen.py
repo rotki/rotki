@@ -239,14 +239,6 @@ class Rotkehlchen():
         )
         PriceHistorian().set_oracles_order(settings.historical_price_oracles)
 
-        self.accountant = Accountant(
-            db=self.data.db,
-            user_directory=self.user_directory,
-            msg_aggregator=self.msg_aggregator,
-            create_csv=True,
-            premium=self.premium,
-        )
-
         exchange_credentials = self.data.db.get_exchange_credentials()
         self.exchange_manager.initialize_exchanges(
             exchange_credentials=exchange_credentials,
@@ -310,6 +302,14 @@ class Rotkehlchen():
             database=self.data.db,
             ethereum_manager=ethereum_manager,
             msg_aggregator=self.msg_aggregator,
+        )
+        self.accountant = Accountant(
+            db=self.data.db,
+            user_directory=self.user_directory,
+            msg_aggregator=self.msg_aggregator,
+            evm_tx_decoder=self.evm_tx_decoder,
+            create_csv=True,
+            premium=self.premium,
         )
         self.events_historian = EventsHistorian(
             user_directory=self.user_directory,
@@ -569,10 +569,10 @@ class Rotkehlchen():
             # start_ts is min of the query start or the first action timestamp since action
             # processing can start well before query start to calculate cost basis
             start_ts = min(
-                self.accountant.events.query_start_ts,
+                self.accountant.events.base.query_start_ts,
                 self.accountant.first_processed_timestamp,
             )
-            diff = self.accountant.events.query_end_ts - start_ts
+            diff = self.accountant.events.base.query_end_ts - start_ts
             progress = 50 + 100 * (
                 FVal(self.accountant.currently_processing_timestamp - start_ts) /
                 FVal(diff) / 2)
@@ -589,7 +589,6 @@ class Rotkehlchen():
             history,
             loan_history,
             asset_movements,
-            eth_transactions,
             defi_events,
             ledger_actions,
             history_base_entries,
@@ -604,7 +603,6 @@ class Rotkehlchen():
             trade_history=history,
             loan_history=loan_history,
             asset_movements=asset_movements,
-            eth_transactions=eth_transactions,
             defi_events=defi_events,
             ledger_actions=ledger_actions,
             history_events=history_base_entries,

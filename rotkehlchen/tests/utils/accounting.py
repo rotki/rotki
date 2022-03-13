@@ -21,7 +21,6 @@ def accounting_history_process(
         margin_list: List[MarginPosition] = None,
         loans_list: List[Dict] = None,
         asset_movements_list: List[AssetMovement] = None,
-        eth_transaction_list: List[Dict] = None,
         defi_events_list: List[DefiEvent] = None,
         ledger_actions_list: List[LedgerAction] = None,
         history_events_list: List[HistoryBaseEntry] = None,
@@ -53,10 +52,6 @@ def accounting_history_process(
             end_ts=end_ts,
         )
 
-    eth_transactions = []
-    if eth_transaction_list:
-        eth_transactions = eth_transaction_list
-
     defi_events = []
     if defi_events_list:
         defi_events = defi_events_list
@@ -75,7 +70,6 @@ def accounting_history_process(
         trade_history=trade_history,
         loan_history=loan_history,
         asset_movements=asset_movements,
-        eth_transactions=eth_transactions,
         defi_events=defi_events,
         ledger_actions=ledger_actions,
         history_events=history_events,

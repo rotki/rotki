@@ -11,6 +11,7 @@ from rotkehlchen.accounting.structures import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.accounting.totals import OVR_TRADE_PNL
 from rotkehlchen.accounting.types import ACCOUNTING_EVENT_SCHEMA
 from rotkehlchen.chain.ethereum.structures import AaveInterestEvent
 from rotkehlchen.constants import ZERO
@@ -83,8 +84,9 @@ history1 = [
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_simple_accounting(accountant):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
-    assert accountant.general_trade_pl.is_close('558.25365490257463')
-    assert accountant.taxable_trade_pl.is_close('558.25365490257463')
+    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
+    assert trades_pnl.taxable.is_close('558.25365490257463')
+    assert trades_pnl.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -130,8 +132,9 @@ def test_selling_crypto_bought_with_crypto(accountant):
     assert sells[0].fee_rate == Fee(ZERO)  # the fee should not be double counted
     assert sells[0].gain.is_close(FVal('148.74375'))
 
-    assert accountant.general_trade_pl.is_close('74.1943864386100625')
-    assert accountant.taxable_trade_pl.is_close('74.1943864386100625')
+    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
+    assert trades_pnl.taxable.is_close('74.1943864386100625')
+    assert trades_pnl.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -183,8 +186,9 @@ def test_buying_selling_eth_before_daofork(accountant):
     # make sure that the intermediate ETH sell before the fork reduced our ETC
     assert accountant.events.cost_basis.get_calculated_asset_amount('ETC') == FVal(850)
     assert accountant.events.cost_basis.get_calculated_asset_amount('ETH') == FVal(1390)
-    assert accountant.general_trade_pl.is_close('1304.651527')
-    assert accountant.taxable_trade_pl.is_close('381.899035')
+    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
+    assert trades_pnl.taxable.is_close('381.899035')
+    assert trades_pnl.free.is_close('922.752492')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -242,9 +246,9 @@ def test_buying_selling_btc_before_bchfork(accountant):
     assert buys[0].fee_rate.is_close(FVal('0.0846153846154'))
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
-
-    assert accountant.general_trade_pl.is_close('13876.6464615')
-    assert accountant.taxable_trade_pl.is_close('13876.6464615')
+    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
+    assert trades_pnl.taxable.is_close('13876.6464615')
+    assert trades_pnl.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -346,8 +350,9 @@ def test_buying_selling_bch_before_bsvfork(accountant):
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
     assert accountant.events.cost_basis.get_calculated_asset_amount(A_BSV) == amount_bsv
 
-    assert accountant.general_trade_pl.is_close('13411.164769')
-    assert accountant.taxable_trade_pl.is_close('13876.646461')
+    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
+    assert trades_pnl.taxable.is_close('13411.164769')
+    assert trades_pnl.free.is_close('465.481692')
 
 
 history5 = history1 + [{
@@ -373,8 +378,9 @@ def test_nocrypto2crypto(accountant):
     msg = 'The crypto to crypto trades should not appear in the list at all'
     assert len(accountant.csvexporter.all_events) == 6, msg
 
-    assert accountant.general_trade_pl.is_close('264693.43364282')
-    assert accountant.taxable_trade_pl.is_close('0')
+    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
+    assert trades_pnl.free.is_close('264693.43364282')
+    assert trades_pnl.taxable == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -383,8 +389,9 @@ def test_nocrypto2crypto(accountant):
 }])
 def test_no_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
-    assert accountant.general_trade_pl.is_close('265251.6872977225746')
-    assert accountant.taxable_trade_pl.is_close('265251.6872977225746')
+    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
+    assert trades_pnl.taxable.is_close('265251.6872977225746')
+    assert trades_pnl.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -393,8 +400,9 @@ def test_no_taxfree_period(accountant):
 }])
 def test_big_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
-    assert accountant.general_trade_pl.is_close('265251.6872977225746375')
-    assert accountant.taxable_trade_pl.is_close('0')
+    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
+    assert trades_pnl.free.is_close('265251.6872977225746')
+    assert trades_pnl.taxable == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -485,7 +493,6 @@ def test_not_include_gas_costs(accountant):
         start_ts=1436979735,
         end_ts=1519693374,
         history_list=history,
-        eth_transaction_list=eth_tx_list,
     )
     assert FVal(report['total_taxable_profit_loss']).is_close('1940.9561588')
 

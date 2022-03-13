@@ -18,7 +18,8 @@ DB_CREATE_REPORT_TOTALS = """
 CREATE TABLE IF NOT EXISTS pnl_report_totals (
     report_id INTEGER NOT NULL,
     name TEXT NOT NULL,
-    value TEXT NOT NULL,
+    taxable_value TEXT NOT NULL,
+    free_value TEXT NOT NULL,
     FOREIGN KEY (report_id) REFERENCES pnl_reports(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
     PRIMARY KEY(report_id, name)
 );

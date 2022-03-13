@@ -14,7 +14,7 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.decoding.pickle.decoder import maybe_enrich_pickle_transfers
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -150,6 +150,13 @@ class EVMTransactionDecoder():
         for _, decoder in self.decoders.items():
             if isinstance(decoder, CustomizableDateMixin):
                 decoder.reload_settings()
+
+    def get_accounting_settings(self) -> Dict[str, TxEventSettings]:
+        """Iterate through loaded decoders and get the accounting settings for each event type"""
+        result = {}
+        for _, decoder in self.decoders.items():
+            result.update(decoder.event_settings())
+        return result
 
     def try_all_rules(
             self,

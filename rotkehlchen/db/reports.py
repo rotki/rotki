@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Uni
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
+from rotkehlchen.accounting.totals import PnlTotals
 from rotkehlchen.accounting.types import NamedJson
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import DeserializationError, InputError
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -88,7 +88,7 @@ class DBAccountingReports():
             last_processed_timestamp: Timestamp,
             processed_actions: int,
             total_actions: int,
-            pnls: Dict[str, FVal],
+            pnls: PnlTotals,
     ) -> None:
         """Inserts the report overview data
 
@@ -106,9 +106,13 @@ class DBAccountingReports():
                 f'Could not insert overview for {report_id}. '
                 f'Report id could not be found in the DB',
             )
+
+        tuples = []
+        for name, entry in pnls.items():
+            tuples.append((report_id, name, entry.taxable, entry.free))
         cursor.executemany(
-            'INSERT OR IGNORE INTO pnl_report_totals(report_id, name, value) VALUES(?, ?, ?)',
-            [(report_id, name, str(value)) for name, value in pnls.items()],
+            'INSERT OR IGNORE INTO pnl_report_totals(report_id, name, taxable_value, free_value) VALUES(?, ?, ?, ?)',  # noqa: E501
+            tuples,
         )
         self.db.conn_transient.commit()
 
@@ -156,10 +160,10 @@ class DBAccountingReports():
             size_result = self._get_report_size(this_report_id)
             other_cursor = self.db.conn_transient.cursor()
             other_cursor.execute(
-                'SELECT name, value FROM pnl_report_totals WHERE report_id=?',
+                'SELECT name, taxable_value, free_value FROM pnl_report_totals WHERE report_id=?',
                 (this_report_id,),
             )
-            overview = {x[0]: x[1] for x in other_cursor}
+            overview = {x[0]: {'taxable': x[1], 'free': x[2]} for x in other_cursor}
             other_cursor.execute(
                 'SELECT name, type, value FROM pnl_report_settings WHERE report_id=?',
                 (this_report_id,),

@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, DefaultDict, Dict, List, NamedTuple, Optional
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_ETH, A_WETH
+from rotkehlchen.constants import BCH_BSV_FORK_TS, BTC_BCH_FORK_TS, ETH_DAO_FORK_TS
+from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETC, A_ETH, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.fval import FVal
@@ -198,10 +199,13 @@ class CostBasisCalculator():
             f'Let rotki know how you acquired it via a ledger action',
         )
 
-    def reduce_asset_amount(self, asset: Asset, amount: FVal) -> bool:
-        """Searches all acquisition events for asset and reduces them by amount
+    def reduce_asset_amount(self, asset: Asset, amount: FVal, timestamp: Timestamp) -> bool:
+        """Searches all acquisition events for asset and reduces them by amount.
+
         Returns True if enough acquisition events to reduce the asset by amount were
         found and False otherwise.
+
+        In the case of insufficient acquisition amounts a critical error is logged.
         """
         # No need to do anything if amount is to be reduced by zero
         if amount == ZERO:
@@ -231,6 +235,10 @@ class CostBasisCalculator():
         if remaining_amount_from_last_buy != FVal('-1'):
             asset_events.acquisitions[0].remaining_amount = remaining_amount_from_last_buy
         elif remaining_amount != ZERO:
+            log.critical(
+                f'No documented buy found for {asset} before '
+                f'{self.csv_exporter.timestamp_to_date(timestamp)}',
+            )
             return False
 
         return True
@@ -435,3 +443,21 @@ class CostBasisCalculator():
         for acquisition_event in asset_events.acquisitions:
             amount += acquisition_event.remaining_amount
         return amount
+
+    def handle_prefork_asset_sells(
+            self, sold_asset: Asset,
+            sold_amount: FVal,
+            timestamp: Timestamp,
+    ) -> None:
+        # For now for those don't use inform_user_missing_acquisition since if those hit
+        # the preforked asset acquisition data is what's missing so user would getLogger
+        # two messages. So as an example one for missing ETH data and one for ETC data
+        if sold_asset == A_ETH and timestamp < ETH_DAO_FORK_TS:
+            self.reduce_asset_amount(asset=A_ETC, amount=sold_amount, timestamp=timestamp)
+
+        if sold_asset == A_BTC and timestamp < BTC_BCH_FORK_TS:
+            self.reduce_asset_amount(asset=A_BCH, amount=sold_amount, timestamp=timestamp)
+            self.reduce_asset_amount(asset=A_BSV, amount=sold_amount, timestamp=timestamp)
+
+        if sold_asset == A_BCH and timestamp < BCH_BSV_FORK_TS:
+            self.reduce_asset_amount(asset=A_BSV, amount=sold_amount, timestamp=timestamp)

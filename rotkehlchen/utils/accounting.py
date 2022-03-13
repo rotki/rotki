@@ -4,14 +4,12 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import DefiEvent, HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.trades import AMMTrade
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
-from rotkehlchen.types import EthereumTransaction, Timestamp
+from rotkehlchen.types import Timestamp
 
 TaxableAction = Union[  # TODO: At this point we perhaps should create an interface/superclass
     Trade,
     AssetMovement,
-    EthereumTransaction,
     MarginPosition,
     Loan,
     DefiEvent,
@@ -31,7 +29,6 @@ def action_get_timestamp(action: TaxableAction) -> Timestamp:
             action, (
                 Trade,
                 AssetMovement,
-                EthereumTransaction,
                 DefiEvent,
                 AMMTrade,
                 LedgerAction,
@@ -51,8 +48,6 @@ def action_get_type(action: TaxableAction) -> str:
         return 'trade'
     if isinstance(action, AssetMovement):
         return 'asset_movement'
-    if isinstance(action, EthereumTransaction):
-        return 'ethereum_transaction'
     if isinstance(action, MarginPosition):
         return 'margin_position'
     if isinstance(action, Loan):
@@ -81,8 +76,6 @@ def action_get_identifier(action: TaxableAction) -> str:
         ),
     ):
         return str(action.identifier)
-    if isinstance(action, EthereumTransaction):
-        return action.tx_hash.hex()
     if isinstance(action, Loan):
         return 'loan_' + str(action.close_time)
     if isinstance(action, DefiEvent):
@@ -114,8 +107,6 @@ def action_get_assets(action: TaxableAction) -> List[Asset]:
                 assets.add(entry.asset)
 
         return list(assets)
-    if isinstance(action, EthereumTransaction):
-        return [A_ETH]
     if isinstance(action, MarginPosition):
         return [action.pl_currency]
     if isinstance(action, Loan):

@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Tuple, Union, cast
 
 import gevent
 
@@ -9,7 +9,7 @@ from rotkehlchen.accounting.events import TaxableEvents
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import ActionType, DefiEvent, HistoryBaseEntry
 from rotkehlchen.chain.ethereum.trades import AMMTrade
-from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.csv_exporter import CSVExporter
 from rotkehlchen.db.reports import DBAccountingReports
@@ -44,6 +44,7 @@ from rotkehlchen.utils.accounting import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -58,6 +59,7 @@ class Accountant():
             db: 'DBHandler',
             user_directory: Path,
             msg_aggregator: MessagesAggregator,
+            evm_tx_decoder: 'EVMTransactionDecoder',
             create_csv: bool,
             premium: Optional[Premium],
     ) -> None:
@@ -69,10 +71,14 @@ class Accountant():
             user_directory=user_directory,
             create_csv=create_csv,
         )
-        self.events = TaxableEvents(self.csvexporter, profit_currency, msg_aggregator)
+        self.events = TaxableEvents(
+            csv_exporter=self.csvexporter,
+            evm_tx_decoder=evm_tx_decoder,
+            profit_currency=profit_currency,
+            msg_aggregator=msg_aggregator,
+        )
 
         self.asset_movement_fees = FVal(0)
-        self.last_gas_price = 0
         self.currently_processing_timestamp = -1
         self.first_processed_timestamp = -1
         self.premium = premium
@@ -87,31 +93,23 @@ class Accountant():
     def deactivate_premium_status(self) -> None:
         self.premium = None
 
-    @property
-    def general_trade_pl(self) -> FVal:
-        return self.events.general_trade_profit_loss
-
-    @property
-    def taxable_trade_pl(self) -> FVal:
-        return self.events.taxable_trade_profit_loss
-
     def _customize(self, settings: DBSettings) -> None:
         """Customize parameters after pulling DBSettings"""
         if settings.include_crypto2crypto is not None:
-            self.events.include_crypto2crypto = settings.include_crypto2crypto
+            self.events.base.include_crypto2crypto = settings.include_crypto2crypto
 
         if settings.taxfree_after_period is None:
-            self.events.taxfree_after_period = None
+            self.events.base.taxfree_after_period = None
         else:
             given_taxfree_after_period: Optional[int] = settings.taxfree_after_period
             if given_taxfree_after_period == -1:
                 # That means user requested to disable taxfree_after_period
                 given_taxfree_after_period = None
 
-            self.events.taxfree_after_period = given_taxfree_after_period
+            self.events.base.taxfree_after_period = given_taxfree_after_period
 
         self.profit_currency = settings.main_currency
-        self.events.profit_currency = settings.main_currency
+        self.events.base.profit_currency = settings.main_currency
         self.events.taxable_ledger_actions = settings.taxable_ledger_actions
         self.csvexporter.profit_currency = settings.main_currency
 
@@ -158,7 +156,7 @@ class Accountant():
             # internal to kraken and KFEE has no value and will error at cryptocompare price query
             return
 
-        fee_rate = self.events.get_rate_in_profit_currency(movement.fee_asset, timestamp)
+        fee_rate = self.events.base.get_rate_in_profit_currency(movement.fee_asset, timestamp)
         cost = movement.fee * fee_rate
         self.asset_movement_fees += cost
         log.debug(
@@ -180,54 +178,6 @@ class Accountant():
             link=movement.link,
         )
 
-    def account_for_gas_costs(
-            self,
-            transaction: EthereumTransaction,
-            include_gas_costs: bool,
-    ) -> None:
-        """
-        Accounts for the gas costs of the given ethereum transaction
-
-        May raise:
-        - PriceQueryUnsupportedAsset if from/to assets are missing from all price oracles
-        - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
-        timestamp from cryptocompare
-        - RemoteError if there is a problem reaching the price oracle server
-        or with reading the response returned by the server
-        """
-        if not include_gas_costs:
-            return
-        if transaction.timestamp < self.start_ts:
-            return
-
-        if transaction.gas_price == -1:
-            gas_price = self.last_gas_price
-        else:
-            gas_price = transaction.gas_price
-            self.last_gas_price = transaction.gas_price
-
-        rate = self.events.get_rate_in_profit_currency(A_ETH, transaction.timestamp)
-        eth_burned_as_gas = FVal(transaction.gas_used * gas_price) / FVal(10 ** 18)
-        cost = eth_burned_as_gas * rate
-        self.eth_transactions_gas_costs += cost
-
-        log.debug(
-            'Accounting for ethereum transaction gas cost',
-            gas_used=transaction.gas_used,
-            gas_price=gas_price,
-            timestamp=transaction.timestamp,
-        )
-        self.events.cost_basis.reduce_asset_amount(
-            asset=A_ETH,
-            amount=eth_burned_as_gas,
-        )
-        self.csvexporter.add_tx_gas_cost(
-            transaction_hash=transaction.tx_hash,
-            eth_burned_as_gas=eth_burned_as_gas,
-            rate=rate,
-            timestamp=transaction.timestamp,
-        )
-
     def trade_add_to_sell_events(self, trade: Trade, loan_settlement: bool) -> None:
         """
         Adds the given trade to the sell events
@@ -241,7 +191,7 @@ class Accountant():
         """
         selling_asset = trade.base_asset
         receiving_asset = trade.quote_asset
-        receiving_asset_rate = self.events.get_rate_in_profit_currency(
+        receiving_asset_rate = self.events.base.get_rate_in_profit_currency(
             receiving_asset,
             trade.timestamp,
         )
@@ -250,7 +200,7 @@ class Accountant():
         gain_in_profit_currency = selling_rate * trade.amount
 
         if not loan_settlement:
-            self.events.add_sell_and_corresponding_buy(
+            self.events.base.add_sell_and_corresponding_buy(
                 location=trade.location,
                 selling_asset=selling_asset,
                 selling_amount=trade.amount,
@@ -267,7 +217,7 @@ class Accountant():
                 notes=trade.notes,
             )
         else:
-            self.events.add_sell(
+            self.events.base.add_sell(
                 location=trade.location,
                 selling_asset=selling_asset,
                 selling_amount=trade.amount,
@@ -292,7 +242,6 @@ class Accountant():
             trade_history: List[Union[Trade, MarginPosition, AMMTrade]],
             loan_history: List[Loan],
             asset_movements: List[AssetMovement],
-            eth_transactions: List[EthereumTransaction],
             defi_events: List[DefiEvent],
             ledger_actions: List[LedgerAction],
             history_events: List[HistoryBaseEntry],
@@ -317,9 +266,7 @@ class Accountant():
         events_limit = -1 if active_premium else FREE_PNL_EVENTS_LIMIT
         profit_currency = self.db.get_main_currency()
         self.events.reset(profit_currency=profit_currency, start_ts=start_ts, end_ts=end_ts)
-        self.last_gas_price = 2000000000
         self.start_ts = start_ts
-        self.eth_transactions_gas_costs = FVal(0)
         self.asset_movement_fees = FVal(0)
         self.csvexporter.reset()
 
@@ -335,9 +282,6 @@ class Accountant():
 
         if len(asset_movements) != 0:
             actions.extend(asset_movements)
-
-        if len(eth_transactions) != 0:
-            actions.extend(eth_transactions)
 
         if len(defi_events) != 0:
             actions.extend(defi_events)
@@ -367,13 +311,14 @@ class Accountant():
         actions_length = len(actions)
         last_event_ts = Timestamp(0)
         ignored_actionids_mapping = self.db.get_ignored_action_ids(action_type=None)
-        for action in actions:
+        actions_iter = iter(actions)
+        while True:
             try:
                 (
-                    should_continue,
+                    processed_actions_num,
                     prev_time,
                 ) = self._process_action(
-                    action=action,
+                    actions_iterator=actions_iter,
                     start_ts=start_ts,
                     end_ts=end_ts,
                     prev_time=prev_time,
@@ -381,6 +326,7 @@ class Accountant():
                     ignored_actionids_mapping=ignored_actionids_mapping,
                 )
             except PriceQueryUnsupportedAsset as e:
+                action = actions[count]
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action with id "{action_get_identifier(action)}" at '
@@ -389,12 +335,13 @@ class Accountant():
                     f'cryptocompare being involved. Check logs for details',
                 )
                 log.error(
-                    f'Skipping action {str(action)} during history processing due to '
+                    f'Skipping action during history processing due to '
                     f'cryptocompare not supporting an involved asset: {str(e)}',
                 )
                 count += 1
                 continue
             except NoPriceForGivenTimestamp as e:
+                action = actions[count]
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action with id "{action_get_identifier(action)}" at '
@@ -409,6 +356,7 @@ class Accountant():
                 count += 1
                 continue
             except RemoteError as e:
+                action = actions[count]
                 ts = action_get_timestamp(action)
                 self.msg_aggregator.add_error(
                     f'Skipping action with id "{action_get_identifier(action)}" at '
@@ -423,17 +371,17 @@ class Accountant():
                 count += 1
                 continue
 
-            if not should_continue:
+            if processed_actions_num == 0:
                 actions_length = count
                 break  # we reached the period end
 
-            last_event_ts = action_get_timestamp(action)
+            last_event_ts = prev_time
             if count % 500 == 0:
                 # This loop can take a very long time depending on the amount of actions
                 # to process. We need to yield to other greenlets or else calls to the
                 # API may time out
                 gevent.sleep(0.5)
-            count += 1
+            count += processed_actions_num
             if not active_premium and count >= FREE_PNL_EVENTS_LIMIT:
                 log.debug(
                     f'PnL reports event processing has hit the event limit of {events_limit}. '
@@ -442,52 +390,14 @@ class Accountant():
                 )
                 break
 
-        sum_other_actions = (
-            self.events.margin_positions_profit_loss +
-            self.events.defi_profit_loss +
-            self.events.staking_profit +
-            self.events.ledger_actions_profit_loss +
-            self.events.loan_profit -
-            self.events.settlement_losses -
-            self.asset_movement_fees -
-            self.eth_transactions_gas_costs
-        )
-        total_taxable_pl = self.events.taxable_trade_profit_loss + sum_other_actions
-        self.events.csv_exporter.maybe_add_summary(
-            ledger_actions_profit_loss=self.events.ledger_actions_profit_loss,
-            defi_profit_loss=self.events.defi_profit_loss,
-            loan_profit=self.events.loan_profit,
-            margin_position_profit_loss=self.events.margin_positions_profit_loss,
-            settlement_losses=self.events.settlement_losses,
-            ethereum_transaction_gas_costs=self.eth_transactions_gas_costs,
-            asset_movement_fees=self.asset_movement_fees,
-            taxable_trade_profit_loss=self.events.taxable_trade_profit_loss,
-            total_taxable_profit_loss=total_taxable_pl,
-        )
-        profit_loss_overview = {
-            'ledger_actions_profit_loss': str(self.events.ledger_actions_profit_loss),
-            'defi_profit_loss': str(self.events.defi_profit_loss),
-            'loan_profit': str(self.events.loan_profit),
-            'margin_positions_profit_loss': str(self.events.margin_positions_profit_loss),
-            'settlement_losses': str(self.events.settlement_losses),
-            'ethereum_transaction_gas_costs': str(self.eth_transactions_gas_costs),
-            'staking_profit': str(self.events.staking_profit),
-            'asset_movement_fees': str(self.asset_movement_fees),
-            'general_trade_profit_loss': str(self.events.general_trade_profit_loss),
-            'taxable_trade_profit_loss': str(self.events.taxable_trade_profit_loss),
-            'total_taxable_profit_loss': str(total_taxable_pl),
-            'total_profit_loss': str(
-                self.events.general_trade_profit_loss +
-                sum_other_actions,
-            ),
-        }
+        self.events.csv_exporter.maybe_add_summary(pnls=self.events.base.pnls)
         dbpnl = DBAccountingReports(self.csvexporter.database)
         dbpnl.add_report_overview(
             report_id=report_id,
             last_processed_timestamp=last_event_ts,
             processed_actions=count,
             total_actions=actions_length,
-            **profit_loss_overview,
+            pnls=self.events.base.pnls,
         )
 
         return report_id
@@ -535,15 +445,16 @@ class Accountant():
 
     def _process_action(
             self,
-            action: TaxableAction,
+            actions_iterator: Iterator[TaxableAction],
             start_ts: Timestamp,
             end_ts: Timestamp,
             prev_time: Timestamp,
             db_settings: DBSettings,
             ignored_actionids_mapping: Dict[ActionType, List[str]],
-    ) -> Tuple[bool, Timestamp]:
-        """Processes each individual action and returns whether we should continue
-        looping through the rest of the actions or not
+    ) -> Tuple[int, Timestamp]:
+        """Processes each individual action and returns a tuple with processing information:
+        - How many actions were consumed (0 to indicate we finished processing)
+        - last action timestamp
 
         May raise:
         - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
@@ -553,6 +464,9 @@ class Accountant():
         or with reading the response returned by the server
         """
         ignored_assets = self.db.get_ignored_assets()
+        action = next(actions_iterator, None)
+        if action is None:
+            return 0, prev_time
 
         # Assert we are sorted in ascending time order.
         timestamp = action_get_timestamp(action)
@@ -563,11 +477,11 @@ class Accountant():
 
         if not db_settings.calculate_past_cost_basis and timestamp < start_ts:
             # ignore older actions than start_ts if we don't want past cost basis
-            return True, prev_time
+            return 1, prev_time
 
         if timestamp > end_ts:
             # reached the end of the time period for the report
-            return False, prev_time
+            return 0, prev_time
 
         self.currently_processing_timestamp = timestamp
         action_type = action_get_type(action)
@@ -579,19 +493,19 @@ class Accountant():
                 f'At history processing found trade with unknown asset {e.asset_name}. '
                 f'Ignoring the trade.',
             )
-            return True, prev_time
+            return 1, prev_time
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
                 f'At history processing found trade with unsupported asset {e.asset_name}. '
                 f'Ignoring the trade.',
             )
-            return True, prev_time
+            return 1, prev_time
         except UnprocessableTradePair as e:
             self.msg_aggregator.add_error(
                 f'At history processing found trade with unprocessable trade pair {str(e)} '
                 f'Ignoring the trade.',
             )
-            return True, prev_time
+            return 1, prev_time
 
         if any(x in ignored_assets for x in action_assets):
             log.debug(
@@ -599,7 +513,7 @@ class Accountant():
                 action_type=action_type,
                 assets=[x.identifier for x in action_assets],
             )
-            return True, prev_time
+            return 1, prev_time
 
         should_ignore, identifier = self._should_ignore_action(
             action=action,
@@ -611,7 +525,7 @@ class Accountant():
                 f'Ignoring {action_type} action with identifier {identifier} '
                 f'at {timestamp} since the user asked to ignore it',
             )
-            return True, prev_time
+            return 1, prev_time
 
         if action_type == 'loan':
             action = cast(Loan, action)
@@ -626,31 +540,27 @@ class Accountant():
                 link=None,
                 notes=None,
             )
-            return True, prev_time
+            return 1, prev_time
         if action_type == 'asset_movement':
             action = cast(AssetMovement, action)
             self.add_asset_movement_to_events(action)
-            return True, prev_time
+            return 1, prev_time
         if action_type == 'margin_position':
             action = cast(MarginPosition, action)
             self.events.add_margin_position(margin=action)
-            return True, prev_time
-        if action_type == 'ethereum_transaction':
-            action = cast(EthereumTransaction, action)
-            self.account_for_gas_costs(action, db_settings.include_gas_costs)
-            return True, prev_time
+            return 1, prev_time
         if action_type == 'defi_event':
             action = cast(DefiEvent, action)
             self.events.add_defi_event(action)
-            return True, prev_time
+            return 1, prev_time
         if action_type == 'ledger_action':
             action = cast(LedgerAction, action)
             self.events.add_ledger_action(action)
-            return True, prev_time
+            return 1, prev_time
         if action_type == 'history_base_entry':
             action = cast(HistoryBaseEntry, action)
-            self.events.add_history_base_entry(action)
-            return True, prev_time
+            consumed_events = self.events.add_history_base_entry(action, actions_iterator)
+            return consumed_events, prev_time
 
         if isinstance(action, AMMTrade) and action.tx_hash:
             link = f'{self.csvexporter.eth_explorer}{action.tx_hash}'
@@ -677,10 +587,10 @@ class Accountant():
             )
 
             self.msg_aggregator.add_warning(msg)
-            return True, prev_time
+            return 1, prev_time
 
         if trade.trade_type == TradeType.BUY:
-            self.events.add_buy_and_corresponding_sell(
+            self.events.base.add_buy_and_corresponding_sell(
                 location=trade.location,
                 bought_asset=trade.base_asset,
                 bought_amount=trade.amount,
@@ -702,7 +612,7 @@ class Accountant():
             # in poloniex settlements you buy some asset with BTC to repay a loan
             # so in essense you sell BTC to repay the loan
             selling_asset = A_BTC
-            selling_asset_rate = self.events.get_rate_in_profit_currency(
+            selling_asset_rate = self.events.base.get_rate_in_profit_currency(
                 selling_asset,
                 trade.timestamp,
             )
@@ -713,7 +623,7 @@ class Accountant():
             # when we invert the sell, the sold amount of BTC should be the cost
             # (amount*rate) of the original buy
             selling_amount = trade.rate * trade.amount
-            self.events.add_sell(
+            self.events.base.add_sell(
                 location=trade.location,
                 selling_asset=selling_asset,
                 selling_amount=selling_amount,
@@ -733,4 +643,4 @@ class Accountant():
             # Should never happen
             raise AssertionError(f'Unknown trade type "{trade.trade_type}" encountered')
 
-        return True, prev_time
+        return 1, prev_time

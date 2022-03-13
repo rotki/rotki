@@ -249,18 +249,19 @@ class TaskManager():
     def _maybe_schedule_ethereum_txreceipts(self) -> None:
         """Schedules the ethereum transaction receipts query task"""
         dbethtx = DBEthTx(self.database)
-        result = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=500)
-        if len(result) == 0:
+        cursor_result = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=500)
+        hash_results = cursor_result.fetchall()
+        if len(hash_results) == 0:
             return
 
-        task_name = f'Query {len(result)} ethereum transactions receipts'
+        task_name = f'Query {len(hash_results)} ethereum transactions receipts'
         log.debug(f'Scheduling task to {task_name}')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
             method=self._run_ethereum_txreceipts_query,
-            hash_results=result,
+            hash_results=hash_results,
         )
 
     def _maybe_schedule_exchange_history_query(self) -> None:

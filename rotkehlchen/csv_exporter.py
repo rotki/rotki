@@ -8,6 +8,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import DefiEvent, HistoryBaseEntry
+from rotkehlchen.accounting.totals import PnlTotals
 from rotkehlchen.accounting.types import NamedJson, SchemaEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import (
@@ -20,10 +21,8 @@ from rotkehlchen.constants import (
     EV_MARGIN_CLOSE,
     EV_SELL,
     EV_STAKING_REWARD,
-    EV_TX_GAS_COST,
     ZERO,
 )
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.errors import DeserializationError, InputError
 from rotkehlchen.fval import FVal
@@ -139,7 +138,6 @@ class CSVExporter(CustomizableDateMixin):
             self.trades_csv: List[Dict[str, Any]] = []
             self.loan_profits_csv: List[Dict[str, Any]] = []
             self.asset_movements_csv: List[Dict[str, Any]] = []
-            self.tx_gas_costs_csv: List[Dict[str, Any]] = []
             self.margin_positions_csv: List[Dict[str, Any]] = []
             self.loan_settlements_csv: List[Dict[str, Any]] = []
             self.defi_events_csv: List[Dict[str, Any]] = []
@@ -206,18 +204,7 @@ class CSVExporter(CustomizableDateMixin):
             entry['net_profit_or_loss'] = str(getattr(db_settings, setting))
             self.all_events_csv.append(entry)
 
-    def maybe_add_summary(
-            self,
-            ledger_actions_profit_loss: FVal,
-            defi_profit_loss: FVal,
-            loan_profit: FVal,
-            margin_position_profit_loss: FVal,
-            settlement_losses: FVal,
-            ethereum_transaction_gas_costs: FVal,
-            asset_movement_fees: FVal,
-            taxable_trade_profit_loss: FVal,
-            total_taxable_profit_loss: FVal,
-    ) -> None:
+    def maybe_add_summary(self, pnls: PnlTotals) -> None:
         """Depending on given settings, adds a few summary lines at the end of
         the all events PnL report"""
         if self.should_have_summary is False:
@@ -245,92 +232,24 @@ class CSVExporter(CustomizableDateMixin):
         self.all_events_csv.append(template)  # separate with 2 new lines
         self.all_events_csv.append(template)
 
-        entry = template.copy()
-        entry['received_in_asset'] = 'LEDGER ACTIONS PROFIT/LOSS'
-        entry['net_profit_or_loss'] = self._add_sumif_formula(
-            check_range=f'A2:A{length}',
-            condition=f'"{EV_LEDGER_ACTION}"',
-            sum_range=f'H2:H{length}',
-            actual_value=ledger_actions_profit_loss,
-        )
-        self.all_events_csv.append(entry)
-
-        entry = template.copy()
-        entry['received_in_asset'] = 'DEFI PROFIT/LOSS'
-        entry['net_profit_or_loss'] = self._add_sumif_formula(
-            check_range=f'A2:A{length}',
-            condition=f'"{EV_DEFI}"',
-            sum_range=f'H2:H{length}',
-            actual_value=defi_profit_loss,
-        )
-        self.all_events_csv.append(entry)
-
-        entry = template.copy()
-        entry['received_in_asset'] = 'LOAN PROFIT/LOSS'
-        entry['net_profit_or_loss'] = self._add_sumif_formula(
-            check_range=f'A2:A{length}',
-            condition=f'"{EV_INTEREST_PAYMENT}"',
-            sum_range=f'H2:H{length}',
-            actual_value=loan_profit,
-        )
-        self.all_events_csv.append(entry)
-
-        entry = template.copy()
-        entry['received_in_asset'] = 'MARGIN POSITIONS PROFIT/LOSS'
-        entry['net_profit_or_loss'] = self._add_sumif_formula(
-            check_range=f'A2:A{length}',
-            condition=f'"{EV_MARGIN_CLOSE}"',
-            sum_range=f'H2:H{length}',
-            actual_value=margin_position_profit_loss,
-        )
-        self.all_events_csv.append(entry)
-
-        entry = template.copy()
-        entry['received_in_asset'] = 'SETTLEMENT LOSS'
-        entry['net_profit_or_loss'] = self._add_sumif_formula(
-            check_range=f'A2:A{length}',
-            condition=f'"{EV_LOAN_SETTLE}"',
-            sum_range=f'H2:H{length}',
-            actual_value=settlement_losses,
-        )
-        self.all_events_csv.append(entry)
-
-        entry = template.copy()
-        entry['received_in_asset'] = 'ETHEREUM TX GAS COST'
-        entry['net_profit_or_loss'] = self._add_sumif_formula(
-            check_range=f'A2:A{length}',
-            condition=f'"{EV_TX_GAS_COST}"',
-            sum_range=f'H2:H{length}',
-            actual_value=ethereum_transaction_gas_costs,
-        )
-        self.all_events_csv.append(entry)
-
-        entry = template.copy()
-        entry['received_in_asset'] = 'ASSET MOVEMENT FEES'
-        entry['net_profit_or_loss'] = self._add_sumif_formula(
-            check_range=f'A2:A{length}',
-            condition=f'"{EV_ASSET_MOVE}"',
-            sum_range=f'H2:H{length}',
-            actual_value=asset_movement_fees,
-        )
-        self.all_events_csv.append(entry)
-
-        entry = template.copy()
-        entry['received_in_asset'] = 'TAXABLE TRADE PROFIT/LOSS'
-        entry['net_profit_or_loss'] = self._add_sumif_formula(
-            check_range=f'A2:A{length}',
-            condition=f'"{EV_SELL}"',
-            sum_range=f'H2:H{length}',
-            actual_value=taxable_trade_profit_loss,
-        )
-        self.all_events_csv.append(entry)
+        total_value = pnls.get_net_taxable_pnl()
+        for name, value in pnls.items():
+            entry = template.copy()
+            entry['received_in_asset'] = name.upper()
+            entry['name'] = self._add_sumif_formula(
+                check_range=f'A2:A{length}',
+                condition=f'"{name.upper()}"',
+                sum_range=f'H2:H{length}',
+                actual_value=value,
+            )
+            self.all_events_csv.append(entry)
 
         entry = template.copy()
         entry['received_in_asset'] = 'TOTAL TAXABLE PROFIT/LOSS'
         start = length + 3
         entry['net_profit_or_loss'] = self._add_equals_formula(
             expression=f'H{start}+H{start + 1}+H{start + 2}+H{start + 3}+H{start + 4}+H{start + 5}+H{start + 6}+H{start + 7}',  # noqa: E501
-            actual_value=total_taxable_profit_loss,
+            actual_value=total_value,
         )
         self.all_events_csv.append(entry)
 
@@ -382,7 +301,7 @@ class CSVExporter(CustomizableDateMixin):
                 if_false=f'L{row}-M{row}',
                 actual_value=net_profit_or_loss,
             )
-        elif event_type in (EV_TX_GAS_COST, EV_ASSET_MOVE, EV_LOAN_SETTLE):
+        elif event_type in (EV_ASSET_MOVE, EV_LOAN_SETTLE):
             net_profit_or_loss = -paid_in_profit_currency
             net_profit_or_loss_csv = self._add_equals_formula(
                 expression=f'-K{row}',
@@ -789,37 +708,6 @@ class CSVExporter(CustomizableDateMixin):
             notes='',
         )
 
-    def add_tx_gas_cost(
-            self,
-            transaction_hash: bytes,
-            eth_burned_as_gas: FVal,
-            rate: FVal,
-            timestamp: Timestamp,
-    ) -> None:
-        if not self.create_csv:
-            return
-
-        self.tx_gas_costs_csv.append({
-            'time': self.timestamp_to_date(timestamp),
-            'transaction_hash': transaction_hash.hex(),
-            'eth_burned_as_gas': eth_burned_as_gas,
-            f'cost_in_{self.profit_currency.symbol}': eth_burned_as_gas * rate,
-        })
-        self.add_to_allevents(
-            location=Location.BLOCKCHAIN,
-            event_type=EV_TX_GAS_COST,
-            paid_in_profit_currency=eth_burned_as_gas * rate,
-            paid_asset=A_ETH,
-            paid_in_asset=eth_burned_as_gas,
-            received_asset=None,
-            received_in_asset=ZERO,
-            taxable_received_in_profit_currency=ZERO,
-            total_received_in_profit_currency=ZERO,
-            timestamp=timestamp,
-            link='',
-            notes='',
-        )
-
     def add_defi_event(
             self,
             event: DefiEvent,
@@ -827,7 +715,6 @@ class CSVExporter(CustomizableDateMixin):
     ) -> None:
         if not self.create_csv:
             return
-
         profit_loss_sum = FVal(sum(profit_loss_in_profit_currency_list))
         if event.tx_hash:
             link = f'{self.eth_explorer}{event.tx_hash}'
@@ -951,10 +838,6 @@ class CSVExporter(CustomizableDateMixin):
             _dict_to_csv_file(
                 dirpath / FILENAME_ASSET_MOVEMENTS_CSV,
                 self.asset_movements_csv,
-            )
-            _dict_to_csv_file(
-                dirpath / FILENAME_GAS_CSV,
-                self.tx_gas_costs_csv,
             )
             _dict_to_csv_file(
                 dirpath / FILENAME_MARGIN_CSV,

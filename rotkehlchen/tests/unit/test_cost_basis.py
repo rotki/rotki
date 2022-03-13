@@ -360,7 +360,7 @@ def test_reduce_asset_amount(accountant):
         ),
     )
 
-    assert accountant.events.cost_basis.reduce_asset_amount(asset, FVal(1.5))
+    assert accountant.events.cost_basis.reduce_asset_amount(asset, FVal(1.5), timestamp=0)
     acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 2, '1 buy should be used'
     remaining_amount = asset_events.acquisitions[0].remaining_amount
@@ -395,14 +395,14 @@ def test_reduce_asset_amount_exact(accountant):
         ),
     )
 
-    assert accountant.events.cost_basis.reduce_asset_amount(asset, FVal(2))
+    assert accountant.events.cost_basis.reduce_asset_amount(asset, FVal(2), 0)
     acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 0, 'all buys should be used'
 
 
 def test_reduce_asset_amount_not_bought(accountant):
     asset = 'BTC'
-    assert not accountant.events.cost_basis.reduce_asset_amount(asset, FVal(3))
+    assert not accountant.events.cost_basis.reduce_asset_amount(asset, FVal(3), 0)
 
 
 def test_reduce_asset_amount_more_that_bought(accountant):
@@ -430,6 +430,6 @@ def test_reduce_asset_amount_more_that_bought(accountant):
     )
 
     # Also reduce WETH, to make sure it's counted same as ETH
-    assert not accountant.events.cost_basis.reduce_asset_amount(A_WETH, FVal(3))
+    assert not accountant.events.cost_basis.reduce_asset_amount(A_WETH, FVal(3), 0)
     acquisitions_num = len(asset_events.acquisitions)
     assert acquisitions_num == 0, 'all buys should be used'
