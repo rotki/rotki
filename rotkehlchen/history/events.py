@@ -44,10 +44,9 @@ log = RotkehlchenLogsAdapter(logger)
 # ledger actions
 # external location trades -> len(EXTERNAL_LOCATION)
 # eth2
-# liquity
 # base history entries
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 7 + len(EXTERNAL_LOCATION)
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 6 + len(EXTERNAL_LOCATION)
 
 
 HistoryResult = Tuple[
@@ -474,17 +473,6 @@ class EventsHistorian():
                     f'Eth2 events are not included in the PnL report due to {str(e)}',
                 )
 
-        step = self._increase_progress(step, total_steps)
-
-        # include liquity events
-        liquity = self.chain_manager.get_module('liquity')
-        if liquity is not None and has_premium:
-            self.processing_state_name = 'Querying Liquity staking history'
-            defi_events.extend(liquity.get_history_events(
-                from_timestamp=start_ts,
-                to_timestamp=end_ts,
-                addresses=self.chain_manager.queried_addresses_for_module('liquity'),
-            ))
         step = self._increase_progress(step, total_steps)
 
         # Include base history entries
