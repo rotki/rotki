@@ -19,69 +19,70 @@ def enrich_pickle_transfers(
     token: Optional[EthereumToken],  # pylint: disable=unused-argument
     tx_log: EthereumTxReceiptLog,
     transaction: EthereumTransaction,
-    decoded_events: List[HistoryBaseEntry],
+    event: HistoryBaseEntry,
     action_items: List[ActionItem],  # pylint: disable=unused-argument
 ) -> None:
     """Enrich tranfer transactions to address for jar deposits and withdrawals"""
-    for event in decoded_events:
-        # Deposit
-        if (
-            event.event_type == HistoryEventType.SPEND and
-            event.event_subtype == HistoryEventSubType.NONE and
-            event.location_label == transaction.from_address and
-            hex_or_bytes_to_address(tx_log.topics[2]) in PICKLE_CONTRACTS
-        ):
-            if EthereumToken(tx_log.address) != event.asset:
-                continue
-            amount_raw = hex_or_bytes_to_int(tx_log.data)
-            amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
-            if event.balance.amount == amount:  # noqa: E501
-                event.event_type = HistoryEventType.STAKING
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.counterparty = 'pickle finance'
-                event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} in pickle contract'  # noqa: E501
-        elif (
-            event.event_type == HistoryEventType.RECEIVE and
-            event.event_subtype == HistoryEventSubType.NONE and
-            tx_log.address in PICKLE_CONTRACTS
-        ):
-            amount_raw = hex_or_bytes_to_int(tx_log.data)
-            amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
-            if event.balance.amount == amount:  # noqa: E501
-                event.event_type = HistoryEventType.STAKING
-                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                event.counterparty = 'pickle finance'
-                event.notes = f'Recive {event.balance.amount} {event.asset.symbol} after depositing in pickle contract'  # noqa: E501
-        # Withdraw
-        elif (
-            event.event_type == HistoryEventType.SPEND and
-            event.event_subtype == HistoryEventSubType.NONE and
-            event.location_label == transaction.from_address and
-            hex_or_bytes_to_address(tx_log.topics[2]) == ZERO_ADDRESS and
-            hex_or_bytes_to_address(tx_log.topics[1]) in transaction.from_address
-        ):
-            if event.asset != EthereumToken(tx_log.address):
-                continue
-            amount_raw = hex_or_bytes_to_int(tx_log.data)
-            amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
-            if event.balance.amount == amount:  # noqa: E501
-                event.event_type = HistoryEventType.STAKING
-                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.counterparty = 'pickle finance'
-                event.notes = f'Return {event.balance.amount} {event.asset.symbol} to the pickle contract'  # noqa: E501
-        elif (
-            event.event_type == HistoryEventType.RECEIVE and
-            event.event_subtype == HistoryEventSubType.NONE and
-            event.location_label == transaction.from_address and
-            hex_or_bytes_to_address(tx_log.topics[2]) == transaction.from_address and
-            hex_or_bytes_to_address(tx_log.topics[1]) in PICKLE_CONTRACTS
-        ):
-            if event.asset != EthereumToken(tx_log.address):
-                continue
-            amount_raw = hex_or_bytes_to_int(tx_log.data)
-            amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
-            if event.balance.amount == amount:  # noqa: E501
-                event.event_type = HistoryEventType.STAKING
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.counterparty = 'pickle finance'
-                event.notes = f'Unstake {event.balance.amount} {event.asset.symbol} from the pickle contract'  # noqa: E501
+    # Deposit
+    if (
+        event.event_type == HistoryEventType.SPEND and
+        event.event_subtype == HistoryEventSubType.NONE and
+        event.location_label == transaction.from_address and
+        hex_or_bytes_to_address(tx_log.topics[2]) in PICKLE_CONTRACTS
+    ):
+        if EthereumToken(tx_log.address) != event.asset:
+            return None
+        amount_raw = hex_or_bytes_to_int(tx_log.data)
+        amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
+        if event.balance.amount == amount:  # noqa: E501
+            event.event_type = HistoryEventType.STAKING
+            event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            event.counterparty = 'pickle finance'
+            event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} in pickle contract'  # noqa: E501
+    elif (
+        event.event_type == HistoryEventType.RECEIVE and
+        event.event_subtype == HistoryEventSubType.NONE and
+        tx_log.address in PICKLE_CONTRACTS
+    ):
+        amount_raw = hex_or_bytes_to_int(tx_log.data)
+        amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
+        if event.balance.amount == amount:  # noqa: E501
+            event.event_type = HistoryEventType.STAKING
+            event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+            event.counterparty = 'pickle finance'
+            event.notes = f'Recive {event.balance.amount} {event.asset.symbol} after depositing in pickle contract'  # noqa: E501
+    # Withdraw
+    elif (
+        event.event_type == HistoryEventType.SPEND and
+        event.event_subtype == HistoryEventSubType.NONE and
+        event.location_label == transaction.from_address and
+        hex_or_bytes_to_address(tx_log.topics[2]) == ZERO_ADDRESS and
+        hex_or_bytes_to_address(tx_log.topics[1]) in transaction.from_address
+    ):
+        if event.asset != EthereumToken(tx_log.address):
+            return None
+        amount_raw = hex_or_bytes_to_int(tx_log.data)
+        amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
+        if event.balance.amount == amount:  # noqa: E501
+            event.event_type = HistoryEventType.STAKING
+            event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+            event.counterparty = 'pickle finance'
+            event.notes = f'Return {event.balance.amount} {event.asset.symbol} to the pickle contract'  # noqa: E501
+    elif (
+        event.event_type == HistoryEventType.RECEIVE and
+        event.event_subtype == HistoryEventSubType.NONE and
+        event.location_label == transaction.from_address and
+        hex_or_bytes_to_address(tx_log.topics[2]) == transaction.from_address and
+        hex_or_bytes_to_address(tx_log.topics[1]) in PICKLE_CONTRACTS
+    ):
+        if event.asset != EthereumToken(tx_log.address):
+            return None
+        amount_raw = hex_or_bytes_to_int(tx_log.data)
+        amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
+        if event.balance.amount == amount:  # noqa: E501
+            event.event_type = HistoryEventType.STAKING
+            event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+            event.counterparty = 'pickle finance'
+            event.notes = f'Unstake {event.balance.amount} {event.asset.symbol} from the pickle contract'  # noqa: E501
+
+    return None

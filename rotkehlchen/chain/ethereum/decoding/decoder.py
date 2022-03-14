@@ -219,7 +219,6 @@ class EVMTransactionDecoder():
             event = self.try_all_rules(token=token, tx_log=tx_log, transaction=transaction, decoded_events=events, action_items=action_items)  # noqa: E501
             if event:
                 events.append(event)
-                self._maybe_enrich_transfers(token=token, tx_log=tx_log, transaction=transaction, decoded_events=events, action_items=action_items)  # noqa: E501
 
         self.dbevents.add_history_events(events)
         cursor.execute(
@@ -487,6 +486,14 @@ class EVMTransactionDecoder():
                 action_items.pop(idx)
                 break  # found an action item and acted on it
 
+        # Add additional information to transfers for different protocols
+        self._maybe_enrich_transfers(
+            token=token,
+            tx_log=tx_log,
+            transaction=transaction,
+            event=transfer,
+            action_items=action_items,
+        )
         return transfer
 
     def _maybe_enrich_transfers(  # pylint: disable=no-self-use
@@ -494,33 +501,31 @@ class EVMTransactionDecoder():
             token: Optional[EthereumToken],
             tx_log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,
-            decoded_events: List[HistoryBaseEntry],
+            event: HistoryBaseEntry,
             action_items: List[ActionItem],
     ) -> Optional[HistoryBaseEntry]:
         if tx_log.topics[0] == GTC_CLAIM and tx_log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
-            for event in decoded_events:
-                if event.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:
-                    event.event_subtype = HistoryEventSubType.AIRDROP
-                    event.notes = f'Claim {event.balance.amount} GTC from the GTC airdrop'
+            if event.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:
+                event.event_subtype = HistoryEventSubType.AIRDROP
+                event.notes = f'Claim {event.balance.amount} GTC from the GTC airdrop'
             return None
 
         if tx_log.topics[0] == ONEINCH_CLAIM and tx_log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
-            for event in decoded_events:
-                if event.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:
-                    event.event_subtype = HistoryEventSubType.AIRDROP
-                    event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'  # noqa: E501
+            if event.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:
+                event.event_subtype = HistoryEventSubType.AIRDROP
+                event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'  # noqa: E501
             return None
 
         if tx_log.topics[0] == XDAI_BRIDGE_RECEIVE and tx_log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501
-            for event in decoded_events:
-                if event.event_type == HistoryEventType.RECEIVE:
-                    # user bridged from xdai
-                    event.event_type = HistoryEventType.TRANSFER
-                    event.event_subtype = HistoryEventSubType.BRIDGE
-                    event.counterparty = 'XDAI'
-                    event.notes = (
-                        f'Bridge {event.balance.amount} {event.asset.symbol} from XDAI'
-                    )
+            if event.event_type == HistoryEventType.RECEIVE:
+                # user bridged from xdai
+                event.event_type = HistoryEventType.TRANSFER
+                event.event_subtype = HistoryEventSubType.BRIDGE
+                event.counterparty = 'XDAI'
+                event.notes = (
+                    f'Bridge {event.balance.amount} {event.asset.symbol} from XDAI'
+                )
+            return None
 
         if (
             tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
@@ -533,7 +538,7 @@ class EVMTransactionDecoder():
             enrich_pickle_transfers(
                 token=token, tx_log=tx_log,
                 transaction=transaction,
-                decoded_events=decoded_events,
+                event=event,
                 action_items=action_items,
             )
 
