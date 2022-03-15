@@ -88,6 +88,7 @@ class EVMTransactionDecoder():
         self.event_rules = [  # rules to try for all tx receipt logs decoding
             self._maybe_decode_erc20_approve,
             self._maybe_decode_erc20_721_transfer,
+            self._maybe_enrich_transfers,
             self._maybe_decode_governance,
         ]
         self.initialize_all_decoders()
@@ -487,7 +488,7 @@ class EVMTransactionDecoder():
                 break  # found an action item and acted on it
 
         # Add additional information to transfers for different protocols
-        self._maybe_enrich_transfers(
+        self._enrich_protocol_tranfers(
             token=token,
             tx_log=tx_log,
             transaction=transaction,
@@ -498,42 +499,57 @@ class EVMTransactionDecoder():
 
     def _maybe_enrich_transfers(  # pylint: disable=no-self-use
             self,
+            token: Optional[EthereumToken],  # pylint: disable=unused-argument
+            tx_log: EthereumTxReceiptLog,
+            transaction: EthereumTransaction,  # pylint: disable=unused-argument
+            decoded_events: List[HistoryBaseEntry],
+            action_items: List[ActionItem],  # pylint: disable=unused-argument
+    ) -> Optional[HistoryBaseEntry]:
+        if tx_log.topics[0] == GTC_CLAIM and tx_log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
+            for event in decoded_events:
+                if event.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:
+                    event.event_subtype = HistoryEventSubType.AIRDROP
+                    event.notes = f'Claim {event.balance.amount} GTC from the GTC airdrop'
+            return None
+
+        if tx_log.topics[0] == ONEINCH_CLAIM and tx_log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
+            for event in decoded_events:
+                if event.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:
+                    event.event_subtype = HistoryEventSubType.AIRDROP
+                    event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'  # noqa: E501
+            return None
+
+        if tx_log.topics[0] == XDAI_BRIDGE_RECEIVE and tx_log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501
+            for event in decoded_events:
+                if event.event_type == HistoryEventType.RECEIVE:
+                    # user bridged from xdai
+                    event.event_type = HistoryEventType.TRANSFER
+                    event.event_subtype = HistoryEventSubType.BRIDGE
+                    event.counterparty = 'XDAI'
+                    event.notes = (
+                        f'Bridge {event.balance.amount} {event.asset.symbol} from XDAI'
+                    )
+
+        return None
+
+    def _enrich_protocol_tranfers(  # pylint: disable=no-self-use
+            self,
             token: Optional[EthereumToken],
             tx_log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,
             event: HistoryBaseEntry,
             action_items: List[ActionItem],
-    ) -> Optional[HistoryBaseEntry]:
-        if tx_log.topics[0] == GTC_CLAIM and tx_log.address == '0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E':  # noqa: E501
-            if event.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:
-                event.event_subtype = HistoryEventSubType.AIRDROP
-                event.notes = f'Claim {event.balance.amount} GTC from the GTC airdrop'
-            return None
-
-        if tx_log.topics[0] == ONEINCH_CLAIM and tx_log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
-            if event.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:
-                event.event_subtype = HistoryEventSubType.AIRDROP
-                event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'  # noqa: E501
-            return None
-
-        if tx_log.topics[0] == XDAI_BRIDGE_RECEIVE and tx_log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501
-            if event.event_type == HistoryEventType.RECEIVE:
-                # user bridged from xdai
-                event.event_type = HistoryEventType.TRANSFER
-                event.event_subtype = HistoryEventSubType.BRIDGE
-                event.counterparty = 'XDAI'
-                event.notes = (
-                    f'Bridge {event.balance.amount} {event.asset.symbol} from XDAI'
-                )
-            return None
-
+    ) -> None:
+        """
+        Decode special transfers made by contract execution for example at the moment
+        of depositing assets or withdrawing.
+        It assumes that the event being decoded has been already filtered and is a
+        transfer.
+        """
         if (
-            tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-            (
-                hex_or_bytes_to_address(tx_log.topics[2]) in PICKLE_CONTRACTS or
-                hex_or_bytes_to_address(tx_log.topics[1]) in PICKLE_CONTRACTS or
-                tx_log.address in PICKLE_CONTRACTS
-            )
+            hex_or_bytes_to_address(tx_log.topics[2]) in PICKLE_CONTRACTS or
+            hex_or_bytes_to_address(tx_log.topics[1]) in PICKLE_CONTRACTS or
+            tx_log.address in PICKLE_CONTRACTS
         ):
             enrich_pickle_transfers(
                 token=token, tx_log=tx_log,
@@ -541,8 +557,6 @@ class EVMTransactionDecoder():
                 event=event,
                 action_items=action_items,
             )
-
-        return None
 
     def _maybe_decode_governance(  # pylint: disable=no-self-use
             self,
