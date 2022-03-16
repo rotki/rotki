@@ -3125,10 +3125,10 @@
       "type": "Watcher Type"
     },
     "ratio": {
-      "ge": "greater than or equal to",
-      "gt": "greater than",
-      "le": "less than or equal to",
-      "lt": "less than"
+      "ge": ">= (greater than or equal to)",
+      "gt": ">  (greater than)",
+      "le": "<= (less than or equal to)",
+      "lt": "<  (less than)"
     },
     "types": {
       "make_collateralization_ratio": "Collateralization Ratio Watcher (Maker)"

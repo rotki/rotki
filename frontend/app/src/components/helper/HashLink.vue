@@ -39,7 +39,7 @@
       </template>
       <span>{{ $t('hash_link.copy') }}</span>
     </v-tooltip>
-    <v-tooltip v-if="!noLink || buttons" top open-delay="600" max-width="400">
+    <v-tooltip v-if="!noLink || buttons" top open-delay="600" max-width="550">
       <template #activator="{ on, attrs }">
         <v-btn
           v-if="!!base"

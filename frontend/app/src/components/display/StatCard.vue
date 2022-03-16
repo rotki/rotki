@@ -21,7 +21,7 @@
       />
     </div>
     <div class="stat-card__content flex-grow-1">
-      <v-card-title class="py-2">
+      <v-card-title>
         <span v-if="title">
           <card-title>{{ title }}</card-title>
         </span>
@@ -67,7 +67,6 @@ export default defineComponent({
   ::v-deep {
     .v-card {
       &__text {
-        padding-top: 12px;
         font-size: 1em;
       }
     }

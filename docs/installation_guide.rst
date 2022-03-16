@@ -360,7 +360,7 @@ Get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_ version 4:
 
     sudo zypper install sqlcipher sqlcipher-devel
 
-rotki uses npm v7. To check if you have version 7 of npm you can run::
+rotki uses npm v8. To check if you have version 8 of npm you can run::
 
     npm --version
 
@@ -480,7 +480,7 @@ rotki uses `Electron <https://electronjs.org>`, we need to install it. To do so 
 
     $ brew install node
 
-rotki uses npm v7. To check if you have version 7 of npm you can run::
+rotki uses npm v8. To check if you have version 8 of npm you can run::
 
     npm --version
 
