@@ -104,6 +104,23 @@ export class ElectronInterop {
   updateTray(update: TrayUpdate) {
     window.interop?.updateTray(update);
   }
+
+  async storePassword(
+    username: string,
+    password: string
+  ): Promise<boolean | undefined> {
+    assert(window.interop);
+    return await window.interop.storePassword(username, password);
+  }
+
+  async getPassword(username: string): Promise<string | undefined> {
+    assert(window.interop);
+    return await window.interop.getPassword(username);
+  }
+
+  async clearPassword() {
+    window.interop?.clearPassword();
+  }
 }
 
 export const interop = new ElectronInterop();

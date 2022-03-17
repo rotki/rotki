@@ -4,9 +4,11 @@ import {
   ipcMain,
   Menu,
   nativeTheme,
-  shell
+  shell,
+  safeStorage
 } from 'electron';
 import { ProgressInfo } from 'electron-builder';
+import Store from 'electron-store';
 import { autoUpdater } from 'electron-updater';
 import { loadConfig } from '@/electron-main/config';
 import { startHttp, stopHttp } from '@/electron-main/http';
@@ -16,9 +18,11 @@ import {
   IPC_CLOSE_APP,
   IPC_CONFIG,
   IPC_DARK_MODE,
+  IPC_CLEAR_PASSWORD,
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_GET_DEBUG,
+  IPC_GET_PASSWORD,
   IPC_INSTALL_UPDATE,
   IPC_LOG_TO_FILE,
   IPC_METAMASK_IMPORT,
@@ -28,6 +32,7 @@ import {
   IPC_PREMIUM_LOGIN,
   IPC_RESTART_BACKEND,
   IPC_SERVER_URL,
+  IPC_STORE_PASSWORD,
   IPC_TRAY_UPDATE,
   IPC_VERSION,
   IPC_WEBSOCKET_URL
@@ -128,6 +133,57 @@ function setupTrayInterop(trayManager: TrayManager) {
   });
 }
 
+function setupPasswordStorage() {
+  const store = new Store<Record<string, string>>();
+
+  const encoding = 'latin1';
+  const encryptionAvailable = safeStorage.isEncryptionAvailable();
+
+  const setPassword = (key: string, password: string) => {
+    const buffer = safeStorage.encryptString(password);
+    store.set(key, buffer.toString(encoding));
+  };
+
+  const clearPassword = () => {
+    store.clear();
+  };
+
+  const getPassword = (key: string) => {
+    const buffer = store.store?.[key];
+    if (buffer) {
+      return safeStorage.decryptString(Buffer.from(buffer, encoding));
+    }
+
+    return '';
+  };
+
+  ipcMain.on(
+    IPC_STORE_PASSWORD,
+    (event, { username, password }: { username: string; password: string }) => {
+      let success = false;
+      if (encryptionAvailable) {
+        setPassword(username, password);
+        success = true;
+      }
+      event.sender.send(IPC_STORE_PASSWORD, success);
+    }
+  );
+
+  ipcMain.on(IPC_GET_PASSWORD, (event, username: string) => {
+    let password = '';
+    if (encryptionAvailable) {
+      password = getPassword(username);
+    }
+    event.sender.send(IPC_GET_PASSWORD, password);
+  });
+
+  ipcMain.on(IPC_CLEAR_PASSWORD, () => {
+    if (encryptionAvailable) {
+      clearPassword();
+    }
+  });
+}
+
 export function ipcSetup(
   pyHandler: PyHandler,
   getWindow: WindowProvider,
@@ -188,6 +244,7 @@ export function ipcSetup(
   setupDarkModeSupport();
   setupBackendRestart(getWindow, pyHandler);
   setupTrayInterop(tray);
+  setupPasswordStorage();
 }
 
 function setupInstallUpdate(pyHandler: PyHandler) {
