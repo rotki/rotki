@@ -35,7 +35,9 @@ export default defineComponent({
       interop.closeApp();
     };
 
-    const { copy } = useClipboard({ source: message });
+    const { copy: copyText } = useClipboard({ source: message });
+
+    const copy = () => copyText();
 
     return {
       terminate,

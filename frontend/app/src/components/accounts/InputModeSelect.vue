@@ -38,11 +38,80 @@
       class="mt-3 info--text text-caption"
       v-text="$t('input_mode_select.metamask_import.metamask')"
     />
-    <p
-      v-if="isEth && !isMetaMaskSupported()"
+    <div
+      v-if="isEth && !$interop.isPackaged && !isMetaMaskSupported()"
       class="mt-3 warning--text text-caption"
-      v-text="$t('input_mode_select.metamask_import.missing')"
-    />
+    >
+      {{ $t('input_mode_select.metamask_import.missing') }}
+
+      <v-menu open-on-hover right offset-x close-delay="400" max-width="300">
+        <template #activator="{ on }">
+          <v-icon class="px-1" small v-on="on">mdi-help-circle</v-icon>
+        </template>
+        <div class="pa-4 text-caption">
+          <div>
+            {{ $t('input_mode_select.metamask_import.missing_tooltip.title') }}
+          </div>
+          <ol>
+            <li>
+              <i18n
+                path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"
+              >
+                <template #link>
+                  <a
+                    :class="$style.link"
+                    target="_blank"
+                    :href="metamaskDownloadLink"
+                  >
+                    {{
+                      $t(
+                        'input_mode_select.metamask_import.missing_tooltip.here'
+                      )
+                    }}
+                  </a>
+                </template>
+              </i18n>
+            </li>
+            <li>
+              {{
+                $t(
+                  'input_mode_select.metamask_import.missing_tooltip.metamask_is_not_enabled'
+                )
+              }}
+            </li>
+            <li>
+              <i18n
+                path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_supported_by_browser"
+              >
+                <template #link>
+                  <a
+                    :class="$style.link"
+                    target="_blank"
+                    :href="metamaskDownloadLink"
+                  >
+                    {{
+                      $t(
+                        'input_mode_select.metamask_import.missing_tooltip.here'
+                      )
+                    }}
+                  </a>
+                </template>
+
+                <template #copy>
+                  <a :class="$style.link" @click="copyPageUrl">
+                    {{
+                      $t(
+                        'input_mode_select.metamask_import.missing_tooltip.copy_url'
+                      )
+                    }}
+                  </a>
+                </template>
+              </i18n>
+            </li>
+          </ol>
+        </div>
+      </v-menu>
+    </div>
   </div>
 </template>
 
@@ -52,9 +121,9 @@ import {
   computed,
   defineComponent,
   PropType,
-  toRefs,
-  unref
+  toRefs
 } from '@vue/composition-api';
+import { get, useClipboard } from '@vueuse/core';
 import {
   MANUAL_ADD,
   METAMASK_IMPORT,
@@ -78,9 +147,23 @@ export default defineComponent({
 
     const input = (value: AccountInput) => emit('input', value);
 
-    const isEth = computed(() => blockchain.value === Blockchain.ETH);
-    const isBtc = computed(() => blockchain.value === Blockchain.BTC);
-    const isMetaMask = computed(() => unref(value) === METAMASK_IMPORT);
+    const isEth = computed(() => get(blockchain) === Blockchain.ETH);
+    const isBtc = computed(() => get(blockchain) === Blockchain.BTC);
+    const isMetaMask = computed(() => get(value) === METAMASK_IMPORT);
+
+    const metamaskDownloadLink = 'https://metamask.io/download/';
+
+    const copyPageUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      params.set('add', 'true');
+      params.set('test', 'false');
+
+      const { origin, pathname } = window.location;
+
+      const pageUrl = `${origin}${pathname}?${params}`;
+      const { copy } = useClipboard({ source: pageUrl });
+      copy();
+    };
 
     return {
       MANUAL_ADD,
@@ -90,8 +173,16 @@ export default defineComponent({
       isBtc,
       isMetaMask,
       isMetaMaskSupported,
-      input
+      input,
+      metamaskDownloadLink,
+      copyPageUrl
     };
   }
 });
 </script>
+<style lang="css" module>
+.link {
+  font-weight: bold;
+  text-decoration: none;
+}
+</style>

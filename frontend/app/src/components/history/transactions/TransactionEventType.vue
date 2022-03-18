@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex align-center">
-    <v-badge v-if="counterparty" avatar overlap color="white" @click="copy">
+    <v-badge v-if="counterparty" avatar overlap color="white">
       <template #badge>
         <v-tooltip top>
           <template #activator="{ on }">
@@ -86,15 +86,10 @@ export default defineComponent({
       return getEventCounterpartyData(unref(event));
     });
 
-    const copy = () => {
-      navigator.clipboard.writeText(unref(event).counterparty || '');
-    };
-
     return {
       dark,
       attrs,
-      counterparty,
-      copy
+      counterparty
     };
   }
 });

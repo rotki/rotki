@@ -9,13 +9,17 @@
     <meta name="author" content="Rotki Solutions GmbH">
     <link rel="shortcut icon" href="/apple-touch-icon.png" />
     <style>
-        html {
-            background-color: rgb(248, 248, 248)
+        * {
+            font-family: Helvetica, sans-serif;
+            box-sizing: border-box;
         }
 
         body {
-            height: 98vh;
-            width: 98vw;
+            background-color: rgb(248, 248, 248);
+            height: 100vh;
+            margin: 0;
+            width: 100vw;
+            font-size: 16px;
         }
 
         .flex {
@@ -35,26 +39,36 @@
         }
 
         .container {
-            height: 100%;
+            padding: 2rem 0;
+            min-height: 100%;
             width: 100%;
         }
 
-        .text {
-            margin: 24px 8px;
-            font-style: normal;
-            font-weight: normal;
-            font-size: 16px;
-            line-height: 24px;
-            color: #5a6166;
+        .wrapper {
+            min-width: 200px;
+            background: #fff;
+            box-shadow: 0 0 1px rgba(6, 10, 13, 0.4), 0 8px 16px rgba(113, 121, 128, 0.08);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            max-width: 400px;
+            padding: 1.5rem;
+        }
+
+        .header {
+            margin: 2rem 0.5rem 1rem;
             text-align: center;
         }
 
-        .text.small {
-            font-size: 14px !important;
+        .text {
+            font-style: normal;
+            font-weight: normal;
+            line-height: 1.5;
+            color: #5a6166;
         }
 
-        #missing {
-            display: none;
+        .text.small {
+            font-size: 0.875rem;
         }
 
         .logo {
@@ -70,148 +84,92 @@
             margin-bottom: 30px;
         }
 
-        .wrapper {
-            min-width: 200px;
-            min-height: 168px;
-            background: #fff;
-            box-shadow: 0 0 1px rgba(6, 10, 13, 0.4), 0 8px 16px rgba(113, 121, 128, 0.08);
-            border-radius: 4px;
-
-            display: flex;
-            flex-direction: column;
-            max-width: 400px;
-            max-height: 400px;
-
-            padding: 16px;
-        }
-
         .button {
-            line-height: 1.5715;
+            line-height: 1.5;
             position: relative;
-            display: inline-block;
-            font-weight: 400;
+            display: none;
             white-space: nowrap;
             text-align: center;
             box-shadow: 0 2px 0 rgba(0, 0, 0, 0.015);
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
-            -webkit-user-select: none;
-            -ms-user-select: none;
+            transition: all 0.3s;
             user-select: none;
             touch-action: manipulation;
-            height: 32px;
-            padding: 4px 15px;
-            font-size: 14px;
-            border-radius: 4px;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 0.25rem;
             color: rgba(0, 0, 0, 0.85);
             background: #fff none;
             border: 1px solid #d9d9d9;
-            outline: none!important;
+            outline: none !important;
+        }
+
+        .button.show {
+            display: inline-block;
         }
 
         .button:hover {
-            background-color: rgb(248, 248, 248)
+            background-color: rgb(248, 248, 248);
         }
 
         .button:active {
-            background-color: rgb(238, 238, 238)
-        }
-
-        #success  {
-            display: none;
+            background-color: rgb(238, 238, 238);
         }
 
         .alert {
-            margin-top: 8px;
-            padding-top: 16px;
+            margin-top: 1rem;
+            padding: 1rem;
+            line-height: 1.5;
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 0.875rem;
         }
 
         .alert img {
-            min-width: 48px;
-            min-height: 48px;
+            width: 32px;
+            height: 32px;
         }
 
-        #error {
+        .alert-text {
+            padding-left: 0.5rem;
+        }
+
+        .alert.success {
+            background: #4caf50;
+        }
+
+        .alert.danger {
+            background: #ff5252;
+        }
+
+        .alert.warning {
+            background: #fb8c00;
+        }
+
+        #missing, #success, #error {
             display: none;
         }
 
+        #missing.show, #success.show, #error.show {
+            display: flex;
+        }
+
+        ol {
+            padding-left: 1.5rem;
+        }
+
+        .mt-8 {
+            padding-top: 2rem;
+        }
+
+        a {
+            color: #7e4a3b;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
     </style>
-    <script type="text/javascript">
-        let isMetamask = false
-        async function onImport() {
-            const error = document.getElementById('error');
-            const errorMessage = document.getElementById('error-message');
-            error.style.display = 'none';
-            errorMessage.innerText = '';
-            try {
-                const permissions = await window.ethereum.request({
-                    method: 'wallet_requestPermissions',
-                    params: [{
-                        'eth_accounts': {},
-                    }]
-                });
-
-                const accountPermission = permissions.find(
-                    permission => permission.parentCapability === 'eth_accounts'
-                )
-
-                if (!accountPermission) {
-                    error.style.display = 'flex';
-                    errorMessage.innerText = 'Could not find the eth_accounts permission';
-                } else {
-                    const exposedAccounts = accountPermission.caveats.find(
-                        caveat => caveat.name === 'exposedAccounts'
-                    );
-                    if (exposedAccounts) {
-                        await post(exposedAccounts.value)
-                    }
-                }
-            } catch (e) {
-                error.style.display = 'flex';
-                errorMessage.innerText = e.message;
-                console.log(e)
-            }
-        }
-        async function post(addresses) {
-            const response = await fetch('/import', {
-                method: 'POST',
-                body: JSON.stringify({ addresses }),
-                headers: {
-                    "Content-Type": 'application/json'
-                }
-            });
-
-            if (response.status !== 200) {
-                const json = await response.json();
-                const error = document.getElementById('error');
-                const errorMessage = document.getElementById('error-message');
-                error.style.display = 'flex';
-                errorMessage.innerText = json?.message ?? json;
-            } else {
-                const success = document.getElementById('success')
-                const button = document.getElementById('import');
-                success.style.display = 'flex'
-                button.style.display = 'none'
-            }
-        }
-
-        if (typeof window.ethereum !== 'undefined') {
-            isMetamask = window.ethereum.isMetaMask;
-        }
-
-        document.addEventListener("DOMContentLoaded", function(){
-            const button = document.getElementById('import');
-            const warning = document.getElementById('missing')
-            if (!isMetamask) {
-                button.setAttribute('disabled', 'disabled')
-                warning.style.display = 'block'
-            }
-
-            button.addEventListener('click', onImport)
-        });
-
-
-    </script>
 </head>
 <body>
 
@@ -222,28 +180,150 @@
         </div>
         <img src="img/mm-logo.svg"/>
 
-        <div class="text">
+        <div class="text header">
             Import your MetaMask addresses to rotki
         </div>
-        <div class="text small" id="missing">
-            MetaMask was not detected
-        </div>
-        <button id="import" class="button">Select Addresses</button>
-        <div id="success" class="flex-column flex align-center justify-center alert">
-            <img src="img/done.svg"/>
-            <div class="text">
-                rotki is importing your addresses. <br/>
-                Please check the app for more information <br />
-                You can safely close this page now.
+        <div id="missing" class="flex-column">
+            <div class="alert warning flex-column">
+                MetaMask could not be detected
+            </div>
+            <div class="text small mt-8">
+                Here are the common cause:
+                <ol>
+                    <li>This browser doesn't have MetaMask installed. You can download MetaMask <a target="_blank" href="https://metamask.io/download/">here</a></li>
+                    <li>The MetaMask is not enabled yet. You can enable it in menu Extension / Add Ons, depends on your browser.</li>
+                    <li>Make sure you open this page with supported browser listed <a target="_blank" href="https://metamask.io/download/">here</a>. If not, please
+                        <a id="copy">copy this page URL</a> and open it manually on supported browser.</li>
+                </ol>
             </div>
         </div>
-        <div id="error" class="flex-column flex align-center justify-center alert">
-            <img src="img/alert.svg"/>
-            <div id="error-message" class="text small"></div>
+        <button id="import" class="button show">Select Addresses</button>
+        <div id="success" class="alert success align-center">
+            <img src="img/done.svg"/>
+            <div class="alert-text">
+                rotki is importing your addresses. <br/>
+                Please check the app for more information <br />
+                This page will close automatically in several seconds, or you can safely close this page manually.
+            </div>
         </div>
-
+        <div id="error" class="alert danger align-center">
+            <img src="img/alert.svg"/>
+            <div class="alert-text" id="error-message"></div>
+        </div>
     </div>
-
 </div>
+<script type="text/javascript">
+    let isMetamask = false
+
+    let $$ = document.getElementById.bind(document);
+
+    const errorElem = $$('error');
+    const errorMessageElem = $$('error-message');
+    const successElem = $$('success')
+    const buttonElem = $$('import');
+    const missingElem = $$('missing');
+    const copyElem = $$('copy');
+
+    const show = (elem) => {
+        elem.classList.add('show');
+    }
+
+    const hide = (elem) => {
+        elem.classList.remove('show');
+    }
+
+    const setText = (elem, text) => {
+        elem.innerText = text;
+    }
+
+    async function onImport() {
+        setText(errorMessageElem, '');
+        hide(errorElem);
+
+        try {
+            const permissions = await window.ethereum.request({
+                method: 'wallet_requestPermissions',
+                params: [{
+                    'eth_accounts': {},
+                }]
+            });
+
+            const accountPermission = permissions.find(
+                permission => permission.parentCapability === 'eth_accounts'
+            )
+
+            if (!accountPermission) {
+                show(errorElem);
+                setText(errorMessageElem, 'Could not find the eth_accounts permission');
+            } else {
+                const addresses = [];
+                accountPermission.caveats.map(permission => {
+                    if (permission.value) {
+                        addresses.push(...permission.value);
+                    }
+                });
+
+                if (addresses.length > 0) {
+                    await post(addresses);
+                } else {
+                    show(errorElem);
+                    setText(errorMessageElem, 'No address selected, please try again!');
+                }
+            }
+        } catch (e) {
+            show(errorElem);
+            setText(errorMessageElem, e.message);
+            console.log(e)
+        }
+    }
+
+    function onCopy() {
+        const text = window.location.href;
+
+        console.log(text);
+
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text);
+        }
+    }
+
+    async function post(addresses) {
+        const response = await fetch('/import', {
+            method: 'POST',
+            body: JSON.stringify({ addresses }),
+            headers: {
+                "Content-Type": 'application/json'
+            }
+        });
+
+        if (response.status !== 200) {
+            const json = await response.json();
+
+            show(errorElem);
+            setText(errorMessageElem, json?.message ?? json);
+        } else {
+            show(successElem);
+            hide(buttonElem);
+            setTimeout(() => {
+                window.close();
+            }, 5000);
+        }
+    }
+
+    if (typeof window.ethereum !== 'undefined') {
+        isMetamask = window.ethereum.isMetaMask;
+    }
+
+    document.addEventListener("DOMContentLoaded", function(){
+        if (!isMetamask) {
+            hide(buttonElem);
+            show(missingElem);
+        }
+
+        buttonElem.addEventListener('click', onImport);
+        copyElem.addEventListener('click', onCopy);
+    });
+
+</script>
 </body>
 </html>
