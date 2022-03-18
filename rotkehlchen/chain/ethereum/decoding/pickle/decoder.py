@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from rotkehlchen.accounting.structures import (
     HistoryBaseEntry,
@@ -16,7 +16,7 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 
 def maybe_enrich_pickle_transfers(
-    token: Optional[EthereumToken],  # pylint: disable=unused-argument
+    token: EthereumToken,  # pylint: disable=unused-argument
     tx_log: EthereumTxReceiptLog,
     transaction: EthereumTransaction,
     event: HistoryBaseEntry,
@@ -30,8 +30,7 @@ def maybe_enrich_pickle_transfers(
     ):
         return False
 
-    # Deposit
-    if (
+    if (  # Deposit give asset
         event.event_type == HistoryEventType.SPEND and
         event.event_subtype == HistoryEventSubType.NONE and
         event.location_label == transaction.from_address and
@@ -46,7 +45,7 @@ def maybe_enrich_pickle_transfers(
             event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
             event.counterparty = 'pickle finance'
             event.notes = f'Deposit {event.balance.amount} {event.asset.symbol} in pickle contract'  # noqa: E501
-    elif (
+    elif (  # Deposit receive wrapped
         event.event_type == HistoryEventType.RECEIVE and
         event.event_subtype == HistoryEventSubType.NONE and
         tx_log.address in PICKLE_CONTRACTS
@@ -58,8 +57,7 @@ def maybe_enrich_pickle_transfers(
             event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
             event.counterparty = 'pickle finance'
             event.notes = f'Recive {event.balance.amount} {event.asset.symbol} after depositing in pickle contract'  # noqa: E501
-    # Withdraw
-    elif (
+    elif (  # Withdraw send wrapped
         event.event_type == HistoryEventType.SPEND and
         event.event_subtype == HistoryEventSubType.NONE and
         event.location_label == transaction.from_address and
@@ -75,7 +73,7 @@ def maybe_enrich_pickle_transfers(
             event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
             event.counterparty = 'pickle finance'
             event.notes = f'Return {event.balance.amount} {event.asset.symbol} to the pickle contract'  # noqa: E501
-    elif (
+    elif (  # Withdraw receive asset
         event.event_type == HistoryEventType.RECEIVE and
         event.event_subtype == HistoryEventSubType.NONE and
         event.location_label == transaction.from_address and
