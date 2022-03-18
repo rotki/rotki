@@ -13,8 +13,7 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
-from rotkehlchen.chain.ethereum.decoding.pickle.constants import PICKLE_CONTRACTS
-from rotkehlchen.chain.ethereum.decoding.pickle.decoder import enrich_pickle_transfers
+from rotkehlchen.chain.ethereum.decoding.pickle.decoder import maybe_enrich_pickle_transfers
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
@@ -37,7 +36,13 @@ from rotkehlchen.errors import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, EVMTxHash, Location
+from rotkehlchen.types import (
+    ChecksumEthAddress,
+    EthereumTransaction,
+    EVMTxHash,
+    Location,
+    TimestampMS,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     from_wei,
@@ -291,17 +296,18 @@ class EVMTransactionDecoder():
         events = self.decode_transaction(transaction, tx_receipt)
         return events
 
-    def _maybe_decode_simple_transactions(
-            self,
-            tx: EthereumTransaction,
-            tx_receipt: EthereumTxReceipt,
-    ) -> List[HistoryBaseEntry]:
-        """Decodes normal ETH transfers, internal transactions and gas cost payments"""
-        events: List[HistoryBaseEntry] = []
-        tx_hash_hex = tx.tx_hash.hex()
-        ts_ms = ts_sec_to_ms(tx.timestamp)
-
-        # check for internal transactions if the transaction is not canceled
+    def _maybe_decode_internal_transactions(
+        self,
+        tx: EthereumTransaction,
+        tx_receipt: EthereumTxReceipt,
+        events: List[HistoryBaseEntry],
+        tx_hash_hex: str,
+        ts_ms: TimestampMS,
+    ) -> None:
+        """
+        check for internal transactions if the transaction is not canceled. This function mutates
+        the events argument.
+        """
         if tx_receipt.status is True:
             internal_txs = self.dbethtx.get_ethereum_internal_transactions(
                 parent_tx_hash=tx.tx_hash,
@@ -332,9 +338,26 @@ class EVMTransactionDecoder():
                     counterparty=counterparty,
                 ))
 
+    def _maybe_decode_simple_transactions(
+            self,
+            tx: EthereumTransaction,
+            tx_receipt: EthereumTxReceipt,
+    ) -> List[HistoryBaseEntry]:
+        """Decodes normal ETH transfers, internal transactions and gas cost payments"""
+        events: List[HistoryBaseEntry] = []
+        tx_hash_hex = tx.tx_hash.hex()
+        ts_ms = ts_sec_to_ms(tx.timestamp)
+
         # check for gas spent
         direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
         if direction_result is None:
+            self._maybe_decode_internal_transactions(
+                tx=tx,
+                tx_receipt=tx_receipt,
+                events=events,
+                tx_hash_hex=tx_hash_hex,
+                ts_ms=ts_ms,
+            )
             return events
 
         event_type, location_label, counterparty, verb = direction_result
@@ -353,6 +376,15 @@ class EVMTransactionDecoder():
                 event_subtype=HistoryEventSubType.FEE,
                 counterparty='gas',
             ))
+
+        # Decode internal transactions after gas so gas is always 0 indexed
+        self._maybe_decode_internal_transactions(
+            tx=tx,
+            tx_receipt=tx_receipt,
+            events=events,
+            tx_hash_hex=tx_hash_hex,
+            ts_ms=ts_ms,
+        )
 
         if tx_receipt.status is False:
             return events  # nothing more to do for failed transactions
@@ -489,7 +521,7 @@ class EVMTransactionDecoder():
 
         # Add additional information to transfers for different protocols
         self._enrich_protocol_tranfers(
-            token=token,
+            token=found_token,
             tx_log=tx_log,
             transaction=transaction,
             event=transfer,
@@ -534,7 +566,7 @@ class EVMTransactionDecoder():
 
     def _enrich_protocol_tranfers(  # pylint: disable=no-self-use
             self,
-            token: Optional[EthereumToken],
+            token: EthereumToken,
             tx_log: EthereumTxReceiptLog,
             transaction: EthereumTransaction,
             event: HistoryBaseEntry,
@@ -546,17 +578,15 @@ class EVMTransactionDecoder():
         It assumes that the event being decoded has been already filtered and is a
         transfer.
         """
-        if (
-            hex_or_bytes_to_address(tx_log.topics[2]) in PICKLE_CONTRACTS or
-            hex_or_bytes_to_address(tx_log.topics[1]) in PICKLE_CONTRACTS or
-            tx_log.address in PICKLE_CONTRACTS
+        if maybe_enrich_pickle_transfers(
+            token=token, tx_log=tx_log,
+            transaction=transaction,
+            event=event,
+            action_items=action_items,
         ):
-            enrich_pickle_transfers(
-                token=token, tx_log=tx_log,
-                transaction=transaction,
-                event=event,
-                action_items=action_items,
-            )
+            return None
+
+        return None
 
     def _maybe_decode_governance(  # pylint: disable=no-self-use
             self,

@@ -15,14 +15,21 @@ from rotkehlchen.types import EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 
-def enrich_pickle_transfers(
+def maybe_enrich_pickle_transfers(
     token: Optional[EthereumToken],  # pylint: disable=unused-argument
     tx_log: EthereumTxReceiptLog,
     transaction: EthereumTransaction,
     event: HistoryBaseEntry,
     action_items: List[ActionItem],  # pylint: disable=unused-argument
-) -> None:
+) -> bool:
     """Enrich tranfer transactions to address for jar deposits and withdrawals"""
+    if not (
+        hex_or_bytes_to_address(tx_log.topics[2]) in PICKLE_CONTRACTS or
+        hex_or_bytes_to_address(tx_log.topics[1]) in PICKLE_CONTRACTS or
+        tx_log.address in PICKLE_CONTRACTS
+    ):
+        return False
+
     # Deposit
     if (
         event.event_type == HistoryEventType.SPEND and
@@ -31,7 +38,7 @@ def enrich_pickle_transfers(
         hex_or_bytes_to_address(tx_log.topics[2]) in PICKLE_CONTRACTS
     ):
         if EthereumToken(tx_log.address) != event.asset:
-            return None
+            return True
         amount_raw = hex_or_bytes_to_int(tx_log.data)
         amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
         if event.balance.amount == amount:  # noqa: E501
@@ -60,7 +67,7 @@ def enrich_pickle_transfers(
         hex_or_bytes_to_address(tx_log.topics[1]) in transaction.from_address
     ):
         if event.asset != EthereumToken(tx_log.address):
-            return None
+            return True
         amount_raw = hex_or_bytes_to_int(tx_log.data)
         amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
         if event.balance.amount == amount:  # noqa: E501
@@ -76,7 +83,7 @@ def enrich_pickle_transfers(
         hex_or_bytes_to_address(tx_log.topics[1]) in PICKLE_CONTRACTS
     ):
         if event.asset != EthereumToken(tx_log.address):
-            return None
+            return True
         amount_raw = hex_or_bytes_to_int(tx_log.data)
         amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
         if event.balance.amount == amount:  # noqa: E501
@@ -85,4 +92,4 @@ def enrich_pickle_transfers(
             event.counterparty = 'pickle finance'
             event.notes = f'Unstake {event.balance.amount} {event.asset.symbol} from the pickle contract'  # noqa: E501
 
-    return None
+    return True

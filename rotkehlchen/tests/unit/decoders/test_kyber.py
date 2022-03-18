@@ -23,7 +23,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 
-@pytest.mark.skip('Needs to be fixed by Yabir')
 @pytest.mark.parametrize('ethereum_accounts', [['0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b']])  # noqa: E501
 def test_kyber_legacy_old_contract(database, ethereum_manager):
     """Data for trade taken from
@@ -109,7 +108,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager):
             extras=None,
         ), HistoryBaseEntry(
             event_identifier='0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
-            sequence_index=27,
+            sequence_index=1,
             timestamp=1591043988000,
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
@@ -126,7 +125,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager):
             extras=None,
         ), HistoryBaseEntry(
             event_identifier='0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
-            sequence_index=87,
+            sequence_index=89,
             timestamp=1591043988000,
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
@@ -139,12 +138,9 @@ def test_kyber_legacy_old_contract(database, ethereum_manager):
             identifier=None,
             extras=None,
         )]
-    print(events)
-    print(expected_events)
-    assert events[1] == expected_events[0]
+    assert events == expected_events
 
 
-@pytest.mark.skip('Needs to be fixed by Yabir')
 @pytest.mark.parametrize('ethereum_accounts', [['0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0']])  # noqa: E501
 def test_kyber_legacy_new_contract(database, ethereum_manager):
     """Data for trade taken from
@@ -233,7 +229,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager):
             extras=None,
         ), HistoryBaseEntry(
             event_identifier='0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
-            sequence_index=349,
+            sequence_index=350,
             timestamp=1644182638000,
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
@@ -247,7 +243,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager):
             extras=None,
         ), HistoryBaseEntry(
             event_identifier='0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
-            sequence_index=369, timestamp=1644182638000,
+            sequence_index=370, timestamp=1644182638000,
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
