@@ -7,4 +7,4 @@ pytest-cov==3.0.0
 coverage==6.3.2
 psutil==5.9.0
 pytest-freezegun==0.4.2
-freezegun==1.2.0
+freezegun==1.2.1
