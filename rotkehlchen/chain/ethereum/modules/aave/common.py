@@ -116,13 +116,13 @@ def asset_to_atoken(asset: Asset, version: int) -> Optional[EthereumToken]:
         'SELECT A.address from ethereum_tokens as A LEFT OUTER JOIN assets as B '
         'WHERE A.protocol==? AND A.address=B.details_reference AND B.symbol=?',
         (protocol, 'a' + asset.symbol),
-    ).fetchone()
+    ).fetchall()
     if len(result) != 1:
-        log.error(f'Could not derive atoken from {asset}  since multiple or no results were returned')  # noqa: E501
+        log.error(f'Could not derive atoken from {asset} since multiple or no results were returned')  # noqa: E501
         return None
 
     try:
-        return EthereumToken(result[0])
+        return EthereumToken(result[0][0])
     except UnknownAsset:  # should not happen
         log.error(f'Could not derive atoken from {asset}. Couldnt turn {result[0]} to EthereumToken')  # noqa: E501
         return None
