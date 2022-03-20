@@ -108,7 +108,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager):
             extras=None,
         ), HistoryBaseEntry(
             event_identifier='0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
-            sequence_index=27,
+            sequence_index=1,
             timestamp=1591043988000,
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
@@ -125,7 +125,7 @@ def test_kyber_legacy_old_contract(database, ethereum_manager):
             extras=None,
         ), HistoryBaseEntry(
             event_identifier='0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87',
-            sequence_index=87,
+            sequence_index=89,
             timestamp=1591043988000,
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
@@ -229,7 +229,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager):
             extras=None,
         ), HistoryBaseEntry(
             event_identifier='0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
-            sequence_index=349,
+            sequence_index=350,
             timestamp=1644182638000,
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
@@ -243,7 +243,7 @@ def test_kyber_legacy_new_contract(database, ethereum_manager):
             extras=None,
         ), HistoryBaseEntry(
             event_identifier='0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22',
-            sequence_index=369, timestamp=1644182638000,
+            sequence_index=370, timestamp=1644182638000,
             location=Location.BLOCKCHAIN,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,

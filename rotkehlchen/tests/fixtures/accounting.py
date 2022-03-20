@@ -46,7 +46,7 @@ def fixture_data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
     # cached price queries, not for user DBs
     for x in data_directory.iterdir():
         if x.is_dir() and (x / 'rotkehlchen.db').exists():
-            shutil.rmtree(x)
+            shutil.rmtree(x, ignore_errors=True)
 
     return data_directory
 

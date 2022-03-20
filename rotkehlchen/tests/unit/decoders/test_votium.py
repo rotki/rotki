@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import EthereumTransaction, Location, deserialize_evm_tx_hash
@@ -20,7 +21,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA']])  # noqa: E501
 def test_votium_claim(database, ethereum_manager):
-    """Data for trade taken from
+    """Data for claim taken from
     https://etherscan.io/tx/0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30
     """
     msg_aggregator = MessagesAggregator()
@@ -74,7 +75,6 @@ def test_votium_claim(database, ethereum_manager):
     dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
     decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
     events = decoder.decode_transaction(transaction=transaction, tx_receipt=receipt)
-
     assert len(events) == 2
     expected_events = [
         HistoryBaseEntry(
@@ -87,7 +87,7 @@ def test_votium_claim(database, ethereum_manager):
             asset=A_ETH,
             balance=Balance(
                 amount=FVal(0.00393701451),
-                usd_value=FVal(0),
+                usd_value=ZERO,
             ),
             location_label='0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',
             notes='Burned 0.00393701451 ETH in gas from 0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA for transaction 0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30',  # noqa: E501
@@ -102,7 +102,7 @@ def test_votium_claim(database, ethereum_manager):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=EthereumToken('0x3432B6A60D23Ca0dFCa7761B7ab56459D9C964D0'),
-            balance=Balance(amount=FVal('12.369108326706528256'), usd_value=FVal(0)),
+            balance=Balance(amount=FVal('12.369108326706528256'), usd_value=ZERO),
             location_label='0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',
             notes='Receive 12.369108326706528256 FXS from votium bribe',
             counterparty='votium',

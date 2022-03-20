@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
+from rotkehlchen.chain.ethereum.decoding.pickle.decoder import maybe_enrich_pickle_transfers
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
@@ -35,7 +36,13 @@ from rotkehlchen.errors import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, EVMTxHash, Location
+from rotkehlchen.types import (
+    ChecksumEthAddress,
+    EthereumTransaction,
+    EVMTxHash,
+    Location,
+    TimestampMS,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
     from_wei,
@@ -289,6 +296,50 @@ class EVMTransactionDecoder():
         events = self.decode_transaction(transaction, tx_receipt)
         return events
 
+    def _maybe_decode_internal_transactions(
+        self,
+        tx: EthereumTransaction,
+        tx_receipt: EthereumTxReceipt,
+        events: List[HistoryBaseEntry],
+        tx_hash_hex: str,
+        ts_ms: TimestampMS,
+    ) -> None:
+        """
+        check for internal transactions if the transaction is not canceled. This function mutates
+        the events argument.
+        """
+        if tx_receipt.status is False:
+            return
+
+        internal_txs = self.dbethtx.get_ethereum_internal_transactions(
+            parent_tx_hash=tx.tx_hash,
+        )
+        for internal_tx in internal_txs:
+            if internal_tx.to_address is None:
+                continue  # can that happen? Internal transaction deploying a contract?
+            direction_result = self.base.decode_direction(internal_tx.from_address, internal_tx.to_address)  # noqa: E501
+            if direction_result is None:
+                continue
+
+            amount = ZERO if internal_tx.value == 0 else from_wei(FVal(internal_tx.value))
+            if amount == ZERO:
+                continue
+
+            event_type, location_label, counterparty, verb = direction_result
+            events.append(HistoryBaseEntry(
+                event_identifier=tx_hash_hex,
+                sequence_index=self.base.get_next_sequence_counter(),
+                timestamp=ts_ms,
+                location=Location.BLOCKCHAIN,
+                location_label=location_label,
+                asset=A_ETH,
+                balance=Balance(amount=amount),
+                notes=f'{verb} {amount} ETH {internal_tx.from_address} -> {internal_tx.to_address}',  # noqa: E501
+                event_type=event_type,
+                event_subtype=HistoryEventSubType.NONE,
+                counterparty=counterparty,
+            ))
+
     def _maybe_decode_simple_transactions(
             self,
             tx: EthereumTransaction,
@@ -299,23 +350,12 @@ class EVMTransactionDecoder():
         tx_hash_hex = tx.tx_hash.hex()
         ts_ms = ts_sec_to_ms(tx.timestamp)
 
-        # check for internal transactions if the transaction is not canceled
-        if tx_receipt.status is True:
-            internal_txs = self.dbethtx.get_ethereum_internal_transactions(
-                parent_tx_hash=tx.tx_hash,
-            )
-            for internal_tx in internal_txs:
-                if internal_tx.to_address is None:
-                    continue  # can that happen? Internal transaction deploying a contract?
-                direction_result = self.base.decode_direction(internal_tx.from_address, internal_tx.to_address)  # noqa: E501
-                if direction_result is None:
-                    continue
-
-                amount = ZERO if internal_tx.value == 0 else from_wei(FVal(internal_tx.value))
-                if amount == ZERO:
-                    continue
-
-                event_type, location_label, counterparty, verb = direction_result
+        # check for gas spent
+        direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
+        if direction_result is not None:
+            event_type, location_label, counterparty, verb = direction_result
+            if event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
+                eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
                 events.append(HistoryBaseEntry(
                     event_identifier=tx_hash_hex,
                     sequence_index=self.base.get_next_sequence_counter(),
@@ -323,37 +363,26 @@ class EVMTransactionDecoder():
                     location=Location.BLOCKCHAIN,
                     location_label=location_label,
                     asset=A_ETH,
-                    balance=Balance(amount=amount),
-                    notes=f'{verb} {amount} ETH {internal_tx.from_address} -> {internal_tx.to_address}',  # noqa: E501
-                    event_type=event_type,
-                    event_subtype=HistoryEventSubType.NONE,
-                    counterparty=counterparty,
+                    balance=Balance(amount=eth_burned_as_gas),
+                    notes=f'Burned {eth_burned_as_gas} ETH in gas from {location_label} for transaction {tx_hash_hex}',  # noqa: E501
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    counterparty='gas',
                 ))
 
-        # check for gas spent
-        direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
-        if direction_result is None:
+        # Decode internal transactions after gas so gas is always 0 indexed
+        self._maybe_decode_internal_transactions(
+            tx=tx,
+            tx_receipt=tx_receipt,
+            events=events,
+            tx_hash_hex=tx_hash_hex,
+            ts_ms=ts_ms,
+        )
+
+        if tx_receipt.status is False or direction_result is None:
+            # Not any other action to do for failed transactions or transaction where
+            # any tracked address is not involved
             return events
-
-        event_type, location_label, counterparty, verb = direction_result
-        if event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
-            eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
-            events.append(HistoryBaseEntry(
-                event_identifier=tx_hash_hex,
-                sequence_index=self.base.get_next_sequence_counter(),
-                timestamp=ts_ms,
-                location=Location.BLOCKCHAIN,
-                location_label=location_label,
-                asset=A_ETH,
-                balance=Balance(amount=eth_burned_as_gas),
-                notes=f'Burned {eth_burned_as_gas} ETH in gas from {location_label} for transaction {tx_hash_hex}',  # noqa: E501
-                event_type=HistoryEventType.SPEND,
-                event_subtype=HistoryEventSubType.FEE,
-                counterparty='gas',
-            ))
-
-        if tx_receipt.status is False:
-            return events  # nothing more to do for failed transactions
 
         # now decode the actual transaction eth transfer itself
         amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
@@ -485,6 +514,14 @@ class EVMTransactionDecoder():
                 action_items.pop(idx)
                 break  # found an action item and acted on it
 
+        # Add additional information to transfers for different protocols
+        self._enrich_protocol_tranfers(
+            token=found_token,
+            tx_log=tx_log,
+            transaction=transaction,
+            event=transfer,
+            action_items=action_items,
+        )
         return transfer
 
     def _maybe_enrich_transfers(  # pylint: disable=no-self-use
@@ -521,6 +558,28 @@ class EVMTransactionDecoder():
                     )
 
         return None
+
+    def _enrich_protocol_tranfers(  # pylint: disable=no-self-use
+            self,
+            token: EthereumToken,
+            tx_log: EthereumTxReceiptLog,
+            transaction: EthereumTransaction,
+            event: HistoryBaseEntry,
+            action_items: List[ActionItem],
+    ) -> None:
+        """
+        Decode special transfers made by contract execution for example at the moment
+        of depositing assets or withdrawing.
+        It assumes that the event being decoded has been already filtered and is a
+        transfer.
+        """
+        maybe_enrich_pickle_transfers(
+            token=token,
+            tx_log=tx_log,
+            transaction=transaction,
+            event=event,
+            action_items=action_items,
+        )
 
     def _maybe_decode_governance(  # pylint: disable=no-self-use
             self,
