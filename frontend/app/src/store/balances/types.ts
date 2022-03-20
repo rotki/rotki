@@ -230,7 +230,7 @@ export const NonFungibleBalance = PriceInformation.merge(
   z.object({
     name: z.string().nullable(),
     id: z.string().nonempty(),
-    imageUrl: z.string()
+    imageUrl: z.string().nullable()
   })
 );
 
