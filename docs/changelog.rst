@@ -6,6 +6,7 @@ Changelog
 * :bug:`4077` stkAave balance should no longer be double counted. Also unclaimed stkAave will appear in the balance (as Aave).
 * :bug:`4059` Nexo importer won't consider `LockingTermDeposit` as another deposit.
 * :bug:`-` BlockFi import for trades will use the correct rate.
+* :bug:`-` If an owned NFT has no image URL, NFTs will still be properly queried and shown in the frontend.
 
 * :release:`1.23.3 <2022-02-04>`
 * :bug:`4034` If a new premium user is created, with DB sync on, premium api keys being correct but wrong password is given then creating same user with right password will now work.
