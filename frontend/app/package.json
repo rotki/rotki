@@ -93,6 +93,7 @@
     "electron-builder": "22.14.13",
     "electron-devtools-installer": "3.2.0",
     "electron-notarize": "1.1.1",
+    "electron-store": "8.0.1",
     "eslint": "7.32.0",
     "eslint-config-prettier": "8.3.0",
     "eslint-import-resolver-alias": "1.1.2",

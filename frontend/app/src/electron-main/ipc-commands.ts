@@ -19,3 +19,6 @@ export const IPC_CLOSE_APP = 'CLOSE_APP' as const;
 export const IPC_PREMIUM_LOGIN = 'PREMIUM_USER_LOGGED_IN' as const;
 export const IPC_TRAY_UPDATE = 'TRAY_UPDATE' as const;
 export const IPC_LOG_TO_FILE = 'LOG_TO_FILE' as const;
+export const IPC_STORE_PASSWORD = 'STORE_PASSWORD' as const;
+export const IPC_GET_PASSWORD = 'GET_PASSWORD' as const;
+export const IPC_CLEAR_PASSWORD = 'CLEAR_PASSWORD' as const;

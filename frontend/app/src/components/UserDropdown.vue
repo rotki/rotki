@@ -109,6 +109,7 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 
 import { useRoute, useRouter } from '@/composables/common';
 import { setupSession } from '@/composables/session';
+import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 
 const tickLabels: string[] = [
@@ -146,10 +147,14 @@ export default defineComponent({
     const route = useRoute();
 
     const logoutHandler = async () => {
+      if (interop.isPackaged) {
+        await interop.clearPassword();
+      }
+
       confirmLogout.value = false;
       await logout();
 
-      if (route.value.path === '/') {
+      if (route.value.path !== '/') {
         router.replace('/');
       }
     };

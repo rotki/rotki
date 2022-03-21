@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`4125` Introduces auto login mechanism for electron app.
 * :feature:`1447` Adds classification for ETH transactions and their events.
 * :bug:`4078` Adjust scrollbar color in dark mode for better visibility.
 * :feature:`4071` Add option to reduce the animations effect.

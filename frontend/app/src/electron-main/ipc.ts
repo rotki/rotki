@@ -72,4 +72,7 @@ export interface Interop {
   config(defaults: boolean): Promise<Partial<BackendOptions>>;
   updateTray(trayUpdate: TrayUpdate): Promise<void>;
   logToFile(message: string): void;
+  storePassword(username: string, password: string): Promise<boolean>;
+  getPassword(username: string): Promise<string>;
+  clearPassword(): Promise<void>;
 }

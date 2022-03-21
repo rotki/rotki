@@ -4,6 +4,7 @@ import { Interop, TrayUpdate } from '@/electron-main/ipc';
 import {
   IPC_ABOUT,
   IPC_CHECK_FOR_UPDATES,
+  IPC_CLEAR_PASSWORD,
   IPC_CLOSE_APP,
   IPC_CONFIG,
   IPC_DARK_MODE,
@@ -11,6 +12,7 @@ import {
   IPC_DOWNLOAD_PROGRESS,
   IPC_DOWNLOAD_UPDATE,
   IPC_GET_DEBUG,
+  IPC_GET_PASSWORD,
   IPC_INSTALL_UPDATE,
   IPC_LOG_TO_FILE,
   IPC_METAMASK_IMPORT,
@@ -20,6 +22,7 @@ import {
   IPC_PREMIUM_LOGIN,
   IPC_RESTART_BACKEND,
   IPC_SERVER_URL,
+  IPC_STORE_PASSWORD,
   IPC_TRAY_UPDATE,
   IPC_VERSION,
   IPC_WEBSOCKET_URL
@@ -91,5 +94,9 @@ contextBridge.exposeInMainWorld('interop', {
     ipcRenderer.send(IPC_TRAY_UPDATE, trayUpdate),
   logToFile(message: string) {
     ipcRenderer.send(IPC_LOG_TO_FILE, message);
-  }
+  },
+  storePassword: (username: string, password: string) =>
+    ipcAction(IPC_STORE_PASSWORD, { username, password }),
+  getPassword: (username: string) => ipcAction(IPC_GET_PASSWORD, username),
+  clearPassword: (username: string) => ipcAction(IPC_CLEAR_PASSWORD, username)
 } as Interop);

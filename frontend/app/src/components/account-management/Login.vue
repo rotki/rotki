@@ -223,12 +223,14 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
+import { get, set, useLocalStorage } from '@vueuse/core';
 import {
   deleteBackendUrl,
   getBackendUrl,
   saveBackendUrl
 } from '@/components/account-management/utils';
 import RevealableInput from '@/components/inputs/RevealableInput.vue';
+import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { SyncConflict } from '@/store/session/types';
 import { useStore } from '@/store/utils';
@@ -301,6 +303,9 @@ export default defineComponent({
     const usernameRef: Ref<any> = ref(null);
     const passwordRef: Ref<any> = ref(null);
 
+    const savedRemember = useLocalStorage(KEY_REMEMBER, null);
+    const savedUsername = useLocalStorage(KEY_USERNAME, '');
+
     watch(username, () => {
       touched();
     });
@@ -310,7 +315,7 @@ export default defineComponent({
     });
 
     const isLoggedInError = computed<boolean>(() => {
-      return !!(errors.value as string[]).find(error =>
+      return !!(get(errors) as string[]).find(error =>
         error.includes('is already logged in')
       );
     });
@@ -323,17 +328,17 @@ export default defineComponent({
     };
 
     const localLastModified = computed<number>(() => {
-      return syncConflict.value.payload?.localLastModified ?? 0;
+      return get(syncConflict).payload?.localLastModified ?? 0;
     });
 
     const remoteLastModified = computed<number>(() => {
-      return syncConflict.value.payload?.remoteLastModified ?? 0;
+      return get(syncConflict).payload?.remoteLastModified ?? 0;
     });
 
     const serverColor = computed<string | null>(() => {
-      if (customBackendSessionOnly.value) {
+      if (get(customBackendSessionOnly)) {
         return 'primary';
-      } else if (customBackendSaved.value) {
+      } else if (get(customBackendSaved)) {
         return 'success';
       }
 
@@ -351,36 +356,45 @@ export default defineComponent({
 
     const updateFocus = () => {
       nextTick(() => {
-        focusElement(username.value ? passwordRef.value : usernameRef.value);
+        focusElement(get(username) ? get(passwordRef) : get(usernameRef));
       });
     };
 
     const saveCustomBackend = () => {
       saveBackendUrl({
-        url: customBackendUrl.value,
-        sessionOnly: customBackendSessionOnly.value
+        url: get(customBackendUrl),
+        sessionOnly: get(customBackendSessionOnly)
       });
-      backendChanged(customBackendUrl.value);
-      customBackendSaved.value = true;
-      customBackendDisplay.value = false;
+      backendChanged(get(customBackendUrl));
+      set(customBackendSaved, true);
+      set(customBackendDisplay, false);
     };
 
     const clearCustomBackend = () => {
-      customBackendUrl.value = '';
-      customBackendSessionOnly.value = false;
+      set(customBackendUrl, '');
+      set(customBackendSessionOnly, false);
       deleteBackendUrl();
       backendChanged(null);
-      customBackendSaved.value = false;
-      customBackendDisplay.value = false;
+      set(customBackendSaved, false);
+      set(customBackendDisplay, false);
     };
 
-    const loadSettings = () => {
-      rememberUser.value = !!localStorage.getItem(KEY_REMEMBER);
-      username.value = localStorage.getItem(KEY_USERNAME) ?? '';
+    const loadSettings = async () => {
+      set(rememberUser, !!get(savedRemember));
+      set(username, get(savedUsername));
       const { sessionOnly, url } = getBackendUrl();
-      customBackendUrl.value = url;
-      customBackendSessionOnly.value = sessionOnly;
-      customBackendSaved.value = !!url;
+      set(customBackendUrl, url);
+      set(customBackendSessionOnly, sessionOnly);
+      set(customBackendSaved, !!url);
+
+      if (interop.isPackaged && get(rememberUser) && get(username)) {
+        const savedPassword = await interop.getPassword(get(username));
+
+        if (savedPassword) {
+          set(password, savedPassword);
+          login();
+        }
+      }
     };
 
     onMounted(() => {
@@ -389,10 +403,10 @@ export default defineComponent({
     });
 
     watch(displayed, () => {
-      username.value = '';
-      password.value = '';
+      set(username, '');
+      set(password, '');
 
-      form.value?.reset();
+      get(form)?.reset();
 
       loadSettings();
       updateFocus();
@@ -404,22 +418,30 @@ export default defineComponent({
       }
 
       if (!remember) {
-        localStorage.removeItem(KEY_REMEMBER);
-        localStorage.removeItem(KEY_USERNAME);
+        set(savedRemember, null);
+        set(savedUsername, null);
+
+        if (interop.isPackaged) {
+          interop.clearPassword();
+        }
       } else {
-        localStorage.setItem(KEY_REMEMBER, `${true}`);
+        set(savedRemember, 'true');
       }
     });
 
     const login = (syncApproval: SyncApproval = 'unknown') => {
       const credentials: LoginCredentials = {
-        username: username.value,
-        password: password.value,
+        username: get(username),
+        password: get(password),
         syncApproval
       };
       emit('login', credentials);
-      if (rememberUser.value) {
-        localStorage.setItem(KEY_USERNAME, username.value);
+      if (get(rememberUser)) {
+        set(savedUsername, get(username));
+
+        if (interop.isPackaged) {
+          interop.storePassword(get(username), get(password));
+        }
       }
     };
 

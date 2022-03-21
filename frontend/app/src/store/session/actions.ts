@@ -561,6 +561,11 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
         newPassword
       );
       showMessage(i18n.t('actions.session.password_change.success').toString());
+
+      if (success && interop.isPackaged) {
+        interop.clearPassword();
+      }
+
       return {
         success
       };
