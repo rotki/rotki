@@ -56,7 +56,7 @@ from rotkehlchen.constants.limits import (
     FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.cache_handler import DBAccountingReports
 from rotkehlchen.db.ethtx import DBEthTx
@@ -1333,7 +1333,7 @@ class RestAPI():
 
     @staticmethod
     def get_asset_types() -> Response:
-        types = [str(x) for x in AssetType]
+        types = [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
         return api_response(_wrap_in_ok_result(types), status_code=HTTPStatus.OK)
 
     @require_loggedin_user()

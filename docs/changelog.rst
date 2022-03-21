@@ -6,6 +6,7 @@ Changelog
 * :bug:`4077` stkAave balance should no longer be double counted. Also unclaimed stkAave will appear in the balance (as Aave).
 * :bug:`4059` Nexo importer won't consider `LockingTermDeposit` as another deposit.
 * :bug:`-` BlockFi import for trades will use the correct rate.
+* :bug:`3661` NFT won't be displayed as option while adding custom assets since the logic there is not compatible with NFTs.
 * :bug:`-` If an owned NFT has no image URL, NFTs will still be properly queried and shown in the frontend.
 
 * :release:`1.23.3 <2022-02-04>`
