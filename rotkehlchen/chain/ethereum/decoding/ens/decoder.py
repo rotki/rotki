@@ -8,7 +8,7 @@ from rotkehlchen.accounting.structures import (
 )
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_ETH
@@ -19,6 +19,7 @@ from rotkehlchen.utils.misc import from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
@@ -33,6 +34,7 @@ ENS_REGISTRAR_CONTROLLER = string_to_ethereum_address('0x283Af0B28c62C092C9727F1
 NAME_RENEWED = b'=\xa2L\x02E\x82\x93\x1c\xfa\xf8&}\x8e\xd2M\x13\xa8*\x80h\xd5\xbd3}0\xecE\xce\xa4\xe5\x06\xae'  # noqa: E501
 NAME_RENEWED_ABI = '{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"name","type":"string"},{"indexed":true,"internalType":"bytes32","name":"label","type":"bytes32"},{"indexed":false,"internalType":"uint256","name":"cost","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"expires","type":"uint256"}],"name":"NameRenewed","type":"event"}'  # noqa: E501
 
+CPT_ENS = 'ens'
 
 class EnsDecoder(DecoderInterface, CustomizableDateMixin):  # lgtm[py/missing-call-to-init]
     def __init__(  # pylint: disable=super-init-not-called
@@ -69,12 +71,21 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):  # lgtm[py/missing-ca
             if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.balance.amount == amount and event.counterparty == tx_log.address:  # noqa: E501
                 event.event_type = HistoryEventType.RENEW
                 event.event_subtype = HistoryEventSubType.NFT
-                event.counterparty = 'ens'
+                event.counterparty = CPT_ENS
                 event.notes = f'Renew ENS name {name} for {amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
 
         return None, None
+
+    # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
         return {
             ENS_REGISTRAR_CONTROLLER: (self._decode_name_renewed,),  # noqa: E501
         }
+
+    def counterparties(self) -> List[str]:
+        return [CPT_ENS]
+
+    def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
+        """Being defined at function call time is fine since this function is called only once"""
+        return {}

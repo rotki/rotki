@@ -7,9 +7,10 @@ from rotkehlchen.accounting.structures import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
+    get_tx_event_type_identifier,
 )
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface, TxEventSettings
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import (
@@ -21,6 +22,7 @@ from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
@@ -29,6 +31,8 @@ DEPOSIT = b'\xc1\x1c\xc3N\x93\xc6z\x938+\x99\xf2I\x8e\x997\x19\x87\x98\xf3\xc1\x
 ORDER_PLACEMENT = b'\xde\xcfo\xde\x82C\x98\x12\x99\xf7\xb7\xa7v\xf2\x9a\x9f\xc6z,\x98H\xe2]w\xc5\x0e\xb1\x1f\xa5\x8a~!'  # noqa: E501
 WITHDRAW_REQUEST = b',bE\xafPo\x0f\xc1\x08\x99\x18\xc0,\x1d\x01\xbd\xe9\xcc\x80v\t\xb34\xb3\xe7dMm\xfbZl^'  # noqa: E501
 WITHDRAW = b'\x9b\x1b\xfa\x7f\xa9\xeeB\n\x16\xe1$\xf7\x94\xc3Z\xc9\xf9\x04r\xac\xc9\x91@\xeb/dG\xc7\x14\xca\xd8\xeb'  # noqa: E501
+
+CPT_DXDAO_MESA = 'dxdaomesa'
 
 
 class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -94,7 +98,7 @@ class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             if event.event_type == HistoryEventType.SPEND and event.asset == deposited_asset and event.balance.amount == amount and event.counterparty == self.contract.address:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.counterparty = 'dxdaomesa'
+                event.counterparty = CPT_DXDAO_MESA
                 event.notes = f'Deposit {amount} {deposited_asset.symbol} to DXDao mesa exchange'  # noqa: E501
                 break
 
@@ -123,7 +127,7 @@ class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             if event.event_type == HistoryEventType.RECEIVE and event.asset == withdraw_asset and event.balance.amount == amount and event.counterparty == self.contract.address:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.counterparty = 'dxdaomesa'
+                event.counterparty = CPT_DXDAO_MESA
                 event.notes = f'Withdraw {amount} {withdraw_asset.symbol} from DXDao mesa exchange'  # noqa: E501
                 break
 
@@ -163,7 +167,7 @@ class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             notes=f'Request a withdrawal of {amount} {token.symbol} from DXDao Mesa',
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
-            counterparty='dxdaomesa',
+            counterparty=CPT_DXDAO_MESA,
         )
         return event, None
 
@@ -212,11 +216,33 @@ class DxdaomesaDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             notes=f'Place an order in DXDao Mesa to sell {sell_amount} {sell_token.symbol} for {buy_amount} {buy_token.symbol}',  # noqa: E501
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.PLACE_ORDER,
-            counterparty='dxdaomesa',
+            counterparty=CPT_DXDAO_MESA,
         )
         return event, None
+
+    # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
         return {
             self.contract.address: (self._decode_events,),  # noqa: E501
+        }
+
+    def counterparties(self) -> List[str]:
+        return [CPT_DXDAO_MESA]
+
+    def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
+        """Being defined at function call time is fine since this function is called only once"""
+        return {
+            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_DXDAO_MESA): TxEventSettings(  # noqa: E501
+                count_pnl=False,
+                method='spend',
+                take=1,
+                multitake_treatment=None,
+            ),
+            get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_DXDAO_MESA): TxEventSettings(  # noqa: E501
+                count_pnl=False,
+                method='acquisition',
+                take=1,
+                multitake_treatment=None,
+            ),
         }

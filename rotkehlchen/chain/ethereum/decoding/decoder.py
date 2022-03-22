@@ -64,6 +64,7 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -151,11 +152,11 @@ class EVMTransactionDecoder():
             if isinstance(decoder, CustomizableDateMixin):
                 decoder.reload_settings()
 
-    def get_accounting_settings(self) -> Dict[str, TxEventSettings]:
+    def get_accounting_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:
         """Iterate through loaded decoders and get the accounting settings for each event type"""
         result = {}
         for _, decoder in self.decoders.items():
-            result.update(decoder.event_settings())
+            result.update(decoder.event_settings(pot))
         return result
 
     def try_all_rules(

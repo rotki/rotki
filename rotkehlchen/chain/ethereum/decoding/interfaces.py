@@ -1,15 +1,17 @@
+from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple
 
 from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.decoding.structures import TxEventSettings
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class DecoderInterface():
+class DecoderInterface(metaclass=ABCMeta):
 
     def __init__(
             self,
@@ -25,24 +27,26 @@ class DecoderInterface():
         return None
 
     def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:  # pylint: disable=no-self-use  # noqa: E501
-        """Subclasses implement this to return the mappings of addresses to decode functions"""
+        """Subclasses may implement this to return the mappings of addresses to decode functions"""
         return {}
 
     def decoding_rules(self) -> List[Callable]:  # pylint: disable=no-self-use
         """
-        Subclasses implement this to add new generic decoding rules to be attemped
+        Subclasses may implement this to add new generic decoding rules to be attempted
         by the decoding process
         """
         return []
 
-    def event_settings(self) -> Dict[str, 'TxEventSettings']:  # pylint: disable=no-self-use
-        """
-        Subclasses implement this to specify rules/settings for their created events
-        """
-        return {}
-
+    @abstractmethod
     def counterparties(self) -> List[str]:  # pylint: disable=no-self-use
         """
         Subclasses implement this to specify which counterparty values are introduced by the module
         """
-        return []
+        ...
+
+    @abstractmethod
+    def event_settings(self, pot: 'AccountingPot') -> Dict[str, 'TxEventSettings']:  # pylint: disable=no-self-use  # noqa: E501
+        """
+        Subclasses implement this to specify rules/settings for their created events
+        """
+        return {}
