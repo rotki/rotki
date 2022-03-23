@@ -78,9 +78,9 @@ import {
   PropType,
   ref,
   toRefs,
-  unref,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
@@ -152,7 +152,7 @@ const AccountForm = defineComponent({
   setup(props, { emit }) {
     const { context, edit } = toRefs(props);
 
-    const isEdit = computed(() => !!edit.value);
+    const isEdit = computed(() => !!get(edit));
     const xpub = ref<XpubPayload | null>(null);
     const addresses = ref<string[]>([]);
     const validator = ref<Eth2Validator | null>(null);
@@ -166,14 +166,14 @@ const AccountForm = defineComponent({
     const selectedModules = ref<Module[]>([]);
 
     const setErrors = (field: keyof ValidationErrors, messages: string[]) => {
-      const errors = { ...errorMessages.value };
+      const errors = { ...get(errorMessages) };
       errors[field].push(...messages);
-      errorMessages.value = errors;
+      set(errorMessages, errors);
       input(false);
     };
 
     const clearErrors = (field: keyof ValidationErrors) => {
-      const messages = errorMessages.value[field];
+      const messages = get(errorMessages)[field];
       if (messages.length === 0) {
         return;
       }
@@ -184,7 +184,7 @@ const AccountForm = defineComponent({
       input(true);
     };
     watch(blockchain, () => {
-      form.value?.resetValidation();
+      get(form)?.resetValidation();
       clearErrors('address');
     });
     watch(xpub, () => {
@@ -194,77 +194,77 @@ const AccountForm = defineComponent({
     watch(addresses, () => clearErrors(FIELD_ADDRESS));
     watch(edit, () => setEditMode());
     watch(blockchain, value => {
-      if (unref(edit)) {
+      if (get(edit)) {
         return;
       }
       if (value === Blockchain.BTC) {
-        inputMode.value = XPUB_ADD;
+        set(inputMode, XPUB_ADD);
       } else {
-        inputMode.value = MANUAL_ADD;
+        set(inputMode, MANUAL_ADD);
       }
     });
     watch(context, () => {
-      if (!edit.value) {
+      if (!get(edit)) {
         return;
       }
-      blockchain.value = context.value;
+      set(blockchain, get(context));
     });
 
-    const isEth = computed(() => blockchain.value === Blockchain.ETH);
-    const isEth2 = computed(() => blockchain.value === Blockchain.ETH2);
-    const isBtc = computed(() => blockchain.value === Blockchain.BTC);
-    const isXpub = computed(() => inputMode.value === XPUB_ADD);
-    const isMetamask = computed(() => inputMode.value === METAMASK_IMPORT);
+    const isEth = computed(() => get(blockchain) === Blockchain.ETH);
+    const isEth2 = computed(() => get(blockchain) === Blockchain.ETH2);
+    const isBtc = computed(() => get(blockchain) === Blockchain.BTC);
+    const isXpub = computed(() => get(inputMode) === XPUB_ADD);
+    const isMetamask = computed(() => get(inputMode) === METAMASK_IMPORT);
 
     const setEditMode = () => {
-      const account = unref(edit);
+      const account = get(edit);
       if (!account) {
         return;
       }
 
       if (account.chain === Blockchain.ETH2) {
         assert('ownershipPercentage' in account);
-        validator.value = {
+        set(validator, {
           publicKey: account.address,
           ownershipPercentage: account.ownershipPercentage,
           validatorIndex: account.label
-        };
+        });
       }
 
-      addresses.value = [account.address];
-      blockchain.value = account.chain;
-      label.value = account.label;
-      tags.value = account.tags;
+      set(addresses, [account.address]);
+      set(blockchain, account.chain);
+      set(label, account.label);
+      set(tags, account.tags);
       if ('xpub' in account) {
-        xpub.value = xpubToPayload(account.xpub, account.derivationPath);
-        inputMode.value = account.address ? MANUAL_ADD : XPUB_ADD;
+        set(xpub, xpubToPayload(account.xpub, account.derivationPath));
+        set(inputMode, account.address ? MANUAL_ADD : XPUB_ADD);
       }
     };
 
     onMounted(() => {
       setEditMode();
-      if (!isEdit.value) {
-        blockchain.value = context.value;
+      if (!get(isEdit)) {
+        set(blockchain, get(context));
       }
     });
 
     const reset = () => {
-      addresses.value = [];
-      label.value = '';
-      tags.value = [];
-      form.value?.resetValidation();
-      blockchain.value = Blockchain.ETH;
-      inputMode.value = MANUAL_ADD;
+      set(addresses, []);
+      set(label, '');
+      set(tags, []);
+      get(form)?.resetValidation();
+      set(blockchain, Blockchain.ETH);
+      set(inputMode, MANUAL_ADD);
     };
 
     const payload = computed<BlockchainAccountPayload>(() => {
       return {
-        blockchain: unref(blockchain),
-        address: unref(addresses)[0],
-        label: label.value,
-        tags: tags.value,
-        xpub: unref(xpub) ?? undefined,
-        modules: isEth.value ? selectedModules.value : undefined
+        blockchain: get(blockchain),
+        address: get(addresses)[0],
+        label: get(label),
+        tags: get(tags),
+        xpub: get(xpub) ?? undefined,
+        modules: get(isEth) ? get(selectedModules) : undefined
       };
     });
 
@@ -276,16 +276,16 @@ const AccountForm = defineComponent({
 
     const accountOperation = computed(
       () =>
-        isTaskRunning(TaskType.ADD_ACCOUNT).value ||
-        isTaskRunning(TaskType.REMOVE_ACCOUNT).value ||
-        pending.value
+        get(isTaskRunning(TaskType.ADD_ACCOUNT)) ||
+        get(isTaskRunning(TaskType.REMOVE_ACCOUNT)) ||
+        get(pending)
     );
 
     const loading = computed(
       () =>
-        accountOperation.value ||
-        isTaskRunning(TaskType.QUERY_BALANCES).value ||
-        isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES).value
+        get(accountOperation) ||
+        get(isTaskRunning(TaskType.QUERY_BALANCES)) ||
+        get(isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES))
     );
 
     const {
@@ -308,14 +308,14 @@ const AccountForm = defineComponent({
 
         const payload: AccountPayload[] = addresses.map(value => ({
           address: value,
-          label: label.value,
-          tags: tags.value
+          label: get(label),
+          tags: get(tags)
         }));
 
         await addAccounts({
           blockchain: Blockchain.ETH,
           payload: payload,
-          modules: selectedModules.value
+          modules: get(selectedModules)
         });
         return true;
       } catch (e: any) {
@@ -341,22 +341,22 @@ const AccountForm = defineComponent({
     const { setMessage } = setupMessages();
 
     const manualAdd = async () => {
-      const blockchainAccount = unref(payload);
+      const blockchainAccount = get(payload);
       try {
-        if (unref(isEdit)) {
+        if (get(isEdit)) {
           await editAccount(blockchainAccount);
         } else {
-          const entries = unref(addresses);
+          const entries = get(addresses);
           if (entries.length > 1) {
             const payload = entries.map(address => ({
               address: address,
-              label: unref(label),
-              tags: unref(tags)
+              label: get(label),
+              tags: get(tags)
             }));
             await addAccounts({
-              blockchain: unref(blockchain),
+              blockchain: get(blockchain),
               payload,
-              modules: unref(isEth) ? unref(selectedModules) : undefined
+              modules: get(isEth) ? get(selectedModules) : undefined
             });
           } else {
             await addAccount(blockchainAccount);
@@ -383,7 +383,7 @@ const AccountForm = defineComponent({
           setErrors(FIELD_ADDRESS, errors[FIELD_ADDRESS]);
           setErrors(FIELD_XPUB, errors[FIELD_XPUB]);
           setErrors(FIELD_DERIVATION_PATH, errors[FIELD_DERIVATION_PATH]);
-          pending.value = false;
+          set(pending, false);
           return false;
         }
         await setMessage({
@@ -402,21 +402,21 @@ const AccountForm = defineComponent({
 
     const save = async () => {
       let result: boolean;
-      pending.value = true;
+      set(pending, true);
 
-      if (unref(isMetamask)) {
+      if (get(isMetamask)) {
         result = await metamaskImport();
-      } else if (unref(isEth2)) {
-        const payload = unref(validator);
+      } else if (get(isEth2)) {
+        const payload = get(validator);
         assert(payload);
-        result = await (edit.value
+        result = await (get(edit)
           ? editEth2Validator(payload)
           : addEth2Validator(payload));
       } else {
         result = await manualAdd();
       }
 
-      pending.value = false;
+      set(pending, false);
       return result;
     };
 

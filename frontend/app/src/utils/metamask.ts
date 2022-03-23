@@ -26,10 +26,13 @@ export async function getMetamaskAddresses(): Promise<string[]> {
 
   assert(accountPermission);
 
-  const exposedAccounts = accountPermission.caveats.find(
-    caveat => caveat.name === 'exposedAccounts'
-  );
+  const addresses: string[] = [];
+  accountPermission.caveats.forEach(permission => {
+    if (permission.value) {
+      addresses.push(...permission.value);
+    }
+  });
 
-  assert(exposedAccounts);
-  return exposedAccounts.value;
+  assert(addresses);
+  return addresses;
 }

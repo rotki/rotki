@@ -7,7 +7,7 @@
     />
 
     <v-row class="mt-2" justify="space-between">
-      <v-col md="3">
+      <v-col cols="auto">
         <v-tooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
             <v-btn
@@ -24,7 +24,7 @@
           <span>{{ $t('asset_management.merge_assets_tooltip') }}</span>
         </v-tooltip>
       </v-col>
-      <v-col md="2">
+      <v-col cols="auto">
         <restore-asset-db-button />
       </v-col>
     </v-row>
