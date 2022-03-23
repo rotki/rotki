@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.23.4 <2022-03-23>`
 * :bug:`4072` Prevent users from inputting future date on trade and ledger action form.
 * :bug:`4077` stkAave balance should no longer be double counted. Also unclaimed stkAave will appear in the balance (as Aave).
 * :bug:`4059` Nexo importer won't consider `LockingTermDeposit` as another deposit.
