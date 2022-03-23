@@ -1,3 +1,4 @@
+from rotkehlchen.assets.typing import AssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import EventType
 
@@ -25,3 +26,5 @@ KRAKEN_API_VERSION = '0'
 # KRAKEN_BASE_URL = 'http://localhost:5001/kraken'
 # KRAKEN_API_VERSION = 'mock'
 # BINANCE_BASE_URL = 'http://localhost:5001/binance/api/'
+
+ASSET_TYPES_EXCLUDED_FOR_USERS = {AssetType.NFT}

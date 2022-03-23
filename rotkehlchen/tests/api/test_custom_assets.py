@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
@@ -533,7 +534,7 @@ def test_query_asset_types(rotkehlchen_api_server):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == [str(x) for x in AssetType]
+    assert result == [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
     assert all(isinstance(AssetType.deserialize(x), AssetType) for x in result)
 
 

@@ -14,10 +14,14 @@ Changelog
 * :feature:`2934` Users will now be able to deploy the docker image under a sub directory behind a proxy.
 * :feature:`569` Users will now be able to see assets staked, and amounts gained on Kraken's staking feature.
 * :feature:`3838` Support for FTX.US has been added.
+
+* :release:`1.23.4 <2022-03-23>`
 * :bug:`4072` Prevent users from inputting future date on trade and ledger action form.
 * :bug:`4077` stkAave balance should no longer be double counted. Also unclaimed stkAave will appear in the balance (as Aave).
 * :bug:`4059` Nexo importer won't consider `LockingTermDeposit` as another deposit.
 * :bug:`-` BlockFi import for trades will use the correct rate.
+* :bug:`3661` NFT won't be displayed as option while adding custom assets since the logic there is not compatible with NFTs.
+* :bug:`4142` If an owned NFT has no image URL, NFTs will still be properly queried and shown in the frontend.
 
 * :release:`1.23.3 <2022-02-04>`
 * :bug:`4034` If a new premium user is created, with DB sync on, premium api keys being correct but wrong password is given then creating same user with right password will now work.
