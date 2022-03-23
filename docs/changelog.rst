@@ -2,12 +2,13 @@
 Changelog
 =========
 
+* :release:`1.23.4 <2022-03-23>`
 * :bug:`4072` Prevent users from inputting future date on trade and ledger action form.
 * :bug:`4077` stkAave balance should no longer be double counted. Also unclaimed stkAave will appear in the balance (as Aave).
 * :bug:`4059` Nexo importer won't consider `LockingTermDeposit` as another deposit.
 * :bug:`-` BlockFi import for trades will use the correct rate.
 * :bug:`3661` NFT won't be displayed as option while adding custom assets since the logic there is not compatible with NFTs.
-* :bug:`-` If an owned NFT has no image URL, NFTs will still be properly queried and shown in the frontend.
+* :bug:`4142` If an owned NFT has no image URL, NFTs will still be properly queried and shown in the frontend.
 
 * :release:`1.23.3 <2022-02-04>`
 * :bug:`4034` If a new premium user is created, with DB sync on, premium api keys being correct but wrong password is given then creating same user with right password will now work.
