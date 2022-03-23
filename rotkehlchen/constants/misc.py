@@ -1,4 +1,4 @@
-from rotkehlchen.assets.typing import AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import EventType
 
