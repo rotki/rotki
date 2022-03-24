@@ -1,10 +1,8 @@
-import * as log from 'loglevel';
-import { LogLevelNumbers } from 'loglevel';
+import logger, { LogLevelNumbers } from 'loglevel';
 import { interop } from '@/electron-interop';
 import IndexedDb from '@/utils/indexed-db';
 import { LogLevel } from '@/utils/log-level';
 
-const logger = require('loglevel');
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 export const getDefaultLogLevel = () => {
@@ -12,15 +10,15 @@ export const getDefaultLogLevel = () => {
 };
 
 export const getDefaultFrontendLogLevel = () => {
-  return isDevelopment ? log.levels.DEBUG : log.levels.SILENT;
+  return isDevelopment ? logger.levels.DEBUG : logger.levels.SILENT;
 };
 
 const mapping = {
-  [LogLevel.CRITICAL]: log.levels.SILENT,
-  [LogLevel.ERROR]: log.levels.ERROR,
-  [LogLevel.WARNING]: log.levels.WARN,
-  [LogLevel.INFO]: log.levels.INFO,
-  [LogLevel.DEBUG]: log.levels.DEBUG
+  [LogLevel.CRITICAL]: logger.levels.SILENT,
+  [LogLevel.ERROR]: logger.levels.ERROR,
+  [LogLevel.WARNING]: logger.levels.WARN,
+  [LogLevel.INFO]: logger.levels.INFO,
+  [LogLevel.DEBUG]: logger.levels.DEBUG
 };
 
 export const mapToFrontendLogLevel = (logLevel?: LogLevel) => {

@@ -233,6 +233,6 @@ export const useTasks = defineStore('tasks', () => {
   };
 });
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useTasks, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useTasks, import.meta.hot));
 }

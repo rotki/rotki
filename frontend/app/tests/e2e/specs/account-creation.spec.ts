@@ -14,6 +14,7 @@ describe('accounts', () => {
 
   before(() => {
     app = new RotkiApp();
+    app.visit();
   });
 
   viewPortSizes.forEach(size => {

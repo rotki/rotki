@@ -12,9 +12,9 @@ Vue.use(Vuetify);
 
 describe('ExternalServices.vue', () => {
   let wrapper: Wrapper<ExternalServices>;
-  let queryExternalServices: jest.Mock;
-  let setExternalServices: jest.Mock;
-  let deleteExternalServices: jest.Mock;
+  let queryExternalServices: any;
+  let setExternalServices: any;
+  let deleteExternalServices: any;
   let pinia: Pinia;
 
   const mockResponse: ExternalServiceKeys = {
@@ -49,9 +49,9 @@ describe('ExternalServices.vue', () => {
   beforeEach(() => {
     pinia = createPinia();
     setActivePinia(pinia);
-    queryExternalServices = jest.fn();
-    setExternalServices = jest.fn();
-    deleteExternalServices = jest.fn();
+    queryExternalServices = vi.fn();
+    setExternalServices = vi.fn();
+    deleteExternalServices = vi.fn();
   });
 
   afterEach(() => {

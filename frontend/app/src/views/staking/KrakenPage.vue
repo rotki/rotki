@@ -16,7 +16,7 @@
                 <v-img
                   width="64px"
                   contain
-                  :src="require('@/assets/images/exchanges/kraken.svg')"
+                  src="/assets/images/exchanges/kraken.svg"
                 />
               </router-link>
             </v-col>

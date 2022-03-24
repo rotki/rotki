@@ -234,6 +234,6 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   };
 });
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useLiquityStore, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useLiquityStore, import.meta.hot));
 }

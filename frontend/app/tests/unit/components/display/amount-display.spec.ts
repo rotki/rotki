@@ -3,6 +3,7 @@ import { mount, Wrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
+import { VTooltip } from 'vuetify/lib/components';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { currencies } from '@/data/currencies';
 import store from '@/store/store';
@@ -11,6 +12,11 @@ import '@/filters';
 import '../../i18n';
 
 Vue.use(Vuetify);
+
+// This is workaround used because stubs is somehow not working,
+// Eager prop will render the <slot /> immediately
+// @ts-ignore
+VTooltip.options.props.eager.default = true;
 
 function createWrapper(
   value: BigNumber,
@@ -27,15 +33,6 @@ function createWrapper(
       'vuex-store': store
     },
     vuetify,
-    stubs: {
-      VTooltip: {
-        template:
-          '<span><slot name="activator"/><slot v-if="!disabled"/></span>',
-        props: {
-          disabled: { type: Boolean }
-        }
-      }
-    },
     propsData: {
       value,
       fiatCurrency,

@@ -40,11 +40,11 @@ export default defineComponent({
 
 <style module lang="scss">
 .uniswap {
-  background-image: url(~@/assets/images/defi/uniswap.svg);
+  background-image: url(/assets/images/defi/uniswap.svg);
 }
 
 .sushiswap {
-  background-image: url(~@/assets/images/modules/sushiswap.svg);
+  background-image: url(/assets/images/modules/sushiswap.svg);
 }
 
 .asset {

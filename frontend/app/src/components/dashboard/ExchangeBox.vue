@@ -37,7 +37,7 @@ export default defineComponent({
   components: { AmountDisplay },
   props: {
     location: { required: true, type: String as PropType<TradeLocation> },
-    amount: { required: true, type: Object as PropType<BigNumber> }
+    amount: { required: true, type: BigNumber }
   },
   setup() {
     return {

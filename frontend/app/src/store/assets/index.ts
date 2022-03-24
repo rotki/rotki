@@ -444,8 +444,12 @@ export const useIgnoredAssetsStore = defineStore('ignoredAssets', () => {
   };
 });
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useAssets, module.hot));
-  module.hot.accept(acceptHMRUpdate(useAssetInfoRetrieval, module.hot));
-  module.hot.accept(acceptHMRUpdate(useIgnoredAssetsStore, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useAssets, import.meta.hot));
+  import.meta.hot.accept(
+    acceptHMRUpdate(useAssetInfoRetrieval, import.meta.hot)
+  );
+  import.meta.hot.accept(
+    acceptHMRUpdate(useIgnoredAssetsStore, import.meta.hot)
+  );
 }

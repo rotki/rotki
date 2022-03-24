@@ -106,6 +106,6 @@ export const balances: Module<BalanceState, RotkehlchenState> = {
   getters
 };
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useEnsNamesStore, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useEnsNamesStore, import.meta.hot));
 }

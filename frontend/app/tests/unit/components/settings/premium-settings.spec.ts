@@ -12,8 +12,8 @@ import { api } from '@/services/rotkehlchen-api';
 import store from '@/store/store';
 import '../../i18n';
 
-jest.mock('@/electron-interop');
-jest.mock('@/services/rotkehlchen-api');
+vi.mock('@/electron-interop');
+vi.mock('@/services/rotkehlchen-api');
 
 Vue.use(Vuetify);
 Vue.use(Api);
@@ -42,7 +42,7 @@ describe('PremiumSettings.vue', () => {
   });
 
   test('updates premium status upon setting keys', async () => {
-    api.setPremiumCredentials = jest.fn().mockResolvedValue({ result: true });
+    api.setPremiumCredentials = vi.fn().mockResolvedValue({ result: true });
     const apiKey = wrapper.find('.premium-settings__fields__api-key input');
     const apiSecret = wrapper.find(
       '.premium-settings__fields__api-secret input'
@@ -64,9 +64,7 @@ describe('PremiumSettings.vue', () => {
   test('updates premium status upon removing keys', async () => {
     store.commit('session/premium', true);
     await wrapper.vm.$nextTick();
-    api.deletePremiumCredentials = jest
-      .fn()
-      .mockResolvedValue({ result: true });
+    api.deletePremiumCredentials = vi.fn().mockResolvedValue({ result: true });
 
     await (wrapper.vm as any).remove();
     await wrapper.vm.$nextTick();

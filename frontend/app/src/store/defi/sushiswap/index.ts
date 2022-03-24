@@ -198,6 +198,6 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
   };
 });
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useSushiswapStore, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useSushiswapStore, import.meta.hot));
 }

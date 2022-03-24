@@ -222,6 +222,6 @@ const store: StoreOptions<RotkehlchenState> = {
 };
 export default new Vuex.Store(store);
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useMainStore, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useMainStore, import.meta.hot));
 }

@@ -33,7 +33,7 @@ import {
 
 describe('settings:utils', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   test('restore nothing is the loaded value has an unexpected type', async () => {

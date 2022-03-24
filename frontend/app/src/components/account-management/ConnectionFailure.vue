@@ -4,7 +4,7 @@
     <div class="text-body-1 mt-2 text--secondary">
       {{ $t('connection_failure.message') }}
     </div>
-    <div class="full-width d-flex mt-2">
+    <div class="full-width d-flex mt-4">
       <v-btn v-if="!$api.defaultBackend" text @click="toDefault">
         {{ $t('connection_failure.default') }}
       </v-btn>
@@ -12,7 +12,7 @@
       <v-btn depressed @click="terminate">
         {{ $t('connection_failure.terminate') }}
       </v-btn>
-      <v-btn depressed color="primary" @click="retry">
+      <v-btn class="ml-4" depressed color="primary" @click="retry">
         {{ $t('connection_failure.retry') }}
       </v-btn>
     </div>

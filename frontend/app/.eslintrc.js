@@ -10,10 +10,9 @@ module.exports = {
   extends: [
     'plugin:vue/recommended',
     'plugin:vue/essential',
-    '@vue/prettier',
-    '@vue/prettier/@typescript-eslint',
     '@vue/typescript',
-    'plugin:@intlify/vue-i18n/recommended'
+    'plugin:@intlify/vue-i18n/recommended',
+    '@vue/prettier'
   ],
 
   parser: 'vue-eslint-parser',
@@ -23,6 +22,7 @@ module.exports = {
     'vuetify/grid-unknown-attributes': 'error',
     'vuetify/no-legacy-grid': 'error',
     'vue/no-empty-component-block': 'error',
+    'vue/multi-word-component-names': 'off',
     'vue/multiline-html-element-content-newline': [
       'error',
       {

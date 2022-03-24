@@ -206,7 +206,7 @@ export const READ_ONLY_TAGS: Record<ReadOnlyTag, Tag> = {
     backgroundColor: 'C5DEF5',
     foregroundColor: '000000',
     readOnly: true,
-    icon: require('@/assets/images/modules/loopring.svg')
+    icon: '/assets/images/modules/loopring.svg'
   }
 };
 
