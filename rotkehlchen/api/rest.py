@@ -1649,27 +1649,20 @@ class RestAPI():
 
     @require_loggedin_user()
     def export_processed_history_csv(self, directory_path: Path) -> Response:
-        if len(self.rotkehlchen.accountant.csvexporter.all_events_csv) == 0:
-            result_dict = wrap_in_fail_result('No history processed in order to perform an export')
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
-
-        result, message = self.rotkehlchen.accountant.csvexporter.create_files(
-            dirpath=directory_path,
-        )
-
-        if not result:
-            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
+        success, msg = self.rotkehlchen.accountant.export(directory_path)
+        if success is False:
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def download_processed_history_csv(self) -> Response:
-        if len(self.rotkehlchen.accountant.csvexporter.all_events_csv) == 0:
-            result_dict = wrap_in_fail_result('No history processed in order to perform an export')
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+        success, msg_or_zipfile = self.rotkehlchen.accountant.export(directory_path=None)
+        if success is False:
+            return api_response(wrap_in_fail_result(msg_or_zipfile), status_code=HTTPStatus.CONFLICT)  # noqa: E501
 
         try:
-            zipfile = self.rotkehlchen.accountant.csvexporter.create_zip()
+            zipfile = msg_or_zipfile
             if zipfile is None:
                 return api_response(
                     wrap_in_fail_result('Could not create a zip archive'),

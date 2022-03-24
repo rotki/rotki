@@ -73,14 +73,6 @@ def mocked_price_queries():
     return defaultdict(defaultdict)
 
 
-@pytest.fixture(name='accounting_create_csv')
-def fixture_accounting_create_csv():
-    # TODO: The whole create_csv argument should be deleted.
-    # Or renamed. Since it's not about actually creating the CSV
-    # but keeping the events in memory
-    return True
-
-
 @pytest.fixture(name='accounting_initialize_parameters')
 def fixture_accounting_initialize_parameters():
     """
@@ -97,7 +89,6 @@ def fixture_accountant(
         price_historian,  # pylint: disable=unused-argument
         database,
         data_dir,
-        accounting_create_csv,
         function_scope_messages_aggregator,
         start_with_logged_in_user,
         accounting_initialize_parameters,
@@ -117,7 +108,6 @@ def fixture_accountant(
         user_directory=data_dir,
         evm_tx_decoder=evm_transaction_decoder,
         msg_aggregator=function_scope_messages_aggregator,
-        create_csv=accounting_create_csv,
         premium=premium,
     )
 

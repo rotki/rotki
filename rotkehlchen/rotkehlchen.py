@@ -308,7 +308,6 @@ class Rotkehlchen():
             user_directory=self.user_directory,
             msg_aggregator=self.msg_aggregator,
             evm_tx_decoder=self.evm_tx_decoder,
-            create_csv=True,
             premium=self.premium,
         )
         self.events_historian = EventsHistorian(
