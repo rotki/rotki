@@ -40,6 +40,7 @@ from rotkehlchen.types import (
     Timestamp,
     make_evm_tx_hash,
 )
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
 logger = logging.getLogger(__name__)
@@ -107,6 +108,22 @@ class TimestampField(fields.Field):
             timestamp = deserialize_timestamp(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
+
+        return Timestamp(timestamp * self.ts_multiplier)
+
+
+class TimestampUntilNowField(TimestampField):
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],
+            data: Optional[Mapping[str, Any]],
+            **kwargs: Any,
+    ) -> Timestamp:
+        timestamp = super()._deserialize(value, attr, data, **kwargs)
+        if timestamp > ts_now():
+            raise ValidationError('Given date cannot be in the future')
 
         return Timestamp(timestamp * self.ts_multiplier)
 

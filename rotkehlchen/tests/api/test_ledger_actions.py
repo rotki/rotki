@@ -13,6 +13,8 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response_with_result,
 )
+from rotkehlchen.types import Timestamp
+from rotkehlchen.utils.misc import ts_now
 
 
 def _add_ledger_actions(server) -> List[Dict]:
@@ -371,3 +373,63 @@ def test_delete_ledger_actions(rotkehlchen_api_server):
         ),
         status_code=HTTPStatus.CONFLICT,
     )
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_add_edit_ledger_actions_with_timestamp(rotkehlchen_api_server):
+    """Test that the user can't pass future dates when creating/editing ledger actions"""
+    error_msg = 'Given date cannot be in the future'
+    action = {
+        'timestamp': Timestamp(ts_now() - 5),
+        'action_type': 'dividends income',
+        'location': 'external',
+        'amount': '75',
+        'asset': 'EUR',
+        'rate': '1.23',
+        'rate_asset': None,
+        'link': 'APPL_dividens_income_id',
+        'notes': None,
+    }
+
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'ledgeractionsresource'),
+        json=action,
+    )
+    result = assert_proper_response_with_result(response)
+    assert 'identifier' in result
+    action['identifier'] = int(result['identifier'])
+
+    # Now add an action with a date after the valid ts_now
+    action['timestamp'] = Timestamp(ts_now() + 45)
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'ledgeractionsresource'),
+        json=action,
+    )
+    assert_error_response(
+        response,
+        contained_in_msg=error_msg,
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Try to edit the first action and check that a invalid date fails
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ledgeractionsresource',
+        ), json=action,
+    )
+    assert_error_response(
+        response,
+        contained_in_msg=error_msg,
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # And finally try to edit with the right date
+    action['timestamp'] = Timestamp(ts_now())
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ledgeractionsresource',
+        ), json=action,
+    )
+    result = assert_proper_response_with_result(response)

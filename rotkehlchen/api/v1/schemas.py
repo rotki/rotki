@@ -99,6 +99,7 @@ from .fields import (
     SerializableEnumField,
     TaxFreeAfterPeriodField,
     TimestampField,
+    TimestampUntilNowField,
     XpubField,
 )
 
@@ -505,7 +506,7 @@ class TimerangeQuerySchema(Schema):
 
 
 class TradeSchema(Schema):
-    timestamp = TimestampField(required=True)
+    timestamp = TimestampUntilNowField(required=True)
     location = LocationField(required=True)
     base_asset = AssetField(required=True)
     quote_asset = AssetField(required=True)
@@ -520,7 +521,7 @@ class TradeSchema(Schema):
 
 class LedgerActionSchema(Schema):
     identifier = fields.Integer(load_default=None, required=False)
-    timestamp = TimestampField(required=True)
+    timestamp = TimestampUntilNowField(required=True)
     action_type = SerializableEnumField(enum_class=LedgerActionType, required=True)
     location = LocationField(required=True)
     amount = AmountField(required=True)
