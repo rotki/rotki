@@ -3,7 +3,6 @@
   "compilerOptions": {
     "types": ["cypress"]
   },
-  "include": ["**/*.ts", "../common/*.ts"],
-  "exclude": ["../unit/**/*.ts", "../spectron/**/*.ts"],
+  "include": ["**/*.ts", ".eslintrc.js"],
   "compileOnSave": false
 }

@@ -27,7 +27,7 @@ import { SupportedExchange } from '@/types/exchanges';
 export default defineComponent({
   name: 'ExchangeAmountRow',
   props: {
-    balance: { required: true, type: Object as PropType<BigNumber> },
+    balance: { required: true, type: BigNumber },
     exchange: { required: true, type: String as PropType<SupportedExchange> }
   },
   setup() {

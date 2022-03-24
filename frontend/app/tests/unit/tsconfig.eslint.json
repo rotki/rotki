@@ -3,5 +3,5 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["**/*.ts", "../common/*.ts", ".eslintrc.js"]
+  "include": ["**/*.ts", ".eslintrc.js"]
 }

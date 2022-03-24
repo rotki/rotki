@@ -33,8 +33,6 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-@import '~@/scss/scroll';
-
 .macos-unsupported {
   background-color: white;
 }

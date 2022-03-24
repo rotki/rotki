@@ -22,12 +22,7 @@
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
-import {
-  computed,
-  defineComponent,
-  PropType,
-  toRefs
-} from '@vue/composition-api';
+import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import Fragment from '@/components/helper/Fragment';
@@ -40,7 +35,7 @@ export default defineComponent({
   components: { PremiumLock, LoanRow, Fragment },
   props: {
     totalInterestOwed: {
-      type: Object as PropType<BigNumber>,
+      type: BigNumber,
       required: true
     },
     stabilityFee: {

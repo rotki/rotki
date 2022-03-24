@@ -1084,10 +1084,10 @@ export const useLedgerActions = defineStore('history/ledgerActions', () => {
   };
 });
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useHistory, module.hot));
-  module.hot.accept(acceptHMRUpdate(useTrades, module.hot));
-  module.hot.accept(acceptHMRUpdate(useTransactions, module.hot));
-  module.hot.accept(acceptHMRUpdate(useLedgerActions, module.hot));
-  module.hot.accept(acceptHMRUpdate(useAssetMovements, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useHistory, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useTrades, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useTransactions, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useLedgerActions, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useAssetMovements, import.meta.hot));
 }

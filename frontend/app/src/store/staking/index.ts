@@ -264,6 +264,6 @@ export const staking: Module<StakingState, RotkehlchenState> = {
   getters
 };
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useEth2StakingStore, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useEth2StakingStore, import.meta.hot));
 }

@@ -1,5 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia } from 'pinia';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
@@ -17,6 +17,7 @@ describe('AccountBalances.vue', () => {
   beforeEach(() => {
     const vuetify = new Vuetify();
     const pinia = createPinia();
+    setActivePinia(pinia);
     wrapper = mount(AccountBalances, {
       store,
       vuetify,

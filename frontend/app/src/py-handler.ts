@@ -4,13 +4,12 @@ import * as os from 'os';
 import * as path from 'path';
 import stream from 'stream';
 import { app, App, BrowserWindow, ipcMain } from 'electron';
-import tasklist from 'tasklist';
+import { Task, tasklist } from 'tasklist';
 import { BackendCode } from '@/electron-main/backend-code';
 import { BackendOptions } from '@/electron-main/ipc';
 import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { assert } from '@/utils/assertions';
 import { wait } from '@/utils/backoff';
-import Task = tasklist.Task;
 
 async function streamToString(givenStream: stream.Readable): Promise<string> {
   const bufferChunks: Buffer[] = [];
@@ -356,19 +355,8 @@ export default class PyHandler {
       }
       defaultArgs.push('--data-dir', tempPath);
     }
-    // in some systems the virtualenv's python is not detected from inside electron and the
-    // system python is used. Electron/node seemed to add /usr/bin to the path before the
-    // virtualenv directory and as such system's python is used. Not sure why this happens only
-    // in some systems. Check again in the future if this happens in Lefteris laptop Archlinux.
-    // To mitigate this if a virtualenv is detected we add its bin directory to the start
-    // start of the path
-    if (process.env.VIRTUAL_ENV) {
-      process.env.PATH =
-        process.env.VIRTUAL_ENV +
-        path.sep +
-        (process.platform === 'win32' ? 'Scripts;' : 'bin:') +
-        process.env.PATH;
-    } else {
+
+    if (!process.env.VIRTUAL_ENV) {
       this.logAndQuit(
         'ERROR: Running in development mode and not inside a python virtual environment'
       );
@@ -449,7 +437,7 @@ export default class PyHandler {
       return;
     }
 
-    const tasks: tasklist.Task[] = await tasklist();
+    const tasks: Task[] = await tasklist();
     this.logToFile(`Currently running: ${tasks.length} tasks`);
 
     const pids = tasks

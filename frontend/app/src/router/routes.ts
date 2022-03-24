@@ -104,21 +104,21 @@ export const Routes = {
   },
   DEFI_DEPOSITS_LIQUIDITY_UNISWAP: {
     route: '/defi/deposits/liquidity/uniswap',
-    image: require('@/assets/images/defi/uniswap.svg'),
+    image: '/assets/images/defi/uniswap.svg',
     text: i18n
       .t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap')
       .toString()
   },
   DEFI_DEPOSITS_LIQUIDITY_BALANCER: {
     route: '/defi/deposits/liquidity/balancer',
-    image: require('@/assets/images/defi/balancer.svg'),
+    image: '/assets/images/defi/balancer.svg',
     text: i18n
       .t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer')
       .toString()
   },
   DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP: {
     route: '/defi/deposits/liquidity/sushiswap',
-    image: require('@/assets/images/modules/sushiswap.svg'),
+    image: '/assets/images/modules/sushiswap.svg',
     text: i18n
       .t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap')
       .toString()

@@ -28,7 +28,7 @@ export default defineComponent({
     },
     ratio: {
       required: false,
-      type: Object as PropType<BigNumber>,
+      type: BigNumber,
       default: null
     }
   },

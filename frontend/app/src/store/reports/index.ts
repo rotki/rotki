@@ -299,6 +299,6 @@ export const useReports = defineStore('reports', () => {
   };
 });
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useReports, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useReports, import.meta.hot));
 }

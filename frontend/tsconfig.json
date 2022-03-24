@@ -15,8 +15,8 @@
     "baseUrl": ".",
     "types": [
       "vuetify",
-      "webpack",
-      "webpack-env"
+      "vite/client",
+      "unplugin-vue2-script-setup/types"
     ],
     "paths": {
       "@/*": [
@@ -43,6 +43,9 @@
     {
       "path": "common"
     }
+  ],
+  "include": [
+    ".eslintrc.js"
   ],
   "exclude": [
     "node_modules",

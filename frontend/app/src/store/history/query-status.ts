@@ -53,6 +53,6 @@ export const useTxQueryStatus = defineStore(
   }
 );
 
-if (module.hot) {
-  module.hot.accept(acceptHMRUpdate(useTxQueryStatus, module.hot));
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useTxQueryStatus, import.meta.hot));
 }

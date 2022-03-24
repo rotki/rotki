@@ -2,11 +2,11 @@ import path from 'path';
 import { app, BrowserWindow, Menu, MenuItem, protocol } from 'electron';
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer';
 import windowStateKeeper from 'electron-window-state';
-import { createProtocol } from 'vue-cli-plugin-electron-builder/lib';
 import { ipcSetup } from '@/electron-main/ipc-setup';
 import { getUserMenu } from '@/electron-main/menu';
 import { TrayManager } from '@/electron-main/tray-manager';
 import { Nullable } from '@/types';
+import createProtocol from './create-protocol';
 import PyHandler from './py-handler';
 import { assert } from './utils/assertions';
 
@@ -152,10 +152,10 @@ async function createWindow() {
     }
   });
 
-  if (process.env.WEBPACK_DEV_SERVER_URL) {
-    pyHandler.setCorsURL(process.env.WEBPACK_DEV_SERVER_URL);
+  if (process.env.VITE_DEV_SERVER_URL) {
+    pyHandler.setCorsURL(process.env.VITE_DEV_SERVER_URL);
     // Load the url of the dev server if in development mode
-    await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
+    await win.loadURL(process.env.VITE_DEV_SERVER_URL);
     if (!process.env.IS_TEST) win.webContents.openDevTools();
   } else {
     createProtocol('app');

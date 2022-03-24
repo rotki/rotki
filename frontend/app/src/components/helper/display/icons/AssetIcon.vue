@@ -96,7 +96,7 @@ export default defineComponent({
         get(symbol) === 'WETH' ||
         get(assetIdentifierForSymbol('WETH')) === id
       ) {
-        return require(`@/assets/images/defi/weth.svg`);
+        return `/assets/images/defi/weth.svg`;
       }
       const url = `${api.serverUrl}/api/1/assets/${id}/icon`;
       return get(changeable) ? `${url}?t=${Date.now()}` : url;

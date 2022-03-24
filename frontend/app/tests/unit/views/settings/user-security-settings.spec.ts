@@ -1,5 +1,5 @@
 import { mount, Wrapper } from '@vue/test-utils';
-import { createPinia } from 'pinia';
+import { createPinia, setActivePinia } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { BackupApi } from '@/services/backup/backup-api';
@@ -9,9 +9,9 @@ import UserSecuritySettings from '@/views/settings/UserSecuritySettings.vue';
 import { stub } from '../../../common/utils';
 import '../../i18n';
 
-jest.spyOn(api, 'backups', 'get').mockReturnValue(
+vi.spyOn(api, 'backups', 'get').mockReturnValue(
   stub<BackupApi>({
-    info: jest.fn()
+    info: vi.fn()
   })
 );
 
@@ -23,6 +23,7 @@ describe('UserSecuritySettings.vue', () => {
   function createWrapper() {
     const vuetify = new Vuetify();
     const pinia = createPinia();
+    setActivePinia(pinia);
     return mount(UserSecuritySettings, {
       store,
       pinia,

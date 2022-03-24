@@ -87,7 +87,7 @@ export default defineComponent({
   name: 'KrakenStakingOverview',
   components: { ValueAccuracyHint },
   props: {
-    totalUsd: { required: true, type: Object as PropType<BigNumber> },
+    totalUsd: { required: true, type: BigNumber },
     earned: { required: true, type: Array as PropType<ReceivedAmount[]> }
   },
   setup(props) {

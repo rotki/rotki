@@ -10,7 +10,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, PropType, toRefs } from '@vue/composition-api';
-import { RawLocation } from 'vue-router/types/router';
+import { RawLocation } from 'vue-router';
 import { useRouter } from '@/composables/common';
 
 export default defineComponent({

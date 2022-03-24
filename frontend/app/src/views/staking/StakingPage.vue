@@ -98,7 +98,7 @@
                   <v-img
                     :width="iconSize"
                     contain
-                    :src="require('@/assets/images/exchanges/kraken.svg')"
+                    src="/assets/images/exchanges/kraken.svg"
                   />
                 </router-link>
               </v-col>
@@ -166,7 +166,7 @@ const staking: StakingInfo[] = [
   },
   {
     id: 'kraken',
-    icon: require('@/assets/images/exchanges/kraken.svg'),
+    icon: '/assets/images/exchanges/kraken.svg',
     name: i18n.t('staking.kraken').toString(),
     img: true
   }

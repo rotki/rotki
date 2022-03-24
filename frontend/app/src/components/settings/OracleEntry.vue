@@ -43,17 +43,17 @@ export default defineComponent({
 
     const icon = computed<string>(() => {
       if (get(identifier) === 'cryptocompare') {
-        return require('@/assets/images/oracles/cryptocompare.png');
+        return '/assets/images/oracles/cryptocompare.png';
       } else if (get(identifier) === 'coingecko') {
-        return require('@/assets/images/oracles/coingecko.svg');
+        return '/assets/images/oracles/coingecko.svg';
       } else if (get(identifier) === 'manual') {
-        return require('@/assets/images/oracles/book.svg');
+        return '/assets/images/oracles/book.svg';
       } else if (identifier.value === 'uniswapv2') {
-        return require('@/assets/images/defi/uniswap.svg');
+        return '/assets/images/defi/uniswap.svg';
       } else if (identifier.value === 'uniswapv3') {
-        return require('@/assets/images/defi/uniswap.svg');
+        return '/assets/images/defi/uniswap.svg';
       } else if (identifier.value === 'saddle') {
-        return require('@/assets/images/airdrops/saddle-finance.svg');
+        return '/assets/images/airdrops/saddle-finance.svg';
       }
       return '';
     });

@@ -21,16 +21,16 @@
   "license": "AGPL-3.0",
   "repository": "https://github.com/rotki/rotki",
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "5.10.1",
-    "@typescript-eslint/parser": "5.10.1",
+    "@typescript-eslint/eslint-plugin": "5.18.0",
+    "@typescript-eslint/parser": "5.18.0",
     "core-js": "3.20.3",
-    "eslint": "7.32.0",
-    "eslint-config-prettier": "8.3.0",
+    "eslint": "8.13.0",
+    "eslint-config-prettier": "8.5.0",
     "eslint-import-resolver-alias": "1.1.2",
-    "eslint-plugin-import": "2.25.4",
-    "prettier": "2.5.1",
+    "eslint-plugin-import": "2.26.0",
+    "prettier": "2.6.2",
     "rimraf": "3.0.2",
-    "typescript": "4.5.5"
+    "typescript": "4.6.2"
   },
   "engines": {
     "node": ">=16 <17",
@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "bignumber.js": "9.0.2",
-    "zod": "3.11.6"
+    "zod": "3.12.0"
   },
   "peerDependencies": {
     "@vue/composition-api": "1.4.6"
