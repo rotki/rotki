@@ -339,12 +339,12 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         May raise RemoteError
         """
-        results: Union[List[Trade], List[AssetMovement]] = []  # type: ignore # bug list nothing
+        results: Union[List[Trade], List[AssetMovement]] = []
         deserialization_method: DeserializationMethod
         if case == KucoinCase.TRADES:
             if start_ts < API_V2_TIMESTART:
                 # create separate query for v1 trades.
-                results.extend(self._api_query_paginated(  # type: ignore
+                results.extend(self._api_query_paginated(
                     options=options,
                     case=KucoinCase.OLD_TRADES,
                     start_ts=start_ts,
@@ -441,7 +441,7 @@ class Kucoin(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         f'Check logs for more details')
                     continue
 
-                results.append(result)  # type: ignore # type is known
+                results.append(result)
 
             is_last_page = total_page in (0, current_page)
             if is_last_page:

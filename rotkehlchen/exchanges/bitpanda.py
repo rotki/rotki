@@ -465,7 +465,7 @@ class Bitpanda(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             page += 1
 
-        return result  # type: ignore
+        return result
 
     # ---- General exchanges interface ----
     @protect_with_lock()
