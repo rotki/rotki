@@ -26,6 +26,7 @@ from rotkehlchen.tests.utils.history import (
     mock_history_processing_and_exchanges,
 )
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
@@ -380,7 +381,6 @@ def test_add_trades(rotkehlchen_api_server):
         assert result['entries'] == [{'entry': x, 'ignored_in_accounting': False} for x in all_expected_trades]  # noqa: E501
 
     # Test trade with rate 0. Should fail
-
     zero_rate_trade = {
         'timestamp': 1575640208,
         'location': 'external',
@@ -405,6 +405,34 @@ def test_add_trades(rotkehlchen_api_server):
     assert_error_response(
         response=response,
         contained_in_msg='A zero rate is not allowed',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Test trade with invalid timestamp
+    zero_rate_trade = {
+        'timestamp': Timestamp(ts_now() + 200),
+        'location': 'external',
+        'base_asset': 'ETH',
+        'quote_asset': A_WETH.identifier,
+        'trade_type': 'buy',
+        'amount': '0.5541',
+        'rate': '1',
+        'fee': '0.01',
+        'fee_currency': 'USD',
+        'link': 'optional trader identifier',
+        'notes': 'optional notes',
+    }
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json=zero_rate_trade,
+    )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='Given date cannot be in the future',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
