@@ -34,6 +34,7 @@ REDEEM_COMPOUND_TOKEN = b'\xe5\xb7T\xfb\x1a\xbb\x7f\x01\xb4\x99y\x1d\x0b\x82\n\x
 
 CPT_COMPOUND = 'compound'
 
+
 class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     def __init__(  # pylint: disable=super-init-not-called
             self,

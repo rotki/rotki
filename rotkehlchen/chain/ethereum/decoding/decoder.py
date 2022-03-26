@@ -5,6 +5,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures import (
+    CPT_GAS,
     Balance,
     HistoryBaseEntry,
     HistoryEventSubType,
@@ -157,6 +158,18 @@ class EVMTransactionDecoder():
         result = {}
         for _, decoder in self.decoders.items():
             result.update(decoder.event_settings(pot))
+
+        # Also add the default settings
+        gas_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS  # noqa: E501
+        result[gas_key] = TxEventSettings(
+            count_pnl=pot.settings.include_gas_costs,
+            take=1,
+            method='spend',
+        )
+        spend_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.NONE)
+        result[spend_key] = TxEventSettings(count_pnl=True, take=1, method='spend')
+        receive_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.NONE)
+        result[receive_key] = TxEventSettings(count_pnl=True, take=1, method='acquisition')
         return result
 
     def try_all_rules(

@@ -10,11 +10,7 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import (
-    ActionItem,
-    TxEventSettings,
-    TxMultitakeTreatment,
-)
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address

@@ -30,4 +30,4 @@ class TxEventSettings(NamedTuple):
     count_pnl: bool
     take: int
     method: Literal['acquisition', 'spend']
-    multitake_treatment: Optional[TxMultitakeTreatment]
+    multitake_treatment: Optional[TxMultitakeTreatment] = None

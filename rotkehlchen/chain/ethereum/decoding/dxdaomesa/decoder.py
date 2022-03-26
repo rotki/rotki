@@ -10,8 +10,8 @@ from rotkehlchen.accounting.structures import (
     get_tx_event_type_identifier,
 )
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
-from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface, TxEventSettings
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
+from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,

@@ -36,6 +36,7 @@ NAME_RENEWED_ABI = '{"anonymous":false,"inputs":[{"indexed":false,"internalType"
 
 CPT_ENS = 'ens'
 
+
 class EnsDecoder(DecoderInterface, CustomizableDateMixin):  # lgtm[py/missing-call-to-init]
     def __init__(  # pylint: disable=super-init-not-called
             self,

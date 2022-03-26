@@ -34,6 +34,7 @@ KYBER_LEGACY_CONTRACT_UPGRADED = string_to_ethereum_address('0x9AAb3f75489902f3a
 
 CPT_KYBER = 'kyber legacy'
 
+
 def _legacy_contracts_basic_info(tx_log: EthereumTxReceiptLog) -> Tuple[ChecksumEthAddress, Optional[Asset], Optional[Asset]]:  # noqa: E501
     """
     Returns:
