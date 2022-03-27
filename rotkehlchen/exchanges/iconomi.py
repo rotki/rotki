@@ -27,7 +27,11 @@ from rotkehlchen.exchanges.data_structures import (
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee, deserialize_fval
+from rotkehlchen.serialization.deserialize import (
+    deserialize_asset_amount,
+    deserialize_fee,
+    deserialize_fval,
+)
 from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
