@@ -247,7 +247,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 assets_balance[asset] = Balance(
                     amount=amount,
-                    usd_value=usd_value
+                    usd_value=usd_value,
                 )
             except (UnknownAsset, UnsupportedAsset) as e:
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
@@ -285,7 +285,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 assets_balance[aust_asset] = Balance(
                     amount=usd_value / aust_usd_price,
-                    usd_value=usd_value
+                    usd_value=usd_value,
                 )
             else:
                 self.msg_aggregator.add_warning(
