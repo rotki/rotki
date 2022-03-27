@@ -183,7 +183,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
 
         # Insert requested events in DB
         all_events = []
-        for address in filter(lambda address: address in address_events, addresses):
+        for address in filter(lambda x: x in address_events, addresses):
             all_events.extend(address_events[address])
 
         self.database.add_amm_events(all_events)
@@ -293,7 +293,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
 
         # Insert all unique swaps to the DB
         all_swaps = set()
-        for address in filter(lambda address: address in address_amm_trades, addresses):
+        for address in filter(lambda x: x in address_amm_trades, addresses):
             for trade in address_amm_trades[address]:
                 for swap in trade.swaps:
                     all_swaps.add(swap)

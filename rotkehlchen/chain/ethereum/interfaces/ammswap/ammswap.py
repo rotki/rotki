@@ -716,7 +716,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
         # Insert all unique swaps to the DB
         all_swaps = set()
-        for address in filter(lambda address: address in address_amm_trades, addresses):
+        for address in filter(lambda x: x in address_amm_trades, addresses):
             for trade in address_amm_trades[address]:
                 for swap in trade.swaps:
                     all_swaps.add(swap)
