@@ -224,15 +224,11 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             try:
                 asset = asset_from_iconomi(ticker)
 
-                # There seems to be a bug in the ICONOMI API regarding balance_info['value'].
-                # The value is supposed to be in USD, but is actually returned
-                # in EUR. So let's use the Inquirer for now.
                 try:
-                    usd_price = Inquirer().find_usd_price(asset=asset)
-                except RemoteError as e:
-                    self.msg_aggregator.add_error(
-                        f'Error processing ICONOMI balance entry due to inability to '
-                        f'query USD price: {str(e)}. Skipping balance entry',
+                    usd_value = deserialize_fval(balance_info['value'], 'usd_value', 'iconomi')
+                except DeserializationError as e:
+                    self.msg_aggregator.add_warning(
+                        f'Skipping iconomi balance entry {balance_info} due to {str(e)}',
                     )
                     continue
 
@@ -246,7 +242,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 assets_balance[asset] = Balance(
                     amount=amount,
-                    usd_value=amount * usd_price,
+                    usd_value=usd_value
                 )
             except (UnknownAsset, UnsupportedAsset) as e:
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
