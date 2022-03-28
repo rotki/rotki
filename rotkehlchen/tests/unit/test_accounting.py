@@ -1,7 +1,11 @@
+import tempfile
+from pathlib import Path
+
 import jsonschema
 import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.pnl import OVR_FEES, OVR_MARGIN_PNL, OVR_TRADE_PNL
 from rotkehlchen.accounting.structures import (
     AssetBalance,
     Balance,
@@ -11,17 +15,27 @@ from rotkehlchen.accounting.structures import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.accounting.totals import OVR_TRADE_PNL
 from rotkehlchen.accounting.types import ACCOUNTING_EVENT_SCHEMA
-from rotkehlchen.chain.ethereum.structures import AaveInterestEvent
-from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETH, A_ETH2, A_KFEE, A_USDT, A_WBTC
+from rotkehlchen.chain.ethereum.modules.aave.structures import AaveInterestEvent
+from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants.assets import (
+    A_BCH,
+    A_BSV,
+    A_BTC,
+    A_ETC,
+    A_ETH,
+    A_ETH2,
+    A_EUR,
+    A_KFEE,
+    A_USDT,
+    A_WBTC,
+)
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
-from rotkehlchen.tests.utils.constants import A_DASH
+from rotkehlchen.tests.utils.constants import A_CHF, A_DASH, A_XMR
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.types import (
     AssetMovementCategory,
@@ -29,6 +43,7 @@ from rotkehlchen.types import (
     Fee,
     Location,
     Timestamp,
+    TradeType,
     make_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import timestamp_to_date
@@ -37,335 +52,381 @@ DUMMY_ADDRESS = '0x0'
 DUMMY_HASH = make_evm_tx_hash(b'')
 
 history1 = [
-    {
-        'timestamp': 1446979735,
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 268.678317859,
-        'fee': 0,
-        'fee_currency': 'BTC',
-        'amount': 82,
-        'location': 'external',
-    }, {
-        'timestamp': 1446979735,
-        'base_asset': 'ETH',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 0.2315893,
-        'fee': 0,
-        'fee_currency': 'ETH',
-        'amount': 1450,
-        'location': 'external',
-    }, {
-        'timestamp': 1473505138,  # cryptocompare hourly BTC/EUR price: 556.435
-        'base_asset': 'ETH',  # cryptocompare hourly ETH/EUR price: 10.36
-        'quote_asset': 'BTC',
-        'trade_type': 'buy',  # Buy ETH with BTC
-        'rate': 0.01858275,
-        'fee': 0.06999999999999999,
-        'fee_currency': 'ETH',
-        'amount': 50.0,
-        'location': 'poloniex',
-    }, {
-        'timestamp': 1475042230,  # cryptocompare hourly BTC/EUR price: 537.805
-        'base_asset': 'ETH',  # cryptocompare hourly ETH/EUR price: 11.925
-        'quote_asset': 'BTC',
-        'trade_type': 'sell',  # Sell ETH for BTC
-        'rate': 0.02209898,
-        'fee': 0.00082871175,
-        'fee_currency': 'BTC',
-        'amount': 25.0,
-        'location': 'poloniex',
-    },
+    Trade(
+        timestamp=1446979735,
+        location=Location.EXTERNAL,
+        base_asset=A_BTC,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=FVal(82),
+        rate=FVal('268.678317859'),
+        fee=None,
+        fee_currency=None,
+        link=None,
+    ), Trade(
+        timestamp=1446979735,
+        location=Location.EXTERNAL,
+        base_asset=A_ETH,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=FVal(1450),
+        rate=FVal('0.2315893'),
+        fee=None,
+        fee_currency=None,
+        link=None,
+    ), Trade(
+        timestamp=1473505138,  # cryptocompare hourly BTC/EUR price: 556.435
+        location=Location.POLONIEX,
+        base_asset=A_ETH,  # cryptocompare hourly ETH/EUR price: 10.36
+        quote_asset=A_BTC,
+        trade_type=TradeType.BUY,
+        amount=FVal(50),
+        rate=FVal('0.01858275'),
+        fee=FVal('0.06999999999999999'),
+        fee_currency=A_ETH,
+        link=None,
+    ), Trade(
+        timestamp=1475042230,  # cryptocompare hourly BTC/EUR price: 537.805
+        location=Location.POLONIEX,
+        base_asset=A_ETH,  # cryptocompare hourly ETH/EUR price: 11.925
+        quote_asset=A_BTC,
+        trade_type=TradeType.SELL,
+        amount=FVal(25),
+        rate=FVal('0.02209898'),
+        fee=FVal('0.00082871175'),
+        fee_currency=A_BTC,
+        link=None,
+    ),
 ]
+
+
+def _check_for_errors(accountant) -> None:
+    errors = accountant.msg_aggregator.consume_errors()
+    warnings = accountant.msg_aggregator.consume_warnings()
+    assert len(errors) == 0, f'Found errors: {errors}'
+    assert len(warnings) == 0, f'Found warnings: {warnings}'
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_simple_accounting(accountant):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
-    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
-    assert trades_pnl.taxable.is_close('558.25365490257463')
-    assert trades_pnl.free == ZERO
+    _check_for_errors(accountant)
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 2
+    assert pnls.taxable.is_close('559.455847283')
+    assert pnls.free == ZERO
+
+    # with tempfile.TemporaryDirectory() as tmpdirname:
+    #     accountant.export(Path(tmpdirname))
+    #     __import__("pdb").set_trace()
+    #     a = 1
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_selling_crypto_bought_with_crypto(accountant):
-    history = [{
-        'timestamp': 1446979735,
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 268.678317859,
-        'fee': 0,
-        'fee_currency': 'BTC',
-        'amount': 82,
-        'location': 'external',
-    }, {
-        'timestamp': 1449809536,  # cryptocompare hourly BTC/EUR price: 386.175
-        'base_asset': 'XMR',  # cryptocompare hourly XMR/EUR price: 0.39665
-        'quote_asset': 'BTC',
-        'trade_type': 'buy',  # Buy XMR with BTC
-        'rate': 0.0010275,
-        'fee': 0.9375,
-        'fee_currency': 'XMR',
-        'amount': 375,
-        'location': 'poloniex',
-    }, {
-        'timestamp': 1458070370,  # cryptocompare hourly rate XMR/EUR price: 1.0443027675
-        'base_asset': 'XMR',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',  # Sell XMR for EUR
-        'rate': 1.0443027675,
-        'fee': 0.117484061344,
-        'fee_currency': 'EUR',
-        'amount': 45,
-        'location': 'kraken',
-    }]
+    history = [
+        Trade(
+            timestamp=1446979735,
+            location=Location.EXTERNAL,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal(82),
+            rate=FVal('268.678317859'),
+            fee=None,
+            fee_currency=None,
+            link=None,
+        ), Trade(
+            timestamp=1449809536,  # cryptocompare hourly BTC/EUR price: 386.175
+            location=Location.POLONIEX,
+            base_asset=A_XMR,  # cryptocompare hourly XMR/EUR price: 0.39665
+            quote_asset=A_BTC,
+            trade_type=TradeType.BUY,
+            amount=FVal(375),
+            rate=FVal('0.0010275'),
+            fee=FVal('0.9375'),
+            fee_currency=A_XMR,
+            link=None,
+        ), Trade(
+            timestamp=1458070370,  # cryptocompare hourly rate XMR/EUR price: 1.0443027675
+            location=Location.KRAKEN,
+            base_asset=A_XMR,
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal(45),
+            rate=FVal('1.0443027675'),
+            fee=FVal('0.117484061344'),
+            fee_currency=A_XMR,
+            link=None,
+        ),
+    ]
     accounting_history_process(accountant, 1436979735, 1495751688, history)
+    _check_for_errors(accountant)
     # Make sure buying XMR with BTC also creates a BTC sell
-    sells = accountant.events.cost_basis.get_events(A_BTC).spends
+    sells = accountant.pots[0].cost_basis.get_events(A_BTC).spends
     assert len(sells) == 1
-    assert sells[0].amount == FVal('0.3853125')
     assert sells[0].timestamp == 1449809536
-    assert sells[0].rate.is_close(FVal('386.0340632603'))
-    assert sells[0].fee_rate == Fee(ZERO)  # the fee should not be double counted
-    assert sells[0].gain.is_close(FVal('148.74375'))
+    assert sells[0].amount.is_close(FVal('0.3853125'))
+    assert sells[0].rate.is_close(FVal('386.03406326'))
 
-    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
-    assert trades_pnl.taxable.is_close('74.1943864386100625')
-    assert trades_pnl.free == ZERO
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 2
+    assert pnls.taxable.is_close('73.8922121486')
+    assert pnls.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_buying_selling_eth_before_daofork(accountant):
     history3 = [
-        {
-            'timestamp': 1446979735,  # 11/08/2015
-            'base_asset': 'ETH',
-            'quote_asset': 'EUR',
-            'trade_type': 'buy',
-            'rate': 0.2315893,
-            'fee': 0,
-            'fee_currency': 'ETH',
-            'amount': 1450,
-            'location': 'external',
-        }, {  # selling ETH prefork should also reduce our ETC amount
-            'timestamp': 1461021812,  # 18/04/2016 (taxable)
-            'base_asset': 'ETH',  # cryptocompare hourly ETC/EUR price: 7.88
-            'quote_asset': 'EUR',
-            'trade_type': 'sell',
-            'rate': 7.88,
-            'fee': 0.5215,
-            'fee_currency': 'EUR',
-            'amount': 50,
-            'location': 'kraken',
-        }, {  # sell ETC after the fork
-            'timestamp': 1481979135,  # 17/12/2016
-            'base_asset': 'ETC',  # cryptocompare hourly ETC/EUR price: 1.78
-            'quote_asset': 'EUR',
-            'trade_type': 'sell',  # not-taxable -- considered bought with ETH so after year
-            'rate': 1.78,
-            'fee': 0.9375,
-            'fee_currency': 'EUR',
-            'amount': 550,
-            'location': 'kraken',
-        }, {  # selling ETH after fork should not affect ETC amount
-            'timestamp': 1482138141,  # 19/12/2016
-            'base_asset': 'ETH',  # cryptocompare hourly ETC/EUR price: 7.45
-            'quote_asset': 'EUR',
-            'trade_type': 'sell',  # not taxable after 1 year
-            'rate': 7.45,
-            'fee': 0.12,
-            'fee_currency': 'EUR',
-            'amount': 10,
-            'location': 'kraken',
-        },
+        Trade(
+            timestamp=1446979735,  # 11/08/2015
+            location=Location.EXTERNAL,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal(1450),
+            rate=FVal('0.2315893'),
+            fee=None,
+            fee_currency=None,
+            link=None,
+        ), Trade(  # selling ETH prefork should also reduce our ETC amount
+            timestamp=1461021812,  # 18/04/2016 (taxable)
+            location=Location.KRAKEN,
+            base_asset=A_ETH,  # cryptocompare hourly ETC/EUR price: 7.88
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal(50),
+            rate=FVal('7.88'),
+            fee=FVal('0.5215'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(  # selling ETC after the fork
+            timestamp=1481979135,  # 17/12/2016
+            location=Location.KRAKEN,
+            base_asset=A_ETC,  # cryptocompare hourly ETC/EUR price: 7.88
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,  # not-taxable -- considered bought with ETH so after year
+            amount=FVal(550),
+            rate=FVal('1.78'),
+            fee=FVal('0.9375'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(  # selling ETH after the fork
+            timestamp=1482138141,  # 19/12/2016
+            location=Location.KRAKEN,
+            base_asset=A_ETH,  # cryptocompare hourly ETH/EUR price: 7.45
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,  # not-taxable -- after 1 year
+            amount=FVal(10),
+            rate=FVal('7.45'),
+            fee=FVal('0.12'),
+            fee_currency=A_EUR,
+            link=None,
+        ),
     ]
     accounting_history_process(accountant, 1436979735, 1495751688, history3)
+    _check_for_errors(accountant)
     # make sure that the intermediate ETH sell before the fork reduced our ETC
-    assert accountant.events.cost_basis.get_calculated_asset_amount('ETC') == FVal(850)
-    assert accountant.events.cost_basis.get_calculated_asset_amount('ETH') == FVal(1390)
-    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
-    assert trades_pnl.taxable.is_close('381.899035')
-    assert trades_pnl.free.is_close('922.752492')
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount('ETC') == FVal(850)
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount('ETH') == FVal(1390)
+
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 2
+    assert pnls.taxable.is_close('381.899035')
+    assert pnls.free.is_close('922.752492')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_buying_selling_btc_before_bchfork(accountant):
-    history = [{
-        'timestamp': 1491593374,  # 04/07/2017
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 1128.905,
-        'fee': 0.55,
-        'fee_currency': 'EUR',
-        'amount': 6.5,
-        'location': 'external',
-    }, {  # selling BTC prefork should also reduce the BCH equivalent -- taxable
-        'timestamp': 1500595200,  # 21/07/2017
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 2380.835,
-        'fee': 0.15,
-        'fee_currency': 'EUR',
-        'amount': 0.5,
-        'location': 'external',
-    }, {  # selling BCH after the fork -- taxable
-        'timestamp': 1512693374,  # 08/12/2017
-        'base_asset': 'BCH',  # cryptocompare hourly BCH/EUR price: 995.935
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 995.935,
-        'fee': 0.26,
-        'fee_currency': 'EUR',
-        'amount': 2.1,
-        'location': 'kraken',
-    }, {
-        'timestamp': 1514937600,  # 03/01/2018
-        'base_asset': 'BTC',  # cryptocompare hourly BCH/EUR price: 995.935
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 12404.88,
-        'fee': 0.52,
-        'fee_currency': 'EUR',
-        'amount': 1.2,
-        'location': 'kraken',
-    }]
-    accounting_history_process(accountant, 1436979735, 1519693374, history)
+    history = [
+        Trade(
+            timestamp=1491593374,  # 04/07/2017
+            location=Location.EXTERNAL,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal('6.5'),
+            rate=FVal('1128.905'),
+            fee=FVal('0.55'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(  # selling BTC prefork should also reduce the BCH equivalent -- taxable
+            timestamp=1500595200,  # 21/07/2017
+            location=Location.EXTERNAL,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal('0.5'),
+            rate=FVal('2380.835'),
+            fee=FVal('0.15'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(   # selling BCH after the fork -- taxable
+            timestamp=1512693374,  # 08/12/2017
+            location=Location.KRAKEN,
+            base_asset=A_BCH,  # cryptocompare hourly BCH/EUR price: 995.935
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal('2.1'),
+            rate=FVal('995.935'),
+            fee=FVal('0.26'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(
+            timestamp=1514937600,  # 03/01/2018
+            location=Location.KRAKEN,
+            base_asset=A_BTC,  # cryptocompare hourly BCH/EUR price: 995.935
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal('1.2'),
+            rate=FVal('12404.88'),
+            fee=FVal('0.52'),
+            fee_currency=A_EUR,
+            link=None,
+        ),
+    ]
 
+    accounting_history_process(accountant, 1436979735, 1519693374, history)
+    _check_for_errors(accountant)
     amount_bch = FVal(3.9)
     amount_btc = FVal(4.8)
-    buys = accountant.events.cost_basis.get_events(A_BCH).acquisitions
+    buys = accountant.pots[0].cost_basis.get_events(A_BCH).acquisitions
     assert len(buys) == 1
     assert buys[0].remaining_amount == amount_bch
     assert buys[0].timestamp == 1491593374
-    assert buys[0].rate == FVal('1128.905')
-    assert buys[0].fee_rate.is_close(FVal('0.0846153846154'))
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
-    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
-    assert trades_pnl.taxable.is_close('13876.6464615')
-    assert trades_pnl.free == ZERO
+    assert buys[0].rate.is_close('1128.98961538')
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 2
+    assert pnls.taxable.is_close('13876.0964615')
+    assert pnls.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_buying_selling_bch_before_bsvfork(accountant):
-    history = [{
-        # 6.5 BTC 6.5 BCH 6.5 BSV
-        'timestamp': 1491593374,  # 04/07/2017
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 1128.905,
-        'fee': 0.55,
-        'fee_currency': 'EUR',
-        'amount': 6.5,
-        'location': 'external',
-    }, {  # selling BTC pre both fork should also reduce the BCH and BSV equivalent -- taxable
-        # 6 BTC 6 BCH 6 BSV
-        'timestamp': 1500595200,  # 21/07/2017
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 2380.835,
-        'fee': 0.15,
-        'fee_currency': 'EUR',
-        'amount': 0.5,
-        'location': 'external',
-    }, {  # selling BCH after the fork should also reduce BSV equivalent -- taxable
-        # 6 BTC 3.9 BCH 3.9 BSV
-        'timestamp': 1512693374,  # 08/12/2017
-        'base_asset': 'BCH',  # cryptocompare hourly BCH/EUR price: 995.935
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 995.935,
-        'fee': 0.26,
-        'fee_currency': 'EUR',
-        'amount': 2.1,
-        'location': 'kraken',
-    }, {
-        # 4.8 BTC 3.9 BCH 3.9 BSV
-        'timestamp': 1514937600,  # 03/01/2018
-        'base_asset': 'BTC',  # cryptocompare hourly BCH/EUR price: 995.935
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 12404.88,
-        'fee': 0.52,
-        'fee_currency': 'EUR',
-        'amount': 1.2,
-        'location': 'kraken',
-    }, {  # buying BCH before the BSV fork should increase BSV equivalent
-        # 4.8 BTC 4.9 BCH 4.9 BSV
-        'timestamp': 1524937600,
-        'base_asset': 'BCH',  # cryptocompare hourly BCH/EUR price: 1146.98
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 1146.98,
-        'fee': 0.52,
-        'fee_currency': 'EUR',
-        'amount': 1,
-        'location': 'kraken',
-    }, {  # selling BCH before the BSV fork should decrease the BSV equivalent
-        # 4.8 BTC 4.6 BCH 4.6 BSV
-        'timestamp': 1525937600,
-        'base_asset': 'BCH',  # cryptocompare hourly BCH/EUR price: 1146.98
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 1272.05,
-        'fee': 0.52,
-        'fee_currency': 'EUR',
-        'amount': 0.3,
-        'location': 'kraken',
-    }, {  # selling BCH after the BSV fork should not affect the BSV equivalent
-        # 4.8 BTC 4.1 BCH 4.6 BSV
-        'timestamp': 1552304352,
-        'base_asset': 'BCH',  # cryptocompare hourly BCH/EUR price: 114.27
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 114.27,
-        'fee': 0.52,
-        'fee_currency': 'EUR',
-        'amount': 0.5,
-        'location': 'kraken',
-    }]
-    accounting_history_process(accountant, 1436979735, 1569693374, history)
+    history = [
+        Trade(  # 6.5 BTC 6.5 BCH 6.5 BSV
+            timestamp=1491593374,  # 04/07/2017
+            location=Location.EXTERNAL,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal('6.5'),
+            rate=FVal('1128.905'),
+            fee=FVal('0.55'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(  # selling BTC prefork should also reduce the BCH and BSV equivalent -- taxable
+            # 6 BTC 6 BCH 6 BSV
+            timestamp=1500595200,  # 21/07/2017
+            location=Location.EXTERNAL,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal('0.5'),
+            rate=FVal('2380.835'),
+            fee=FVal('0.15'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(  # selling BCH after the fork should also reduce BSV equivalent -- taxable
+            # 6 BTC 3.9 BCH 3.9 BSV
+            timestamp=1512693374,  # 08/12/2017
+            location=Location.KRAKEN,
+            base_asset=A_BCH,  # cryptocompare hourly BCH/EUR price: 995.935
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal('2.1'),
+            rate=FVal('995.935'),
+            fee=FVal('0.26'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(  # 4.8 BTC 3.9 BCH 3.9 BSV
+            timestamp=1514937600,  # 03/01/2018
+            location=Location.KRAKEN,
+            base_asset=A_BTC,  # cryptocompare hourly BCH/EUR price: 995.935
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal('1.2'),
+            rate=FVal('12404.88'),
+            fee=FVal('0.52'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(  # buying BCH before the BSV fork should increase BSV equivalent
+            # 4.8 BTC 4.9 BCH 4.9 BSV
+            timestamp=1524937600,
+            location=Location.KRAKEN,
+            base_asset=A_BCH,  # cryptocompare hourly BCH/EUR price: 1146.98
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=ONE,
+            rate=FVal('1146.98'),
+            fee=FVal('0.52'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(   # selling BCH before the BSV fork should decrease the BSV equivalent
+            # 4.8 BTC 4.6 BCH 4.6 BSV
+            timestamp=1525937600,
+            location=Location.KRAKEN,
+            base_asset=A_BCH,  # cryptocompare hourly BCH/EUR price: 1146.98
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal('0.3'),
+            rate=FVal('1272.05'),
+            fee=FVal('0.52'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(   # selling BCH after the BSV fork should not affect the BSV equivalent
+            # 4.8 BTC 4.1 BCH 4.6 BSV
+            timestamp=1552304352,
+            location=Location.KRAKEN,
+            base_asset=A_BCH,  # cryptocompare hourly BCH/EUR price: 114.27
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal('0.5'),
+            rate=FVal('114.27'),
+            fee=FVal('0.52'),
+            fee_currency=A_EUR,
+            link=None,
+        ),
+    ]
 
+    accounting_history_process(accountant, 1436979735, 1569693374, history)
+    _check_for_errors(accountant)
     amount_btc = FVal(4.8)
     amount_bch = FVal(4.1)
     amount_bsv = FVal(4.6)
-    bch_buys = accountant.events.cost_basis.get_events(A_BCH).acquisitions
+    bch_buys = accountant.pots[0].cost_basis.get_events(A_BCH).acquisitions
     assert len(bch_buys) == 2
     assert sum(x.remaining_amount for x in bch_buys) == amount_bch
     assert bch_buys[0].timestamp == 1491593374
     assert bch_buys[1].timestamp == 1524937600
-    bsv_buys = accountant.events.cost_basis.get_events(A_BSV).acquisitions
+    bsv_buys = accountant.pots[0].cost_basis.get_events(A_BSV).acquisitions
     assert len(bsv_buys) == 2
     assert sum(x.remaining_amount for x in bsv_buys) == amount_bsv
     assert bsv_buys[0].timestamp == 1491593374
     assert bsv_buys[1].timestamp == 1524937600
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BSV) == amount_bsv
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BSV) == amount_bsv
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 2
+    assert pnls.taxable.is_close('13875.5764615')
+    assert pnls.free.is_close('-465.481692304')
 
-    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
-    assert trades_pnl.taxable.is_close('13411.164769')
-    assert trades_pnl.free.is_close('465.481692')
 
-
-history5 = history1 + [{
-    'timestamp': 1512693374,  # cryptocompare hourly BTC/EUR price: 537.805
-    'base_asset': 'BTC',  # cryptocompare hourly ETH/EUR price: 11.925
-    'quote_asset': 'EUR',
-    'trade_type': 'sell',
-    'rate': 13503.35,
-    'fee': 0,
-    'fee_currency': 'BTC',
-    'amount': 20.0,
-    'location': 'kraken',
-}]
+history5 = history1 + [Trade(
+    timestamp=1512693374,  # cryptocompare hourly BTC/EUR price: 537.805
+    location=Location.KRAKEN,
+    base_asset=A_BTC,
+    quote_asset=A_EUR,
+    trade_type=TradeType.SELL,
+    amount=FVal('20'),
+    rate=FVal('13503.35'),
+    fee=None,
+    fee_currency=None,
+    link=None,
+)]
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -374,13 +435,11 @@ history5 = history1 + [{
 }])
 def test_nocrypto2crypto(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
-    # Expected = 3 trades + the creation of ETC, BCH and BSV after fork times
-    msg = 'The crypto to crypto trades should not appear in the list at all'
-    assert len(accountant.csvexporter.all_events) == 6, msg
-
-    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
-    assert trades_pnl.free.is_close('264693.43364282')
-    assert trades_pnl.taxable == ZERO
+    _check_for_errors(accountant)
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 2
+    assert pnls.taxable.is_close('-1.17088532271')
+    assert pnls.free.is_close('264693.43364282')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -389,9 +448,11 @@ def test_nocrypto2crypto(accountant):
 }])
 def test_no_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
-    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
-    assert trades_pnl.taxable.is_close('265251.6872977225746')
-    assert trades_pnl.free == ZERO
+    _check_for_errors(accountant)
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 2
+    assert pnls.taxable.is_close('265252.8894901028033993590659')
+    assert pnls.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -400,200 +461,161 @@ def test_no_taxfree_period(accountant):
 }])
 def test_big_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
-    trades_pnl = accountant.events.base.pnls[OVR_TRADE_PNL]
-    assert trades_pnl.free.is_close('265251.6872977225746')
-    assert trades_pnl.taxable == ZERO
+    _check_for_errors(accountant)
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 2
+    assert pnls.free.is_close('265252.8894901028033993590659')
+    assert pnls.taxable == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_buy_event_creation(accountant):
-    history = [{
-        'timestamp': 1476979735,
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 578.505,
-        'fee': 0.0012,
-        'fee_currency': 'BTC',
-        'amount': 5,
-        'location': 'kraken',
-    }, {
-        'timestamp': 1476979735,
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 578.505,
-        'fee': 0.0012,
-        'fee_currency': 'EUR',
-        'amount': 5,
-        'location': 'kraken',
-    }]
+    history = [
+        Trade(
+            timestamp=1476979735,
+            location=Location.KRAKEN,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal(5),
+            rate=FVal('578.505'),
+            fee=FVal('0.0012'),
+            fee_currency=A_BTC,
+            link=None,
+        ), Trade(
+            timestamp=1476979735,
+            location=Location.KRAKEN,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal(5),
+            rate=FVal('578.505'),
+            fee=FVal('0.0012'),
+            fee_currency=A_EUR,
+            link=None,
+        ),
+    ]
     accounting_history_process(accountant, 1436979735, 1519693374, history)
-    buys = accountant.events.cost_basis.get_events(A_BTC).acquisitions
+    _check_for_errors(accountant)
+    buys = accountant.pots[0].cost_basis.get_events(A_BTC).acquisitions
     assert len(buys) == 2
     assert buys[0].amount == FVal(5)
     assert buys[0].timestamp == 1476979735
-    assert buys[0].rate == FVal('578.505')
-    assert buys[0].fee_rate == FVal('0.1388412')
+    assert buys[0].rate.is_close('578.6438412')  # (578.505 * 5 + 0.0012 * 578.505)/5
 
     assert buys[1].amount == FVal(5)
     assert buys[1].timestamp == 1476979735
-    assert buys[1].rate == FVal('578.505')
-    assert buys[1].fee_rate == FVal('2.4e-4')
+    assert buys[1].rate == FVal('578.50524')  # (578.505 * 5 + 0.0012)/5
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('ignored_assets', [[A_DASH]])
-@pytest.mark.parametrize('db_settings', [{
-    'include_gas_costs': False,
-}])
-def test_not_include_gas_costs(accountant):
-    """
-    Added ignored assets here only to have a test for
-    https://github.com/rotki/rotki/issues/399
-    """
-    history = [{
-        'timestamp': 1476979735,
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 578.505,
-        'fee': 0.0012,
-        'fee_currency': 'BTC',
-        'amount': 5,
-        'location': 'kraken',
-    }, {
-        'timestamp': 1496979735,
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 2519.62,
-        'fee': 0.02,
-        'fee_currency': 'EUR',
-        'amount': 1,
-        'location': 'kraken',
-    }]
-    eth_tx_list = [
-        EthereumTransaction(
-            timestamp=1491062063,  # 01/04/2017
-            block_number=3458409,
-            tx_hash=DUMMY_HASH,
-            from_address=DUMMY_ADDRESS,
-            to_address=DUMMY_ADDRESS,
-            value=FVal('12323'),
-            gas=FVal('5000000'),
-            gas_price=FVal('2000000000'),
-            gas_used=FVal('1000000'),
-            input_data=DUMMY_HASH,
-            nonce=0,
-        ),
-    ]
-    report, _ = accounting_history_process(
-        accountant,
-        start_ts=1436979735,
-        end_ts=1519693374,
-        history_list=history,
-    )
-    assert FVal(report['total_taxable_profit_loss']).is_close('1940.9561588')
+@pytest.mark.parametrize('db_settings', [{'include_gas_costs': True}, {'include_gas_costs': False}])  # noqa: E501
+def test_include_gas_costs(accountant):
+    addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
+    tx_hash = '0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a'
+    history = [
+        Trade(
+            timestamp=1539388574,
+            location=Location.EXTERNAL,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal(10),
+            rate=FVal('168.7'),
+            fee=None,
+            fee_currency=None,
+            link=None,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash,
+            sequence_index=0,
+            timestamp=1569924574000,
+            location=Location.BLOCKCHAIN,
+            location_label=addr1,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.000030921')),
+            # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
+            notes=f'Burned 0.000030921 ETH in gas from {addr1} for transaction {tx_hash}',
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            counterparty='gas',
+        )]
+    accounting_history_process(accountant, start_ts=1436979735, end_ts=1619693374, history_list=history)  # noqa: E501
+    _check_for_errors(accountant)
+    include_gas_costs = accountant.pots[0].settings.include_gas_costs
+    pnls = accountant.pots[0].pnls
+
+    assert pnls.free == ZERO
+    if include_gas_costs:
+        assert pnls.taxable.is_close('-0.0052163727')
+    else:
+        assert pnls.taxable == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('ignored_assets', [[A_DASH]])
 def test_ignored_assets(accountant):
-    history = history1 + [{
-        'timestamp': 1476979735,
-        'base_asset': 'DASH',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 9.76775956284,
-        'fee': 0.0011,
-        'fee_currency': 'DASH',
-        'amount': 10,
-        'location': 'kraken',
-    }, {
-        'timestamp': 1496979735,
-        'base_asset': 'DASH',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 128.09,
-        'fee': 0.015,
-        'fee_currency': 'EUR',
-        'amount': 5,
-        'location': 'kraken',
-    }]
-    report, _ = accounting_history_process(accountant, 1436979735, 1519693374, history)
-    assert FVal(report['total_taxable_profit_loss']).is_close('558.253654902574637500')
-
-
-@pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_settlement_buy(accountant):
-    history = [{
-        'timestamp': 1476979735,
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 578.505,
-        'fee': 0.0012,
-        'fee_currency': 'BTC',
-        'amount': 5,
-        'location': 'kraken',
-    }, {  # 0.0079275 * 810.49 + 0.15 * 12.4625608386372145 = 8.29454360079
-        'timestamp': 1484629704,  # 17/01/2017
-        'base_asset': 'DASH',  # DASH/EUR price: 12.88
-        'quote_asset': 'BTC',
-        'trade_type': 'settlement buy',  # Buy DASH with BTC to settle. Essentially BTC loss
-        'rate': 0.015855,  # BTC/EUR price: 810.49
-        'fee': 0.15,
-        'fee_currency': 'DASH',
-        'amount': 0.5,
-        'location': 'poloniex',
-    }, {
-        'timestamp': 1496979735,
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 2519.62,
-        'fee': 0.02,
-        'fee_currency': 'EUR',
-        'amount': 1,
-        'location': 'kraken',
-    }]
-
-    report, _ = accounting_history_process(
-        accountant=accountant,
-        start_ts=1436979735,
-        end_ts=1519693374,
-        history_list=history,
-    )
-    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.9908725')
-    assert FVal(report['total_taxable_profit_loss']).is_close('1932.598999')
-    assert FVal(report['settlement_losses']).is_close('8.357159475')
+    history = history1 + [
+        Trade(
+            timestamp=1476979735,
+            location=Location.KRAKEN,
+            base_asset=A_DASH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal(10),
+            rate=FVal('9.76775956284'),
+            fee=FVal('0.0011'),
+            fee_currency=A_DASH,
+            link=None,
+        ), Trade(
+            timestamp=1496979735,
+            location=Location.KRAKEN,
+            base_asset=A_DASH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal(5),
+            rate=FVal('128.09'),
+            fee=FVal('0.015'),
+            fee_currency=A_EUR,
+            link=None,
+        ),
+    ]
+    accounting_history_process(accountant, 1436979735, 1519693374, history)
+    _check_for_errors(accountant)
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 2
+    assert pnls.taxable.is_close('559.455847283')
+    assert pnls.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_margin_events_affect_gained_lost_amount(accountant):
-    history = [{
-        'timestamp': 1476979735,
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 578.505,
-        'fee': 0.0012,
-        'fee_currency': 'BTC',
-        'amount': 5,
-        'location': 'kraken',
-    }, {  # 2519.62-0.02-((0.0012*578.505)/5 + 578.505)
-        'timestamp': 1496979735,
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 2519.62,
-        'fee': 0.02,
-        'fee_currency': 'EUR',
-        'amount': 1,
-        'location': 'kraken',
-    }]
-    margin_history = [MarginPosition(
+    history = [
+        Trade(
+            timestamp=1476979735,
+            location=Location.KRAKEN,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal(5),
+            rate=FVal('578.505'),
+            fee=FVal('0.0012'),
+            fee_currency=A_BTC,
+            link=None,
+        ), Trade(  # 2519.62 - 0.02 - ((0.0012*578.505)/5 + 578.505)
+            timestamp=1476979735,
+            location=Location.KRAKEN,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal(1),
+            rate=FVal('2519.62'),
+            fee=FVal('0.02'),
+            fee_currency=A_EUR,
+            link=None,
+        ),
+    ]
+    history += [MarginPosition(
         location=Location.POLONIEX,  # BTC/EUR: 810.49
         open_time=1484438400,  # 15/01/2017
         close_time=1484629704,  # 17/01/2017
@@ -615,218 +637,189 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         notes='margin2',
     )]
 
-    report, _ = accounting_history_process(
+    accounting_history_process(
         accountant=accountant,
         start_ts=1436979735,
         end_ts=1519693374,
         history_list=history,
-        margin_list=margin_history,
     )
-    assert accountant.events.cost_basis.get_calculated_asset_amount('BTC').is_close('3.7468')
-    assert FVal(report['general_trade_profit_loss']).is_close('1940.9561588')
-    assert FVal(report['margin_positions_profit_loss']).is_close('-162.18738')
-    assert FVal(report['total_taxable_profit_loss']).is_close('1778.7687788')
+    _check_for_errors(accountant)
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount('BTC').is_close('3.7468')
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 3
+    assert pnls[OVR_FEES].taxable.is_close('-1.87166029184')
+    assert pnls[OVR_FEES].free == ZERO
+    assert pnls[OVR_TRADE_PNL].taxable.is_close('1940.9761588')
+    assert pnls[OVR_TRADE_PNL].free == ZERO
+    assert pnls[OVR_MARGIN_PNL].taxable.is_close('-44.4744206')
+    assert pnls[OVR_MARGIN_PNL].free == ZERO
+
+    assert pnls.taxable.is_close('1894.63007791')
+    assert pnls.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_no_corresponding_buy_for_sell(accountant):
-    history = [{
-        'timestamp': 1496979735,
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 2519.62,
-        'fee': 0.02,
-        'fee_currency': 'EUR',
-        'amount': 1,
-        'location': 'kraken',
-    }]
-
-    report, _ = accounting_history_process(
+    """Test that if there is no corresponding buy for a sell, the entire sell counts as profit"""
+    history = [Trade(
+        timestamp=1476979735,
+        location=Location.KRAKEN,
+        base_asset=A_BTC,
+        quote_asset=A_EUR,
+        trade_type=TradeType.SELL,
+        amount=FVal(1),
+        rate=FVal('2519.62'),
+        fee=FVal('0.02'),
+        fee_currency=A_EUR,
+        link=None,
+    )]
+    accounting_history_process(
         accountant=accountant,
         start_ts=1436979735,
         end_ts=1519693374,
         history_list=history,
     )
-    assert FVal(report['general_trade_profit_loss']).is_close('2519.6')
-    assert FVal(report['total_taxable_profit_loss']).is_close('2519.6')
+
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 2
+    assert pnls.taxable.is_close('2519.6')
+    assert pnls.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_accounting_works_for_empty_history(accountant):
     history = []
-
-    report, _ = accounting_history_process(
+    accounting_history_process(
         accountant=accountant,
         start_ts=1436979735,
         end_ts=1519693374,
         history_list=history,
     )
-    assert FVal(report['general_trade_profit_loss']).is_close('0')
-    assert FVal(report['total_taxable_profit_loss']).is_close('0')
+    _check_for_errors(accountant)
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 0
+    assert pnls.taxable == ZERO
+    assert pnls.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings, expected', [
-    ({'account_for_assets_movements': False}, 0),
-    ({'account_for_assets_movements': True}, 0.57867315),
+    ({'account_for_assets_movements': False, 'taxfree_after_period': -1}, 0),
+    ({'account_for_assets_movements': True, 'taxfree_after_period': -1}, '-0.0781483014791'),
 ])
 def test_assets_movements_not_accounted_for(accountant, expected):
     # asset_movements_list partially copied from
     # rotkehlchen/tests/integration/test_end_to_end_tax_report.py
-    asset_movements_list = [AssetMovement(
-        # before query period -- 8.915 * 0.001 = 8.915e-3
-        location=Location.KRAKEN,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address=None,
-        transaction_id=None,
-        timestamp=Timestamp(1479510304),  # 18/11/2016,
-        asset=A_ETH,  # cryptocompare hourly ETH/EUR: 8.915
-        amount=FVal('95'),
-        fee_asset=A_ETH,
-        fee=Fee(FVal('0.001')),
-        link='krakenid1',
-    ), AssetMovement(  # 0.00029*1964.685 = 0.56975865
-        location=Location.POLONIEX,
-        address='foo',
-        transaction_id='0xfoo',
-        category=AssetMovementCategory.WITHDRAWAL,
-        timestamp=Timestamp(1495969504),  # 28/05/2017,
-        asset=A_BTC,  # cryptocompare hourly BTC/EUR: 1964.685
-        amount=FVal('8.5'),
-        fee_asset=A_BTC,
-        fee=Fee(FVal('0.00029')),
-        link='poloniexid1',
-    )]
-    history = []
+    history = [
+        Trade(
+            timestamp=1446979735,
+            location=Location.EXTERNAL,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal(82),
+            rate=FVal('268.678317859'),
+            fee=None,
+            fee_currency=None,
+            link=None,
+        ), Trade(
+            timestamp=1446979735,
+            location=Location.EXTERNAL,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal(1450),
+            rate=FVal('0.2315893'),
+            fee=None,
+            fee_currency=None,
+            link=None,
+        ), AssetMovement(
+            # before query period -- 8.915 * 0.001 = 8.915e-3
+            location=Location.KRAKEN,
+            category=AssetMovementCategory.WITHDRAWAL,
+            address=None,
+            transaction_id=None,
+            timestamp=Timestamp(1479510304),  # 18/11/2016,
+            asset=A_ETH,  # cryptocompare hourly ETH/EUR: 8.915
+            amount=FVal('95'),
+            fee_asset=A_ETH,
+            fee=Fee(FVal('0.001')),
+            link='krakenid1',
+        ), AssetMovement(  # 0.00029*1964.685 = 0.56975865
+            location=Location.POLONIEX,
+            address='foo',
+            transaction_id='0xfoo',
+            category=AssetMovementCategory.WITHDRAWAL,
+            timestamp=Timestamp(1495969504),  # 28/05/2017,
+            asset=A_BTC,  # cryptocompare hourly BTC/EUR: 1964.685
+            amount=FVal('8.5'),
+            fee_asset=A_BTC,
+            fee=Fee(FVal('0.00029')),
+            link='poloniexid1',
+        ),
+    ]
 
-    report, _ = accounting_history_process(
+    accounting_history_process(
         accountant=accountant,
         start_ts=1436979735,
         end_ts=1519693374,
         history_list=history,
-        asset_movements_list=asset_movements_list,
     )
-    assert FVal(report['asset_movement_fees']).is_close(expected)
-    assert FVal(report['total_taxable_profit_loss']).is_close(-expected)
-    assert FVal(report['total_profit_loss']).is_close(-expected)
+    _check_for_errors(accountant)
+    pnls = accountant.pots[0].pnls
+    assert pnls.taxable.is_close(expected)
+    assert pnls.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('db_settings', [
-    {'calculate_past_cost_basis': False, 'taxfree_after_period': -1},
-    {'calculate_past_cost_basis': True, 'taxfree_after_period': -1},
+@pytest.mark.parametrize('db_settings, expected', [
+    ({'calculate_past_cost_basis': False, 'taxfree_after_period': -1}, '2292.43'),
+    ({'calculate_past_cost_basis': True, 'taxfree_after_period': -1}, '1755.07336428'),
 ])
-def test_not_calculate_past_cost_basis(accountant, db_settings):
+def test_not_calculate_past_cost_basis(accountant, expected):
     # trades copied from
     # rotkehlchen/tests/integration/test_end_to_end_tax_report.py
 
-    history = [{
-        'timestamp': 1446979735,  # 08/11/2015
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 268.678317859,
-        'fee': 0,
-        'fee_currency': 'BTC',
-        'amount': 5,
-        'location': 'external',
-    }, {
-        'timestamp': 1446979735,  # 08/11/2015
-        'base_asset': 'ETH',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 0.2315893,
-        'fee': 0,
-        'fee_currency': 'ETH',
-        'amount': 1450,
-        'location': 'external',
-    }, {
-        'timestamp': 1488373504,  # 29/02/2017
-        'base_asset': 'BTC',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 1146.22,
-        'fee': 0.01,
-        'fee_currency': 'EUR',
-        'amount': 2,
-        'location': 'kraken',
-    }]
-    report, _ = accounting_history_process(
+    history = [
+        Trade(
+            timestamp=1446979735,  # 08/11/2015
+            location=Location.EXTERNAL,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=FVal(5),
+            rate=FVal('268.678317859'),
+            fee=None,
+            fee_currency=None,
+            link=None,
+        ), Trade(
+            timestamp=1488373504,  # 29/02/2017
+            location=Location.KRAKEN,
+            base_asset=A_BTC,
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal(2),
+            rate=FVal('1146.22'),
+            fee=FVal('0.01'),
+            fee_currency=A_EUR,
+            link=None,
+        ),
+    ]
+    accounting_history_process(
         accountant=accountant,
         start_ts=1466979735,
         end_ts=1519693374,
         history_list=history,
     )
-    sell_gain = (
-        FVal(history[-1]['rate']) * FVal(history[-1]['amount']) -
-        FVal(history[-1]['fee'])
-    )
-    if db_settings['calculate_past_cost_basis'] is True:
-        buy_cost = FVal(history[0]['rate']) * FVal(history[-1]['amount'])
-        expected = sell_gain - buy_cost
-    else:
-        expected = sell_gain
-
-    assert FVal(report['taxable_trade_profit_loss']).is_close(expected)
-    assert FVal(report['total_taxable_profit_loss']).is_close(expected)
-    assert FVal(report['total_profit_loss']).is_close(expected)
+    pnls = accountant.pots[0].pnls
+    assert pnls.taxable.is_close(expected)
+    assert pnls.free == ZERO
+    assert pnls.free == ZERO
 
 
-@pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_defi_event_zero_amount(accountant):
-    """Test that if a Defi Event with a zero amount obtained
-    comes in we don't raise an error
-
-    Regression test for a division by zero error a user reported
-    """
-    defi_events = [DefiEvent(
-        timestamp=1467279735,
-        wrapped_event=AaveInterestEvent(
-            event_type='interest',
-            asset=A_WBTC,
-            value=Balance(amount=FVal(0), usd_value=FVal(0)),
-            block_number=4,
-            timestamp=Timestamp(1467279735),
-            tx_hash='0x49c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
-            log_index=4,
-        ),
-        event_type=DefiEventType.AAVE_EVENT,
-        got_asset=A_WBTC,
-        got_balance=Balance(amount=FVal(0), usd_value=FVal(0)),
-        spent_asset=A_WBTC,
-        spent_balance=Balance(amount=FVal(0), usd_value=FVal(0)),
-        pnl=[AssetBalance(asset=A_WBTC, balance=Balance(amount=FVal(0), usd_value=FVal(0)))],
-        count_spent_got_cost_basis=True,
-        tx_hash='0x49c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',
-    )]
-    _, events = accounting_history_process(
-        accountant=accountant,
-        start_ts=1466979735,
-        end_ts=1519693374,
-        history_list=[],
-        defi_events_list=defi_events,
-    )
-    assert_serialized_dicts_equal(events[0], {
-        'cost_basis': None,
-        'is_virtual': False,
-        'location': 'blockchain',
-        'net_profit_or_loss': ZERO,
-        'paid_asset': '_ceth_0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
-        'paid_in_asset': ZERO,
-        'paid_in_profit_currency': ZERO,
-        'received_asset': '',
-        'received_in_asset': ZERO,
-        'taxable_amount': ZERO,
-        'taxable_bought_cost_in_profit_currency': ZERO,
-        'taxable_received_in_profit_currency': ZERO,
-        'time': 1467279735,
-        'type': 'defi_event',
-        'link': 'https://etherscan.io/tx/0x49c67445d26679623f9b7d56a8be260a275cb6744a1c1ae5a8d6883a5a5c03de',  # noqa: E501
-        'notes': '',
-    })
-
-
+@pytest.mark.parametrize('db_settings', [{
+    'taxfree_after_period': -1,
+}])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_sell_fiat_for_crypto(accountant):
     """
@@ -834,103 +827,110 @@ def test_sell_fiat_for_crypto(accountant):
     Make sure that selling fiat for crypto does not give warnings due to
     inability to trace the source of the sold fiat.
     """
-    history = [{
-        'timestamp': 1476979735,
-        'base_asset': 'EUR',
-        'quote_asset': 'BTC',
-        'trade_type': 'sell',
-        'rate': 0.002,
-        'fee': 0.0012,
-        'fee_currency': 'EUR',
-        'amount': 2000,
-        'location': 'kraken',
-    }, {
-        'timestamp': 1496979735,
-        'base_asset': 'CHF',
-        'quote_asset': 'ETH',
-        'trade_type': 'sell',
-        'rate': 0.004,
-        'fee': 0.02,
-        'fee_currency': 'EUR',
-        'amount': 500,
-        'location': 'kraken',
-    }, {
-        'timestamp': 1506979735,
-        'base_asset': 'ETH',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 25000,
-        'fee': 0.02,
-        'fee_currency': 'EUR',
-        'amount': 1,
-        'location': 'kraken',
-    }]
-    report, _ = accounting_history_process(
+    history = [
+        Trade(
+            timestamp=1446979735,
+            location=Location.KRAKEN,
+            base_asset=A_EUR,
+            quote_asset=A_BTC,
+            trade_type=TradeType.SELL,
+            amount=FVal(2000),
+            rate=FVal('0.002'),
+            fee=FVal('0.0012'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(
+            # Selling 500 CHF for ETH with 0.004 CHF/ETH. + 0.02 EUR
+            # That means 2 ETH for 500 CHF + 0.02 EUR -> with 1.001 CHF/EUR ->
+            # (500*1.001 + 0.02)/2 -> 250.26 EUR per ETH
+            timestamp=1496979735,
+            location=Location.KRAKEN,
+            base_asset=A_CHF,
+            quote_asset=A_ETH,
+            trade_type=TradeType.SELL,
+            amount=FVal(500),
+            rate=FVal('0.004'),
+            fee=FVal('0.02'),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(
+            timestamp=1506979735,
+            location=Location.KRAKEN,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=ONE,
+            rate=FVal(25000),
+            fee=FVal('0.02'),
+            fee_currency=A_EUR,
+            link=None,
+        ),
+    ]
+    accounting_history_process(
         accountant=accountant,
         start_ts=1436979735,
         end_ts=1519693374,
         history_list=history,
     )
-    assert FVal(report['total_profit_loss']) == FVal(25000 - 0.02 - 250 * 1.001)  # the 0.02/2 fee from sell of CHF to ETH is not counted since the first sell is skipped, only the buy of ETH is counted  # noqa: E501
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_ETH) == FVal(1)
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC) == FVal(4)
-    warnings = accountant.msg_aggregator.consume_warnings()
-    assert len(warnings) == 0
-    errors = accountant.msg_aggregator.consume_errors()
-    assert len(errors) == 0
+    _check_for_errors(accountant)
+    pnls = accountant.pots[0].pnls
+    assert len(pnls) == 2
+    assert pnls.taxable.is_close(25000 - 250.26 - 0.02 - 0.02 - 0.0012)
+    assert pnls.free == ZERO
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_fees_count_in_cost_basis(accountant):
-    """
-    Test for https://github.com/rotki/rotki/issues/2744
-    Make sure that asset amounts used in fees are reduced.
-    """
-    history = [{
-        'timestamp': 1609537953,
-        'base_asset': 'ETH',
-        'quote_asset': 'EUR',
-        'trade_type': 'buy',
-        'rate': 598.26,
-        'fee': 1,
-        'fee_currency': 'EUR',
-        'amount': 1,
-        'location': 'kraken',
-    }, {
-        'timestamp': 1624395186,
-        'base_asset': 'ETH',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 1862.06,
-        'fee': 0.5,
-        'fee_currency': 'ETH',
-        'amount': 0.5,
-        'location': 'kraken',
-    }, {
-        'timestamp': 1625001464,
-        'base_asset': 'ETH',
-        'quote_asset': 'EUR',
-        'trade_type': 'sell',
-        'rate': 1837.31,
-        'fee': 0,
-        'fee_currency': 'EUR',
-        'amount': 0.5,
-        'location': 'kraken',
-    }]
-    report, _ = accounting_history_process(
+    """Make sure that asset amounts used in fees are reduced."""
+    history = [
+        Trade(
+            timestamp=1609537953,
+            location=Location.KRAKEN,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=ONE,
+            rate=FVal('598.26'),
+            fee=ONE,
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(
+            # PNL: 0.5 * 1862.06 - 0.5 * 599.26 -> 631.4
+            # fee: -0.5 * 1862.06 + 0.5 * 1862.06 - 0.5 * 599.26 -> -299.63
+            timestamp=1624395186,
+            location=Location.KRAKEN,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal('0.5'),
+            rate=FVal('1862.06'),
+            fee=FVal('0.5'),
+            fee_currency=A_ETH,
+            link=None,
+        ), Trade(
+            timestamp=1625001464,
+            location=Location.KRAKEN,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=FVal('0.5'),
+            rate=FVal('1837.31'),
+            fee=None,
+            fee_currency=None,
+            link=None,
+        ),
+    ]
+    accounting_history_process(
         accountant=accountant,
         start_ts=1436979735,
         end_ts=1625001466,
         history_list=history,
     )
 
-    assert FVal(report['total_profit_loss']) == FVal(
-        # first sell also has a huge fee, same as the amount sold
-        1862.06 * 0.5 - (0.5 * 598.26 + 0.5) - 0.5 * 1862.06 +
-        # 2nd sell can't find ETH due to fee of previous so considers pure profit
-        1837.31 * 0.5,
-    )
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_ETH) is None
+    pnls = accountant.pots[0].pnls
+    assert pnls.taxable.is_close('1249.425')
+    assert pnls.free == ZERO
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_ETH) is None
     error = (
         f'No documented acquisition found for ETH(Ethereum) before '
         f'{timestamp_to_date(1625001464, treat_as_local=True)}. '
@@ -949,47 +949,47 @@ def test_fees_in_received_asset(accountant):
     where the PnL report said that there was no documented acquisition.
     """
     history = [
-        {
-            'timestamp': 1609537953,
-            'base_asset': 'ETH',
-            'quote_asset': A_USDT.identifier,
-            'trade_type': 'sell',
-            'rate': 1000,
-            'fee': '0.10',
-            'fee_currency': A_USDT.identifier,
-            'amount': 0.02,
-            'location': 'binance',
-        },
-    ]
-    ledger_actions_list = [
         LedgerAction(
             identifier=0,
-            timestamp=Timestamp(1539713238),
+            timestamp=Timestamp(1539713238),  # 178.615 EUR/ETH
             action_type=LedgerActionType.INCOME,
             location=Location.BINANCE,
-            amount=FVal(1),
+            amount=ONE,
             asset=A_ETH,
             rate=None,
             rate_asset=None,
             link=None,
             notes='',
         ),
+        Trade(
+            # Sell 0.02 ETH for USDT with rate 1000 USDT/ETH and 0.10 USDT fee
+            # So acquired 20 USDT for 0.02 ETH + 0.10 USDT
+            # So acquired 20 USDT for 0.02 * 598.26 + 0.10 * 0.89 -> 12.0542 EUR
+            # So paid 12.0542/20 -> 0.60271 EUR/USDT
+            timestamp=1609537953,  # 0.89 EUR/USDT
+            location=Location.BINANCE,
+            base_asset=A_ETH,  # 598.26 EUR/ETH
+            quote_asset=A_USDT,
+            trade_type=TradeType.SELL,
+            amount=FVal('0.02'),
+            rate=FVal(1000),
+            fee=FVal('0.10'),
+            fee_currency=A_USDT,
+            link=None,
+        ),
     ]
-    report, _ = accounting_history_process(
+
+    accounting_history_process(
         accountant,
         start_ts=1539713238,
         end_ts=1624395187,
         history_list=history,
-        ledger_actions_list=ledger_actions_list,
     )
-    warnings = accountant.msg_aggregator.consume_warnings()
-    assert len(warnings) == 0
-    errors = accountant.msg_aggregator.consume_errors()
-    assert len(errors) == 0
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_USDT.identifier).is_close('19.90')  # noqa: E501
-    # The ethereum income doesn't count for the income as the 1
-    # year rule is applied. Only the sell is computed.
-    assert FVal(report['total_profit_loss']) == FVal(14.13870)
+    _check_for_errors(accountant)
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_USDT.identifier).is_close('19.90')  # noqa: E501
+    pnls = accountant.pots[0].pnls
+    assert pnls.taxable == FVal('178.554729')
+    assert pnls.free == FVal('14.2277')
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -997,24 +997,13 @@ def test_fees_in_received_asset(accountant):
 def test_kfee_price_in_accounting(accountant):
     """
     Test that KFEEs are correctly handled during accounting
+
+    KFEE price is fixed at $0.01
     """
     history = [
-        {
-            'timestamp': 1609537953,
-            'base_asset': 'ETH',
-            'quote_asset': A_USDT.identifier,
-            'trade_type': 'sell',
-            'rate': 1000,
-            'fee': '30',
-            'fee_currency': A_KFEE.identifier,
-            'amount': 0.02,
-            'location': 'kraken',
-        },
-    ]
-    ledger_actions_list = [
         LedgerAction(
             identifier=0,
-            timestamp=Timestamp(1539713238),
+            timestamp=Timestamp(1539713238),  # 178.615 EUR/ETH
             action_type=LedgerActionType.INCOME,
             location=Location.KRAKEN,
             amount=FVal(1),
@@ -1025,7 +1014,7 @@ def test_kfee_price_in_accounting(accountant):
             notes='',
         ), LedgerAction(
             identifier=0,
-            timestamp=Timestamp(1539713238),
+            timestamp=Timestamp(1539713238),  # 0.8612 USD/EUR. 1 KFEE = $0.01 so 8.612 EUR
             action_type=LedgerActionType.INCOME,
             location=Location.KRAKEN,
             amount=FVal(1000),
@@ -1034,24 +1023,30 @@ def test_kfee_price_in_accounting(accountant):
             rate_asset=None,
             link=None,
             notes='',
+        ), Trade(
+            timestamp=1609537953,
+            location=Location.KRAKEN,  # 0.89 USDT/EUR -> PNL: 20 * 0.89 - 0.02*178.615 ->  14.2277
+            base_asset=A_ETH,
+            quote_asset=A_USDT,
+            trade_type=TradeType.SELL,
+            amount=FVal('0.02'),
+            rate=FVal(1000),
+            fee=FVal(30),  # 0.82411 USD/EUR -> 30 * 0.01 * 0.82411 -> 0.247233
+            fee_currency=A_KFEE,  # - 0.247233 + 0.247233 - 30 * 0.01 * 0.8612 -> -0.25836
+            link=None,
         ),
     ]
-    report, _ = accounting_history_process(
+    accounting_history_process(
         accountant,
         start_ts=1539713238,
         end_ts=1624395187,
         history_list=history,
-        ledger_actions_list=ledger_actions_list,
     )
-    warnings = accountant.msg_aggregator.consume_warnings()
-    assert len(warnings) == 0
-    errors = accountant.msg_aggregator.consume_errors()
-    assert len(errors) == 0
-    # The ledger actions income doesn't count for the income as the 1
-    # year rule is applied. Only the sell is computed.
-    # The expected PnL without the fee is 14.2277000
-    # counting the fee is 14.2277000 - 30 * 0.01 * 0.82411
-    assert FVal(report['total_profit_loss']) == FVal(13.980467)
+    _check_for_errors(accountant)
+
+    pnls = accountant.pots[0].pnls
+    assert pnls.taxable == FVal('187.227')  # 178.615 + 8.612
+    assert pnls.free == FVal('13.96934')  # 14.2277 - 0.25836
 
 
 def test_accounting_event_schemas():
@@ -1064,7 +1059,7 @@ def test_kraken_staking_events(accountant, events_historian):
     """
     Test that staking events from kraken are correctly processed
     """
-    history_events_list = [
+    history = [
         HistoryBaseEntry(
             event_identifier='XXX',
             sequence_index=0,
@@ -1094,20 +1089,17 @@ def test_kraken_staking_events(accountant, events_historian):
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
         )]
-    db = DBHistoryEvents(events_historian.db)
-    db.add_history_events(history_events_list)
-    data = events_historian.get_history(start_ts=1636638549, end_ts=1640493376, has_premium=True)
+    # db = DBHistoryEvents(events_historian.db)
+    # db.add_history_events(history)
+    # data = events_historian.get_history(start_ts=1636638549, end_ts=1640493376, has_premium=True)
     report, events = accounting_history_process(
         accountant,
         start_ts=1640493372,
         end_ts=1640493376,
-        history_list=[],
-        history_events_list=data[-1],
+        history_list=history,
     )
-    warnings = accountant.msg_aggregator.consume_warnings()
-    assert len(warnings) == 0
-    errors = accountant.msg_aggregator.consume_errors()
-    assert len(errors) == 0
+    __import__("pdb").set_trace()
+    _check_for_errors(accountant)
 
     assert FVal(report['staking_profit']) == FVal(0.47150582600)
     assert len(events) == 2
