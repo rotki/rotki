@@ -231,7 +231,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 try:
                     usd_value = deserialize_fval(balance_info['value'], 'usd_value', 'iconomi')
-                except DeserializationError as e:
+                except (DeserializationError, KeyError) as e:
                     self.msg_aggregator.add_warning(
                         f'Skipping iconomi balance entry {balance_info} due to {str(e)}',
                     )
@@ -239,7 +239,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 try:
                     amount = deserialize_asset_amount(balance_info['balance'])
-                except DeserializationError as e:
+                except (DeserializationError, KeyError) as e:
                     self.msg_aggregator.add_warning(
                         f'Skipping iconomi balance entry {balance_info} due to {str(e)}',
                     )
@@ -277,7 +277,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 try:
                     usd_value = deserialize_fval(balance_info['value'], 'usd_value', 'iconomi')
-                except DeserializationError as e:
+                except (DeserializationError, KeyError) as e:
                     self.msg_aggregator.add_warning(
                         f'Skipping iconomi balance entry {balance_info} due to {str(e)}',
                     )
