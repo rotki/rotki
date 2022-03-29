@@ -162,14 +162,28 @@ class EVMTransactionDecoder():
         # Also add the default settings
         gas_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS  # noqa: E501
         result[gas_key] = TxEventSettings(
-            count_pnl=pot.settings.include_gas_costs,
+            taxable=pot.settings.include_gas_costs,
+            count_entire_amount_spend=True,
+            count_cost_basis_pnl=True,
             take=1,
             method='spend',
         )
         spend_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.NONE)
-        result[spend_key] = TxEventSettings(count_pnl=True, take=1, method='spend')
+        result[spend_key] = TxEventSettings(
+            taxable=True,
+            count_entire_amount_spend=True,
+            count_cost_basis_pnl=True,
+            take=1,
+            method='spend',
+        )
         receive_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.NONE)
-        result[receive_key] = TxEventSettings(count_pnl=True, take=1, method='acquisition')
+        result[receive_key] = TxEventSettings(
+            taxable=True,
+            count_entire_amount_spend=True,
+            count_cost_basis_pnl=True,
+            take=1,
+            method='acquisition',
+        )
         return result
 
     def try_all_rules(

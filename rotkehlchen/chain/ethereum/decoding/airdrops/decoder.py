@@ -127,7 +127,9 @@ class AirdropsDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         airdrops_taxable = LedgerActionType.AIRDROP in pot.settings.taxable_ledger_actions
         return {
             get_tx_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, counterparty): TxEventSettings(  # noqa: E501
-                count_pnl=airdrops_taxable,
+                taxable=airdrops_taxable,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
                 method='acquisition',
                 take=1,
                 multitake_treatment=None,

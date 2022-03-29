@@ -163,13 +163,17 @@ class Oneinchv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         """Being defined at function call time is fine since this function is called only once"""
         return {
             get_tx_event_type_identifier(HistoryEventType.TRADE, HistoryEventSubType.SPEND, CPT_ONEINCH_V1): TxEventSettings(  # noqa: E501
-                count_pnl=True,
+                taxable=True,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=True,
                 method='spend',
                 take=2,
                 multitake_treatment=TxMultitakeTreatment.SWAP,
             ),
             get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.FEE, CPT_ONEINCH_V1): TxEventSettings(  # noqa: E501
-                count_pnl=True,
+                taxable=True,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=True,
                 method='spend',
                 take=1,
                 multitake_treatment=None,

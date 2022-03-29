@@ -599,37 +599,49 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
         # TODO: How can we count here loss from debt and gain from DSR? We need to keep state
         return {  # vault collateral deposit
             get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_VAULT): TxEventSettings(  # noqa: E501
-                count_pnl=False,
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
                 method='spend',
                 take=1,
                 multitake_treatment=None,
             ),  # vault collateral withdraw
             get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_VAULT): TxEventSettings(  # noqa: E501
-                count_pnl=False,
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
                 method='acquisition',
                 take=1,
                 multitake_treatment=None,
             ),  # payback DAI to vault
             get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
-                count_pnl=False,
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
                 method='spend',
                 take=1,
                 multitake_treatment=None,
             ),  # generate DAI from vault
             get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
-                count_pnl=False,
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
                 method='acquisition',
                 take=1,
                 multitake_treatment=None,
             ),  # Deposit DAI in the DSR
             get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
-                count_pnl=False,
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
                 method='spend',
                 take=1,
                 multitake_treatment=None,
             ),  # Withdraw DAI from the DSR
             get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
-                count_pnl=False,
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
                 method='acquisition',
                 take=1,
                 multitake_treatment=None,
