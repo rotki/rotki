@@ -1,22 +1,13 @@
-import tempfile
-from pathlib import Path
-
-import jsonschema
 import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.accounting.pnl import OVR_FEES, OVR_MARGIN_PNL, OVR_TRADE_PNL
+from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures import (
-    AssetBalance,
     Balance,
-    DefiEvent,
-    DefiEventType,
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.accounting.types import ACCOUNTING_EVENT_SCHEMA
-from rotkehlchen.chain.ethereum.modules.aave.structures import AaveInterestEvent
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_BCH,
@@ -28,20 +19,18 @@ from rotkehlchen.constants.assets import (
     A_EUR,
     A_KFEE,
     A_USDT,
-    A_WBTC,
 )
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process
-from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.constants import A_CHF, A_DASH, A_XMR
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.types import (
+    AssetAmount,
     AssetMovementCategory,
-    EthereumTransaction,
     Fee,
     Location,
+    Price,
     Timestamp,
     TradeType,
     make_evm_tx_hash,
@@ -53,47 +42,47 @@ DUMMY_HASH = make_evm_tx_hash(b'')
 
 history1 = [
     Trade(
-        timestamp=1446979735,
+        timestamp=Timestamp(1446979735),
         location=Location.EXTERNAL,
         base_asset=A_BTC,
         quote_asset=A_EUR,
         trade_type=TradeType.BUY,
-        amount=FVal(82),
-        rate=FVal('268.678317859'),
+        amount=AssetAmount(FVal(82)),
+        rate=Price(FVal('268.678317859')),
         fee=None,
         fee_currency=None,
         link=None,
     ), Trade(
-        timestamp=1446979735,
+        timestamp=Timestamp(1446979735),
         location=Location.EXTERNAL,
         base_asset=A_ETH,
         quote_asset=A_EUR,
         trade_type=TradeType.BUY,
-        amount=FVal(1450),
-        rate=FVal('0.2315893'),
+        amount=AssetAmount(FVal(1450)),
+        rate=Price(FVal('0.2315893')),
         fee=None,
         fee_currency=None,
         link=None,
     ), Trade(
-        timestamp=1473505138,  # cryptocompare hourly BTC/EUR price: 556.435
+        timestamp=Timestamp(1473505138),  # cryptocompare hourly BTC/EUR price: 556.435
         location=Location.POLONIEX,
         base_asset=A_ETH,  # cryptocompare hourly ETH/EUR price: 10.36
         quote_asset=A_BTC,
         trade_type=TradeType.BUY,
-        amount=FVal(50),
-        rate=FVal('0.01858275'),
-        fee=FVal('0.06999999999999999'),
+        amount=AssetAmount(FVal(50)),
+        rate=Price(FVal('0.01858275')),
+        fee=Fee(FVal('0.06999999999999999')),
         fee_currency=A_ETH,
         link=None,
     ), Trade(
-        timestamp=1475042230,  # cryptocompare hourly BTC/EUR price: 537.805
+        timestamp=Timestamp(1475042230),  # cryptocompare hourly BTC/EUR price: 537.805
         location=Location.POLONIEX,
         base_asset=A_ETH,  # cryptocompare hourly ETH/EUR price: 11.925
         quote_asset=A_BTC,
         trade_type=TradeType.SELL,
-        amount=FVal(25),
-        rate=FVal('0.02209898'),
-        fee=FVal('0.00082871175'),
+        amount=AssetAmount(FVal(25)),
+        rate=Price(FVal('0.02209898')),
+        fee=Fee(FVal('0.00082871175')),
         fee_currency=A_BTC,
         link=None,
     ),
@@ -115,11 +104,6 @@ def test_simple_accounting(accountant):
     assert len(pnls) == 2
     assert pnls.taxable.is_close('559.455847283')
     assert pnls.free == ZERO
-
-    # with tempfile.TemporaryDirectory() as tmpdirname:
-    #     accountant.export(Path(tmpdirname))
-    #     __import__("pdb").set_trace()
-    #     a = 1
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -416,13 +400,13 @@ def test_buying_selling_bch_before_bsvfork(accountant):
 
 
 history5 = history1 + [Trade(
-    timestamp=1512693374,  # cryptocompare hourly BTC/EUR price: 537.805
+    timestamp=Timestamp(1512693374),  # cryptocompare hourly BTC/EUR price: 537.805
     location=Location.KRAKEN,
     base_asset=A_BTC,
     quote_asset=A_EUR,
     trade_type=TradeType.SELL,
-    amount=FVal('20'),
-    rate=FVal('13503.35'),
+    amount=AssetAmount(FVal('20')),
+    rate=Price(FVal('13503.35')),
     fee=None,
     fee_currency=None,
     link=None,
@@ -647,12 +631,12 @@ def test_margin_events_affect_gained_lost_amount(accountant):
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount('BTC').is_close('3.7468')
     pnls = accountant.pots[0].pnls
     assert len(pnls) == 3
-    assert pnls[OVR_FEES].taxable.is_close('-1.87166029184')
-    assert pnls[OVR_FEES].free == ZERO
-    assert pnls[OVR_TRADE_PNL].taxable.is_close('1940.9761588')
-    assert pnls[OVR_TRADE_PNL].free == ZERO
-    assert pnls[OVR_MARGIN_PNL].taxable.is_close('-44.4744206')
-    assert pnls[OVR_MARGIN_PNL].free == ZERO
+    assert pnls[AccountingEventType.FEE].taxable.is_close('-1.87166029184')
+    assert pnls[AccountingEventType.FEE].free == ZERO
+    assert pnls[AccountingEventType.TRADE].taxable.is_close('1940.9761588')
+    assert pnls[AccountingEventType.TRADE].free == ZERO
+    assert pnls[AccountingEventType.MARGIN_POSITION].taxable.is_close('-44.4744206')
+    assert pnls[AccountingEventType.MARGIN_POSITION].free == ZERO
 
     assert pnls.taxable.is_close('1894.63007791')
     assert pnls.free == ZERO
@@ -1049,13 +1033,8 @@ def test_kfee_price_in_accounting(accountant):
     assert pnls.free == FVal('13.96934')  # 14.2277 - 0.25836
 
 
-def test_accounting_event_schemas():
-    """Test that the accounting event json schemas we use are valid"""
-    jsonschema.Draft4Validator.check_schema(ACCOUNTING_EVENT_SCHEMA)
-
-
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_kraken_staking_events(accountant, events_historian):
+def test_kraken_staking_events(accountant):
     """
     Test that staking events from kraken are correctly processed
     """
@@ -1089,20 +1068,19 @@ def test_kraken_staking_events(accountant, events_historian):
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
         )]
-    # db = DBHistoryEvents(events_historian.db)
-    # db.add_history_events(history)
-    # data = events_historian.get_history(start_ts=1636638549, end_ts=1640493376, has_premium=True)
-    report, events = accounting_history_process(
+    _, events = accounting_history_process(
         accountant,
-        start_ts=1640493372,
+        start_ts=1636638549,
         end_ts=1640493376,
         history_list=history,
     )
-    __import__("pdb").set_trace()
     _check_for_errors(accountant)
+    pnls = accountant.pots[0].pnls
+    assert pnls.taxable.is_close('0.47150582600')
+    assert pnls.free == ZERO
 
-    assert FVal(report['staking_profit']) == FVal(0.47150582600)
     assert len(events) == 2
-    profits = [FVal(entry['net_profit_or_loss']) for entry in events]
-    assert [FVal(0.25114638241), FVal(0.22035944359)] == profits
-    assert {entry['type'] for entry in events} == {'staking_reward'}
+    expected_pnls = [FVal('0.25114638241'), FVal('0.22035944359')]
+    for idx, event in enumerate(events):
+        assert event.pnl.taxable == expected_pnls[idx]
+        assert event.type == AccountingEventType.STAKING
