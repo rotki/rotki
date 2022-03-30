@@ -1,12 +1,23 @@
 import logging
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+    overload,
+)
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
-from rotkehlchen.accounting.totals import PnlTotals
-from rotkehlchen.accounting.types import NamedJson
+from rotkehlchen.accounting.pnl import PnlTotals
+from rotkehlchen.accounting.processed_event import ProcessedAccountingEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.settings import DBSettings
@@ -22,12 +33,32 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
+@overload
 def _get_reports_or_events_maybe_limit(
-        entry_type: Literal['events', 'reports'],
+        entry_type: Literal['events'],
+        entries_found: int,
+        entries: List[ProcessedAccountingEvent],
+        with_limit: bool,
+) -> Tuple[List[ProcessedAccountingEvent], int]:
+    ...
+
+
+@overload
+def _get_reports_or_events_maybe_limit(
+        entry_type: Literal['reports'],
         entries_found: int,
         entries: List[Dict[str, Any]],
         with_limit: bool,
 ) -> Tuple[List[Dict[str, Any]], int]:
+    ...
+
+
+def _get_reports_or_events_maybe_limit(
+        entry_type: Literal['events', 'reports'],
+        entries_found: int,
+        entries: Union[List[Dict[str, Any]], List[ProcessedAccountingEvent]],
+        with_limit: bool,
+) -> Tuple[Union[List[Dict[str, Any]], List[ProcessedAccountingEvent]], int]:
     if with_limit is False:
         return entries, entries_found
 
@@ -108,8 +139,8 @@ class DBAccountingReports():
             )
 
         tuples = []
-        for name, entry in pnls.items():
-            tuples.append((report_id, name, entry.taxable, entry.free))
+        for event_type, entry in pnls.items():
+            tuples.append((report_id, event_type.serialize(), str(entry.taxable), str(entry.free)))  # noqa: E501
         cursor.executemany(
             'INSERT OR IGNORE INTO pnl_report_totals(report_id, name, taxable_value, free_value) VALUES(?, ?, ?, ?)',  # noqa: E501
             tuples,
@@ -217,20 +248,27 @@ class DBAccountingReports():
         self.db.conn.commit()
         self.db.update_last_write()
 
-    def add_report_data(self, report_id: int, time: Timestamp, event: NamedJson) -> None:
+    def add_report_data(
+            self,
+            report_id: int,
+            time: Timestamp,
+            ts_converter: Callable[[Timestamp], str],
+            event: ProcessedAccountingEvent,
+    ) -> None:
         """Adds a new entry to a transient report for the PnL history in a given time range
         May raise:
         - DeserializationError if there is a conflict at serialization of the event
         - InputError if the event can not be written to the DB. Probably report id does not exist.
         """
         cursor = self.db.conn_transient.cursor()
+        data = event.serialize_for_db(ts_converter)
         query = """
         INSERT INTO pnl_events(
-            report_id, timestamp, event_type, data
+            report_id, timestamp, data
         )
-        VALUES(?, ?, ?, ?);"""
+        VALUES(?, ?, ?);"""
         try:
-            cursor.execute(query, (report_id, time) + event.to_db_tuple())
+            cursor.execute(query, (report_id, time, data))
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
                 f'Could not write {event} data to the DB due to {str(e)}. '
@@ -242,7 +280,7 @@ class DBAccountingReports():
             self,
             filter_: ReportDataFilterQuery,
             with_limit: bool,
-    ) -> Tuple[List[Dict[str, Any]], int]:
+    ) -> Tuple[List[ProcessedAccountingEvent], int]:
         """Retrieve the event data of a PnL report depending on the given filter
 
         May raise:
@@ -260,13 +298,13 @@ class DBAccountingReports():
             )
 
         query, bindings = filter_.prepare()
-        query = 'SELECT event_type, data FROM pnl_events ' + query
+        query = 'SELECT timestamp, data FROM pnl_events ' + query
         results = cursor.execute(query, bindings)
 
         records = []
         for result in results:
             try:
-                record = NamedJson.deserialize_from_db(result).data
+                record = ProcessedAccountingEvent.deserialize_from_db(result[0], result[1])
             except DeserializationError as e:
                 self.db.msg_aggregator.add_error(
                     f'Error deserializing AccountingEvent from the DB. Skipping it.'

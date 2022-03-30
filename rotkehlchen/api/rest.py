@@ -56,7 +56,7 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
-from rotkehlchen.chain.ethereum.modules.eth2 import FREE_VALIDATORS_LIMIT
+from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
@@ -1657,17 +1657,11 @@ class RestAPI():
 
     @require_loggedin_user()
     def download_processed_history_csv(self) -> Response:
-        success, msg_or_zipfile = self.rotkehlchen.accountant.export(directory_path=None)
+        success, zipfile = self.rotkehlchen.accountant.export(directory_path=None)
         if success is False:
-            return api_response(wrap_in_fail_result(msg_or_zipfile), status_code=HTTPStatus.CONFLICT)  # noqa: E501
+            return api_response(wrap_in_fail_result('Could not create a zip archive'), status_code=HTTPStatus.CONFLICT)  # noqa: E501
 
         try:
-            zipfile = msg_or_zipfile
-            if zipfile is None:
-                return api_response(
-                    wrap_in_fail_result('Could not create a zip archive'),
-                    status_code=HTTPStatus.NOT_FOUND,
-                )
             return send_file(
                 path_or_file=zipfile,
                 mimetype='application/zip',

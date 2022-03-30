@@ -1,19 +1,19 @@
-import csv
 import json
 import logging
+from csv import DictWriter
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from rotkehlchen.accounting.pnls import PnlTotals
-from rotkehlchen.accounting.structures import ProcessedAccountingEvent
+from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.processed_event import ProcessedAccountingEvent
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ def _dict_to_csv_file(path: Path, dictionary_list: List) -> None:
         return
 
     with open(path, 'w', newline='') as f:
-        w = csv.DictWriter(f, fieldnames=dictionary_list[0].keys())
+        w = DictWriter(f, fieldnames=dictionary_list[0].keys())
         w.writeheader()
         try:
             for dic in dictionary_list:
@@ -64,8 +64,10 @@ class CSVExporter(CustomizableDateMixin):
             database: 'DBHandler',
     ):
         super().__init__(database=database)
-        # get setting for prefered eth explorer
-        self.settings = self.database.get_settings()
+        self.reset()
+
+    def reset(self) -> None:
+        self.reload_settings()
         try:
             frontend_settings = json.loads(self.settings.frontend_settings)
             if (
@@ -153,19 +155,18 @@ class CSVExporter(CustomizableDateMixin):
         entry['taxable_amount'] = version_result.our_version
         events.append(entry)
 
-        db_settings = self.database.get_settings()
         for setting in ACCOUNTING_SETTINGS:
             entry = template.copy()
             entry['free_amount'] = setting
-            entry['taxable_amount'] = str(getattr(db_settings, setting))
+            entry['taxable_amount'] = str(getattr(self.settings, setting))
             events.append(entry)
 
     def create_zip(
             self,
-            events: List[ProcessedAccountingEvent],
+            events: List['ProcessedAccountingEvent'],
             pnls: PnlTotals,
     ) -> Tuple[bool, str]:
-        #  TODO: Find a way to properly delete the directory after send is complete
+        # TODO: Find a way to properly delete the directory after send is complete
         dirpath = Path(mkdtemp())
         success, msg = self.export(events=events, pnls=pnls, directory=dirpath)
         if not success:
@@ -182,15 +183,21 @@ class CSVExporter(CustomizableDateMixin):
                 csv_zip.write(path, filename)
                 path.unlink()
 
-        return True, csv_zip.filename
+        success = False
+        filename = ''
+        if csv_zip.filename is not None:
+            success = True
+            filename = csv_zip.filename
+
+        return success, filename
 
     def export(
             self,
-            events: List[ProcessedAccountingEvent],
+            events: List['ProcessedAccountingEvent'],
             pnls: PnlTotals,
             directory: Path,
     ) -> Tuple[bool, str]:
-        serialized_events = [x.to_dict(self.timestamp_to_date) for x in events]
+        serialized_events = [x.to_exported_dict(self.timestamp_to_date) for x in events]
         self._maybe_add_summary(events=serialized_events, pnls=pnls)
         try:
             directory.mkdir(parents=True, exist_ok=True)

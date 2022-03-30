@@ -1,10 +1,9 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, List, Tuple
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import HistoryBaseEntry
-from rotkehlchen.chain.ethereum.trades import AMMTRADE_LOCATION_NAMES, AMMTrade, AMMTradeLocations
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ethtx import DBEthTx
@@ -18,18 +17,17 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors import RemoteError
-from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EXTERNAL_LOCATION, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.accounting import action_get_timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures import DefiEvent
+    from rotkehlchen.accounting.event.mixins import AccountingEventMixin
     from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -47,41 +45,6 @@ log = RotkehlchenLogsAdapter(logger)
 # base history entries
 # Please, update this number each time a history query step is either added or removed
 NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 6 + len(EXTERNAL_LOCATION)
-
-
-HistoryResult = Tuple[
-    str,
-    List[Union[Trade, MarginPosition, AMMTrade]],
-    List[Loan],
-    List[AssetMovement],
-    List['DefiEvent'],
-    List['LedgerAction'],
-    List[HistoryBaseEntry],
-]
-# TRADES_LIST = List[Union[Trade, AMMTrade]]
-TRADES_LIST = List[Trade]
-
-
-def limit_trade_list_to_period(
-        trades_list: List[Union[Trade, MarginPosition]],
-        start_ts: Timestamp,
-        end_ts: Timestamp,
-) -> List[Union[Trade, MarginPosition]]:
-    """Accepts a SORTED by timestamp trades_list and returns a shortened version
-    of that list limited to a specific time period"""
-
-    start_idx: Optional[int] = None
-    end_idx: Optional[int] = None
-    for idx, trade in enumerate(trades_list):
-        timestamp = action_get_timestamp(trade)
-        if start_idx is None and timestamp >= start_ts:
-            start_idx = idx
-
-        if end_idx is None and timestamp > end_ts:
-            end_idx = idx if idx >= 1 else 0
-            break
-
-    return trades_list[start_idx:end_idx] if start_idx is not None else []
 
 
 class EventsHistorian():
@@ -167,7 +130,7 @@ class EventsHistorian():
             self.query_location_latest_trades(location=location, from_ts=from_ts, to_ts=to_ts)
             return
 
-        # else query all CEXes and all AMMs
+        # else query all CEXes
         for exchange in self.exchange_manager.iterate_exchanges():
             exchange.query_trade_history(
                 start_ts=from_ts,
@@ -175,20 +138,11 @@ class EventsHistorian():
                 only_cache=False,
             )
 
-        # for all trades we also need the trades from the amm protocols
-        if self.chain_manager.premium is not None:
-            for amm_location in AMMTradeLocations:
-                self.query_location_latest_trades(
-                    location=amm_location,
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                )
-
     def query_trades(
             self,
             filter_query: TradesFilterQuery,
             only_cache: bool,
-    ) -> Tuple[TRADES_LIST, int]:
+    ) -> Tuple[List[Trade], int]:
         """Queries trades for the given location and time range.
         If no location is given then all external, all exchange and DEX trades are queried.
 
@@ -225,18 +179,7 @@ class EventsHistorian():
 
         - RemoteError if there is a problem with reaching the service
         """
-        if location in AMMTradeLocations:
-            if self.chain_manager.premium is not None:
-                amm_module_name = cast(AMMTRADE_LOCATION_NAMES, str(location))
-                amm_module = self.chain_manager.get_module(amm_module_name)
-                if amm_module is not None:
-                    amm_module.get_trades(
-                        addresses=self.chain_manager.queried_addresses_for_module(amm_module_name),
-                        from_timestamp=from_ts,
-                        to_timestamp=to_ts,
-                        only_cache=False,
-                    )
-        elif location in SUPPORTED_EXCHANGES:
+        if location in SUPPORTED_EXCHANGES:
             exchanges_list = self.exchange_manager.connected_exchanges.get(location)
             if exchanges_list is None:
                 return
@@ -247,6 +190,8 @@ class EventsHistorian():
                     end_ts=to_ts,
                     only_cache=False,
                 )
+        else:
+            log.error(f'Requested latest trades for unsupported location {location}')
 
     def _query_services_for_asset_movements(self, filter_query: AssetMovementsFilterQuery) -> None:
         """Queries all services requested for asset movements and writes them to the DB"""
@@ -337,8 +282,11 @@ class EventsHistorian():
             start_ts: Timestamp,
             end_ts: Timestamp,
             has_premium: bool,
-    ) -> HistoryResult:
-        """Creates trades and loans history from start_ts to end_ts"""
+    ) -> Tuple[str, List['AccountingEventMixin']]:
+        """
+        Creates all events history from start_ts to end_ts. Returns it
+        sorted by ascending timestamp.
+        """
         self._reset_variables()
         step = 0
         total_steps = len(self.exchange_manager.connected_exchanges) + NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES  # noqa: E501
@@ -348,11 +296,7 @@ class EventsHistorian():
             end_ts=end_ts,
         )
         # start creating the all trades history list
-        history: List[Union[Trade, MarginPosition, AMMTrade]] = []
-        asset_movements = []
-        ledger_actions = []
-        loans = []
-        history_base_entries = []
+        history: List['AccountingEventMixin'] = []
         empty_or_error = ''
 
         def populate_history_cb(
@@ -362,16 +306,18 @@ class EventsHistorian():
                 result_ledger_actions: List[LedgerAction],
                 exchange_specific_data: Any,
         ) -> None:
-            """This callback will run for succesfull exchange history query"""
+            """This callback will run for succesfull exchange history query
+
+            We don't include ledger actions here since we simply gather all of them at the end
+            """
             history.extend(trades_history)
             history.extend(margin_history)
-            asset_movements.extend(result_asset_movements)
-            ledger_actions.extend(result_ledger_actions)
+            history.extend(result_asset_movements)
 
             if exchange_specific_data:
                 # This can only be poloniex at the moment
                 polo_loans_data = exchange_specific_data
-                loans.extend(process_polo_loans(
+                history.extend(process_polo_loans(
                     msg_aggregator=self.msg_aggregator,
                     data=polo_loans_data,
                     # We need to have history of loans since before the range
@@ -449,25 +395,23 @@ class EventsHistorian():
 
         # include the ledger actions from offline sources
         self.processing_state_name = 'Querying ledger actions history'
-        offline_ledger_actions, _ = self.query_ledger_actions(
+        ledger_actions, _ = self.query_ledger_actions(
             filter_query=LedgerActionsFilterQuery.make(),
             only_cache=True,
         )
-        unique_ledger_actions = list(set(offline_ledger_actions) - set(ledger_actions))
-        ledger_actions.extend(unique_ledger_actions)
+        history.extend(ledger_actions)
         step = self._increase_progress(step, total_steps)
 
-        defi_events = []
         # include eth2 staking events
         eth2 = self.chain_manager.get_module('eth2')
         if eth2 is not None and has_premium:
             self.processing_state_name = 'Querying ETH2 staking history'
             try:
                 eth2_events = self.chain_manager.get_eth2_history_events(
-                    from_timestamp=start_ts,
+                    from_timestamp=Timestamp(0),
                     to_timestamp=end_ts,
                 )
-                defi_events.extend(eth2_events)
+                history.extend(eth2_events)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Eth2 events are not included in the PnL report due to {str(e)}',
@@ -485,16 +429,8 @@ class EventsHistorian():
             ),
             has_premium=True,  # ignore limits here. Limit applied at processing
         )
-        history_base_entries.extend(base_entries)
+        history.extend(base_entries)
         self._increase_progress(step, total_steps)
 
-        history.sort(key=action_get_timestamp)
-        return (
-            empty_or_error,
-            history,
-            loans,
-            asset_movements,
-            defi_events,
-            ledger_actions,
-            history_base_entries,
-        )
+        history.sort(key=lambda x: x.get_timestamp)
+        return empty_or_error, history
