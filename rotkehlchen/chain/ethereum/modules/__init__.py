@@ -20,7 +20,7 @@ from .aave.aave import Aave
 from .adex.adex import Adex
 from .balancer.balancer import Balancer
 from .compound import Compound
-from .eth2 import Eth2
+from .eth2.eth2 import Eth2
 from .l2.loopring import Loopring
 from .liquity.trove import Liquity
 from .makerdao.dsr import MakerdaoDsr

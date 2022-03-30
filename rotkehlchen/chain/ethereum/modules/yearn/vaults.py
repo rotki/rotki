@@ -4,7 +4,6 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.chain.ethereum.structures import YearnVault, YearnVaultEvent
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import (
     A_ALINK_V1,
@@ -60,6 +59,8 @@ from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChecksumEthAddress, Pric
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, ts_now
+
+from .structures import YearnVault, YearnVaultEvent
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.defi.structures import (

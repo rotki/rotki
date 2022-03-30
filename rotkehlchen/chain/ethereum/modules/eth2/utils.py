@@ -6,7 +6,6 @@ import gevent
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
-from rotkehlchen.chain.ethereum.types import ValidatorDailyStats
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
@@ -17,6 +16,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import create_timestamp
+
+from .structures import ValidatorDailyStats
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

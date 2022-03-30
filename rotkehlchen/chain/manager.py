@@ -24,13 +24,7 @@ from typing import (
 from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
 
-from rotkehlchen.accounting.structures import (
-    AssetBalance,
-    Balance,
-    BalanceSheet,
-    DefiEvent,
-    DefiEventType,
-)
+from rotkehlchen.accounting.structures import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.defi.chad import DefiChad
@@ -51,7 +45,7 @@ from rotkehlchen.chain.ethereum.modules import (
     YearnVaults,
     YearnVaultsV2,
 )
-from rotkehlchen.chain.ethereum.structures import Eth2Validator
+from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.ethereum.tokens import EthTokens
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
@@ -107,8 +101,12 @@ from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_l
 if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.modules.eth2.structures import (
+        Eth2Deposit,
+        ValidatorDailyStats,
+        ValidatorDetails,
+    )
     from rotkehlchen.chain.ethereum.modules.nfts import Nfts
-    from rotkehlchen.chain.ethereum.types import Eth2Deposit, ValidatorDailyStats, ValidatorDetails
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain import BeaconChain
@@ -1649,7 +1647,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             self,
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ) -> List[DefiEvent]:
+    ) -> List['ValidatorDailyStats']:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         - RemoteError if a remote query to beacon chain fails and is not caught in the method
@@ -1661,7 +1659,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         if to_timestamp < 1607212800:  # Dec 1st UTC
             return []  # no need to bother querying before beacon chain launch
 
-        defi_events = []
         # Ask for details to detect any new validators
         eth2.get_details(addresses=self.queried_addresses_for_module('eth2'))
         # Create a mapping of validator index to ownership proportion
@@ -1676,40 +1673,16 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             msg_aggregator=self.msg_aggregator,
         )
         for stats_entry in stats:
-            got_asset = got_balance = spent_asset = spent_balance = None
             if stats_entry.pnl_balance.amount == ZERO:
                 continue
 
             # Take into account the validator ownership proportion if is not 100%
             validator_ownership = validators_ownership.get(stats_entry.validator_index, FVal(1))
             if validator_ownership != ONE:
-                pnl_balance = Balance(
-                    amount=stats_entry.pnl_balance.amount * validator_ownership,
-                    usd_value=stats_entry.pnl_balance.usd_value * validator_ownership,
-                )
-            else:
-                pnl_balance = stats_entry.pnl_balance
+                stats_entry.pnl = stats_entry.pnl * validator_ownership
+                stats_entry.ownership = validator_ownership
 
-            if pnl_balance.amount > ZERO:
-                got_asset = A_ETH
-                got_balance = pnl_balance
-            else:  # negative
-                spent_asset = A_ETH
-                spent_balance = -pnl_balance
-
-            defi_events.append(DefiEvent(
-                timestamp=stats_entry.timestamp,
-                wrapped_event=stats_entry,
-                event_type=DefiEventType.ETH2_EVENT,
-                got_asset=got_asset,
-                got_balance=got_balance,
-                spent_asset=spent_asset,
-                spent_balance=spent_balance,
-                pnl=[AssetBalance(asset=A_ETH, balance=pnl_balance)],
-                count_spent_got_cost_basis=True,
-            ))
-
-        return defi_events
+        return stats
 
     def get_eth2_validators(self) -> List[Eth2Validator]:
         """May raise:

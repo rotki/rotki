@@ -3,8 +3,11 @@ from typing import TYPE_CHECKING, List, Literal, Optional, Sequence
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.chain.ethereum.structures import Eth2Validator
-from rotkehlchen.chain.ethereum.types import Eth2Deposit, ValidatorDailyStats
+from rotkehlchen.chain.ethereum.modules.eth2.structures import (
+    Eth2Deposit,
+    Eth2Validator,
+    ValidatorDailyStats,
+)
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery

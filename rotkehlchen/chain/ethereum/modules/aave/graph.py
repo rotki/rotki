@@ -6,14 +6,6 @@ from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
-from rotkehlchen.chain.ethereum.structures import (
-    AaveBorrowEvent,
-    AaveDepositWithdrawalEvent,
-    AaveEvent,
-    AaveInterestEvent,
-    AaveLiquidationEvent,
-    AaveRepayEvent,
-)
 from rotkehlchen.chain.ethereum.utils import ethaddress_to_asset, token_normalized_value_decimals
 from rotkehlchen.constants.ethereum import ATOKEN_ABI, ATOKEN_V2_ABI
 from rotkehlchen.constants.misc import ZERO
@@ -35,6 +27,14 @@ from .common import (
     _get_reserve_address_decimals,
     asset_to_aave_reserve_address,
     asset_to_atoken,
+)
+from .structures import (
+    AaveBorrowEvent,
+    AaveDepositWithdrawalEvent,
+    AaveEvent,
+    AaveInterestEvent,
+    AaveLiquidationEvent,
+    AaveRepayEvent,
 )
 
 if TYPE_CHECKING:
