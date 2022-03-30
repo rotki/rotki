@@ -25,6 +25,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap import (
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.aave.common import atoken_to_asset
+from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent, aave_event_from_db
 from rotkehlchen.chain.ethereum.modules.adex import (
     ADEX_EVENTS_PREFIX,
     AdexEventType,
@@ -41,12 +42,7 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
 )
 from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.structures import (
-    AaveEvent,
-    YearnVault,
-    YearnVaultEvent,
-    aave_event_from_db,
-)
+from rotkehlchen.chain.ethereum.modules.yearn.structures import YearnVault, YearnVaultEvent
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX

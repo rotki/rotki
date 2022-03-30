@@ -1,7 +1,9 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
+from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
+from rotkehlchen.accounting.structures import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -12,6 +14,9 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, Tuple
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.pot import AccountingPot
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -66,7 +71,7 @@ LedgerActionDBTupleWithIdentifier = Tuple[
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class LedgerAction:
+class LedgerAction(AccountingEventMixin):
     """Represents an income/loss/expense for accounting purposes"""
     identifier: int  # the unique id of the action and DB primary key
     timestamp: Timestamp
@@ -145,3 +150,61 @@ class LedgerAction:
 
     def is_profitable(self) -> bool:
         return self.action_type.is_profitable()
+
+    # -- Methods of AccountingEventMixin
+
+    def get_timestamp(self) -> Timestamp:
+        return self.timestamp
+
+    @staticmethod
+    def get_accounting_event_type() -> AccountingEventType:
+        return AccountingEventType.LEDGER_ACTION
+
+    def get_identifier(self) -> str:
+        return str(self.identifier)
+
+    def should_ignore(self, ignored_ids_mapping: Dict[ActionType, List[str]]) -> bool:
+        return self.identifier in ignored_ids_mapping.get(ActionType.LEDGER_ACTION, [])
+
+    def get_assets(self) -> List[Asset]:
+        return [self.asset]
+
+    def process(
+            self,
+            accounting: 'AccountingPot',
+            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+    ) -> int:
+        given_price = None  # Determine if non-standard price should be used
+        if self.rate is not None and self.rate_asset is not None:
+            if self.rate_asset == accounting.profit_currency:
+                given_price = self.rate
+            else:
+                quote_rate = accounting.get_rate_in_profit_currency(self.rate_asset, self.timestamp)  # noqa: E501
+                given_price = Price(self.rate * quote_rate)
+
+        taxed = self.action_type in accounting.settings.taxable_ledger_actions
+        notes = self.notes if self.notes else f'{self.action_type} ledger action'
+        if self.is_profitable():
+            accounting.add_acquisition(
+                event_type=AccountingEventType.LEDGER_ACTION,
+                notes=notes,
+                location=self.location,
+                timestamp=self.timestamp,
+                asset=self.asset,
+                amount=self.amount,
+                taxable=taxed,
+                given_price=given_price,
+            )
+        else:
+            accounting.add_spend(
+                event_type=AccountingEventType.LEDGER_ACTION,
+                notes=notes,
+                location=self.location,
+                timestamp=self.timestamp,
+                asset=self.asset,
+                amount=self.amount,
+                taxable=taxed,
+                given_price=given_price,
+            )
+
+        return 1

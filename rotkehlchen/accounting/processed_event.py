@@ -1,0 +1,152 @@
+"""TODO: Move under a structures directory???"""
+
+import json
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Optional, Type, TypeVar
+
+from rotkehlchen.accounting.cost_basis import CostBasisInfo
+from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.accounting.pnl import PNL
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors import DeserializationError
+from rotkehlchen.fval import FVal
+from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.serialization.deserialize import deserialize_fval
+from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.utils.serialization import rlk_jsondumps
+
+T = TypeVar('T', bound='ProcessedAccountingEvent')
+
+
+@dataclass(init=True, repr=False, eq=True, order=False, unsafe_hash=False, frozen=False)
+class ProcessedAccountingEvent:
+    """An event after having been processed by accounting. This is what:
+        - Gets returned via the API
+        - Gets saved in the DB for saved reports
+        - Exported via CSV
+    """
+    type: AccountingEventType
+    notes: str
+    location: Location
+    timestamp: Timestamp
+    asset: Asset
+    free_amount: FVal
+    taxable_amount: FVal
+    price: Price
+    pnl: PNL
+    cost_basis: Optional['CostBasisInfo']
+
+    def to_string(self, ts_converter: Callable[[Timestamp], str]) -> str:
+        desc = f'{self.type.name} for {self.free_amount}/{self.taxable_amount} {self.asset.symbol} with price: {self.price} and PNL: {self.pnl}.'  # noqa: E501
+        if self.cost_basis:
+            desc += f'Cost basis: {self.cost_basis.to_string(ts_converter)}'
+
+        return desc
+
+    def to_exported_dict(self, ts_converter: Callable[[Timestamp], str]) -> Dict[str, Any]:
+        """These are the fields that will appear in CSV and report"""
+        return {
+            'type': self.type.serialize(),
+            'notes': self.notes,
+            'location': str(self.location),
+            'timestamp': self.timestamp,
+            'asset': self.asset.identifier,
+            'free_amount': str(self.free_amount),
+            'taxable_amount': str(self.taxable_amount),
+            'price': str(self.price),
+            'pnl': str(self.pnl.taxable),
+            'cost_basis': self.cost_basis.to_string(ts_converter) if self.cost_basis else '',
+        }
+
+    def serialize_to_dict(self, ts_converter: Callable[[Timestamp], str]) -> Dict[str, Any]:
+        """This is used to serialize to dict for saving to the DB"""
+        data = self.to_exported_dict(ts_converter)
+        data['cost_basis'] = self.cost_basis.serialize() if self.cost_basis else ''
+        data['pnl_free'] = str(self.pnl.free)
+        return data
+
+    def calculate_pnl(
+            self,
+            count_entire_amount_spend: bool,
+            count_cost_basis_pnl: bool,
+    ) -> PNL:
+        """Calculate PnL for this event and return it.
+        Only called for events that should have PnL counted
+
+        If count_entire_amount_spend is True then the entire amount is counted as a spend.
+        Which means an expense (negative pnl).
+
+        If count_cost_basis_pnl is True then the PnL between buying the asset amount
+        and spending it is calculated and added to PnL.
+        """
+        taxable_bought_cost = taxfree_bought_cost = ZERO
+        taxable_value = self.taxable_amount * self.price
+        free_value = self.free_amount * self.price
+        self.pnl = PNL()
+        if count_entire_amount_spend:
+            # for fees and other types  we also need to consider the entire amount as spent
+            self.pnl -= PNL(taxable=taxable_value, free=free_value)
+
+        if self.asset.is_fiat() or count_cost_basis_pnl is False:
+            return self.pnl  # no need to calculate spending pnl if asset is fiat
+
+        if self.cost_basis is not None:
+            taxable_bought_cost = self.cost_basis.taxable_bought_cost
+            taxfree_bought_cost = self.cost_basis.taxfree_bought_cost
+
+        self.pnl += PNL(
+            taxable=taxable_value - taxable_bought_cost,
+            free=free_value - taxfree_bought_cost,
+        )
+
+        return self.pnl
+
+    def serialize_for_db(self, ts_converter: Callable[[Timestamp], str]) -> str:
+        """May raise:
+
+        - DeserializationError if something fails during conversion to the DB tuple
+        """
+        json_data = self.serialize_to_dict(ts_converter)
+        try:
+            string_data = rlk_jsondumps(json_data)
+        except (OverflowError, ValueError, TypeError) as e:
+            raise DeserializationError(
+                f'Could not dump json to string for NamedJson. Error was {str(e)}',
+            ) from e
+
+        return string_data
+
+    @classmethod
+    def deserialize_from_db(cls: Type[T], timestamp: Timestamp, stringified_json: str) -> T:
+        """May raise:
+        - DeserializationError if something is wrong with reading this from the DB
+        """
+        try:
+            data = json.loads(stringified_json)
+        except json.decoder.JSONDecodeError as e:
+            raise DeserializationError(
+                f'Could not decode processed accounting event json from the DB due to {str(e)}',
+            ) from e
+
+        try:
+            pnl_taxable = deserialize_fval(data['pnl'], name='pnl', location='processed event decoding')  # noqa: E501
+            pnl_free = deserialize_fval(data['pnl_free'], name='pnl_free', location='processed event decoding')  # noqa: E501
+            if data['cost_basis'] == '':
+                cost_basis = None
+            else:
+                cost_basis = CostBasisInfo.deserialize(data['cost_basis'])
+            return cls(
+                type=AccountingEventType.deserialize(data['type']),
+                notes=data['notes'],
+                location=Location.deserialize(data['location']),
+                timestamp=timestamp,
+                asset=Asset(data['asset']),
+                free_amount=deserialize_fval(data['free_amount'], name='free_amount', location='processed event decoding'),  # noqa: E501
+                taxable_amount=deserialize_fval(data['taxable_amount'], name='taxable_amount', location='processed event decoding'),  # noqa: E501
+                price=deserialize_price(data['price']),
+                pnl=PNL(free=pnl_free, taxable=pnl_taxable),
+                cost_basis=cost_basis,
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Could not decode processed accounting event json from the DB due to missing key {str(e)}') from e  # noqa: E501
