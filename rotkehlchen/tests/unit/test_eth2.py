@@ -6,14 +6,14 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.eth2_utils import scrape_validator_daily_stats
-from rotkehlchen.chain.ethereum.modules.eth2 import REQUEST_DELTA_TS
-from rotkehlchen.chain.ethereum.structures import Eth2Validator
-from rotkehlchen.chain.ethereum.types import (
+from rotkehlchen.chain.ethereum.modules.eth2.eth2 import REQUEST_DELTA_TS
+from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     Eth2Deposit,
+    Eth2Validator,
     ValidatorDailyStats,
-    string_to_ethereum_address,
 )
+from rotkehlchen.chain.ethereum.modules.eth2.utils import scrape_validator_daily_stats
+from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery

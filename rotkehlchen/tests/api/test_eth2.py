@@ -6,8 +6,8 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.modules.eth2 import FREE_VALIDATORS_LIMIT
-from rotkehlchen.chain.ethereum.structures import Eth2Validator
+from rotkehlchen.chain.ethereum.modules.eth2.eth2 import FREE_VALIDATORS_LIMIT
+from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (

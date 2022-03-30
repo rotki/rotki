@@ -13,6 +13,7 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, Inquirer
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.types import Timestamp
 
 
 @pytest.fixture(name='use_clean_caching_directory')
@@ -113,7 +114,14 @@ def fixture_accountant(
 
     if accounting_initialize_parameters:
         db_settings = accountant.db.get_settings()
-        accountant._customize(db_settings)
+        for pot in accountant.pots:
+            pot.reset(
+                settings=db_settings,
+                start_ts=Timestamp(0),
+                end_ts=Timestamp(0),
+                report_id=1,
+            )
+        accountant.csvexporter.reset()
 
     return accountant
 

@@ -1,13 +1,12 @@
 import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC
+from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.types import HistoricalPriceOracle
-from rotkehlchen.types import Location, TradeType
+from rotkehlchen.types import Location
 
 
 def test_query_ledger_actions(events_historian, function_scope_messages_aggregator):

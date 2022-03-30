@@ -244,7 +244,7 @@ class EthereumTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return self.tx_hash.hex() + self.from_address + str(self.nonce)
+        return self.tx_hash.hex()
 
 
 class EthereumInternalTransaction(NamedTuple):

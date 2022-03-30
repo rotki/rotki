@@ -568,10 +568,10 @@ class Rotkehlchen():
             # start_ts is min of the query start or the first action timestamp since action
             # processing can start well before query start to calculate cost basis
             start_ts = min(
-                self.accountant.events.base.query_start_ts,
+                self.accountant.query_start_ts,
                 self.accountant.first_processed_timestamp,
             )
-            diff = self.accountant.events.base.query_end_ts - start_ts
+            diff = self.accountant.query_end_ts - start_ts
             progress = 50 + 100 * (
                 FVal(self.accountant.currently_processing_timestamp - start_ts) /
                 FVal(diff) / 2)
@@ -583,15 +583,7 @@ class Rotkehlchen():
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Tuple[int, str]:
-        (
-            error_or_empty,
-            history,
-            loan_history,
-            asset_movements,
-            defi_events,
-            ledger_actions,
-            history_base_entries,
-        ) = self.events_historian.get_history(
+        error_or_empty, events = self.events_historian.get_history(
             start_ts=start_ts,
             end_ts=end_ts,
             has_premium=self.premium is not None,
@@ -599,12 +591,7 @@ class Rotkehlchen():
         report_id = self.accountant.process_history(
             start_ts=start_ts,
             end_ts=end_ts,
-            trade_history=history,
-            loan_history=loan_history,
-            asset_movements=asset_movements,
-            defi_events=defi_events,
-            ledger_actions=ledger_actions,
-            history_events=history_base_entries,
+            events=events,
         )
         return report_id, error_or_empty
 

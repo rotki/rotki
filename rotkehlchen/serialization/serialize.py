@@ -19,6 +19,7 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveHistory,
     AaveLendingBalance,
 )
+from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent
 from rotkehlchen.chain.ethereum.modules.adex import ADXStakingHistory
 from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerBPTEventPoolToken,
@@ -28,6 +29,7 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerPoolTokenBalance,
 )
 from rotkehlchen.chain.ethereum.modules.compound import CompoundBalance, CompoundEvent
+from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Deposit
 from rotkehlchen.chain.ethereum.modules.liquity.trove import (
     LiquityStakeEvent,
     LiquityStakeEventType,
@@ -55,9 +57,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultEvent,
     YearnVaultHistory,
 )
-from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.chain.ethereum.trades import AMMTrade
-from rotkehlchen.chain.ethereum.types import Eth2Deposit
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
