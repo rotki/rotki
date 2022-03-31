@@ -3871,12 +3871,12 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
         result = {
-            'entries': report_data,
+            'entries': [x.to_exported_dict(self.rotkehlchen.accountant.pots[0].timestamp_to_date) for x in report_data],  # noqa: E501
             'entries_found': entries_found,
             'entries_limit': entries_limit,
         }
         result_dict = _wrap_in_result(result, '')
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def get_associated_locations(self) -> Response:

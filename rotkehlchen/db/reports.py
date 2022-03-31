@@ -18,7 +18,6 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.accounting.processed_event import ProcessedAccountingEvent
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import DeserializationError, InputError
@@ -81,7 +80,6 @@ class DBAccountingReports():
             first_processed_timestamp: Timestamp,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            profit_currency: Asset,
             settings: DBSettings,
     ) -> int:
         cursor = self.db.conn_transient.cursor()
@@ -103,7 +101,7 @@ class DBAccountingReports():
             'INSERT OR IGNORE INTO pnl_report_settings(report_id, name, type, value) '
             'VALUES(?, ?, ?, ?)',
             [
-                (report_id, 'profit_currency', 'string', profit_currency.identifier),
+                (report_id, 'profit_currency', 'string', settings.main_currency.identifier),
                 (report_id, 'taxfree_after_period', 'integer', settings.taxfree_after_period),
                 (report_id, 'include_crypto2crypto', 'bool', settings.include_crypto2crypto),
                 (report_id, 'calculate_past_cost_basis', 'bool', settings.calculate_past_cost_basis),  # noqa: E501
@@ -204,7 +202,7 @@ class DBAccountingReports():
                 if x[1] == 'integer':
                     settings[x[0]] = int(x[2])
                 elif x[1] == 'bool':
-                    settings[x[0]] = x[2] == 'True'
+                    settings[x[0]] = x[2] == '1'
                 else:
                     settings[x[0]] = x[2]
             reports.append({

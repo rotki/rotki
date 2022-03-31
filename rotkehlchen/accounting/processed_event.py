@@ -45,7 +45,7 @@ class ProcessedAccountingEvent:
         return desc
 
     def to_exported_dict(self, ts_converter: Callable[[Timestamp], str]) -> Dict[str, Any]:
-        """These are the fields that will appear in CSV and report"""
+        """These are the fields that will appear in CSV and report API"""
         return {
             'type': self.type.serialize(),
             'notes': self.notes,
