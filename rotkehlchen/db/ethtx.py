@@ -1,5 +1,4 @@
 import logging
-from sqlite3 import Cursor
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
@@ -17,6 +16,7 @@ from rotkehlchen.types import (
     EthereumInternalTransaction,
     EthereumTransaction,
     EVMTxHash,
+    deserialize_evm_tx_hash,
     make_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -220,9 +220,9 @@ class DBEthTx():
             self,
             tx_filter_query: Optional[ETHTransactionsFilterQuery],
             limit: Optional[int],
-    ) -> Cursor:
+    ) -> List[EVMTxHash]:
         cursor = self.db.conn.cursor()
-        querystr = 'SELECT tx_hash FROM ethereum_transactions '
+        querystr = 'SELECT DISTINCT tx_hash FROM ethereum_transactions '
         bindings = ()
         if tx_filter_query is not None:
             filter_query, bindings = tx_filter_query.prepare(with_order=False, with_pagination=False)  # type: ignore  # noqa: E501
@@ -235,8 +235,15 @@ class DBEthTx():
             querystr += 'LIMIT ?'
             bindings = (*bindings, limit)  # type: ignore
 
-        result = cursor.execute(querystr, bindings)
-        return result
+        cursor_result = cursor.execute(querystr, bindings)
+        hashes = []
+        for entry in cursor_result:
+            try:
+                hashes.append(deserialize_evm_tx_hash(entry[0]))
+            except DeserializationError as e:
+                log.debug(f'Got error {str(e)} while deserializing tx_hash {entry[0]} from the DB')
+
+        return hashes
 
     def get_transaction_hashes_not_decoded(self, limit: Optional[int]) -> List[EVMTxHash]:
         cursor = self.db.conn.cursor()

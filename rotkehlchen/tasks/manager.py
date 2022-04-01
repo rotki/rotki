@@ -240,17 +240,16 @@ class TaskManager():
         )
         self.last_eth_tx_query_ts[address] = now
 
-    def _run_ethereum_txreceipts_query(self, hash_results: List[Tuple]) -> None:
+    def _run_ethereum_txreceipts_query(self, hash_results: List[EVMTransactionDecoder]) -> None:
         dbethtx = DBEthTx(self.database)
         for entry in hash_results:
-            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry[0])
+            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry)
             dbethtx.add_receipt_data(tx_receipt_data)
 
     def _maybe_schedule_ethereum_txreceipts(self) -> None:
         """Schedules the ethereum transaction receipts query task"""
         dbethtx = DBEthTx(self.database)
-        cursor_result = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=500)
-        hash_results = cursor_result.fetchall()
+        hash_results = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=500)
         if len(hash_results) == 0:
             return
 

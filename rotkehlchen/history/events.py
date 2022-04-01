@@ -22,7 +22,7 @@ from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.exchanges.poloniex import process_polo_loans
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EXTERNAL_LOCATION, Location, Timestamp
+from rotkehlchen.types import EXTERNAL_LOCATION, Location, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
 
@@ -374,7 +374,7 @@ class EventsHistorian():
             limit=None,
         )
         for entry in hashes_result:
-            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry[0])
+            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry)
             dbethtx.add_receipt_data(tx_receipt_data)
         step = self._increase_progress(step, total_steps)
 
@@ -432,5 +432,5 @@ class EventsHistorian():
         history.extend(base_entries)
         self._increase_progress(step, total_steps)
 
-        history.sort(key=lambda x: x.get_timestamp)
+        history.sort(key=lambda x: x.get_timestamp())
         return empty_or_error, history

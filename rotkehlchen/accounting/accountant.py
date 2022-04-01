@@ -122,14 +122,13 @@ class Accountant():
         # Ask the DB for the settings once at the start of processing so we got the
         # same settings through the entire task
         db_settings = self.db.get_settings()
-        profit_currency = db_settings.main_currency
         # Create a new pnl report in the DB to be used to save each event generated
         dbpnl = DBAccountingReports(self.db)
+        first_ts = Timestamp(0) if len(events) == 0 else events[0].get_timestamp()
         report_id = dbpnl.add_report(
-            first_processed_timestamp=self.first_processed_timestamp,
+            first_processed_timestamp=first_ts,
             start_ts=start_ts,
             end_ts=end_ts,
-            profit_currency=profit_currency,
             settings=db_settings,
         )
         self.pots[0].reset(settings=db_settings, start_ts=start_ts, end_ts=end_ts, report_id=report_id)  # noqa: E501
@@ -137,7 +136,6 @@ class Accountant():
         self.csvexporter.reset()
 
         # The first ts is the ts of the first action we have in history or 0 for empty history
-        first_ts = Timestamp(0) if len(events) == 0 else events[0].get_timestamp()
         self.currently_processing_timestamp = first_ts
         self.first_processed_timestamp = first_ts
 
