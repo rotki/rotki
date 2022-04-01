@@ -14,7 +14,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_ICONOMI_ASSETS, asset_from_iconomi
-from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.constants.assets import A_AUST
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
@@ -264,10 +264,8 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 # The AUSTS strategy is 'ICONOMI Earn'. We know that this strategy holds its
                 # value in Anchor UST (AUST). That's why we report the user balance for this
                 # strategy as usd_value / AUST price.
-                aust_asset = symbol_to_asset_or_token('AUST')
-
                 try:
-                    aust_usd_price = Inquirer().find_usd_price(asset=aust_asset)
+                    aust_usd_price = Inquirer().find_usd_price(asset=A_AUST)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing ICONOMI balance entry due to inability to '
@@ -283,7 +281,7 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     )
                     continue
 
-                assets_balance[aust_asset] = Balance(
+                assets_balance[A_AUST] = Balance(
                     amount=usd_value / aust_usd_price,
                     usd_value=usd_value,
                 )
