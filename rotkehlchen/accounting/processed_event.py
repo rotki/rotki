@@ -50,7 +50,7 @@ class ProcessedAccountingEvent:
             'type': self.type.serialize(),
             'notes': self.notes,
             'location': str(self.location),
-            'timestamp': self.timestamp,
+            'timestamp': ts_converter(self.timestamp),
             'asset': self.asset.identifier,
             'free_amount': str(self.free_amount),
             'taxable_amount': str(self.taxable_amount),
