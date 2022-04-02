@@ -14,6 +14,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_ICONOMI_ASSETS, asset_from_iconomi
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AUST
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import (
@@ -276,6 +277,13 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                     self.msg_aggregator.add_error(
                         f'Error processing ICONOMI balance entry due to inability to '
                         f'query USD price: {str(e)}. Skipping balance entry',
+                    )
+                    continue
+
+                if aust_usd_price == ZERO:
+                    self.msg_aggregator.add_error(
+                        f'Error processing ICONOMI balance entry because the USD price '
+                        f'for AUST was reported as 0. Skipping balance entry',
                     )
                     continue
 
