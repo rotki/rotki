@@ -282,8 +282,8 @@ class Iconomi(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
                 if aust_usd_price == ZERO:
                     self.msg_aggregator.add_error(
-                        f'Error processing ICONOMI balance entry because the USD price '
-                        f'for AUST was reported as 0. Skipping balance entry',
+                        'Error processing ICONOMI balance entry because the USD price '
+                        'for AUST was reported as 0. Skipping balance entry',
                     )
                     continue
 
