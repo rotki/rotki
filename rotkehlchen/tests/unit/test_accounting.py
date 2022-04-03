@@ -22,7 +22,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.accounting import accounting_history_process
+from rotkehlchen.tests.utils.accounting import accounting_history_process, assert_csv_export
 from rotkehlchen.tests.utils.constants import A_CHF, A_DASH, A_XMR
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.types import (
@@ -101,9 +101,11 @@ def test_simple_accounting(accountant):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
     _check_for_errors(accountant)
     pnls = accountant.pots[0].pnls
+    expected_pnl = FVal('559.455847283')
     assert len(pnls) == 2
-    assert pnls.taxable.is_close('559.455847283')
+    assert pnls.taxable.is_close(expected_pnl)
     assert pnls.free == ZERO
+    assert_csv_export(accountant, expected_pnl)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
