@@ -140,8 +140,10 @@ class AccountingPot(CustomizableDateMixin):
             asset=asset,
             amount=amount,
             price=price,
+            starting_index=len(self.processed_events),
         )
-        self.processed_events.extend(prefork_events)
+        for prefork_event in prefork_events:
+            self._add_processed_event(prefork_event)
 
         event = ProcessedAccountingEvent(
             type=event_type,
@@ -154,6 +156,7 @@ class AccountingPot(CustomizableDateMixin):
             price=price,
             pnl=PNL(),  # filled out later
             cost_basis=None,
+            index=len(self.processed_events),
         )
         self.cost_basis.obtain_asset(event)
         # count profit/losses if we are inside the query period
@@ -238,6 +241,7 @@ class AccountingPot(CustomizableDateMixin):
             price=price,
             pnl=PNL(),  # filled out later
             cost_basis=spend_cost,
+            index=len(self.processed_events),
         )
         # count profit/losses if we are inside the query period
         if timestamp >= self.query_start_ts and taxable:

@@ -3,8 +3,8 @@ import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
-from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV
-from rotkehlchen.accounting.mixins.event import AccountingEventMixin
+from rotkehlchen.accounting.export.csv import CSV_INDEX_OFFSET, FILENAME_ALL_CSV
+from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.processed_event import ProcessedAccountingEvent
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.reports import DBAccountingReports, ReportDataFilterQuery
@@ -13,7 +13,6 @@ from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
-    from rotkehlchen.db.settings import DBSettings
 
 
 def accounting_history_process(
@@ -56,6 +55,34 @@ def assert_csv_export(
             reader = csv.DictReader(csvfile)
             calculated_pnl = ZERO
             for row in reader:
+                if row['type'] == '':
+                    break  # have summaries and reached the end
                 calculated_pnl += FVal(row['pnl'])
 
         assert expected_pnl.is_close(calculated_pnl)
+
+        # export with formulas and summary
+        csvexporter.settings = csvexporter.settings._replace(pnl_csv_with_formulas=True, pnl_csv_have_summary=True)  # noqa: E501
+        accountant.csvexporter.export(
+            events=accountant.pots[0].processed_events,
+            pnls=accountant.pots[0].pnls,
+            directory=tmpdir,
+        )
+        index = CSV_INDEX_OFFSET
+        with open(tmpdir / FILENAME_ALL_CSV, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                if row['type'] == '':
+                    break  # have summaries and reached the end
+
+                if row['pnl'] == '0':
+                    index += 1
+                    continue
+
+                value = f'G{index}*H{index}'
+                if row['type'] == AccountingEventType.TRADE and 'Amount out' in row['notes']:
+                    assert row['pnl'] == f'={value}-J{index}'
+                elif row['type'] == AccountingEventType.FEE:
+                    assert row['pnl'] == f'={value}+{value}-J{index}'
+
+                index += 1

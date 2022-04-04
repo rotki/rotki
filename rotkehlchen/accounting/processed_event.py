@@ -36,6 +36,7 @@ class ProcessedAccountingEvent:
     price: Price
     pnl: PNL
     cost_basis: Optional['CostBasisInfo']
+    index: int
 
     def to_string(self, ts_converter: Callable[[Timestamp], str]) -> str:
         desc = f'{self.type.name} for {self.free_amount}/{self.taxable_amount} {self.asset.symbol} with price: {self.price} and PNL: {self.pnl}.'  # noqa: E501
@@ -64,6 +65,7 @@ class ProcessedAccountingEvent:
         data = self.to_exported_dict(ts_converter)
         data['cost_basis'] = self.cost_basis.serialize() if self.cost_basis else ''
         data['pnl_free'] = str(self.pnl.free)
+        data['index'] = self.index
         return data
 
     def calculate_pnl(
@@ -136,7 +138,7 @@ class ProcessedAccountingEvent:
                 cost_basis = None
             else:
                 cost_basis = CostBasisInfo.deserialize(data['cost_basis'])
-            return cls(
+            event = cls(
                 type=AccountingEventType.deserialize(data['type']),
                 notes=data['notes'],
                 location=Location.deserialize(data['location']),
@@ -147,6 +149,8 @@ class ProcessedAccountingEvent:
                 price=deserialize_price(data['price']),
                 pnl=PNL(free=pnl_free, taxable=pnl_taxable),
                 cost_basis=cost_basis,
+                index=data['index'],
             )
+            return event
         except KeyError as e:
             raise DeserializationError(f'Could not decode processed accounting event json from the DB due to missing key {str(e)}') from e  # noqa: E501

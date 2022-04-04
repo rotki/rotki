@@ -27,7 +27,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.types import ChecksumEthAddress, Location, Optional, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, EVMTxHash, Location, Optional, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
@@ -240,7 +240,7 @@ class TaskManager():
         )
         self.last_eth_tx_query_ts[address] = now
 
-    def _run_ethereum_txreceipts_query(self, hash_results: List[EVMTransactionDecoder]) -> None:
+    def _run_ethereum_txreceipts_query(self, hash_results: List[EVMTxHash]) -> None:
         dbethtx = DBEthTx(self.database)
         for entry in hash_results:
             tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry)

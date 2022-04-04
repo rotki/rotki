@@ -39,39 +39,48 @@ log = RotkehlchenLogsAdapter(logger)
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class AssetAcquisitionEvent:
-    event: 'ProcessedAccountingEvent'
+    amount: FVal
     remaining_amount: FVal = field(init=False)  # Same as amount but reduced during processing
-
-    @property
-    def amount(self) -> FVal:
-        """Amount of the asset being bought"""
-        return self.event.taxable_amount
-
-    @property
-    def timestamp(self) -> Timestamp:
-        return self.event.timestamp
-
-    @property
-    def rate(self) -> Price:
-        return self.event.price
+    timestamp: Timestamp
+    rate: Price
+    index: int
 
     def __post_init__(self) -> None:
         self.remaining_amount = self.amount
 
     def __str__(self) -> str:
         return (
-            f'AssetAcquisitionEvent {self.event.notes} in {str(self.event.location)} '
-            f'@ {self.event.timestamp}. amount: {self.amount} rate: {self.event.price}'
+            f'AssetAcquisitionEvent @{self.timestamp}. amount: {self.amount} rate: {self.rate}'
         )
 
+    @classmethod
+    def from_processed_event(cls: Type['AssetAcquisitionEvent'], event: 'ProcessedAccountingEvent') -> 'AssetAcquisitionEvent':  # noqa: E501
+        return cls(
+            amount=event.taxable_amount,
+            timestamp=event.timestamp,
+            rate=event.price,
+            index=event.index,
+        )
+
+    @classmethod
+    def deserialize(cls: Type['AssetAcquisitionEvent'], data: Dict[str, Any]) -> 'AssetAcquisitionEvent':  # noqa: E501
+        """May raise DeserializationError"""
+        try:
+            return cls(
+                amount=data['amount'],
+                timestamp=data['timestamp'],
+                rate=data['rate'],
+                index=data['index'],
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Missing key {str(e)}') from e
+
     def serialize(self) -> Dict[str, Any]:
-        """Turn to a dict to be returned by the API and shown in the UI"""
         return {
-            'time': self.event.timestamp,
-            'description': self.event.notes,
-            'location': str(self.event.location),
+            'timestamp': self.timestamp,
             'amount': str(self.amount),
-            'rate': str(self.event.price),
+            'rate': str(self.rate),
+            'index': self.index,
         }
 
 
@@ -103,19 +112,32 @@ class CostBasisEvents:
 
 
 class MatchedAcquisition(NamedTuple):
-    amount: FVal
-    event: AssetAcquisitionEvent
+    amount: FVal  # the amount used from the acquisition event
+    event: AssetAcquisitionEvent  # the acquisition event
 
     def serialize(self) -> Dict[str, Any]:
-        """Turn to a dict to be returned by the API and shown in the UI"""
-        serialized_acquisition = self.event.serialize()
-        serialized_acquisition['used_amount'] = str(self.amount)
-        return serialized_acquisition
+        """Turn to a dict to be serialized into the DB"""
+        return {
+            'amount': str(self.amount),
+            'event': self.event.serialize(),
+        }
+
+    @classmethod
+    def deserialize(cls: Type['MatchedAcquisition'], data: Dict[str, Any]) -> 'MatchedAcquisition':
+        """May raise DeserializationError"""
+        try:
+            event = AssetAcquisitionEvent.deserialize(data['event'])
+            amount = FVal(data['amount'])  # TODO: deserialize_fval
+        except KeyError as e:
+            raise DeserializationError(f'Missing key {str(e)}') from e
+
+        return MatchedAcquisition(amount=amount, event=event)
 
     def to_string(self, converter: Callable[[Timestamp], str]) -> str:
+        """User readable string version of the acquisition"""
         return (
-            f'{self.amount} / {self.event.amount}  acquired in {str(self.event.event.location)}'
-            f' at {converter(self.event.timestamp)} for price: {self.event.event.price}'
+            f'{self.amount} / {self.event.amount}  acquired '
+            f'at {converter(self.event.timestamp)} for price: {self.event.rate}'
         )
 
 
@@ -139,7 +161,7 @@ class CostBasisInfo(NamedTuple):
     is_complete: bool
 
     def serialize(self) -> Dict[str, Any]:
-        """Turn to a dict to be returned by the API and shown in the UI"""
+        """Turn to a dict to be exported into the DB"""
         return {
             'is_complete': self.is_complete,
             'matched_acquisitions': [x.serialize() for x in self.matched_acquisitions],
@@ -156,12 +178,7 @@ class CostBasisInfo(NamedTuple):
             is_complete = data['is_complete']
             matched_acquisitions = []
             for entry in data['matched_acquisitions']:
-                # Here entries are stringified matched acquisitions
-                # TODO: This is a hack and a bad one. We have no way to serialize/deserialize
-                # matched acquisitions. This is fine here since deserialized CostBasisInfo
-                # currently only goes into CSV and api which is consuming it stringified.
-                # But we have to fix this
-                matched_acquisitions.append(entry)
+                matched_acquisitions.append(MatchedAcquisition.deserialize(entry))
         except KeyError as e:
             raise DeserializationError(f'Could not decode CostBasisInfo json from the DB due to missing key {str(e)}') from e  # noqa: E501
 
@@ -177,12 +194,12 @@ class CostBasisInfo(NamedTuple):
         """Turn to a string to be shown in exported files such as CSV"""
         value = ''
         if not self.is_complete:
-            value += 'Incomplete cost basis information for spend. '
+            value += 'Incomplete cost basis information for spend.'
 
         if len(self.matched_acquisitions) == 0:
             return value
 
-        value += f'Used: {"|".join([x.to_string(converter) for x in self.matched_acquisitions])}'
+        value += f' Used: {"|".join([x.to_string(converter) for x in self.matched_acquisitions])}'
         return value
 
 
@@ -285,8 +302,8 @@ class CostBasisCalculator(CustomizableDateMixin):
             event: 'ProcessedAccountingEvent',
     ) -> None:
         """Adds an acquisition event for an asset"""
-        asset_event = AssetAcquisitionEvent(event=event)
-        asset_events = self.get_events(asset_event.event.asset)
+        asset_event = AssetAcquisitionEvent.from_processed_event(event=event)
+        asset_events = self.get_events(event.asset)
         asset_events.acquisitions.append(asset_event)
 
     @overload
@@ -511,6 +528,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             asset: Asset,
             amount: FVal,
             price: Price,
+            starting_index: int,
     ) -> List['ProcessedAccountingEvent']:
         """
         Calculate the prefork asset acquisitions, meaning how is the acquisition
@@ -548,9 +566,11 @@ class CostBasisCalculator(CustomizableDateMixin):
                 price=price,
                 pnl=PNL(),
                 cost_basis=None,
+                index=starting_index,
             )
             self.obtain_asset(event)
             events.append(event)
+            starting_index += 1
 
         return events
 
