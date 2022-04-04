@@ -1,5 +1,5 @@
 from typing import List
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, patch
 
 import gevent
 import pytest
@@ -7,7 +7,6 @@ import pytest
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
@@ -64,7 +63,7 @@ def fixture_task_manager(
         chain_manager=blockchain,
         exchange_manager=exchange_manager,
         evm_tx_decoder=evm_transaction_decoder,
-        logout_function=lambda: None,
+        deactivate_premium=lambda: None,
     )
     return task_manager
 
@@ -205,29 +204,34 @@ def test_maybe_schedule_ethereum_txreceipts(task_manager, ethereum_manager, data
 
 
 @pytest.mark.parametrize('max_tasks_num', [7])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_check_premium_status(rotkehlchen_api_server):
     """
     Test that the premium check tasks works correctly. The tests creates a valid subscription
-    and verifies that after the task was scheduled the users is logged out.
+    and verifies that after the task was scheduled the users premium is deactivated.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     gevent.killall(rotki.api_task_greenlets)
     task_manager = rotki.task_manager
-    task_manager.potential_tasks = [task_manager._check_premium_status]
+    task_manager.potential_tasks = [task_manager._maybe_check_premium_status]
+    task_manager.last_premium_status_check = ts_now() - 3601
 
     premium_credentials = PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET)
     premium = Premium(premium_credentials)
     premium.status = SubscriptionStatus.ACTIVE
 
-    DBHandler.get_rotkehlchen_premium = Mock(return_value=premium_credentials)
-    assert premium.is_active() is True
-    assert rotki.user_is_logged_in is True
+    with patch(
+        'rotkehlchen.db.dbhandler.DBHandler.get_rotkehlchen_premium',
+        MagicMock(return_value=premium_credentials),
+    ):
+        assert premium.is_active() is True
+        assert rotki.premium is not None
 
-    timeout = 5
-    try:
-        with gevent.Timeout(timeout):
-            task_manager.schedule()
-    except gevent.Timeout as e:
-        raise AssertionError(f'Premium check query was not completed within {timeout} seconds') from e  # noqa: E501
+        timeout = 5
+        try:
+            with gevent.Timeout(timeout):
+                task_manager.schedule()
+        except gevent.Timeout as e:
+            raise AssertionError(f'Premium check query was not completed within {timeout} seconds') from e  # noqa: E501
 
-    assert rotki.user_is_logged_in is False
+        assert rotki.premium is None
