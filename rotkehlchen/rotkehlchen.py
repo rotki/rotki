@@ -328,6 +328,7 @@ class Rotkehlchen():
             chain_manager=self.chain_manager,
             exchange_manager=self.exchange_manager,
             evm_tx_decoder=self.evm_tx_decoder,
+            logout_function=self._logout,
         )
         DataMigrationManager(self).maybe_migrate_data()
         self.greenlet_manager.spawn_and_track(
