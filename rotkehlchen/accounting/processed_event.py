@@ -1,7 +1,7 @@
 """TODO: Move under a structures directory???"""
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Optional, Type, TypeVar
 
 from rotkehlchen.accounting.cost_basis import CostBasisInfo
@@ -37,16 +37,24 @@ class ProcessedAccountingEvent:
     pnl: PNL
     cost_basis: Optional['CostBasisInfo']
     index: int
+    # These are set by calculate pnl and are only here to be remembered by the
+    # processed accounting event so that the CSV export formulas can be correctly made
+    count_entire_amount_spend: bool = field(init=False, default=False)
+    count_cost_basis_pnl: bool = field(init=False, default=False)
 
     def to_string(self, ts_converter: Callable[[Timestamp], str]) -> str:
         desc = f'{self.type.name} for {self.free_amount}/{self.taxable_amount} {self.asset.symbol} with price: {self.price} and PNL: {self.pnl}.'  # noqa: E501
         if self.cost_basis:
-            desc += f'Cost basis: {self.cost_basis.to_string(ts_converter)}'
+            taxable, free = self.cost_basis.to_string(ts_converter)
+            desc += f'Cost basis. Taxable {taxable}. Free: {free}'
 
         return desc
 
     def to_exported_dict(self, ts_converter: Callable[[Timestamp], str]) -> Dict[str, Any]:
         """These are the fields that will appear in CSV and report API"""
+        taxable_basis = free_basis = ''
+        if self.cost_basis is not None:
+            taxable_basis, free_basis = self.cost_basis.to_string(ts_converter)
         return {
             'type': self.type.serialize(),
             'notes': self.notes,
@@ -56,16 +64,21 @@ class ProcessedAccountingEvent:
             'free_amount': str(self.free_amount),
             'taxable_amount': str(self.taxable_amount),
             'price': str(self.price),
-            'pnl': str(self.pnl.taxable),
-            'cost_basis': self.cost_basis.to_string(ts_converter) if self.cost_basis else '',
+            'pnl_taxable': str(self.pnl.taxable),
+            'cost_basis_taxable': taxable_basis,
+            'pnl_free': str(self.pnl.free),
+            'cost_basis_free': free_basis,
         }
 
     def serialize_to_dict(self, ts_converter: Callable[[Timestamp], str]) -> Dict[str, Any]:
         """This is used to serialize to dict for saving to the DB"""
         data = self.to_exported_dict(ts_converter)
+        data.pop('cost_basis_taxable')
+        data.pop('cost_basis_free')
         data['cost_basis'] = self.cost_basis.serialize() if self.cost_basis else ''
-        data['pnl_free'] = str(self.pnl.free)
         data['index'] = self.index
+        data['count_entire_amount_spend'] = self.count_entire_amount_spend
+        data['count_cost_basis_pnl'] = self.count_cost_basis_pnl
         return data
 
     def calculate_pnl(
@@ -82,6 +95,8 @@ class ProcessedAccountingEvent:
         If count_cost_basis_pnl is True then the PnL between buying the asset amount
         and spending it is calculated and added to PnL.
         """
+        self.count_entire_amount_spend = count_entire_amount_spend
+        self.count_cost_basis_pnl = count_cost_basis_pnl
         taxable_bought_cost = taxfree_bought_cost = ZERO
         taxable_value = self.taxable_amount * self.price
         free_value = self.free_amount * self.price
@@ -132,7 +147,7 @@ class ProcessedAccountingEvent:
             ) from e
 
         try:
-            pnl_taxable = deserialize_fval(data['pnl'], name='pnl', location='processed event decoding')  # noqa: E501
+            pnl_taxable = deserialize_fval(data['pnl_taxable'], name='pnl_taxable', location='processed event decoding')  # noqa: E501
             pnl_free = deserialize_fval(data['pnl_free'], name='pnl_free', location='processed event decoding')  # noqa: E501
             if data['cost_basis'] == '':
                 cost_basis = None
@@ -151,6 +166,8 @@ class ProcessedAccountingEvent:
                 cost_basis=cost_basis,
                 index=data['index'],
             )
+            event.count_cost_basis_pnl = data['count_cost_basis_pnl']
+            event.count_entire_amount_spend = data['count_entire_amount_spend']
             return event
         except KeyError as e:
             raise DeserializationError(f'Could not decode processed accounting event json from the DB due to missing key {str(e)}') from e  # noqa: E501

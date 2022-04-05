@@ -11,6 +11,7 @@ from typing import (
     Literal,
     NamedTuple,
     Optional,
+    Tuple,
     Type,
     overload,
 )
@@ -114,12 +115,14 @@ class CostBasisEvents:
 class MatchedAcquisition(NamedTuple):
     amount: FVal  # the amount used from the acquisition event
     event: AssetAcquisitionEvent  # the acquisition event
+    taxable: bool  # whether it counts for taxable or non-taxable cost basis
 
     def serialize(self) -> Dict[str, Any]:
         """Turn to a dict to be serialized into the DB"""
         return {
             'amount': str(self.amount),
             'event': self.event.serialize(),
+            'taxable': self.taxable,
         }
 
     @classmethod
@@ -128,10 +131,11 @@ class MatchedAcquisition(NamedTuple):
         try:
             event = AssetAcquisitionEvent.deserialize(data['event'])
             amount = FVal(data['amount'])  # TODO: deserialize_fval
+            taxable = data['taxable']
         except KeyError as e:
             raise DeserializationError(f'Missing key {str(e)}') from e
 
-        return MatchedAcquisition(amount=amount, event=event)
+        return MatchedAcquisition(amount=amount, event=event, taxable=taxable)
 
     def to_string(self, converter: Callable[[Timestamp], str]) -> str:
         """User readable string version of the acquisition"""
@@ -190,17 +194,27 @@ class CostBasisInfo(NamedTuple):
             matched_acquisitions=matched_acquisitions,
         )
 
-    def to_string(self, converter: Callable[[Timestamp], str]) -> str:
-        """Turn to a string to be shown in exported files such as CSV"""
-        value = ''
+    def to_string(self, converter: Callable[[Timestamp], str]) -> Tuple[str, str]:
+        """
+        Turn to 2 strings to be shown in exported files such as CSV for taxable and free cost basis
+        """
+        taxable = ''
+        free = ''
         if not self.is_complete:
-            value += 'Incomplete cost basis information for spend.'
+            taxable += 'Incomplete cost basis information for spend.'
+            free += 'Incomplete cost basis information for spend.'
 
         if len(self.matched_acquisitions) == 0:
-            return value
+            return taxable, free
 
-        value += f' Used: {"|".join([x.to_string(converter) for x in self.matched_acquisitions])}'
-        return value
+        for entry in self.matched_acquisitions:
+            stringified = f' {entry.to_string(converter)}'
+            if entry.taxable:
+                taxable += stringified
+            else:
+                free += stringified
+
+        return taxable, free
 
 
 class CostBasisCalculator(CustomizableDateMixin):
@@ -411,9 +425,11 @@ class CostBasisCalculator(CustomizableDateMixin):
                 stop_index = idx
                 acquisition_cost = acquisition_event.rate * remaining_sold_amount
 
+                taxable = True
                 if at_taxfree_period:
                     taxfree_amount += remaining_sold_amount
                     taxfree_bought_cost += acquisition_cost
+                    taxable = False
                 else:
                     taxable_amount += remaining_sold_amount
                     taxable_bought_cost += acquisition_cost
@@ -432,15 +448,18 @@ class CostBasisCalculator(CustomizableDateMixin):
                 matched_acquisitions.append(MatchedAcquisition(
                     amount=remaining_sold_amount,
                     event=acquisition_event,
+                    taxable=taxable,
                 ))
                 # stop iterating since we found all acquisitions to satisfy this spend
                 break
 
             remaining_sold_amount -= acquisition_event.remaining_amount
             acquisition_cost = acquisition_event.rate * acquisition_event.remaining_amount
+            taxable = True
             if at_taxfree_period:
                 taxfree_amount += acquisition_event.remaining_amount
                 taxfree_bought_cost += acquisition_cost
+                taxable = False
             else:
                 taxable_amount += acquisition_event.remaining_amount
                 taxable_bought_cost += acquisition_cost
@@ -457,6 +476,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             matched_acquisitions.append(MatchedAcquisition(
                 amount=acquisition_event.remaining_amount,
                 event=acquisition_event,
+                taxable=taxable,
             ))
             # and since this events is going to be removed, reduce its remaining to zero
             acquisition_event.remaining_amount = ZERO

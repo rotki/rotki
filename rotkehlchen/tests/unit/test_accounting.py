@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures import (
     Balance,
     HistoryBaseEntry,
@@ -22,7 +23,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.accounting import accounting_history_process, assert_csv_export
+from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
 from rotkehlchen.tests.utils.constants import A_CHF, A_DASH, A_XMR
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.types import (
@@ -100,12 +101,11 @@ def _check_for_errors(accountant) -> None:
 def test_simple_accounting(accountant):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
     _check_for_errors(accountant)
-    pnls = accountant.pots[0].pnls
-    expected_pnl = FVal('559.455847283')
-    assert len(pnls) == 2
-    assert pnls.taxable.is_close(expected_pnl)
-    assert pnls.free == ZERO
-    assert_csv_export(accountant, expected_pnl)
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=FVal('559.6947154'), free=ZERO),
+        AccountingEventType.FEE: PNL(taxable=FVal('-0.23886813'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -155,10 +155,11 @@ def test_selling_crypto_bought_with_crypto(accountant):
     assert sells[0].amount.is_close(FVal('0.3853125'))
     assert sells[0].rate.is_close(FVal('386.03406326'))
 
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 2
-    assert pnls.taxable.is_close('73.8922121486')
-    assert pnls.free == ZERO
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=FVal('74.3118704999540625'), free=ZERO),
+        AccountingEventType.FEE: PNL(taxable=FVal('-0.419658351381311222'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -216,10 +217,11 @@ def test_buying_selling_eth_before_daofork(accountant):
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount('ETC') == FVal(850)
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount('ETH') == FVal(1390)
 
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 2
-    assert pnls.taxable.is_close('381.899035')
-    assert pnls.free.is_close('922.752492')
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=FVal('382.4205350'), free=FVal('923.8099920')),
+        AccountingEventType.FEE: PNL(taxable=FVal('-0.5215'), free=FVal('-1.0575')),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -283,10 +285,12 @@ def test_buying_selling_btc_before_bchfork(accountant):
     assert buys[0].rate.is_close('1128.98961538')
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 2
-    assert pnls.taxable.is_close('13876.0964615')
-    assert pnls.free == ZERO
+
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=FVal('13877.57646153846153846153846'), free=ZERO),
+        AccountingEventType.FEE: PNL(taxable=FVal('-1.48'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -395,10 +399,14 @@ def test_buying_selling_bch_before_bsvfork(accountant):
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BCH) == amount_bch
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BTC) == amount_btc
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BSV) == amount_bsv
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 2
-    assert pnls.taxable.is_close('13875.5764615')
-    assert pnls.free.is_close('-465.481692304')
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(
+            taxable=FVal('13877.57646153846153846153846'),
+            free=FVal('-464.4416923076923076923076920'),
+        ),
+        AccountingEventType.FEE: PNL(taxable=FVal('-2'), free=FVal('-1.04')),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 history5 = history1 + [Trade(
@@ -422,10 +430,11 @@ history5 = history1 + [Trade(
 def test_nocrypto2crypto(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     _check_for_errors(accountant)
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 2
-    assert pnls.taxable.is_close('-1.17088532271')
-    assert pnls.free.is_close('264693.43364282')
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('264693.433642820')),
+        AccountingEventType.FEE: PNL(taxable=FVal('-1.1708853227087498964'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -435,10 +444,11 @@ def test_nocrypto2crypto(accountant):
 def test_no_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     _check_for_errors(accountant)
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 2
-    assert pnls.taxable.is_close('265252.8894901028033993590659')
-    assert pnls.free == ZERO
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=FVal('265253.1283582327833875'), free=ZERO),
+        AccountingEventType.FEE: PNL(taxable=FVal('-0.238868129979988140934107'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -448,10 +458,11 @@ def test_no_taxfree_period(accountant):
 def test_big_taxfree_period(accountant):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     _check_for_errors(accountant)
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 2
-    assert pnls.free.is_close('265252.8894901028033993590659')
-    assert pnls.taxable == ZERO
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('265253.1283582327833875')),
+        AccountingEventType.FEE: PNL(taxable=ZERO, free=FVal('-0.238868129979988140934107')),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -528,14 +539,12 @@ def test_include_gas_costs(accountant):
         )]
     accounting_history_process(accountant, start_ts=1436979735, end_ts=1619693374, history_list=history)  # noqa: E501
     _check_for_errors(accountant)
-    include_gas_costs = accountant.pots[0].settings.include_gas_costs
-    pnls = accountant.pots[0].pnls
-
-    assert pnls.free == ZERO
-    if include_gas_costs:
-        assert pnls.taxable.is_close('-0.0052163727')
-    else:
-        assert pnls.taxable == ZERO
+    expected = ZERO
+    expected_pnls = PnlTotals()
+    if accountant.pots[0].settings.include_gas_costs:
+        expected = FVal('-0.0052163727')
+        expected_pnls[AccountingEventType.TRANSACTION_EVENT] = PNL(taxable=expected, free=ZERO)
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -568,10 +577,11 @@ def test_ignored_assets(accountant):
     ]
     accounting_history_process(accountant, 1436979735, 1519693374, history)
     _check_for_errors(accountant)
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 2
-    assert pnls.taxable.is_close('559.455847283')
-    assert pnls.free == ZERO
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=FVal('559.6947154127833875'), free=ZERO),
+        AccountingEventType.FEE: PNL(taxable=FVal('-0.238868129979988140934107'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -631,17 +641,12 @@ def test_margin_events_affect_gained_lost_amount(accountant):
     )
     _check_for_errors(accountant)
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount('BTC').is_close('3.7468')
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 3
-    assert pnls[AccountingEventType.FEE].taxable.is_close('-1.87166029184')
-    assert pnls[AccountingEventType.FEE].free == ZERO
-    assert pnls[AccountingEventType.TRADE].taxable.is_close('1940.9761588')
-    assert pnls[AccountingEventType.TRADE].free == ZERO
-    assert pnls[AccountingEventType.MARGIN_POSITION].taxable.is_close('-44.4744206')
-    assert pnls[AccountingEventType.MARGIN_POSITION].free == ZERO
-
-    assert pnls.taxable.is_close('1894.63007791')
-    assert pnls.free == ZERO
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=FVal('1940.9761588'), free=ZERO),
+        AccountingEventType.FEE: PNL(taxable=FVal('-1.87166029184'), free=ZERO),
+        AccountingEventType.MARGIN_POSITION: PNL(taxable=FVal('-44.47442060'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -666,10 +671,11 @@ def test_no_corresponding_buy_for_sell(accountant):
         history_list=history,
     )
 
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 2
-    assert pnls.taxable.is_close('2519.6')
-    assert pnls.free == ZERO
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=FVal('2519.62'), free=ZERO),
+        AccountingEventType.FEE: PNL(taxable=FVal('-0.02'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -682,16 +688,14 @@ def test_accounting_works_for_empty_history(accountant):
         history_list=history,
     )
     _check_for_errors(accountant)
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 0
-    assert pnls.taxable == ZERO
-    assert pnls.free == ZERO
+    expected_pnls = PnlTotals()
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings, expected', [
-    ({'account_for_assets_movements': False, 'taxfree_after_period': -1}, 0),
-    ({'account_for_assets_movements': True, 'taxfree_after_period': -1}, '-0.0781483014791'),
+    ({'account_for_assets_movements': False, 'taxfree_after_period': -1}, ZERO),
+    ({'account_for_assets_movements': True, 'taxfree_after_period': -1}, FVal('-0.0781483014791')),
 ])
 def test_assets_movements_not_accounted_for(accountant, expected):
     # asset_movements_list partially copied from
@@ -752,15 +756,28 @@ def test_assets_movements_not_accounted_for(accountant, expected):
         history_list=history,
     )
     _check_for_errors(accountant)
-    pnls = accountant.pots[0].pnls
-    assert pnls.taxable.is_close(expected)
-    assert pnls.free == ZERO
+    expected_pnls = PnlTotals()
+    if expected != ZERO:
+        expected_pnls[AccountingEventType.ASSET_MOVEMENT] = PNL(taxable=expected, free=ZERO)  # noqa: E501
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings, expected', [
-    ({'calculate_past_cost_basis': False, 'taxfree_after_period': -1}, '2292.43'),
-    ({'calculate_past_cost_basis': True, 'taxfree_after_period': -1}, '1755.07336428'),
+    (
+        {'calculate_past_cost_basis': False, 'taxfree_after_period': -1},
+        PnlTotals({
+            AccountingEventType.TRADE: PNL(taxable=FVal('2292.44'), free=ZERO),
+            AccountingEventType.FEE: PNL(taxable=FVal('-0.01'), free=ZERO),
+        }),
+    ),
+    (
+        {'calculate_past_cost_basis': True, 'taxfree_after_period': -1},
+        PnlTotals({
+            AccountingEventType.TRADE: PNL(taxable=FVal('1755.083364282'), free=ZERO),
+            AccountingEventType.FEE: PNL(taxable=FVal('-0.01'), free=ZERO),
+        }),
+    ),
 ])
 def test_not_calculate_past_cost_basis(accountant, expected):
     # trades copied from
@@ -797,10 +814,7 @@ def test_not_calculate_past_cost_basis(accountant, expected):
         end_ts=1519693374,
         history_list=history,
     )
-    pnls = accountant.pots[0].pnls
-    assert pnls.taxable.is_close(expected)
-    assert pnls.free == ZERO
-    assert pnls.free == ZERO
+    check_pnls_and_csv(accountant, expected)
 
 
 @pytest.mark.parametrize('db_settings', [{
@@ -859,10 +873,11 @@ def test_sell_fiat_for_crypto(accountant):
         history_list=history,
     )
     _check_for_errors(accountant)
-    pnls = accountant.pots[0].pnls
-    assert len(pnls) == 2
-    assert pnls.taxable.is_close(25000 - 250.26 - 0.02 - 0.02 - 0.0012)
-    assert pnls.free == ZERO
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=FVal('24749.74'), free=ZERO),
+        AccountingEventType.FEE: PNL(taxable=FVal('-0.0412'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -913,9 +928,10 @@ def test_fees_count_in_cost_basis(accountant):
         history_list=history,
     )
 
-    pnls = accountant.pots[0].pnls
-    assert pnls.taxable.is_close('1249.425')
-    assert pnls.free == ZERO
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=FVal('1550.055'), free=ZERO),
+        AccountingEventType.FEE: PNL(taxable=FVal('-300.630'), free=ZERO),
+    })
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_ETH) is None
     error = (
         f'No documented acquisition found for ETH(Ethereum) before '
@@ -926,6 +942,7 @@ def test_fees_count_in_cost_basis(accountant):
     assert len(warnings) == 0
     errors = accountant.msg_aggregator.consume_errors()
     assert errors == [error]
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -973,9 +990,12 @@ def test_fees_in_received_asset(accountant):
     )
     _check_for_errors(accountant)
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_USDT.identifier).is_close('19.90')  # noqa: E501
-    pnls = accountant.pots[0].pnls
-    assert pnls.taxable == FVal('178.554729')
-    assert pnls.free == FVal('14.2277')
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('14.2277')),
+        AccountingEventType.FEE: PNL(taxable=FVal('-0.060271'), free=ZERO),
+        AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('178.615'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -1029,10 +1049,12 @@ def test_kfee_price_in_accounting(accountant):
         history_list=history,
     )
     _check_for_errors(accountant)
-
-    pnls = accountant.pots[0].pnls
-    assert pnls.taxable == FVal('187.227')  # 178.615 + 8.612
-    assert pnls.free == FVal('13.96934')  # 14.2277 - 0.25836
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('14.2277')),
+        AccountingEventType.FEE: PNL(taxable=ZERO, free=FVal('-0.25836')),
+        AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('187.227'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -1077,10 +1099,10 @@ def test_kraken_staking_events(accountant):
         history_list=history,
     )
     _check_for_errors(accountant)
-    pnls = accountant.pots[0].pnls
-    assert pnls.taxable.is_close('0.47150582600')
-    assert pnls.free == ZERO
-
+    expected_pnls = PnlTotals({
+        AccountingEventType.STAKING: PNL(taxable=FVal('0.471505826'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)
     assert len(events) == 2
     expected_pnls = [FVal('0.25114638241'), FVal('0.22035944359')]
     for idx, event in enumerate(events):

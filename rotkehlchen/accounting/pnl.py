@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import MutableMapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Iterator
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional
 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
@@ -26,6 +26,12 @@ OVR_STAKING = 'ethereum_staking'
 class PNL():
     free: FVal = ZERO
     taxable: FVal = ZERO
+
+    def serialize(self) -> Dict[str, str]:
+        return {
+            'free_pnl': str(self.free),
+            'taxable_pnl': str(self.taxable),
+        }
 
     @property
     def total(self) -> FVal:
@@ -67,8 +73,11 @@ class PNL():
 
 class PnlTotals(MutableMapping):
 
-    def __init__(self) -> None:
+    def __init__(self, totals: Optional[Dict['AccountingEventType', PNL]] = None) -> None:
         self.totals: Dict['AccountingEventType', PNL] = defaultdict(PNL)
+        if totals is not None:
+            for event_type, entry in totals.items():
+                self.totals[event_type] = entry
 
     def reset(self) -> None:
         self.totals = defaultdict(PNL)
