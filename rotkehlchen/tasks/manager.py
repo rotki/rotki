@@ -2,7 +2,7 @@ import copy
 import logging
 import random
 from collections import defaultdict
-from typing import DefaultDict, List, NamedTuple, Set, Tuple
+from typing import Callable, DefaultDict, List, NamedTuple, Set, Tuple
 
 import gevent
 
@@ -16,7 +16,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import DBIgnoreValuesFilter, DBStringFilter, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors import NoPriceForGivenTimestamp, RemoteError
+from rotkehlchen.errors import NoPriceForGivenTimestamp, PremiumAuthenticationError, RemoteError
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
@@ -25,8 +25,10 @@ from rotkehlchen.greenlets import GreenletManager
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.types import ChecksumEthAddress, Location, Optional, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -39,6 +41,7 @@ CRYPTOCOMPARE_HISTOHOUR_FREQUENCY = 240  # at least 4 mins apart
 XPUB_DERIVATION_FREQUENCY = 3600  # every hour
 ETH_TX_QUERY_FREQUENCY = 3600  # every hour
 EXCHANGE_QUERY_FREQUENCY = 3600  # every hour
+PREMIUM_STATUS_CHECK = 3600  # every hour
 
 
 def noop_exchange_succes_cb(trades, margin, asset_movements, ledger_actions, exchange_specific_data) -> None:  # type: ignore # noqa: E501
@@ -67,6 +70,7 @@ class TaskManager():
             chain_manager: ChainManager,
             exchange_manager: ExchangeManager,
             evm_tx_decoder: EVMTransactionDecoder,
+            deactivate_premium: Callable,
     ) -> None:
         self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
@@ -88,6 +92,9 @@ class TaskManager():
             exception_is_error=True,
             method=self._prepare_cryptocompare_queries,
         )
+        self.deactivate_premium = deactivate_premium
+        self.last_premium_status_check = ts_now()
+        self.msg_aggregator = MessagesAggregator()
 
         self.potential_tasks = [
             self._maybe_schedule_cryptocompare_query,
@@ -97,6 +104,7 @@ class TaskManager():
             self._maybe_schedule_ethereum_txreceipts,
             self._maybe_query_missing_prices,
             self._maybe_decode_evm_transactions,
+            self._maybe_check_premium_status,
         ]
         if premium_sync_manager is not None:
             self.potential_tasks.append(premium_sync_manager.maybe_upload_data_to_server)
@@ -379,6 +387,29 @@ class TaskManager():
                 ignore_cache=False,
                 tx_hashes=hashes,
             )
+
+    def _maybe_check_premium_status(self) -> None:
+        """
+        Validates the premium status of the account and if the credentials are not valid
+        it deactivates the user's premium status.
+        """
+        now = ts_now()
+        if now - self.last_premium_status_check < PREMIUM_STATUS_CHECK:
+            return
+
+        db_credentials = self.database.get_rotkehlchen_premium()
+        if db_credentials:
+            try:
+                premium_create_and_verify(db_credentials)
+            except PremiumAuthenticationError as e:
+                message = (
+                    f'Could not authenticate with the rotkehlchen server with '
+                    f'the API keys found in the Database. Error: {str(e)}. Will '
+                    f'deactivate the premium status.'
+                )
+                self.msg_aggregator.add_error(message)
+                self.deactivate_premium()
+        self.last_premium_status_check = now
 
     def _schedule(self) -> None:
         """Schedules background tasks"""
