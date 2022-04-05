@@ -114,8 +114,8 @@ class CSVExporter(CustomizableDateMixin):
 
         return f'={expression}'
 
+    @staticmethod
     def _add_pnl_type(
-            self,
             event: 'ProcessedAccountingEvent',
             dict_event: Dict[str, Any],
             amount_column: str,

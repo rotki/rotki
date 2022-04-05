@@ -89,7 +89,6 @@ def fixture_accounting_initialize_parameters():
 def fixture_accountant(
         price_historian,  # pylint: disable=unused-argument
         database,
-        data_dir,
         function_scope_messages_aggregator,
         start_with_logged_in_user,
         accounting_initialize_parameters,
@@ -106,7 +105,6 @@ def fixture_accountant(
 
     accountant = Accountant(
         db=database,
-        user_directory=data_dir,
         evm_tx_decoder=evm_transaction_decoder,
         msg_aggregator=function_scope_messages_aggregator,
         premium=premium,

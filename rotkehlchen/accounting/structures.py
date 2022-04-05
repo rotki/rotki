@@ -190,7 +190,8 @@ class DefiEvent(AccountingEventMixin):
 
     @staticmethod
     def get_accounting_event_type() -> AccountingEventType:
-        return AccountingEventType.DEFI_EVENT
+        """DefiEvent should be eventually deleted. Will not be called from accounting"""
+        raise AssertionError('Should never be called')
 
     def get_identifier(self) -> str:
         return self.__str__()

@@ -38,7 +38,6 @@ class Accountant():
     def __init__(
             self,
             db: 'DBHandler',
-            user_directory: Path,
             msg_aggregator: MessagesAggregator,
             evm_tx_decoder: 'EVMTransactionDecoder',
             premium: Optional[Premium],
