@@ -121,7 +121,7 @@ def test_serialize_deserialize_trade():
         link='a link can be here',
         notes='notes can be here',
     )
-    serialized_trade = rlk_jsondumps(trade._asdict())
+    serialized_trade = rlk_jsondumps(trade.serialize())
     assert serialized_trade == rlk_jsondumps(raw_trade2)
     deserialized_trade = deserialize_trade(raw_trade2)
     assert deserialized_trade == trade

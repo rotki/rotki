@@ -38,7 +38,7 @@ class Uniswapv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             transaction: EthereumTransaction,  # pylint: disable=unused-argument
             decoded_events: List[HistoryBaseEntry],
             action_items: List[ActionItem],  # pylint: disable=unused-argument
-    ) -> Optional[HistoryBaseEntry]:
+    ) -> None:
         """Search for both events. Since the order is not guaranteed try reshuffle in both cases"""
         out_event = in_event = None
         if tx_log.topics[0] == TOKEN_PURCHASE:
@@ -68,7 +68,6 @@ class Uniswapv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                     out_event = event
 
         maybe_reshuffle_events(out_event=out_event, in_event=in_event)
-        return None
 
     # -- DecoderInterface methods
 

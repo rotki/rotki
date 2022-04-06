@@ -202,7 +202,7 @@ class ValidatorDailyStats(AccountingEventMixin):
 
     @staticmethod
     def get_accounting_event_type() -> AccountingEventType:
-        return AccountingEventType.ETH_STAKING
+        return AccountingEventType.STAKING
 
     def get_identifier(self) -> str:
         return str(self.validator_index) + str(self.timestamp)

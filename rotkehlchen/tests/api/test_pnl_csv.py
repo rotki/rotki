@@ -19,7 +19,7 @@ from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import create_timestamp
 
 
-def assert_csv_export_response(response, db_settings, csv_dir, is_download=False):
+def assert_csv_export_response(response, csv_dir, is_download=False):
     if is_download:
         assert response.status_code == HTTPStatus.OK
     else:
@@ -29,13 +29,13 @@ def assert_csv_export_response(response, db_settings, csv_dir, is_download=False
         assert data['result'] is True
 
     # and check the csv files were generated succesfully. Here we are only checking
-    # for valid CSV and not for the values to be valid.
-    # TODO: In the future make a test that checks the values are also valid
+    # for valid CSV and not for the values to be valid. Valid values are tested
+    # in unit/test_accounting.py
     with open(os.path.join(csv_dir, FILENAME_ALL_CSV), newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 10
+            assert len(row) == 12
             assert row['location'] in (
                 'kraken',
                 'bittrex',
@@ -59,8 +59,10 @@ def assert_csv_export_response(response, db_settings, csv_dir, is_download=False
             assert row['taxable_amount'] is not None
             assert row['free_amount'] is not None
             assert row['price'] is not None
-            assert row['pnl'] is not None
-            assert row['cost_basis'] is not None
+            assert row['pnl_taxable'] is not None
+            assert row['cost_basis_taxable'] is not None
+            assert row['pnl_free'] is not None
+            assert row['cost_basis_free'] is not None
             count += 1
     assert count == 47
 
@@ -79,7 +81,6 @@ def test_history_export_download_csv(
         tmpdir_factory,
 ):
     """Test that the csv export/download REST API endpoint works correctly"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     # Query history api to have report data to export
     query_api_create_and_get_report(
         server=rotkehlchen_api_server_with_exchanges,
@@ -87,7 +88,6 @@ def test_history_export_download_csv(
         end_ts=1601040361,
         prepare_mocks=True,
     )
-    db_settings = rotki.accountant.pots[0].settings
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
 
@@ -96,13 +96,13 @@ def test_history_export_download_csv(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource'),
         json={'directory_path': csv_dir},
     )
-    assert_csv_export_response(response, db_settings, csv_dir)
+    assert_csv_export_response(response, csv_dir)
     # now query the export endpoint with query params
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource') +
         f'?directory_path={csv_dir2}',
     )
-    assert_csv_export_response(response, db_settings, csv_dir2)
+    assert_csv_export_response(response, csv_dir2)
     # now query the download CSV endpoint
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historydownloadingresource'))
@@ -112,7 +112,7 @@ def test_history_export_download_csv(
         tempzipfile.write_bytes(response.content)
         with zipfile.ZipFile(tempzipfile, 'r') as zip_ref:
             zip_ref.extractall(extractdir)
-        assert_csv_export_response(response, db_settings, extractdir, is_download=True)
+        assert_csv_export_response(response, extractdir, is_download=True)
 
 
 @pytest.mark.parametrize(
