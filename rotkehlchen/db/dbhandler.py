@@ -259,10 +259,10 @@ class DBHandler:
         self.update_owned_assets_in_globaldb()
         self.add_globaldb_assetids()
 
-    def __del__(self) -> None:
-        if hasattr(self, 'conn') and self.conn:
+    def logout(self) -> None:
+        if self.conn is not None:
             self.disconnect(conn_attribute='conn')
-        if hasattr(self, 'conn_transient') and self.conn_transient:
+        if self.conn_transient:
             self.disconnect(conn_attribute='conn_transient')
         try:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
@@ -298,7 +298,7 @@ class DBHandler:
         # set up transient connection
         self._connect(password, conn_attribute='conn_transient')
         # creating tables if necessary
-        if hasattr(self, 'conn_transient') and self.conn_transient:
+        if self.conn_transient:
             transient_version = 0
             cursor = self.conn_transient.cursor()
             try:
@@ -324,8 +324,7 @@ class DBHandler:
         May raise:
         - SystemPermissionError if there are permission errors when accessing the DB
         """
-        no_active_connection = not hasattr(self, 'conn') or not self.conn
-        assert no_active_connection, 'md5hash should be taken only with a closed DB'
+        assert self.conn is None, 'md5hash should be taken only with a closed DB'
         if transient:
             return file_md5(self.user_data_dir / TRANSIENT_DB_NAME)
         return file_md5(self.user_data_dir / MAIN_DB_NAME)
@@ -387,7 +386,6 @@ class DBHandler:
             # that checks the password is correct at this same point in the code
             conn.execute('PRAGMA cache_size = -32768')
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            del self.conn
             raise AuthenticationError(
                 'Wrong password or invalid/corrupt database for user',
             ) from e
