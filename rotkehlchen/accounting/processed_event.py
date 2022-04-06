@@ -50,32 +50,42 @@ class ProcessedAccountingEvent:
 
         return desc
 
-    def to_exported_dict(self, ts_converter: Callable[[Timestamp], str]) -> Dict[str, Any]:
+    def to_exported_dict(
+            self,
+            ts_converter: Callable[[Timestamp], str],
+            for_csv: bool,
+    ) -> Dict[str, Any]:
         """These are the fields that will appear in CSV and report API"""
-        taxable_basis = free_basis = ''
-        if self.cost_basis is not None:
-            taxable_basis, free_basis = self.cost_basis.to_string(ts_converter)
-        return {
+        exported_dict = {
             'type': self.type.serialize(),
             'notes': self.notes,
             'location': str(self.location),
-            'timestamp': ts_converter(self.timestamp),
+            'timestamp': self.timestamp,
             'asset': self.asset.identifier,
             'free_amount': str(self.free_amount),
             'taxable_amount': str(self.taxable_amount),
             'price': str(self.price),
             'pnl_taxable': str(self.pnl.taxable),
-            'cost_basis_taxable': taxable_basis,
             'pnl_free': str(self.pnl.free),
-            'cost_basis_free': free_basis,
         }
+
+        if for_csv:
+            taxable_basis = free_basis = ''
+            if self.cost_basis is not None:
+                taxable_basis, free_basis = self.cost_basis.to_string(ts_converter)
+            exported_dict['cost_basis_taxable'] = taxable_basis
+            exported_dict['cost_basis_free'] = free_basis
+        else:
+            cost_basis = None
+            if self.cost_basis is not None:
+                cost_basis = self.cost_basis.serialize()
+            exported_dict['cost_basis'] = cost_basis
+
+        return exported_dict
 
     def serialize_to_dict(self, ts_converter: Callable[[Timestamp], str]) -> Dict[str, Any]:
         """This is used to serialize to dict for saving to the DB"""
-        data = self.to_exported_dict(ts_converter)
-        data.pop('cost_basis_taxable')
-        data.pop('cost_basis_free')
-        data['cost_basis'] = self.cost_basis.serialize() if self.cost_basis else ''
+        data = self.to_exported_dict(ts_converter, for_csv=False)
         data['index'] = self.index
         data['count_entire_amount_spend'] = self.count_entire_amount_spend
         data['count_cost_basis_pnl'] = self.count_cost_basis_pnl
@@ -149,7 +159,7 @@ class ProcessedAccountingEvent:
         try:
             pnl_taxable = deserialize_fval(data['pnl_taxable'], name='pnl_taxable', location='processed event decoding')  # noqa: E501
             pnl_free = deserialize_fval(data['pnl_free'], name='pnl_free', location='processed event decoding')  # noqa: E501
-            if data['cost_basis'] == '':
+            if data['cost_basis'] == None:
                 cost_basis = None
             else:
                 cost_basis = CostBasisInfo.deserialize(data['cost_basis'])

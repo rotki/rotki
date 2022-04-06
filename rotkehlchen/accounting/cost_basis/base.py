@@ -65,7 +65,7 @@ class AssetAcquisitionEvent:
         """May raise DeserializationError"""
         try:
             return cls(
-                amount=data['amount'],
+                amount=data['full_amount'],
                 timestamp=data['timestamp'],
                 rate=data['rate'],
                 index=data['index'],
@@ -76,7 +76,7 @@ class AssetAcquisitionEvent:
     def serialize(self) -> Dict[str, Any]:
         return {
             'timestamp': self.timestamp,
-            'amount': str(self.amount),
+            'full_amount': str(self.amount),
             'rate': str(self.rate),
             'index': self.index,
         }
@@ -205,10 +205,14 @@ class CostBasisInfo(NamedTuple):
             return taxable, free
 
         for entry in self.matched_acquisitions:
-            stringified = f' {entry.to_string(converter)}'
+            stringified = entry.to_string(converter)
             if entry.taxable:
+                if taxable != '':
+                    taxable += ' '
                 taxable += stringified
             else:
+                if free != '':
+                    free += ' '
                 free += stringified
 
         return taxable, free
