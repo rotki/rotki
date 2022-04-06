@@ -9,6 +9,7 @@ from rotkehlchen.accounting.structures import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_BCH,
@@ -1108,3 +1109,36 @@ def test_kraken_staking_events(accountant):
     for idx, event in enumerate(events):
         assert event.pnl.taxable == expected_pnls[idx]
         assert event.type == AccountingEventType.STAKING
+
+
+@pytest.mark.parametrize('should_mock_price_queries', [False])
+def test_asset_and_price_not_found_in_history_processing(accountant):
+    """
+    Make sure that in history processing if no price is found for a trade it's skipped
+    and an error is logged.
+
+    Regression for https://github.com/rotki/rotki/issues/432
+    """
+    fgp = EthereumToken('0xd9A8cfe21C232D485065cb62a96866799d4645f7')
+    history = [Trade(
+        timestamp=1492685761,
+        location=Location.KRAKEN,
+        base_asset=fgp,
+        quote_asset=A_BTC,
+        trade_type=TradeType.BUY,
+        amount=FVal('2.5'),
+        rate=FVal(.11000),
+        fee=FVal('0.15'),
+        fee_currency=fgp,
+        link=None,
+    )]
+    accounting_history_process(
+        accountant,
+        start_ts=0,
+        end_ts=1514764799,  # 31/12/2017
+        history_list=history,
+    )
+    errors = accountant.msg_aggregator.consume_errors()
+    assert len(errors) == 2
+    assert 'No documented acquisition found for BTC' in errors[0]
+    assert 'due to inability to find a price at that point in time' in errors[1]
