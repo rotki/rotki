@@ -2,6 +2,10 @@ import logging
 from typing import TYPE_CHECKING, Any, List, Literal, Optional, Tuple
 
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
+from rotkehlchen.accounting.cost_basis.prefork import (
+    handle_prefork_asset_acquisitions,
+    handle_prefork_asset_spends,
+)
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.processed_event import ProcessedAccountingEvent
@@ -134,7 +138,8 @@ class AccountingPot(CustomizableDateMixin):
         else:
             price = self.get_rate_in_profit_currency(asset=asset, timestamp=timestamp)
 
-        prefork_events = self.cost_basis.handle_prefork_asset_acquisitions(
+        prefork_events = handle_prefork_asset_acquisitions(
+            cost_basis=self.cost_basis,
             location=location,
             timestamp=timestamp,
             asset=asset,
@@ -201,7 +206,8 @@ class AccountingPot(CustomizableDateMixin):
         if asset.is_fiat() and event_type != AccountingEventType.FEE:
             taxable = False
 
-        self.cost_basis.handle_prefork_asset_spends(
+        handle_prefork_asset_spends(
+            cost_basis=self.cost_basis,
             asset=asset,
             amount=amount,
             timestamp=timestamp,
