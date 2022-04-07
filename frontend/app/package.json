@@ -89,7 +89,7 @@
     "babel-jest": "27.4.6",
     "babel-plugin-istanbul": "6.1.1",
     "dotenv": "14.3.0",
-    "electron": "16.0.7",
+    "electron": "18.0.1",
     "electron-builder": "22.14.13",
     "electron-devtools-installer": "3.2.0",
     "electron-notarize": "1.1.1",
