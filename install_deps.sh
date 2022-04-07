@@ -31,7 +31,8 @@ trap cleanup EXIT
 SQLCIPHER_EXISTS=$(ldconfig -p | grep libsqlcipher)
 
 echo "SQLCIPHER_EXISTS: $SQLCIPHER_EXISTS";
-if [[ $SQLCIPHER_EXISTS == "" ]]; then
+# Installing sqlcipher if it wasn't previously installed or user provided flag --upgrade
+if [[ $SQLCIPHER_EXISTS == "" || $1 == "--upgrade" ]]; then
     echo "Downloading and compiling sqlcipher";
     # Go into the directory and build sqlcipher
     cd "$WORK_DIR" || exit 1
