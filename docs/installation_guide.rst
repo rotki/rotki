@@ -354,7 +354,7 @@ Get `sqlcipher <https://www.zetetic.net/sqlcipher/>`_ version 4:
 
 - If you are running Archlinux you can install the `package <https://www.archlinux.org/packages/community/x86_64/sqlcipher/>`_ with ``pacman``.
 
-- If you are running Ubuntu, at the time of writing of this article Ubuntu is still using sqlcipher v3 which is not supported by rotki. So you should build sqlcipher v4 by hand. We have a script for that which is also used by our CI. Check it out `here <https://github.com/rotki/rotki/blob/develop/install_deps.sh>`__. If you already have an older version of sqlcipher run this script with --upgrade flag. Install libssl-dev and tclsh by running ``sudo apt-get install libssl-dev tclsh`` if not already installed.
+- If you are running Ubuntu, at the time of writing of this article Ubuntu is still using sqlcipher v3 which is not supported by rotki. So you should build sqlcipher v4 by hand. We have a script for that which is also used by our CI. Check it out `here <https://github.com/rotki/rotki/blob/0da58b6ab74bab40ee3c6b185ae0bc412e54da20/install_deps.sh>`__. If you already have an older version of sqlcipher run this script with --upgrade flag. Install libssl-dev and tclsh by running ``sudo apt-get install libssl-dev tclsh`` if not already installed.
 
 - If you are running openSUSE Tumbleweed, you can install sqlcipher v4 as follows::
 
