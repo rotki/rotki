@@ -1,5 +1,7 @@
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 
+# Pickle contracts
+# TODO @yabirgb: Since those are ERC20 tokens move them to the globaldb
 PICKLE_LOOKS = string_to_ethereum_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69')
 PICKLE_RBN_ETH = string_to_ethereum_address('0x506748d736b77f51c5b490e4aC6c26B8c3975b14')
 PICKLE_SCRV = string_to_ethereum_address('0x68d14d66B2B0d6E157c06Dc8Fefa3D8ba0e66a89')

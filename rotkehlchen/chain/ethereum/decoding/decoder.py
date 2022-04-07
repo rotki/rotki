@@ -13,7 +13,7 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
-from rotkehlchen.chain.ethereum.decoding.pickle.decoder import maybe_enrich_pickle_transfers
+from rotkehlchen.chain.ethereum.decoding.enrichers.pickle import maybe_enrich_pickle_transfers
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
@@ -110,7 +110,7 @@ class EVMTransactionDecoder():
         rules_results = []
         for _, name, is_pkg in pkgutil.walk_packages(package.__path__):
             full_name = package.__name__ + '.' + name
-            if full_name == __name__:
+            if full_name == __name__ or 'enrichers' in full_name:
                 continue  # skip -- this is this source file
 
             if is_pkg:

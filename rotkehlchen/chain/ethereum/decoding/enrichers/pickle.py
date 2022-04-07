@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.chain.ethereum.decoding.pickle.constants import PICKLE_CONTRACTS
+from rotkehlchen.assets.contracts import PICKLE_CONTRACTS
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
