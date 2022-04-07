@@ -1680,7 +1680,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
             validator_ownership = validators_ownership.get(stats_entry.validator_index, FVal(1))
             if validator_ownership != ONE:
                 stats_entry.pnl = stats_entry.pnl * validator_ownership
-                stats_entry.ownership = validator_ownership
+                stats_entry.ownership_percentage = validator_ownership
 
         return stats
 

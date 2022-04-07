@@ -208,6 +208,18 @@ class DefiEvent(AccountingEventMixin):
 
         return list(assets)
 
+    def process(
+            self,
+            accounting: 'AccountingPot',
+            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+    ) -> int:
+        """DefiEvent should be eventually deleted. Will not be called from accounting"""
+        raise AssertionError('Should never be called')
+
+    def should_ignore(self, ignored_ids_mapping: Dict['ActionType', List[str]]) -> bool:
+        """DefiEvent should be eventually deleted. Will not be called from accounting"""
+        raise AssertionError('Should never be called')
+
 
 def _evaluate_balance_input(other: Any, operation: str) -> Balance:
     transformed_input = other

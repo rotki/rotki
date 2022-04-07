@@ -50,7 +50,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert report['first_processed_timestamp'] == 1428994442
     assert report['last_processed_timestamp'] == end_ts if end_ts == 1539713238 else 1566572401
     assert report['identifier'] == report_id
-    assert report['size_on_disk'] == 17004 if start_ts == 0 else 15364
+    assert report['size_on_disk'] > 0
 
     overview = report['overview']
     if start_ts == 0:
@@ -74,7 +74,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert settings['taxfree_after_period'] == 31536000
 
     assert events_result['entries_limit'] == FREE_PNL_EVENTS_LIMIT
-    entries_length = 41 if start_ts == 0 else 38
+    entries_length = 47 if start_ts == 0 else 44
     assert events_result['entries_found'] == entries_length
     assert isinstance(events_result['entries'], list)
     # TODO: These events are not actually checked anywhere for correctness
@@ -279,7 +279,7 @@ def test_query_pnl_report_events_pagination_filtering(
             assert x in reverse_master
             reverse_master.remove(x)
 
-    assert len(events) == 41
+    assert len(events) == 47
     for idx, x in enumerate(events):
         if idx == len(events) - 1:
             break

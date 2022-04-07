@@ -159,7 +159,7 @@ class ProcessedAccountingEvent:
         try:
             pnl_taxable = deserialize_fval(data['pnl_taxable'], name='pnl_taxable', location='processed event decoding')  # noqa: E501
             pnl_free = deserialize_fval(data['pnl_free'], name='pnl_free', location='processed event decoding')  # noqa: E501
-            if data['cost_basis'] == None:
+            if data['cost_basis'] is None:
                 cost_basis = None
             else:
                 cost_basis = CostBasisInfo.deserialize(data['cost_basis'])

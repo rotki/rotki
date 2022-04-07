@@ -11,6 +11,7 @@ from rotkehlchen.accounting.pnl import (
     OVR_STAKING,
     OVR_TRADE_PNL,
 )
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
 
@@ -70,7 +71,7 @@ class AccountingEventMixin(metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def get_assets(self) -> None:
+    def get_assets(self) -> List[Asset]:
         """Gets the assets involved in the event.
 
         May raise:

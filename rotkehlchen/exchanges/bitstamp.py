@@ -408,7 +408,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             end_ts: Timestamp,
             options: Dict[str, Any],
             case: Literal['trades', 'asset_movements'],
-    ) -> Union[List[Trade], List[AssetMovement]]:
+    ) -> Union[List[Trade], List[AssetMovement], List]:
         """Request a Bitstamp API v2 endpoint paginating via an options
         attribute.
 
@@ -449,7 +449,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
         call_options = options.copy()
         limit = options.get('limit', API_MAX_LIMIT)
-        results: Union[List[Trade], List[AssetMovement]] = []
+        results = []
         while True:
             response = self._api_query(
                 endpoint=endpoint,
@@ -469,8 +469,7 @@ class Bitstamp(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying Bistamp trades: {msg}',
                 )
-                no_results: Union[List[Trade], List[AssetMovement]] = []
-                return no_results
+                return []
 
             has_results = False
             is_result_timestamp_gt_end_ts = False

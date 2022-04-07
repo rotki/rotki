@@ -60,7 +60,7 @@ AssetMovementDBTuple = Tuple[
 ]
 
 
-@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class AssetMovement(AccountingEventMixin):
     location: Location
     category: AssetMovementCategory
@@ -102,7 +102,7 @@ class AssetMovement(AccountingEventMixin):
         return hash_id(string)
 
     def serialize(self) -> Dict[str, Any]:
-        result = self._asdict()  # pylint: disable=no-member
+        result = self.__dict__
         result['identifier'] = self.identifier
         return result
 
@@ -395,7 +395,7 @@ MarginPositionDBTuple = Tuple[
 ]
 
 
-@dataclass(init=True, repr=True, eq=False, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class MarginPosition(AccountingEventMixin):
     """We only support margin positions on poloniex and bitmex at the moment"""
     location: Location

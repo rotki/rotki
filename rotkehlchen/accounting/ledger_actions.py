@@ -164,7 +164,7 @@ class LedgerAction(AccountingEventMixin):
         return str(self.identifier)
 
     def should_ignore(self, ignored_ids_mapping: Dict[ActionType, List[str]]) -> bool:
-        return self.identifier in ignored_ids_mapping.get(ActionType.LEDGER_ACTION, [])
+        return self.get_identifier() in ignored_ids_mapping.get(ActionType.LEDGER_ACTION, [])
 
     def get_assets(self) -> List[Asset]:
         return [self.asset]
