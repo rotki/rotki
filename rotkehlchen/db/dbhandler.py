@@ -259,13 +259,13 @@ class DBHandler:
         self.update_owned_assets_in_globaldb()
         self.add_globaldb_assetids()
 
-    def __del__(self)-> None:
+    def __del__(self) -> None:
         self.logout()
 
     def logout(self) -> None:
         if self.conn is not None:
             self.disconnect(conn_attribute='conn')
-        if self.conn_transient:
+        if self.conn_transient is not None:
             self.disconnect(conn_attribute='conn_transient')
         try:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
@@ -320,6 +320,7 @@ class DBHandler:
                 'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
                 ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
             )
+            self.conn_transient.commit()
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB

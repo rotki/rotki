@@ -38,15 +38,16 @@ def fixture_data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
 
     # do not keep pull github assets between tests. Can really confuse test results
     # as we may end up with different set of assets in tests
-    try:
-        (data_directory / 'assets').unlink()
-    except FileNotFoundError:  # TODO: In python 3.8 we can add missing_ok=True to unlink
-        pass
+    (data_directory / 'assets').unlink(missing_ok=True)
 
     # Remove any old accounts. The only reason we keep this directory around is for
     # cached price queries, not for user DBs
     for x in data_directory.iterdir():
-        if x.is_dir() and (x / 'rotkehlchen.db').exists():
+        directory_with_db = (
+            x.is_dir() and
+            (x / 'rotkehlchen.db').exists() or (x / 'rotkehlchen_transient.db').exists()
+        )
+        if directory_with_db:
             shutil.rmtree(x, ignore_errors=True)
 
     return data_directory

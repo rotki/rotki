@@ -361,8 +361,7 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         self.totals: BalanceSheet = BalanceSheet()
         self.premium = premium
         self.greenlet_manager = greenlet_manager
-        # TODO: Turn this mapping into a typed dict once we upgrade to python 3.8
-        self.eth_modules: Dict[ModuleName, Union[EthereumModule]] = {}
+        self.eth_modules: Dict[ModuleName, EthereumModule] = {}
         for given_module in eth_modules:
             self.activate_module(given_module)
 
