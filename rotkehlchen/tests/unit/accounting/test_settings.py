@@ -112,7 +112,6 @@ def test_include_gas_costs(accountant):
             location_label=addr1,
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000030921')),
-            # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
             notes=f'Burned 0.000030921 ETH in gas from {addr1} for transaction {tx_hash}',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,

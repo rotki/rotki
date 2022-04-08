@@ -119,7 +119,7 @@ class AccountingPot(CustomizableDateMixin):
         self.transactions.reset()
 
     def add_acquisition(
-            self,
+            self,  # pylint: disable=unused-argument
             event_type: AccountingEventType,
             notes: str,
             location: Location,
@@ -128,6 +128,7 @@ class AccountingPot(CustomizableDateMixin):
             amount: FVal,
             taxable: bool,
             given_price: Optional[Price] = None,
+            **kwargs: Any,  # to be able to consume args given by add_asset_change_event
     ) -> None:
         """Add an asset acquisition event for the pot and count it in PnL if needed.
 
