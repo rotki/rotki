@@ -1,6 +1,6 @@
 <template>
   <span>
-    <v-btn icon small @click="click">
+    <v-btn icon @click="click">
       <v-icon :class="{ icon: true, 'icon--expanded': expanded }">
         mdi-chevron-down
       </v-icon>

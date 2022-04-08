@@ -115,9 +115,3 @@ export default defineComponent({
   }
 });
 </script>
-
-<style scoped lang="scss">
-.range-selector {
-  height: 260px;
-}
-</style>

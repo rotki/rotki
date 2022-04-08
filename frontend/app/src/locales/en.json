@@ -276,12 +276,10 @@
     "cost_basis": "Cost Basis",
     "headers": {
       "amount": "Amount",
-      "description": "Description",
-      "fee_rate": "Fee Rate",
-      "location": "Location",
+      "full_amount": "Full Amount",
       "rate": "Rate",
-      "used_amount": "Used Amount",
-      "time": "Time"
+      "time": "Time",
+      "taxable": "Taxable ?"
     },
     "incomplete": "(Incomplete)"
   },
@@ -1367,16 +1365,16 @@
     "button": "Refresh Prices"
   },
   "profit_loss_event_type": {
+    "trade": "Trade",
+    "fee": "Fee",
     "asset_movement": "Asset Movement",
-    "buy": "Buy",
-    "defi_event": "DeFi Event",
-    "gas_cost": "Gas Cost",
-    "interest_rate_payment": "Interest Rate Payment",
+    "margin_position": "Margin Position",
+    "loan": "Loan",
+    "prefork_acquisition": "Prefork Acquisition",
     "ledger_action": "Ledger Action",
-    "loan_settlement": "Loan settlement",
-    "margin_position_close": "Margin Position Close",
-    "sell": "Sell",
-    "staking_reward": "Staking Reward"
+    "staking": "Staking",
+    "history_base_entry": "History Base Entry",
+    "transaction_event": "Transaction Event"
   },
   "progress_screen": {
     "progress": "{progress} %"
@@ -1438,36 +1436,22 @@
   "profit_loss_events": {
     "headers": {
       "location": "Location",
-      "paid_in": "Paid in {currency}",
-      "paid_in_asset": "Paid in Asset",
-      "received_in_asset": "Received in Asset",
-      "taxable_amount": "Taxable Amount",
-      "taxable_bought_cost_in": "Taxable Bought Cost in {currency}",
-      "taxable_received_in": "Taxable Received in {currency}",
+      "total": "Total",
+      "taxable": "Taxable",
       "time": "Time",
       "type": "Type",
-      "virtual": "Virtual?"
+      "notes": "Notes"
     },
     "title": "Events"
   },
   "profit_loss_overview": {
     "columns": {
       "result": "Result",
-      "value": "{symbol} value"
-    },
-    "rows": {
-      "asset_movement_fees": "Asset Movement Fees",
-      "defi_profit_loss": "DeFi Profit/Loss",
-      "ethereum_transaction_gas_costs": "Ethereum Transaction Gas Costs",
-      "general_trade_profit_loss": "General Trade Profit/Loss",
-      "ledger_actions_profit_loss": "Ledger Actions Profit/Loss",
-      "loan_profit": "Loan Profit",
-      "margin_positions_pnl": "Margin Positions Profit/Loss",
-      "settlement_losses": "Settlement Losses",
-      "taxable_trade_profit_loss": "Taxable Trade Profit/Loss",
-      "taxable_staking_profit": "Taxable Staking Profit",
       "total_profit_loss": "Total Profit/Loss",
       "total_taxable_profit_loss": "Total Taxable Profit/Loss"
+    },
+    "rows": {
+      "total": "Total"
     },
     "title": "Overview"
   },

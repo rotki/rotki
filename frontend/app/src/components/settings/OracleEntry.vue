@@ -10,7 +10,7 @@
       />
     </v-col>
     <v-col cols="auto">
-      {{ capitalize(identifier) }}
+      {{ toSentenceCase(identifier) }}
     </v-col>
   </v-row>
 </template>
@@ -18,6 +18,7 @@
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
+import { toSentenceCase } from '@/utils/text';
 
 export default defineComponent({
   name: 'OracleEntry',
@@ -45,14 +46,10 @@ export default defineComponent({
       return '';
     });
 
-    const capitalize = (text: string) => {
-      return text[0].toUpperCase() + text.slice(1);
-    };
-
     return {
       size,
       icon,
-      capitalize
+      toSentenceCase
     };
   }
 });

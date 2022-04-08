@@ -2,7 +2,9 @@
   <div>
     <div class="py-2 d-flex align-center">
       <div class="mr-2">
-        <asset-icon size="32px" :identifier="event.asset" />
+        <asset-link :asset="event.asset" icon>
+          <asset-icon size="32px" :identifier="event.asset" />
+        </asset-link>
       </div>
       <div v-if="showBalance">
         <div>

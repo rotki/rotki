@@ -18,72 +18,48 @@
         <location-display :identifier="item.location" />
       </template>
       <template #item.time="{ item }">
-        <date-display :timestamp="item.time" />
+        <date-display :timestamp="item.timestamp" />
       </template>
-      <template #item.paidInProfitCurrency="{ item }">
-        <amount-display :value="item.paidInProfitCurrency" />
-      </template>
-      <template #item.paidInAsset="{ item }">
-        <v-row
-          no-gutters
-          justify="space-between"
-          align="center"
-          class="flex-nowrap"
-        >
-          <v-col v-if="item.paidAsset" cols="auto">
-            <asset-link icon :asset="item.paidAsset" class="pr-2">
-              <asset-icon :identifier="item.paidAsset" size="24px" />
+      <template #item.total="{ item }">
+        <v-row no-gutters align="center" class="flex-nowrap text-left">
+          <v-col v-if="item.asset" cols="auto">
+            <asset-link icon :asset="item.asset" class="mr-2">
+              <asset-icon :identifier="item.asset" size="24px" />
             </asset-link>
           </v-col>
           <v-col>
-            <amount-display
-              :value="item.paidInAsset"
-              :asset="item.paidAsset ? item.paidAsset : ''"
-            />
-          </v-col>
-        </v-row>
-      </template>
-      <template #item.taxableAmount="{ item }">
-        <amount-display :value="item.taxableAmount" />
-      </template>
-      <template #item.taxableBoughtCostInProfitCurrency="{ item }">
-        <amount-display :value="item.taxableBoughtCostInProfitCurrency" />
-      </template>
-      <template #item.receivedInAsset="{ item }">
-        <v-row
-          no-gutters
-          justify="space-between"
-          align="center"
-          class="flex-nowrap"
-        >
-          <v-col v-if="item.receivedAsset" cols="auto">
-            <asset-link icon :asset="item.receivedAsset" class="pr-2">
-              <asset-icon
-                :identifier="item.receivedAsset ? item.receivedAsset : ''"
-                size="24px"
+            <div>
+              <amount-display
+                :value="item.freeAmount.plus(item.taxableAmount)"
+                :asset="item.asset ? item.asset : ''"
               />
-            </asset-link>
-          </v-col>
-          <v-col>
-            <amount-display
-              :value="item.receivedInAsset"
-              :asset="item.receivedAsset ? item.receivedAsset : ''"
-            />
+            </div>
+            <div>
+              <amount-display
+                class="grey--text"
+                :value="item.pnlFree.plus(item.pnlTaxable)"
+                :fiat-currency="report.settings.profitCurrency"
+              />
+            </div>
           </v-col>
         </v-row>
       </template>
-      <template #item.taxableReceivedInProfitCurrency="{ item }">
-        <amount-display :value="item.taxableReceivedInProfitCurrency" />
-      </template>
-      <template #item.isVirtual="{ item }">
-        <v-icon v-if="item.isVirtual" color="success"> mdi-check</v-icon>
-      </template>
-      <template #expanded-item="{ headers, item }">
-        <cost-basis-table
-          :visible="!!item.costBasis"
-          :colspan="headers.length"
-          :cost-basis="item.costBasis"
-        />
+      <template #item.taxable="{ item }">
+        <div class="text-left">
+          <div>
+            <amount-display
+              :value="item.taxableAmount"
+              :asset="item.asset ? item.asset : ''"
+            />
+          </div>
+          <div>
+            <amount-display
+              class="grey--text"
+              :value="item.pnlTaxable"
+              :fiat-currency="report.settings.profitCurrency"
+            />
+          </div>
+        </div>
       </template>
       <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
         <upgrade-row
@@ -93,14 +69,32 @@
           :time-end="report.lastProcessedTimestamp"
           :time-start="report.firstProcessedTimestamp"
           :colspan="headers.length"
-          :label="$t('profit_loss_events.title')"
+          :label="$tc('profit_loss_events.title')"
         />
+      </template>
+      <template #item.notes="{ item }">
+        <div class="py-4">
+          <transaction-event-note
+            v-if="isTransactionEvent(item)"
+            :notes="item.notes"
+            :amount="item.taxableAmount"
+            :asset="item.asset"
+          />
+          <template v-else>{{ item.notes }}</template>
+        </div>
       </template>
       <template #item.expand="{ item }">
         <row-expander
           v-if="item.costBasis"
           :expanded="expanded.includes(item)"
           @click="expanded = expanded.includes(item) ? [] : [item]"
+        />
+      </template>
+      <template #expanded-item="{ headers, item }">
+        <cost-basis-table
+          :visible="!!item.costBasis"
+          :colspan="headers.length"
+          :cost-basis="item.costBasis"
         />
       </template>
     </data-table>
@@ -112,7 +106,6 @@ import {
   computed,
   defineComponent,
   PropType,
-  Ref,
   ref,
   toRefs,
   watch
@@ -122,17 +115,18 @@ import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
+import TransactionEventNote from '@/components/history/transactions/TransactionEventNote.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
-import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
+import ProfitLossEventType, {
+  TRANSACTION_EVENT
+} from '@/components/profitloss/ProfitLossEventType.vue';
 import { useRoute } from '@/composables/common';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
-import { SelectedReport } from '@/types/reports';
+import { ProfitLossEvent, SelectedReport } from '@/types/reports';
 
-const getHeaders: (
-  report: Ref<SelectedReport>
-) => DataTableHeader[] = report => [
+const tableHeaders: DataTableHeader[] = [
   {
     text: i18n.t('profit_loss_events.headers.type').toString(),
     align: 'center',
@@ -148,62 +142,25 @@ const getHeaders: (
     sortable: false
   },
   {
-    text: i18n
-      .t('profit_loss_events.headers.paid_in', {
-        currency: report.value.currency
-      })
-      .toString(),
+    text: i18n.t('profit_loss_events.headers.total').toString(),
     sortable: false,
-    value: 'paidInProfitCurrency',
-    align: 'end'
+    align: 'center',
+    value: 'total'
   },
   {
-    text: i18n.t('profit_loss_events.headers.paid_in_asset').toString(),
+    text: i18n.t('profit_loss_events.headers.taxable').toString(),
     sortable: false,
-    value: 'paidInAsset',
-    align: 'end'
-  },
-  {
-    text: i18n.t('profit_loss_events.headers.taxable_amount').toString(),
-    sortable: false,
-    value: 'taxableAmount',
-    align: 'end'
-  },
-  {
-    text: i18n
-      .t('profit_loss_events.headers.taxable_bought_cost_in', {
-        currency: report.value.currency
-      })
-      .toString(),
-    sortable: false,
-    value: 'taxableBoughtCostInProfitCurrency',
-    align: 'end'
-  },
-  {
-    text: i18n.t('profit_loss_events.headers.received_in_asset').toString(),
-    sortable: false,
-    value: 'receivedInAsset',
-    align: 'end'
-  },
-  {
-    text: i18n
-      .t('profit_loss_events.headers.taxable_received_in', {
-        currency: report.value.currency
-      })
-      .toString(),
-    sortable: false,
-    value: 'taxableReceivedInProfitCurrency',
-    align: 'end'
+    align: 'center',
+    value: 'taxable'
   },
   {
     text: i18n.t('profit_loss_events.headers.time').toString(),
     value: 'time'
   },
   {
-    text: i18n.t('profit_loss_events.headers.virtual').toString(),
+    text: i18n.t('profit_loss_events.headers.notes').toString(),
     sortable: false,
-    value: 'isVirtual',
-    align: 'center'
+    value: 'notes'
   },
   {
     text: '',
@@ -222,6 +179,7 @@ type PaginationOptions = {
 
 export default defineComponent({
   components: {
+    TransactionEventNote,
     DataTable,
     ProfitLossEventType,
     UpgradeRow,
@@ -291,14 +249,20 @@ export default defineComponent({
       });
     };
 
+    const isTransactionEvent = (item: ProfitLossEvent) => {
+      return item.type === TRANSACTION_EVENT;
+    };
+
     watch(options, updatePagination);
+
     return {
       items,
       itemLength,
       options,
       expanded,
       showUpgradeMessage,
-      tableHeaders: getHeaders(report)
+      isTransactionEvent,
+      tableHeaders
     };
   }
 });

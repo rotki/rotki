@@ -1,6 +1,6 @@
-import { capitalize } from '@/filters';
 import { TradeLocation } from '@/services/history/types';
 import { bigNumberify, Zero } from '@/utils/bignumbers';
+import { toSentenceCase } from '@/utils/text';
 import { AccountBalancesPage } from './index';
 
 export interface FixtureManualBalance {
@@ -90,7 +90,7 @@ export class ManualBalancesPage extends AccountBalancesPage {
 
     cy.get('@row')
       .find('.manual-balances-list__location')
-      .should('contain', capitalize(balance.location));
+      .should('contain', toSentenceCase(balance.location));
 
     cy.get('@row')
       .find('[data-cy=details-symbol]')

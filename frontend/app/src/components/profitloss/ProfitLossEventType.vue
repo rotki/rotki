@@ -1,5 +1,5 @@
 <template>
-  <span class="d-flex align-center py-4" :class="'flex-column'">
+  <span class="d-flex align-center" :class="'flex-column'">
     <span>
       <v-icon color="accent"> {{ icon }} </v-icon>
     </span>
@@ -16,30 +16,32 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import i18n from '@/i18n';
+import { toCapitalCase } from '@/utils/text';
 
-const BUY = 'buy';
-const SELL = 'sell';
-const GAS_COST = 'tx_gas_cost';
-const ASSET_MOVEMENT = 'asset_movement';
-const LOAN_SETTLEMENT = 'loan_settlement';
-const INTEREST_RATE_PAYMENT = 'interest_rate_payment';
-const MARGIN_POSITION_CLOSE = 'margin_position_close';
-const DEFI_EVENT = 'defi_event';
-const LEDGER_ACTION = 'ledger_action';
-const STAKING_REWARD = 'staking_reward';
+const TRADE = 'trade';
+const FEE = 'fee';
+const ASSET_MOVEMENT = 'asset movement';
+const MARGIN_POSITION = 'margin position';
+const LOAN = 'loan';
+const PREFORK_ACQUISITION = 'prefork acquisition';
+const LEDGER_ACTION = 'ledger action';
+const STAKING = 'staking';
+const HISTORY_BASE_ENTRY = 'history base entry';
+export const TRANSACTION_EVENT = 'transaction event';
 
 const EVENT_TYPES = [
-  BUY,
-  SELL,
-  GAS_COST,
+  TRADE,
+  FEE,
   ASSET_MOVEMENT,
-  LOAN_SETTLEMENT,
-  INTEREST_RATE_PAYMENT,
-  MARGIN_POSITION_CLOSE,
-  DEFI_EVENT,
+  MARGIN_POSITION,
+  LOAN,
+  PREFORK_ACQUISITION,
   LEDGER_ACTION,
-  STAKING_REWARD
+  STAKING,
+  HISTORY_BASE_ENTRY,
+  TRANSACTION_EVENT
 ] as const;
 
 type EventTypes = typeof EVENT_TYPES[number];
@@ -47,35 +49,37 @@ type EventTypes = typeof EVENT_TYPES[number];
 type Resources = { [key in EventTypes]: string };
 
 const icons: Resources = {
-  [BUY]: 'mdi-arrow-down',
-  [SELL]: 'mdi-arrow-up',
-  [GAS_COST]: 'mdi-gas-station',
-  [ASSET_MOVEMENT]: 'mdi-swap-horizontal',
-  [LOAN_SETTLEMENT]: 'mdi-handshake',
-  [INTEREST_RATE_PAYMENT]: 'bank-transfer-in',
-  [MARGIN_POSITION_CLOSE]: 'mdi-margin',
-  [DEFI_EVENT]: 'mdi-finance',
+  [TRADE]: 'mdi-shuffle-variant',
+  [FEE]: 'mdi-fire',
+  [ASSET_MOVEMENT]: 'mdi-bank-transfer',
+  [MARGIN_POSITION]: 'mdi-margin',
+  [LOAN]: 'mdi-handshake',
+  [PREFORK_ACQUISITION]: 'mdi-source-fork',
   [LEDGER_ACTION]: 'mdi-book-open-variant',
-  [STAKING_REWARD]: 'mdi-sprout'
+  [STAKING]: 'mdi-sprout',
+  [HISTORY_BASE_ENTRY]: 'mdi-history',
+  [TRANSACTION_EVENT]: 'mdi-swap-horizontal'
 };
 
 const names: Resources = {
-  [BUY]: i18n.t('profit_loss_event_type.buy').toString(),
-  [SELL]: i18n.t('profit_loss_event_type.sell').toString(),
-  [GAS_COST]: i18n.t('profit_loss_event_type.gas_cost').toString(),
+  [TRADE]: i18n.t('profit_loss_event_type.trade').toString(),
+  [FEE]: i18n.t('profit_loss_event_type.fee').toString(),
   [ASSET_MOVEMENT]: i18n.t('profit_loss_event_type.asset_movement').toString(),
-  [LOAN_SETTLEMENT]: i18n
-    .t('profit_loss_event_type.loan_settlement')
+  [MARGIN_POSITION]: i18n
+    .t('profit_loss_event_type.margin_position')
     .toString(),
-  [INTEREST_RATE_PAYMENT]: i18n
-    .t('profit_loss_event_type.interest_rate_payment')
+  [LOAN]: i18n.t('profit_loss_event_type.loan').toString(),
+  [PREFORK_ACQUISITION]: i18n
+    .t('profit_loss_event_type.prefork_acquisition')
     .toString(),
-  [MARGIN_POSITION_CLOSE]: i18n
-    .t('profit_loss_event_type.margin_position_close')
-    .toString(),
-  [DEFI_EVENT]: i18n.t('profit_loss_event_type.defi_event').toString(),
   [LEDGER_ACTION]: i18n.t('profit_loss_event_type.ledger_action').toString(),
-  [STAKING_REWARD]: i18n.t('profit_loss_event_type.staking_reward').toString()
+  [STAKING]: i18n.t('profit_loss_event_type.staking').toString(),
+  [HISTORY_BASE_ENTRY]: i18n
+    .t('profit_loss_event_type.history_base_entry')
+    .toString(),
+  [TRANSACTION_EVENT]: i18n
+    .t('profit_loss_event_type.transaction_event')
+    .toString()
 };
 
 export default defineComponent({
@@ -85,8 +89,8 @@ export default defineComponent({
   },
   setup(props) {
     const { type } = toRefs(props);
-    const icon = computed(() => icons[type.value] ?? '');
-    const name = computed(() => names[type.value] ?? '');
+    const icon = computed(() => icons[get(type)] ?? 'mdi-help');
+    const name = computed(() => names[get(type)] ?? toCapitalCase(get(type)));
     return {
       icon,
       name

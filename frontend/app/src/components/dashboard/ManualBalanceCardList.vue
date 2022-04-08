@@ -12,7 +12,7 @@
     <v-list-item-content>
       <v-list-item-title class="d-flex justify-space-between">
         <span>
-          {{ capitalize(name) }}
+          {{ toSentenceCase(name) }}
         </span>
         <span class="text-end">
           <amount-display
@@ -31,7 +31,7 @@ import { BigNumber } from '@rotki/common';
 import { defineComponent, PropType } from '@vue/composition-api';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { setupGeneralSettings } from '@/composables/session';
-import { capitalize } from '@/filters';
+import { toSentenceCase } from '@/utils/text';
 
 export default defineComponent({
   name: 'ManualBalanceCardList',
@@ -50,8 +50,8 @@ export default defineComponent({
     const { currencySymbol } = setupGeneralSettings();
 
     return {
-      capitalize,
-      currencySymbol
+      currencySymbol,
+      toSentenceCase
     };
   }
 });

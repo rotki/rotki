@@ -33,8 +33,8 @@
     <export-report-csv v-if="exportable" />
     <profit-loss-overview
       class="mt-8"
-      :overview="report.overview"
-      :symbol="report.currency"
+      :report="report"
+      :symbol="report.settings.profitCurrency"
       :loading="loading"
     />
     <profit-loss-events

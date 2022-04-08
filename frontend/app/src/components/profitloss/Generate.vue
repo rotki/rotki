@@ -25,6 +25,7 @@
       <template #buttons>
         <v-btn
           color="primary"
+          block
           depressed
           :disabled="!valid"
           @click="generate()"
@@ -49,6 +50,7 @@ export default defineComponent({
   setup(_, { emit }) {
     const range = ref({ start: '', end: '' });
     const valid = ref(false);
+
     const generate = () => {
       const start = convertToTimestamp(range.value.start);
       const end = convertToTimestamp(range.value.end);

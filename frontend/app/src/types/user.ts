@@ -54,8 +54,9 @@ export const BaseAccountingSettings = z.object({
   calculatePastCostBasis: z.boolean(),
   includeCrypto2crypto: z.boolean(),
   includeGasCosts: z.boolean(),
-  taxfreeAfterPeriod: z.number().nullable(),
-  accountForAssetsMovements: z.boolean()
+  taxfreeAfterPeriod: z.number().nullish(),
+  accountForAssetsMovements: z.boolean(),
+  profitCurrency: z.string().nullish()
 });
 
 export type BaseAccountingSettings = z.infer<typeof BaseAccountingSettings>;

@@ -17,23 +17,20 @@
       item-key="id"
       sort-by="time"
     >
-      <template #item.location="{ item }">
-        <location-display :identifier="item.location" />
-      </template>
-      <template #item.usedAmount="{ item }">
-        <amount-display :value="item.usedAmount" />
-      </template>
       <template #item.amount="{ item }">
         <amount-display :value="item.amount" />
       </template>
-      <template #item.fee="{ item }">
-        <amount-display :value="item.fee" />
+      <template #item.fullAmount="{ item }">
+        <amount-display :value="item.event.fullAmount" />
       </template>
-      <template #item.feeRate="{ item }">
-        <amount-display :value="item.feeRate" />
+      <template #item.rate="{ item }">
+        <amount-display :value="item.event.rate" />
       </template>
       <template #item.time="{ item }">
-        <date-display :timestamp="item.time" />
+        <date-display :timestamp="item.event.timestamp" />
+      </template>
+      <template #item.taxable="{ item }">
+        <v-icon v-if="item.taxable" color="success">mdi-check</v-icon>
       </template>
     </data-table>
   </table-expand-container>
@@ -48,23 +45,13 @@ import { CostBasis } from '@/types/reports';
 
 const getHeaders: () => DataTableHeader[] = () => [
   {
-    text: i18n.t('cost_basis_table.headers.location').toString(),
-    value: 'location',
-    width: '120px',
-    align: 'center'
-  },
-  {
-    text: i18n.t('cost_basis_table.headers.description').toString(),
-    value: 'description'
-  },
-  {
-    text: i18n.t('cost_basis_table.headers.used_amount').toString(),
-    value: 'usedAmount',
+    text: i18n.t('cost_basis_table.headers.amount').toString(),
+    value: 'amount',
     align: 'end'
   },
   {
-    text: i18n.t('cost_basis_table.headers.amount').toString(),
-    value: 'amount',
+    text: i18n.t('cost_basis_table.headers.full_amount').toString(),
+    value: 'fullAmount',
     align: 'end'
   },
   {
@@ -73,13 +60,12 @@ const getHeaders: () => DataTableHeader[] = () => [
     align: 'end'
   },
   {
-    text: i18n.t('cost_basis_table.headers.fee_rate').toString(),
-    value: 'feeRate',
-    align: 'end'
-  },
-  {
     text: i18n.t('cost_basis_table.headers.time').toString(),
     value: 'time'
+  },
+  {
+    text: i18n.t('cost_basis_table.headers.taxable').toString(),
+    value: 'taxable'
   }
 ];
 
