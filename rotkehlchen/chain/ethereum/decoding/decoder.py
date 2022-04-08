@@ -14,7 +14,6 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
-from rotkehlchen.chain.ethereum.decoding.pickle.decoder import maybe_enrich_pickle_transfers
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
@@ -98,6 +97,7 @@ class EVMTransactionDecoder():
             self._maybe_enrich_transfers,
             self._maybe_decode_governance,
         ]
+        self.token_enricher_rules: List[Callable] = []  # enrichers to run for token transfers
         self.initialize_all_decoders()
 
     def _recursively_initialize_decoders(
@@ -105,11 +105,13 @@ class EVMTransactionDecoder():
     ) -> Tuple[
             Dict[ChecksumEthAddress, Tuple[Any, ...]],
             List[Callable],
+            List[Callable],
     ]:
         if isinstance(package, str):
             package = importlib.import_module(package)
         address_results = {}
         rules_results = []
+        enricher_results = []
         for _, name, is_pkg in pkgutil.walk_packages(package.__path__):
             full_name = package.__name__ + '.' + name
             if full_name == __name__:
@@ -130,21 +132,24 @@ class EVMTransactionDecoder():
                     )
                     address_results.update(self.decoders[class_name].addresses_to_decoders())
                     rules_results.extend(self.decoders[class_name].decoding_rules())
+                    enricher_results.extend(self.decoders[class_name].enricher_rules())
 
-                recursive_addrs, recursive_rules = self._recursively_initialize_decoders(full_name)
+                recursive_addrs, recursive_rules, recurisve_enricher_results = self._recursively_initialize_decoders(full_name)  # noqa: E501
                 address_results.update(recursive_addrs)
                 rules_results.extend(recursive_rules)
+                enricher_results.extend(recurisve_enricher_results)
 
-        return address_results, rules_results
+        return address_results, rules_results, enricher_results
 
     def initialize_all_decoders(self) -> None:
         """Recursively check all submodules of this module to get all decoder address
         mappings and rules
         """
         self.decoders: Dict[str, 'DecoderInterface'] = {}
-        address_result, rules_result = self._recursively_initialize_decoders(__package__)
+        address_result, rules_result, enrichers_result = self._recursively_initialize_decoders(__package__)  # noqa: E501
         self.address_mappings = address_result
         self.event_rules.extend(rules_result)
+        self.token_enricher_rules.extend(enrichers_result)
 
     def reload_from_db(self) -> None:
         """Reload all related settings from DB so that decoding happens with latest"""
@@ -608,13 +613,16 @@ class EVMTransactionDecoder():
         It assumes that the event being decoded has been already filtered and is a
         transfer.
         """
-        maybe_enrich_pickle_transfers(
-            token=token,
-            tx_log=tx_log,
-            transaction=transaction,
-            event=event,
-            action_items=action_items,
-        )
+        for enrich_call in self.token_enricher_rules:
+            transfer_enriched = enrich_call(
+                token=token,
+                tx_log=tx_log,
+                transaction=transaction,
+                event=event,
+                action_items=action_items,
+            )
+            if transfer_enriched:
+                break
 
     def _maybe_decode_governance(  # pylint: disable=no-self-use
             self,

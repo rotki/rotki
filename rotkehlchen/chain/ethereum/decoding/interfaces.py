@@ -30,13 +30,6 @@ class DecoderInterface(metaclass=ABCMeta):
         """Subclasses may implement this to return the mappings of addresses to decode functions"""
         return {}
 
-    def decoding_rules(self) -> List[Callable]:  # pylint: disable=no-self-use
-        """
-        Subclasses may implement this to add new generic decoding rules to be attempted
-        by the decoding process
-        """
-        return []
-
     @abstractmethod
     def counterparties(self) -> List[str]:  # pylint: disable=no-self-use
         """
@@ -50,3 +43,17 @@ class DecoderInterface(metaclass=ABCMeta):
         Subclasses implement this to specify rules/settings for their created events
         """
         return {}
+
+    def decoding_rules(self) -> List[Callable]:  # pylint: disable=no-self-use
+        """
+        Subclasses may implement this to add new generic decoding rules to be attempted
+        by the decoding process
+        """
+        return []
+
+    def enricher_rules(self) -> List[Callable]:  # pylint: disable=no-self-use
+        """
+        Subclasses may implement this to add new generic decoding rules to be attempted
+        by the decoding process
+        """
+        return []
