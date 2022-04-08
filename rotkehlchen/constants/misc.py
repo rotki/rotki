@@ -4,7 +4,6 @@ from rotkehlchen.types import EventType
 
 EV_BUY = EventType('buy')
 EV_SELL = EventType('sell')
-EV_TX_GAS_COST = EventType('tx_gas_cost')
 EV_ASSET_MOVE = EventType('asset_movement')
 EV_LOAN_SETTLE = EventType('loan_settlement')
 EV_INTEREST_PAYMENT = EventType('interest_rate_payment')

@@ -1,12 +1,23 @@
 import logging
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+    overload,
+)
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
-from rotkehlchen.accounting.types import NamedJson
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.accounting.pnl import PnlTotals
+from rotkehlchen.accounting.processed_event import ProcessedAccountingEvent
 from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import DeserializationError, InputError
@@ -21,12 +32,32 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
+@overload
 def _get_reports_or_events_maybe_limit(
-        entry_type: Literal['events', 'reports'],
+        entry_type: Literal['events'],
+        entries_found: int,
+        entries: List[ProcessedAccountingEvent],
+        with_limit: bool,
+) -> Tuple[List[ProcessedAccountingEvent], int]:
+    ...
+
+
+@overload
+def _get_reports_or_events_maybe_limit(
+        entry_type: Literal['reports'],
         entries_found: int,
         entries: List[Dict[str, Any]],
         with_limit: bool,
 ) -> Tuple[List[Dict[str, Any]], int]:
+    ...
+
+
+def _get_reports_or_events_maybe_limit(
+        entry_type: Literal['events', 'reports'],
+        entries_found: int,
+        entries: Union[List[Dict[str, Any]], List[ProcessedAccountingEvent]],
+        with_limit: bool,
+) -> Tuple[Union[List[Dict[str, Any]], List[ProcessedAccountingEvent]], int]:
     if with_limit is False:
         return entries, entries_found
 
@@ -49,7 +80,6 @@ class DBAccountingReports():
             first_processed_timestamp: Timestamp,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            profit_currency: Asset,
             settings: DBSettings,
     ) -> int:
         cursor = self.db.conn_transient.cursor()
@@ -57,25 +87,29 @@ class DBAccountingReports():
         query = """
         INSERT INTO pnl_reports(
             timestamp, start_ts, end_ts, first_processed_timestamp,
-            profit_currency, taxfree_after_period, include_crypto2crypto,
-            calculate_past_cost_basis, include_gas_costs, account_for_assets_movements,
             last_processed_timestamp, processed_actions, total_actions
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        VALUES (?, ?, ?, ?, ?, ?, ?)"""
         cursor.execute(
             query,
             (timestamp, start_ts, end_ts, first_processed_timestamp,
-             profit_currency.identifier, settings.taxfree_after_period,
-             int(settings.include_crypto2crypto),
-             int(settings.calculate_past_cost_basis),
-             int(settings.include_gas_costs),
-             int(settings.account_for_assets_movements),
              0, 0, 0,  # will be set later
              ),
         )
-        identifier = cursor.lastrowid
+        report_id = cursor.lastrowid
+        cursor.executemany(
+            'INSERT OR IGNORE INTO pnl_report_settings(report_id, name, type, value) '
+            'VALUES(?, ?, ?, ?)',
+            [
+                (report_id, 'profit_currency', 'string', settings.main_currency.identifier),
+                (report_id, 'taxfree_after_period', 'integer', settings.taxfree_after_period),
+                (report_id, 'include_crypto2crypto', 'bool', settings.include_crypto2crypto),
+                (report_id, 'calculate_past_cost_basis', 'bool', settings.calculate_past_cost_basis),  # noqa: E501
+                (report_id, 'include_gas_costs', 'bool', settings.include_gas_costs),
+                (report_id, 'account_for_assets_movements', 'bool', settings.account_for_assets_movements),  # noqa: E501
+            ])
         self.db.conn_transient.commit()
-        return identifier
+        return report_id
 
     def add_report_overview(
             self,
@@ -83,18 +117,7 @@ class DBAccountingReports():
             last_processed_timestamp: Timestamp,
             processed_actions: int,
             total_actions: int,
-            ledger_actions_profit_loss: str,
-            defi_profit_loss: str,
-            loan_profit: str,
-            margin_positions_profit_loss: str,
-            settlement_losses: str,
-            ethereum_transaction_gas_costs: str,
-            staking_profit: str,
-            asset_movement_fees: str,
-            general_trade_profit_loss: str,
-            taxable_trade_profit_loss: str,
-            total_taxable_profit_loss: str,
-            total_profit_loss: str,
+            pnls: PnlTotals,
     ) -> None:
         """Inserts the report overview data
 
@@ -103,24 +126,23 @@ class DBAccountingReports():
         """
         cursor = self.db.conn_transient.cursor()
         cursor.execute(
-            'UPDATE pnl_reports SET ledger_actions_profit_loss=?, defi_profit_loss=?, '
-            'loan_profit=?, margin_positions_profit_loss=?, settlement_losses=?, '
-            'ethereum_transaction_gas_costs=?, asset_movement_fees=?, staking_profit=?,'
-            ' general_trade_profit_loss=?, taxable_trade_profit_loss=?,'
-            ' total_taxable_profit_loss=?, total_profit_loss=?, last_processed_timestamp=?,'
+            'UPDATE pnl_reports SET last_processed_timestamp=?,'
             ' processed_actions=?, total_actions=? WHERE identifier=?',
-            (ledger_actions_profit_loss, defi_profit_loss, loan_profit,
-             margin_positions_profit_loss, settlement_losses,
-             ethereum_transaction_gas_costs, asset_movement_fees,
-             staking_profit, general_trade_profit_loss, taxable_trade_profit_loss,
-             total_taxable_profit_loss, total_profit_loss,
-             last_processed_timestamp, processed_actions, total_actions, report_id),
+            (last_processed_timestamp, processed_actions, total_actions, report_id),
         )
         if cursor.rowcount != 1:
             raise InputError(
                 f'Could not insert overview for {report_id}. '
                 f'Report id could not be found in the DB',
             )
+
+        tuples = []
+        for event_type, entry in pnls.items():
+            tuples.append((report_id, event_type.serialize(), str(entry.taxable), str(entry.free)))  # noqa: E501
+        cursor.executemany(
+            'INSERT OR IGNORE INTO pnl_report_totals(report_id, name, taxable_value, free_value) VALUES(?, ?, ?, ?)',  # noqa: E501
+            tuples,
+        )
         self.db.conn_transient.commit()
 
     def _get_report_size(self, report_id: int) -> int:
@@ -165,6 +187,24 @@ class DBAccountingReports():
         for report in results:
             this_report_id = report[0]
             size_result = self._get_report_size(this_report_id)
+            other_cursor = self.db.conn_transient.cursor()
+            other_cursor.execute(
+                'SELECT name, taxable_value, free_value FROM pnl_report_totals WHERE report_id=?',
+                (this_report_id,),
+            )
+            overview = {x[0]: {'taxable': x[1], 'free': x[2]} for x in other_cursor}
+            other_cursor.execute(
+                'SELECT name, type, value FROM pnl_report_settings WHERE report_id=?',
+                (this_report_id,),
+            )
+            settings = {}
+            for x in other_cursor:
+                if x[1] == 'integer':
+                    settings[x[0]] = int(x[2])
+                elif x[1] == 'bool':
+                    settings[x[0]] = x[2] == '1'
+                else:
+                    settings[x[0]] = x[2]
             reports.append({
                 'identifier': this_report_id,
                 'timestamp': report[1],
@@ -172,27 +212,11 @@ class DBAccountingReports():
                 'end_ts': report[3],
                 'first_processed_timestamp': report[4],
                 'size_on_disk': size_result,
-                'ledger_actions_profit_loss': report[5],
-                'defi_profit_loss': report[6],
-                'loan_profit': report[7],
-                'margin_positions_profit_loss': report[8],
-                'settlement_losses': report[9],
-                'ethereum_transaction_gas_costs': report[10],
-                'asset_movement_fees': report[11],
-                'staking_profit': report[12],
-                'general_trade_profit_loss': report[13],
-                'taxable_trade_profit_loss': report[14],
-                'total_taxable_profit_loss': report[15],
-                'total_profit_loss': report[16],
-                'last_processed_timestamp': report[17],
-                'processed_actions': report[18],
-                'total_actions': report[19],
-                'profit_currency': report[20],
-                'taxfree_after_period': report[21],
-                'include_crypto2crypto': bool(report[22]),
-                'calculate_past_cost_basis': bool(report[23]),
-                'include_gas_costs': bool(report[24]),
-                'account_for_assets_movements': bool(report[25]),
+                'last_processed_timestamp': report[5],
+                'processed_actions': report[6],
+                'total_actions': report[7],
+                'overview': overview,
+                'settings': settings,
             })
 
         if report_id is not None:
@@ -222,20 +246,27 @@ class DBAccountingReports():
         self.db.conn.commit()
         self.db.update_last_write()
 
-    def add_report_data(self, report_id: int, time: Timestamp, event: NamedJson) -> None:
+    def add_report_data(
+            self,
+            report_id: int,
+            time: Timestamp,
+            ts_converter: Callable[[Timestamp], str],
+            event: ProcessedAccountingEvent,
+    ) -> None:
         """Adds a new entry to a transient report for the PnL history in a given time range
         May raise:
         - DeserializationError if there is a conflict at serialization of the event
         - InputError if the event can not be written to the DB. Probably report id does not exist.
         """
         cursor = self.db.conn_transient.cursor()
+        data = event.serialize_for_db(ts_converter)
         query = """
         INSERT INTO pnl_events(
-            report_id, timestamp, event_type, data
+            report_id, timestamp, data
         )
-        VALUES(?, ?, ?, ?);"""
+        VALUES(?, ?, ?);"""
         try:
-            cursor.execute(query, (report_id, time) + event.to_db_tuple())
+            cursor.execute(query, (report_id, time, data))
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             raise InputError(
                 f'Could not write {event} data to the DB due to {str(e)}. '
@@ -247,7 +278,7 @@ class DBAccountingReports():
             self,
             filter_: ReportDataFilterQuery,
             with_limit: bool,
-    ) -> Tuple[List[Dict[str, Any]], int]:
+    ) -> Tuple[List[ProcessedAccountingEvent], int]:
         """Retrieve the event data of a PnL report depending on the given filter
 
         May raise:
@@ -265,13 +296,13 @@ class DBAccountingReports():
             )
 
         query, bindings = filter_.prepare()
-        query = 'SELECT event_type, data FROM pnl_events ' + query
+        query = 'SELECT timestamp, data FROM pnl_events ' + query
         results = cursor.execute(query, bindings)
 
         records = []
         for result in results:
             try:
-                record = NamedJson.deserialize_from_db(result).data
+                record = ProcessedAccountingEvent.deserialize_from_db(result[0], result[1])
             except DeserializationError as e:
                 self.db.msg_aggregator.add_error(
                     f'Error deserializing AccountingEvent from the DB. Skipping it.'

@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures import (
     HistoryEventType,
 )
 from rotkehlchen.assets.asset import EthereumToken
+from rotkehlchen.chain.ethereum.decoding.airdrops.decoder import CPT_ONEINCH
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
@@ -102,7 +103,7 @@ def test_1inch_claim(database, ethereum_manager):
             balance=Balance(amount=FVal('609.397099685988397871'), usd_value=ZERO),
             location_label='0xc931De6d845846E332a52D045072E3feF540Bd5d',
             notes='Claim 609.397099685988397871 1INCH from the 1INCH airdrop',
-            counterparty='1inch',
+            counterparty=CPT_ONEINCH,
             identifier=None,
             extras=None,
         ),

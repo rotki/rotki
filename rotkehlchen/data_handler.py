@@ -40,7 +40,7 @@ class DataHandler():
             self.password = ''
             self.user_data_dir: Optional[Path] = None
             self.db.update_owned_assets_in_globaldb()
-            del self.db
+            self.db.logout()
             self.logged_in = False
 
     def change_password(self, new_password: str) -> bool:

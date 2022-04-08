@@ -13,7 +13,6 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultHistory,
     get_usd_price_zero_if_error,
 )
-from rotkehlchen.chain.ethereum.structures import YearnVaultEvent
 from rotkehlchen.constants.ethereum import (
     MAX_BLOCKTIME_CACHE,
     YEARN_VAULT_V2_ABI,
@@ -29,6 +28,8 @@ from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChecksumEthAddress, EthA
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now
+
+from .structures import YearnVaultEvent
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.defi.structures import GIVEN_ETH_BALANCES

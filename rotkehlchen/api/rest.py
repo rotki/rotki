@@ -56,7 +56,7 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
-from rotkehlchen.chain.ethereum.modules.eth2 import FREE_VALIDATORS_LIMIT
+from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
@@ -1649,32 +1649,19 @@ class RestAPI():
 
     @require_loggedin_user()
     def export_processed_history_csv(self, directory_path: Path) -> Response:
-        if len(self.rotkehlchen.accountant.csvexporter.all_events_csv) == 0:
-            result_dict = wrap_in_fail_result('No history processed in order to perform an export')
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
-
-        result, message = self.rotkehlchen.accountant.csvexporter.create_files(
-            dirpath=directory_path,
-        )
-
-        if not result:
-            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
+        success, msg = self.rotkehlchen.accountant.export(directory_path)
+        if success is False:
+            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def download_processed_history_csv(self) -> Response:
-        if len(self.rotkehlchen.accountant.csvexporter.all_events_csv) == 0:
-            result_dict = wrap_in_fail_result('No history processed in order to perform an export')
-            return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
+        success, zipfile = self.rotkehlchen.accountant.export(directory_path=None)
+        if success is False:
+            return api_response(wrap_in_fail_result('Could not create a zip archive'), status_code=HTTPStatus.CONFLICT)  # noqa: E501
 
         try:
-            zipfile = self.rotkehlchen.accountant.csvexporter.create_zip()
-            if zipfile is None:
-                return api_response(
-                    wrap_in_fail_result('Could not create a zip archive'),
-                    status_code=HTTPStatus.NOT_FOUND,
-                )
             return send_file(
                 path_or_file=zipfile,
                 mimetype='application/zip',
@@ -3884,12 +3871,12 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
         result = {
-            'entries': report_data,
+            'entries': [x.to_exported_dict(self.rotkehlchen.accountant.pots[0].timestamp_to_date, for_csv=False) for x in report_data],  # noqa: E501
             'entries_found': entries_found,
             'entries_limit': entries_limit,
         }
         result_dict = _wrap_in_result(result, '')
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
+        return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def get_associated_locations(self) -> Response:

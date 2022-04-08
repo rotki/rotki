@@ -13,6 +13,7 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, Inquirer
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.types import Timestamp
 
 
 @pytest.fixture(name='use_clean_caching_directory')
@@ -37,15 +38,16 @@ def fixture_data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
 
     # do not keep pull github assets between tests. Can really confuse test results
     # as we may end up with different set of assets in tests
-    try:
-        (data_directory / 'assets').unlink()
-    except FileNotFoundError:  # TODO: In python 3.8 we can add missing_ok=True to unlink
-        pass
+    (data_directory / 'assets').unlink(missing_ok=True)
 
     # Remove any old accounts. The only reason we keep this directory around is for
     # cached price queries, not for user DBs
     for x in data_directory.iterdir():
-        if x.is_dir() and (x / 'rotkehlchen.db').exists():
+        directory_with_db = (
+            x.is_dir() and
+            (x / 'rotkehlchen.db').exists() or (x / 'rotkehlchen_transient.db').exists()
+        )
+        if directory_with_db:
             shutil.rmtree(x, ignore_errors=True)
 
     return data_directory
@@ -73,14 +75,6 @@ def mocked_price_queries():
     return defaultdict(defaultdict)
 
 
-@pytest.fixture(name='accounting_create_csv')
-def fixture_accounting_create_csv():
-    # TODO: The whole create_csv argument should be deleted.
-    # Or renamed. Since it's not about actually creating the CSV
-    # but keeping the events in memory
-    return True
-
-
 @pytest.fixture(name='accounting_initialize_parameters')
 def fixture_accounting_initialize_parameters():
     """
@@ -96,11 +90,10 @@ def fixture_accounting_initialize_parameters():
 def fixture_accountant(
         price_historian,  # pylint: disable=unused-argument
         database,
-        data_dir,
-        accounting_create_csv,
         function_scope_messages_aggregator,
         start_with_logged_in_user,
         accounting_initialize_parameters,
+        evm_transaction_decoder,
         start_with_valid_premium,
         rotki_premium_credentials,
 ) -> Optional[Accountant]:
@@ -113,15 +106,21 @@ def fixture_accountant(
 
     accountant = Accountant(
         db=database,
-        user_directory=data_dir,
+        evm_tx_decoder=evm_transaction_decoder,
         msg_aggregator=function_scope_messages_aggregator,
-        create_csv=accounting_create_csv,
         premium=premium,
     )
 
     if accounting_initialize_parameters:
         db_settings = accountant.db.get_settings()
-        accountant._customize(db_settings)
+        for pot in accountant.pots:
+            pot.reset(
+                settings=db_settings,
+                start_ts=Timestamp(0),
+                end_ts=Timestamp(0),
+                report_id=1,
+            )
+        accountant.csvexporter.reset()
 
     return accountant
 

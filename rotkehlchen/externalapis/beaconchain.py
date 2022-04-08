@@ -6,8 +6,12 @@ import gevent
 import requests
 
 from rotkehlchen.accounting.structures import Balance
-from rotkehlchen.chain.ethereum.eth2_utils import ValidatorBalance
-from rotkehlchen.chain.ethereum.types import Eth2Deposit, ValidatorID, ValidatorPerformance
+from rotkehlchen.chain.ethereum.modules.eth2.structures import (
+    Eth2Deposit,
+    ValidatorID,
+    ValidatorPerformance,
+)
+from rotkehlchen.chain.ethereum.modules.eth2.utils import ValidatorBalance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT, QUERY_RETRY_TIMES

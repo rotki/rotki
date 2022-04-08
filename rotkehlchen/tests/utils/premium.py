@@ -196,7 +196,8 @@ def setup_starting_environment(
 
 
 def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
-    """For environment setup with setup_starting_environment make sure DB is replaced"""
+    """For environment setup with setup_starting_environment make sure DB is replaced
+    """
     msg = 'Test default main currency should be different from the restored currency'
     assert DEFAULT_TESTS_MAIN_CURRENCY != A_GBP, msg
     # At this point pulling data from rotkehlchen server should have worked
@@ -207,7 +208,7 @@ def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
     directory = os.path.join(rotkehlchen_instance.data.data_directory, username)
     files = [
         os.path.join(directory, f) for f in os.listdir(directory)
-        if not f.endswith('backup') or f.startswith('rotkehlchen_db')
+        if (not f.endswith('backup') or f.startswith('rotkehlchen_db')) and not f.startswith('rotkehlchen_transient')  # noqa: E501
     ]
     msg = f'Expected 2 or 3 files in the directory but got {files}'
     assert len(files) in (2, 3), msg  # 3rd file is the dbinfo.json

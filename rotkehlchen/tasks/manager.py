@@ -27,7 +27,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.types import ChecksumEthAddress, Location, Optional, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, EVMTxHash, Location, Optional, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
@@ -240,30 +240,27 @@ class TaskManager():
         )
         self.last_eth_tx_query_ts[address] = now
 
-    def _run_ethereum_txreceipts_query(self, hash_results: List[Tuple]) -> None:
+    def _run_ethereum_txreceipts_query(self, hash_results: List[EVMTxHash]) -> None:
         dbethtx = DBEthTx(self.database)
         for entry in hash_results:
-            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry[0])
+            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry)
             dbethtx.add_receipt_data(tx_receipt_data)
 
     def _maybe_schedule_ethereum_txreceipts(self) -> None:
         """Schedules the ethereum transaction receipts query task"""
-        cursor = self.database.conn.cursor()
-        result = cursor.execute(
-            'SELECT tx_hash from ethereum_transactions WHERE tx_hash NOT IN '
-            '(SELECT tx_hash from ethtx_receipts) LIMIT 500;',
-        ).fetchall()
-        if len(result) == 0:
+        dbethtx = DBEthTx(self.database)
+        hash_results = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=500)
+        if len(hash_results) == 0:
             return
 
-        task_name = f'Query {len(result)} ethereum transactions receipts'
+        task_name = f'Query {len(hash_results)} ethereum transactions receipts'
         log.debug(f'Scheduling task to {task_name}')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
             method=self._run_ethereum_txreceipts_query,
-            hash_results=result,
+            hash_results=hash_results,
         )
 
     def _maybe_schedule_exchange_history_query(self) -> None:
@@ -370,12 +367,8 @@ class TaskManager():
         self.database.update_last_write()
 
     def _maybe_decode_evm_transactions(self) -> None:
-        cursor = self.database.conn.cursor()
-        cursor.execute(
-            'SELECT A.tx_hash from ethtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B '
-            'ON A.tx_hash=B.tx_hash WHERE B.tx_hash is NULL LIMIT 200',
-        )
-        hashes = [x[0] for x in cursor]
+        dbethtx = DBEthTx(self.database)
+        hashes = dbethtx.get_transaction_hashes_not_decoded(limit=200)
         if len(hashes) > 0:
             task_name = 'Periodically decode evm trasactions'
             log.debug(f'Scheduling task to {task_name}')

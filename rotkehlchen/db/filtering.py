@@ -165,7 +165,11 @@ class DBFilterQuery():
     order_by: Optional[DBFilterOrder] = None
     pagination: Optional[DBFilterPagination] = None
 
-    def prepare(self, with_pagination: bool = True) -> Tuple[str, List[Any]]:
+    def prepare(
+            self,
+            with_pagination: bool = True,
+            with_order: bool = True,
+    ) -> Tuple[str, List[Any]]:
         query_parts = []
         bindings = []
         filterstrings = []
@@ -189,7 +193,7 @@ class DBFilterQuery():
             filter_query = f'{"WHERE " if self.join_clause is None else "AND ("}{operator.join(filterstrings)}{"" if self.join_clause is None else ")"}'  # noqa: E501
             query_parts.append(filter_query)
 
-        if self.order_by is not None:
+        if with_order and self.order_by is not None:
             orderby_query = self.order_by.prepare()
             query_parts.append(orderby_query)
 

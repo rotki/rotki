@@ -5,6 +5,7 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures import (
+    CPT_GAS,
     Balance,
     HistoryBaseEntry,
     HistoryEventSubType,
@@ -14,7 +15,7 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.decoding.pickle.decoder import maybe_enrich_pickle_transfers
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -64,6 +65,7 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -150,6 +152,39 @@ class EVMTransactionDecoder():
         for _, decoder in self.decoders.items():
             if isinstance(decoder, CustomizableDateMixin):
                 decoder.reload_settings()
+
+    def get_accounting_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:
+        """Iterate through loaded decoders and get the accounting settings for each event type"""
+        result = {}
+        for _, decoder in self.decoders.items():
+            result.update(decoder.event_settings(pot))
+
+        # Also add the default settings
+        gas_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS  # noqa: E501
+        result[gas_key] = TxEventSettings(
+            taxable=pot.settings.include_gas_costs,
+            count_entire_amount_spend=True,
+            count_cost_basis_pnl=True,
+            take=1,
+            method='spend',
+        )
+        spend_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.NONE)
+        result[spend_key] = TxEventSettings(
+            taxable=True,
+            count_entire_amount_spend=True,
+            count_cost_basis_pnl=True,
+            take=1,
+            method='spend',
+        )
+        receive_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.NONE)
+        result[receive_key] = TxEventSettings(
+            taxable=True,
+            count_entire_amount_spend=True,
+            count_cost_basis_pnl=True,
+            take=1,
+            method='acquisition',
+        )
+        return result
 
     def try_all_rules(
             self,

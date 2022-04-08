@@ -4,11 +4,17 @@ from rotkehlchen.accounting.structures import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
+    get_tx_event_type_identifier,
 )
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import symbol_to_ethereum_token
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
+from rotkehlchen.chain.ethereum.decoding.structures import (
+    ActionItem,
+    TxEventSettings,
+    TxMultitakeTreatment,
+)
+from rotkehlchen.chain.ethereum.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import A_COMP
@@ -17,6 +23,7 @@ from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
@@ -24,6 +31,8 @@ if TYPE_CHECKING:
 
 MINT_COMPOUND_TOKEN = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n\x1co\xef&9OL\x03\x82\x1cO'  # noqa: E501
 REDEEM_COMPOUND_TOKEN = b'\xe5\xb7T\xfb\x1a\xbb\x7f\x01\xb4\x99y\x1d\x0b\x82\n\xe3\xb6\xaf4$\xac\x1cYv\x8e\xdbS\xf4\xec1\xa9)'  # noqa: E501
+
+CPT_COMPOUND = 'compound'
 
 
 class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
@@ -34,16 +43,6 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
     ) -> None:
         self.base = base_tools
-
-    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
-        compound_tokens = GlobalDBHandler().get_ethereum_tokens(protocol='compound')
-        mapping: Dict[ChecksumEthAddress, Tuple[Any, ...]] = {}
-        for token in compound_tokens:
-            if token == A_COMP:
-                continue
-
-            mapping[token.ethereum_address] = (self.decode_compound_token_movement, token)
-        return mapping
 
     def _decode_mint(
             self,
@@ -65,7 +64,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             if event.event_type == HistoryEventType.SPEND and event.asset == underlying_token and event.balance.amount == mint_amount:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.counterparty = 'compound'
+                event.counterparty = CPT_COMPOUND
                 event.notes = f'Deposit {mint_amount} {underlying_token.symbol} to compound'
                 break
 
@@ -79,7 +78,7 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             amount=minted_amount,
             to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             to_notes=f'Receive {minted_amount} {compound_token.symbol} from compound',
-            to_counterparty='compound',
+            to_counterparty=CPT_COMPOUND,
         )
         return None, action_item
 
@@ -98,19 +97,23 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         underlying_token = symbol_to_ethereum_token(compound_token.symbol[1:])
         redeem_amount = token_normalized_value(redeem_amount_raw, underlying_token)
         redeem_tokens = token_normalized_value(redeem_tokens_raw, compound_token)
+        out_event = in_event = None
         for event in decoded_events:
             # Find the transfer event which should have come before the redeeming
             if event.event_type == HistoryEventType.RECEIVE and event.asset == underlying_token and event.balance.amount == redeem_amount:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                event.counterparty = 'compound'
+                event.counterparty = CPT_COMPOUND
                 event.notes = f'Withdraw {redeem_amount} {underlying_token.symbol} from compound'
+                in_event = event
             elif event.event_type == HistoryEventType.SPEND and event.asset == compound_token and event.balance.amount == redeem_tokens:  # noqa: E501
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.counterparty = 'compound'
+                event.counterparty = CPT_COMPOUND
                 event.notes = f'Return {redeem_tokens} {compound_token.symbol} to compound'
+                out_event = event
 
+        maybe_reshuffle_events(out_event=out_event, in_event=in_event)
         return None, None
 
     def decode_compound_token_movement(
@@ -129,3 +132,39 @@ class CompoundDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             return self._decode_redeem(tx_log=tx_log, decoded_events=decoded_events, compound_token=compound_token)  # noqa: E501
 
         return None, None
+
+    # -- DecoderInterface methods
+
+    def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
+        compound_tokens = GlobalDBHandler().get_ethereum_tokens(protocol='compound')
+        mapping: Dict[ChecksumEthAddress, Tuple[Any, ...]] = {}
+        for token in compound_tokens:
+            if token == A_COMP:
+                continue
+
+            mapping[token.ethereum_address] = (self.decode_compound_token_movement, token)
+        return mapping
+
+    def counterparties(self) -> List[str]:
+        return [CPT_COMPOUND]
+
+    def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
+        """Being defined at function call time is fine since this function is called only once"""
+        return {
+            get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, CPT_COMPOUND): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='spend',
+                take=2,
+                multitake_treatment=TxMultitakeTreatment.SWAP,
+            ),
+            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_COMPOUND): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='spend',
+                take=2,
+                multitake_treatment=TxMultitakeTreatment.SWAP,
+            ),
+        }

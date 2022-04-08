@@ -222,7 +222,6 @@ class EthereumTransaction(NamedTuple):
 
     def serialize(self) -> Dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
-        result['identifier'] = self.identifier
         result['tx_hash'] = result['tx_hash'].hex()
         result['input_data'] = '0x' + result['input_data'].hex()
 
@@ -244,7 +243,7 @@ class EthereumTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return self.tx_hash.hex() + self.from_address + str(self.nonce)
+        return self.tx_hash.hex()
 
 
 class EthereumInternalTransaction(NamedTuple):

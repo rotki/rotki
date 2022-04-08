@@ -14,7 +14,6 @@ from rotkehlchen.assets.asset import WORLD_TO_BINANCE, Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
 from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors import RemoteError, UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import (
     API_TIME_INTERVAL_CONSTRAINT_TS,
@@ -39,7 +38,6 @@ from rotkehlchen.tests.utils.exchanges import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms
 
 
@@ -861,15 +859,16 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
     assert binance_mock_get.call_args_list == expected_calls
 
 
-def test_binance_query_trade_history_custom_markets(function_scope_binance, user_data_dir):
+def test_binance_query_trade_history_custom_markets(function_scope_binance):
     """Test that custom pairs are queried correctly"""
-    msg_aggregator = MessagesAggregator()
-    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
-
     binance_api_key = ApiKey('binance_api_key')
     binance_api_secret = ApiSecret(b'binance_api_secret')
-    db.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
-
+    function_scope_binance.db.add_exchange(
+        name='binance',
+        location=Location.BINANCE,
+        api_key=binance_api_key,
+        api_secret=binance_api_secret,
+    )
     binance = function_scope_binance
 
     markets = ['ETHBTC', 'BNBBTC', 'BTCUSDC']

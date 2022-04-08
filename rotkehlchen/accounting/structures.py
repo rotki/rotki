@@ -2,8 +2,9 @@ import operator
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Dict, Iterator, List, Optional, Tuple
 
+from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import DeserializationError, InputError
@@ -12,6 +13,9 @@ from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import combine_dicts, timestamp_to_date, ts_ms_to_sec
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.pot import AccountingPot
 
 
 class BalanceType(DBEnumMixIn):
@@ -151,7 +155,7 @@ class DefiEventType(Enum):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DefiEvent:
+class DefiEvent(AccountingEventMixin):
     timestamp: Timestamp
     wrapped_event: Any
     event_type: DefiEventType
@@ -178,6 +182,43 @@ class DefiEvent:
         result = str(self)
         result += f' at {timestamp_converter(self.timestamp)}'
         return result
+
+    # -- Methods of AccountingEventMixin
+
+    def get_timestamp(self) -> Timestamp:
+        return self.timestamp
+
+    @staticmethod
+    def get_accounting_event_type() -> AccountingEventType:
+        """DefiEvent should be eventually deleted. Will not be called from accounting"""
+        raise AssertionError('Should never be called')
+
+    def get_identifier(self) -> str:
+        return self.__str__()
+
+    def get_assets(self) -> List[Asset]:
+        assets = set()
+        if self.got_asset is not None:
+            assets.add(self.got_asset)
+        if self.spent_asset is not None:
+            assets.add(self.spent_asset)
+        if self.pnl is not None:
+            for entry in self.pnl:
+                assets.add(entry.asset)
+
+        return list(assets)
+
+    def process(
+            self,
+            accounting: 'AccountingPot',
+            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+    ) -> int:
+        """DefiEvent should be eventually deleted. Will not be called from accounting"""
+        raise AssertionError('Should never be called')
+
+    def should_ignore(self, ignored_ids_mapping: Dict['ActionType', List[str]]) -> bool:
+        """DefiEvent should be eventually deleted. Will not be called from accounting"""
+        raise AssertionError('Should never be called')
 
 
 def _evaluate_balance_input(other: Any, operation: str) -> Balance:
@@ -360,8 +401,18 @@ HISTORY_EVENT_DB_TUPLE_WRITE = Tuple[
 ]
 
 
+def get_tx_event_type_identifier(event_type: HistoryEventType, event_subtype: HistoryEventSubType, counterparty: str) -> str:  # noqa: E501
+    return str(event_type) + '__' + str(event_subtype) + '__' + counterparty
+
+
+CPT_GAS = 'gas'
+TX_TYPE_IDENTIFIER_TO_PNL_NAME = {
+    str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS: 'ethereum_transaction_gas_costs',  # noqa: E501
+}
+
+
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class HistoryBaseEntry:
+class HistoryBaseEntry(AccountingEventMixin):
     """
     Intended to be the base unit of any type of accounting. All trades, deposits,
     swaps etc. are going to be made up of multiple HistoryBaseEntry
@@ -419,7 +470,9 @@ class HistoryBaseEntry:
                 timestamp=TimestampMS(entry[3]),
                 location=Location.deserialize_from_db(entry[4]),
                 location_label=entry[5],
-                asset=Asset(entry[6]),
+                # Setting incomplete data to true since we save all history events,
+                # regardless of the type of token that it may involve
+                asset=Asset(entry[6], form_with_incomplete_data=True),
                 balance=Balance(
                     amount=FVal(entry[7]),
                     usd_value=FVal(entry[8]),
@@ -459,6 +512,63 @@ class HistoryBaseEntry:
 
     def get_timestamp_in_sec(self) -> Timestamp:
         return ts_ms_to_sec(self.timestamp)
+
+    def get_type_identifier(self) -> str:
+        """A unique type identifier for known event types"""
+        identifier = str(self.event_type) + '__' + str(self.event_subtype)
+        if self.counterparty and not self.counterparty.startswith('0x'):
+            identifier += '__' + self.counterparty
+
+        return identifier
+
+    # -- Methods of AccountingEventMixin
+
+    def get_timestamp(self) -> Timestamp:
+        return self.get_timestamp_in_sec()
+
+    @staticmethod
+    def get_accounting_event_type() -> AccountingEventType:
+        return AccountingEventType.HISTORY_BASE_ENTRY
+
+    def should_ignore(self, ignored_ids_mapping: Dict[ActionType, List[str]]) -> bool:
+        if not self.event_identifier.startswith('0x'):
+            return False
+
+        ignored_ids = ignored_ids_mapping.get(ActionType.ETHEREUM_TRANSACTION, [])
+        return self.event_identifier in ignored_ids
+
+    def get_identifier(self) -> str:
+        assert self.identifier is not None, 'Should never be called without identifier'
+        return str(self.identifier)
+
+    def get_assets(self) -> List[Asset]:
+        return [self.asset]
+
+    def process(
+            self,
+            accounting: 'AccountingPot',
+            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+    ) -> int:
+        if self.location == Location.KRAKEN:
+            if (
+                self.event_type != HistoryEventType.STAKING or
+                self.event_subtype != HistoryEventSubType.REWARD
+            ):
+                return 1
+
+            # otherwise it's kraken staking
+            accounting.add_acquisition(
+                event_type=AccountingEventType.STAKING,
+                notes=f'Kraken {self.asset.symbol} staking',
+                location=self.location,
+                timestamp=self.get_timestamp_in_sec(),
+                asset=self.asset,
+                amount=self.balance.amount,
+                taxable=True,
+            )
+            return 1
+        # else it's a decoded transaction event and should be processed there
+        return accounting.transactions.process(self, events_iterator)
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

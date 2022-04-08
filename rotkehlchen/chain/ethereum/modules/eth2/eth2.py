@@ -5,17 +5,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 import gevent
 
 from rotkehlchen.accounting.structures import AssetBalance, Balance
-from rotkehlchen.chain.ethereum.eth2_utils import scrape_validator_daily_stats
-from rotkehlchen.chain.ethereum.structures import Eth2Validator
-from rotkehlchen.chain.ethereum.types import (
-    DEPOSITING_VALIDATOR_PERFORMANCE,
-    Eth2Deposit,
-    ValidatorDailyStats,
-    ValidatorDetails,
-    ValidatorID,
-)
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.ethereum import EthereumConstants
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
@@ -29,6 +19,23 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import from_gwei, ts_now
 
+from .constants import (
+    FREE_VALIDATORS_LIMIT,
+    REQUEST_DELTA_TS,
+    VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS,
+    VALIDATOR_STATS_QUERY_BACKOFF_TIME,
+    VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE,
+)
+from .structures import (
+    DEPOSITING_VALIDATOR_PERFORMANCE,
+    Eth2Deposit,
+    Eth2Validator,
+    ValidatorDailyStats,
+    ValidatorDetails,
+    ValidatorID,
+)
+from .utils import scrape_validator_daily_stats
+
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -36,16 +43,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-ETH2_DEPOSIT = EthereumConstants().contract('ETH2_DEPOSIT')
-
-REQUEST_DELTA_TS = 60 * 60  # 1
-
-VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS = 30
-VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE = 20
-VALIDATOR_STATS_QUERY_BACKOFF_TIME = 8
-
-FREE_VALIDATORS_LIMIT = 4
 
 
 class Eth2(EthereumModule):

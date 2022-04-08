@@ -187,10 +187,7 @@ class DBHistoryEvents():
             try:
                 output.append(HistoryBaseEntry.deserialize_from_db(entry))
             except (DeserializationError, UnknownAsset) as e:
-                log.debug(f'Failed to deserialize history event {entry}')
-                self.db.msg_aggregator.add_error(
-                    f'Failed to read history event from database. {str(e)}',
-                )
+                log.debug(f'Failed to deserialize history event {entry} due to {str(e)}')
 
         return output
 

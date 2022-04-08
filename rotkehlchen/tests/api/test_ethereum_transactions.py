@@ -93,8 +93,6 @@ EXPECTED_AFB7_TXS = [{
     'input_data': '0xf7654176',
     'nonce': 1,
 }]
-for x in EXPECTED_AFB7_TXS:
-    x['identifier'] = x['tx_hash'] + x['from_address'] + str(x['nonce'])  # type: ignore
 
 EXPECTED_4193_TXS = [{
     'tx_hash': '0x2964f3a91408337b05aeb8f8f670f4107999be05376e630742404664c96a5c31',
@@ -133,8 +131,6 @@ EXPECTED_4193_TXS = [{
     'input_data': '0x',
     'nonce': 1,
 }]
-for x in EXPECTED_4193_TXS:
-    x['identifier'] = x['tx_hash'] + x['from_address'] + str(x['nonce'])  # type: ignore
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[
@@ -185,8 +181,8 @@ def test_query_transactions(rotkehlchen_api_server):
 
     # now let's ignore two transactions
     ignored_ids = [
-        EXPECTED_AFB7_TXS[2]['tx_hash'] + EXPECTED_AFB7_TXS[2]['from_address'] + str(EXPECTED_AFB7_TXS[2]['nonce']),  # noqa: E501
-        EXPECTED_AFB7_TXS[3]['tx_hash'] + EXPECTED_AFB7_TXS[3]['from_address'] + str(EXPECTED_AFB7_TXS[3]['nonce']),  # noqa: E501
+        EXPECTED_AFB7_TXS[2]['tx_hash'],
+        EXPECTED_AFB7_TXS[3]['tx_hash'],
     ]
     response = requests.put(
         api_url_for(

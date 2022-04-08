@@ -16,6 +16,7 @@ from rotkehlchen.types import (
     EthereumInternalTransaction,
     EthereumTransaction,
     EVMTxHash,
+    deserialize_evm_tx_hash,
     make_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -214,6 +215,49 @@ class DBEthTx():
         cursor.execute('DELETE FROM ethereum_transactions;')
         self.db.conn.commit()
         self.db.update_last_write()
+
+    def get_transaction_hashes_no_receipt(
+            self,
+            tx_filter_query: Optional[ETHTransactionsFilterQuery],
+            limit: Optional[int],
+    ) -> List[EVMTxHash]:
+        cursor = self.db.conn.cursor()
+        querystr = 'SELECT DISTINCT tx_hash FROM ethereum_transactions '
+        bindings = ()
+        if tx_filter_query is not None:
+            filter_query, bindings = tx_filter_query.prepare(with_order=False, with_pagination=False)  # type: ignore  # noqa: E501
+            querystr += filter_query + ' AND '
+        else:
+            querystr += ' WHERE '
+
+        querystr += 'tx_hash NOT IN (SELECT tx_hash from ethtx_receipts)'
+        if limit is not None:
+            querystr += 'LIMIT ?'
+            bindings = (*bindings, limit)  # type: ignore
+
+        cursor_result = cursor.execute(querystr, bindings)
+        hashes = []
+        for entry in cursor_result:
+            try:
+                hashes.append(deserialize_evm_tx_hash(entry[0]))
+            except DeserializationError as e:
+                log.debug(f'Got error {str(e)} while deserializing tx_hash {entry[0]} from the DB')
+
+        return hashes
+
+    def get_transaction_hashes_not_decoded(self, limit: Optional[int]) -> List[EVMTxHash]:
+        cursor = self.db.conn.cursor()
+        querystr = (
+            'SELECT A.tx_hash from ethtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B '
+            'ON A.tx_hash=B.tx_hash WHERE B.tx_hash is NULL'
+        )
+        bindings = ()
+        if limit is not None:
+            bindings = (limit,)  # type: ignore
+            querystr += ' LIMIT ?'
+
+        cursor.execute(querystr, bindings)
+        return [make_evm_tx_hash(x[0]) for x in cursor]
 
     def add_receipt_data(self, data: Dict[str, Any]) -> None:
         """Add tx receipt data as they are returned by the chain to the DB

@@ -1,11 +1,14 @@
 import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.accounting.pnl import PNL, PnlTotals
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.db.filtering import LedgerActionsFilterQuery
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.accounting import accounting_history_process
+from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.types import AssetAmount, Location
@@ -137,23 +140,23 @@ def test_ledger_action_can_be_edited(database, function_scope_messages_aggregato
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('db_settings, expected_pnl', [
+@pytest.mark.parametrize('db_settings, expected', [
     ({'taxable_ledger_actions': [
         LedgerActionType.INCOME,
         LedgerActionType.AIRDROP,
-        LedgerActionType.LOSS]},
-     FVal('257.155')),  # 578.505 + 478.65 - 400 * 2
+        LedgerActionType.LOSS,
+    ]}, FVal('961.425')),  # 578.505 + 478.65 -2*400 + 2*400 - 2 * 47.865
     ({'taxable_ledger_actions': []}, 0),
 ])
-def test_taxable_ledger_action_setting(accountant, expected_pnl):
+def test_taxable_ledger_action_setting(accountant, expected):
     """Test that ledger actions respect the taxable setting"""
-    ledger_actions_list = [
+    history = [
         LedgerAction(
             identifier=1,
             timestamp=1476979735,
             action_type=LedgerActionType.INCOME,
             location=Location.EXTERNAL,
-            amount=FVal(1),  # 578.505 EUR total from mocked prices
+            amount=FVal(1),  # 578.505 EUR/BTC from mocked prices
             asset=A_BTC,
             rate=None,
             rate_asset=None,
@@ -164,7 +167,7 @@ def test_taxable_ledger_action_setting(accountant, expected_pnl):
             timestamp=1491062063,
             action_type=LedgerActionType.AIRDROP,
             location=Location.EXTERNAL,
-            amount=FVal(10),  # 478.65 EUR total from mocked prices
+            amount=FVal(10),  # 47.865 EUR/ETH from mocked prices
             asset=A_ETH,
             rate=None,
             rate_asset=None,
@@ -175,22 +178,35 @@ def test_taxable_ledger_action_setting(accountant, expected_pnl):
             timestamp=1501062063,
             action_type=LedgerActionType.LOSS,
             location=Location.BLOCKCHAIN,
-            amount=FVal(2),  # 350.88 EUR total from mocked prices
+            amount=FVal(2),  # 175.44 EUR/ETH  from mocked prices
             asset=A_ETH,
             rate=FVal(400),  # but should use the given rate of 400 EUR
             rate_asset=A_EUR,
             link='goo',
             notes='hoo',
+        ), LedgerAction(  # include a non taxed ledger action too
+            identifier=4,
+            timestamp=1501062064,
+            action_type=LedgerActionType.EXPENSE,
+            location=Location.BLOCKCHAIN,
+            amount=FVal(1),
+            asset=A_ETH,
+            rate=FVal(400),
+            rate_asset=A_EUR,
+            link='goo2',
+            notes='hoo2',
         ),
     ]
-    report, _ = accounting_history_process(
+    accounting_history_process(
         accountant=accountant,
         start_ts=1436979735,
         end_ts=1519693374,
-        history_list=[],
-        ledger_actions_list=ledger_actions_list,
+        history_list=history,
     )
-    assert FVal(report['total_taxable_profit_loss']).is_close(expected_pnl)
+    expected_pnls = PnlTotals()
+    if expected != 0:
+        expected_pnls[AccountingEventType.LEDGER_ACTION] = PNL(taxable=FVal(expected), free=ZERO)
+    check_pnls_and_csv(accountant, expected_pnls)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -201,7 +217,7 @@ def test_ledger_actions_accounting(accountant):
     and that they contribute to the "bought" amount per asset and that also if
     a rate is given then that is used instead of the queried price
     """
-    ledger_actions_history = [LedgerAction(  # before range - read only for amount not profit
+    history = [LedgerAction(  # before range - read only for amount not profit
         identifier=1,
         timestamp=1435979735,  # 0.1 EUR per ETH
         action_type=LedgerActionType.INCOME,
@@ -269,18 +285,17 @@ def test_ledger_actions_accounting(accountant):
         notes='we give a rate here too but doesnt matter',
     )]
 
-    report, _ = accounting_history_process(
+    accounting_history_process(
         accountant=accountant,
         start_ts=1436979735,
         end_ts=1519693374,
-        history_list=[],
-        ledger_actions_list=ledger_actions_history,
+        history_list=history,
     )
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_BTC).is_close('0.9')
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_ETH).is_close('0.9')
-    assert accountant.events.cost_basis.get_calculated_asset_amount(A_XMR).is_close('10')
-    # 400 * 1 + 0.4 * 10 - 1 * 0.1  - 500 * 0.9004 * 0.1 = 358.88
-    expected_pnl = '358.88'
-    assert FVal(report['ledger_actions_profit_loss']).is_close(expected_pnl)
-    assert FVal(report['total_profit_loss']).is_close(expected_pnl)
-    assert FVal(report['total_taxable_profit_loss']).is_close(expected_pnl)
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_BTC).is_close('0.9')
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_ETH).is_close('0.9')
+    assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_XMR).is_close('10')
+    expected_pnls = PnlTotals({
+        # 400 + 0.4*10 - 1*0.1 + 1*0.1 - 1*0.01 - 0.1*500*0.9004 + 0.1*500*0.9004 - 0.1* 400
+        AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('363.99'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls)

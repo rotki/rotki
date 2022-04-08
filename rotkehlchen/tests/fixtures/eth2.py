@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.chain.ethereum.modules.eth2 import Eth2
+from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
 from rotkehlchen.premium.premium import Premium
 
 

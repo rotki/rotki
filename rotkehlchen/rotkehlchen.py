@@ -239,14 +239,6 @@ class Rotkehlchen():
         )
         PriceHistorian().set_oracles_order(settings.historical_price_oracles)
 
-        self.accountant = Accountant(
-            db=self.data.db,
-            user_directory=self.user_directory,
-            msg_aggregator=self.msg_aggregator,
-            create_csv=True,
-            premium=self.premium,
-        )
-
         exchange_credentials = self.data.db.get_exchange_credentials()
         self.exchange_manager.initialize_exchanges(
             exchange_credentials=exchange_credentials,
@@ -311,12 +303,19 @@ class Rotkehlchen():
             ethereum_manager=ethereum_manager,
             msg_aggregator=self.msg_aggregator,
         )
+        self.accountant = Accountant(
+            db=self.data.db,
+            msg_aggregator=self.msg_aggregator,
+            evm_tx_decoder=self.evm_tx_decoder,
+            premium=self.premium,
+        )
         self.events_historian = EventsHistorian(
             user_directory=self.user_directory,
             db=self.data.db,
             msg_aggregator=self.msg_aggregator,
             exchange_manager=self.exchange_manager,
             chain_manager=self.chain_manager,
+            evm_tx_decoder=self.evm_tx_decoder,
         )
         self.task_manager = TaskManager(
             max_tasks_num=DEFAULT_MAX_TASKS_NUM,
@@ -568,10 +567,10 @@ class Rotkehlchen():
             # start_ts is min of the query start or the first action timestamp since action
             # processing can start well before query start to calculate cost basis
             start_ts = min(
-                self.accountant.events.query_start_ts,
+                self.accountant.query_start_ts,
                 self.accountant.first_processed_timestamp,
             )
-            diff = self.accountant.events.query_end_ts - start_ts
+            diff = self.accountant.query_end_ts - start_ts
             progress = 50 + 100 * (
                 FVal(self.accountant.currently_processing_timestamp - start_ts) /
                 FVal(diff) / 2)
@@ -583,16 +582,7 @@ class Rotkehlchen():
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> Tuple[int, str]:
-        (
-            error_or_empty,
-            history,
-            loan_history,
-            asset_movements,
-            eth_transactions,
-            defi_events,
-            ledger_actions,
-            history_base_entries,
-        ) = self.events_historian.get_history(
+        error_or_empty, events = self.events_historian.get_history(
             start_ts=start_ts,
             end_ts=end_ts,
             has_premium=self.premium is not None,
@@ -600,13 +590,7 @@ class Rotkehlchen():
         report_id = self.accountant.process_history(
             start_ts=start_ts,
             end_ts=end_ts,
-            trade_history=history,
-            loan_history=loan_history,
-            asset_movements=asset_movements,
-            eth_transactions=eth_transactions,
-            defi_events=defi_events,
-            ledger_actions=ledger_actions,
-            history_events=history_base_entries,
+            events=events,
         )
         return report_id, error_or_empty
 

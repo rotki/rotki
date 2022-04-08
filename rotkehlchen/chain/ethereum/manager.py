@@ -28,7 +28,7 @@ from web3.types import BlockIdentifier, FilterParams
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.ethereum.modules.eth2 import ETH2_DEPOSIT
+from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN, UNIV1_LP_ABI

@@ -228,6 +228,7 @@ def populate_db_and_check_for_asset_renaming(
         ),
     )
     db.conn.commit()
+    db.logout()
 
     # now relogin and check that all tables have appropriate data
     with mock_dbhandler_update_owned_assets(), creation_patch:
@@ -309,7 +310,7 @@ def populate_db_and_check_for_asset_renaming(
 
     assert new_db.get_version() == target_version
     with mock_dbhandler_update_owned_assets():
-        del new_db  # explicit delete the db so update_owned_assets still runs mocked
+        new_db.logout()  # logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_1_to_2(data_dir, username):
@@ -340,7 +341,7 @@ def test_upgrade_db_1_to_2(data_dir, username):
     # Also make sure that we have updated to the target_version
     assert version == 2
     with mock_dbhandler_update_owned_assets():
-        del data.db  # explicit delete the db so update_owned_assets still runs mocked
+        data.db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_2_to_3(user_data_dir):
@@ -362,7 +363,6 @@ def test_upgrade_db_2_to_3(user_data_dir):
             renamed_asset='BSV',
             target_version=3,
         )
-        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_3_to_4(data_dir, username):
@@ -401,7 +401,7 @@ def test_upgrade_db_3_to_4(data_dir, username):
     # Also make sure that we have updated to the target_version
     assert version == 4
     with mock_dbhandler_update_owned_assets():
-        del data.db  # explicit delete the db so update_owned_assets still runs mocked
+        data.db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_4_to_5(user_data_dir):
@@ -423,7 +423,6 @@ def test_upgrade_db_4_to_5(user_data_dir):
             renamed_asset='BCH',
             target_version=5,
         )
-        del db  # explicit delete the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_5_to_6(user_data_dir):
@@ -516,7 +515,7 @@ def test_upgrade_db_5_to_6(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 6
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_6_to_7(user_data_dir):
@@ -578,7 +577,7 @@ def test_upgrade_db_6_to_7(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 7
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_7_to_8(user_data_dir):
@@ -738,7 +737,7 @@ def test_upgrade_db_7_to_8(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 8
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_broken_db_7_to_8(user_data_dir):
@@ -784,7 +783,7 @@ def test_upgrade_db_8_to_9(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 9
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_9_to_10(user_data_dir):
@@ -807,7 +806,7 @@ def test_upgrade_db_9_to_10(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 10
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_10_to_11(user_data_dir):
@@ -838,7 +837,7 @@ def test_upgrade_db_10_to_11(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 11
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_11_to_12(user_data_dir):
@@ -864,7 +863,7 @@ def test_upgrade_db_11_to_12(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 12
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_12_to_13(user_data_dir):
@@ -918,7 +917,7 @@ def test_upgrade_db_12_to_13(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 13
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_13_to_14(user_data_dir):
@@ -968,7 +967,7 @@ def test_upgrade_db_13_to_14(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 14
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_15_to_16(user_data_dir):
@@ -996,7 +995,7 @@ def test_upgrade_db_15_to_16(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 16
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_16_to_17(user_data_dir):
@@ -1044,7 +1043,7 @@ def test_upgrade_db_16_to_17(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 17
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_18_to_19(user_data_dir):
@@ -1072,7 +1071,7 @@ def test_upgrade_db_18_to_19(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 19
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_19_to_20(user_data_dir):
@@ -1104,7 +1103,7 @@ def test_upgrade_db_19_to_20(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 20
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_20_to_21(user_data_dir):
@@ -1169,7 +1168,7 @@ def test_upgrade_db_20_to_21(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 21
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_21_to_22(user_data_dir):  # pylint: disable=unused-argument
@@ -1205,7 +1204,7 @@ def test_upgrade_db_21_to_22(user_data_dir):  # pylint: disable=unused-argument
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 22
     with mock_dbhandler_update_owned_assets():
-        del db  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()  # explicit logout the db so update_owned_assets still runs mocked
 
 
 def test_upgrade_db_22_to_23_with_frontend_settings(user_data_dir):
@@ -1245,6 +1244,7 @@ def test_upgrade_db_22_to_23_with_frontend_settings(user_data_dir):
     assert cursor.execute(
         'SELECT COUNT(*) from trades WHERE location = "T";',
     ).fetchone()[0] == 2
+    db_v22.logout()
 
     # Migrate to v23
     db = _init_db_with_target_version(
@@ -1287,7 +1287,7 @@ def test_upgrade_db_22_to_23_with_frontend_settings(user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 23
     with mock_dbhandler_update_owned_assets():
-        del db, db_v22  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1327,6 +1327,7 @@ def test_upgrade_db_22_to_23_without_frontend_settings(data_dir, user_data_dir):
         'SELECT COUNT(*) FROM settings WHERE name = "historical_data_start";',
     ).fetchone()[0] == 1
 
+    db_v22.logout()
     # Migrate to v23
     db = _init_db_with_target_version(
         target_version=23,
@@ -1369,7 +1370,7 @@ def test_upgrade_db_22_to_23_without_frontend_settings(data_dir, user_data_dir):
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 23
     with mock_dbhandler_update_owned_assets():
-        del db, db_v22  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()
 
 
 def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
@@ -1392,6 +1393,7 @@ def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
     ).fetchone()[0] == 1
     assert cursor.execute('SELECT COUNT(*) from adex_events;').fetchone()[0] == 1
 
+    db_v23.logout()
     # Migrate to v24
     db = _init_db_with_target_version(
         target_version=24,
@@ -1430,7 +1432,7 @@ def test_upgrade_db_23_to_24(user_data_dir):  # pylint: disable=unused-argument
     # Finally also make sure that we have updated to the target version
     assert db.get_version() == 24
     with mock_dbhandler_update_owned_assets():
-        del db, db_v23  # explicit delete the db so update_owned_assets still runs mocked
+        db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1571,7 +1573,8 @@ def test_upgrade_db_24_to_25(user_data_dir):  # pylint: disable=unused-argument
     ]
 
     with mock_dbhandler_update_owned_assets():
-        del db_v24  # explicit delete the db so update_owned_assets still runs mocked
+        db_v24.logout()
+
     # Migrate to v25
     db = _init_db_with_target_version(
         target_version=25,
@@ -2125,6 +2128,7 @@ def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) from balancer_pools;').fetchone()[0] == 1
     assert cursor.execute('SELECT COUNT(*) from balancer_events;').fetchone()[0] == 1
 
+    db_v26.logout()
     # Migrate to v27
     db = _init_db_with_target_version(
         target_version=27,
@@ -2159,6 +2163,8 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
     # Checks before migration
     assert cursor.execute('SELECT COUNT(*) FROM aave_events;').fetchone()[0] == 1
     assert cursor.execute('SELECT COUNT(*) from yearn_vaults_events;').fetchone()[0] == 1
+
+    db_v27.logout()
     # Migrate to v28
     db = _init_db_with_target_version(
         target_version=28,
@@ -2248,6 +2254,8 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
             entry[4],
         ))
     assert transactions_before == expected_transactions_before
+
+    db_v28.logout()
     # Migrate to v29
     db = _init_db_with_target_version(
         target_version=29,
@@ -2367,6 +2375,7 @@ def test_upgrade_db_30_to_31(user_data_dir, db_with_set_version):  # pylint: dis
         ('kraken_asset_movements_kraken1', 0, 1634850532),
     ]
 
+    db_v30.logout()
     if db_with_set_version:
         db_name = 'v30_rotkehlchen.db'
     else:
@@ -2410,12 +2419,12 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v31_rotkehlchen.db')
-    db = _init_db_with_target_version(
+    db_v31 = _init_db_with_target_version(
         target_version=31,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
-    cursor = db.conn.cursor()
+    cursor = db_v31.conn.cursor()
     result = cursor.execute('SELECT rowid from history_events')
     old_ids = {row[0] for row in result}
     assert len(old_ids) == 3
@@ -2446,6 +2455,8 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         assert cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
         ).fetchone()[0] == 1
+
+    db_v31.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
         target_version=32,
@@ -2486,14 +2497,16 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v31_rotkehlchen.db')
-    db = _init_db_with_target_version(
+    last_db = _init_db_with_target_version(
         target_version=31,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
     )
-    cursor = db.conn.cursor()
+    cursor = last_db.conn.cursor()
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
     tables_before = {x[0] for x in result}
+
+    last_db.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
         target_version=32,

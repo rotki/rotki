@@ -1,12 +1,15 @@
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, cast
 from unittest.mock import _patch, patch
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import DefiEvent, HistoryBaseEntry
+from rotkehlchen.accounting.mixins.event import AccountingEventMixin
+from rotkehlchen.accounting.structures import (
+    HistoryBaseEntry,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.chain.ethereum.trades import AMMTrade
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LTC, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -17,11 +20,9 @@ from rotkehlchen.serialization.serialize import process_result_list
 from rotkehlchen.tests.utils.constants import (
     A_EUR,
     A_RDN,
-    A_XMR,
     ETH_ADDRESS1,
     ETH_ADDRESS2,
     ETH_ADDRESS3,
-    MOCK_INPUT_DATA,
     MOCK_INPUT_DATA_HEX,
     TX_HASH_STR1,
     TX_HASH_STR2,
@@ -30,16 +31,7 @@ from rotkehlchen.tests.utils.constants import (
 from rotkehlchen.tests.utils.exchanges import POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import (
-    AssetAmount,
-    AssetMovementCategory,
-    EthereumTransaction,
-    Fee,
-    Location,
-    Timestamp,
-    TradeType,
-)
-from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -87,18 +79,30 @@ prices = {
             1484629704: FVal(810.49),
             1486299904: FVal(942.78),
             1487289600: FVal(979.39),
+            1488373504: FVal('1156.18'),
             1491177600: FVal(1039.935),
             1491231601: FVal(1062.67),
+            1491593374: FVal('1123.86'),
             1493650800: FVal(1259.295),
             1493737201: FVal(1310.735),
             1495551601: FVal(2030.01),
             1495969504: FVal(1964.685),
             1498694400: FVal(2244.465),
+            1500595200: FVal('2295.68'),
             1512561941: FVal(10929.925),
             1512693374: FVal(14415.365),
+            1514937600: FVal('12786.04'),
             1539713117: FVal(5626.17),
             1539713237: FVal(5626.17),
             1566572401: FVal(9367.55),
+        },
+    },
+    'BCH': {
+        'EUR': {
+            1512693374: FVal('1175.06'),
+            1524937600: FVal('1146.98'),
+            1525937600: FVal('1272.05'),
+            1552304352: FVal('114.27'),
         },
     },
     'ETH': {
@@ -112,6 +116,7 @@ prices = {
             1446979735: FVal(0.8583),
             1448994442: FVal(0.83195),
             1457279735: FVal(1),
+            1461021812: FVal('7.875'),
             1463184190: FVal(9.187),
             1463508234: FVal(10.785),
             1468994442: FVal(10.80),
@@ -119,19 +124,25 @@ prices = {
             1475042230: FVal(11.925),
             1476536704: FVal(10.775),
             1479510304: FVal(8.9145),
+            1482138141: FVal('7.345'),
             1483313925: FVal(7.764),
             1491062063: FVal(47.865),
             1493291104: FVal(53.175),
             1493737200: FVal(69.505),
             1496979735: FVal(251.36),
             1501062063: FVal(175.44),
+            1506979735: FVal('253.39'),
+            1508924574: FVal('252.74'),
             1511626623: FVal(396.56),
             1512561941: FVal(380.34),
             1512561942: FVal(380.34),
+            1539388574: FVal('168.7'),
             1539713117: FVal(178.615),
             1539713237: FVal(178.615),
             1539713238: FVal(178.615),
+            1569924574: FVal('161.59'),
             1609537953: FVal(598.26),
+            1609950165: FVal('978.54'),
             1624395186: FVal(1862.06),
             1624791600: FVal(1659.59),
             1625001464: FVal(1837.31),
@@ -153,6 +164,11 @@ prices = {
             1636740198: FVal(4042.84),
             1636638550: FVal(4641.49),
             1628994441: FVal(3258.55),
+        },
+    },
+    'ETC': {
+        'EUR': {
+            1481979135: FVal('0.9514'),
         },
     },
     A_USDC.identifier: {
@@ -181,6 +197,7 @@ prices = {
         'EUR': {
             1447279735: FVal('0.4'),
             1449809536: FVal(0.39665),
+            1458070370: FVal('1.0443027675'),
             1539713238: FVal(91.86),
         },
     },
@@ -217,21 +234,9 @@ prices = {
 def check_result_of_history_creation_for_remote_errors(  # pylint: disable=useless-return
         start_ts: Timestamp,  # pylint: disable=unused-argument
         end_ts: Timestamp,  # pylint: disable=unused-argument
-        trade_history: List[Union[Trade, MarginPosition, AMMTrade]],
-        loan_history: List[Loan],
-        asset_movements: List[AssetMovement],
-        eth_transactions: List[EthereumTransaction],
-        defi_events: List[DefiEvent],
-        ledger_actions: List[LedgerAction],
-        history_events: List[HistoryBaseEntry],
+        events: List[AccountingEventMixin],
 ) -> Optional[int]:
-    assert len(trade_history) == 0
-    assert len(loan_history) == 0
-    assert len(asset_movements) == 0
-    assert len(eth_transactions) == 0
-    assert len(defi_events) == 0
-    assert len(ledger_actions) == 0
-    assert len(history_events) == 0
+    assert len(events) == 0
     return None  # fake report id
 
 
@@ -760,13 +765,7 @@ def mock_history_processing(
     def check_result_of_history_creation(
             start_ts: Timestamp,
             end_ts: Timestamp,
-            trade_history: List[Union[Trade, MarginPosition, AMMTrade]],
-            loan_history: List[Loan],
-            asset_movements: List[AssetMovement],
-            eth_transactions: List[EthereumTransaction],
-            defi_events: List[DefiEvent],
-            ledger_actions: List[LedgerAction],
-            history_events: List[HistoryBaseEntry],
+            events: List[AccountingEventMixin],
     ) -> Optional[int]:
         """This function offers some simple assertions on the result of the
         created history. The entire processing part of the history is mocked
@@ -779,170 +778,128 @@ def mock_history_processing(
             assert end_ts == history_end_ts, 'should be same as given to process_history'
 
         # TODO: terrible way to check. Figure out something better
-        # This whole function needs better thinking also on the order it expects
-        # the events to be. It's super brittle right now
         limited_range_test = False
-        expected_trades_num = 11
+        expected_trades_num = 9
+        expected_margin_num = 1
         expected_asset_movements_num = 13
+        if not limited_range_test:
+            expected_margin_num = 2
+            expected_asset_movements_num = 13
         if end_ts == 1539713238:
             limited_range_test = True
-            expected_trades_num = 9
+            expected_trades_num = 8
+            expected_margin_num = 1
             expected_asset_movements_num = 12
         if end_ts == 1601040361:
-            expected_trades_num = 10
+            expected_trades_num = 8
 
-        # TODO: Add more assertions/check for each action
-        # OR instead do it in tests for conversion of actions(trades, loans, deposits e.t.c.)
-        # from exchange to our format for each exchange
-        assert len(trade_history) == expected_trades_num, f'Expected {len(trade_history)} during history creation check from {start_ts} to {end_ts}'  # noqa: E501
-        assert isinstance(trade_history[0], Trade)
-        assert trade_history[0].location == Location.KRAKEN
-        assert trade_history[0].base_asset == A_BTC
-        assert trade_history[0].quote_asset == A_EUR
-        assert trade_history[0].trade_type == TradeType.BUY
-        assert isinstance(trade_history[1], Trade)
-        assert trade_history[1].location == Location.BITTREX
-        assert trade_history[1].base_asset == A_LTC
-        assert trade_history[1].quote_asset == A_BTC
-        assert trade_history[1].trade_type == TradeType.BUY
-        assert isinstance(trade_history[2], Trade)
-        assert trade_history[2].location == Location.BITTREX
-        assert trade_history[2].base_asset == A_LTC
-        assert trade_history[2].quote_asset == A_ETH
-        assert trade_history[2].trade_type == TradeType.SELL
-        assert isinstance(trade_history[3], MarginPosition)
-        assert trade_history[3].profit_loss == FVal('0.05')
-        assert isinstance(trade_history[4], Trade)
-        assert trade_history[4].location == Location.BINANCE
-        assert trade_history[4].base_asset == A_ETH
-        assert trade_history[4].quote_asset == A_BTC
-        assert trade_history[4].trade_type == TradeType.BUY
-        assert isinstance(trade_history[5], Trade)
-        assert trade_history[5].location == Location.BINANCE
-        assert trade_history[5].base_asset == A_RDN
-        assert trade_history[5].quote_asset == A_ETH
-        assert trade_history[5].trade_type == TradeType.SELL
-        assert isinstance(trade_history[6], Trade)
-        assert trade_history[6].location == Location.POLONIEX
-        assert trade_history[6].base_asset == A_ETH
-        assert trade_history[6].quote_asset == A_BTC
-        assert trade_history[6].trade_type == TradeType.SELL
-        assert isinstance(trade_history[7], Trade)
-        assert trade_history[7].location == Location.POLONIEX
-        assert trade_history[7].base_asset == A_ETH
-        assert trade_history[7].quote_asset == A_BTC
-        assert trade_history[7].trade_type == TradeType.BUY
-        assert isinstance(trade_history[8], Trade)
-        assert trade_history[8].location == Location.POLONIEX
-        assert trade_history[8].base_asset == A_XMR
-        assert trade_history[8].quote_asset == A_ETH
-        assert trade_history[8].trade_type == TradeType.BUY
+        trades = [x for x in events if isinstance(x, Trade)]
+        assert len(trades) == expected_trades_num, f'Expected {len(trades)} during history creation check from {start_ts} to {end_ts}'  # noqa: E501
+
+        margin_positions = [x for x in events if isinstance(x, MarginPosition)]
+        assert len(margin_positions) == expected_margin_num
+
+        loans = [x for x in events if isinstance(x, Loan)]
+        assert len(loans) == 2
+        assert loans[0].currency == A_ETH
+        assert loans[0].earned == AssetAmount(FVal('0.00000001'))
+        assert loans[1].currency == A_BTC
+        assert loans[1].earned == AssetAmount(FVal('0.00000005'))
+
+        asset_movements = [x for x in events if isinstance(x, AssetMovement)]
+        assert len(asset_movements) == expected_asset_movements_num
         if not limited_range_test:
-            assert isinstance(trade_history[9], MarginPosition)
-            assert trade_history[9].profit_loss == FVal('5E-9')
-
-        assert len(loan_history) == 2
-        assert loan_history[0].currency == A_ETH
-        assert loan_history[0].earned == AssetAmount(FVal('0.00000001'))
-        assert loan_history[1].currency == A_BTC
-        assert loan_history[1].earned == AssetAmount(FVal('0.00000005'))
-
-        assert len(asset_movements) == expected_asset_movements_num, len(asset_movements)
-        if not limited_range_test:
-            assert asset_movements[0].location == Location.POLONIEX
+            assert asset_movements[0].location == Location.KRAKEN
             assert asset_movements[0].category == AssetMovementCategory.WITHDRAWAL
             assert asset_movements[0].asset == A_BTC
             assert asset_movements[1].location == Location.POLONIEX
-            assert asset_movements[1].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[1].category == AssetMovementCategory.DEPOSIT
             assert asset_movements[1].asset == A_ETH
-            assert asset_movements[2].location == Location.POLONIEX
-            assert asset_movements[2].category == AssetMovementCategory.DEPOSIT
-            assert asset_movements[2].asset == A_BTC
-            assert asset_movements[3].location == Location.POLONIEX
-            assert asset_movements[3].category == AssetMovementCategory.DEPOSIT
+            assert asset_movements[2].location == Location.KRAKEN
+            assert asset_movements[2].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[2].asset == A_ETH
+            assert asset_movements[3].location == Location.KRAKEN
+            assert asset_movements[3].category == AssetMovementCategory.WITHDRAWAL
             assert asset_movements[3].asset == A_ETH
-            assert asset_movements[4].location == Location.BITMEX
+            assert asset_movements[4].location == Location.POLONIEX
             assert asset_movements[4].category == AssetMovementCategory.DEPOSIT
             assert asset_movements[4].asset == A_BTC
-            assert asset_movements[5].location == Location.BITMEX
-            assert asset_movements[5].category == AssetMovementCategory.WITHDRAWAL
-            assert asset_movements[5].asset == A_BTC
-            assert asset_movements[6].location == Location.BITMEX
-            assert asset_movements[6].category == AssetMovementCategory.WITHDRAWAL
-            assert asset_movements[6].asset == A_BTC
-            assert asset_movements[7].location == Location.KRAKEN
-            assert asset_movements[7].category == AssetMovementCategory.DEPOSIT
-            assert asset_movements[7].asset == A_EUR
+            assert asset_movements[5].location == Location.KRAKEN
+            assert asset_movements[5].category == AssetMovementCategory.DEPOSIT
+            assert asset_movements[5].asset == A_ETH
+            assert asset_movements[6].location == Location.KRAKEN
+            assert asset_movements[6].category == AssetMovementCategory.DEPOSIT
+            assert asset_movements[6].asset == A_EUR
+            assert asset_movements[7].location == Location.POLONIEX
+            assert asset_movements[7].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[7].asset == A_BTC
             assert asset_movements[8].location == Location.KRAKEN
-            assert asset_movements[8].category == AssetMovementCategory.WITHDRAWAL
-            assert asset_movements[8].asset == A_ETH
-            assert asset_movements[9].location == Location.KRAKEN
-            assert asset_movements[9].category == AssetMovementCategory.DEPOSIT
-            assert asset_movements[9].asset == A_BTC
-            assert asset_movements[10].location == Location.KRAKEN
+            assert asset_movements[8].category == AssetMovementCategory.DEPOSIT
+            assert asset_movements[8].asset == A_BTC
+            assert asset_movements[9].location == Location.POLONIEX
+            assert asset_movements[9].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[9].asset == A_ETH
+            assert asset_movements[10].location == Location.BITMEX
             assert asset_movements[10].category == AssetMovementCategory.DEPOSIT
-            assert asset_movements[10].asset == A_ETH
+            assert asset_movements[10].asset == A_BTC
+            assert asset_movements[11].location == Location.BITMEX
+            assert asset_movements[11].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[11].asset == A_BTC
+            assert asset_movements[12].location == Location.BITMEX
+            assert asset_movements[12].category == AssetMovementCategory.WITHDRAWAL
+            assert asset_movements[12].asset == A_BTC
 
-        # The history creation for these is not yet tested
-        assert len(eth_transactions) == 3
-        assert eth_transactions[0].block_number == 54092
-        assert eth_transactions[0].tx_hash == hexstring_to_bytes(TX_HASH_STR1)
-        assert eth_transactions[0].from_address == ETH_ADDRESS1
-        assert eth_transactions[0].to_address is None
-        assert eth_transactions[0].value == FVal('11901464239480000000000000')
-        assert eth_transactions[0].input_data == MOCK_INPUT_DATA
-        assert eth_transactions[1].block_number == 54093
-        assert eth_transactions[1].tx_hash == hexstring_to_bytes(TX_HASH_STR2)
-        assert eth_transactions[1].from_address == ETH_ADDRESS2
-        assert eth_transactions[1].to_address == ETH_ADDRESS1
-        assert eth_transactions[1].value == FVal('40000300')
-        assert eth_transactions[1].input_data == MOCK_INPUT_DATA
-        assert eth_transactions[2].block_number == 54094
-        assert eth_transactions[2].tx_hash == hexstring_to_bytes(TX_HASH_STR3)
-        assert eth_transactions[2].from_address == ETH_ADDRESS3
-        assert eth_transactions[2].to_address == ETH_ADDRESS1
-        assert eth_transactions[2].value == FVal('500520300')
-        assert eth_transactions[2].input_data == MOCK_INPUT_DATA
+        tx_events = [x for x in events if isinstance(x, HistoryBaseEntry) and x.event_identifier.startswith('0x')]  # noqa: E501
+        gas_in_eth = FVal('14.36963')
+        assert len(tx_events) == 6
+        assert tx_events[0].location_label == ETH_ADDRESS1
+        assert tx_events[0].event_type == HistoryEventType.SPEND
+        assert tx_events[0].event_subtype == HistoryEventSubType.FEE
+        assert tx_events[0].counterparty == 'gas'
+        assert tx_events[0].balance.amount == gas_in_eth
+        assert tx_events[1].location_label == ETH_ADDRESS1
+        assert tx_events[1].event_type == HistoryEventType.INFORMATIONAL
+        assert tx_events[1].event_subtype == HistoryEventSubType.DEPLOY
 
-        assert len(defi_events) == 0
-        assert len(ledger_actions) == 0
-        assert len(history_events) == 0
+        assert tx_events[2].location_label == ETH_ADDRESS2
+        assert tx_events[2].event_type == HistoryEventType.SPEND
+        assert tx_events[2].event_subtype == HistoryEventSubType.FEE
+        assert tx_events[2].counterparty == 'gas'
+        assert tx_events[2].balance.amount == gas_in_eth
+        assert tx_events[3].location_label == ETH_ADDRESS2
+        assert tx_events[3].event_type == HistoryEventType.TRANSFER
+        assert tx_events[3].event_subtype == HistoryEventSubType.NONE
+        assert tx_events[3].counterparty == ETH_ADDRESS1
+        assert tx_events[3].balance.amount == FVal('4.00003E-11')
+
+        assert tx_events[4].location_label == ETH_ADDRESS3
+        assert tx_events[4].event_type == HistoryEventType.SPEND
+        assert tx_events[4].event_subtype == HistoryEventSubType.FEE
+        assert tx_events[4].counterparty == 'gas'
+        assert tx_events[4].balance.amount == gas_in_eth
+        assert tx_events[5].location_label == ETH_ADDRESS3
+        assert tx_events[5].event_type == HistoryEventType.TRANSFER
+        assert tx_events[5].event_subtype == HistoryEventSubType.NONE
+        assert tx_events[5].counterparty == ETH_ADDRESS1
+        assert tx_events[5].balance.amount == FVal('5.005203E-10')
 
         return 1  # need to return a report id
 
     def check_result_of_history_creation_and_process_it(
             start_ts: Timestamp,
             end_ts: Timestamp,
-            trade_history: List[Union[Trade, MarginPosition, AMMTrade]],
-            loan_history: List[Loan],
-            asset_movements: List[AssetMovement],
-            eth_transactions: List[EthereumTransaction],
-            defi_events: List[DefiEvent],
-            ledger_actions: List[LedgerAction],
-            history_events=List[HistoryBaseEntry],
+            events: List[AccountingEventMixin],
     ) -> Optional[int]:
         """Checks results of history creation but also proceeds to normal history processing"""
         check_result_of_history_creation(
             start_ts=start_ts,
             end_ts=end_ts,
-            trade_history=trade_history,
-            loan_history=loan_history,
-            asset_movements=asset_movements,
-            eth_transactions=eth_transactions,
-            defi_events=defi_events,
-            ledger_actions=ledger_actions,
-            history_events=history_events,
+            events=events,
         )
         return original_history_processing_function(
             start_ts=start_ts,
             end_ts=end_ts,
-            trade_history=trade_history,
-            loan_history=loan_history,
-            asset_movements=asset_movements,
-            eth_transactions=eth_transactions,
-            defi_events=defi_events,
-            ledger_actions=ledger_actions,
-            history_events=history_events,
+            events=events,
         )
 
     if should_mock_history_processing is True:
@@ -967,9 +924,15 @@ def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: boo
 
         addr1_tx = f"""{{"blockNumber":"54092","timeStamp":"1439048640","hash":"{TX_HASH_STR1}","nonce":"0","blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{ETH_ADDRESS1}","to":"","value":"11901464239480000000000000","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}
         """
+        addr1_receipt = f"""{{"blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","blockNumber":"0xdd1987","contractAddress":null,"cumulativeGasUsed":"0x1ba9a3f","effectiveGasPrice":"0xd4026e5de","from":"0x1627158aca8a8e2039f5ba3023c04a2129c634f1","gasUsed":"0x3251a","logs":[],"status":"0x1","to":"0xf8fdc3aa1f5a1ac20dd8596cd3d5b471ad305de1","transactionHash":"{TX_HASH_STR1}","transactionIndex":"0x12c","type":"0x2"}}
+        """
         addr2_tx = f"""{{"blockNumber":"54093","timeStamp":"1439048643","hash":"{TX_HASH_STR2}","nonce":"0","blockHash":"0xf3cabad6adab0b52eb632c386ea194036805713682c62cb589b5abcd76df2159","transactionIndex":"0","from":"{ETH_ADDRESS2}","to":"{ETH_ADDRESS1}","value":"40000300","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}
         """
+        addr2_receipt = f"""{{"blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","blockNumber":"0xdd1987","contractAddress":null,"cumulativeGasUsed":"0x1ba9a3f","effectiveGasPrice":"0xd4026e5de","from":"0x1627158aca8a8e2039f5ba3023c04a2129c634f1","gasUsed":"0x3251a","logs":[],"status":"0x1","to":"0xf8fdc3aa1f5a1ac20dd8596cd3d5b471ad305de1","transactionHash":"{TX_HASH_STR2}","transactionIndex":"0x12c","type":"0x2"}}
+        """
         addr3_tx = f"""{{"blockNumber":"54094","timeStamp":"1439048645","hash":"{TX_HASH_STR3}","nonce":"0","blockHash":"0xe3cabad6adab0b52eb632c3165a194036805713682c62cb589b5abcd76de2159","transactionIndex":"0","from":"{ETH_ADDRESS3}","to":"{ETH_ADDRESS1}","value":"500520300","gas":"2000000","gasPrice":"10000000000000","isError":"0","txreceipt_status":"","input":"{MOCK_INPUT_DATA_HEX}","contractAddress":"0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae","cumulativeGasUsed":"1436963","gasUsed":"1436963","confirmations":"8569454"}}
+        """
+        addr3_receipt = f"""{{"blockHash":"0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159","blockNumber":"0xdd1987","contractAddress":null,"cumulativeGasUsed":"0x1ba9a3f","effectiveGasPrice":"0xd4026e5de","from":"0x1627158aca8a8e2039f5ba3023c04a2129c634f1","gasUsed":"0x3251a","logs":[],"status":"0x1","to":"0xf8fdc3aa1f5a1ac20dd8596cd3d5b471ad305de1","transactionHash":"{TX_HASH_STR3}","transactionIndex":"0x12c","type":"0x2"}}
         """
         if '=txlistinternal&' in url:
             # don't return any internal transactions
@@ -994,6 +957,19 @@ def mock_etherscan_transaction_response(etherscan: Etherscan, remote_errors: boo
         elif '=getblocknobytime&' in url:
             # we don't really care about this in the history tests so just return whatever
             payload = '{"status":"1","message":"OK","result": "1"}'
+        elif 'eth_getTransactionReceipt&txhash=' in url:
+            if TX_HASH_STR1 in url:
+                receipt_str = addr1_receipt
+            elif TX_HASH_STR2 in url:
+                receipt_str = addr2_receipt
+            elif TX_HASH_STR3 in url:
+                receipt_str = addr3_receipt
+            else:
+                raise AssertionError(
+                    'Requested etherscan receipts for unknown hashes in tests',
+                )
+
+            payload = f'{{"jsonrpc":"2.0","id":1,"result":{receipt_str}}}'
         else:
             raise AssertionError(f'Unexpected etherscan query {url} at test mock')
 

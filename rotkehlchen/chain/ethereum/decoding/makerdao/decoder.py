@@ -5,11 +5,12 @@ from rotkehlchen.accounting.structures import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
+    get_tx_event_type_identifier,
 )
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.structures import ActionItem
+from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
@@ -84,6 +85,7 @@ from rotkehlchen.utils.misc import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.user_messages import MessagesAggregator
@@ -98,6 +100,10 @@ POT_EXIT = b'\x7f\x86a\xa1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x
 NEWCDP = b"\xd6\xbe\x0b\xc1xe\x8a8/\xf4\xf9\x1c\x8ch\xb5B\xaakqh[\x8f\xe4'\x96k\x87t\\>\xa7\xa2"
 CDPMANAGER_MOVE = b'\xf9\xf3\r\xb6\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
 CDPMANAGER_FROB = b'E\xe6\xbd\xcd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
+
+CPT_VAULT = 'makerdao vault'
+CPT_DSR = 'makerdao dsr'
+CPT_MIGRATION = 'makerdao migration'
 
 
 class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-init]
@@ -188,7 +194,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                     event.sequence_index = tx_log.log_index  # to better position it in the list
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                    event.counterparty = 'makerdao vault'
+                    event.counterparty = CPT_VAULT
                     event.notes = f'Deposit {amount} {vault_asset.symbol} to {vault_type} MakerDAO vault'  # noqa: E501
                     event.extras = {'vault_type': vault_type}
                     return None, None
@@ -205,7 +211,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 if event.event_type == HistoryEventType.RECEIVE and event.asset == vault_asset and event.balance.amount == amount:  # noqa: E501
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-                    event.counterparty = 'makerdao vault'
+                    event.counterparty = CPT_VAULT
                     event.notes = f'Withdraw {amount} {vault_asset.symbol} from {vault_type} MakerDAO vault'  # noqa: E501
                     event.extras = {'vault_type': vault_type}
                     return None, None
@@ -238,7 +244,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 asset=A_DAI,
                 amount=amount,
                 to_event_subtype=HistoryEventSubType.PAYBACK_DEBT,
-                to_counterparty='makerdao vault',
+                to_counterparty=CPT_VAULT,
                 extras={'vault_address': join_user_address},
             )
             return None, action_item
@@ -284,7 +290,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 if event.asset == A_DAI and event.event_type == HistoryEventType.SPEND and event.balance.amount == amount:  # noqa: E501
                     # found the event
                     event.location_label = user
-                    event.counterparty = 'makerdao dsr'
+                    event.counterparty = CPT_DSR
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.notes = f'Deposit {amount} DAI in the DSR'
@@ -326,7 +332,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
                 to_event_type=HistoryEventType.WITHDRAWAL,
                 to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
                 to_notes=f'Withdraw {amount} DAI from the DSR',
-                to_counterparty='makerdao dsr',
+                to_counterparty=CPT_DSR,
             )
             return None, action_item
 
@@ -431,7 +437,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             amount=amount,
             to_event_type=HistoryEventType.WITHDRAWAL,
             to_event_subtype=HistoryEventSubType.GENERATE_DEBT,
-            to_counterparty='makerdao vault',
+            to_counterparty=CPT_VAULT,
             to_notes=f'Generate {amount} DAI from MakerDAO vault {cdp_id}',
         )
         return None, action_item
@@ -481,7 +487,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             # dink is the raw collateral amount change. Let's use this event to see if
             # there was a deposit event beforehand to append the cdp id
             for event in decoded_events:
-                if event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.counterparty == 'makerdao vault':  # noqa: E501
+                if event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.counterparty == CPT_VAULT:  # noqa: E501
                     normalized_dink = asset_normalized_value(amount=dink, asset=event.asset)
                     if normalized_dink != event.balance.amount:
                         continue
@@ -530,7 +536,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             transfer.event_type = HistoryEventType.MIGRATE
             transfer.event_subtype = HistoryEventSubType.SPEND
             transfer.notes = f'Migrate {transfer.balance.amount} SAI to DAI'
-            transfer.counterparty = 'makerdao migration'
+            transfer.counterparty = CPT_MIGRATION
 
             # also create action item for the receive transfer
             action_item = ActionItem(
@@ -548,6 +554,8 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             return transfer, action_item
 
         return None, None
+
+    # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> Dict[ChecksumEthAddress, Tuple[Any, ...]]:
         return {
@@ -581,4 +589,61 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):  # lgtm[py/missing-call-to-
             string_to_ethereum_address('0xA26e15C895EFc0616177B7c1e7270A4C7D51C997'): (self.decode_proxy_creation,),  # noqa: E501
             string_to_ethereum_address('0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'): (self.decode_saidai_migration,),  # noqa: E501
             MAKERDAO_CDP_MANAGER.address: (self.decode_cdp_manager_events,),
+        }
+
+    def counterparties(self) -> List[str]:
+        return [CPT_VAULT, CPT_DSR, CPT_MIGRATION]
+
+    def event_settings(self, pot: 'AccountingPot') -> Dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
+        """Being defined at function call time is fine since this function is called only once"""
+        # TODO: How can we count here loss from debt and gain from DSR? We need to keep state
+        return {  # vault collateral deposit
+            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_VAULT): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='spend',
+                take=1,
+                multitake_treatment=None,
+            ),  # vault collateral withdraw
+            get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_VAULT): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='acquisition',
+                take=1,
+                multitake_treatment=None,
+            ),  # payback DAI to vault
+            get_tx_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='spend',
+                take=1,
+                multitake_treatment=None,
+            ),  # generate DAI from vault
+            get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='acquisition',
+                take=1,
+                multitake_treatment=None,
+            ),  # Deposit DAI in the DSR
+            get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='spend',
+                take=1,
+                multitake_treatment=None,
+            ),  # Withdraw DAI from the DSR
+            get_tx_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
+                taxable=False,
+                count_entire_amount_spend=False,
+                count_cost_basis_pnl=False,
+                method='acquisition',
+                take=1,
+                multitake_treatment=None,
+            ),
         }

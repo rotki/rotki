@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from rotkehlchen.accounting.structures import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.chain.ethereum.structures import AaveEvent
 from rotkehlchen.constants.assets import A_AETH_V1, A_AREP_V1, A_ETH, A_REP
 from rotkehlchen.constants.ethereum import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
@@ -14,6 +13,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import ChecksumEthAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+
+from .structures import AaveEvent
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager

@@ -25,6 +25,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap import (
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.aave.common import atoken_to_asset
+from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent, aave_event_from_db
 from rotkehlchen.chain.ethereum.modules.adex import (
     ADEX_EVENTS_PREFIX,
     AdexEventType,
@@ -41,12 +42,7 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
 )
 from rotkehlchen.chain.ethereum.modules.sushiswap import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap import UNISWAP_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.structures import (
-    AaveEvent,
-    YearnVault,
-    YearnVaultEvent,
-    aave_event_from_db,
-)
+from rotkehlchen.chain.ethereum.modules.yearn.structures import YearnVault, YearnVaultEvent
 from rotkehlchen.chain.ethereum.trades import AMMSwap
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.ethereum import YEARN_VAULTS_PREFIX, YEARN_VAULTS_V2_PREFIX
@@ -67,6 +63,7 @@ from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
     DEFAULT_PREMIUM_SHOULD_SYNC,
     ROTKEHLCHEN_DB_VERSION,
+    ROTKEHLCHEN_TRANSIENT_DB_VERSION,
     DBSettings,
     ModifiableDBSettings,
     db_settings_from_dict,
@@ -263,9 +260,12 @@ class DBHandler:
         self.add_globaldb_assetids()
 
     def __del__(self) -> None:
-        if hasattr(self, 'conn') and self.conn:
+        self.logout()
+
+    def logout(self) -> None:
+        if self.conn is not None:
             self.disconnect(conn_attribute='conn')
-        if hasattr(self, 'conn_transient') and self.conn_transient:
+        if self.conn_transient is not None:
             self.disconnect(conn_attribute='conn_transient')
         try:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
@@ -301,8 +301,26 @@ class DBHandler:
         # set up transient connection
         self._connect(password, conn_attribute='conn_transient')
         # creating tables if necessary
-        if hasattr(self, 'conn_transient') and self.conn_transient:
+        if self.conn_transient:
+            transient_version = 0
+            cursor = self.conn_transient.cursor()
+            try:
+                result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
+                if result is not None:
+                    transient_version = int(result[0])
+            except sqlcipher.DatabaseError:
+                pass   # not created yet
+
+            if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
+                # "upgrade" transient DB
+                tables = list(cursor.execute('select name from sqlite_master where type is "table"'))  # noqa: E501
+                cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))  # noqa: E501
             self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
+            cursor.execute(
+                'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
+                ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
+            )
+            self.conn_transient.commit()
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
@@ -310,8 +328,7 @@ class DBHandler:
         May raise:
         - SystemPermissionError if there are permission errors when accessing the DB
         """
-        no_active_connection = not hasattr(self, 'conn') or not self.conn
-        assert no_active_connection, 'md5hash should be taken only with a closed DB'
+        assert self.conn is None, 'md5hash should be taken only with a closed DB'
         if transient:
             return file_md5(self.user_data_dir / TRANSIENT_DB_NAME)
         return file_md5(self.user_data_dir / MAIN_DB_NAME)
@@ -373,7 +390,6 @@ class DBHandler:
             # that checks the password is correct at this same point in the code
             conn.execute('PRAGMA cache_size = -32768')
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            del self.conn
             raise AuthenticationError(
                 'Wrong password or invalid/corrupt database for user',
             ) from e

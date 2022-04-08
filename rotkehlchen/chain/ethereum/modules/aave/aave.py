@@ -8,13 +8,6 @@ from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
-from rotkehlchen.chain.ethereum.structures import (
-    AaveBorrowEvent,
-    AaveDepositWithdrawalEvent,
-    AaveInterestEvent,
-    AaveLiquidationEvent,
-    AaveRepayEvent,
-)
 from rotkehlchen.constants.ethereum import AAVE_V1_LENDING_POOL, AAVE_V2_LENDING_POOL
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import ModuleInitializationFailure, RemoteError, UnknownAsset
@@ -33,6 +26,13 @@ from .common import (
     _get_reserve_address_decimals,
 )
 from .graph import AaveGraphInquirer
+from .structures import (
+    AaveBorrowEvent,
+    AaveDepositWithdrawalEvent,
+    AaveInterestEvent,
+    AaveLiquidationEvent,
+    AaveRepayEvent,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager

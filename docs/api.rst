@@ -1920,7 +1920,6 @@ Querying ethereum transactions
         "result": {
           "entries": [{
             "entry": {
-              "identifier": "0xdasdsadsadadads",
               "tx_hash": "0x18807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280675eb8",
               "timestamp": 1598006527,
               "block_number": 10703085,
@@ -1969,7 +1968,6 @@ Querying ethereum transactions
             }]
           }, {
             "entry": {
-              "identifier": "0xdasdsadsadadads",
               "tx_hash": "0x19807cd818b2b50a2284bda2dfc39c9f60607ccfa25b1a01143e934280635eb7",
               "timestamp": 1588006528,
               "block_number": 10700085,
@@ -4445,88 +4443,71 @@ Query saved PnL Reports
         "result":{
           "entries":[
             {
-              "asset_movement_fees":null,
-              "defi_profit_loss":null,
-              "end_ts":1637928988,
-              "ethereum_transaction_gas_costs":null,
-              "first_processed_timestamp":null,
-              "general_trade_profit_loss":null,
               "identifier":2,
-              "ledger_actions_profit_loss":null,
-              "loan_profit":null,
-              "margin_positions_profit_loss":null,
-              "settlement_losses":null,
-              "size_on_disk":6793,
-              "start_ts":0,
-              "taxable_trade_profit_loss":null,
-              "timestamp":1637931185,
-              "total_profit_loss":null,
-              "total_taxable_profit_loss":null,
-              "last_processed_timestamp": 1612042717,
-              "processed_actions": 100,
-              "total_actions": 2585,
-              "profit_currency": "EUR",
-              "taxfree_after_period": null,
-              "include_crypto2crypto": false,
-              "calculate_past_cost_basis": true,
-              "include_gas_costs": false,
-              "account_for_assets_movements": true
-            },
-            {
-              "asset_movement_fees":"0",
-              "defi_profit_loss":"0",
-              "end_ts":1637928988,
-              "ethereum_transaction_gas_costs":"0",
-              "first_processed_timestamp":null,
-              "general_trade_profit_loss":"9.450326",
-              "identifier":3,
-              "ledger_actions_profit_loss":"15.85728944",
-              "loan_profit":"0",
-              "margin_positions_profit_loss":"0",
-              "settlement_losses":"0",
-              "size_on_disk":6793,
-              "start_ts":0,
-              "taxable_trade_profit_loss":"9.450326",
               "timestamp":1637931305,
-              "total_profit_loss":"25.30761544",
-              "total_taxable_profit_loss":"25.30761544",
+              "start_ts":15,
+              "end_ts":1637928988,
+              "first_processed_timestamp":null,
               "last_processed_timestamp": 1602042717,
-              "processed_actions": 1500,
-              "total_actions": 1500,
-              "profit_currency": "USD",
-              "taxfree_after_period": 365,
-              "include_crypto2crypto": true,
-              "calculate_past_cost_basis": true,
-              "include_gas_costs": true,
-              "account_for_assets_movements": true
+              "last_processed_timestamp": 1602042717,
+              "size_on_disk":14793,
+              "settings": {
+                  "profit_currency": "USD",
+                  "taxfree_after_period": 365,
+                  "include_crypto2crypto": true,
+                  "calculate_past_cost_basis": true,
+                  "include_gas_costs": true,
+                  "account_for_assets_movements": true
+              },
+              "overview": {
+                  "trade": {"free": "0", "taxable": "60.1"},
+		  "transaction event": {"free": "0", "taxable": "40.442"}.
+                  "fee": {"free": "10", "taxable": "55.5"}
+              }
             },
             {
-              "asset_movement_fees":"0",
-              "defi_profit_loss":"0",
+              "identifier":3,
+              "timestamp":1637931305,
+              "start_ts":0,
               "end_ts":1637928988,
-              "ethereum_transaction_gas_costs":"0",
-              "first_processed_timestamp":1598911200,
-              "general_trade_profit_loss":"0",
+              "first_processed_timestamp":null,
+              "last_processed_timestamp": 1602042717,
+              "last_processed_timestamp": 1602042717,
+              "size_on_disk":6793,
+              "settings": {
+                  "profit_currency": "USD",
+                  "taxfree_after_period": 365,
+                  "include_crypto2crypto": true,
+                  "calculate_past_cost_basis": true,
+                  "include_gas_costs": true,
+                  "account_for_assets_movements": true
+              },
+              "overview": {
+                  "trade": {"free": "0", "taxable": "60.1"},
+                  "fee": {"free": "10", "taxable": "55.5"}
+              }
+            },
+            {
               "identifier":4,
-              "ledger_actions_profit_loss":"3.80586544",
-              "loan_profit":"0",
-              "margin_positions_profit_loss":"0",
-              "settlement_losses":"0",
-              "size_on_disk":4498,
-              "start_ts":1630928988,
-              "taxable_trade_profit_loss":"0",
-              "timestamp":1637934538,
-              "total_profit_loss":"3.80586544",
-              "total_taxable_profit_loss":"3.80586544",
-              "last_processed_timestamp": 1592042717,
-              "processed_actions": 2505,
-              "total_actions": 2505,
-              "profit_currency": "EUR",
-              "taxfree_after_period": 1,
-              "include_crypto2crypto": true,
-              "calculate_past_cost_basis": true,
-              "include_gas_costs": false,
-              "account_for_assets_movements": true
+              "timestamp":1647931305,
+              "start_ts":0,
+              "end_ts":1637928988,
+              "first_processed_timestamp":null,
+              "last_processed_timestamp": 1602042717,
+              "last_processed_timestamp": 1602042717,
+              "size_on_disk":23493,
+              "settings": {
+                  "profit_currency": "USD",
+                  "taxfree_after_period": 365,
+                  "include_crypto2crypto": true,
+                  "calculate_past_cost_basis": true,
+                  "include_gas_costs": true,
+                  "account_for_assets_movements": true
+              },
+              "overview": {
+                  "asset movement": {"free": "0", "taxable": "5"},
+                  "fee": {"free": "10", "taxable": "55.5"}
+              }
             }
           ],
           "entries_found":3,
@@ -4540,28 +4521,22 @@ Query saved PnL Reports
    :resjson int end_ts: The end unix timestamp of the PnL report
    :resjson int first_processed_timestamp: The timestamp of the first even we processed in the PnL report or 0 for empty report.
    :resjson int size_on_disk: An approximation of the size of the PnL report on disk.
-   :resjson str asset_movement_fees: An optional stringified amount of the fees for asset movements generated by the PnL report. Can be missing if the report did not finish.
-   :resjson str defi_profit_loss: An optional stringified amount of the defi PnL generated by the PnL report. Can be missing if the report did not finish.
-   :resjson str ethereum_transaction_gas_costs: An optional stringified amount of the ethereum transaction gas costs generated by the PnL report. Can be missing if the report did not finish.
-   :resjson str general_trade_profit_loss: An optional stringified amount of the general trades PnL generated by the PnL report. Can be missing if the report did not finish.
-   :resjson str ledger_actions_profit_loss: An optional stringified amount of the ledger actions PnL generated by the PnL report. Can be missing if the report did not finish.
-   :resjson str loan_profit: An optional stringified amount of the loan profit generated by the PnL report. Can be missing if the report did not finish.
-   :resjson str margin_positions_profit_loss: An optional stringified amount of the margin positions PnL generated by the PnL report. Can be missing if the report did not finish.
-   :resjson str settlement_losses: An optional stringified amount of the settlement losses generated by the PnL report. Can be missing if the report did not finish.
-   :resjson str taxable_trade_profit_loss: An optional stringified amount of the taxable trade PnL generated by the PnL report. Can be missing if the report did not finish.
-   :resjson str total_profit_loss: An optional stringified amount of the total PnL generated by the PnL report. Can be missing if the report did not finish.
-   :resjson str total_taxable_profit_loss: An optional stringified amount of the total taxable PnL generated by the PnL report. Can be missing if the report did not finish.
+
+
+   :resjson object overview: The overview contains an entry for totals per event type. Each entry contains pnl breakdown (free/taxable for now).
    :resjson int last_processed_timestamp: The timestamp of the last processed action. This helps us figure out when was the last action the backend processed and if it was before the start of the PnL period to warn the user WHY the PnL is empty.
    :resjson int processed_actions: The number of actions processed by the PnL report. This is not the same as the events shown within the report as some of them may be before the time period of the report started. This may be smaller than "total_actions".
    :resjson int total_actions: The total number of actions to be processed  by the PnL report. This is not the same as the events shown within the report as some of them they may be before or after the time period of the report.
+   :resjson int entries_found: The number of reports found if called without a specific report id.
+   :resjson int entries_limit: -1 if there is no limit (premium). Otherwise the limit of saved reports to inspect is 20.
+   **Settings**
+   This object contains an entry per PnL report setting.
    :resjson str profit_currency: The identifier of the asset used as profit currency in the PnL report.
    :resjson integer taxfree_after_period: An optional integer for the value of taxfree_after_period setting. Can be either null or an integer.
    :resjson bool include_crypto2crypto: The value of the setting used in the PnL report.
    :resjson bool calculate_past_cost_basis: The value of the setting used in the PnL report.
    :resjson bool include_gas_costs: The value of the setting used in the PnL report.
    :resjson bool account_for_assets_movements: The value of the setting used in the PnL report.
-   :resjson int entries_found: The number of reports found if called without a specific report id.
-   :resjson int entries_limit: -1 if there is no limit (premium). Otherwise the limit of saved reports to inspect is 20.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.
@@ -4600,39 +4575,41 @@ Get saved events of a PnL Report
       {
         "result": {
             "entries": [{
-                    "cost_basis": null,
-                    "is_virtual": false,
-                    "link": null,
-                    "location": "blockchain",
-                    "net_profit_or_loss": "0.26083196",
-                    "notes": null,
-                    "paid_asset": "",
-                    "paid_in_asset": "0",
-                    "paid_in_profit_currency": "0",
-                    "received_asset": "BTC",
-                    "received_in_asset": "0.23",
-                    "taxable_amount": "0",
-                    "taxable_bought_cost_in_profit_currency": "0",
-                    "taxable_received_in_profit_currency": "0.26083196",
-                    "time": 1637276400,
-                    "type": "ledger_action"
-                }, {
-                    "cost_basis": null,
-                    "is_virtual": false,
-                    "link": null,
-                    "location": "blockchain",
-                    "net_profit_or_loss": "0.61830810",
-                    "notes": null,
-                    "paid_asset": "",
-                    "paid_in_asset": "0",
-                    "paid_in_profit_currency": "0",
-                    "received_asset": "BTC",
-                    "received_in_asset": "0.54",
-                    "taxable_amount": "0",
-                    "taxable_bought_cost_in_profit_currency": "0",
-                    "taxable_received_in_profit_currency": "0.61830810",
-                    "time": 1636921926,
-                    "type": "ledger_action"
+		"asset": "BTC",
+		"cost_basis": {
+		    "is_complete": true,
+		    "matched_acquisitions": [
+			{
+			    "amount": "0.001",
+			    "event": {
+				"full_amount": "1",
+				"index": 11,
+				"rate": "100.1",
+				"timestamp": 1458994442
+			    },
+			    "taxable": false}
+		     ]},
+		"free_amount": "1E-11",
+		"location": "bitmex",
+		"notes": "bitmex withdrawal",
+		"pnl_free": "-1.0010E-9",
+		"pnl_taxable": "0.00",
+		"price": "9367.55",
+		"taxable_amount": "0",
+		"timestamp": 1566572401,
+		"type": "asset movement"
+            }, {
+		"asset": "XMR",
+		"cost_basis": null,
+		"free_amount": "0",
+		"location": "poloniex",
+		"notes": "Buy XMR(Monero) with ETH(Ethereum).Amount in",
+		"pnl_free": "0",
+		"pnl_taxable": "0",
+		"price": "12.47924607060",
+		"taxable_amount": "1.40308443",
+		"timestamp": 1539713238,
+		"type": "trade"
         }],
         "entries_found": 2,
         "entries_limit": 1000
@@ -4640,19 +4617,18 @@ Get saved events of a PnL Report
        "message": ""
       }
 
-   :resjson str type: The type of event. Can be one of ``"buy"``, ``"sell"``, ``"tx_gas_cost"``, ``"asset_movement"``, ``"loan_settlement"``, ``"interest_rate_payment"``, ``"margin_position_close"``
-   :resjson str paid_in_profit_currency: The total amount paid for this action in the user's profit currency. This will always be zero for sells and other actions that only give profit.
-   :resjson str paid_asset: The asset that was paid for in this action.
-   :resjson str paid_in_asset: The amount of ``paid_asset`` that was used in this action.
-   :resjson str taxable_amount: For sells and other similar actions this is the part of the ``paid_in_asset`` that is considered taxable. Can differ for jurisdictions like Germany where after a year of holding trades are not taxable. For buys this will have the string ``"not applicable"``.
-   :resjson str taxable_bought_cost_in_profit_currency: For sells and other similar actions this is the part of the ``paid_in_asset`` that is considered taxable. Can differ for jurisdictions like Germany where after a year of holding trades are not taxable. For buys this will have the string ``"not applicable"``.
-   :resjson str received_asset: The asset that we received from this action. For buys this is the asset that we bought and for sells the asset that we got by selling.
-   :resjson str taxable_received_in_profit_currency: The taxable portion of the asset that we received from this action in profit currency. Can be different than the price of ``received_in_asset`` in profit currency if not the entire amount that was exchanged was taxable. For buys this would be 0.
-   :resjson str received_in_asset: The amount of ``received_asset`` that we received from this action.
-   :resjson str net_profit_or_loss: The net profit/loss from this action denoted in profit currency.
-   :resjson int time: The timestamp this action took place in.
-   :resjson bool is_virtual: A boolean denoting whether this is a virtual action. Virtual actions are special actions that are created to make accounting for crypto to crypto trades possible. For example, if you sell BTC for ETH a virtual trade to sell BTC for EUR and then a virtual buy to buy BTC with EUR will be created.
-   :resjson object cost_basis: An object describing the cost basis of the event if it's a spend event. Contains a boolean attribute ``"is_complete"`` to denoting if we have complete cost basis information for the spent asset or not. If not then this means that rotki does not know enough to properly calculate cost basis. The other attribute is ``"matched_acquisitions"`` a list of matched acquisition events from which the cost basis is calculated. Each event has ``"time"``, ``"description"``, ``"location"`` attributes which are self-explanatory. Then it also has the ``"amount"`` which is the amount that was acquired in that event and the ``"used_amount"`` which is how much of that is used in this spend action. Then there is the ``"rate"`` key which shows the rate in the profit currency with which 1 unit of the asset was acquired at the event. And finally the ``"fee_rate"`` denoting how much of the profit currency was paid for each unit of the asset bought.
+   :resjson str asset: The asset that is involved in the event.
+   :resjson object cost_basis: Can be null. An object describing the cost basis of the event if it's a spend event. Contains a boolean attribute ``"is_complete"`` to denoting if we have complete cost basis information for the spent asset or not. If not then this means that rotki does not know enough to properly calculate cost basis. The other attribute is ``"matched_acquisitions"`` a list of matched acquisition events from which the cost basis is calculated. Each event has an ``"amount"`` attribute denoting how much of the acquisition event this entry uses. A ``"taxable"`` attribute denoting if this acquisition concerns taxable or tax-free spend. Then there is also an event which shows the full event. It's attributes show the full amount bought, when, at what rate and the index of the event in the PnL report.
+   :resjson str free_amount: The amount of the event that counts as tax free.
+   :resjson str taxable_amount: The amount of the event that counts as taxable.
+   :resjson str location: The location this event took place in.
+   :resjson str notes: A description of the event.
+   :resjson str pnl_free: The non-taxable profit/loss caused by this event.
+   :resjson str pnl_taxable: The taxable profit/loss caused by this event.
+   :resjson str price: The price in profit_currency for asset used
+   :resjson str taxable_amount: The amount of the event that counts as taxable.
+   :resjson int timestamp: The timestamp this event took place in.
+   :resjson str type: The type of event. Can be any of the possible accounting event types.
 
    :statuscode 200: Report event data was successfully queried.
    :statuscode 400: Report id does not exist.
