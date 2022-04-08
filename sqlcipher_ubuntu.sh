@@ -48,10 +48,10 @@ git checkout v4.5.0
 CFLAGS="-DSQLITE_HAS_CODEC -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS" \
 LDFLAGS="-lcrypto" \
 prefix="$SQLCIPHER_DIR"
-  make
-  sudo make install
+make
+sudo make install
 
-  cd "$DIR" || exit 1
+cd "$DIR" || exit 1
 
 # We need to set LD_LIBRARY_PATH to use local version of sqlcipher
 echo "LD_LIBRARY_PATH=$SQLCIPHER_DIR/lib" > "$DIR/sqlcipher.env"
