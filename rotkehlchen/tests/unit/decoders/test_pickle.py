@@ -98,7 +98,7 @@ def test_pickle_deposit(database, ethereum_manager):
             sequence_index=260,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.STAKING,
+            event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=EthereumToken('0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
             balance=Balance(amount=FVal('907.258590539447889901'), usd_value=ZERO),
@@ -112,12 +112,12 @@ def test_pickle_deposit(database, ethereum_manager):
             sequence_index=262,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.STAKING,
+            event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=EthereumToken('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
             balance=Balance(amount=FVal('560.885632516582380401'), usd_value=ZERO),
             location_label='0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',
-            notes='Recive 560.885632516582380401 pLOOKS after depositing in pickle contract',
+            notes='Receive 560.885632516582380401 pLOOKS after depositing in pickle contract',
             counterparty='pickle finance',
             identifier=None,
             extras=None,
@@ -127,7 +127,7 @@ def test_pickle_deposit(database, ethereum_manager):
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xC7Dc4Cd171812a441A30472219d390f4F15f6070']])  # noqa: E501
 def test_pickle_withdraw(database, ethereum_manager):
-    """Data for deposit taken from
+    """Data for withdraw taken from
     https://etherscan.io/tx/0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab
     """
     msg_aggregator = MessagesAggregator()
@@ -204,7 +204,7 @@ def test_pickle_withdraw(database, ethereum_manager):
             sequence_index=106,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.STAKING,
+            event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=EthereumToken('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
             balance=Balance(amount=FVal('245.522202162316534411'), usd_value=ZERO),
@@ -218,7 +218,7 @@ def test_pickle_withdraw(database, ethereum_manager):
             sequence_index=107,
             timestamp=1646375440000,
             location=Location.BLOCKCHAIN,
-            event_type=HistoryEventType.STAKING,
+            event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=EthereumToken('0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
             balance=Balance(amount=FVal('403.097099656688209687'), usd_value=ZERO),
