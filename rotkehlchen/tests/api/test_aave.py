@@ -111,7 +111,6 @@ def test_query_aave_balances(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('mocked_price_queries', [aave_mocked_historical_prices])
 @pytest.mark.parametrize('mocked_current_prices', [aave_mocked_current_prices])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1)])
-@pytest.mark.skip('https://github.com/rotki/rotki/issues/4161')
 def test_query_aave_history_with_borrowing_v2(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
     """Check querying the aave histoy endpoint works. Uses real data."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

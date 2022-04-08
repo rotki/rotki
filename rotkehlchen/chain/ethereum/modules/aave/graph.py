@@ -269,16 +269,23 @@ def _parse_common_event_data(
         # Since for the user data we can't query per timestamp, filter timestamps here
         return None
 
-    pair = entry['id'].split(':')
-    if len(pair) != 2:
+    event_id_parts = entry['id'].split(':')
+    if len(event_id_parts) == 5:
+        # aave v2 has 5 elements in the ids as can be checked in their code
+        # https://github.com/aave/protocol-subgraphs/commit/40e09d0e0d3196e5624ca113fc346a1d65c4f4fb#diff-835762719eeb8a927a81e727fcd8ecdb8f5b2ea4d56f39478a17ade85588acf2R4-R14  # noqa: E501
+        tx_hash = event_id_parts[2]
+        index = int(event_id_parts[3])
+    elif len(event_id_parts) == 2:
+        # aave v1 uses only tx_hash and index in their ids
+        tx_hash = event_id_parts[0]
+        index = int(event_id_parts[1])
+    else:
         log.error(
             f'Could not parse the id entry for an aave liquidation as '
             f'returned by graph: {entry["id"]}.  Skipping entry ...',
         )
         return None
 
-    tx_hash = pair[0]
-    index = int(pair[1])  # not really log index
     return timestamp, tx_hash, index
 
 

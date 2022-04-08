@@ -470,7 +470,7 @@ expected_aave_v2_events = [
         block_number=0,
         timestamp=Timestamp(1615333105),
         tx_hash='0x75444c0ae48700f388d05ec8380b3922c4daf1e8eef2476001437b68d36f56a1',
-        log_index=1,
+        log_index=216,
     ), AaveBorrowEvent(
         event_type='borrow',
         asset=A_USDT,
@@ -481,7 +481,7 @@ expected_aave_v2_events = [
         block_number=0,
         timestamp=Timestamp(1615333284),
         tx_hash='0x74e8781fd86e81a87a4ba93bc7755d4a94901765cd72399f0372d36e7a26a03a',
-        log_index=2,
+        log_index=352,
         borrow_rate_mode='stable',
         borrow_rate=FVal('0.088712770921360153608109216'),
         accrued_borrow_interest=ZERO,
@@ -496,7 +496,7 @@ expected_aave_v2_events = [
         block_number=0,
         timestamp=Timestamp(1615587042),
         tx_hash='0x164e3eafef02ac1a956ba3c7d027506d47de36b34daee1e05ca0d178413911c1',
-        log_index=4,
+        log_index=29,
     ), AaveInterestEvent(
         event_type='interest',
         asset=A_ALINK_V2,
@@ -507,7 +507,7 @@ expected_aave_v2_events = [
         block_number=0,
         timestamp=Timestamp(1615669328),
         tx_hash='0xfeee61357d43e79a2beae9edab860c30db9765964be26eff82c6834d4e2c2db7',
-        log_index=4,
+        log_index=133,
     ), AaveDepositWithdrawalEvent(
         event_type='withdrawal',
         asset=A_LINK,
@@ -519,6 +519,6 @@ expected_aave_v2_events = [
         block_number=0,
         timestamp=Timestamp(1615669328),
         tx_hash='0xfeee61357d43e79a2beae9edab860c30db9765964be26eff82c6834d4e2c2db7',
-        log_index=3,
+        log_index=132,
     ),
 ]
