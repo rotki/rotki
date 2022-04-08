@@ -8,13 +8,64 @@ from rotkehlchen.accounting.mixins.event import AccountingEventMixin, Accounting
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.processed_event import ProcessedAccountingEvent
 from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.reports import DBAccountingReports, ReportDataFilterQuery
+from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
+
+
+history1 = [
+    Trade(
+        timestamp=Timestamp(1446979735),
+        location=Location.EXTERNAL,
+        base_asset=A_BTC,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal(82)),
+        rate=Price(FVal('268.678317859')),
+        fee=None,
+        fee_currency=None,
+        link=None,
+    ), Trade(
+        timestamp=Timestamp(1446979735),
+        location=Location.EXTERNAL,
+        base_asset=A_ETH,
+        quote_asset=A_EUR,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal(1450)),
+        rate=Price(FVal('0.2315893')),
+        fee=None,
+        fee_currency=None,
+        link=None,
+    ), Trade(
+        timestamp=Timestamp(1473505138),  # cryptocompare hourly BTC/EUR price: 556.435
+        location=Location.POLONIEX,
+        base_asset=A_ETH,  # cryptocompare hourly ETH/EUR price: 10.36
+        quote_asset=A_BTC,
+        trade_type=TradeType.BUY,
+        amount=AssetAmount(FVal(50)),
+        rate=Price(FVal('0.01858275')),
+        fee=Fee(FVal('0.06999999999999999')),
+        fee_currency=A_ETH,
+        link=None,
+    ), Trade(
+        timestamp=Timestamp(1475042230),  # cryptocompare hourly BTC/EUR price: 537.805
+        location=Location.POLONIEX,
+        base_asset=A_ETH,  # cryptocompare hourly ETH/EUR price: 11.925
+        quote_asset=A_BTC,
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal(25)),
+        rate=Price(FVal('0.02209898')),
+        fee=Fee(FVal('0.00082871175')),
+        fee_currency=A_BTC,
+        link=None,
+    ),
+]
 
 
 def accounting_history_process(
