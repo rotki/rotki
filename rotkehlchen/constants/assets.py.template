@@ -2,8 +2,8 @@ from typing import List
 
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.types import Timestamp
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
+from rotkehlchen.types import Timestamp
 
 CONSTANT_ASSETS: List[Asset] = []
 
@@ -148,6 +148,9 @@ A_KRW = Asset('KRW')
 
 # Needed by airdrops.py
 A_CVX = EthereumToken('0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B')
+
+# Needed by iconomi
+A_AUST = Asset('AUST')
 
 # Needed by loopring.py
 A_HT = EthereumToken('0x6f259637dcD74C767781E37Bc6133cd6A68aa161')

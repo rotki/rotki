@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 24/01/2022 21:42:06.
+# tools/scripts/generate_constant_assets.py at 01/04/2022 09:37:12.
 # Do not edit manually!
 
 from typing import List
@@ -1439,6 +1439,20 @@ A_CVX = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_CVX)
+
+# Needed by iconomi
+A_AUST = Asset.initialize(
+    identifier='AUST',
+    asset_type=AssetType.OTHER,
+    name="AnchorUST",
+    symbol='AUST',
+    started=Timestamp(1638331459),
+    forked=None,
+    swapped_for=None,
+    coingecko='anchorust',
+    cryptocompare=None,
+)
+CONSTANT_ASSETS.append(A_AUST)
 
 # Needed by loopring.py
 A_HT = EthereumToken.initialize(
