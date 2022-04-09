@@ -24,8 +24,8 @@ cryptography==36.0.1
 # For the rest api
 flask-cors==3.0.10
 flask-restful==0.3.9
-flask==2.0.3
-marshmallow==3.14.1
+flask==2.1.1
+marshmallow==3.15.0
 webargs==8.1.0
 
 #constraints
