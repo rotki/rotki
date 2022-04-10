@@ -5,8 +5,11 @@ from typing import Any, Dict, List, Tuple
 
 import gevent
 
-from rotkehlchen.chain.ethereum.manager import NodeName
+from rotkehlchen.accounting.structures import HistoryBaseEntry
+from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
+from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ethtx import DBEthTx
@@ -15,10 +18,12 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     BlockchainAccountData,
     EthereumTransaction,
+    EVMTxHash,
     SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 NODE_CONNECTION_TIMEOUT = 10
@@ -272,3 +277,16 @@ def setup_ethereum_transactions_test(
         dbethtx.add_receipt_data(txreceipt_to_data(expected_receipt1))
 
     return transactions, [expected_receipt1, expected_receipt2]
+
+
+def get_decoded_events_of_transaction(
+        ethereum_manager: EthereumManager,
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        tx_hash: EVMTxHash,
+) -> List[HistoryBaseEntry]:
+    """A convenience function to ask get transaction, receipt and decoded event for a tx_hash"""
+    transactions = EthTransactions(ethereum=ethereum_manager, database=database)
+    transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
+    decoder = EVMTransactionDecoder(database, ethereum_manager, msg_aggregator)
+    return decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])
