@@ -11,6 +11,7 @@ from ens.exceptions import InvalidName
 from ens.main import ENS_MAINNET_ADDR
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import BlockNumber, HexStr
+from gevent.lock import Semaphore
 from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
@@ -239,6 +240,8 @@ class EthereumManager():
         )
         # A cache for the erc20 contract info to not requery same one
         self.contract_info_cache: Dict[ChecksumEthAddress, Dict[str, Any]] = {}
+        # Locks to be used by this and other objects utilizing it such as EthTransactions
+        self.receipts_query_lock = Semaphore()
 
     def connected_to_any_web3(self) -> bool:
         return (

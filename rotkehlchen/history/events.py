@@ -368,16 +368,10 @@ class EventsHistorian():
         step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Querying ethereum transaction receipts'
-        dbethtx = DBEthTx(self.db)
-        hashes_result = dbethtx.get_transaction_hashes_no_receipt(
-            tx_filter_query=tx_filter_query,
-            limit=None,
-        )
-        for entry in hashes_result:
-            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry)
-            dbethtx.add_receipt_data(tx_receipt_data)
+        ethtx_module.get_receipts_for_transactions_missing_them()
         step = self._increase_progress(step, total_steps)
 
+        dbethtx = DBEthTx(self.db)
         self.processing_state_name = 'Decoding raw transactions'
         hashes = dbethtx.get_transaction_hashes_not_decoded(limit=None)
         self.evm_tx_decoder.decode_transaction_hashes(ignore_cache=False, tx_hashes=hashes)

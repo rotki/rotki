@@ -27,7 +27,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.types import ChecksumEthAddress, EVMTxHash, Location, Optional, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, Location, Optional, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
@@ -42,6 +42,7 @@ XPUB_DERIVATION_FREQUENCY = 3600  # every hour
 ETH_TX_QUERY_FREQUENCY = 3600  # every hour
 EXCHANGE_QUERY_FREQUENCY = 3600  # every hour
 PREMIUM_STATUS_CHECK = 3600  # every hour
+TX_RECEIPTS_QUERY_LIMIT = 500
 
 
 def noop_exchange_succes_cb(trades, margin, asset_movements, ledger_actions, exchange_specific_data) -> None:  # type: ignore # noqa: E501
@@ -240,27 +241,30 @@ class TaskManager():
         )
         self.last_eth_tx_query_ts[address] = now
 
-    def _run_ethereum_txreceipts_query(self, hash_results: List[EVMTxHash]) -> None:
-        dbethtx = DBEthTx(self.database)
-        for entry in hash_results:
-            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry)
-            dbethtx.add_receipt_data(tx_receipt_data)
-
     def _maybe_schedule_ethereum_txreceipts(self) -> None:
-        """Schedules the ethereum transaction receipts query task"""
+        """Schedules the ethereum transaction receipts query task
+
+        The DB check happens first here to see if scheduling would even be needed.
+        But the DB query will happen again inside the query task while having the
+        lock acquired.
+        """
         dbethtx = DBEthTx(self.database)
-        hash_results = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=500)
+        hash_results = dbethtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=TX_RECEIPTS_QUERY_LIMIT)  # noqa: E501
         if len(hash_results) == 0:
             return
 
+        tx_module = EthTransactions(
+            ethereum=self.chain_manager.ethereum,
+            database=self.database,
+        )
         task_name = f'Query {len(hash_results)} ethereum transactions receipts'
         log.debug(f'Scheduling task to {task_name}')
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=self._run_ethereum_txreceipts_query,
-            hash_results=hash_results,
+            method=tx_module.get_receipts_for_transactions_missing_them,
+            limit=TX_RECEIPTS_QUERY_LIMIT,
         )
 
     def _maybe_schedule_exchange_history_query(self) -> None:
