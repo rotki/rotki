@@ -423,5 +423,10 @@ class EventsHistorian():
         history.extend(base_entries)
         self._increase_progress(step, total_steps)
 
-        history.sort(key=lambda x: x.get_timestamp())
+        history.sort(  # sort events first by timestamp and if history base by sequence index
+            key=lambda x: (
+                x.get_timestamp(),
+                x.sequence_index if isinstance(x, HistoryBaseEntry) else 1,
+            ),
+        )
         return empty_or_error, history
