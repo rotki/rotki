@@ -140,7 +140,7 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
         # Insert requested events in DB
         all_events = []
-        for address in filter(lambda address: address in address_events, addresses):
+        for address in filter(lambda x: x in address_events, addresses):
             all_events.extend(address_events[address])
         self.database.add_amm_events(all_events)
 

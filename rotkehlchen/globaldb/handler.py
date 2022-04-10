@@ -1030,9 +1030,9 @@ class GlobalDBHandler():
                         ) VALUES (?, ?, ?, ?, ?)
                         """, entry.serialize_for_db(),
                     )
-                except sqlite3.IntegrityError as e:
+                except sqlite3.IntegrityError as entry_error:
                     log.error(
-                        f'Failed to add {str(entry)} due to {str(e)}. Skipping entry addition',
+                        f'Failed to add {str(entry)} due to {str(entry_error)}. Skipping entry addition',  # noqa: E501
                     )
 
         connection.commit()

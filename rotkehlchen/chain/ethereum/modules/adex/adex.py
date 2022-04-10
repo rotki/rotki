@@ -805,7 +805,7 @@ class Adex(EthereumModule):
 
         # Update usd_value for all events
         for event in staking_events.get_all():  # type: ignore # event can have all types
-            token = event.token if isinstance(event, ChannelWithdraw) else A_ADX  # type: ignore
+            token = event.token if isinstance(event, ChannelWithdraw) else A_ADX
             usd_price = PriceHistorian().query_historical_price(
                 from_asset=token,
                 to_asset=A_USD,
