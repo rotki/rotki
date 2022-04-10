@@ -638,7 +638,7 @@ The loopring account balances are also visible in the blockchain accounts view.
 Moving data to another system
 =====================================
 
-If you want to move your data to another system then you will need to do some manual steps. First identify the :ref:`rotki_data_directory` in both the source and the destination system. Then move the entire data directory from the source system to the destination system and make sure that the same rotki version is used in both syste
+If you want to move your data to another system then you will need to do some manual steps. First identify the :ref:`rotki_data_directory` in both the source and the destination system. Then move the entire data directory from the source system to the destination system and make sure that the same rotki version is used in both systems.
 
 .. _track_balances:
 
