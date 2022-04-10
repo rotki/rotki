@@ -43,6 +43,7 @@ ETH_TX_QUERY_FREQUENCY = 3600  # every hour
 EXCHANGE_QUERY_FREQUENCY = 3600  # every hour
 PREMIUM_STATUS_CHECK = 3600  # every hour
 TX_RECEIPTS_QUERY_LIMIT = 500
+TX_DECODING_LIMIT = 500
 
 
 def noop_exchange_succes_cb(trades, margin, asset_movements, ledger_actions, exchange_specific_data) -> None:  # type: ignore # noqa: E501
@@ -371,18 +372,24 @@ class TaskManager():
         self.database.update_last_write()
 
     def _maybe_decode_evm_transactions(self) -> None:
+        """Schedules the evm transaction decoding task
+
+        The DB check happens first here to see if scheduling would even be needed.
+        But the DB query will happen again inside the query task while having the
+        lock acquired.
+        """
         dbethtx = DBEthTx(self.database)
-        hashes = dbethtx.get_transaction_hashes_not_decoded(limit=200)
-        if len(hashes) > 0:
-            task_name = 'Periodically decode evm trasactions'
-            log.debug(f'Scheduling task to {task_name}')
+        hashes = dbethtx.get_transaction_hashes_not_decoded(limit=TX_DECODING_LIMIT)
+        hashes_length = len(hashes)
+        if hashes_length > 0:
+            task_name = f'decode {hashes_length} evm trasactions'
+            log.debug(f'Scheduling periodic task to {task_name}')
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
-                method=self.evm_tx_decoder.decode_transaction_hashes,
-                ignore_cache=False,
-                tx_hashes=hashes,
+                method=self.evm_tx_decoder.get_and_decode_undecoded_transactions,
+                limit=TX_DECODING_LIMIT,
             )
 
     def _maybe_check_premium_status(self) -> None:
