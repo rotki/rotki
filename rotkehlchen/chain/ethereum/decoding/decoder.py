@@ -285,7 +285,7 @@ class EVMTransactionDecoder():
             hashes = self.dbethtx.get_transaction_hashes_not_decoded(limit=limit)
             self.decode_transaction_hashes(ignore_cache=False, tx_hashes=hashes)
 
-    def decode_transaction_hashes(self, ignore_cache: bool, tx_hashes: List[EVMTxHash]) -> None:
+    def decode_transaction_hashes(self, ignore_cache: bool, tx_hashes: List[EVMTxHash]) -> List[HistoryBaseEntry]:  # noqa: E501
         """Make sure that receipts are pulled + events decoded for the given transaction hashes.
 
         The transaction hashes must exist in the DB at the time of the call
@@ -295,6 +295,7 @@ class EVMTransactionDecoder():
         - RemoteError if there is a problem with contacting a remote to get receipts
         - InputError if the transaction hash is not found in the DB
         """
+        events = []
         self.reload_from_db()
         tx_module = EthTransactions(ethereum=self.ethereum_manager, database=self.database)
 
@@ -309,11 +310,13 @@ class EVMTransactionDecoder():
                 filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
                 has_premium=True,  # ignore limiting here
             )
-            self.get_or_decode_transaction_events(
+            events.extend(self.get_or_decode_transaction_events(
                 transaction=txs[0],
                 tx_receipt=receipt,
                 ignore_cache=ignore_cache,
-            )
+            ))
+
+        return events
 
     def get_or_decode_transaction_events(
             self,
