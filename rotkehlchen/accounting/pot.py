@@ -310,6 +310,12 @@ class AccountingPot(CustomizableDateMixin):
 
         Returns (out_price, in_price) or None if it can't find proper prices
         """
+        if ZERO in (amount_in, amount_out):
+            log.error(
+                f'At get_prices_for_swap got a zero amount. {asset_in=} {amount_in=} '
+                f'{asset_out=} {amount_out=}. Skipping ...')
+            return None
+
         try:
             out_price = self.get_rate_in_profit_currency(
                 asset=asset_out,
