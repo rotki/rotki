@@ -325,10 +325,11 @@ class AccountingPot(CustomizableDateMixin):
             out_price = None
 
         fee_price = None
-        if fee is not None and fee != ZERO:
+        if fee is not None and fee_asset is not None and fee != ZERO:
+            # also checking fee_asset != None due to https://github.com/rotki/rotki/issues/4172
             try:
                 fee_price = self.get_rate_in_profit_currency(
-                    asset=fee_asset,  # type: ignore # fee_asset should exist here
+                    asset=fee_asset,
                     timestamp=timestamp,
                 )
             except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
