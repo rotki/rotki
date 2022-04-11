@@ -173,11 +173,11 @@ def test_maybe_schedule_ethereum_txreceipts(task_manager, ethereum_manager, data
     timeout = 10
     tx_hash_1 = hexstring_to_bytes('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
     tx_hash_2 = hexstring_to_bytes('0x6beab9409a8f3bd11f82081e99e856466a7daf5f04cca173192f79e78ed53a77')  # noqa: E501
-    receipt_task_patch = patch.object(task_manager, '_run_ethereum_txreceipts_query', wraps=task_manager._run_ethereum_txreceipts_query)  # pylint: disable=protected-member  # noqa: E501
+    receipt_get_patch = patch.object(ethereum_manager, 'get_transaction_receipt', wraps=ethereum_manager.get_transaction_receipt)  # pylint: disable=protected-member  # noqa: E501
     queried_receipts = set()
     try:
         with gevent.Timeout(timeout):
-            with receipt_task_patch as receipt_task_mock:
+            with receipt_get_patch as receipt_task_mock:
                 task_manager.schedule()
                 while True:
                     if len(queried_receipts) == 2:
@@ -191,7 +191,7 @@ def test_maybe_schedule_ethereum_txreceipts(task_manager, ethereum_manager, data
 
                 task_manager.schedule()
                 gevent.sleep(.5)
-                assert receipt_task_mock.call_count == 1, '2nd schedule should do nothing'
+                assert receipt_task_mock.call_count == 1 if one_receipt_in_db else 2, '2nd schedule should do nothing'  # noqa: E501
 
     except gevent.Timeout as e:
         raise AssertionError(f'receipts query was not completed within {timeout} seconds') from e  # noqa: E501
