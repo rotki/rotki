@@ -218,7 +218,7 @@ class ValidatorDailyStats(AccountingEventMixin):
             accounting: 'AccountingPot',
             events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
     ) -> int:
-        if self.pnl_balance == ZERO:
+        if self.pnl_balance.amount == ZERO:
             return 1
 
         amount = self.pnl_balance.amount
