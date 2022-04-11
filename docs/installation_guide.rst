@@ -224,7 +224,7 @@ To set the timezone in the docker environment you can use the option ``-e TZ=Tim
         -v $HOME/.rotki/logs:/logs \
         -e TZ=America/New_York \
         rotki/rotki:latest
-       
+
 You can find all TimeZone Databases on Wikipedia:
 https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 
@@ -277,7 +277,7 @@ Using Docker Defined Volume:
    version: '3.7'
    services:
      rotki:
-       environment: 
+       environment:
          - TZ=America/Chicago  # TimeZone Databases on Wikipedia: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
        image: rotki/rotki:latest
        ports:
@@ -285,12 +285,12 @@ Using Docker Defined Volume:
        networks:
          - rotki-net
        volumes:
-         - rotki-data:/data 
+         - rotki-data:/data
          - rotki-logs:/logs
    volumes:
      rotki-data:
      rotki-logs:
-   networks: 
+   networks:
      rotki-net:
 
 Using $home (or which ever path to your local data) Defined directed volume:
@@ -300,7 +300,7 @@ Using $home (or which ever path to your local data) Defined directed volume:
    version: '3.7'
    services:
      rotki:
-       environment: 
+       environment:
          - TZ=America/Chicago  # TimeZone Databases on Wikipedia: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
        image: rotki/rotki:latest
        ports:
@@ -308,9 +308,9 @@ Using $home (or which ever path to your local data) Defined directed volume:
        networks:
          - rotki-net
        volumes:
-         - $HOME/.rotki/data:/data 
+         - $HOME/.rotki/data:/data
          - $HOME/.rotki/logs:/logs
-   networks: 
+   networks:
      rotki-net:
 
 
@@ -446,7 +446,7 @@ And add the following to your shell startup file (e.g. .bashrc, .bash_profile, o
     export VIRTUALENVWRAPPER_PYTHON=/Library/Frameworks/Python.framework/Versions/3.9/bin/python3
     export VIRTUALENVWRAPPER_VIRTUALENV=/Library/Frameworks/Python.framework/Versions/3.9/bin/virtualenv
     source /Library/Frameworks/Python.framework/Versions/3.9/bin/virtualenvwrapper.sh
-    
+
 And reload shell startup file::
 
     $ source ~/.bash_profile
@@ -461,7 +461,7 @@ Before using `pip3`, let´s ensure we have the latest version::
 
 Install all the requirements::
 
-    $ sudo pip3 install -r requirements.txt
+    $ pip3 install -r requirements.txt
 
 If you want to also have the developer requirements in order to develop rotki
 then do::
@@ -469,8 +469,11 @@ then do::
     $ pip3 install -r requirements_dev.txt
 
 .. NOTE::
-   Make sure that pysqlcipher3 is properly installed. If ``$ pip3 freeze | grep pysqlcipher3`` returns nothing for you then it was not installed. Try to manually install only that dependency with the verbose option to see where it fails. ``$ pip3 install pysqlcipher3 -v``. If it fails at the stage of finding the library for ``-lsqlcipher`` then ``brew install sqlciper`` did not place the installed lib directory to the ``LIBRARY_PATH`` and you will have to do it manually. For example if ``sqlcipher`` was installed at ``/usr/local/Cellar/sqlcipher/4.4.0/`` then use pip3 install this way:
-     ``$ LIBRARY_PATH=/usr/local/Cellar/sqlcipher/4.4.0/lib pip3 install pysqlcipher3``.
+    Make sure that pysqlcipher3 is properly installed. If ``$ pip3 freeze | grep pysqlcipher3`` returns nothing for you then it was not installed. Try to manually install only that dependency with the verbose option to see where it fails. ``$ pip3 install pysqlcipher3 -v``. If it fails at the stage of finding the library for ``-lsqlcipher`` or ``sqlcipher/sqlite3.h file not found`` then ``brew install sqlciper`` did not place the installed lib directory to the ``LIBRARY_PATH`` and you will have to do it manually.
+    For example, if ``sqlcipher`` was installed using Homebrew, the library path resembles this ``/opt/homebrew/Cellar/sqlcipher/<version>/lib`` on Mac ARM based chips and ``/usr/local/Cellar/sqlcipher/<version>/lib`` on Mac Intel based chips by default.
+    Afterwards, install ``pysqlcipher3`` using the command below:
+        ``$ LIBRARY_PATH=/opt/homebrew/Cellar/sqlcipher/4.5.1/lib pip3 install pysqlcipher3``.
+    Assuming ``version``= 4.5.1.
 
 Since the electron application is located in a different directory you also need to do::
 
@@ -631,7 +634,7 @@ Installing Electron and Running rotki
 
     cd frontend
     npm ci
-    
+
 2. Next you should build the ``@rotki/common`` library::
 
     npm run build -w @rotki/common
