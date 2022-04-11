@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Dict, Literal, NamedTuple, Optional
 
-from rotkehlchen.accounting.structures import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.base import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.fval import FVal
 

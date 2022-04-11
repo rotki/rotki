@@ -3,7 +3,7 @@ from collections import defaultdict
 import pytest
 from web3 import Web3
 
-from rotkehlchen.accounting.structures import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
     COLLATERAL_TYPE_MAPPING,
     GEMJOIN_MAPPING,

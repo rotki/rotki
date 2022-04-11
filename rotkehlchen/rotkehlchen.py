@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, DefaultDict, Dict, List, Literal, Optiona
 import gevent
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.accounting.structures import Balance, BalanceType
+from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset

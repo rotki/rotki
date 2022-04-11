@@ -8,7 +8,7 @@ from rotkehlchen.accounting.cost_basis.prefork import (
 )
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.processed_event import ProcessedAccountingEvent
+from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.transactions import TransactionsAccountant
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ONE, ZERO

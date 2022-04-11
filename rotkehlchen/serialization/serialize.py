@@ -4,7 +4,8 @@ from hexbytes import HexBytes
 from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
-from rotkehlchen.accounting.structures import Balance, BalanceType, StakingEvent
+from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.accounting.structures.base import StakingEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.bitcoin.xpub import XpubData

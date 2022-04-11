@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, List
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
-from rotkehlchen.accounting.processed_event import ProcessedAccountingEvent
+from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import BCH_BSV_FORK_TS, BTC_BCH_FORK_TS, ETH_DAO_FORK_TS
 from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETC, A_ETH

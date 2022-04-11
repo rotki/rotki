@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import REQUEST_DELTA_TS
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     Eth2Deposit,

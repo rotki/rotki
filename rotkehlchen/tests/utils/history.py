@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Tuple, 
 from unittest.mock import _patch, patch
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin
-from rotkehlchen.accounting.structures import (
+from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,

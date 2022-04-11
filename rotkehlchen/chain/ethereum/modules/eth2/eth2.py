@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import gevent
 
-from rotkehlchen.accounting.structures import AssetBalance, Balance
+from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2

@@ -17,7 +17,7 @@ from rotkehlchen.utils.misc import timestamp_to_date
 from .types import HistoricalPriceOracle, HistoricalPriceOracleInstance
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures import Balance
+    from rotkehlchen.accounting.structures.balance import Balance
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 

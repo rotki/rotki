@@ -6,7 +6,8 @@ import requests
 from eth_typing import ChecksumAddress
 from web3 import Web3
 
-from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
+from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
+from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.chain.ethereum.graph import (
     GRAPH_QUERY_LIMIT,
     SUBGRAPH_REMOTE_ERROR_MSG,

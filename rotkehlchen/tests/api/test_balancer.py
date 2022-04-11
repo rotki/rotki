@@ -6,7 +6,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
 from rotkehlchen.chain.ethereum.modules.balancer.types import (
     BalancerBPTEventType,

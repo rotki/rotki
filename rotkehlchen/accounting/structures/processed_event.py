@@ -1,5 +1,3 @@
-"""TODO: Move under a structures directory???"""
-
 import json
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Optional, Type, TypeVar

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional
 
-from rotkehlchen.accounting.structures import (
+from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,

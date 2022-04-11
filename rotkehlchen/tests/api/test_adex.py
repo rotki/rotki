@@ -6,7 +6,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.adex.types import Bond, ChannelWithdraw, Unbond
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants.assets import A_ADX

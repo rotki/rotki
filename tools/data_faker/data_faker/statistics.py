@@ -4,7 +4,7 @@ import random
 import sys
 from typing import Tuple
 
-from rotkehlchen.accounting.structures import BalanceType
+from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.db.dbhandler import DBHandler

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional
 from eth_utils import to_checksum_address
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures import AssetBalance, Balance
+from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.graph import (

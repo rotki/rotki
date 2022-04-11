@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional
 
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures import AssetBalance, Balance, DefiEvent, DefiEventType
+from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
+from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI

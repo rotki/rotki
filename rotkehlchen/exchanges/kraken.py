@@ -17,8 +17,8 @@ import requests
 from requests import Response
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import (
-    Balance,
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,

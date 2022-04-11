@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.chain.ethereum.contracts import EthereumContract

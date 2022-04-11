@@ -4,7 +4,7 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures import BalanceType
+from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.fval import FVal

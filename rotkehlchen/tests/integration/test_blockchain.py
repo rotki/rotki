@@ -5,7 +5,7 @@ import gevent
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
     DefiProtocol,

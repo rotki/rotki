@@ -8,7 +8,7 @@ from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.accounting.export.csv import CSVExporter
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin
 from rotkehlchen.accounting.pot import AccountingPot
-from rotkehlchen.accounting.structures import ActionType
+from rotkehlchen.accounting.structures.base import ActionType
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import (

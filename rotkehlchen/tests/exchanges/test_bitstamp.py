@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD, A_USDC
 from rotkehlchen.errors import RemoteError, UnknownAsset

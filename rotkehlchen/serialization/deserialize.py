@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Tuple, TypeVar, 
 
 from eth_utils import to_checksum_address
 
-from rotkehlchen.accounting.structures import HistoryEventType
+from rotkehlchen.accounting.structures.base import HistoryEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.constants.misc import ZERO

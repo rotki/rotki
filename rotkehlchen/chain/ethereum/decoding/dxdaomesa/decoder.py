@@ -2,8 +2,8 @@ import json
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from rotkehlchen.accounting.structures import (
-    Balance,
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,

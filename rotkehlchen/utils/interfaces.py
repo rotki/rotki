@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, List, Optional
 from rotkehlchen.types import ChecksumEthAddress
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures import AssetBalance
+    from rotkehlchen.accounting.structures.balance import AssetBalance
 
 
 class EthereumModule(metaclass=ABCMeta):

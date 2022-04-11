@@ -6,9 +6,8 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Un
 
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures import (
-    CPT_GAS,
-    Balance,
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
@@ -16,6 +15,7 @@ from rotkehlchen.accounting.structures import (
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.assets.utils import get_or_create_ethereum_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
+from rotkehlchen.chain.ethereum.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.decoding.structures import ActionItem, TxEventSettings
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
