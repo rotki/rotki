@@ -9,7 +9,7 @@ from rotkehlchen.accounting.structures import (
     HistoryEventType,
 )
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
@@ -141,29 +141,26 @@ prices = {
             1539713237: FVal(178.615),
             1539713238: FVal(178.615),
             1569924574: FVal('161.59'),
+            1607727600: FVal('449.68'),
+            1607814000: FVal('469.82'),
+            1607900400: FVal('486.57'),
             1609537953: FVal(598.26),
             1609950165: FVal('978.54'),
             1624395186: FVal(1862.06),
             1624791600: FVal(1659.59),
+            1628994441: FVal(3258.55),
             1625001464: FVal(1837.31),
+            1636638550: FVal(4641.49),
+            1636740198: FVal(4042.84),
+            1640493374: FVal(4072.51),
         },
         'USD': {
             1624798800: FVal(1983.33),
+            1628994441: FVal(3258.55),
+            1636638550: FVal(4641.49),
             1636738550: FVal(4042.84),
-        },
-    },
-    'ETH2': {
-        'USD': {
-            1640493374: FVal(4072.51),
             1636740198: FVal(4042.84),
-            1636638550: FVal(4641.49),
-            1628994441: FVal(3258.55),
-        },
-        'EUR': {
             1640493374: FVal(4072.51),
-            1636740198: FVal(4042.84),
-            1636638550: FVal(4641.49),
-            1628994441: FVal(3258.55),
         },
     },
     'ETC': {
@@ -1189,6 +1186,9 @@ def maybe_mock_historical_price_queries(
     def mock_historical_price_query(from_asset, to_asset, timestamp):
         if from_asset == to_asset:
             return FVal(1)
+
+        if from_asset == A_ETH2:
+            from_asset = A_ETH
 
         if from_asset in dont_mock_price_for:
             return original_function(from_asset, to_asset, timestamp)

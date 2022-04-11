@@ -361,8 +361,8 @@ class Trade(AccountingEventMixin):
             given_price=prices[1],
         )
 
-        if self.fee is not None and self.fee != ZERO:
-            assert self.fee_currency, 'fee currency should exist here'
+        if self.fee is not None and self.fee_currency is not None and self.fee != ZERO:
+            # also checking fee_asset != None due to https://github.com/rotki/rotki/issues/4172
             accounting.add_spend(
                 event_type=AccountingEventType.FEE,
                 notes=notes + 'Fee',
