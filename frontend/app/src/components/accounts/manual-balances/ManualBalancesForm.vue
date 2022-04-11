@@ -73,6 +73,7 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { IVueI18n } from 'vue-i18n';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
@@ -133,9 +134,9 @@ const ManualBalancesForm = defineComponent({
     const form = ref<any>(null);
 
     const reset = () => {
-      form.value?.reset();
-      balanceType.value = context.value;
-      errors.value = {};
+      get(form)?.reset();
+      set(balanceType, get(context));
+      set(errors, {});
     };
 
     const clear = () => {
@@ -147,13 +148,13 @@ const ManualBalancesForm = defineComponent({
       emit('input', balance);
     };
 
-    const set = (balance: ManualBalance) => {
-      asset.value = balance.asset;
-      label.value = balance.label;
-      amount.value = balance.amount.toString();
-      tags.value = balance.tags ?? [];
-      location.value = balance.location;
-      balanceType.value = balance.balanceType;
+    const setBalance = (balance: ManualBalance) => {
+      set(asset, balance.asset);
+      set(label, balance.label);
+      set(amount, balance.amount.toString());
+      set(tags, balance.tags ?? []);
+      set(location, balance.location);
+      set(balanceType, balance.balanceType);
     };
 
     watch(
@@ -162,7 +163,7 @@ const ManualBalancesForm = defineComponent({
         if (!balance) {
           reset();
         } else {
-          set(balance);
+          setBalance(balance);
         }
       },
       { immediate: true }
@@ -171,20 +172,20 @@ const ManualBalancesForm = defineComponent({
     const { editBalance, addBalance, manualLabels } = setupManualBalances();
 
     const save = async () => {
-      pending.value = true;
+      set(pending, true);
       const balance: ManualBalance = {
-        asset: asset.value,
-        amount: bigNumberify(amount.value),
-        label: label.value,
-        tags: tags.value,
-        location: location.value,
-        balanceType: balanceType.value
+        asset: get(asset),
+        amount: bigNumberify(get(amount)),
+        label: get(label),
+        tags: get(tags),
+        location: get(location),
+        balanceType: get(balanceType)
       };
-      const status = await (edit.value
+      const status = await (get(edit)
         ? editBalance(balance)
         : addBalance(balance));
 
-      pending.value = false;
+      set(pending, false);
 
       if (status.success) {
         clear();
@@ -193,32 +194,32 @@ const ManualBalancesForm = defineComponent({
 
       if (status.message) {
         const errorMessages = deserializeApiErrorMessage(status.message);
-        errors.value = (errorMessages?.balances[0] as any) ?? {};
+        set(errors, (errorMessages?.balances[0] as any) ?? {});
       }
       return false;
     };
 
     watch(label, label => {
-      if (edit.value) {
+      if (get(edit)) {
         return;
       }
 
-      const validationErrors = errors.value['label'];
-      if (manualLabels.value.includes(label)) {
+      const validationErrors = get(errors)['label'];
+      if (get(manualLabels).includes(label)) {
         if (validationErrors && validationErrors.length > 0) {
           return;
         }
-        errors.value = {
-          ...errors.value,
+        set(errors, {
+          ...get(errors),
           label: [
             i18n
               .t('manual_balances_form.validation.label_exists', { label })
               .toString()
           ]
-        };
+        });
       } else {
-        const { label, ...data } = errors.value;
-        errors.value = data;
+        const { label, ...data } = get(errors);
+        set(errors, data);
       }
     });
 

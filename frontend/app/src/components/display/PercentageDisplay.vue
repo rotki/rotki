@@ -71,7 +71,7 @@ export default defineComponent({
         return (Math.random() * 100 + 1).toFixed(2);
       }
 
-      if (get(value)) {
+      if (!get(value)) {
         return '-';
       }
 

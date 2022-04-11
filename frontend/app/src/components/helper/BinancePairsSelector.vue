@@ -59,6 +59,7 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { setupThemeCheck } from '@/composables/common';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
@@ -87,16 +88,16 @@ export default defineComponent({
     const loading = ref<boolean>(false);
 
     const handleInput = (value: string[]) => {
-      selection.value = value;
+      set(selection, value);
       input(value);
     };
 
     onMounted(async () => {
-      loading.value = true;
+      set(loading, true);
       try {
-        queriedMarkets.value = await api.queryBinanceUserMarkets(
-          name.value,
-          location.value
+        set(
+          queriedMarkets,
+          await api.queryBinanceUserMarkets(get(name), get(location))
         );
       } catch (e: any) {
         const title = i18n
@@ -117,7 +118,7 @@ export default defineComponent({
       }
 
       try {
-        allMarkets.value = await api.queryBinanceMarkets(location.value);
+        set(allMarkets, await api.queryBinanceMarkets(get(location)));
       } catch (e: any) {
         const title = i18n
           .t('binance_market_selector.query_all.title')
@@ -136,8 +137,8 @@ export default defineComponent({
         });
       }
 
-      loading.value = false;
-      selection.value = queriedMarkets.value;
+      set(loading, false);
+      set(selection, get(queriedMarkets));
     });
 
     const filter = (item: string, queryText: string) => {
@@ -158,10 +159,10 @@ export default defineComponent({
             search = pairs.pop()!;
           }
           const matchedPairs = pairs.filter(pair =>
-            allMarkets.value.includes(pair)
+            get(allMarkets).includes(pair)
           );
           handleInput(
-            [...selection.value, ...matchedPairs].filter(uniqueStrings)
+            [...get(selection), ...matchedPairs].filter(uniqueStrings)
           );
         }
       }

@@ -6,6 +6,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { setupDisplayData, setupGeneralSettings } from '@/composables/session';
 import { displayDateFormatter } from '@/data/date_formatter';
 
@@ -22,19 +23,19 @@ export default defineComponent({
     const { scrambleData, shouldShowAmount } = setupDisplayData();
 
     const dateFormat = computed<string>(() => {
-      const display = noTimezone.value
-        ? dateDisplayFormat.value.replace('%z', '').replace('%Z', '')
-        : dateDisplayFormat.value;
+      const display = get(noTimezone)
+        ? get(dateDisplayFormat).replace('%z', '').replace('%Z', '')
+        : get(dateDisplayFormat);
 
-      if (noTime.value) {
+      if (get(noTime)) {
         return display.split(' ')[0];
       }
       return display;
     });
 
     const displayTimestamp = computed<number>(() => {
-      if (!scrambleData.value) {
-        return timestamp.value;
+      if (!get(scrambleData)) {
+        return get(timestamp);
       }
       const start = new Date(2016, 0, 1).getTime();
       const now = Date.now();
@@ -43,8 +44,8 @@ export default defineComponent({
 
     const formattedDate = computed<string>(() => {
       return displayDateFormatter.format(
-        new Date(displayTimestamp.value * 1000),
-        dateFormat.value
+        new Date(get(displayTimestamp) * 1000),
+        get(dateFormat)
       );
     });
 

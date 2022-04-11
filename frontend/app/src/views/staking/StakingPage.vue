@@ -129,7 +129,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
-import { useLocalStorage } from '@vueuse/core';
+import { get, set, useLocalStorage } from '@vueuse/core';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { setupThemeCheck, useRouter } from '@/composables/common';
@@ -197,7 +197,7 @@ export default defineComponent({
     const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 
     const page = computed(() => {
-      const selectedLocation = location.value;
+      const selectedLocation = get(location);
       return selectedLocation ? pages[selectedLocation] : null;
     });
 
@@ -205,14 +205,14 @@ export default defineComponent({
 
     const updateLocation = (location: string) => {
       if (location) {
-        lastLocation.value = location;
+        set(lastLocation, location);
       }
       router.push(Routes.STAKING.replace(':location*', location));
     };
 
     onBeforeMount(() => {
-      if (lastLocation.value) {
-        updateLocation(lastLocation.value);
+      if (get(lastLocation)) {
+        updateLocation(get(lastLocation));
       }
     });
 

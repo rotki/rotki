@@ -43,6 +43,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import WatcherDialog from '@/components/dialogs/WatcherDialog.vue';
 import Fragment from '@/components/helper/Fragment';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
@@ -69,8 +70,8 @@ export default defineComponent({
     const loanWatchers = computed(() => store.state.session!!.watchers);
     const premium = getPremium();
     const watchers = computed(() => {
-      const { identifier } = vault.value;
-      return loanWatchers.value.filter(watcher => {
+      const { identifier } = get(vault);
+      return get(loanWatchers).filter(watcher => {
         const watcherArgs = watcher.args;
 
         if (watcherArgs.vault_id.indexOf(identifier) > -1) return watcher;
@@ -78,21 +79,22 @@ export default defineComponent({
     });
 
     const openWatcherDialog = () => {
-      if (!premium.value) {
+      if (!get(premium)) {
         return;
       }
 
       const { collateralizationRatio, identifier, liquidationRatio } =
-        vault.value;
+        get(vault);
       const params = {
         collateralizationRatio,
         identifier,
         liquidationRatio
       };
-      showWatcherDialog.value = true;
-      watcherMessage.value = i18n
-        .t('loan_collateral.watchers.dialog.message', params)
-        .toString();
+      set(showWatcherDialog, true);
+      set(
+        watcherMessage,
+        i18n.t('loan_collateral.watchers.dialog.message', params).toString()
+      );
     };
 
     const { dark } = setupThemeCheck();

@@ -270,9 +270,9 @@ import {
   PropType,
   ref,
   toRefs,
-  unref,
   watch
 } from '@vue/composition-api';
+import { get, set, useTimeoutFn } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { setupGeneralBalances } from '@/composables/balances';
 import i18n from '@/i18n';
@@ -352,29 +352,29 @@ const ExternalTradeForm = defineComponent({
     ];
 
     const baseHint = computed<string>(() => {
-      return unref(type) === 'buy'
+      return get(type) === 'buy'
         ? i18n.t('external_trade_form.buy_base').toString()
         : i18n.t('external_trade_form.sell_base').toString();
     });
 
     const quoteHint = computed<string>(() => {
-      return unref(type) === 'buy'
+      return get(type) === 'buy'
         ? i18n.t('external_trade_form.buy_quote').toString()
         : i18n.t('external_trade_form.sell_quote').toString();
     });
 
     const shouldRenderSummary = computed<boolean>(() => {
       return !!(
-        unref(type) &&
-        unref(base) &&
-        unref(quote) &&
-        unref(amount) &&
-        unref(rate)
+        get(type) &&
+        get(base) &&
+        get(quote) &&
+        get(amount) &&
+        get(rate)
       );
     });
 
     const fetching = computed<boolean>(() => {
-      return isTaskRunning(TaskType.FETCH_HISTORIC_PRICE).value;
+      return get(isTaskRunning(TaskType.FETCH_HISTORIC_PRICE));
     });
 
     const numericAmount = bigNumberifyFromRef(amount);
@@ -382,61 +382,61 @@ const ExternalTradeForm = defineComponent({
     const numericRate = bigNumberifyFromRef(rate);
 
     const reset = () => {
-      id.value = '';
-      datetime.value = convertFromTimestamp(dayjs().unix(), true);
-      amount.value = '';
-      rate.value = '';
-      fee.value = '';
-      feeCurrency.value = '';
-      link.value = '';
-      notes.value = '';
-      type.value = 'buy';
-      errorMessages.value = {};
+      set(id, '');
+      set(datetime, convertFromTimestamp(dayjs().unix(), true));
+      set(amount, '');
+      set(rate, '');
+      set(fee, '');
+      set(feeCurrency, '');
+      set(link, '');
+      set(notes, '');
+      set(type, 'buy');
+      set(errorMessages, {});
     };
 
     const setEditMode = () => {
-      if (!unref(edit)) {
+      if (!get(edit)) {
         reset();
         return;
       }
 
-      const trade: Trade = unref(edit);
+      const trade: Trade = get(edit);
 
-      base.value = trade.baseAsset;
-      quote.value = trade.quoteAsset;
-      datetime.value = convertFromTimestamp(trade.timestamp, true);
-      amount.value = trade.amount.toString();
-      rate.value = trade.rate.toString();
-      fee.value = trade.fee?.toString() ?? '';
-      feeCurrency.value = trade.feeCurrency ? trade.feeCurrency : '';
-      link.value = trade.link ?? '';
-      notes.value = trade.notes ?? '';
-      type.value = trade.tradeType;
-      id.value = trade.tradeId;
+      set(base, trade.baseAsset);
+      set(quote, trade.quoteAsset);
+      set(datetime, convertFromTimestamp(trade.timestamp, true));
+      set(amount, trade.amount.toString());
+      set(rate, trade.rate.toString());
+      set(fee, trade.fee?.toString() ?? '');
+      set(feeCurrency, trade.feeCurrency ? trade.feeCurrency : '');
+      set(link, trade.link ?? '');
+      set(notes, trade.notes ?? '');
+      set(type, trade.tradeType);
+      set(id, trade.tradeId);
     };
 
     const save = async (): Promise<boolean> => {
-      const amount = unref(numericAmount);
-      const fee = unref(numericFee);
-      const rate = unref(numericRate);
+      const amount = get(numericAmount);
+      const fee = get(numericFee);
+      const rate = get(numericRate);
 
       const tradePayload: Writeable<NewTrade> = {
         amount: amount.isNaN() ? Zero : amount,
         fee: fee.isNaN() ? undefined : fee,
-        feeCurrency: unref(feeCurrency) ? unref(feeCurrency) : undefined,
-        link: unref(link) ? unref(link) : undefined,
-        notes: unref(notes) ? unref(notes) : undefined,
-        baseAsset: unref(base),
-        quoteAsset: unref(quote),
+        feeCurrency: get(feeCurrency) ? get(feeCurrency) : undefined,
+        link: get(link) ? get(link) : undefined,
+        notes: get(notes) ? get(notes) : undefined,
+        baseAsset: get(base),
+        quoteAsset: get(quote),
         rate: rate.isNaN() ? Zero : rate,
         location: 'external',
-        timestamp: convertToTimestamp(unref(datetime)),
-        tradeType: unref(type)
+        timestamp: convertToTimestamp(get(datetime)),
+        tradeType: get(type)
       };
 
-      const result = !unref(id)
+      const result = !get(id)
         ? await saveData(tradePayload)
-        : await saveData({ ...tradePayload, tradeId: unref(id) });
+        : await saveData({ ...tradePayload, tradeId: get(id) });
 
       if (result.success) {
         reset();
@@ -444,10 +444,13 @@ const ExternalTradeForm = defineComponent({
       }
 
       if (result.message) {
-        errorMessages.value = convertKeys(
-          deserializeApiErrorMessage(result.message) ?? {},
-          true,
-          false
+        set(
+          errorMessages,
+          convertKeys(
+            deserializeApiErrorMessage(result.message) ?? {},
+            true,
+            false
+          )
         );
       }
 
@@ -455,44 +458,47 @@ const ExternalTradeForm = defineComponent({
     };
 
     const swapAmountInput = () => {
-      if (unref(selectedCalculationInput) === 'rate') {
-        selectedCalculationInput.value = 'quoteAmount';
+      if (get(selectedCalculationInput) === 'rate') {
+        set(selectedCalculationInput, 'quoteAmount');
         nextTick(() => {
-          quoteAmountInput.value?.focus();
+          get(quoteAmountInput)?.focus();
         });
       } else {
-        selectedCalculationInput.value = 'rate';
+        set(selectedCalculationInput, 'rate');
         nextTick(() => {
-          rateInput.value?.focus();
+          get(rateInput)?.focus();
         });
       }
     };
 
     const updateRate = (forceUpdate: boolean = false) => {
       if (
-        unref(amount) &&
-        unref(rate) &&
-        (unref(selectedCalculationInput) === 'rate' || forceUpdate)
+        get(amount) &&
+        get(rate) &&
+        (get(selectedCalculationInput) === 'rate' || forceUpdate)
       ) {
-        quoteAmount.value = new BigNumber(unref(amount))
-          .multipliedBy(new BigNumber(unref(rate)))
-          .toString();
+        set(
+          quoteAmount,
+          new BigNumber(get(amount))
+            .multipliedBy(new BigNumber(get(rate)))
+            .toString()
+        );
       }
     };
 
     const fetchPrice = async () => {
       if (
-        (unref(rate) && unref(edit)) ||
-        !unref(datetime) ||
-        !unref(base) ||
-        !unref(quote)
+        (get(rate) && get(edit)) ||
+        !get(datetime) ||
+        !get(base) ||
+        !get(quote)
       ) {
         return;
       }
 
-      const timestamp = convertToTimestamp(unref(datetime));
-      const fromAsset = unref(base);
-      const toAsset = unref(quote);
+      const timestamp = convertToTimestamp(get(datetime));
+      const fromAsset = get(base);
+      const toAsset = get(quote);
 
       const rateFromHistoricPrice = await fetchHistoricPrice({
         timestamp,
@@ -500,27 +506,30 @@ const ExternalTradeForm = defineComponent({
         toAsset
       });
       if (rateFromHistoricPrice.gt(0)) {
-        rate.value = rateFromHistoricPrice.toString();
+        set(rate, rateFromHistoricPrice.toString());
         updateRate(true);
-      } else if (!unref(rate)) {
-        errorMessages.value = {
+      } else if (!get(rate)) {
+        set(errorMessages, {
           rate: [i18n.t('external_trade_form.rate_not_found').toString()]
-        };
-        setTimeout(() => {
-          errorMessages.value = {};
+        });
+        useTimeoutFn(() => {
+          set(errorMessages, {});
         }, 4000);
       }
     };
 
     const onQuoteAmountChange = () => {
       if (
-        unref(amount) &&
-        unref(quoteAmount) &&
-        unref(selectedCalculationInput) === 'quoteAmount'
+        get(amount) &&
+        get(quoteAmount) &&
+        get(selectedCalculationInput) === 'quoteAmount'
       ) {
-        rate.value = new BigNumber(unref(quoteAmount))
-          .div(new BigNumber(unref(amount)))
-          .toString();
+        set(
+          rate,
+          new BigNumber(get(quoteAmount))
+            .div(new BigNumber(get(amount)))
+            .toString()
+        );
       }
     };
 

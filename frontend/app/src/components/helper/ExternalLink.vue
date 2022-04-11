@@ -4,6 +4,7 @@
 
 <script lang="ts">
 import { defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { interop } from '@/electron-interop';
 
 export default defineComponent({
@@ -14,7 +15,7 @@ export default defineComponent({
   setup(props) {
     const { url } = toRefs(props);
     const openLink = () => {
-      interop.openUrl(url.value);
+      interop.openUrl(get(url));
     };
 
     return { openLink };

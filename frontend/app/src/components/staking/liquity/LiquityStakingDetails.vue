@@ -75,7 +75,7 @@ export default defineComponent({
       const staked: Record<string, AssetBalance> = {};
       const stake = get(staking) as LiquityStaking;
       for (const address in stake) {
-        const account = selectedAccount.value;
+        const account = get(selectedAccount);
         if (account && account.address !== address) {
           continue;
         }
@@ -100,7 +100,7 @@ export default defineComponent({
       const allEvents = get(stakingEvents) as LiquityStakingEvents;
       const events: LiquityStakingEvent[] = [];
       for (const address in allEvents) {
-        const account = selectedAccount.value;
+        const account = get(selectedAccount);
         if (account && account.address !== address) {
           continue;
         }

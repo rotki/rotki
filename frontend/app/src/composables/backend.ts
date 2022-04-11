@@ -1,4 +1,5 @@
-import { computed, onMounted, ref, unref } from '@vue/composition-api';
+import { computed, onMounted, ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { useInterop } from '@/electron-interop';
 import { BackendOptions } from '@/electron-main/ipc';
 import { useMainStore } from '@/store/store';
@@ -40,8 +41,8 @@ export const setupBackendManagement = (loaded: () => void = () => {}) => {
   const fileConfig = ref<Partial<BackendOptions>>({});
   const defaultLogDirectory = ref('');
   const options = computed<Partial<BackendOptions>>(() => ({
-    ...unref(userOptions),
-    ...unref(fileConfig)
+    ...get(userOptions),
+    ...get(fileConfig)
   }));
 
   onMounted(async () => {

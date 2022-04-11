@@ -52,6 +52,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import MakerDaoVaultCollateral from '@/components/defi/loan/loans/makerdao/MakerDaoVaultCollateral.vue';
@@ -61,7 +62,11 @@ import PremiumCard from '@/components/display/PremiumCard.vue';
 import { getPremium, setupDisplayData } from '@/composables/session';
 import { interop } from '@/electron-interop';
 import { VaultEventsList } from '@/premium/premium';
-import { MakerDAOVaultModel } from '@/store/defi/types';
+import {
+  MakerDAOVault,
+  MakerDAOVaultDetails,
+  MakerDAOVaultModel
+} from '@/store/defi/types';
 import { Zero } from '@/utils/bignumbers';
 
 export default defineComponent({
@@ -91,8 +96,9 @@ export default defineComponent({
     };
 
     const totalInterestOwed = computed(() => {
-      if ('totalInterestOwed' in vault.value) {
-        return vault.value.totalInterestOwed;
+      if ('totalInterestOwed' in get(vault)) {
+        return (get(vault) as MakerDAOVault & MakerDAOVaultDetails)
+          .totalInterestOwed;
       }
       return Zero;
     });

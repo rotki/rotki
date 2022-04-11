@@ -124,6 +124,7 @@ import {
   ref,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { Dispatch } from 'vuex';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
@@ -150,9 +151,9 @@ const requestPrices = () => {
   const fetchPrices = async () => {
     try {
       const data = await api.assets.fetchCurrentPrices();
-      prices.value = AssetPriceArray.parse(data);
+      set(prices, AssetPriceArray.parse(data));
     } catch (e: any) {
-      priceError.value = e.message;
+      set(priceError, e.message);
     }
   };
   onMounted(fetchPrices);
@@ -169,8 +170,8 @@ function sortNfts(
   a: GalleryNft,
   b: GalleryNft
 ): number {
-  const sortProp = sortBy.value;
-  const desc = sortDesc.value;
+  const sortProp = get(sortBy);
+  const desc = get(sortDesc);
   const isCollection = sortProp === 'collection';
   const aElement = isCollection ? a.collection.name : a[sortProp];
   const bElement = isCollection ? b.collection.name : b[sortProp];
@@ -223,10 +224,10 @@ const setupNfts = (
   ];
 
   const items = computed(() => {
-    const account = selectedAccount.value;
-    const selection = selectedCollection.value;
+    const account = get(selectedAccount);
+    const selection = get(selectedCollection);
     if (account || selection) {
-      return nfts.value
+      return get(nfts)
         .filter(({ address, collection }) => {
           const sameAccount = account ? address === account.address : true;
           const sameCollection = selection
@@ -237,25 +238,25 @@ const setupNfts = (
         .sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
     }
 
-    return nfts.value.sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
+    return get(nfts).sort((a, b) => sortNfts(sortBy, sortDesc, a, b));
   });
 
   const pages = computed(() => {
-    return Math.ceil(items.value.length / itemsPerPage.value);
+    return Math.ceil(get(items).length / get(itemsPerPage));
   });
 
   const visibleNfts = computed(() => {
-    const start = (page.value - 1) * itemsPerPage.value;
-    return items.value.slice(start, start + itemsPerPage.value);
+    const start = (get(page) - 1) * get(itemsPerPage);
+    return get(items).slice(start, start + get(itemsPerPage));
   });
 
   const availableAddresses = computed(() =>
-    perAccount.value ? Object.keys(perAccount.value) : []
+    get(perAccount) ? Object.keys(get(perAccount)!) : []
   );
 
   const nfts = computed<GalleryNft[]>(() => {
-    const addresses: Nfts | null = perAccount.value;
-    const value = prices.value;
+    const addresses: Nfts | null = get(perAccount);
+    const value = get(prices);
     if (!addresses) {
       return [];
     }
@@ -292,34 +293,34 @@ const setupNfts = (
   });
 
   const collections = computed(() => {
-    if (!nfts.value) {
+    if (!get(nfts)) {
       return [];
     }
-    return nfts.value
+    return get(nfts)
       .map(({ collection }) => collection.name ?? '')
       .filter(uniqueStrings);
   });
 
   const fetchNfts = async (payload?: { ignoreCache: boolean }) => {
-    loading.value = true;
+    set(loading, true);
     const { message, result }: ActionResult<NftResponse> = await dispatch(
       `session/${SessionActions.FETCH_NFTS}`,
       payload
     );
     if (result) {
-      total.value = result.entriesFound;
-      limit.value = result.entriesLimit;
-      perAccount.value = result.addresses;
+      set(total, result.entriesFound);
+      set(limit, result.entriesLimit);
+      set(perAccount, result.addresses);
     } else {
-      error.value = message;
+      set(error, message);
     }
-    loading.value = false;
+    set(loading, false);
   };
 
   const noData = computed(
     () =>
-      visibleNfts.value.length === 0 &&
-      !(selectedCollection.value || selectedAccount.value)
+      get(visibleNfts).length === 0 &&
+      !(get(selectedCollection) || get(selectedAccount))
   );
 
   onMounted(fetchNfts);
@@ -366,11 +367,11 @@ export default defineComponent({
     const page = ref(1);
 
     const itemsPerPage = computed(() => {
-      if (breakpoint.value === 'xs') {
+      if (get(breakpoint) === 'xs') {
         return 1;
-      } else if (breakpoint.value === 'sm') {
+      } else if (get(breakpoint) === 'sm') {
         return 2;
-      } else if (width.value >= 1600) {
+      } else if (get(width) >= 1600) {
         return 10;
       }
       return 8;
@@ -379,8 +380,8 @@ export default defineComponent({
     const selectedCollection = ref<string | null>(null);
     const premium = getPremium();
 
-    watch(selectedAccount, () => (page.value = 1));
-    watch(selectedCollection, () => (page.value = 1));
+    watch(selectedAccount, () => set(page, 1));
+    watch(selectedCollection, () => set(page, 1));
     const retrievePrices = requestPrices();
 
     return {

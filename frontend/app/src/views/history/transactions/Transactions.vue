@@ -15,10 +15,9 @@ import {
   defineComponent,
   onBeforeMount,
   onUnmounted,
-  unref,
   watch
 } from '@vue/composition-api';
-import { useIntervalFn } from '@vueuse/core';
+import { get, useIntervalFn } from '@vueuse/core';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import { isSectionLoading, setupStatusChecking } from '@/composables/common';
 import { Section } from '@/store/const';
@@ -48,9 +47,9 @@ export default defineComponent({
     watch(
       [sectionLoading, eventTaskLoading],
       ([sectionLoading, eventTaskLoading]) => {
-        if ((sectionLoading || eventTaskLoading) && !unref(isActive)) {
+        if ((sectionLoading || eventTaskLoading) && !get(isActive)) {
           resume();
-        } else if (!sectionLoading && !eventTaskLoading && unref(isActive)) {
+        } else if (!sectionLoading && !eventTaskLoading && get(isActive)) {
           pause();
         }
       }

@@ -27,8 +27,7 @@ import {
   computed,
   defineComponent,
   PropType,
-  toRefs,
-  unref
+  toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { useAssetInfoRetrieval } from '@/store/assets';
@@ -51,7 +50,7 @@ export default defineComponent({
     const { assetSymbol } = useAssetInfoRetrieval();
 
     const showBalance = computed<boolean>(() => {
-      const type = getEventType(unref(event));
+      const type = getEventType(get(event));
 
       return type !== TransactionEventType.APPROVAL;
     });

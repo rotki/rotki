@@ -48,6 +48,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import makeBlockie from 'ethereum-blockies-base64';
 import { setupThemeCheck } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
@@ -64,48 +65,48 @@ export default defineComponent({
     const { currentBreakpoint } = setupThemeCheck();
     const { scrambleData, shouldShowAmount } = setupDisplayData();
 
-    const xsOnly = computed(() => currentBreakpoint.value.xsOnly);
-    const smAndDown = computed(() => currentBreakpoint.value.smAndDown);
+    const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+    const smAndDown = computed(() => get(currentBreakpoint).smAndDown);
 
     const address = computed<string>(() => {
-      return scrambleData.value ? randomHex() : account.value.address;
+      return get(scrambleData) ? randomHex() : get(account).address;
     });
 
     const breakpoint = computed<string>(() => {
-      return account.value.label.length > 0 && currentBreakpoint.value.mdAndDown
+      return get(account).label.length > 0 && get(currentBreakpoint).mdAndDown
         ? 'sm'
-        : currentBreakpoint.value.name;
+        : get(currentBreakpoint).name;
     });
 
     const truncationLength = computed<number>(() => {
-      let truncationPoint = truncationPoints[breakpoint.value];
-      if (truncationPoint && account.value.label) {
+      let truncationPoint = truncationPoints[get(breakpoint)];
+      if (truncationPoint && get(account).label) {
         return 4;
       }
       return truncationPoint ?? 4;
     });
 
     const truncatedAddress = computed(() => {
-      return truncateAddress(address.value, truncationLength.value);
+      return truncateAddress(get(address), get(truncationLength));
     });
 
     const displayAddress = computed<string>(() => {
-      if (truncatedAddress.value.length >= address.value.length) {
-        return address.value;
+      if (get(truncatedAddress).length >= get(address).length) {
+        return get(address);
       }
-      return truncatedAddress.value;
+      return get(truncatedAddress);
     });
 
     const truncated = computed<boolean>(() => {
-      if (truncatedAddress.value.length >= address.value.length) {
+      if (get(truncatedAddress).length >= get(address).length) {
         return false;
       }
-      return truncatedAddress.value.includes('...');
+      return get(truncatedAddress).includes('...');
     });
 
     const label = computed<string>(() => {
-      const bp = currentBreakpoint.value;
-      const label = account.value.label;
+      const bp = get(currentBreakpoint);
+      const label = get(account).label;
       let length = -1;
 
       if (bp.xlOnly && label.length > 50) {

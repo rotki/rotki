@@ -66,6 +66,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import CardTitle from '@/components/typography/CardTitle.vue';
 
 const Card = defineComponent({
@@ -85,16 +86,16 @@ const Card = defineComponent({
 
     onMounted(() => {
       setTimeout(() => {
-        top.value = body.value?.getBoundingClientRect().top ?? 0;
+        set(top, get(body)?.getBoundingClientRect().top ?? 0);
       }, 1000);
     });
 
     const bodyStyle = computed(() => {
-      if (!contained.value) {
+      if (!get(contained)) {
         return null;
       }
-      const bodyTop = top.value;
-      const actionsHeight = actions.value?.getBoundingClientRect().height ?? 0;
+      const bodyTop = get(top);
+      const actionsHeight = get(actions)?.getBoundingClientRect().height ?? 0;
       const diff = bodyTop + actionsHeight;
 
       return {

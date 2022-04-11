@@ -1,4 +1,5 @@
 import { computed } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { SupportedCurrency } from '@/data/currencies';
 import { SessionState } from '@/store/session/types';
 import { ActionStatus } from '@/store/types';
@@ -114,7 +115,7 @@ export const setupGeneralSettings = () => {
   });
 
   const currencySymbol = computed<SupportedCurrency>(() => {
-    return currency.value.tickerSymbol;
+    return get(currency).tickerSymbol;
   });
 
   const floatingPrecision = computed<number>(() => {

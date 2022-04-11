@@ -47,6 +47,7 @@
 
 <script lang="ts">
 import { defineComponent, nextTick, ref, watch } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import Notification from '@/components/status/notifications/Notification.vue';
 import { setupNotifications } from '@/composables/notifications';
 import { emptyNotification } from '@/store/notifications';
@@ -59,25 +60,25 @@ const NotificationPopup = defineComponent({
     const { queue, displayed } = setupNotifications();
     const dismiss = (id: number) => {
       displayed([id]);
-      notification.value = { ...notification.value, display: false };
+      set(notification, { ...get(notification), display: false });
     };
 
     const dismissAll = () => {
-      displayed(queue.value.map(({ id }) => id));
-      notification.value = { ...notification.value, display: false };
+      displayed(get(queue).map(({ id }) => id));
+      set(notification, { ...get(notification), display: false });
     };
 
     watch(
       queue,
       () => {
-        const data = [...queue.value];
-        if (!notification.value.display && data.length > 0) {
+        const data = [...get(queue)];
+        if (!get(notification).display && data.length > 0) {
           const next = data.shift();
           if (!next) {
             return;
           }
           nextTick(() => {
-            notification.value = next;
+            set(notification, next);
           });
         }
       },

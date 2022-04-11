@@ -104,6 +104,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { IVueI18n } from 'vue-i18n';
 import { DataTableHeader } from 'vuetify';
 import ConflictRow from '@/components/status/update/ConflictRow.vue';
@@ -156,14 +157,14 @@ const ConflictDialog = defineComponent({
     const { conflicts } = toRefs(props);
     const resolution: Ref<ConflictResolution> = ref({});
     const setResolution = (strategy: ConflictResolutionStrategy) => {
-      const length = conflicts.value.length;
+      const length = get(conflicts).length;
       const resolutionStrategy: Writeable<ConflictResolution> = {};
       for (let i = 0; i < length; i++) {
-        const conflict = conflicts.value[i];
+        const conflict = get(conflicts)[i];
         resolutionStrategy[conflict.identifier] = strategy;
       }
 
-      resolution.value = resolutionStrategy;
+      set(resolution, resolutionStrategy);
     };
 
     const getConflictFields = (
@@ -194,15 +195,15 @@ const ConflictDialog = defineComponent({
     };
 
     const remaining = computed(() => {
-      const resolved = Object.keys(resolution.value).length;
-      return conflicts.value.length - resolved;
+      const resolved = Object.keys(get(resolution)).length;
+      return get(conflicts).length - resolved;
     });
 
     const valid = computed(() => {
-      const identifiers = conflicts.value
+      const identifiers = get(conflicts)
         .map(({ identifier }) => identifier)
         .sort();
-      const resolved = Object.keys(resolution.value).sort();
+      const resolved = Object.keys(get(resolution)).sort();
       if (identifiers.length !== resolved.length) {
         return false;
       }

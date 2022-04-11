@@ -37,6 +37,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import LoanDebt from '@/components/defi/loan/LoanDebt.vue';
 import LoanHeader from '@/components/defi/loan/LoanHeader.vue';
 import CompoundCollateral from '@/components/defi/loan/loans/compound/CompoundCollateral.vue';
@@ -68,7 +69,7 @@ export default defineComponent({
 
     const { loan } = toRefs(props);
     const assets = computed(() => {
-      const { asset, events } = loan.value;
+      const { asset, events } = get(loan);
       const assets = events
         .map(({ toAsset }) => toAsset ?? '')
         .filter(uniqueStrings);

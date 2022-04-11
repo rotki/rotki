@@ -56,6 +56,7 @@
 <script lang="ts">
 import { Pool } from '@rotki/common/lib/defi/balancer';
 import { defineComponent, PropType, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 
 export default defineComponent({
   name: 'LiquidityPoolSelector',
@@ -80,7 +81,7 @@ export default defineComponent({
     };
 
     const remove = (asset: Pool) => {
-      const addresses = [...value.value];
+      const addresses = [...get(value)];
       const index = addresses.findIndex(address => address === asset.address);
       addresses.splice(index, 1);
       input(addresses);

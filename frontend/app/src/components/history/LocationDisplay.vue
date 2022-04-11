@@ -25,6 +25,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import ListItem from '@/components/helper/ListItem.vue';
 import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
@@ -48,11 +49,11 @@ export default defineComponent({
     const { getLocation } = setupLocationInfo();
 
     const location = computed<TradeLocationData>(() =>
-      getLocation(identifier.value)
+      getLocation(get(identifier))
     );
 
     const route = {
-      path: Routes.LOCATIONS.replace(':identifier', location.value.identifier)
+      path: Routes.LOCATIONS.replace(':identifier', get(location).identifier)
     };
 
     return {

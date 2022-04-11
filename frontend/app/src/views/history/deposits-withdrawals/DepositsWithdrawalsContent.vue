@@ -129,6 +129,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -301,13 +302,13 @@ export default defineComponent({
     const filters: Ref<MatchedKeyword<AssetMovementFilterValueKeys>> = ref({});
 
     const availableAssets = computed<string[]>(() => {
-      return supportedAssets.value
+      return get(supportedAssets)
         .map(value => getAssetSymbol(value.identifier))
         .filter(uniqueStrings);
     });
 
     const availableLocations = computed<TradeLocation[]>(() => {
-      return associatedLocations.value;
+      return get(associatedLocations);
     });
 
     const matchers = computed<
@@ -317,8 +318,8 @@ export default defineComponent({
         key: AssetMovementFilterKeys.ASSET,
         keyValue: AssetMovementFilterValueKeys.ASSET,
         description: i18n.t('deposit_withdrawals.filter.asset').toString(),
-        suggestions: () => availableAssets.value,
-        validate: (asset: string) => availableAssets.value.includes(asset),
+        suggestions: () => get(availableAssets),
+        validate: (asset: string) => get(availableAssets).includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
       },
       {
@@ -335,17 +336,17 @@ export default defineComponent({
         suggestions: () => [],
         hint: i18n
           .t('deposit_withdrawals.filter.date_hint', {
-            format: getDateInputISOFormat(dateInputFormat.value)
+            format: getDateInputISOFormat(get(dateInputFormat))
           })
           .toString(),
         validate: value => {
           return (
             value.length > 0 &&
-            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
           );
         },
         transformer: (date: string) =>
-          convertToTimestamp(date, dateInputFormat.value).toString()
+          convertToTimestamp(date, get(dateInputFormat)).toString()
       },
       {
         key: AssetMovementFilterKeys.END,
@@ -354,39 +355,39 @@ export default defineComponent({
         suggestions: () => [],
         hint: i18n
           .t('deposit_withdrawals.filter.date_hint', {
-            format: getDateInputISOFormat(dateInputFormat.value)
+            format: getDateInputISOFormat(get(dateInputFormat))
           })
           .toString(),
         validate: value => {
           return (
             value.length > 0 &&
-            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
           );
         },
         transformer: (date: string) =>
-          convertToTimestamp(date, dateInputFormat.value).toString()
+          convertToTimestamp(date, get(dateInputFormat)).toString()
       },
       {
         key: AssetMovementFilterKeys.LOCATION,
         keyValue: AssetMovementFilterValueKeys.LOCATION,
         description: i18n.t('deposit_withdrawals.filter.location').toString(),
-        suggestions: () => availableLocations.value,
-        validate: location => availableLocations.value.includes(location as any)
+        suggestions: () => get(availableLocations),
+        validate: location => get(availableLocations).includes(location as any)
       }
     ]);
 
     const updatePayloadHandler = () => {
       let paginationOptions = {};
-      if (options.value) {
-        options.value = {
-          ...options.value,
-          sortBy:
-            options.value.sortBy.length > 0 ? [options.value.sortBy[0]] : [],
+      const optionsVal = get(options);
+      if (optionsVal) {
+        set(options, {
+          ...optionsVal,
+          sortBy: optionsVal.sortBy.length > 0 ? [optionsVal.sortBy[0]] : [],
           sortDesc:
-            options.value.sortDesc.length > 0 ? [options.value.sortDesc[0]] : []
-        };
+            optionsVal.sortDesc.length > 0 ? [optionsVal.sortDesc[0]] : []
+        });
 
-        const { itemsPerPage, page, sortBy, sortDesc } = options.value;
+        const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
         const offset = (page - 1) * itemsPerPage;
 
         paginationOptions = {
@@ -397,12 +398,12 @@ export default defineComponent({
         };
       }
 
-      if (locationOverview.value) {
-        filters.value.location = locationOverview.value as TradeLocation;
+      if (get(locationOverview)) {
+        filters.value.location = get(locationOverview) as TradeLocation;
       }
 
       const payload: Partial<AssetMovementRequestPayload> = {
-        ...filters.value,
+        ...get(filters),
         ...paginationOptions
       };
 
@@ -410,19 +411,19 @@ export default defineComponent({
     };
 
     const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
-      options.value = newOptions;
+      set(options, newOptions);
       updatePayloadHandler();
     };
 
     const updateFilterHandler = (
       newFilters: MatchedKeyword<AssetMovementFilterKeys>
     ) => {
-      filters.value = newFilters;
+      set(filters, newFilters);
 
       let newOptions = null;
-      if (options.value) {
+      if (get(options)) {
         newOptions = {
-          ...options.value,
+          ...get(options)!,
           page: 1
         };
       }
@@ -438,7 +439,7 @@ export default defineComponent({
     return {
       pageRoute,
       selected,
-      tableHeaders: tableHeaders(locationOverview.value),
+      tableHeaders: tableHeaders(get(locationOverview)),
       data,
       limit,
       found,

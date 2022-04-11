@@ -11,6 +11,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import { EventType } from '@/services/defi/types';
 
@@ -24,7 +25,7 @@ export default defineComponent({
     const { eventType } = toRefs(props);
 
     const event = computed<string>(() => {
-      return eventType.value === 'comp' ? 'comp claimed' : eventType.value;
+      return get(eventType) === 'comp' ? 'comp claimed' : get(eventType);
     });
 
     return {

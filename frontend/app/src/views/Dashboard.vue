@@ -150,6 +150,7 @@
 <script lang="ts">
 import { AssetBalance } from '@rotki/common';
 import { Ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { mapState } from 'pinia';
 import { Component, Vue } from 'vue-property-decorator';
 import { mapActions, mapGetters } from 'vuex';
@@ -217,19 +218,19 @@ export default class Dashboard extends Vue {
   fetchManualBalances!: () => Promise<void>;
 
   get blockchainIsLoading(): boolean {
-    return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES).value;
+    return get(this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES));
   }
 
   get exchangeIsLoading(): boolean {
-    return this.isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES).value;
+    return get(this.isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES));
   }
 
   get allBalancesIsLoading(): boolean {
-    return this.isTaskRunning(TaskType.QUERY_BALANCES).value;
+    return get(this.isTaskRunning(TaskType.QUERY_BALANCES));
   }
 
   get manualBalancesLoading(): boolean {
-    return this.isTaskRunning(TaskType.MANUAL_BALANCES).value;
+    return get(this.isTaskRunning(TaskType.MANUAL_BALANCES));
   }
 
   get anyIsLoading(): boolean {

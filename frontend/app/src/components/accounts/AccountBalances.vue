@@ -74,6 +74,7 @@
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { mapState } from 'pinia';
 import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
 import { mapActions } from 'vuex';
@@ -130,13 +131,13 @@ export default class AccountBalances extends Vue {
   }
 
   get isLoading(): boolean {
-    return this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES).value;
+    return get(this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES));
   }
 
   get operationRunning(): boolean {
     return (
-      this.isTaskRunning(TaskType.ADD_ACCOUNT).value ||
-      this.isTaskRunning(TaskType.REMOVE_ACCOUNT).value
+      get(this.isTaskRunning(TaskType.ADD_ACCOUNT)) ||
+      get(this.isTaskRunning(TaskType.REMOVE_ACCOUNT))
     );
   }
 

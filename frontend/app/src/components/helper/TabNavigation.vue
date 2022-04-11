@@ -49,6 +49,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 
 export interface TabContent {
   readonly name: string;
@@ -66,7 +67,7 @@ export default defineComponent({
   setup(props) {
     const { tabContents } = toRefs(props);
     const visibleTabs = computed(() => {
-      return tabContents.value.filter(({ hidden }) => !hidden);
+      return get(tabContents).filter(({ hidden }) => !hidden);
     });
     const getClass = (route: string) => {
       return route.toLowerCase().replace('/', '').replace(/\//g, '__');
@@ -74,7 +75,7 @@ export default defineComponent({
     const selectedTab = ref('');
     const isRouterVisible = (route: string, tab: TabContent) => {
       return (
-        route.indexOf(tab.routeTo) >= 0 && tab.routeTo === selectedTab.value
+        route.indexOf(tab.routeTo) >= 0 && tab.routeTo === get(selectedTab)
       );
     };
 

@@ -33,6 +33,7 @@ import {
   TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
 import { defineComponent, PropType, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { getPremium } from '@/composables/session';
 
 import { isPeriodAllowed } from '@/store/settings/utils';
@@ -58,9 +59,7 @@ export default defineComponent({
     };
 
     const activeClass = (timeframePeriod: TimeFrameSetting): string => {
-      return timeframePeriod === value.value
-        ? 'timeframe-selector--active'
-        : '';
+      return timeframePeriod === get(value) ? 'timeframe-selector--active' : '';
     };
 
     return {

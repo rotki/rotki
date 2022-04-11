@@ -70,6 +70,7 @@ import {
   Ref,
   ref
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
 import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -87,23 +88,24 @@ const setupDialog = (balanceToEdit: Ref<ManualBalance | null>) => {
   const dialogLoading = ref(false);
 
   const add = () => {
-    dialogTitle.value = i18n.t('manual_balances.dialog.add.title').toString();
-    dialogSubtitle.value = '';
-    openDialog.value = true;
+    set(dialogTitle, i18n.t('manual_balances.dialog.add.title').toString());
+    set(dialogSubtitle, '');
+    set(openDialog, true);
   };
 
   const edit = (balance: ManualBalance) => {
-    balanceToEdit.value = balance;
-    dialogTitle.value = i18n.t('manual_balances.dialog.edit.title').toString();
-    dialogSubtitle.value = i18n
-      .t('manual_balances.dialog.edit.subtitle')
-      .toString();
-    openDialog.value = true;
+    set(balanceToEdit, balance);
+    set(dialogTitle, i18n.t('manual_balances.dialog.edit.title').toString());
+    set(
+      dialogSubtitle,
+      i18n.t('manual_balances.dialog.edit.subtitle').toString()
+    );
+    set(openDialog, true);
   };
 
   const cancel = () => {
-    openDialog.value = false;
-    balanceToEdit.value = null;
+    set(openDialog, false);
+    set(balanceToEdit, null);
   };
 
   return {
@@ -136,24 +138,24 @@ const ManualBalances = defineComponent({
       setupManualBalances();
 
     const refresh = async () => {
-      loading.value = true;
+      set(loading, true);
       await fetchManualBalances();
-      loading.value = false;
+      set(loading, false);
     };
 
     const save = async () => {
       const { dialogDisabled, dialogLoading, openDialog } = dialog;
-      dialogDisabled.value = true;
-      dialogLoading.value = true;
-      const success = await form.value?.save();
-      dialogDisabled.value = false;
-      dialogLoading.value = false;
+      set(dialogDisabled, true);
+      set(dialogLoading, true);
+      const success = await get(form)?.save();
+      set(dialogDisabled, false);
+      set(dialogLoading, false);
 
       if (!success) {
         return;
       }
-      openDialog.value = false;
-      balanceToEdit.value = null;
+      set(openDialog, false);
+      set(balanceToEdit, null);
     };
 
     const router = useRouter();
@@ -174,10 +176,10 @@ const ManualBalances = defineComponent({
       entries: IntersectionObserverEntry[],
       value: BalanceType
     ) => {
-      intersections.value = {
-        ...intersections.value,
+      set(intersections, {
+        ...get(intersections),
         [value]: entries[0].isIntersecting
-      };
+      });
     };
 
     const observers = {
@@ -188,7 +190,7 @@ const ManualBalances = defineComponent({
     };
 
     const context = computed(() => {
-      const intersect = intersections.value;
+      const intersect = get(intersections);
       return intersect.liability ? BalanceType.LIABILITY : BalanceType.ASSET;
     });
 

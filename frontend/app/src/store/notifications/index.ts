@@ -5,6 +5,7 @@ import {
   Severity
 } from '@rotki/common/lib/messages';
 import { computed, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
@@ -64,9 +65,11 @@ export const useNotifications = defineStore('notifications', () => {
   const data = ref<NotificationData[]>([]);
   let isRunning = false;
 
-  const count = computed(() => data.value.length);
+  const count = computed(() => get(data).length);
   const nextId = computed(() => {
-    const ids = data.value.map(value => value.id).sort((a, b) => b - a);
+    const ids = get(data)
+      .map(value => value.id)
+      .sort((a, b) => b - a);
 
     let nextId: number;
     if (ids.length > 0) {
@@ -77,26 +80,26 @@ export const useNotifications = defineStore('notifications', () => {
     return nextId;
   });
   const queue = computed(() =>
-    data.value.filter(notification => notification.display)
+    get(data).filter(notification => notification.display)
   );
 
   function update(payload: NotificationData[]) {
-    data.value = [...data.value, ...payload];
+    set(data, [...get(data), ...payload]);
   }
 
   function remove(id: number) {
-    const notifications = [...data.value];
+    const notifications = [...get(data)];
 
     const index = notifications.findIndex(v => v.id === id);
     if (index > -1) {
       notifications.splice(index, 1);
     }
 
-    data.value = notifications;
+    set(data, notifications);
   }
 
-  function set(notifications: NotificationData[]) {
-    data.value = notifications;
+  function setNotifications(notifications: NotificationData[]) {
+    set(data, notifications);
   }
 
   const notify = (
@@ -104,7 +107,7 @@ export const useNotifications = defineStore('notifications', () => {
   ) => {
     update([
       createNotification(
-        nextId.value,
+        get(nextId),
         Object.assign(notificationDefaults(), data)
       )
     ]);
@@ -115,7 +118,7 @@ export const useNotifications = defineStore('notifications', () => {
       return;
     }
 
-    const notifications = [...data.value];
+    const notifications = [...get(data)];
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i];
       const index = notifications.findIndex(({ id: idA }) => idA === id);
@@ -124,7 +127,7 @@ export const useNotifications = defineStore('notifications', () => {
       }
       notifications[index] = { ...notifications[index], display: false };
     }
-    set(notifications);
+    setNotifications(notifications);
   };
 
   const consume = async (): Promise<void> => {
@@ -139,7 +142,7 @@ export const useNotifications = defineStore('notifications', () => {
 
     try {
       const messages = await backoff(3, () => api.consumeMessages(), 10000);
-      const existing = data.value.map(({ message }) => message);
+      const existing = get(data).map(({ message }) => message);
       messages.errors
         .filter(uniqueStrings)
         .filter(error => !existing.includes(error))
@@ -161,7 +164,7 @@ export const useNotifications = defineStore('notifications', () => {
   };
 
   const reset = () => {
-    data.value = [];
+    set(data, []);
   };
 
   return {

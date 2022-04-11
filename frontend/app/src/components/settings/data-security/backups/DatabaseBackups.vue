@@ -77,6 +77,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import Fragment from '@/components/helper/Fragment';
 import RowAppend from '@/components/helper/RowAppend.vue';
@@ -125,13 +126,13 @@ export default defineComponent({
     const { dateDisplayFormat } = setupGeneralSettings();
 
     const messageInfo = computed(() => {
-      const db = pendingDeletion.value;
+      const db = get(pendingDeletion);
       if (db) {
         return {
           size: size(db.size),
           date: displayDateFormatter.format(
             new Date(db.time * 1000),
-            dateDisplayFormat.value
+            get(dateDisplayFormat)
           )
         };
       }
@@ -143,13 +144,13 @@ export default defineComponent({
     });
 
     const remove = () => {
-      const value = pendingDeletion.value;
-      pendingDeletion.value = null;
+      const value = get(pendingDeletion);
+      set(pendingDeletion, null);
       emit('remove', value);
     };
 
     const totalSize = computed(() =>
-      size(items.value.reduce((sum, db) => sum + db.size, 0))
+      size(get(items).reduce((sum, db) => sum + db.size, 0))
     );
 
     const getLink = (db: UserDbBackup) =>

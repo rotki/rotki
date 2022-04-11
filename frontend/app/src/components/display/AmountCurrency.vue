@@ -27,6 +27,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { Currency } from '@/types/currency';
 
 export default defineComponent({
@@ -53,18 +54,18 @@ export default defineComponent({
   setup(props) {
     const { assetPadding, showCurrency, currency } = toRefs(props);
     const assetStyle = computed(() => {
-      if (!assetPadding.value) {
+      if (!get(assetPadding)) {
         return {};
       }
       return {
-        width: `${assetPadding.value + 1}ch`,
+        width: `${get(assetPadding) + 1}ch`,
         'text-align': 'start'
       };
     });
 
     const displayAsset = computed(() => {
-      const show = showCurrency.value;
-      const value = currency.value;
+      const show = get(showCurrency);
+      const value = get(currency);
       if (show === 'ticker') {
         return value.tickerSymbol;
       } else if (show === 'symbol') {

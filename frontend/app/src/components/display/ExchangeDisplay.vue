@@ -14,6 +14,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { tradeLocations } from '@/components/history/consts';
 import { TradeLocationData } from '@/components/history/type';
@@ -31,15 +32,15 @@ export default defineComponent({
     const locations = tradeLocations;
 
     const location = computed<TradeLocationData | undefined>(() => {
-      return locations.find(({ identifier }) => identifier === exchange.value);
+      return locations.find(({ identifier }) => identifier === get(exchange));
     });
 
     const name = computed<string>(() => {
-      return location.value?.name ?? capitalize(exchange.value);
+      return get(location)?.name ?? capitalize(get(exchange));
     });
 
     const icon = computed<string>(() => {
-      return location.value?.icon ?? '';
+      return get(location)?.icon ?? '';
     });
 
     return {

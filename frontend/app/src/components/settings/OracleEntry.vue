@@ -17,6 +17,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 
 export default defineComponent({
   name: 'OracleEntry',
@@ -27,18 +28,18 @@ export default defineComponent({
     const { identifier } = toRefs(props);
 
     const size = computed<string>(() => {
-      if (identifier.value === 'manual') {
+      if (get(identifier) === 'manual') {
         return '40px';
       }
       return '48px';
     });
 
     const icon = computed<string>(() => {
-      if (identifier.value === 'cryptocompare') {
+      if (get(identifier) === 'cryptocompare') {
         return require('@/assets/images/oracles/cryptocompare.png');
-      } else if (identifier.value === 'coingecko') {
+      } else if (get(identifier) === 'coingecko') {
         return require('@/assets/images/oracles/coingecko.svg');
-      } else if (identifier.value === 'manual') {
+      } else if (get(identifier) === 'manual') {
         return require('@/assets/images/oracles/book.svg');
       }
       return '';

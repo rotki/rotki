@@ -1,5 +1,6 @@
 import { XswapBalances, XswapEvents } from '@rotki/common/lib/defi/xswap';
-import { computed, Ref, ref, unref } from '@vue/composition-api';
+import { computed, Ref, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
@@ -35,30 +36,30 @@ export const useUniswap = defineStore('defi/uniswap', () => {
 
   const uniswapBalances = (addresses: string[]) =>
     computed(() => {
-      return getBalances(unref(balances), addresses);
+      return getBalances(get(balances), addresses);
     });
 
   const uniswapPoolProfit = (addresses: string[]) =>
     computed(() => {
-      return getPoolProfit(unref(events), addresses);
+      return getPoolProfit(get(events), addresses);
     });
 
   const uniswapEvents = (addresses: string[]) =>
     computed(() => {
-      return getEventDetails(unref(events), addresses);
+      return getEventDetails(get(events), addresses);
     });
 
   const addresses = computed(() => {
-    const uniswapBalances = unref(balances);
-    const uniswapEvents = unref(events);
+    const uniswapBalances = get(balances);
+    const uniswapEvents = get(events);
     return Object.keys(uniswapBalances)
       .concat(Object.keys(uniswapEvents))
       .filter(uniqueStrings);
   });
 
   const poolAssets = computed(() => {
-    const uniswapBalances = unref(balances);
-    const uniswapEvents = unref(events);
+    const uniswapBalances = get(balances);
+    const uniswapEvents = get(events);
     return getPools(uniswapBalances, uniswapEvents);
   });
 
@@ -94,7 +95,7 @@ export const useUniswap = defineStore('defi/uniswap', () => {
         }
       );
 
-      balances.value = result;
+      set(balances, result);
     } catch (e: any) {
       const { notify } = useNotifications();
       notify({
@@ -142,7 +143,7 @@ export const useUniswap = defineStore('defi/uniswap', () => {
         }
       );
 
-      trades.value = result;
+      set(trades, result);
     } catch (e: any) {
       const { notify } = useNotifications();
       notify({
@@ -195,7 +196,7 @@ export const useUniswap = defineStore('defi/uniswap', () => {
         }
       );
 
-      events.value = result;
+      set(events, result);
     } catch (e: any) {
       const { notify } = useNotifications();
       notify({

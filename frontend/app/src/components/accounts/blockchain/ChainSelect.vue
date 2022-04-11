@@ -22,6 +22,7 @@
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import { setupModuleEnabled } from '@/composables/session';
 import { Module } from '@/types/modules';
@@ -80,7 +81,7 @@ export default defineComponent({
     const { isModuleEnabled } = setupModuleEnabled();
 
     const items = computed(() => {
-      const isEth2Enabled = isModuleEnabled(Module.ETH2).value;
+      const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
 
       if (!isEth2Enabled) {
         return chains.filter(({ symbol }) => symbol !== Blockchain.ETH2);

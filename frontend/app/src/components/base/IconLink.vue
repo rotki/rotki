@@ -24,6 +24,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { interop } from '@/electron-interop';
 import ThemeMixin from '@/mixins/theme-mixin';
 
@@ -44,7 +45,7 @@ export default defineComponent({
   setup(props) {
     const { url } = toRefs(props);
     const openLink = () => {
-      interop.openUrl(url.value);
+      interop.openUrl(get(url));
     };
 
     const target = interop.isPackaged ? undefined : '_blank';
@@ -53,7 +54,7 @@ export default defineComponent({
       if (interop.isPackaged) {
         return undefined;
       }
-      return url.value;
+      return get(url);
     });
 
     return {

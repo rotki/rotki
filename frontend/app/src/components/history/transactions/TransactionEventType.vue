@@ -57,9 +57,9 @@ import {
   computed,
   defineComponent,
   PropType,
-  toRefs,
-  unref
+  toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { setupThemeCheck } from '@/composables/common';
 import { ActionDataEntry } from '@/store/history/consts';
 import { EthTransactionEventEntry } from '@/store/history/types';
@@ -79,11 +79,11 @@ export default defineComponent({
     const { dark } = setupThemeCheck();
 
     const attrs = computed<ActionDataEntry>(() => {
-      return getEventTypeData(unref(event));
+      return getEventTypeData(get(event));
     });
 
     const counterparty = computed<ActionDataEntry | null>(() => {
-      return getEventCounterpartyData(unref(event));
+      return getEventCounterpartyData(get(event));
     });
 
     return {

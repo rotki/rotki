@@ -1,6 +1,8 @@
 import { Message } from '@rotki/common/lib/messages';
 import { computed, Ref, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
 import { useNotifications } from '@/store/notifications';
@@ -66,7 +68,7 @@ const defaultReport = (): SelectedReport => ({
   lastProcessedTimestamp: 0,
   processedActions: 0,
   totalActions: 0,
-  currency: 'USD',
+  currency: CURRENCY_USD,
   settings: {
     taxfreeAfterPeriod: 0,
     calculatePastCostBasis: false,
@@ -134,12 +136,12 @@ export const useReports = defineStore('reports', () => {
     reportId: number,
     page?: { limit: number; offset: number }
   ): Promise<boolean> => {
-    loaded.value = false;
+    set(loaded, false);
     const itemsPerPage = store.state.settings!.itemsPerPage;
     const currentPage = page ?? { limit: itemsPerPage, offset: 0 };
 
     try {
-      const selectedReport = reports.value.entries.find(
+      const selectedReport = get(reports).entries.find(
         value => value.identifier === reportId
       );
 
@@ -171,7 +173,7 @@ export const useReports = defineStore('reports', () => {
         includeGasCosts: selectedReport.includeGasCosts,
         taxfreeAfterPeriod: selectedReport.taxfreeAfterPeriod
       };
-      report.value = {
+      set(report, {
         overview,
         settings,
         ...reportEntries,
@@ -182,8 +184,8 @@ export const useReports = defineStore('reports', () => {
         totalActions: selectedReport.totalActions,
         processedActions: selectedReport.processedActions,
         currency: selectedReport.profitCurrency
-      };
-      loaded.value = true;
+      });
+      set(loaded, false);
     } catch (e: any) {
       notify({
         title: i18n.t('actions.reports.fetch.error.title').toString(),
@@ -198,7 +200,7 @@ export const useReports = defineStore('reports', () => {
 
   const fetchReports = async () => {
     try {
-      reports.value = await api.reports.fetchReports();
+      set(reports, await api.reports.fetchReports());
     } catch (e: any) {
       notify({
         title: i18n.t('actions.reports.fetch.error.title').toString(),
@@ -212,14 +214,14 @@ export const useReports = defineStore('reports', () => {
   const generateReport = async (
     period: ProfitLossReportPeriod
   ): Promise<number> => {
-    reportProgress.value = {
+    set(reportProgress, {
       processingState: '',
       totalProgress: '0'
-    };
-    reportError.value = emptyError();
+    });
+    set(reportError, emptyError());
 
     const interval = setInterval(async () => {
-      reportProgress.value = await api.history.getProgress();
+      set(reportProgress, await api.history.getProgress());
     }, 2000);
 
     const { awaitTask } = useTasks();
@@ -235,40 +237,40 @@ export const useReports = defineStore('reports', () => {
       );
 
       if (result) {
-        generatedReport.value = true;
+        set(generatedReport, true);
         await fetchReports();
       } else {
-        reportError.value = {
+        set(reportError, {
           error: '',
           message: i18n
             .t('actions.reports.generate.error.description', { error: '' })
             .toString()
-        };
+        });
       }
       return result;
     } catch (e: any) {
-      reportError.value = {
+      set(reportError, {
         error: e.message,
         message: i18n.t('actions.reports.generate.error.description').toString()
-      };
+      });
       return -1;
     } finally {
       clearInterval(interval);
 
-      reportProgress.value = {
+      set(reportProgress, {
         processingState: '',
         totalProgress: '0'
-      };
+      });
     }
   };
 
-  const progress = computed(() => reportProgress.value.totalProgress);
-  const processingState = computed(() => reportProgress.value.processingState);
+  const progress = computed(() => get(reportProgress).totalProgress);
+  const processingState = computed(() => get(reportProgress).processingState);
 
   const canExport = (reportId: number) =>
     computed(() => {
-      const entries = reports.value.entries;
-      if (!generatedReport.value || entries.length === 0) {
+      const entries = get(reports).entries;
+      if (!get(generatedReport) || entries.length === 0) {
         return false;
       }
       const reverse = [...entries].sort((a, b) => b.identifier - a.identifier);
@@ -276,20 +278,20 @@ export const useReports = defineStore('reports', () => {
     });
 
   const clearError = () => {
-    reportError.value = emptyError();
+    set(reportError, emptyError());
   };
 
   const clearReport = () => {
-    report.value = defaultReport();
+    set(report, defaultReport());
   };
 
   const reset = () => {
-    report.value = defaultReport();
-    reports.value = defaultReports();
-    loaded.value = false;
-    accountingSettings.value = null;
-    reportProgress.value = defaultProgress();
-    reportError.value = emptyError();
+    set(report, defaultReport());
+    set(reports, defaultReports());
+    set(loaded, false);
+    set(accountingSettings, null);
+    set(reportProgress, defaultProgress());
+    set(reportError, emptyError());
   };
 
   return {

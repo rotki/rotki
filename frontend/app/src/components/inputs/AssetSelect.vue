@@ -58,6 +58,7 @@ import {
   toRefs,
   watch
 } from '@vue/composition-api';
+import { get, set, useTimeoutFn } from '@vueuse/core';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetInfoRetrieval } from '@/store/assets';
@@ -99,24 +100,24 @@ export default defineComponent({
     const visibleAssets = ref<SupportedAsset[]>([]);
 
     const keyword = computed<string>(() => {
-      if (!search.value) {
+      if (!get(search)) {
         return '';
       }
 
-      return search.value.toLocaleLowerCase().trim();
+      return get(search).toLocaleLowerCase().trim();
     });
 
     const getAvailableAssets = () => {
-      if (items.value && items.value.length > 0) {
-        return supportedAssets.value.filter(asset =>
-          items.value!.includes(asset.identifier)
+      if (get(items) && get(items).length > 0) {
+        return get(supportedAssets).filter(asset =>
+          get(items)!.includes(asset.identifier)
         );
       }
-      return supportedAssets.value;
+      return get(supportedAssets);
     };
 
     const setDefaultVisibleAssets = () => {
-      visibleAssets.value = getAvailableAssets();
+      set(visibleAssets, getAvailableAssets());
     };
 
     onMounted(() => {
@@ -140,9 +141,12 @@ export default defineComponent({
     watch(search, search => {
       const assets = getAvailableAssets();
 
-      visibleAssets.value = assets
-        .filter(value1 => customFilter(value1, search))
-        .sort((a, b) => compareAssets(a, b, 'name', keyword.value, false));
+      set(
+        visibleAssets,
+        assets
+          .filter(value1 => customFilter(value1, search))
+          .sort((a, b) => compareAssets(a, b, 'name', get(keyword), false))
+      );
     });
 
     const assetText = (asset: SupportedAsset): string => {
@@ -150,8 +154,8 @@ export default defineComponent({
     };
 
     const blur = () => {
-      setTimeout(() => {
-        search.value = '';
+      useTimeoutFn(() => {
+        set(search, '');
       }, 200);
     };
 

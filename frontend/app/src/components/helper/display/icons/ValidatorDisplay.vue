@@ -26,6 +26,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { truncateAddress } from '@/filters';
 
 export default defineComponent({
@@ -43,7 +44,7 @@ export default defineComponent({
   },
   setup(props) {
     const { horizontal } = toRefs(props);
-    const length = computed(() => (horizontal.value ? 4 : 10));
+    const length = computed(() => (get(horizontal) ? 4 : 10));
     return {
       length,
       truncateAddress

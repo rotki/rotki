@@ -109,6 +109,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { IVueI18n } from 'vue-i18n';
 import { DataTableHeader } from 'vuetify';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -155,7 +156,7 @@ const setupHeaders: (
     {
       text: i18n
         .t('manual_balances_table.columns.value', {
-          symbol: currency.value
+          symbol: get(currency)
         })
         .toString(),
       value: 'usdValue',
@@ -200,19 +201,19 @@ const ManualBalanceTable = defineComponent({
     const { deleteManualBalance } = setupManualBalances();
 
     const deleteBalance = async () => {
-      const label = pendingDeletion.value;
+      const label = get(pendingDeletion);
       assert(label);
-      pendingDeletion.value = null;
+      set(pendingDeletion, null);
       await deleteManualBalance(label);
     };
 
     const visibleBalances = computed<ManualBalance[]>(() => {
-      const selectedTags = onlyTags.value;
+      const selectedTags = get(onlyTags);
       if (selectedTags.length === 0) {
-        return balances.value;
+        return get(balances);
       }
 
-      return balances.value.filter(balance => {
+      return get(balances).filter(balance => {
         if (balance.tags) {
           return selectedTags.every(tag => balance.tags.includes(tag));
         }
@@ -223,9 +224,9 @@ const ManualBalanceTable = defineComponent({
 
     const total = computed(() => {
       return aggregateTotal(
-        visibleBalances.value,
-        currencySymbol.value,
-        exchangeRate(currencySymbol.value) ?? new BigNumber(1)
+        get(visibleBalances),
+        get(currencySymbol),
+        exchangeRate(get(currencySymbol)) ?? new BigNumber(1)
       );
     });
 

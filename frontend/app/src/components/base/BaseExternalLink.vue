@@ -17,6 +17,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { interop } from '@/electron-interop';
 import { truncateAddress } from '@/filters';
 
@@ -30,11 +31,11 @@ export default defineComponent({
   setup(props) {
     const { href, truncate, text } = toRefs(props);
     const openLink = () => {
-      interop.openUrl(href.value);
+      interop.openUrl(get(href));
     };
 
     const displayText = computed(() =>
-      truncate.value ? truncateAddress(text.value) : text.value
+      get(truncate) ? truncateAddress(get(text)) : get(text)
     );
 
     return {

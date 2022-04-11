@@ -37,6 +37,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { TradeLocationData } from '@/components/history/type';
 
@@ -57,7 +58,7 @@ export default defineComponent({
     const { size } = toRefs(props);
     const iconStyle = computed(() => {
       return {
-        fontSize: size.value
+        fontSize: get(size)
       };
     });
 

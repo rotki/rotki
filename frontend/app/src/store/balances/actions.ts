@@ -2,6 +2,7 @@ import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Message, Severity } from '@rotki/common/lib/messages';
 import { Eth2Validators } from '@rotki/common/lib/staking/eth2';
+import { get } from '@vueuse/core';
 import { ActionTree } from 'vuex';
 import { currencies, CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
@@ -122,7 +123,7 @@ const updateBalancePrice: (
 export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   async fetchBalances({ dispatch }, payload: Partial<AllBalancePayload> = {}) {
     const { addTask, isTaskRunning } = useTasks();
-    if (isTaskRunning(TaskType.QUERY_BALANCES).value) {
+    if (get(isTaskRunning(TaskType.QUERY_BALANCES))) {
       return;
     }
     try {
@@ -168,7 +169,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const { awaitTask, isTaskRunning, metadata } = useTasks();
     const meta = metadata<ExchangeMeta>(taskType);
 
-    if (isTaskRunning(taskType).value && meta?.location === location) {
+    if (get(isTaskRunning(taskType)) && meta?.location === location) {
       return;
     }
 
@@ -404,7 +405,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     const { awaitTask, isTaskRunning } = useTasks();
     try {
       const taskType = TaskType.REMOVE_ACCOUNT;
-      if (isTaskRunning(taskType).value) {
+      if (get(isTaskRunning(taskType))) {
         return;
       }
       const { taskId } = await api.deleteXpub(payload);
@@ -511,7 +512,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   ): Promise<void> {
     const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.ADD_ACCOUNT;
-    if (isTaskRunning(taskType).value) {
+    if (get(isTaskRunning(taskType))) {
       return;
     }
 
@@ -1180,7 +1181,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   ): Promise<void> {
     const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.UPDATE_PRICES;
-    if (isTaskRunning(taskType).value) {
+    if (get(isTaskRunning(taskType))) {
       return;
     }
     const fetchPrices: (assets: string[]) => Promise<void> = async assets => {
@@ -1244,7 +1245,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   ): Promise<ActionStatus> {
     const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.CREATE_PRICE_CACHE;
-    if (isTaskRunning(taskType).value) {
+    if (get(isTaskRunning(taskType))) {
       return {
         success: false,
         message: i18n
@@ -1299,7 +1300,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   ): Promise<BigNumber> {
     const { awaitTask, isTaskRunning } = useTasks();
     const taskType = TaskType.FETCH_HISTORIC_PRICE;
-    if (isTaskRunning(taskType).value) {
+    if (get(isTaskRunning(taskType))) {
       return bigNumberify(-1);
     }
 

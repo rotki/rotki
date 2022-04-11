@@ -90,6 +90,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import IconLink from '@/components/base/IconLink.vue';
 import { GalleryNft } from '@/store/session/types';
@@ -107,15 +108,15 @@ export default defineComponent({
   setup(props) {
     const { item } = toRefs(props);
     const name = computed(() =>
-      item.value.name ? item.value.name : item.value.collection.name
+      get(item).name ? get(item).name : get(item).collection.name
     );
 
     const imageUrl = computed(() => {
-      return item.value.imageUrl ?? require('@/assets/images/placeholder.svg');
+      return get(item).imageUrl ?? require('@/assets/images/placeholder.svg');
     });
 
     const isMediaVideo = computed(() => {
-      return isVideo(item.value.imageUrl);
+      return isVideo(get(item).imageUrl);
     });
 
     return { name, imageUrl, isVideo: isMediaVideo };

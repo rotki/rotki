@@ -1,6 +1,7 @@
 import { ActionResult } from '@rotki/common/lib/data';
 import { Severity } from '@rotki/common/lib/messages';
 import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
+import { get } from '@vueuse/core';
 import { ActionTree } from 'vuex';
 import { lastLogin } from '@/components/account-management/utils';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
@@ -620,7 +621,7 @@ export const actions: ActionTree<SessionState, RotkehlchenState> = {
   async forceSync({ dispatch }, action: SyncAction): Promise<void> {
     const { isTaskRunning, awaitTask } = useTasks();
     const taskType = TaskType.FORCE_SYNC;
-    if (isTaskRunning(taskType).value) {
+    if (get(isTaskRunning(taskType))) {
       return;
     }
     const { notify } = useNotifications();

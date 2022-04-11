@@ -45,6 +45,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from '@vue/composition-api';
+import { set } from '@vueuse/core';
 
 export default defineComponent({
   name: 'ConfirmableReset',
@@ -58,7 +59,7 @@ export default defineComponent({
     const menu = ref<boolean>(false);
 
     const reset = () => {
-      menu.value = false;
+      set(menu, false);
       emit('reset');
     };
 

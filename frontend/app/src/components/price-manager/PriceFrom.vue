@@ -65,9 +65,10 @@ import {
   onMounted,
   PropType,
   ref,
+  toRefs,
   watch
 } from '@vue/composition-api';
-import { get } from '@vueuse/core';
+import { get, set } from '@vueuse/core';
 import AssetMixin from '@/mixins/asset-mixin';
 import { HistoricalPrice } from '@/services/assets/types';
 import { useAssetInfoRetrieval } from '@/store/assets';
@@ -89,6 +90,7 @@ export default defineComponent({
   },
   emits: ['input', 'valid'],
   setup(props, { emit }) {
+    const { value } = toRefs(props);
     const { assetSymbol } = useAssetInfoRetrieval();
     const valid = ref(false);
     const date = computed(({ value }) =>
@@ -100,14 +102,14 @@ export default defineComponent({
     const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));
     const price = ref('');
     const input = (price: Partial<HistoricalPrice>) => {
-      emit('input', { ...props.value, ...price });
+      emit('input', { ...get(value), ...price });
     };
     watch(valid, value => emit('valid', value));
-    watch(props.value, value => {
-      if (price.value.endsWith('.')) {
+    watch(value, val => {
+      if (get(price).endsWith('.')) {
         return;
       }
-      price.value = value.price.toString();
+      set(price, val.price.toString());
     });
     watch(price, value => {
       if (value.endsWith('.') || (value.includes('.') && value.endsWith('0'))) {
@@ -120,7 +122,7 @@ export default defineComponent({
     });
 
     onMounted(() => {
-      price.value = props.value.price.toString();
+      set(price, get(value).price.toString());
     });
 
     return {

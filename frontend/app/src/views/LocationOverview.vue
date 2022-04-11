@@ -26,9 +26,9 @@ import {
   computed,
   defineComponent,
   onBeforeMount,
-  toRefs,
-  unref
+  toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import ClosedTrades from '@/components/history/ClosedTrades.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
@@ -77,11 +77,11 @@ export default defineComponent({
     const { ledgerActions } = storeToRefs(ledgerActionStore);
 
     const location = computed<TradeLocationData>(() =>
-      getLocation(identifier.value)
+      getLocation(get(identifier))
     );
 
     onBeforeMount(() => {
-      const payload = { location: identifier.value };
+      const payload = { location: get(identifier) };
       updateTradesPayload(payload);
       updateAssetMovementsPayload(payload);
       updateLedgerActionsPayload(payload);
@@ -89,22 +89,21 @@ export default defineComponent({
 
     const showTrades = computed<boolean>(() => {
       return (
-        unref(isSectionLoading(Section.TRADES)) ||
-        unref(trades)?.data.length > 0
+        get(isSectionLoading(Section.TRADES)) || get(trades)?.data.length > 0
       );
     });
 
     const showAssetMovements = computed<boolean>(() => {
       return (
-        unref(isSectionLoading(Section.ASSET_MOVEMENT)) ||
-        unref(assetMovements)?.data.length > 0
+        get(isSectionLoading(Section.ASSET_MOVEMENT)) ||
+        get(assetMovements)?.data.length > 0
       );
     });
 
     const showLedgerActions = computed<boolean>(() => {
       return (
-        unref(isSectionLoading(Section.LEDGER_ACTIONS)) ||
-        unref(ledgerActions)?.data.length > 0
+        get(isSectionLoading(Section.LEDGER_ACTIONS)) ||
+        get(ledgerActions)?.data.length > 0
       );
     });
 

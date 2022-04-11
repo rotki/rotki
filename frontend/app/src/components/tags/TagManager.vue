@@ -79,6 +79,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -125,13 +126,13 @@ export default defineComponent({
     const close = () => emit('close');
 
     const onChange = (newTag: Tag) => {
-      tag.value = newTag;
+      set(tag, newTag);
     };
 
     const save = async (newTag: Tag) => {
-      tag.value = defaultTag();
-      if (editMode.value) {
-        editMode.value = false;
+      set(tag, defaultTag());
+      if (get(editMode)) {
+        set(editMode, false);
         await editTag(newTag);
       } else {
         await addTag(newTag);
@@ -139,22 +140,22 @@ export default defineComponent({
     };
 
     const cancel = () => {
-      tag.value = defaultTag();
-      editMode.value = false;
+      set(tag, defaultTag());
+      set(editMode, false);
     };
 
     const editItem = (newTag: Tag) => {
-      tag.value = newTag;
-      editMode.value = true;
+      set(tag, newTag);
+      set(editMode, true);
     };
 
     const deleteItem = (selectedTag: Tag) => {
-      tagToDelete.value = selectedTag.name;
+      set(tagToDelete, selectedTag.name);
     };
 
     const confirmDelete = async () => {
-      const tagName = tagToDelete.value;
-      tagToDelete.value = '';
+      const tagName = get(tagToDelete);
+      set(tagToDelete, '');
       await deleteTag(tagName);
     };
 

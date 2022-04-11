@@ -69,9 +69,9 @@ import {
   computed,
   defineComponent,
   PropType,
-  toRefs,
-  unref
+  toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import Fragment from '@/components/helper/Fragment';
@@ -93,7 +93,7 @@ export default defineComponent({
     const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
 
     const name = computed<string>(() => {
-      const chain = unref(total).chain;
+      const chain = get(total).chain;
       if (chain === Blockchain.ETH) {
         return i18n.t('blockchains.eth').toString();
       } else if (chain === Blockchain.BTC) {
@@ -118,15 +118,15 @@ export default defineComponent({
     };
 
     const amount = computed<BigNumber>(() => {
-      return unref(total).usdValue;
+      return get(total).usdValue;
     });
 
     const chain = computed<Blockchain>(() => {
-      return unref(total).chain;
+      return get(total).chain;
     });
 
     const loading = computed<boolean>(() => {
-      return unref(total).loading;
+      return get(total).loading;
     });
 
     return {

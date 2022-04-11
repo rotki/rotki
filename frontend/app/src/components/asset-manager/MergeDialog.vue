@@ -56,7 +56,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, unref } from '@vue/composition-api';
+import { defineComponent, ref } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import i18n from '@/i18n';
 import { useAssets } from '@/store/assets';
 
@@ -77,37 +78,37 @@ export default defineComponent({
     const { mergeAssets } = useAssets();
 
     const reset = () => {
-      done.value = false;
-      target.value = '';
-      source.value = '';
-      valid.value = false;
-      pending.value = false;
-      errorMessages.value = [];
+      set(done, false);
+      set(target, '');
+      set(source, '');
+      set(valid, false);
+      set(pending, false);
+      set(errorMessages, []);
     };
 
     const clearErrors = () => {
-      const elements = unref(errorMessages).length;
+      const elements = get(errorMessages).length;
       for (let i = 0; i < elements; i++) {
-        errorMessages.value = [];
+        set(errorMessages, []);
       }
     };
 
     async function merge() {
-      pending.value = true;
+      set(pending, true);
       const result = await mergeAssets({
-        sourceIdentifier: unref(source),
-        targetIdentifier: unref(target)
+        sourceIdentifier: get(source),
+        targetIdentifier: get(target)
       });
 
       if (result.success) {
-        done.value = true;
+        set(done, true);
       } else {
-        errorMessages.value = [
-          ...unref(errorMessages),
+        set(errorMessages, [
+          ...get(errorMessages),
           result.message ?? i18n.t('merge_dialog.error').toString()
-        ];
+        ]);
       }
-      pending.value = false;
+      set(pending, false);
     }
 
     const input = (value: boolean) => {

@@ -57,9 +57,9 @@ import {
   computed,
   defineComponent,
   onMounted,
-  unref,
   watch
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
@@ -78,14 +78,14 @@ export default defineComponent({
 
     const { connectedExchanges } = useExchanges();
     const isKrakenConnected = computed(() => {
-      const exchanges = unref(connectedExchanges);
+      const exchanges = get(connectedExchanges);
       return !!exchanges.find(
         ({ location }) => location === SupportedExchange.KRAKEN
       );
     });
 
     onMounted(async () => {
-      if (unref(isKrakenConnected)) {
+      if (get(isKrakenConnected)) {
         await load(false);
       }
     });

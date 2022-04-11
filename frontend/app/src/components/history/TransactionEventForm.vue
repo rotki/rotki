@@ -186,6 +186,7 @@ import {
   setupGeneralBalances
 } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
+import { CURRENCY_USD } from '@/data/currencies';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import i18n from '@/i18n';
 import { convertKeys } from '@/services/axios-tranformers';
@@ -349,7 +350,7 @@ const TransactionEventForm = defineComponent({
       const event: EthTransactionEvent = get(edit);
 
       const convertedFiatValue =
-        get(currencySymbol) === 'USD'
+        get(currencySymbol) === CURRENCY_USD
           ? event.balance.usdValue.toString()
           : event.balance.usdValue
               .multipliedBy(get(fiatExchangeRate))
@@ -377,7 +378,7 @@ const TransactionEventForm = defineComponent({
       const numericFiatValue = get(bigNumberifyFromRef(fiatValue));
 
       const convertedUsdValue =
-        get(currencySymbol) === 'USD'
+        get(currencySymbol) === CURRENCY_USD
           ? numericFiatValue
           : numericFiatValue.dividedBy(get(fiatExchangeRate));
 

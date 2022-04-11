@@ -1,5 +1,5 @@
 import { Message, Severity } from '@rotki/common/lib/messages';
-import { Ref, unref } from '@vue/composition-api';
+import { Ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import * as logger from 'loglevel';
 import { ActionContext, Store } from 'vuex';
@@ -124,7 +124,7 @@ export function showMessage(description: string, title?: string): void {
 
 export const getStatus = (section: Section) => {
   const { getStatus } = useMainStore();
-  return unref(getStatus(section));
+  return get(getStatus(section));
 };
 
 export const setStatus: (newStatus: Status, section: Section) => void = (
@@ -132,7 +132,7 @@ export const setStatus: (newStatus: Status, section: Section) => void = (
   section
 ) => {
   const { getStatus, setStatus } = useMainStore();
-  if (unref(getStatus(section)) === newStatus) {
+  if (get(getStatus(section)) === newStatus) {
     return;
   }
   setStatus({
@@ -160,10 +160,10 @@ export const getStatusUpdater = (section: Section, ignore: boolean = false) => {
     });
   };
 
-  const loading = () => isLoading(unref(getStatus(section)));
-  const isFirstLoad = () => unref(getStatus(section)) === Status.NONE;
+  const loading = () => isLoading(get(getStatus(section)));
+  const isFirstLoad = () => get(getStatus(section)) === Status.NONE;
   const getSectionStatus = (otherSection?: Section) => {
-    return unref(getStatus(otherSection ?? section));
+    return get(getStatus(otherSection ?? section));
   };
   return {
     loading,

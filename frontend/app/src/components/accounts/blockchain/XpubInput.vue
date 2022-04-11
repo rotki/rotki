@@ -71,9 +71,9 @@ import {
   PropType,
   ref,
   toRefs,
-  unref,
   watch
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import {
   getKeyType,
   getPrefix,
@@ -124,21 +124,21 @@ export default defineComponent({
         if (prefix === XpubPrefix.XPUB) {
           return;
         }
-        xpubKeyPrefix.value = prefix;
+        set(xpubKeyPrefix, prefix);
       }
     };
 
     watch(xpub, xpub => {
-      xpubKey.value = xpub?.xpub;
-      xpubKeyPrefix.value = getPrefix(xpub?.xpubType);
-      derivationPath.value = xpub?.derivationPath;
+      set(xpubKey, xpub?.xpub);
+      set(xpubKeyPrefix, getPrefix(xpub?.xpubType));
+      set(derivationPath, xpub?.derivationPath);
     });
 
     onMounted(() => {
-      const payload = unref(xpub);
-      xpubKey.value = payload?.xpub;
-      xpubKeyPrefix.value = getPrefix(payload?.xpubType);
-      derivationPath.value = payload?.derivationPath;
+      const payload = get(xpub);
+      set(xpubKey, payload?.xpub);
+      set(xpubKeyPrefix, getPrefix(payload?.xpubType));
+      set(derivationPath, payload?.derivationPath);
     });
 
     watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, xpub, path]) => {
@@ -161,7 +161,7 @@ export default defineComponent({
       const paste = trimOnPaste(event);
       if (paste) {
         setXpubKeyType(paste);
-        xpubKey.value = paste;
+        set(xpubKey, paste);
       }
     };
 

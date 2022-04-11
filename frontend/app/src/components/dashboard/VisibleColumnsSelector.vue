@@ -29,6 +29,7 @@ import {
   Ref,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { setupSettings } from '@/composables/settings';
 import i18n from '@/i18n';
 import {
@@ -53,7 +54,7 @@ const availableColumns = (groupLabel: Ref<string>, group: Ref<string>) =>
           .t(
             'dashboard_asset_table.headers.percentage_of_total_current_group',
             {
-              group: groupLabel.value || group.value
+              group: get(groupLabel) || get(group)
             }
           )
           .toString()
@@ -73,14 +74,14 @@ export default defineComponent({
     const { dashboardTablesVisibleColumns, updateSetting } = setupSettings();
 
     const currentVisibleColumns = computed(() => {
-      return dashboardTablesVisibleColumns.value[group.value];
+      return get(dashboardTablesVisibleColumns)[get(group)];
     });
 
     const onVisibleColumnsChange = async (visibleColumns: TableColumn[]) => {
       const payload: FrontendSettingsPayload = {
         [DASHBOARD_TABLES_VISIBLE_COLUMNS]: {
-          ...dashboardTablesVisibleColumns.value,
-          [group.value]: visibleColumns
+          ...get(dashboardTablesVisibleColumns),
+          [get(group)]: visibleColumns
         }
       };
 

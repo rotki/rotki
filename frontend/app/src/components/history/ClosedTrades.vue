@@ -197,6 +197,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -405,18 +406,19 @@ export default defineComponent({
     const form = ref<ExternalTradeFormInstance | null>(null);
 
     const newExternalTrade = () => {
-      dialogTitle.value = i18n.t('closed_trades.dialog.add.title').toString();
-      dialogSubtitle.value = '';
-      openDialog.value = true;
+      set(dialogTitle, i18n.t('closed_trades.dialog.add.title').toString());
+      set(dialogSubtitle, '');
+      set(openDialog, true);
     };
 
     const editTradeHandler = (trade: TradeEntry) => {
-      editableItem.value = trade;
-      dialogTitle.value = i18n.t('closed_trades.dialog.edit.title').toString();
-      dialogSubtitle.value = i18n
-        .t('closed_trades.dialog.edit.subtitle')
-        .toString();
-      openDialog.value = true;
+      set(editableItem, trade);
+      set(dialogTitle, i18n.t('closed_trades.dialog.edit.title').toString());
+      set(
+        dialogSubtitle,
+        i18n.t('closed_trades.dialog.edit.subtitle').toString()
+      );
+      set(openDialog, true);
     };
 
     const promptForDelete = (trade: TradeEntry) => {
@@ -426,45 +428,48 @@ export default defineComponent({
           : i18n.t('closed_trades.description.for').toString()
       ).toLocaleLowerCase();
 
-      confirmationMessage.value = i18n
-        .t('closed_trades.confirmation.message', {
-          pair: `${getAssetSymbol(trade.baseAsset)} ${prep} ${getAssetSymbol(
-            trade.quoteAsset
-          )}`,
-          action: trade.tradeType,
-          amount: trade.amount
-        })
-        .toString();
-      tradeToDelete.value = trade;
+      set(
+        confirmationMessage,
+        i18n
+          .t('closed_trades.confirmation.message', {
+            pair: `${getAssetSymbol(trade.baseAsset)} ${prep} ${getAssetSymbol(
+              trade.quoteAsset
+            )}`,
+            action: trade.tradeType,
+            amount: trade.amount
+          })
+          .toString()
+      );
+      set(tradeToDelete, trade);
     };
 
     const deleteTradeHandler = async () => {
-      if (!tradeToDelete.value) {
+      if (!get(tradeToDelete)) {
         return;
       }
 
       const { success } = await deleteExternalTrade(
-        tradeToDelete.value?.tradeId
+        get(tradeToDelete)!.tradeId!
       );
 
       if (!success) {
         return;
       }
 
-      tradeToDelete.value = null;
-      confirmationMessage.value = '';
+      set(tradeToDelete, null);
+      set(confirmationMessage, '');
     };
 
     const clearDialog = () => {
-      form.value?.reset();
+      get(form)?.reset();
 
-      openDialog.value = false;
-      editableItem.value = null;
+      set(openDialog, false);
+      set(editableItem, null);
     };
 
     const confirmSave = async () => {
-      if (form.value) {
-        const success = await form.value?.save();
+      if (get(form)) {
+        const success = await get(form)?.save();
         if (success) {
           clearDialog();
         }
@@ -484,13 +489,13 @@ export default defineComponent({
     const filters: Ref<MatchedKeyword<TradeFilterValueKeys>> = ref({});
 
     const availableAssets = computed<string[]>(() => {
-      return supportedAssets.value
+      return get(supportedAssets)
         .map(value => getAssetSymbol(value.identifier))
         .filter(uniqueStrings);
     });
 
     const availableLocations = computed<TradeLocation[]>(() => {
-      return associatedLocations.value;
+      return get(associatedLocations);
     });
 
     const matchers = computed<
@@ -500,16 +505,16 @@ export default defineComponent({
         key: TradeFilterKeys.BASE,
         keyValue: TradeFilterValueKeys.BASE,
         description: i18n.t('closed_trades.filter.base_asset').toString(),
-        suggestions: () => availableAssets.value,
-        validate: (asset: string) => availableAssets.value.includes(asset),
+        suggestions: () => get(availableAssets),
+        validate: (asset: string) => get(availableAssets).includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
       },
       {
         key: TradeFilterKeys.QUOTE,
         keyValue: TradeFilterValueKeys.QUOTE,
         description: i18n.t('closed_trades.filter.quote_asset').toString(),
-        suggestions: () => availableAssets.value,
-        validate: (asset: string) => availableAssets.value.includes(asset),
+        suggestions: () => get(availableAssets),
+        validate: (asset: string) => get(availableAssets).includes(asset),
         transformer: (asset: string) => getAssetIdentifierForSymbol(asset) ?? ''
       },
       {
@@ -526,17 +531,17 @@ export default defineComponent({
         suggestions: () => [],
         hint: i18n
           .t('closed_trades.filter.date_hint', {
-            format: getDateInputISOFormat(dateInputFormat.value)
+            format: getDateInputISOFormat(get(dateInputFormat))
           })
           .toString(),
         validate: value => {
           return (
             value.length > 0 &&
-            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
           );
         },
         transformer: (date: string) =>
-          convertToTimestamp(date, dateInputFormat.value).toString()
+          convertToTimestamp(date, get(dateInputFormat)).toString()
       },
       {
         key: TradeFilterKeys.END,
@@ -545,39 +550,40 @@ export default defineComponent({
         suggestions: () => [],
         hint: i18n
           .t('closed_trades.filter.date_hint', {
-            format: getDateInputISOFormat(dateInputFormat.value)
+            format: getDateInputISOFormat(get(dateInputFormat))
           })
           .toString(),
         validate: value => {
           return (
             value.length > 0 &&
-            !isNaN(convertToTimestamp(value, dateInputFormat.value))
+            !isNaN(convertToTimestamp(value, get(dateInputFormat)))
           );
         },
         transformer: (date: string) =>
-          convertToTimestamp(date, dateInputFormat.value).toString()
+          convertToTimestamp(date, get(dateInputFormat)).toString()
       },
       {
         key: TradeFilterKeys.LOCATION,
         keyValue: TradeFilterValueKeys.LOCATION,
         description: i18n.t('closed_trades.filter.location').toString(),
-        suggestions: () => availableLocations.value,
-        validate: location => availableLocations.value.includes(location as any)
+        suggestions: () => get(availableLocations),
+        validate: location => get(availableLocations).includes(location as any)
       }
     ]);
 
     const updatePayloadHandler = () => {
       let paginationOptions = {};
-      if (options.value) {
-        options.value = {
-          ...options.value,
-          sortBy:
-            options.value.sortBy.length > 0 ? [options.value.sortBy[0]] : [],
-          sortDesc:
-            options.value.sortDesc.length > 0 ? [options.value.sortDesc[0]] : []
-        };
 
-        const { itemsPerPage, page, sortBy, sortDesc } = options.value;
+      const optionsVal = get(options);
+      if (optionsVal) {
+        set(options, {
+          ...optionsVal,
+          sortBy: optionsVal.sortBy.length > 0 ? [optionsVal.sortBy[0]] : [],
+          sortDesc:
+            optionsVal.sortDesc.length > 0 ? [optionsVal.sortDesc[0]] : []
+        });
+
+        const { itemsPerPage, page, sortBy, sortDesc } = get(options)!;
         const offset = (page - 1) * itemsPerPage;
 
         paginationOptions = {
@@ -588,12 +594,12 @@ export default defineComponent({
         };
       }
 
-      if (locationOverview.value) {
-        filters.value.location = locationOverview.value as TradeLocation;
+      if (get(locationOverview)) {
+        filters.value.location = get(locationOverview) as TradeLocation;
       }
 
       const payload: Partial<TradeRequestPayload> = {
-        ...filters.value,
+        ...get(filters),
         ...paginationOptions
       };
 
@@ -601,19 +607,19 @@ export default defineComponent({
     };
 
     const updatePaginationHandler = (newOptions: PaginationOptions | null) => {
-      options.value = newOptions;
+      set(options, newOptions);
       updatePayloadHandler();
     };
 
     const updateFilterHandler = (
       newFilters: MatchedKeyword<TradeFilterKeys>
     ) => {
-      filters.value = newFilters;
+      set(filters, newFilters);
 
       let newOptions = null;
-      if (options.value) {
+      if (get(options)) {
         newOptions = {
-          ...options.value,
+          ...get(options)!,
           page: 1
         };
       }
@@ -629,7 +635,7 @@ export default defineComponent({
     return {
       pageRoute,
       selected,
-      tableHeaders: tableHeaders(locationOverview.value),
+      tableHeaders: tableHeaders(get(locationOverview)),
       data,
       limit,
       found,

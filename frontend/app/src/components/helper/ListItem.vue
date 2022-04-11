@@ -33,6 +33,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { setupThemeCheck } from '@/composables/common';
 
 export default defineComponent({
@@ -59,14 +60,14 @@ export default defineComponent({
   setup(props, { emit }) {
     const { subtitle } = toRefs(props);
     const { currentBreakpoint } = setupThemeCheck();
-    const large = computed(() => currentBreakpoint.value.lgAndUp);
+    const large = computed(() => get(currentBreakpoint).lgAndUp);
     const visibleSubtitle = computed(() => {
-      const sub = subtitle.value;
+      const sub = get(subtitle);
       if (!sub) {
         return '';
       }
       const truncLength = 7;
-      const small = currentBreakpoint.value.mdAndDown;
+      const small = get(currentBreakpoint).mdAndDown;
       const length = sub.length;
 
       if (!small || (length <= truncLength * 2 && small)) {

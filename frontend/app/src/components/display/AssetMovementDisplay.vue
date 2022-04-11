@@ -36,6 +36,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { AssetMovement } from '@/components/display/types';
 import { setupThemeCheck } from '@/composables/common';
@@ -49,7 +50,7 @@ export default defineComponent({
   setup() {
     const { breakpoint, isMobile } = setupThemeCheck();
     const small = computed(
-      () => !(['xs', 'sm'].includes(breakpoint.value) || isMobile.value)
+      () => !(['xs', 'sm'].includes(get(breakpoint)) || get(isMobile))
     );
     return {
       small,

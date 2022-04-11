@@ -123,6 +123,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { TagEvent } from '@/components/tags/types';
 import i18n from '@/i18n';
@@ -149,18 +150,18 @@ export default defineComponent({
 
     const changed = (event: TagEvent) => {
       emit('changed', {
-        ...tag.value,
+        ...get(tag),
         ...event
       });
     };
 
     const save = () => {
-      form.value?.reset();
-      emit('save', tag.value);
+      get(form)?.reset();
+      emit('save', get(tag));
     };
 
     const cancel = () => {
-      form.value?.reset();
+      get(form)?.reset();
       emit('cancel');
     };
 

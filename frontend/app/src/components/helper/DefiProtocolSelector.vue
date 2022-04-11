@@ -44,6 +44,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import DefiProtocolDetails from '@/components/helper/DefiProtocolDetails.vue';
 
 export interface Protocol {
@@ -117,7 +118,7 @@ export default defineComponent({
     };
 
     const protocols = computed<Protocol[]>(() => {
-      if (liabilities.value) {
+      if (get(liabilities)) {
         return [...dual, ...borrowing];
       }
       return [...dual, ...lending];

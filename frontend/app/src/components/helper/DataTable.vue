@@ -43,6 +43,7 @@
 
 <script lang="ts">
 import { defineComponent, PropType, ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import { setupThemeCheck } from '@/composables/common';
 import { setupSettings } from '@/composables/settings';
@@ -72,7 +73,7 @@ export default defineComponent({
     };
 
     const scrollToTop = () => {
-      const tableRef = table.value;
+      const tableRef = get(table);
       $vuetify.goTo(tableRef, {
         container: document.querySelector('.app-main') as HTMLElement
       });

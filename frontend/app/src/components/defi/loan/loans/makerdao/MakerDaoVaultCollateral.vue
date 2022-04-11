@@ -29,6 +29,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import LoanRow from '@/components/defi/loan/LoanRow.vue';
 import ManageWatchers from '@/components/defi/loan/loans/makerdao/ManageWatchers.vue';
 import StatCard from '@/components/display/StatCard.vue';
@@ -46,7 +47,7 @@ export default defineComponent({
   setup(props) {
     const { vault } = toRefs(props);
     const ratio = computed(() => {
-      const value = vault.value;
+      const value = get(vault);
       return value.collateralizationRatio ? value.collateralizationRatio : null;
     });
     return {

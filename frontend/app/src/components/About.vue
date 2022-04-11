@@ -112,6 +112,7 @@ import {
   ref,
   toRefs
 } from '@vue/composition-api';
+import { get, set, useClipboard } from '@vueuse/core';
 import BaseExternalLink from '@/components/base/BaseExternalLink.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import { interop } from '@/electron-interop';
@@ -129,7 +130,7 @@ export default defineComponent({
     const versionInfo = ref<SystemVersion | WebVersion | null>(null);
 
     const web = computed<boolean>(() => {
-      return (versionInfo.value && 'userAgent' in versionInfo.value) ?? false;
+      return (get(versionInfo) && 'userAgent' in get(versionInfo)!) ?? false;
     });
 
     const frontendVersion = computed<string>(() => {
@@ -137,23 +138,26 @@ export default defineComponent({
     });
 
     onMounted(async () => {
-      versionInfo.value = await interop.version();
+      set(versionInfo, await interop.version());
     });
 
     const copy = () => {
       let versionText = '';
-      versionText += `App Version: ${version.value.version}\r\n`;
-      versionText += `Frontend Version: ${frontendVersion.value}\r\n`;
-      if (versionInfo.value) {
-        if ('userAgent' in versionInfo.value) {
-          versionText += `Platform: ${versionInfo.value.platform}\r\n`;
-          versionText += `User Agent: ${versionInfo.value.userAgent}\r\n`;
+      versionText += `App Version: ${get(version).version}\r\n`;
+      versionText += `Frontend Version: ${get(frontendVersion)}\r\n`;
+      const versionInfoVal = get(versionInfo);
+      if (versionInfoVal) {
+        if ('userAgent' in versionInfoVal) {
+          versionText += `Platform: ${versionInfoVal.platform}\r\n`;
+          versionText += `User Agent: ${versionInfoVal.userAgent}\r\n`;
         } else {
-          versionText += `Platform: ${versionInfo.value.os} ${versionInfo.value.arch} ${versionInfo.value.osVersion}\r\n`;
-          versionText += `Electron: ${versionInfo.value.electron}\r\n`;
+          versionText += `Platform: ${versionInfoVal.os} ${versionInfoVal.arch} ${versionInfoVal.osVersion}\r\n`;
+          versionText += `Electron: ${versionInfoVal.electron}\r\n`;
         }
       }
-      navigator.clipboard.writeText(versionText);
+
+      const { copy } = useClipboard({ source: versionText });
+      copy();
     };
 
     return {

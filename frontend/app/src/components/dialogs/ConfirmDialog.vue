@@ -64,6 +64,7 @@ import {
   PropType,
   toRefs
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { themes } from '@/components/dialogs/consts';
 
 const ConfirmDialog = defineComponent({
@@ -85,8 +86,8 @@ const ConfirmDialog = defineComponent({
   emits: ['confirm', 'cancel'],
   setup(props, { emit }) {
     const { confirmType } = toRefs(props);
-    const color = computed(() => themes[confirmType.value].color);
-    const icon = computed(() => themes[confirmType.value].icon);
+    const color = computed(() => themes[get(confirmType)].color);
+    const icon = computed(() => themes[get(confirmType)].icon);
     const confirm = () => emit('confirm');
     const cancel = () => emit('cancel');
 
