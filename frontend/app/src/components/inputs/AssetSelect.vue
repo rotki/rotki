@@ -1,5 +1,6 @@
 ﻿<template>
   <v-autocomplete
+    ref="autoCompleteInput"
     :value="value"
     :disabled="disabled"
     :items="visibleAssets"
@@ -10,6 +11,7 @@
     :rules="rules"
     :clearable="clearable"
     :persistent-hint="persistentHint"
+    :required="required"
     :success-messages="successMessages"
     :error-messages="errorMessages"
     item-value="identifier"
@@ -86,7 +88,8 @@ export default defineComponent({
     disabled: { required: false, type: Boolean, default: false },
     outlined: { required: false, type: Boolean, default: false },
     clearable: { required: false, type: Boolean, default: false },
-    persistentHint: { required: false, type: Boolean, default: false }
+    persistentHint: { required: false, type: Boolean, default: false },
+    required: { required: false, type: Boolean, default: false }
   },
   emits: ['input'],
   setup(props, { emit }) {
@@ -95,6 +98,8 @@ export default defineComponent({
     const { supportedAssets } = toRefs(assetInfoRetrievalStore);
 
     const input = (_value: string) => emit('input', _value);
+
+    const autoCompleteInput = ref(null);
 
     const search = ref<string>('');
     const visibleAssets = ref<SupportedAsset[]>([]);
@@ -160,6 +165,7 @@ export default defineComponent({
     };
 
     return {
+      autoCompleteInput,
       blur,
       visibleAssets,
       customFilter,
