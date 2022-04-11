@@ -19,7 +19,7 @@ from rotkehlchen.utils.serialization import rlk_jsondumps
 T = TypeVar('T', bound='ProcessedAccountingEvent')
 
 
-@dataclass(init=True, repr=False, eq=True, order=False, unsafe_hash=False, frozen=False)
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class ProcessedAccountingEvent:
     """An event after having been processed by accounting. This is what:
         - Gets returned via the API
