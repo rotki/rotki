@@ -208,27 +208,35 @@
         <v-row>
           <v-col cols="12" md="6">
             <amount-input
+              ref="feeInput"
               v-model="fee"
               class="external-trade-form__fee"
+              persistent-hint
               outlined
               data-cy="fee"
+              :required="!!feeCurrency"
               :label="$t('external_trade_form.fee.label')"
-              persistent-hint
               :hint="$t('external_trade_form.fee.hint')"
               :error-messages="errorMessages['fee']"
+              :rules="feeRules"
               @focus="delete errorMessages['fee']"
+              @input="triggerFeeValidator"
             />
           </v-col>
           <v-col cols="12" md="6">
             <asset-select
+              ref="feeCurrencyInput"
               v-model="feeCurrency"
+              data-cy="fee-currency"
               outlined
               persistent-hint
               :label="$t('external_trade_form.fee_currency.label')"
               :hint="$t('external_trade_form.fee_currency.hint')"
-              data-cy="fee-currency"
+              :required="!!fee"
               :error-messages="errorMessages['feeCurrency']"
+              :rules="feeCurrencyRules"
               @focus="delete errorMessages['feeCurrency']"
+              @input="triggerFeeValidator"
             />
           </v-col>
         </v-row>
@@ -329,6 +337,8 @@ const ExternalTradeForm = defineComponent({
 
     const quoteAmountInput = ref<any>(null);
     const rateInput = ref<any>(null);
+    const feeInput = ref<any>(null);
+    const feeCurrencyInput = ref<any>(null);
 
     const baseRules = [
       (v: string) =>
@@ -350,6 +360,25 @@ const ExternalTradeForm = defineComponent({
       (v: string) =>
         !!v || i18n.t('external_trade_form.validation.non_empty_quote_amount')
     ];
+
+    const feeRules = [
+      (v: string) =>
+        !!v ||
+        !get(feeCurrency) ||
+        i18n.t('external_trade_form.validation.non_empty_fee')
+    ];
+
+    const feeCurrencyRules = [
+      (v: string) =>
+        !!v ||
+        !get(fee) ||
+        i18n.t('external_trade_form.validation.non_empty_fee_currency')
+    ];
+
+    const triggerFeeValidator = () => {
+      get(feeInput)?.textInput?.validate(true);
+      get(feeCurrencyInput)?.autoCompleteInput?.validate(true);
+    };
 
     const baseHint = computed<string>(() => {
       return get(type) === 'buy'
@@ -408,7 +437,7 @@ const ExternalTradeForm = defineComponent({
       set(amount, trade.amount.toString());
       set(rate, trade.rate.toString());
       set(fee, trade.fee?.toString() ?? '');
-      set(feeCurrency, trade.feeCurrency ? trade.feeCurrency : '');
+      set(feeCurrency, trade.feeCurrency ?? '');
       set(link, trade.link ?? '');
       set(notes, trade.notes ?? '');
       set(type, trade.tradeType);
@@ -559,6 +588,7 @@ const ExternalTradeForm = defineComponent({
     });
 
     return {
+      triggerFeeValidator,
       getAssetSymbol,
       input,
       id,
@@ -576,12 +606,16 @@ const ExternalTradeForm = defineComponent({
       type,
       rateInput,
       quoteAmountInput,
+      feeInput,
+      feeCurrencyInput,
       errorMessages,
       baseRules,
       quoteRules,
       amountRules,
       rateRules,
       quoteAmountRules,
+      feeRules,
+      feeCurrencyRules,
       baseHint,
       quoteHint,
       shouldRenderSummary,
