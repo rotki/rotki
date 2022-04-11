@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.constants.assets import A_BAT, A_MKR
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.blockchain import mock_etherscan_query
-from rotkehlchen.tests.utils.constants import A_GNO
+from rotkehlchen.tests.utils.constants import A_GNO, ZERO_ADDRESS
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 
 
@@ -30,7 +30,7 @@ def test_detect_tokens_for_addresses(ethtokens, inquirer):  # pylint: disable=un
 
 
     """
-    addr1 = '0x0000000000000000000000000000000000000000'
+    addr1 = ZERO_ADDRESS
     addr2 = '0xD3A962916a19146D658de0ab62ee237ed3115873'
     result, token_usd_prices = ethtokens.query_tokens_for_addresses([addr1, addr2], False)
 

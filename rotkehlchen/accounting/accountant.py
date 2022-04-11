@@ -104,6 +104,8 @@ class Accountant():
         the price and time at which every asset was obtained and also
         the general and taxable profit/loss.
 
+        The events history is already expected to be sorted when passed to this function.
+
         start_ts here is the timestamp at which to start taking trades and other
         taxable events into account. Not where processing starts from. Processing
         always starts from the very first event we find in the history.

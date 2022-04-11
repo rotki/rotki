@@ -83,7 +83,7 @@ class Oneinchv1Decoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
                 event.sequence_index = tx_log.log_index
                 in_event = event
 
-        maybe_reshuffle_events(out_event=out_event, in_event=in_event)
+        maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
         return None, None
 
     def _decode_swapped(  # pylint: disable=no-self-use

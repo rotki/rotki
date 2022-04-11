@@ -4,6 +4,8 @@ import pkgutil
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
 
+from gevent.lock import Semaphore
+
 from rotkehlchen.accounting.structures import (
     CPT_GAS,
     Balance,
@@ -99,6 +101,7 @@ class EVMTransactionDecoder():
         ]
         self.token_enricher_rules: List[Callable] = []  # enrichers to run for token transfers
         self.initialize_all_decoders()
+        self.undecoded_tx_query_lock = Semaphore()
 
     def _recursively_initialize_decoders(
             self, package: Union[str, ModuleType],
@@ -274,16 +277,25 @@ class EVMTransactionDecoder():
         self.database.update_last_write()
         return sorted(events, key=lambda x: x.sequence_index, reverse=False)
 
-    def decode_transaction_hashes(self, ignore_cache: bool, tx_hashes: List[EVMTxHash]) -> None:
-        """Make sure that receipts are pulled + events decoded for the given transaction hashes
+    def get_and_decode_undecoded_transactions(self, limit: Optional[int] = None) -> None:
+        """Checks the DB for up to `limit` undecoded transactions and decodes them.
+
+        This is protected by concurrent access from a lock"""
+        with self.undecoded_tx_query_lock:
+            hashes = self.dbethtx.get_transaction_hashes_not_decoded(limit=limit)
+            self.decode_transaction_hashes(ignore_cache=False, tx_hashes=hashes)
+
+    def decode_transaction_hashes(self, ignore_cache: bool, tx_hashes: List[EVMTxHash]) -> List[HistoryBaseEntry]:  # noqa: E501
+        """Make sure that receipts are pulled + events decoded for the given transaction hashes.
 
         The transaction hashes must exist in the DB at the time of the call
 
         May raise:
         - DeserializationError if there is a problem with conacting a remote to get receipts
-        - RemoteError if there is a problem with conacting a remote to get receipts
+        - RemoteError if there is a problem with contacting a remote to get receipts
         - InputError if the transaction hash is not found in the DB
         """
+        events = []
         self.reload_from_db()
         tx_module = EthTransactions(ethereum=self.ethereum_manager, database=self.database)
 
@@ -298,11 +310,13 @@ class EVMTransactionDecoder():
                 filter_=ETHTransactionsFilterQuery.make(tx_hash=tx_hash),
                 has_premium=True,  # ignore limiting here
             )
-            self.get_or_decode_transaction_events(
+            events.extend(self.get_or_decode_transaction_events(
                 transaction=txs[0],
                 tx_receipt=receipt,
                 ignore_cache=ignore_cache,
-            )
+            ))
+
+        return events
 
     def get_or_decode_transaction_events(
             self,

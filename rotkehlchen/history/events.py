@@ -6,7 +6,6 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures import HistoryBaseEntry
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     ETHTransactionsFilterQuery,
@@ -368,19 +367,11 @@ class EventsHistorian():
         step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Querying ethereum transaction receipts'
-        dbethtx = DBEthTx(self.db)
-        hashes_result = dbethtx.get_transaction_hashes_no_receipt(
-            tx_filter_query=tx_filter_query,
-            limit=None,
-        )
-        for entry in hashes_result:
-            tx_receipt_data = self.chain_manager.ethereum.get_transaction_receipt(tx_hash=entry)
-            dbethtx.add_receipt_data(tx_receipt_data)
+        ethtx_module.get_receipts_for_transactions_missing_them()
         step = self._increase_progress(step, total_steps)
 
         self.processing_state_name = 'Decoding raw transactions'
-        hashes = dbethtx.get_transaction_hashes_not_decoded(limit=None)
-        self.evm_tx_decoder.decode_transaction_hashes(ignore_cache=False, tx_hashes=hashes)
+        self.evm_tx_decoder.get_and_decode_undecoded_transactions(limit=None)
         step = self._increase_progress(step, total_steps)
 
         # Include all external trades and trades from external exchanges
@@ -432,5 +423,10 @@ class EventsHistorian():
         history.extend(base_entries)
         self._increase_progress(step, total_steps)
 
-        history.sort(key=lambda x: x.get_timestamp())
+        history.sort(  # sort events first by timestamp and if history base by sequence index
+            key=lambda x: (
+                x.get_timestamp(),
+                x.sequence_index if isinstance(x, HistoryBaseEntry) else 1,
+            ),
+        )
         return empty_or_error, history

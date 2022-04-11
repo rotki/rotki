@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
@@ -233,3 +233,25 @@ class EthTransactions(LockableQueryMixIn):
         dbethtx.add_receipt_data(tx_receipt_data)
         tx_receipt = dbethtx.get_receipt(tx_hash)
         return tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there
+
+    def get_receipts_for_transactions_missing_them(self, limit: Optional[int] = None) -> None:
+        """
+        Searches the database for up to `limit` transactions that have no corresponding receipt
+        and for each one of them queries the receipt and saves it in the DB.
+
+        It's protected by a lock to not enter the same code twice
+        (i.e. from periodic tasks and from pnl report history events gathering)
+        """
+        with self.ethereum.receipts_query_lock:
+            dbethtx = DBEthTx(self.database)
+            hash_results = dbethtx.get_transaction_hashes_no_receipt(
+                tx_filter_query=None,
+                limit=limit,
+            )
+
+            if len(hash_results) == 0:
+                return  # nothing to do
+
+            for entry in hash_results:
+                tx_receipt_data = self.ethereum.get_transaction_receipt(tx_hash=entry)
+                dbethtx.add_receipt_data(tx_receipt_data)
