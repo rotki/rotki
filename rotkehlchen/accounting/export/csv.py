@@ -263,7 +263,11 @@ class CSVExporter(CustomizableDateMixin):
         return success, filename
 
     def to_csv_entry(self, event: 'ProcessedAccountingEvent') -> Dict[str, Any]:
-        dict_event = event.to_exported_dict(self.timestamp_to_date, for_csv=True)
+        dict_event = event.to_exported_dict(
+            ts_converter=self.timestamp_to_date,
+            eth_explorer=self.eth_explorer,
+            for_csv=True,
+        )
         # For CSV also convert timestamp to date
         dict_event['timestamp'] = self.timestamp_to_date(event.timestamp)
         if self.settings.pnl_csv_with_formulas is False:

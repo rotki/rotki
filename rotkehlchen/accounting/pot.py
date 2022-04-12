@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, List, Literal, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple
 
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
 from rotkehlchen.accounting.cost_basis.prefork import (
@@ -128,6 +128,7 @@ class AccountingPot(CustomizableDateMixin):
             amount: FVal,
             taxable: bool,
             given_price: Optional[Price] = None,
+            extra_data: Optional[Dict] = None,
             **kwargs: Any,  # to be able to consume args given by add_asset_change_event
     ) -> None:
         """Add an asset acquisition event for the pot and count it in PnL if needed.
@@ -164,6 +165,8 @@ class AccountingPot(CustomizableDateMixin):
             cost_basis=None,
             index=len(self.processed_events),
         )
+        if extra_data:
+            event.extra_data = extra_data
         self.cost_basis.obtain_asset(event)
         # count profit/losses if we are inside the query period
         if timestamp >= self.query_start_ts and taxable:
@@ -187,6 +190,7 @@ class AccountingPot(CustomizableDateMixin):
             taxable_amount_ratio: FVal = ONE,
             count_entire_amount_spend: bool = True,
             count_cost_basis_pnl: bool = True,
+            extra_data: Optional[Dict[str, Any]] = None,
     ) -> Tuple[FVal, FVal]:
         """Add an asset spend event for the pot and count it in PnL if needed
 
@@ -250,6 +254,8 @@ class AccountingPot(CustomizableDateMixin):
             cost_basis=spend_cost,
             index=len(self.processed_events),
         )
+        if extra_data:
+            spend_event.extra_data = extra_data
         # count profit/losses if we are inside the query period
         if timestamp >= self.query_start_ts and taxable:
             self.pnls[event_type] += spend_event.calculate_pnl(

@@ -85,6 +85,7 @@ class TransactionsAccountant():
             taxable=event_settings.taxable,
             count_entire_amount_spend=event_settings.count_entire_amount_spend,
             count_cost_basis_pnl=event_settings.count_cost_basis_pnl,
+            extra_data={'tx_hash': event.event_identifier},
         )
         return 1
 
@@ -118,6 +119,7 @@ class TransactionsAccountant():
             taxable=event_settings.taxable,
             given_price=prices[0],
             count_entire_amount_spend=False,
+            extra_data={'tx_hash': out_event.event_identifier},
         )
         self.pot.add_acquisition(
             event_type=AccountingEventType.TRANSACTION_EVENT,
@@ -128,5 +130,6 @@ class TransactionsAccountant():
             amount=in_event.balance.amount,
             taxable=event_settings.taxable,
             given_price=prices[1],
+            extra_data={'tx_hash': in_event.event_identifier},
         )
         return 2
