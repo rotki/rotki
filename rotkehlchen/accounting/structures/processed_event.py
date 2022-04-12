@@ -80,6 +80,7 @@ class ProcessedAccountingEvent:
             tx_hash = self.extra_data.get('tx_hash', None)
             if tx_hash:
                 exported_dict['notes'] = f'{eth_explorer}{tx_hash}  ->  {self.notes}'
+            exported_dict['asset'] = str(self.asset)
         else:
             cost_basis = None
             if self.cost_basis is not None:
