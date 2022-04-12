@@ -517,6 +517,21 @@ class TradeSchema(Schema):
     link = fields.String(load_default=None)
     notes = fields.String(load_default=None)
 
+    @validates_schema
+    def validate_fee_and_fee_currency(  # pylint: disable=no-self-use
+        self,
+        data: Dict[str, Any],
+        **_kwargs: Any,
+    ) -> None:
+        fee = data.get('fee')
+        fee_currency = data.get('fee_currency')
+
+        if not ((fee and fee_currency) or not (fee or fee_currency)):
+            raise ValidationError('fee and fee_currency must be provided', field_name='fee')
+
+        if fee and fee == FVal('0'):
+            raise ValidationError('fee cannot be zero', field_name='fee')
+
 
 class LedgerActionSchema(Schema):
     identifier = fields.Integer(load_default=None, required=False)

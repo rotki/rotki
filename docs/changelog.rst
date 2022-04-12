@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`4172` Disallow addition and editing of external trade that could result in invalid trade fees.
 * :feature:`3370` Manual balance labels are now editable even after their creation
 * :feature:`4125` Introduces auto login mechanism for electron app.
 * :feature:`1447` Adds classification for ETH transactions and their events.
@@ -55,7 +56,7 @@ Changelog
 * :bug:`-` Fix coinbase/pro detection for GTC, TRU and FARM.
 * :bug:`3896` Fix dashboard balance search that does not show ethereum tokens.
 * :bug:`3895` Popup for successful forced sync operation should show correct icon.
-* :bug:`3899` Crypto.com users will now be able to import supercharger events and recurring buy orders. Viban purchases will also now be correct categorized. 
+* :bug:`3899` Crypto.com users will now be able to import supercharger events and recurring buy orders. Viban purchases will also now be correct categorized.
 * :bug:`-` Restores arm64 docker images.
 * :bug:`-` AVAX balances should now be always correctly queried.
 * :bug:`-` PnL report will correctly detect asset cost basis when the fee of a trade is nominated in the received asset.
