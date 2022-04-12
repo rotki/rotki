@@ -9,18 +9,6 @@ from rotkehlchen.fval import FVal
 if TYPE_CHECKING:
     from rotkehlchen.accounting.mixins.event import AccountingEventType
 
-# The various fields seen in overview and as type in all events
-OVR_TRADE_PNL = 'trades_pnl'
-OVR_LOAN_PROFIT = 'loan_profit'
-OVR_MARGIN_PNL = 'margin_positions_profit_loss'
-OVR_LEDGER_ACTIONS_PNL = 'ledger_actions_profit_loss'
-OVR_STAKING_PROFIT = 'staking_profit'
-OVR_SETTLEMENT_LOSS = 'settlement_loss'
-OVR_FEES = 'fees'
-OVR_ASSET_MOVEMENTS_FEES = 'asset_movement_fees'
-OVR_GAS_FEES = 'ethereum_transaction_gas_fees'
-OVR_STAKING = 'ethereum_staking'
-
 
 @dataclass(init=True, repr=False, eq=True, order=False, unsafe_hash=False, frozen=False)
 class PNL():
@@ -104,6 +92,3 @@ class PnlTotals(MutableMapping):
     @property
     def free(self) -> FVal:
         return FVal(sum(x.free for x in self.totals.values()))
-
-    def get_net_taxable_pnl(self) -> FVal:
-        return FVal(sum(self.totals.values()))  # type: ignore

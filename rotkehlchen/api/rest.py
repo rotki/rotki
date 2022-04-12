@@ -3870,7 +3870,11 @@ class RestAPI():
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
         result = {
-            'entries': [x.to_exported_dict(self.rotkehlchen.accountant.pots[0].timestamp_to_date, for_csv=False) for x in report_data],  # noqa: E501
+            'entries': [x.to_exported_dict(
+                ts_converter=self.rotkehlchen.accountant.pots[0].timestamp_to_date,
+                eth_explorer=None,
+                for_csv=False,
+            ) for x in report_data],
             'entries_found': entries_found,
             'entries_limit': entries_limit,
         }

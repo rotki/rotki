@@ -2,15 +2,6 @@ from abc import ABCMeta, abstractmethod
 from enum import auto
 from typing import TYPE_CHECKING, Dict, Iterator, List
 
-from rotkehlchen.accounting.pnl import (
-    OVR_ASSET_MOVEMENTS_FEES,
-    OVR_FEES,
-    OVR_LEDGER_ACTIONS_PNL,
-    OVR_LOAN_PROFIT,
-    OVR_MARGIN_PNL,
-    OVR_STAKING,
-    OVR_TRADE_PNL,
-)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.serializableenum import SerializableEnumMixin
@@ -31,17 +22,6 @@ class AccountingEventType(SerializableEnumMixin):
     STAKING = auto()
     HISTORY_BASE_ENTRY = auto()
     TRANSACTION_EVENT = auto()
-
-
-TYPE_TO_STR = {
-    AccountingEventType.TRADE: OVR_TRADE_PNL,
-    AccountingEventType.ASSET_MOVEMENT: OVR_ASSET_MOVEMENTS_FEES,
-    AccountingEventType.FEE: OVR_FEES,
-    AccountingEventType.MARGIN_POSITION: OVR_MARGIN_PNL,
-    AccountingEventType.LOAN: OVR_LOAN_PROFIT,
-    AccountingEventType.LEDGER_ACTION: OVR_LEDGER_ACTIONS_PNL,
-    AccountingEventType.STAKING: OVR_STAKING,
-}
 
 
 class AccountingEventMixin(metaclass=ABCMeta):

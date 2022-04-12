@@ -226,7 +226,6 @@ class CostBasisCalculator(CustomizableDateMixin):
             msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(database=database)
-        self._taxfree_after_period: Optional[int] = None
         self.msg_aggregator = msg_aggregator
         self.reset(self.settings)
 

@@ -7,56 +7,6 @@ from rotkehlchen.errors import DeserializationError
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
-ACCOUNTING_EVENT_SCHEMA = {
-    'type': 'object',
-    'properties': {
-        'event_type': {'type': 'string'},
-        'location': {'type': 'string'},
-        'paid_in_profit_currency': {'type': 'string'},
-        'paid_asset': {'type': 'string'},
-        'paid_in_asset': {'type': 'string'},
-        'taxable_amount': {'type': 'string'},
-        'taxable_bought_cost_in_profit_currency': {'type': 'string'},
-        'received_asset': {'type': 'string'},
-        'taxable_received_in_profit_currency': {'type': 'string'},
-        'received_in_asset': {'type': 'string'},
-        'net_profit_or_loss': {'type': 'string'},
-        'time': {'type': 'number'},
-        'cost_basis': {
-            'oneOf': [{'type': 'null'}, {'$ref': '#/$defs/cost_basis'}],
-        },
-        'is_virtual': {'type': 'boolean'},
-        'link': {'oneOf': [{'type': 'string'}, {'type': 'null'}]},
-        'notes': {'oneOf': [{'type': 'string'}, {'type': 'null'}]},
-    },
-    '$defs': {
-        'cost_basis': {
-            'type': 'object',
-            'properties': {
-                'is_complete': {'type': 'boolean'},
-                'matched_acquisitions': {'type': 'array'},
-                'taxable_bought_cost': {'type': 'string'},
-                'taxfree_bought_cost': {'type': 'string'},
-            },
-        },
-    },
-    'required': [
-        'location',
-        'paid_in_profit_currency',
-        'paid_in_asset',
-        'taxable_amount',
-        'taxable_bought_cost_in_profit_currency',
-        'taxable_received_in_profit_currency',
-        'received_in_asset',
-        'net_profit_or_loss',
-        'time',
-        'cost_basis',
-        'is_virtual',
-        'link',
-        'notes',
-    ],
-}
-
 
 class SchemaEventType(DBEnumMixIn):
     """Supported Event Type schemas

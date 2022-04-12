@@ -35,6 +35,9 @@ class ProcessedAccountingEvent:
     pnl: PNL
     cost_basis: Optional['CostBasisInfo']
     index: int
+    # This is set only for some events to remember extra data that can be used later
+    # such as the transaction hash of an event
+    extra_data: Dict[str, Any] = field(default_factory=dict)
     # These are set by calculate pnl and are only here to be remembered by the
     # processed accounting event so that the CSV export formulas can be correctly made
     count_entire_amount_spend: bool = field(init=False, default=False)
@@ -51,6 +54,7 @@ class ProcessedAccountingEvent:
     def to_exported_dict(
             self,
             ts_converter: Callable[[Timestamp], str],
+            eth_explorer: Optional[str],
             for_csv: bool,
     ) -> Dict[str, Any]:
         """These are the fields that will appear in CSV and report API"""
@@ -73,6 +77,10 @@ class ProcessedAccountingEvent:
                 taxable_basis, free_basis = self.cost_basis.to_string(ts_converter)
             exported_dict['cost_basis_taxable'] = taxable_basis
             exported_dict['cost_basis_free'] = free_basis
+            tx_hash = self.extra_data.get('tx_hash', None)
+            if tx_hash:
+                exported_dict['notes'] = f'{eth_explorer}{tx_hash}  ->  {self.notes}'
+            exported_dict['asset'] = str(self.asset)
         else:
             cost_basis = None
             if self.cost_basis is not None:
@@ -83,7 +91,11 @@ class ProcessedAccountingEvent:
 
     def serialize_to_dict(self, ts_converter: Callable[[Timestamp], str]) -> Dict[str, Any]:
         """This is used to serialize to dict for saving to the DB"""
-        data = self.to_exported_dict(ts_converter, for_csv=False)
+        data = self.to_exported_dict(
+            ts_converter=ts_converter,
+            eth_explorer=None,
+            for_csv=False,
+        )
         data['index'] = self.index
         data['count_entire_amount_spend'] = self.count_entire_amount_spend
         data['count_cost_basis_pnl'] = self.count_cost_basis_pnl

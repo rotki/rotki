@@ -84,18 +84,6 @@ class CSVExporter(CustomizableDateMixin):
         except (json.decoder.JSONDecodeError, KeyError):
             self.eth_explorer = ETH_EXPLORER
 
-    def _add_if_formula(
-            self,
-            condition: str,
-            if_true: str,
-            if_false: str,
-            actual_value: FVal,
-    ) -> str:
-        if self.settings.pnl_csv_with_formulas is False:
-            return str(actual_value)
-
-        return f'=IF({condition};{if_true};{if_false})'
-
     def _add_sumif_formula(
             self,
             check_range: str,
@@ -107,12 +95,6 @@ class CSVExporter(CustomizableDateMixin):
             return str(actual_value)
 
         return f'=SUMIF({check_range};{condition};{sum_range})'
-
-    def _add_equals_formula(self, expression: str, actual_value: FVal) -> str:
-        if self.settings.pnl_csv_with_formulas is False:
-            return str(actual_value)
-
-        return f'={expression}'
 
     @staticmethod
     def _add_pnl_type(
@@ -263,7 +245,11 @@ class CSVExporter(CustomizableDateMixin):
         return success, filename
 
     def to_csv_entry(self, event: 'ProcessedAccountingEvent') -> Dict[str, Any]:
-        dict_event = event.to_exported_dict(self.timestamp_to_date, for_csv=True)
+        dict_event = event.to_exported_dict(
+            ts_converter=self.timestamp_to_date,
+            eth_explorer=self.eth_explorer,
+            for_csv=True,
+        )
         # For CSV also convert timestamp to date
         dict_event['timestamp'] = self.timestamp_to_date(event.timestamp)
         if self.settings.pnl_csv_with_formulas is False:
