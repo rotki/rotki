@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING
+from collections import defaultdict
+from typing import TYPE_CHECKING, Dict, Set
 
 if TYPE_CHECKING:
     from sqlite3 import Cursor
@@ -120,6 +121,7 @@ def _update_history_entries_from_kraken(cursor: 'Cursor') -> None:
     logic by:
     - Removing extra row additions
     - Updating the sequence index to avoid duplicates
+    - Make sure that no other event has duplicated sequence indexes
     """
     cursor.execute("""
     DELETE FROM history_events where location="B" AND asset="KFEE" AND
@@ -129,6 +131,34 @@ def _update_history_entries_from_kraken(cursor: 'Cursor') -> None:
     UPDATE history_events SET sequence_index = sequence_index + 1 WHERE asset="KFEE"
      AND location="B" AND type="trade" AND subtype="fee"
     """)
+
+    cursor.execute("""
+    SELECT e.event_identifier, e.sequence_index, e.identifier from history_events e JOIN (SELECT event_identifier,
+    sequence_index, COUNT(*) as cnt FROM history_events GROUP BY event_identifier, sequence_index)
+    other ON e.event_identifier = other.event_identifier and e.sequence_index=other.sequence_index
+    WHERE other.cnt > 1;
+    """)  # noqa: E501
+
+    update_sentences = []
+    used_indexes: Dict[str, Set[int]] = defaultdict(set)
+    for event_identifier, sequence_index, identifier in cursor:
+        last_index = used_indexes.get(event_identifier)
+        if last_index is None:
+            # Let the first one be the same as it was in the database
+            used_indexes[event_identifier].add(sequence_index)
+            continue
+
+        new_index = sequence_index + 1
+        while new_index in used_indexes[event_identifier]:
+            new_index += 1
+        used_indexes[event_identifier].add(new_index)
+        update_sentences.append((new_index, identifier))
+
+    if len(update_sentences) != 0:
+        cursor.executemany(
+            'UPDATE history_events SET sequence_index=? WHERE identifier=?',
+            update_sentences,
+        )
 
 
 def upgrade_v31_to_v32(db: 'DBHandler') -> None:
