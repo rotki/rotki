@@ -61,10 +61,6 @@ class AccountingPot(CustomizableDateMixin):
             pot=self,
         )
         self.query_start_ts = self.query_end_ts = Timestamp(0)
-        # If this flag is True when your asset is being forcefully sold as a
-        # loan/margin settlement then profit/loss is also calculated before the entire
-        # amount is taken as a loss
-        self.count_profit_for_settlements = False
 
     def _add_processed_event(self, event: ProcessedAccountingEvent) -> None:
         dbpnl = DBAccountingReports(self.database)
