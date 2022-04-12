@@ -3,7 +3,7 @@ from typing import Any, DefaultDict, Dict, List, NamedTuple, Optional, Set, Tupl
 
 from eth_typing.evm import ChecksumAddress
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EthereumToken, UnderlyingToken
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address

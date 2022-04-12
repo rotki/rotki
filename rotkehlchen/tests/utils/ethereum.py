@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Tuple
 
 import gevent
 
-from rotkehlchen.accounting.structures import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager, NodeName
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxReceiptLog

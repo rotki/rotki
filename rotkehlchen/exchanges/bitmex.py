@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset

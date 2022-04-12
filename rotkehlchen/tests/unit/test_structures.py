@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.accounting.structures import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_USD
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors import InputError

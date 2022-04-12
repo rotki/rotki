@@ -1,7 +1,7 @@
 import dataclasses
 from typing import Any, Dict, Literal, Optional, Tuple
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.errors import DeserializationError, UnknownAsset
 from rotkehlchen.fval import FVal

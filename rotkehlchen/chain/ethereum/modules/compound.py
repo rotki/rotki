@@ -2,13 +2,8 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, NamedTuple, Optional, Tuple, Union
 
-from rotkehlchen.accounting.structures import (
-    AssetBalance,
-    Balance,
-    BalanceType,
-    DefiEvent,
-    DefiEventType,
-)
+from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
+from rotkehlchen.accounting.structures.defi import DefiEvent, DefiEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.utils import symbol_to_asset_or_token, symbol_to_ethereum_token
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES

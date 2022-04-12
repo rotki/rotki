@@ -1,4 +1,4 @@
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.modules.aave.structures import (
     AaveBorrowEvent,

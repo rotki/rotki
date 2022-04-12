@@ -34,10 +34,9 @@ from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import (
+from rotkehlchen.accounting.structures.balance import Balance, BalanceType
+from rotkehlchen.accounting.structures.base import (
     ActionType,
-    Balance,
-    BalanceType,
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,

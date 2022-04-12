@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, List, Literal, NamedTuple, Optional, Tuple, Union, cast
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
-from rotkehlchen.accounting.structures import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.base import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import DeserializationError

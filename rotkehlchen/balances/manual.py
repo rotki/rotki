@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
-from rotkehlchen.accounting.structures import Balance, BalanceType
+from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors import InputError, RemoteError

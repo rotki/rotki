@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 
-from rotkehlchen.accounting.structures import AssetBalance, Balance
+from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.utils import multicall_2, token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_PICKLE

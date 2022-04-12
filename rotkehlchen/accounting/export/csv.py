@@ -14,7 +14,7 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.processed_event import ProcessedAccountingEvent
+    from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)

@@ -11,7 +11,7 @@ from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
-from rotkehlchen.accounting.structures import ActionType, HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import ActionType, HistoryBaseEntry
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (

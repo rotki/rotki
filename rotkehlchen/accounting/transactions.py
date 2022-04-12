@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Dict, Iterator, List
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.chain.ethereum.decoding.structures import TxEventSettings, TxMultitakeTreatment
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp

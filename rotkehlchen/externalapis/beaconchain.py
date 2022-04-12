@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union
 import gevent
 import requests
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     Eth2Deposit,
     ValidatorID,

@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from rotkehlchen.accounting.structures import HistoryBaseEntry
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 
 
 def _swap_event_indices(event1: HistoryBaseEntry, event2: HistoryBaseEntry) -> None:

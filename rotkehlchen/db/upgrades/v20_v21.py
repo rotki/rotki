@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures import BalanceType
+from rotkehlchen.accounting.structures.balance import BalanceType
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

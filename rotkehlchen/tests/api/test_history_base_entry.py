@@ -4,8 +4,8 @@ from typing import Any, Dict, List
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures import (
-    Balance,
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntry,
     HistoryEventSubType,
     HistoryEventType,
