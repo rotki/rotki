@@ -2456,6 +2456,11 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
         ).fetchone()[0] == 1
 
+    manual_balance_before = cursor.execute(
+        'SELECT asset, label, amount, location, category FROM '
+        'manually_tracked_balances;',
+    ).fetchall()
+
     db_v31.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2484,6 +2489,22 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         assert cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
         ).fetchone()[0] == 0
+
+    manual_balance_after = cursor.execute(
+        'SELECT asset, label, amount, location, category FROM '
+        'manually_tracked_balances;',
+    ).fetchall()
+
+    manual_balance_right = [
+        ('1CR', 'LABEL1', '34.5', 'A', 'B'),
+        ('2GIVE', 'LABEL2', '0.3', 'B', 'B'),
+        ('1CR', 'LABEL3', '3', 'A', 'A'),
+    ]
+    assert manual_balance_right == manual_balance_before == manual_balance_after
+
+    manual_balance_ids = cursor.execute('SELECT id FROM manually_tracked_balances;').fetchall()
+
+    assert [1, 2, 3] == list(map(lambda x: x[0], manual_balance_ids))
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

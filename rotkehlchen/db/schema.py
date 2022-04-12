@@ -317,8 +317,9 @@ CREATE TABLE IF NOT EXISTS ethereum_accounts_details (
 
 DB_CREATE_MANUALLY_TRACKED_BALANCES = """
 CREATE TABLE IF NOT EXISTS manually_tracked_balances (
+    id INTEGER PRIMARY KEY,
     asset TEXT NOT NULL,
-    label TEXT NOT NULL PRIMARY KEY,
+    label TEXT NOT NULL,
     amount TEXT,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
