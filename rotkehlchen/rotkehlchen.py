@@ -694,10 +694,9 @@ class Rotkehlchen():
                     ignore_cache=False,
                 )
             except RemoteError as e:
-                problem_free = False
-                self.msg_aggregator.add_message(
-                    message_type=WSMessageType.BALANCE_SNAPSHOT_ERROR,
-                    data={'location': 'nfts', 'error': str(e)},
+                log.error(
+                    f'At balance snapshot NFT balances query failed due to {str(e)}. Error '
+                    f'is ignored and balance snapshot will still be saved.',
                 )
             else:
                 if len(nft_mapping) != 0:
