@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3370` Manual balance labels are now editable even after their creation
 * :feature:`4125` Introduces auto login mechanism for electron app.
 * :feature:`1447` Adds classification for ETH transactions and their events.
 * :bug:`4078` Adjust scrollbar color in dark mode for better visibility.
