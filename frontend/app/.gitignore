@@ -1,6 +1,7 @@
 .DS_Store
 node_modules
 /dist
+/electron-build
 
 /tests/spectron/reports/
 selenium-debug.log
@@ -31,3 +32,4 @@ tests/e2e/screenshots
 .nyc_output
 
 rotki_config.json
+package-lock.json

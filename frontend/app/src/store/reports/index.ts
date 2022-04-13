@@ -10,7 +10,6 @@ import store, { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import {
   ProfitLossEvents,
-  ProfitLossOverview,
   ProfitLossReportPeriod,
   ReportError,
   Reports,
@@ -18,8 +17,7 @@ import {
 } from '@/types/reports';
 import { TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { AccountingSettings, BaseAccountingSettings } from '@/types/user';
-import { Zero } from '@/utils/bignumbers';
+import { AccountingSettings } from '@/types/user';
 import { logger } from '@/utils/logging';
 
 const notify = (info: {
@@ -42,23 +40,7 @@ const emptyError: () => ReportError = () => ({
   message: ''
 });
 
-const pnlOverview = (): ProfitLossOverview => ({
-  loanProfit: Zero,
-  defiProfitLoss: Zero,
-  marginPositionsProfitLoss: Zero,
-  settlementLosses: Zero,
-  ethereumTransactionGasCosts: Zero,
-  ledgerActionsProfitLoss: Zero,
-  assetMovementFees: Zero,
-  generalTradeProfitLoss: Zero,
-  taxableTradeProfitLoss: Zero,
-  totalTaxableProfitLoss: Zero,
-  stakingProfit: Zero,
-  totalProfitLoss: Zero
-});
-
 const defaultReport = (): SelectedReport => ({
-  overview: pnlOverview(),
   entries: [] as ProfitLossEvents,
   entriesLimit: 0,
   entriesFound: 0,
@@ -68,13 +50,14 @@ const defaultReport = (): SelectedReport => ({
   lastProcessedTimestamp: 0,
   processedActions: 0,
   totalActions: 0,
-  currency: CURRENCY_USD,
+  overview: {},
   settings: {
     taxfreeAfterPeriod: 0,
     calculatePastCostBasis: false,
     accountForAssetsMovements: false,
     includeGasCosts: false,
-    includeCrypto2crypto: false
+    includeCrypto2crypto: false,
+    profitCurrency: CURRENCY_USD
   }
 });
 
@@ -152,38 +135,16 @@ export const useReports = defineStore('reports', () => {
         reportId,
         currentPage
       );
-      const overview: ProfitLossOverview = {
-        assetMovementFees: selectedReport.assetMovementFees,
-        defiProfitLoss: selectedReport.defiProfitLoss,
-        generalTradeProfitLoss: selectedReport.generalTradeProfitLoss,
-        ethereumTransactionGasCosts: selectedReport.ethereumTransactionGasCosts,
-        ledgerActionsProfitLoss: selectedReport.ledgerActionsProfitLoss,
-        marginPositionsProfitLoss: selectedReport.marginPositionsProfitLoss,
-        settlementLosses: selectedReport.settlementLosses,
-        taxableTradeProfitLoss: selectedReport.taxableTradeProfitLoss,
-        totalProfitLoss: selectedReport.totalProfitLoss,
-        totalTaxableProfitLoss: selectedReport.totalTaxableProfitLoss,
-        stakingProfit: selectedReport.stakingProfit,
-        loanProfit: selectedReport.loanProfit
-      };
-      const settings: BaseAccountingSettings = {
-        includeCrypto2crypto: selectedReport.includeCrypto2crypto,
-        accountForAssetsMovements: selectedReport.accountForAssetsMovements,
-        calculatePastCostBasis: selectedReport.calculatePastCostBasis,
-        includeGasCosts: selectedReport.includeGasCosts,
-        taxfreeAfterPeriod: selectedReport.taxfreeAfterPeriod
-      };
       set(report, {
-        overview,
-        settings,
         ...reportEntries,
+        overview: selectedReport.overview,
+        settings: selectedReport.settings,
         start: selectedReport.startTs,
         end: selectedReport.endTs,
         firstProcessedTimestamp: selectedReport.firstProcessedTimestamp,
         lastProcessedTimestamp: selectedReport.lastProcessedTimestamp,
         totalActions: selectedReport.totalActions,
-        processedActions: selectedReport.processedActions,
-        currency: selectedReport.profitCurrency
+        processedActions: selectedReport.processedActions
       });
       set(loaded, false);
     } catch (e: any) {

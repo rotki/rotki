@@ -29,14 +29,14 @@
       </template>
       <template #item.totalProfitLoss="{ item }">
         <amount-display
-          :value="item.totalProfitLoss"
-          :asset="item.profitCurrency"
+          :value="calculateTotalProfitLoss(item).total"
+          :fiat-currency="item.settings.profitCurrency"
         />
       </template>
       <template #item.totalTaxableProfitLoss="{ item }">
         <amount-display
-          :value="item.totalTaxableProfitLoss"
-          :asset="item.profitCurrency"
+          :value="calculateTotalProfitLoss(item).taxable"
+          :fiat-currency="item.settings.profitCurrency"
         />
       </template>
       <template #item.sizeOnDisk="{ item }">
@@ -77,9 +77,9 @@
       <template #expanded-item="{ headers, item }">
         <table-expand-container visible :colspan="headers.length">
           <profit-loss-overview
-            :overview="item"
             flat
-            :symbol="item.profitCurrency"
+            :report="item"
+            :symbol="item.settings.profitCurrency"
           />
         </table-expand-container>
       </template>
@@ -100,6 +100,7 @@ import {
   onBeforeMount,
   ref
 } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import { DataTableHeader } from 'vuetify';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -114,6 +115,7 @@ import { Routes } from '@/router/routes';
 import { Section } from '@/store/const';
 import { useReports } from '@/store/reports';
 import { size } from '@/utils/data';
+import { calculateTotalProfitLoss } from '@/utils/report';
 
 const getHeaders: () => DataTableHeader[] = () => [
   {
@@ -152,7 +154,7 @@ const getHeaders: () => DataTableHeader[] = () => [
     align: 'end',
     width: 140
   },
-  { text: '', value: 'expand', align: 'end', width: 48 }
+  { text: '', value: 'expand', align: 'end', sortable: false }
 ];
 
 export default defineComponent({
@@ -172,15 +174,15 @@ export default defineComponent({
     const { fetchReports, fetchReport, deleteReport, canExport } = reportStore;
     const { reports } = storeToRefs(reportStore);
     const items = computed(() =>
-      reports.value.entries.map((value, index) => ({
+      get(reports).entries.map((value, index) => ({
         ...value,
         id: index
       }))
     );
 
     const limits = computed(() => ({
-      total: reports.value.entriesFound,
-      limit: reports.value.entriesLimit
+      total: get(reports).entriesFound,
+      limit: get(reports).entriesLimit
     }));
 
     const refresh = async () => await fetchReports();
@@ -192,8 +194,8 @@ export default defineComponent({
 
     const showUpgradeMessage = computed(
       () =>
-        reports.value.entriesLimit > 0 &&
-        reports.value.entriesLimit < reports.value.entriesFound
+        get(reports).entriesLimit > 0 &&
+        get(reports).entriesLimit < get(reports).entriesFound
     );
 
     const getReportUrl = (identifier: number) => {
@@ -212,11 +214,12 @@ export default defineComponent({
       size,
       refresh,
       selected,
-      canExport: (reportId: number) => canExport(reportId).value,
+      canExport: (reportId: number) => get(canExport(reportId)),
       getReportUrl,
       fetchReports,
       fetchReport,
-      deleteReport
+      deleteReport,
+      calculateTotalProfitLoss
     };
   }
 });

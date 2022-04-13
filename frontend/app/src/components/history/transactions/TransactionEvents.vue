@@ -1,9 +1,9 @@
 <template>
   <table-expand-container
-    visible
     :colspan="colspan - 1"
-    :padded="false"
     :offset="1"
+    :padded="false"
+    visible
   >
     <template #append>
       <v-expansion-panels
@@ -30,15 +30,15 @@
           <v-expansion-panel-content>
             <div class="my-n4">
               <data-table
-                class="transparent"
                 :class="$style.table"
                 :headers="headers"
                 :items="events"
-                item-key="identifier"
+                :mobile-breakpoint="0"
+                :no-data-text="$t('transactions.events.loading')"
+                class="transparent"
                 hide-default-footer
                 hide-default-header
-                :no-data-text="$t('transactions.events.loading')"
-                :mobile-breakpoint="0"
+                item-key="identifier"
               >
                 <template #item.type="{ item }">
                   <transaction-event-type :event="item" />
@@ -47,33 +47,16 @@
                   <transaction-event-asset :event="item" />
                 </template>
                 <template #item.description="{ item }">
-                  <template v-for="(note, index) in formatNotes(item)">
-                    <span
-                      v-if="note.type === 'address' || note.type === 'tx'"
-                      :key="index"
-                      class="d-inline-flex"
-                    >
-                      <hash-link
-                        :class="$style['row__description__address']"
-                        :text="note.address"
-                        :tx="note.type === 'tx'"
-                      />
-                    </span>
-                    <span v-else-if="note.type === 'amount'" :key="index">
-                      <amount-display
-                        :value="note.amount"
-                        :asset="note.asset"
-                      />
-                    </span>
-                    <span v-else :key="index">
-                      {{ note.word }}
-                    </span>
-                  </template>
+                  <transaction-event-note
+                    :notes="item.notes"
+                    :amount="item.balance.amount"
+                    :asset="item.asset"
+                  />
                 </template>
                 <template #item.actions="{ item }">
                   <row-actions
-                    :edit-tooltip="$t('transactions.events.actions.edit')"
                     :delete-tooltip="$t('transactions.events.actions.delete')"
+                    :edit-tooltip="$t('transactions.events.actions.edit')"
                     @edit-click="editEvent(item)"
                     @delete-click="deleteEvent(item)"
                   />
@@ -88,7 +71,6 @@
 </template>
 
 <script lang="ts">
-import { BigNumber } from '@rotki/common';
 import {
   computed,
   defineComponent,
@@ -102,36 +84,21 @@ import { DataTableHeader } from 'vuetify';
 import RowActions from '@/components/helper/RowActions.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import TransactionEventAsset from '@/components/history/transactions/TransactionEventAsset.vue';
+import TransactionEventNote from '@/components/history/transactions/TransactionEventNote.vue';
 import TransactionEventType from '@/components/history/transactions/TransactionEventType.vue';
 import { useProxy } from '@/composables/common';
 import i18n from '@/i18n';
 import { EthTransactionEventWithMeta } from '@/services/history/types';
-import { useAssetInfoRetrieval } from '@/store/assets';
 import {
   EthTransactionEntry,
   EthTransactionEventEntry
 } from '@/store/history/types';
 import { transformEntryWithMeta } from '@/store/history/utils';
-import { bigNumberify } from '@/utils/bignumbers';
-
-enum NoteType {
-  ADDRESS = 'address',
-  TX = 'tx',
-  AMOUNT = 'amount',
-  WORD = 'word'
-}
-
-type NoteFormat = {
-  type: NoteType;
-  word?: string;
-  address?: string;
-  amount?: BigNumber;
-  asset?: string;
-};
 
 export default defineComponent({
   name: 'TransactionEvents',
   components: {
+    TransactionEventNote,
     RowActions,
     TransactionEventType,
     TransactionEventAsset,
@@ -186,59 +153,6 @@ export default defineComponent({
       );
     });
 
-    const formatNotes = (event: EthTransactionEventEntry): NoteFormat[] => {
-      const { assetSymbol } = useAssetInfoRetrieval();
-
-      const notes = event.notes;
-      const amount = event.balance.amount;
-      const asset = get(assetSymbol(event.asset));
-
-      if (!notes) return [];
-
-      const formats: NoteFormat[] = [];
-      let skip = false;
-
-      // label each word from notes whether it is an address or not
-      const words = notes.split(' ');
-
-      words.forEach((word, index) => {
-        if (skip) {
-          skip = false;
-          return;
-        }
-
-        const isAddress = word.startsWith('0x') && word.length >= 42;
-        const isTransaction =
-          isAddress && index !== 0 && words[index - 1] === 'transaction';
-
-        if (isAddress) {
-          if (isTransaction) {
-            formats.push({ type: NoteType.TX, address: word });
-          } else {
-            formats.push({ type: NoteType.ADDRESS, address: word });
-          }
-          return;
-        }
-
-        const isAmount =
-          !isNaN(parseFloat(word)) &&
-          bigNumberify(word).eq(amount) &&
-          amount.gt(0) &&
-          index < words.length - 1 &&
-          words[index + 1] === asset;
-
-        if (isAmount) {
-          formats.push({ type: NoteType.AMOUNT, amount, asset });
-          skip = true;
-          return;
-        }
-
-        formats.push({ type: NoteType.WORD, word });
-      });
-
-      return formats;
-    };
-
     const editEvent = (item: EthTransactionEventEntry) =>
       emit('edit:event', item);
     const deleteEvent = (item: EthTransactionEventEntry) =>
@@ -258,7 +172,6 @@ export default defineComponent({
 
     return {
       panel,
-      formatNotes,
       events,
       headers,
       editEvent,
@@ -268,7 +181,7 @@ export default defineComponent({
 });
 </script>
 
-<style module lang="scss">
+<style lang="scss" module>
 .table {
   :global {
     tbody {
@@ -297,13 +210,6 @@ export default defineComponent({
     min-width: 300px;
     line-height: 1.5rem;
     word-break: break-word;
-
-    &__address {
-      background: var(--v-rotki-light-grey-darken1);
-      padding: 0 4px 0 8px;
-      border-radius: 50px;
-      margin: 2px;
-    }
   }
 
   &__actions {

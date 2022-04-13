@@ -12,147 +12,57 @@
           />
           <th
             class="text-right"
-            v-text="$t('profit_loss_overview.columns.value', { symbol })"
+            v-text="$t('profit_loss_overview.columns.total_profit_loss')"
+          />
+          <th
+            class="text-right"
+            v-text="
+              $t('profit_loss_overview.columns.total_taxable_profit_loss')
+            "
           />
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>{{ $t('profit_loss_overview.rows.loan_profit') }}</td>
+        <tr v-for="(item, key) in report.overview" :key="key">
+          <td>{{ toCapitalCase(key) }}</td>
           <td class="text-right">
             <amount-display
               pnl
-              :value="overview.loanProfit"
+              :value="item.free.plus(item.taxable)"
               :loading="loading"
+              :fiat-currency="report.settings.profitCurrency"
             />
-          </td>
-        </tr>
-        <tr>
-          <td>{{ $t('profit_loss_overview.rows.defi_profit_loss') }}</td>
-          <td class="text-right">
-            <amount-display
-              pnl
-              :value="overview.defiProfitLoss"
-              :loading="loading"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td>
-            {{ $t('profit_loss_overview.rows.margin_positions_pnl') }}
           </td>
           <td class="text-right">
             <amount-display
               pnl
-              :value="overview.marginPositionsProfitLoss"
+              :value="item.taxable"
               :loading="loading"
+              :fiat-currency="report.settings.profitCurrency"
             />
           </td>
         </tr>
         <tr>
-          <td>{{ $t('profit_loss_overview.rows.settlement_losses') }}</td>
-          <td class="text-right">
-            <amount-display
-              pnl
-              :value="overview.settlementLosses"
-              :loading="loading"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td>
-            {{ $t('profit_loss_overview.rows.ethereum_transaction_gas_costs') }}
-          </td>
-          <td class="text-right">
-            <amount-display
-              :value="overview.ethereumTransactionGasCosts"
-              :loading="loading"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td>
-            {{ $t('profit_loss_overview.rows.asset_movement_fees') }}
-          </td>
-          <td class="text-right">
-            <amount-display
-              :value="overview.assetMovementFees"
-              :loading="loading"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td>
-            {{ $t('profit_loss_overview.rows.ledger_actions_profit_loss') }}
-          </td>
-          <td class="text-right">
-            <amount-display
-              pnl
-              :value="overview.ledgerActionsProfitLoss"
-              :loading="loading"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td>
-            {{ $t('profit_loss_overview.rows.general_trade_profit_loss') }}
-          </td>
-          <td class="text-right">
-            <amount-display
-              pnl
-              :value="overview.generalTradeProfitLoss"
-              :loading="loading"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td>
-            {{ $t('profit_loss_overview.rows.taxable_staking_profit') }}
-          </td>
-          <td class="text-right">
-            <amount-display
-              pnl
-              :value="overview.stakingProfit"
-              :loading="loading"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td>
-            {{ $t('profit_loss_overview.rows.taxable_trade_profit_loss') }}
-          </td>
-          <td class="text-right text-subtitle-1">
-            <amount-display
-              pnl
-              :value="overview.taxableTradeProfitLoss"
-              :loading="loading"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td colspan="2" />
+          <td colspan="3" />
         </tr>
         <tr>
           <td class="font-weight-medium text-subtitle-1">
-            {{ $t('profit_loss_overview.rows.total_profit_loss') }}
+            {{ $t('profit_loss_overview.rows.total') }}
           </td>
-          <td class="text-right text-subtitle-1">
+          <td class="text-right font-weight-medium text-subtitle-1">
             <amount-display
               pnl
-              :value="overview.totalProfitLoss"
+              :value="total.total"
               :loading="loading"
+              :fiat-currency="report.settings.profitCurrency"
             />
           </td>
-        </tr>
-        <tr>
-          <td class="font-weight-medium text-subtitle-1">
-            {{ $t('profit_loss_overview.rows.total_taxable_profit_loss') }}
-          </td>
-          <td class="text-right text-subtitle-1">
+          <td class="text-right font-weight-medium text-subtitle-1">
             <amount-display
               pnl
-              :value="overview.totalTaxableProfitLoss"
+              :value="total.taxable"
               :loading="loading"
+              :fiat-currency="report.settings.profitCurrency"
             />
           </td>
         </tr>
@@ -162,9 +72,17 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { ProfitLossOverview } from '@/types/reports';
+import { ProfitLossOverviewItem, Report } from '@/types/reports';
+import { calculateTotalProfitLoss } from '@/utils/report';
+import { toCapitalCase } from '@/utils/text';
 
 export default defineComponent({
   name: 'ProfitLossOverview',
@@ -172,9 +90,9 @@ export default defineComponent({
     AmountDisplay
   },
   props: {
-    overview: {
+    report: {
       required: true,
-      type: Object as PropType<ProfitLossOverview>
+      type: Object as PropType<Report>
     },
     symbol: {
       required: true,
@@ -190,6 +108,18 @@ export default defineComponent({
       type: Boolean,
       default: false
     }
+  },
+  setup(props) {
+    const { report } = toRefs(props);
+
+    const total = computed<ProfitLossOverviewItem>(() => {
+      return calculateTotalProfitLoss(get(report));
+    });
+
+    return {
+      total,
+      toCapitalCase
+    };
   }
 });
 </script>

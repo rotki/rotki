@@ -18,8 +18,8 @@ import { get } from '@vueuse/core';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import { tradeLocations } from '@/components/history/consts';
 import { TradeLocationData } from '@/components/history/type';
-import { capitalize } from '@/filters';
 import { SupportedExchange } from '@/types/exchanges';
+import { toSentenceCase } from '@/utils/text';
 
 export default defineComponent({
   name: 'ExchangeDisplay',
@@ -36,7 +36,7 @@ export default defineComponent({
     });
 
     const name = computed<string>(() => {
-      return get(location)?.name ?? capitalize(get(exchange));
+      return get(location)?.name ?? toSentenceCase(get(exchange));
     });
 
     const icon = computed<string>(() => {

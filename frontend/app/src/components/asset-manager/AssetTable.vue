@@ -126,11 +126,11 @@ import DataTable from '@/components/helper/DataTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowExpander from '@/components/helper/RowExpander.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
-import { capitalize } from '@/filters';
 import i18n from '@/i18n';
 import { EthereumToken, ManagedAsset } from '@/services/assets/types';
 import { Nullable } from '@/types';
 import { compareAssets } from '@/utils/assets';
+import { toSentenceCase } from '@/utils/text';
 
 const tableHeaders: DataTableHeader[] = [
   {
@@ -231,7 +231,7 @@ export default defineComponent({
     };
 
     const formatType = (string?: string) => {
-      return capitalize(string ?? 'ethereum token');
+      return toSentenceCase(string ?? 'ethereum token');
     };
 
     const getAsset = (item: EthereumToken) => {

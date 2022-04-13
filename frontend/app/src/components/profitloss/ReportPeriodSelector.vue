@@ -5,6 +5,8 @@
       <v-chip-group
         :value="year"
         mandatory
+        column
+        class="mx-n2"
         @change="onChange({ year: $event })"
       >
         <v-chip
@@ -34,6 +36,7 @@
       <v-chip-group
         :value="quarter"
         mandatory
+        class="mx-n2"
         @change="onChange({ quarter: $event })"
       >
         <v-chip

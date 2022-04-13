@@ -1,10 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { Zero } from '@/utils/bignumbers';
 
-export function capitalize(string: string): string {
-  return string[0].toUpperCase() + string.slice(1);
-}
-
 export const truncationPoints: { [breakpoint: string]: number } = {
   xs: 3,
   sm: 6,
