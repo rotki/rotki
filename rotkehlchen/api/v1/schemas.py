@@ -523,10 +523,13 @@ class TradeSchema(Schema):
         data: Dict[str, Any],
         **_kwargs: Any,
     ) -> None:
+        """This validation checks that fee_currency is provided whenever fee is given and vice versa.
+         It also checks that fee is not a zero value when both fee and fee_currency are provided.
+        """
         fee = data.get('fee')
         fee_currency = data.get('fee_currency')
 
-        if not ((fee and fee_currency) or not (fee or fee_currency)):
+        if not all([fee, fee_currency]) and any([fee, fee_currency]):
             raise ValidationError('fee and fee_currency must be provided', field_name='fee')
 
         if fee is not None and fee == ZERO:

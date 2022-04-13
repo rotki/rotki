@@ -2515,11 +2515,11 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     assert [1, 2, 3] == list(map(lambda x: x[0], manual_balance_ids))
 
     # Check that trades with fee missing sets fee_currency to NULL and vice versa
-    trades_expected = cursor.execute('SELECT * FROM trades WHERE id != ? AND id != ?', ("foo1", "foo2")).fetchall()  # noqa: E501
+    trades_expected = cursor.execute('SELECT * FROM trades WHERE id != ? AND id != ?', ('foo1', 'foo2')).fetchall()  # noqa: E501
     assert trades_expected == [
-        ("1111111", 1595640208, "external", "ETH", "USD", "buy", "1.5541", "22.1", "3.4", "USD", None, None),  # noqa: E501
-        ("1111112", 1595640208, "external", "ETH", "USD", "buy", "1.5541", "22.1", None, None, None, None),  # noqa: E501
-        ("1111113", 1595640208, "external", "ETH", "USD", "buy", "1.5541", "22.1", None, None, None, None),  # noqa: E501
+        ('1111111', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', '3.4', 'USD', None, None),  # noqa: E501
+        ('1111112', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', None, None, None, None),  # noqa: E501
+        ('1111113', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', None, None, None, None),  # noqa: E501
     ]
 
 
