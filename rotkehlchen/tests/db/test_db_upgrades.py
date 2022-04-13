@@ -2416,6 +2416,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
 
     - Check that subtype is correctly updated
     - Check that gitcoin data is properly delete
+    - Check that trades with fee missing, sets fee_currency to NULL and vice versa
     """
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v31_rotkehlchen.db')
@@ -2461,7 +2462,14 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         'manually_tracked_balances;',
     ).fetchall()
 
-    db_v31.logout()
+    # check that the trades with invalid fee/fee_currency are present at this point
+    trades_before = cursor.execute('SELECT * FROM trades WHERE id != ? AND id != ?', ("foo1", "foo2")).fetchall()  # noqa: E501
+    assert trades_before == [
+        ('1111111', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', '3.4', 'USD', None, None),  # noqa: E501
+        ('1111112', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', '3.4', None, None, None),  # noqa: E501
+        ('1111113', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', None, 'USD', None, None),  # noqa: E501
+    ]
+
     # Execute upgrade
     db = _init_db_with_target_version(
         target_version=32,
@@ -2505,6 +2513,14 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     manual_balance_ids = cursor.execute('SELECT id FROM manually_tracked_balances;').fetchall()
 
     assert [1, 2, 3] == list(map(lambda x: x[0], manual_balance_ids))
+
+    # Check that trades with fee missing sets fee_currency to NULL and vice versa
+    trades_expected = cursor.execute('SELECT * FROM trades WHERE id != ? AND id != ?', ('foo1', 'foo2')).fetchall()  # noqa: E501
+    assert trades_expected == [
+        ('1111111', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', '3.4', 'USD', None, None),  # noqa: E501
+        ('1111112', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', None, None, None, None),  # noqa: E501
+        ('1111113', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', None, None, None, None),  # noqa: E501
+    ]
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

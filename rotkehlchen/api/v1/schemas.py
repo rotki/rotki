@@ -32,7 +32,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_kusama_address,
     is_valid_polkadot_address,
 )
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     Eth2DailyStatsFilterQuery,
@@ -516,6 +516,24 @@ class TradeSchema(Schema):
     fee_currency = AssetField(load_default=None)
     link = fields.String(load_default=None)
     notes = fields.String(load_default=None)
+
+    @validates_schema
+    def validate_fee_and_fee_currency(  # pylint: disable=no-self-use
+        self,
+        data: Dict[str, Any],
+        **_kwargs: Any,
+    ) -> None:
+        """This validation checks that fee_currency is provided whenever fee is given and vice versa.
+         It also checks that fee is not a zero value when both fee and fee_currency are provided.
+        """
+        fee = data.get('fee')
+        fee_currency = data.get('fee_currency')
+
+        if not all([fee, fee_currency]) and any([fee, fee_currency]):
+            raise ValidationError('fee and fee_currency must be provided', field_name='fee')
+
+        if fee is not None and fee == ZERO:
+            raise ValidationError('fee cannot be zero', field_name='fee')
 
 
 class LedgerActionSchema(Schema):

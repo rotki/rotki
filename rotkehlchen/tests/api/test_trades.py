@@ -436,6 +436,57 @@ def test_add_trades(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
+    # Test with fee & without fee_currency
+    fee_and_no_fee_currency_trade = {
+        'timestamp': 1595640208,
+        'location': 'external',
+        'base_asset': 'ETH',
+        'quote_asset': 'USD',
+        'trade_type': 'buy',
+        'amount': '1.5541',
+        'rate': '22.1',
+        'fee': '0.55',
+    }
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json=fee_and_no_fee_currency_trade,
+    )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='fee and fee_currency must be provided',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Test with fee is zero
+    fee_is_zero_trade = {
+        'timestamp': 1595640208,
+        'location': 'external',
+        'base_asset': 'ETH',
+        'quote_asset': 'USD',
+        'trade_type': 'buy',
+        'amount': '1.5541',
+        'rate': '22.1',
+        'fee': '0',
+        'fee_currency': 'USD',
+    }
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json=fee_is_zero_trade,
+    )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='fee cannot be zero',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
 
 def assert_all_missing_fields_are_handled(correct_trade, server):
     fields = correct_trade.keys()
@@ -708,6 +759,20 @@ def test_add_trades_errors(rotkehlchen_api_server):
         contained_in_msg='Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+    # Test that '0' value for fee is handled
+    broken_trade = correct_trade.copy()
+    broken_trade['fee'] = '0'
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            "tradesresource",
+        ), json=broken_trade,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='fee cannot be zero',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
 
 def _check_trade_is_edited(original_trade: Dict[str, Any], result_trade: Dict[str, Any]) -> None:
@@ -741,6 +806,38 @@ def test_edit_trades(rotkehlchen_api_server_with_exchanges):
 
     # get the binance trades
     original_binance_trades = [t['entry'] for t in trades if t['entry']['location'] == 'binance']
+
+    # get the poloniex trades
+    original_poloniex_trades = [t['entry'] for t in trades if t['entry']['location'] == 'poloniex']
+
+    # Test that setting '0' as value for `fee` fails
+    original_poloniex_trades[0]['fee'] = '0'
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tradesresource",
+        ), json=original_poloniex_trades[0],
+    )
+    assert_error_response(response, contained_in_msg='fee cannot be zero')
+
+    # Test that popping either of `fee` or `fee_currency` fails
+    original_poloniex_trades[1].pop('fee', None)
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tradesresource",
+        ), json=original_poloniex_trades[1],
+    )
+    assert_error_response(response, contained_in_msg='fee and fee_currency must be provided')
+
+    # Test that setting both `fee` and `fee_currency` passes
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            "tradesresource",
+        ), json=original_poloniex_trades[2],
+    )
+    assert_proper_response(response)
 
     for trade in original_binance_trades:
         # edit two fields of each binance trade
