@@ -111,6 +111,7 @@ def _refactor_manual_balance_id(cursor: 'Cursor') -> None:
 
 def _update_fee_for_existing_trades(cursor: 'Cursor') -> None:
     cursor.execute("""UPDATE trades SET fee = NULL WHERE fee_currency IS NULL""")
+    cursor.execute("""UPDATE trades SET fee_currency = NULL WHERE fee IS NULL""")
 
 
 def upgrade_v31_to_v32(db: 'DBHandler') -> None:

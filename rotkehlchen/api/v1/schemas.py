@@ -32,7 +32,7 @@ from rotkehlchen.chain.substrate.utils import (
     is_valid_kusama_address,
     is_valid_polkadot_address,
 )
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     Eth2DailyStatsFilterQuery,
@@ -529,7 +529,7 @@ class TradeSchema(Schema):
         if not ((fee and fee_currency) or not (fee or fee_currency)):
             raise ValidationError('fee and fee_currency must be provided', field_name='fee')
 
-        if fee and fee == FVal('0'):
+        if fee is not None and fee == ZERO:
             raise ValidationError('fee cannot be zero', field_name='fee')
 
 
