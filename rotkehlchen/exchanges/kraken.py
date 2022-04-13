@@ -213,7 +213,7 @@ def history_event_from_kraken(
                 )
             fee_amount = deserialize_asset_amount(raw_event['fee'])
 
-            # Make sure to not generate a event for KFEES that is not of type FEE
+            # Make sure to not generate an event for KFEES that is not of type FEE
             if asset != A_KFEE:
                 group_events.append(HistoryBaseEntry(
                     event_identifier=identifier,

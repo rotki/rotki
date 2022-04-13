@@ -2469,10 +2469,20 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         ('1111112', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', '3.4', None, None, None),  # noqa: E501
         ('1111113', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', None, 'USD', None, None),  # noqa: E501
     ]
+    # Check that there are invalid pairs of (event_identifier, sequence_index)
     base_entries_query = 'SELECT * from history_events WHERE event_identifier="KRAKEN-REMOTE-ID3"'
     result = cursor.execute(base_entries_query).fetchall()
     assert len(result) == 5
+    assert len([row[2] for row in result]) == 5
+    assert len({row[2] for row in result}) == 4
     assert len([True for event in result if event[-1] is not None]) == 2
+
+    base_entries_query = 'SELECT * from history_events WHERE event_identifier="KRAKEN-REMOTE-ID4"'
+    result = cursor.execute(base_entries_query).fetchall()
+    assert len(result) == 5
+    assert len([row[2] for row in result]) == 5
+    assert len({row[2] for row in result}) == 3
+
     db_v31.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2525,6 +2535,19 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         ('1111112', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', None, None, None, None),  # noqa: E501
         ('1111113', 1595640208, 'external', 'ETH', 'USD', 'buy', '1.5541', '22.1', None, None, None, None),  # noqa: E501
     ]
+
+    # Check that sequence indeces are unique for the same event identifier
+    base_entries_query = 'SELECT * from history_events WHERE event_identifier="KRAKEN-REMOTE-ID3"'
+    result = cursor.execute(base_entries_query).fetchall()
+    assert len(result) == 5
+    assert len([row[2] for row in result]) == 5
+    assert len({row[2] for row in result}) == 5
+
+    base_entries_query = 'SELECT * from history_events WHERE event_identifier="KRAKEN-REMOTE-ID4"'
+    result = cursor.execute(base_entries_query).fetchall()
+    assert len(result) == 5
+    assert len([row[2] for row in result]) == 5
+    assert len({row[2] for row in result}) == 5
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
