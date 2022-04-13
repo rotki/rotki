@@ -167,8 +167,7 @@ export const EthTransaction = z.object({
   gasPrice: NumericString,
   gasUsed: NumericString,
   inputData: z.string(),
-  nonce: z.number(),
-  identifier: z.string()
+  nonce: z.number()
 });
 
 export type EthTransaction = z.infer<typeof EthTransaction>;
