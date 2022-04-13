@@ -44,7 +44,7 @@
         :single-select="false"
         :mobile-breakpoint="0"
         :item-class="item => (item.ignoredInAccounting ? 'darken-row' : '')"
-        item-key="identifier"
+        item-key="txHash"
         :class="$style.table"
         @update:options="updatePaginationHandler($event)"
       >
@@ -345,7 +345,7 @@ export default defineComponent({
     const valid: Ref<boolean> = ref(false);
     const form = ref<TransactionEventFormInstance | null>(null);
 
-    const getId = (item: EthTransactionEntry) => item.identifier;
+    const getId = (item: EthTransactionEntry) => item.txHash;
 
     const selected: Ref<EthTransactionEntry[]> = ref([]);
 
