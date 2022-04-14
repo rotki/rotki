@@ -1761,8 +1761,15 @@ class ManualPriceSchema(Schema):
     price = PriceField(required=True)
 
 
-class TimedManualPriceSchema(ManualPriceSchema):
+class SingleTimestampSchema(ManualPriceSchema):
     timestamp = TimestampField(required=True)
+    from_asset = AssetField(required=False)
+    to_asset = AssetField(required=False)
+    price = PriceField(required=False)
+
+
+class SingleTimestampExportingSchema(SingleTimestampSchema):
+    path = DirectoryField(required=True)
 
 
 class ManualPriceRegisteredSchema(Schema):

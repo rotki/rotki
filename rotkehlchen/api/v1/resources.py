@@ -87,13 +87,14 @@ from rotkehlchen.api.v1.schemas import (
     RequiredEthereumAddressSchema,
     SingleAssetIdentifierSchema,
     SingleFileSchema,
+    SingleTimestampExportingSchema,
+    SingleTimestampSchema,
     StakingQuerySchema,
     StatisticsAssetBalanceSchema,
     StatisticsNetValueSchema,
     StatisticsValueDistributionSchema,
     StringIdentifierSchema,
     TagSchema,
-    TimedManualPriceSchema,
     TradeDeleteSchema,
     TradePatchSchema,
     TradeSchema,
@@ -1865,8 +1866,8 @@ class CurrentAssetsPriceResource(BaseResource):
 class HistoricalAssetsPriceResource(BaseResource):
 
     post_schema = HistoricalAssetsPriceSchema()
-    put_schema = TimedManualPriceSchema()
-    patch_schema = TimedManualPriceSchema()
+    put_schema = SingleTimestampSchema()
+    patch_schema = SingleTimestampSchema()
     get_schema = ManualPriceRegisteredSchema()
     delete_schema = ManualPriceDeleteSchema()
 
@@ -2081,3 +2082,19 @@ class UserAssetsResource(BaseResource):
             file.save(str(filepath))
             response = self.rest_api.import_user_assets(path=filepath)
         return response
+
+
+class DBSnapshotExportingResource(BaseResource):
+    get_schema = SingleTimestampExportingSchema()
+
+    @use_kwargs(get_schema, location='query')
+    def get(self, timestamp: Timestamp, path: Path) -> Response:
+        return self.rest_api.export_user_db_snapshot(timestamp=timestamp, path=path)
+
+
+class DBSnapshotDownloadingResource(BaseResource):
+    get_schema = SingleTimestampSchema()
+
+    @use_kwargs(get_schema, location='query')
+    def get(self, timestamp: Timestamp) -> Response:
+        return self.rest_api.download_user_db_snapshot(timestamp=timestamp)

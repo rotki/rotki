@@ -3494,3 +3494,39 @@ class DBHandler:
         if cursor.fetchone()[0] >= 1:
             locations.add(Location.BALANCER)
         return locations
+
+    def get_timed_balances(self, timestamp: Timestamp) -> List[SingleDBAssetBalance]:
+        balances_data = []
+        cursor = self.conn.cursor()
+        timed_balances_result = cursor.execute(
+            'SELECT category, time, amount, usd_value FROM timed_balances '
+            'WHERE time=?', (timestamp,),
+        )
+        for data in timed_balances_result:
+            balances_data.append(
+                SingleDBAssetBalance(
+                    category=BalanceType.deserialize_from_db(data[0]),
+                    time=data[1],
+                    amount=data[2],
+                    usd_value=data[3],
+                ),
+            )
+        return balances_data
+
+    def get_timed_location_data(self, timestamp: Timestamp) -> List[LocationData]:
+        location_data = []
+        cursor = self.conn.cursor()
+        timed_location_data = cursor.execute(
+            'SELECT time, location, usd_value FROM timed_location_data '
+            'WHERE time=?',
+            (timestamp,),
+        )
+        for data in timed_location_data:
+            location_data.append(
+                LocationData(
+                    time=data[0],
+                    location=data[1],
+                    usd_value=data[2],
+                ),
+            )
+        return location_data

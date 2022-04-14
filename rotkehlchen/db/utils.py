@@ -13,6 +13,7 @@ from rotkehlchen.types import (
     ChecksumEthAddress,
     HexColorCode,
     ListOfBlockchainAddresses,
+    Location,
     SupportedBlockchain,
     Timestamp,
 )
@@ -52,6 +53,14 @@ class DBAssetBalance(NamedTuple):
     amount: str
     usd_value: str
 
+    def serialize(self) -> Dict[str, str]:
+        return {
+            'category': str(self.category),
+            'asset': str(self.asset),
+            'amount': self.amount,
+            'usd_value': self.usd_value,
+        }
+
 
 class SingleDBAssetBalance(NamedTuple):
     category: BalanceType
@@ -64,6 +73,12 @@ class LocationData(NamedTuple):
     time: Timestamp
     location: str  # Location serialized in a DB enum
     usd_value: str
+
+    def serialize(self) -> Dict[str, str]:
+        return {
+            'location': str(Location.deserialize_from_db(self.location)),
+            'usd_value': self.usd_value,
+        }
 
 
 class Tag(NamedTuple):
