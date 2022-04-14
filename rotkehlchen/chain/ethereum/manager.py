@@ -348,11 +348,11 @@ class EthereumManager():
                         log.warning(message)
                         return False, message
 
-                    current_block = web3.eth.block_number  # pylint: disable=no-member
                     try:
+                        current_block = web3.eth.block_number  # pylint: disable=no-member
                         latest_block = self.query_eth_highest_block()
-                    except RemoteError:
-                        msg = 'Could not query latest block'
+                    except (requests.exceptions.RequestException, RemoteError) as e:
+                        msg = f'Could not query latest block due to {str(e)}'
                         log.warning(msg)
                         synchronized = False
                     else:
