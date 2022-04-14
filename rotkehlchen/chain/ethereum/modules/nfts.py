@@ -119,7 +119,9 @@ class Nfts(CacheableMixIn, LockableQueryMixIn):  # lgtm [py/missing-call-to-init
             return_zero_values: bool,
             ignore_cache: bool,
     ) -> Dict[ChecksumEthAddress, List[Dict[str, Any]]]:
-        """Gets all NFT balances
+        """Gets all NFT balances. The actual opensea querying part is protected by a lock.
+
+        If `return_zero_values` is False then zero value NFTs are not returned in the result.
 
         May raise:
         - RemoteError
