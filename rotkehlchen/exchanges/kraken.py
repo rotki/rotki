@@ -170,6 +170,7 @@ def history_event_from_kraken(
     """
     group_events = []
     found_unknown_event = False
+    current_fee_index = len(events)
     for idx, raw_event in enumerate(events):
         try:
             timestamp = TimestampMS((deserialize_fval(
@@ -212,25 +213,27 @@ def history_event_from_kraken(
                 )
             fee_amount = deserialize_asset_amount(raw_event['fee'])
 
-            group_events.append(HistoryBaseEntry(
-                event_identifier=identifier,
-                sequence_index=idx,
-                timestamp=timestamp,
-                location=Location.KRAKEN,
-                location_label=name,
-                asset=asset,
-                balance=Balance(
-                    amount=raw_amount,
-                    usd_value=ZERO,
-                ),
-                notes=notes,
-                event_type=event_type,
-                event_subtype=event_subtype,
-            ))
+            # Make sure to not generate an event for KFEES that is not of type FEE
+            if asset != A_KFEE:
+                group_events.append(HistoryBaseEntry(
+                    event_identifier=identifier,
+                    sequence_index=idx,
+                    timestamp=timestamp,
+                    location=Location.KRAKEN,
+                    location_label=name,
+                    asset=asset,
+                    balance=Balance(
+                        amount=raw_amount,
+                        usd_value=ZERO,
+                    ),
+                    notes=notes,
+                    event_type=event_type,
+                    event_subtype=event_subtype,
+                ))
             if fee_amount != ZERO:
                 group_events.append(HistoryBaseEntry(
                     event_identifier=identifier,
-                    sequence_index=len(events),
+                    sequence_index=current_fee_index,
                     timestamp=timestamp,
                     location=Location.KRAKEN,
                     location_label=name,
@@ -243,6 +246,9 @@ def history_event_from_kraken(
                     event_type=event_type,
                     event_subtype=HistoryEventSubType.FEE,
                 ))
+                # Increase the fee index to not have duplicates in the case of having a normal
+                # fee and KFEE
+                current_fee_index += 1
         except (DeserializationError, KeyError, UnknownAsset) as e:
             msg = str(e)
             if isinstance(e, KeyError):
