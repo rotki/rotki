@@ -20,8 +20,8 @@
       <template #item.time="{ item }">
         <date-display :timestamp="item.timestamp" />
       </template>
-      <template #item.total="{ item }">
-        <v-row no-gutters align="center" class="flex-nowrap text-left">
+      <template #item.free_amount="{ item }">
+        <v-row no-gutters align="center" class="flex-nowrap">
           <v-col v-if="item.asset" cols="auto">
             <asset-link icon :asset="item.asset" class="mr-2">
               <asset-icon :identifier="item.asset" size="24px" />
@@ -30,36 +30,43 @@
           <v-col>
             <div>
               <amount-display
-                :value="item.freeAmount.plus(item.taxableAmount)"
+                force-currency
+                :value="item.freeAmount"
                 :asset="item.asset ? item.asset : ''"
-              />
-            </div>
-            <div>
-              <amount-display
-                class="grey--text"
-                :value="item.pnlFree.plus(item.pnlTaxable)"
-                :fiat-currency="report.settings.profitCurrency"
               />
             </div>
           </v-col>
         </v-row>
       </template>
-      <template #item.taxable="{ item }">
-        <div class="text-left">
-          <div>
-            <amount-display
-              :value="item.taxableAmount"
-              :asset="item.asset ? item.asset : ''"
-            />
-          </div>
-          <div>
-            <amount-display
-              class="grey--text"
-              :value="item.pnlTaxable"
-              :fiat-currency="report.settings.profitCurrency"
-            />
-          </div>
-        </div>
+      <template #item.taxable_amount="{ item }">
+        <amount-display
+          force-currency
+          :value="item.taxableAmount"
+          :asset="item.asset ? item.asset : ''"
+        />
+      </template>
+      <template #item.price="{ item }">
+        <amount-display
+          force-currency
+          :value="item.price"
+          :fiat-currency="report.settings.profitCurrency"
+        />
+      </template>
+      <template #item.pnl_taxable="{ item }">
+        <amount-display
+          pnl
+          force-currency
+          :value="item.pnlTaxable"
+          :fiat-currency="report.settings.profitCurrency"
+        />
+      </template>
+      <template #item.pnl_free="{ item }">
+        <amount-display
+          pnl
+          force-currency
+          :value="item.pnlFree"
+          :fiat-currency="report.settings.profitCurrency"
+        />
       </template>
       <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
         <upgrade-row
@@ -93,6 +100,7 @@
       <template #expanded-item="{ headers, item }">
         <cost-basis-table
           :visible="!!item.costBasis"
+          :currency="report.settings.profitCurrency"
           :colspan="headers.length"
           :cost-basis="item.costBasis"
         />
@@ -142,28 +150,47 @@ const tableHeaders: DataTableHeader[] = [
     sortable: false
   },
   {
-    text: i18n.t('profit_loss_events.headers.total').toString(),
-    sortable: false,
-    align: 'center',
-    value: 'total'
+    text: i18n.t('profit_loss_events.headers.tax_free_amount').toString(),
+    align: 'end',
+    value: 'free_amount',
+    sortable: false
   },
   {
-    text: i18n.t('profit_loss_events.headers.taxable').toString(),
-    sortable: false,
-    align: 'center',
-    value: 'taxable'
+    text: i18n.t('profit_loss_events.headers.taxable_amount').toString(),
+    align: 'end',
+    value: 'taxable_amount',
+    sortable: false
+  },
+  {
+    text: i18n.t('profit_loss_events.headers.price').toString(),
+    align: 'end',
+    value: 'price',
+    sortable: false
+  },
+  {
+    text: i18n.t('profit_loss_events.headers.pnl_free').toString(),
+    align: 'end',
+    value: 'pnl_free',
+    sortable: false
+  },
+  {
+    text: i18n.t('profit_loss_events.headers.pnl_taxable').toString(),
+    align: 'end',
+    value: 'pnl_taxable',
+    sortable: false
   },
   {
     text: i18n.t('profit_loss_events.headers.time').toString(),
-    value: 'time'
+    value: 'time',
+    sortable: false
   },
   {
     text: i18n.t('profit_loss_events.headers.notes').toString(),
-    sortable: false,
-    value: 'notes'
+    value: 'notes',
+    sortable: false
   },
   {
-    text: '',
+    text: i18n.t('profit_loss_events.headers.cost_basis').toString(),
     value: 'expand',
     align: 'end',
     sortable: false

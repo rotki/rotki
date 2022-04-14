@@ -7,6 +7,7 @@ import { interop } from '@/electron-interop';
 import i18n from '@/i18n';
 import { AssetUpdatePayload } from '@/services/assets/types';
 import { api } from '@/services/rotkehlchen-api';
+import { SupportedAssets } from '@/services/types-api';
 import { convertSupportedAssets } from '@/store/assets/utils';
 import { AssetPriceInfo } from '@/store/balances/types';
 import { useNotifications } from '@/store/notifications';
@@ -176,6 +177,7 @@ export const useAssetInfoRetrieval = defineStore(
   () => {
     const store = useStore();
     const supportedAssets = ref<SupportedAsset[]>([]);
+    const supportedAssetsMap = ref<SupportedAssets>({});
 
     const fetchSupportedAssets = async (refresh: boolean = false) => {
       set(supportedAssets, []);
@@ -184,6 +186,7 @@ export const useAssetInfoRetrieval = defineStore(
       }
       try {
         const assets = await api.assets.allAssets();
+        set(supportedAssetsMap, assets);
         set(supportedAssets, convertSupportedAssets(assets));
       } catch (e: any) {
         const { notify } = useNotifications();
@@ -223,9 +226,16 @@ export const useAssetInfoRetrieval = defineStore(
           }
         }
 
-        return get(supportedAssets).find(
-          asset => asset.identifier === identifier
-        );
+        const asset = get(supportedAssetsMap)[identifier];
+
+        if (!asset) {
+          return undefined;
+        }
+
+        return {
+          ...asset,
+          identifier
+        };
       });
     };
 

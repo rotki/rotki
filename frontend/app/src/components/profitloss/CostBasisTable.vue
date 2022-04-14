@@ -18,13 +18,23 @@
       sort-by="time"
     >
       <template #item.amount="{ item }">
-        <amount-display :value="item.amount" />
+        <amount-display force-currency :value="item.amount" />
       </template>
       <template #item.fullAmount="{ item }">
-        <amount-display :value="item.event.fullAmount" />
+        <amount-display force-currency :value="item.event.fullAmount" />
+      </template>
+      <template #item.remainingAmount="{ item }">
+        <amount-display
+          force-currency
+          :value="item.event.fullAmount.minus(item.amount)"
+        />
       </template>
       <template #item.rate="{ item }">
-        <amount-display :value="item.event.rate" />
+        <amount-display
+          force-currency
+          :value="item.event.rate"
+          :fiat-currency="currency"
+        />
       </template>
       <template #item.time="{ item }">
         <date-display :timestamp="item.event.timestamp" />
@@ -37,37 +47,50 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from '@vue/composition-api';
+import { computed, defineComponent, PropType, Ref } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
+import { setupGeneralSettings } from '@/composables/session';
+import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import { CostBasis } from '@/types/reports';
 
-const getHeaders: () => DataTableHeader[] = () => [
-  {
-    text: i18n.t('cost_basis_table.headers.amount').toString(),
-    value: 'amount',
-    align: 'end'
-  },
-  {
-    text: i18n.t('cost_basis_table.headers.full_amount').toString(),
-    value: 'fullAmount',
-    align: 'end'
-  },
-  {
-    text: i18n.t('cost_basis_table.headers.rate').toString(),
-    value: 'rate',
-    align: 'end'
-  },
-  {
-    text: i18n.t('cost_basis_table.headers.time').toString(),
-    value: 'time'
-  },
-  {
-    text: i18n.t('cost_basis_table.headers.taxable').toString(),
-    value: 'taxable'
-  }
-];
+const getHeaders = (currency: Ref<string>) =>
+  computed<DataTableHeader[]>(() => {
+    return [
+      {
+        text: i18n.t('cost_basis_table.headers.amount').toString(),
+        value: 'amount',
+        align: 'end'
+      },
+      {
+        text: i18n.t('cost_basis_table.headers.full_amount').toString(),
+        value: 'fullAmount',
+        align: 'end'
+      },
+      {
+        text: i18n.t('cost_basis_table.headers.remaining_amount').toString(),
+        value: 'remainingAmount',
+        align: 'end'
+      },
+      {
+        text: i18n
+          .t('cost_basis_table.headers.rate', { currency: get(currency) })
+          .toString(),
+        value: 'rate',
+        align: 'end'
+      },
+      {
+        text: i18n.t('cost_basis_table.headers.time').toString(),
+        value: 'time'
+      },
+      {
+        text: i18n.t('cost_basis_table.headers.taxable').toString(),
+        value: 'taxable'
+      }
+    ];
+  });
 
 export default defineComponent({
   name: 'CostBasicTable',
@@ -75,11 +98,14 @@ export default defineComponent({
   props: {
     costBasis: { required: true, type: Object as PropType<CostBasis> },
     visible: { required: true, type: Boolean },
-    colspan: { required: true, type: Number }
+    colspan: { required: true, type: Number },
+    currency: { required: false, type: String, default: CURRENCY_USD }
   },
   setup() {
+    const { currencySymbol } = setupGeneralSettings();
+
     return {
-      headers: getHeaders()
+      headers: getHeaders(currencySymbol)
     };
   }
 });

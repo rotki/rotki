@@ -1,9 +1,8 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { Constraints } from '@/data/constraints';
-import { currencies } from '@/data/currencies';
+import { findCurrency } from '@/data/currencies';
 import { axiosCamelCaseTransformer } from '@/services/axios-tranformers';
-import { Currency } from '@/types/currency';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { FrontendSettings } from '@/types/frontend-settings';
 import { LedgerActionEnum } from '@/types/ledger-actions';
@@ -72,16 +71,6 @@ const AccountingSettings = z
 export type AccountingSettings = z.infer<typeof AccountingSettings>;
 
 export type AccountingSettingsUpdate = Partial<AccountingSettings>;
-
-const findCurrency = (currencySymbol: string) => {
-  const currency: Currency | undefined = currencies.find(
-    currency => currency.tickerSymbol === currencySymbol
-  );
-  if (!currency) {
-    throw new Error(`Could not find ${currencySymbol}`);
-  }
-  return currency;
-};
 
 const Settings = GeneralSettings.merge(AccountingSettings).merge(OtherSettings);
 

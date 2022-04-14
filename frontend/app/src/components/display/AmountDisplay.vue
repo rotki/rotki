@@ -94,7 +94,9 @@ import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupDisplayData, setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import { displayAmountFormatter } from '@/data/amount_formatter';
+import { CURRENCY_USD, findCurrency } from '@/data/currencies';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { Currency } from '@/types/currency';
 import { bigNumberify } from '@/utils/bignumbers';
 import RoundingMode = BigNumber.RoundingMode;
 
@@ -122,6 +124,7 @@ export default defineComponent({
         return shownCurrency.indexOf(showCurrency) > -1;
       }
     },
+    forceCurrency: { required: false, type: Boolean, default: false },
     asset: { required: false, type: String, default: '' },
     priceAsset: { required: false, type: String, default: '' },
     integer: { required: false, type: Boolean, default: false },
@@ -142,7 +145,8 @@ export default defineComponent({
       fiatCurrency,
       showCurrency,
       priceAsset,
-      integer
+      integer,
+      forceCurrency
     } = toRefs(props);
     const { currency, currencySymbol, floatingPrecision } =
       setupGeneralSettings();
@@ -215,7 +219,11 @@ export default defineComponent({
     );
 
     const convertFiat = computed<boolean>(() => {
-      return !!get(fiatCurrency) && get(fiatCurrency) !== get(currencySymbol);
+      return (
+        !get(forceCurrency) &&
+        !!get(fiatCurrency) &&
+        get(fiatCurrency) !== get(currencySymbol)
+      );
     });
 
     // Set exponential notation when the number is too big
@@ -275,7 +283,14 @@ export default defineComponent({
     });
 
     const convertValue = (value: BigNumber): BigNumber => {
-      const rate = exchangeRate(get(currencySymbol));
+      let rate = exchangeRate(get(currencySymbol));
+      if (get(fiatCurrency) !== CURRENCY_USD) {
+        const denominatorRate = exchangeRate(get(fiatCurrency));
+
+        if (rate && denominatorRate && !denominatorRate.isZero()) {
+          rate = rate.dividedBy(denominatorRate);
+        }
+      }
       return rate ? value.multipliedBy(rate) : value;
     };
 
@@ -330,8 +345,15 @@ export default defineComponent({
       startAnimation();
     };
 
+    const renderedCurrency = computed<Currency>(() => {
+      if (get(forceCurrency) && get(fiatCurrency))
+        return findCurrency(get(fiatCurrency));
+
+      return get(currency);
+    });
+
     return {
-      currency,
+      currency: renderedCurrency,
       shouldShowAmount,
       isRenderValueNaN,
       renderValueDecimalPlaces,

@@ -12,13 +12,11 @@
           />
           <th
             class="text-right"
-            v-text="$t('profit_loss_overview.columns.total_profit_loss')"
+            v-text="$t('profit_loss_overview.columns.tax_free_profit_loss')"
           />
           <th
             class="text-right"
-            v-text="
-              $t('profit_loss_overview.columns.total_taxable_profit_loss')
-            "
+            v-text="$t('profit_loss_overview.columns.taxable_profit_loss')"
           />
         </tr>
       </thead>
@@ -28,7 +26,8 @@
           <td class="text-right">
             <amount-display
               pnl
-              :value="item.free.plus(item.taxable)"
+              force-currency
+              :value="item.free"
               :loading="loading"
               :fiat-currency="report.settings.profitCurrency"
             />
@@ -36,6 +35,7 @@
           <td class="text-right">
             <amount-display
               pnl
+              force-currency
               :value="item.taxable"
               :loading="loading"
               :fiat-currency="report.settings.profitCurrency"
@@ -52,7 +52,8 @@
           <td class="text-right font-weight-medium text-subtitle-1">
             <amount-display
               pnl
-              :value="total.total"
+              force-currency
+              :value="total.free"
               :loading="loading"
               :fiat-currency="report.settings.profitCurrency"
             />
@@ -60,6 +61,7 @@
           <td class="text-right font-weight-medium text-subtitle-1">
             <amount-display
               pnl
+              force-currency
               :value="total.taxable"
               :loading="loading"
               :fiat-currency="report.settings.profitCurrency"
