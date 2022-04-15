@@ -1,11 +1,13 @@
 import pytest
 import requests
+from flaky import flaky
 
 from rotkehlchen.chain.substrate.types import KusamaNodeName
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_NODES, SUBSTRATE_ACC1_KSM_ADDR
 
 
+@flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
 def test_set_own_rpc_endpoint(rotkehlchen_api_server):
     """Test that successfully setting an own node (via `ksm_rpc_endpoint` setting)
     updates the `available_node_attributes_map`, sorts `available_nodes_call_order`,

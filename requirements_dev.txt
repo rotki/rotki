@@ -8,3 +8,4 @@ coverage==6.3.2
 psutil==5.9.0
 pytest-freezegun==0.4.2
 freezegun==1.2.1
+flaky==3.7.0
