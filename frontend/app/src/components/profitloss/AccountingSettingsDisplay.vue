@@ -4,7 +4,7 @@
     <template #subtitle>
       {{ $t('account_settings_display.subtitle') }}
     </template>
-    <v-row class="mt-2" align="center">
+    <v-row class="mt-2">
       <v-col cols="12" sm="6">
         <span class="text--primary">
           {{ $t('account_settings_display.past_cost_basis') }}
@@ -37,21 +37,10 @@
       </v-col>
       <v-col cols="12" sm="6">
         <span class="text--primary">
-          {{ $t('account_settings_display.tax_free_period') }}
+          {{ $t('account_settings_display.profit_currency') }}
         </span>
-        <span class="font-weight-medium ms-2">
-          <span
-            v-if="accountingSettings.taxfreeAfterPeriod !== 0"
-            :class="color(accountingSettings.taxfreeAfterPeriod > 0)"
-          >
-            {{ taxFreePeriod(accountingSettings.taxfreeAfterPeriod) }}
-          </span>
-          <v-icon
-            v-else
-            :class="color(accountingSettings.taxfreeAfterPeriod > 0)"
-          >
-            mdi-close
-          </v-icon>
+        <span class="ms-2">
+          {{ accountingSettings.profitCurrency }}
         </span>
       </v-col>
       <v-col cols="12" sm="6">
@@ -61,6 +50,25 @@
         <span class="ms-2">
           <v-icon :class="color(accountingSettings.accountForAssetsMovements)">
             {{ icon(accountingSettings.accountForAssetsMovements) }}
+          </v-icon>
+        </span>
+      </v-col>
+      <v-col cols="12" sm="6">
+        <span class="text--primary">
+          {{ $t('account_settings_display.tax_free_period') }}
+        </span>
+        <span class="font-weight-medium ms-2">
+          <span
+            v-if="accountingSettings.taxfreeAfterPeriod"
+            :class="color(accountingSettings.taxfreeAfterPeriod > 0)"
+          >
+            {{ taxFreePeriod(accountingSettings.taxfreeAfterPeriod) }}
+          </span>
+          <v-icon
+            v-else
+            :class="color(accountingSettings.taxfreeAfterPeriod > 0)"
+          >
+            mdi-close
           </v-icon>
         </span>
       </v-col>

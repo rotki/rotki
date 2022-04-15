@@ -27,14 +27,16 @@
       <template #item.endTs="{ item }">
         <date-display no-time :timestamp="item.endTs" />
       </template>
-      <template #item.totalProfitLoss="{ item }">
+      <template #item.free="{ item }">
         <amount-display
-          :value="calculateTotalProfitLoss(item).total"
+          force-currency
+          :value="calculateTotalProfitLoss(item).free"
           :fiat-currency="item.settings.profitCurrency"
         />
       </template>
-      <template #item.totalTaxableProfitLoss="{ item }">
+      <template #item.taxable="{ item }">
         <amount-display
+          force-currency
           :value="calculateTotalProfitLoss(item).taxable"
           :fiat-currency="item.settings.profitCurrency"
         />
@@ -127,15 +129,13 @@ const getHeaders: () => DataTableHeader[] = () => [
     value: 'endTs'
   },
   {
-    text: i18n.t('profit_loss_reports.columns.total_profit_loss').toString(),
-    value: 'totalProfitLoss',
+    text: i18n.t('profit_loss_reports.columns.taxfree_profit_loss').toString(),
+    value: 'free',
     align: 'end'
   },
   {
-    text: i18n
-      .t('profit_loss_reports.columns.total_taxable_profit_loss')
-      .toString(),
-    value: 'totalTaxableProfitLoss',
+    text: i18n.t('profit_loss_reports.columns.taxable_profit_loss').toString(),
+    value: 'taxable',
     align: 'end'
   },
   {

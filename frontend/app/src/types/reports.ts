@@ -5,8 +5,7 @@ import { BaseAccountingSettings } from '@/types/user';
 
 export const ProfitLossOverviewItem = z.object({
   taxable: NumericString,
-  free: NumericString,
-  total: NumericString.optional()
+  free: NumericString
 });
 
 export type ProfitLossOverviewItem = z.infer<typeof ProfitLossOverviewItem>;

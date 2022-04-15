@@ -7,7 +7,6 @@ import {
 } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { toRefs } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import isEmpty from 'lodash/isEmpty';
 import map from 'lodash/map';
@@ -657,10 +656,8 @@ export const getters: Getters<
   },
 
   isEthereumToken: () => (asset: string) => {
-    const { supportedAssets } = toRefs(useAssetInfoRetrieval());
-    const match = get(supportedAssets).find(
-      supportedAsset => supportedAsset.identifier === asset
-    );
+    const { assetInfo } = useAssetInfoRetrieval();
+    const match = get(assetInfo(asset));
     if (match) {
       return match.assetType === 'ethereum token';
     }

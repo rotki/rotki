@@ -21,6 +21,7 @@
     "tax_free_period": "There was a tax free period:",
     "title": "Accounting Settings",
     "subtitle": "These accounting setting were used during the report creation",
+    "profit_currency": "Profit Currency",
     "days": "{days} days"
   },
   "active_modules": {
@@ -275,9 +276,10 @@
     "complete": "(Complete)",
     "cost_basis": "Cost Basis",
     "headers": {
-      "amount": "Amount",
-      "full_amount": "Full Amount",
-      "rate": "Rate",
+      "amount": "Amount Sold",
+      "full_amount": "Total Owned Amount",
+      "remaining_amount": "Remaining Amount",
+      "rate": "{currency} Rate",
       "time": "Time",
       "taxable": "Taxable ?"
     },
@@ -1435,9 +1437,13 @@
   },
   "profit_loss_events": {
     "headers": {
+      "cost_basis": "Cost Basis",
       "location": "Location",
-      "total": "Total",
-      "taxable": "Taxable",
+      "tax_free_amount": "Tax Free Amount",
+      "taxable_amount": "Taxable Amount",
+      "pnl_free": "Tax Free PnL",
+      "pnl_taxable": "Taxable PnL",
+      "price": "Price",
       "time": "Time",
       "type": "Type",
       "notes": "Notes"
@@ -1447,8 +1453,8 @@
   "profit_loss_overview": {
     "columns": {
       "result": "Result",
-      "total_profit_loss": "Total Profit/Loss",
-      "total_taxable_profit_loss": "Total Taxable Profit/Loss"
+      "tax_free_profit_loss": "Tax Free Profit/Loss",
+      "taxable_profit_loss": "Taxable Profit/Loss"
     },
     "rows": {
       "total": "Total"
@@ -1462,8 +1468,8 @@
       "start": "Period Start",
       "end": "Period End",
       "actions": "Actions",
-      "total_profit_loss": "Total P/L",
-      "total_taxable_profit_loss": "Total Taxable P/L"
+      "taxfree_profit_loss": "Tax Free P/L",
+      "taxable_profit_loss": "Taxable P/L"
     },
     "error": {
       "close": "Close"

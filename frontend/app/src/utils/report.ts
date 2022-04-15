@@ -13,7 +13,6 @@ export const calculateTotalProfitLoss = (
 
   return {
     free: totalFree,
-    taxable: totalTaxable,
-    total: totalFree.plus(totalTaxable)
+    taxable: totalTaxable
   };
 };

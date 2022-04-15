@@ -75,3 +75,13 @@ export const currencies: Currency[] = [
   new Currency('Bitcoin', CURRENCY_BTC, '₿'),
   new Currency('Ether', CURRENCY_ETH, 'Ξ')
 ];
+
+export const findCurrency = (currencySymbol: string) => {
+  const currency: Currency | undefined = currencies.find(
+    currency => currency.tickerSymbol === currencySymbol
+  );
+  if (!currency) {
+    throw new Error(`Could not find ${currencySymbol}`);
+  }
+  return currency;
+};
