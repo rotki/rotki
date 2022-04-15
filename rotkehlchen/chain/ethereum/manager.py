@@ -9,7 +9,12 @@ from ens import ENS
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
 from ens.exceptions import InvalidName
 from ens.main import ENS_MAINNET_ADDR
-from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
+from ens.utils import (
+    address_to_reverse_domain,
+    is_none_or_zero_address,
+    normal_name_to_hash,
+    normalize_name,
+)
 from eth_typing import BlockNumber, HexStr
 from gevent.lock import Semaphore
 from web3 import HTTPProvider, Web3
@@ -605,6 +610,79 @@ class EthereumManager():
             return self.etherscan.get_code(account)
 
         return hex_or_bytes_to_str(web3.eth.getCode(account))
+
+    def _ens_reverse_lookup(
+            self,
+            web3: Optional[Web3],
+            reversed_addr: ChecksumEthAddress,
+            blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
+    ) -> Optional[str]:
+        """Performs an ENS reverse lookup on the given address
+
+    May raise:
+        - RemoteError if Etherscan is used and there is a problem querying it or
+        - InputError if the address is not a valid wallet address
+        """
+        try:
+            reversed_domain = address_to_reverse_domain(reversed_addr)
+        except (TypeError, ValueError) as e:
+            raise InputError(str(e)) from e
+
+        normalized_domain_name = normalize_name(reversed_domain)
+        arguments = [normal_name_to_hash(normalized_domain_name)]
+        resolver_addr = self._call_contract(
+            web3=web3,
+            contract_address=ENS_MAINNET_ADDR,
+            abi=ENS_ABI,
+            method_name='resolver',
+            arguments=arguments,
+        )
+        if is_none_or_zero_address(resolver_addr):
+            log.error(f'Got zero resolver address for address {reversed_addr}')
+            return None
+
+        ens_resolver_abi = ENS_RESOLVER_ABI.copy()
+        if blockchain != SupportedBlockchain.ETHEREUM:
+            ens_resolver_abi.extend(ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS)
+            arguments.append(blockchain.ens_coin_type())
+
+        try:
+            deserialized_resolver_addr = deserialize_ethereum_address(resolver_addr)
+        except DeserializationError:
+            log.error(
+                f'Error deserializing address {resolver_addr} while doing'
+                f'ens lookup',
+            )
+            return None
+
+        human_domain_name = self._call_contract(
+            web3=web3,
+            contract_address=deserialized_resolver_addr,
+            method_name='name',
+            abi=ens_resolver_abi,
+            arguments=arguments,
+        )
+        real_addr_on_this_name = self.ens_lookup(human_domain_name)
+        if real_addr_on_this_name != reversed_addr:
+            log.error(
+                f'More than one address is pointing to domain name {human_domain_name}',
+            )
+            return None
+
+        return human_domain_name
+
+    def ens_reverse_lookup(
+            self,
+            reversed_addr: ChecksumEthAddress,
+            blockchain: SupportedBlockchain = SupportedBlockchain.ETHEREUM,
+            call_order: Optional[Sequence[NodeName]] = None,
+    ) -> Optional[str]:
+        return self.query(
+            method=self._ens_reverse_lookup,
+            reversed_addr=reversed_addr,
+            call_order=call_order if call_order is not None else self.default_call_order(),
+            blockchain=blockchain,
+        )
 
     @overload
     def ens_lookup(
