@@ -7,10 +7,9 @@ from pathlib import Path
 
 import requests
 
-from rotkehlchen.data_handler import DBHandler
 from rotkehlchen.db.snapshots import BALANCES_FILENAME, LOCATION_DATA_FILENAME
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
-from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.tests.utils.api import api_url_for, assert_simple_ok_response
+from rotkehlchen.types import Location
 
 
 def _populate_db_with_balances(connection):
@@ -57,10 +56,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
     if is_download:
         assert response.status_code == HTTPStatus.OK
     else:
-        assert_proper_response(response)
-        data = response.json()
-        assert data['message'] == ''
-        assert data['result'] is True
+        assert_simple_ok_response(response)
 
     with open(os.path.join(csv_dir, BALANCES_FILENAME), newline='') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -81,93 +77,57 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
         count = 0
         for row in reader:
             assert len(row) == 2
-            assert row['location'] in (
-                'external',
-                'kraken',
-                'poloniex',
-                'bittrex',
-                'binance',
-                'bitmex',
-                'coinbase',
-                'total',
-                'banks',
-                'blockchain',
-                'coinbasepro',
-                'gemini',
-                'equities',
-                'realestate'
-                'commodities',
-                'cryptocom'
-                'uniswap',
-                'bitstamp',
-                'binanceus',
-                'bitfinex',
-                'bitcoinde',
-                'iconomi',
-                'kucoin',
-                'balancer',
-                'loopring',
-                'ftx',
-                'nexo',
-                'blockfi',
-                'independentreserve',
-                'gitcoin',
-                'sushiswap',
-                'uphold',
-                'bitpanda',
-                'bisq',
-                'ftxus',
-            )
+            assert Location.deserialize(row['location']) is not None
             assert row['usd_value'] is not None
             count += 1
         assert count == 3
 
 
-def test_export_snapshot(rotkehlchen_api_server, user_data_dir, tmpdir_factory):
-    msg_aggregator = MessagesAggregator()
-    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
-    conn = db.conn
+def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
+    conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
 
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
     _populate_db_with_balances(conn)
     _populate_db_with_location_data(conn)
 
-    # test with query params
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'dbsnapshotexportingresource',
-            timestamp='1',
-            path=csv_dir,
         ),
+        json={
+            'timestamp': 1,
+            'path': csv_dir,
+        },
     )
     assert_csv_export_response(response, csv_dir, is_download=False)
-    response = requests.get(
+    # test query params
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'dbsnapshotexportingresource',
-            timestamp='1',
+            timestamp=1,
             path=csv_dir2,
         ),
     )
     assert_csv_export_response(response, csv_dir2, is_download=False)
 
 
-def test_download_snapshot(rotkehlchen_api_server, user_data_dir):
-    msg_aggregator = MessagesAggregator()
-    db = DBHandler(user_data_dir, '123', msg_aggregator, None)
-    conn = db.conn
+def test_download_snapshot(rotkehlchen_api_server):
+    conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
 
     _populate_db_with_balances(conn)
     _populate_db_with_location_data(conn)
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'dbsnapshotdownloadingresource',
-            timestamp='1',
         ),
+        json={
+            'timestamp': 1,
+        },
     )
     with tempfile.TemporaryDirectory() as tmpdirname:
         tempzipfile = Path(tmpdirname, 'temp.zip')

@@ -93,7 +93,12 @@ class DBSnapshot:
         return success, filename
 
     def export(self, timestamp: Timestamp, directory_path: Optional[Path]) -> Tuple[bool, str]:
-        """Export the database's snapshot for specified timestamp."""
+        """Export the database's snapshot for specified timestamp.
+
+        If `directory_path` is provided, the snapshot generated is written to directory.
+        Otherwise, a zip file is created and the snapshot generated is written to the file
+        and a path to the zip file is returned.
+        """
         timed_balances = self.get_timed_balances(timestamp)
         timed_location_data = self.get_timed_location_data(timestamp)
 

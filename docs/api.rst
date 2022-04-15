@@ -10317,20 +10317,28 @@ Import assets added by the user
 Export database snapshot to CSV
 ================================
 
-.. http:get:: /api/(version)/snapshot/export
+.. http:post:: /api/(version)/snapshot/export
 
+   .. note::
+      This endpoint also accepts parameters as query arguments.
 
-   Doing a GET on the snapshot export endpoint will export the database snapshot for the specified timestamp to CSV files and save them in the given directory.
+   Doing a POST on the snapshot export endpoint will export the database snapshot for the specified timestamp to CSV files and save them in the given directory.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/snapshot/export?timestamp=133899009&path=/home/user/Documents HTTP/1.1
+      POST /api/1/snapshot/export HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
-   :param str path: The directory in which to write the exported CSV files
-   :param str timestamp: The epoch timestamp representing the day of the snapshot to be returned
+      {
+          "path": "/home/user/Documents",
+          "timestamp": 133899009
+      }
+
+   :reqjson str path: The directory in which to write the exported CSV files.
+   :reqjson int timestamp: The epoch timestamp representing the time of the snapshot to be returned.
 
    **Example Response**:
 
@@ -10344,29 +10352,36 @@ Export database snapshot to CSV
           "message": ""
       }
 
-   :resjson bool result: Boolean denoting success or failure of the query
-   :statuscode 200: Files were exported successfully
-   :statuscode 400: Provided query parameters are in some way malformed or given string is not a directory.
+   :resjson bool result: Boolean denoting success or failure of the query.
+   :statuscode 200: Files were exported successfully.
+   :statuscode 400: Provided JSON is in some way malformed or given path is not a directory.
    :statuscode 409: No user is currently logged in. No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal rotki error.
 
 
-Downloading a database backup
+Downloading a database snapshot
 =================================
 
-.. http:get:: /api/(version)/snapshot/download
+.. http:post:: /api/(version)/snapshot/download
 
+   .. note::
+      This endpoint also accepts parameters as query arguments.
 
-   Doing a GET on the snapshot download endpoint will download database snapshot for the specified timestamp as a zip file.
+   Doing a POST on the snapshot download endpoint will download database snapshot for the specified timestamp as a zip file.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/snapshot/export?timestamp=133899009 HTTP/1.1
+      POST /api/1/snapshot/download HTTP/1.1
       Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
 
-   :param str timestamp: The epoch timestamp representing the day of the snapshot to be returned
+      {
+          "timestamp": 133899009
+      }
+
+   :reqjson int timestamp: The epoch timestamp representing the time of the snapshot to be returned.
 
    **Example Response**:
 
@@ -10377,6 +10392,6 @@ Downloading a database backup
 
 
    :statuscode 200: Snapshot was downloaded successfully.
-   :statuscode 400: Provided timestamp query paramater is missing.
+   :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is currently logged in. No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal rotki error.
