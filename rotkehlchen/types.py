@@ -467,3 +467,25 @@ EXTERNAL_EXCHANGES: List = [
     Location.BISQ,
 ]
 EXTERNAL_LOCATION = [Location.EXTERNAL] + EXTERNAL_EXCHANGES
+
+
+class ExchangeLocationID(NamedTuple):
+    name: str
+    location: Location
+
+    def serialize(self) -> Dict:
+        return {'name': self.name, 'location': self.location.serialize()}
+
+    @classmethod
+    def deserialize(
+            cls: Type['ExchangeLocationID'],
+            data: Dict['str', Any],
+    ) -> 'ExchangeLocationID':
+        """May raise DeserializationError"""
+        try:
+            return cls(
+                name=data['name'],
+                location=Location.deserialize(data['location']),
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Missing key {str(e)}') from e

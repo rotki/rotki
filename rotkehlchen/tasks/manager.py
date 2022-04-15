@@ -27,7 +27,7 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
-from rotkehlchen.types import ChecksumEthAddress, Location, Optional, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, ExchangeLocationID, Location, Optional, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
@@ -85,7 +85,7 @@ class TaskManager():
         self.chain_manager = chain_manager
         self.last_xpub_derivation_ts = 0
         self.last_eth_tx_query_ts: DefaultDict[ChecksumEthAddress, int] = defaultdict(int)
-        self.last_exchange_query_ts: DefaultDict[Tuple[str, Location], int] = defaultdict(int)
+        self.last_exchange_query_ts: DefaultDict[ExchangeLocationID, int] = defaultdict(int)
         self.base_entries_ignore_set: Set[str] = set()
         self.prepared_cryptocompare_query = False
         self.greenlet_manager.spawn_and_track(  # Needs to run in greenlet, is slow
