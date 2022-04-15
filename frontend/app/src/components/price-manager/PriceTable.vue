@@ -20,7 +20,8 @@
       <template #item.price="{ item }">
         <amount-display :value="item.price" />
       </template>
-      <template #item.join>{{ $t('price_table.join_text') }}</template>
+      <template #item.wasWorth>{{ $t('price_table.was_worth') }}</template>
+      <template #item.on>{{ $t('price_table.on') }}</template>
       <template #item.actions="{ item }">
         <row-actions
           :disabled="loading"
@@ -186,7 +187,7 @@ export default defineComponent({
         },
         {
           text: '',
-          value: 'join'
+          value: 'wasWorth'
         },
         {
           text: this.$t('price_table.headers.price').toString(),
@@ -195,6 +196,10 @@ export default defineComponent({
         {
           text: this.$t('price_table.headers.to_asset').toString(),
           value: 'toAsset'
+        },
+        {
+          text: '',
+          value: 'on'
         },
         {
           text: this.$t('price_table.headers.date').toString(),
