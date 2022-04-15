@@ -4,10 +4,6 @@ from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.types import Location
 
-# pytest doesn't see fixture without this import
-from .test_tasks_manager import \
-    fixture_exchange_manager  # noqa: F401 # pylint: disable=unused-import
-
 
 def test_exchanges_filtering(database, exchange_manager, function_scope_messages_aggregator):
     kraken1 = MockKraken(
