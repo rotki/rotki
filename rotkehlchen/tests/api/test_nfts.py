@@ -3,6 +3,7 @@ import warnings as test_warnings
 
 import pytest
 import requests
+from flaky import flaky
 
 from rotkehlchen.chain.ethereum.modules.nfts import FREE_NFT_LIMIT
 from rotkehlchen.constants.misc import ZERO
@@ -19,6 +20,7 @@ TEST_ACC2 = '0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF'
 TEST_ACC3 = '0xC21A5ee89D306353e065a6dd5779470DE395DBaC'
 
 
+@flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('start_with_valid_premium', [bool(random.getrandbits(1))])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
@@ -69,6 +71,7 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
     assert nft_found, 'Could not find and verify the test NFT'
 
 
+@flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
@@ -111,6 +114,7 @@ def test_nft_query_after_account_add(rotkehlchen_api_server):
     assert TEST_ACC2 in result['addresses']
 
 
+@flaky(max_runs=3, min_passes=1)  # all opensea calls have become quite flaky
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC2, TEST_ACC3]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])

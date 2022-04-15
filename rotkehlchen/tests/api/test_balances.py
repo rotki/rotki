@@ -6,6 +6,7 @@ from unittest.mock import patch
 import gevent
 import pytest
 import requests
+from flaky import flaky
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -684,6 +685,7 @@ def test_balances_caching_mixup(
         assert result_btc['totals']['liabilities'] == {}
 
 
+@flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 @pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, SUBSTRATE_ACC2_KSM_ADDR]])
