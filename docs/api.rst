@@ -9757,7 +9757,7 @@ All Binance markets
       GET /api/1/exchanges/binance/pairs?location=binance HTTP/1.1
       Host: localhost:5042
 
-   
+
    :query string location: Either ``binance`` or ``binanceus`` locations. This argument will filter the result based on the exchange type.
 
    **Example Response**:
@@ -10102,7 +10102,7 @@ Get associated locations
 ========================
 
 .. http:get:: /api/(version)/locations/associated
-   
+
    Doing a GET on this endpoint will return a list of locations where the user has information. It contains locations imported in CSV, exchanges and DeFi locations.
 
    **Example Request**:
@@ -10292,7 +10292,7 @@ Import assets added by the user
 
       {"action": "upload", "file": "/tmp/assets.zip"}
 
-   
+
    :resjsonarr string action: Action performed on the endpoint
    :resjsonarr string file: The path to the file to upload for PUT. The file itself for POST.
 
@@ -10312,3 +10312,86 @@ Import assets added by the user
    :statuscode 409: No user is logged in, imported file is for an older version of the schema or file can't be loaded or format is not valid.
    :statuscode 500: Internal rotki error
    :statuscode 507: Filesystem error, probably related to size.
+
+
+Export database snapshot to CSV
+================================
+
+.. http:post:: /api/(version)/snapshot/export
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a POST on the snapshot export endpoint will export the database snapshot for the specified timestamp to CSV files and save them in the given directory.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/snapshot/export HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "path": "/home/user/Documents",
+          "timestamp": 133899009
+      }
+
+   :reqjson str path: The directory in which to write the exported CSV files.
+   :reqjson int timestamp: The epoch timestamp representing the time of the snapshot to be returned.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true
+          "message": ""
+      }
+
+   :resjson bool result: Boolean denoting success or failure of the query.
+   :statuscode 200: Files were exported successfully.
+   :statuscode 400: Provided JSON is in some way malformed or given path is not a directory.
+   :statuscode 409: No user is currently logged in. No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
+   :statuscode 500: Internal rotki error.
+
+
+Downloading a database snapshot
+=================================
+
+.. http:post:: /api/(version)/snapshot/download
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a POST on the snapshot download endpoint will download database snapshot for the specified timestamp as a zip file.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/snapshot/download HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "timestamp": 133899009
+      }
+
+   :reqjson int timestamp: The epoch timestamp representing the time of the snapshot to be returned.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/zip
+
+
+   :statuscode 200: Snapshot was downloaded successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
+   :statuscode 500: Internal rotki error.

@@ -87,6 +87,8 @@ from rotkehlchen.api.v1.schemas import (
     RequiredEthereumAddressSchema,
     SingleAssetIdentifierSchema,
     SingleFileSchema,
+    SnapshotDownloadingSchema,
+    SnapshotExportingSchema,
     StakingQuerySchema,
     StatisticsAssetBalanceSchema,
     StatisticsNetValueSchema,
@@ -2081,3 +2083,19 @@ class UserAssetsResource(BaseResource):
             file.save(str(filepath))
             response = self.rest_api.import_user_assets(path=filepath)
         return response
+
+
+class DBSnapshotExportingResource(BaseResource):
+    get_schema = SnapshotExportingSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def post(self, timestamp: Timestamp, path: Path) -> Response:
+        return self.rest_api.export_user_db_snapshot(timestamp=timestamp, path=path)
+
+
+class DBSnapshotDownloadingResource(BaseResource):
+    get_schema = SnapshotDownloadingSchema()
+
+    @use_kwargs(get_schema, location='json_and_query')
+    def post(self, timestamp: Timestamp) -> Response:
+        return self.rest_api.download_user_db_snapshot(timestamp=timestamp)

@@ -1765,6 +1765,14 @@ class TimedManualPriceSchema(ManualPriceSchema):
     timestamp = TimestampField(required=True)
 
 
+class SnapshotDownloadingSchema(Schema):
+    timestamp = TimestampField(required=True)
+
+
+class SnapshotExportingSchema(SnapshotDownloadingSchema):
+    path = DirectoryField(required=True)
+
+
 class ManualPriceRegisteredSchema(Schema):
     from_asset = AssetField(load_default=None)
     to_asset = AssetField(load_default=None)

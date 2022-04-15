@@ -47,6 +47,8 @@ from rotkehlchen.api.v1.resources import (
     DatabaseBackupsResource,
     DatabaseInfoResource,
     DataImportResource,
+    DBSnapshotDownloadingResource,
+    DBSnapshotExportingResource,
     DefiBalancesResource,
     ERC20TokenInfo,
     ERC20TokenInfoAVAX,
@@ -268,6 +270,8 @@ URLS_V1: URLS = [
     ('/database/backups', DatabaseBackupsResource),
     ('/locations/associated', AssociatedLocations),
     ('/staking/kraken', StakingResource),
+    ('/snapshot/download', DBSnapshotDownloadingResource),
+    ('/snapshot/export', DBSnapshotExportingResource),
 ]
 
 logger = logging.getLogger(__name__)

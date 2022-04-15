@@ -83,6 +83,7 @@ from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.snapshots import DBSnapshot
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors import (
     AuthenticationError,
@@ -4062,3 +4063,32 @@ class RestAPI():
             )
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def export_user_db_snapshot(self, timestamp: Timestamp, path: Path) -> Response:
+        dbsnapshot = DBSnapshot(self.rotkehlchen.data.db)
+        is_success, message = dbsnapshot.export(timestamp=timestamp, directory_path=path)
+        if is_success is False:
+            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
+    def download_user_db_snapshot(self, timestamp: Timestamp) -> Response:
+        dbsnapshot = DBSnapshot(self.rotkehlchen.data.db)
+        is_success, zipfile_path = dbsnapshot.export(timestamp, directory_path=None)
+        if is_success is False:
+            return api_response(wrap_in_fail_result('Could not create a zip archive'), status_code=HTTPStatus.CONFLICT)  # noqa: E501
+
+        try:
+            return send_file(
+                path_or_file=zipfile_path,
+                mimetype='application/zip',
+                as_attachment=True,
+                download_name='snapshot.zip',
+            )
+        except FileNotFoundError:
+            return api_response(
+                wrap_in_fail_result('No file was found'),
+                status_code=HTTPStatus.NOT_FOUND,
+            )
