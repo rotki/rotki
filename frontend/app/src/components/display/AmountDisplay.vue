@@ -266,7 +266,7 @@ export default defineComponent({
       if (hiddenDecimals && get(rounding) === BigNumber.ROUND_UP) {
         return `< ${formattedValue}`;
       } else if (
-        price.lt(1) &&
+        price.abs().lt(1) &&
         hiddenDecimals &&
         get(rounding) === BigNumber.ROUND_DOWN
       ) {
@@ -305,7 +305,7 @@ export default defineComponent({
     });
 
     const rounding = computed<RoundingMode | undefined>(() => {
-      const isValue = get(fiatCurrency) === get(currencySymbol);
+      const isValue = get(fiatCurrency);
       let rounding: RoundingMode | undefined = undefined;
       if (isValue) {
         rounding = get(valueRoundingMode);

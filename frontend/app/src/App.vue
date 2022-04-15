@@ -67,7 +67,8 @@
             class="app__app-bar__button"
             @click="showNotificationBar = !showNotificationBar"
           />
-          <currency-drop-down class="app__app-bar__button" />
+          <currency-dropdown class="app__app-bar__button" />
+          <privacy-mode-dropdown class="app__app-bar__button" />
           <user-dropdown class="app__app-bar__button" />
           <help-indicator
             v-if="!xsOnly"
@@ -137,7 +138,7 @@ import {
 import { get, set } from '@vueuse/core';
 import About from '@/components/About.vue';
 import AccountManagement from '@/components/AccountManagement.vue';
-import CurrencyDropDown from '@/components/CurrencyDropDown.vue';
+import CurrencyDropdown from '@/components/CurrencyDropdown.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import MacOsVersionUnsupported from '@/components/error/MacOsVersionUnsupported.vue';
 import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
@@ -146,6 +147,7 @@ import HelpSidebar from '@/components/help/HelpSidebar.vue';
 import BackButton from '@/components/helper/BackButton.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
+import PrivacyModeDropdown from '@/components/PrivacyModeDropdown.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import FrontendUpdateNotifier from '@/components/status/FrontendUpdateNotifier.vue';
 import NodeStatusIndicator from '@/components/status/NodeStatusIndicator.vue';
@@ -191,9 +193,10 @@ export default defineComponent({
     BalanceSavedIndicator: SyncIndicator,
     NodeStatusIndicator,
     MessageDialog,
-    CurrencyDropDown,
+    CurrencyDropdown,
     NavigationMenu,
-    UserDropdown
+    UserDropdown,
+    PrivacyModeDropdown
   },
   setup() {
     const store = useMainStore();

@@ -20,8 +20,8 @@
     "lint:style": "stylelint 'src/**/*.{vue,scss}'",
     "lint:style:fix": "stylelint --fix 'src/**/*.{vue,scss}'",
     "test:e2e-ci": "nyc vue-cli-service test:e2e --mode e2e --headless",
-    "test:integration": "start-server-and-test serve:backend http://localhost:22221/api/1/ping test:e2e",
-    "test:integration-ci": "start-server-and-test serve:backend http://localhost:22221/api/1/ping test:e2e-ci"
+    "test:integration": "cross-env-shell 'start-server-and-test serve:backend http://localhost:22221/api/1/ping \"npm run test:e2e -- $ARGS\"'",
+    "test:integration-ci": "cross-env-shell 'start-server-and-test serve:backend http://localhost:22221/api/1/ping \"npm run test:e2e-ci -- $ARGS\"'"
   },
   "main": "background.js",
   "dependencies": {
@@ -29,13 +29,13 @@
     "@vue/composition-api": "1.4.6",
     "@vueuse/core": "7.5.5",
     "axios": "0.25.0",
-    "ethereum-blockies-base64": "1.0.2",
     "chart.js": "2.9.4",
     "cleave.js": "1.6.0",
     "core-js": "3.20.3",
     "dayjs": "1.10.7",
     "electron-updater": "4.6.5",
     "electron-window-state": "5.0.3",
+    "ethereum-blockies-base64": "1.0.2",
     "lodash": "4.17.21",
     "loglevel": "1.8.0",
     "pinia": "2.0.9",
@@ -88,6 +88,7 @@
     "babel-eslint": "10.1.0",
     "babel-jest": "27.4.6",
     "babel-plugin-istanbul": "6.1.1",
+    "cross-env": "7.0.3",
     "dotenv": "14.3.0",
     "electron": "18.0.1",
     "electron-builder": "22.14.13",

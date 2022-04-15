@@ -63,7 +63,7 @@ import ThemeMixin from '@/mixins/theme-mixin';
 import { Currency } from '@/types/currency';
 
 export default defineComponent({
-  name: 'CurrencyDropDown',
+  name: 'CurrencyDropdown',
   components: { MenuTooltipButton },
   mixins: [ThemeMixin],
   setup() {

@@ -809,7 +809,8 @@
       "price": "Price",
       "to_asset": "To Asset"
     },
-    "join_text": "was worth",
+    "was_worth": "was worth",
+    "on": "on",
     "title": "Manual Prices"
   },
   "queried_address_dialog": {
