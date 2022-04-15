@@ -62,6 +62,7 @@ from rotkehlchen.types import (
     AssetMovementCategory,
     BTCAddress,
     ChecksumEthAddress,
+    ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
     Location,
@@ -675,6 +676,19 @@ def _validate_historical_price_oracles(
         )
 
 
+class ExchangeLocationIDSchema(Schema):
+    name = fields.Str(required=True)
+    location = LocationField(required=True)
+
+    @post_load()
+    def make_exchange_location_id(  # pylint: disable=no-self-use
+            self,
+            data: Dict[str, Any],
+            **_kwargs: Any,
+    ) -> ExchangeLocationID:
+        return ExchangeLocationID(name=data['name'], location=data['location'])
+
+
 class ModifiableSettingsSchema(Schema):
     """This is the Schema for the settings that can be modified via the API"""
     premium_should_sync = fields.Bool(load_default=None)
@@ -744,6 +758,12 @@ class ModifiableSettingsSchema(Schema):
         ),
         load_default=None,
     )
+    non_syncing_exchanges = fields.List(
+        fields.Nested(ExchangeLocationIDSchema),
+        load_default=None,
+        # Check that all values are unique
+        validate=lambda data: len(data) == len(set(data)),
+    )
 
     @validates_schema
     def validate_settings_schema(  # pylint: disable=no-self-use
@@ -790,6 +810,7 @@ class ModifiableSettingsSchema(Schema):
             pnl_csv_with_formulas=data['pnl_csv_with_formulas'],
             pnl_csv_have_summary=data['pnl_csv_have_summary'],
             ssf_0graph_multiplier=data['ssf_0graph_multiplier'],
+            non_syncing_exchanges=data['non_syncing_exchanges'],
         )
 
 
