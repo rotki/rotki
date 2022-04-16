@@ -9,6 +9,7 @@ from rotkehlchen.accounting.export.csv import CSVExporter
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.base import ActionType
+from rotkehlchen.accounting.types import MissingPrice
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors import (
@@ -82,16 +83,26 @@ class Accountant():
         event = events[count]
         ts = event.get_timestamp()
         identifier = event.get_identifier()
-        self.msg_aggregator.add_error(
-            f'Skipping event with id {identifier} at '
-            f'{self.csvexporter.timestamp_to_date(ts)} '
-            f'during history processing due to {reason}: '
-            f'{str(exception)}. Check the logs for more details',
-        )
-        log.error(
-            f'Skipping event with id {identifier}  during history processing due to '
-            f'{reason}: {str(exception)}',
-        )
+
+        if isinstance(exception, NoPriceForGivenTimestamp):
+            self.pots[0].cost_basis.missing_prices.append(
+                MissingPrice(
+                    from_asset=exception.from_asset,
+                    to_asset=exception.to_asset,
+                    time=exception.date,
+                ),
+            )
+        else:
+            self.msg_aggregator.add_error(
+                f'Skipping event with id {identifier} at '
+                f'{self.csvexporter.timestamp_to_date(ts)} '
+                f'during history processing due to {reason}: '
+                f'{str(exception)}. Check the logs for more details',
+            )
+            log.error(
+                f'Skipping event with id {identifier}  during history processing due to '
+                f'{reason}: {str(exception)}',
+            )
         return count + 1
 
     def process_history(

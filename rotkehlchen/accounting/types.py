@@ -3,7 +3,10 @@ from typing import Any, Dict, NamedTuple, Tuple
 
 import jsonschema
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors import DeserializationError
+from rotkehlchen.fval import FVal
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
@@ -101,3 +104,15 @@ class NamedJson(NamedTuple):
             ) from e
 
         return event_type, string_data
+
+
+class MissingAcquisition(NamedTuple):
+    asset: Asset
+    time: Timestamp
+    missing_amount: FVal
+
+
+class MissingPrice(NamedTuple):
+    from_asset: Asset
+    to_asset: Asset
+    time: Timestamp

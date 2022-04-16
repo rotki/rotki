@@ -16,6 +16,7 @@ from typing import (
     overload,
 )
 
+from rotkehlchen.accounting.types import MissingAcquisition, MissingPrice
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.misc import ZERO
@@ -233,6 +234,8 @@ class CostBasisCalculator(CustomizableDateMixin):
         self.settings = settings
         self.profit_currency = settings.main_currency
         self._events: DefaultDict[Asset, CostBasisEvents] = defaultdict(CostBasisEvents)
+        self.missing_acquisitions: List[MissingAcquisition] = []
+        self.missing_prices: List[MissingPrice] = []
 
     def get_events(self, asset: Asset) -> CostBasisEvents:
         """Custom getter for events so that we have common cost basis for some assets"""
@@ -248,7 +251,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             found_amount: Optional[FVal] = None,
             missing_amount: Optional[FVal] = None,
     ) -> None:
-        """Inform the user for missing data for an acquisition via the msg aggregator"""
+        """Inform the user for missing data for an acquisition by appending it to a list."""
         if found_amount is None:
             self.msg_aggregator.add_error(
                 f'No documented acquisition found for {asset} before '
@@ -257,12 +260,14 @@ class CostBasisCalculator(CustomizableDateMixin):
             )
             return
 
-        self.msg_aggregator.add_error(
-            f'Not enough documented acquisitions found for {asset} before '
-            f'{self.timestamp_to_date(time)}. Only found acquisitions '
-            f'for {found_amount} {asset} and miss {missing_amount} {asset}.'
-            f'Let rotki know how you acquired it via a ledger action',
-        )
+        if missing_amount is not None:
+            self.missing_acquisitions.append(
+                MissingAcquisition(
+                    asset=asset,
+                    time=time,
+                    missing_amount=missing_amount,
+                ),
+            )
 
     def reduce_asset_amount(self, asset: Asset, amount: FVal, timestamp: Timestamp) -> bool:
         """Searches all acquisition events for asset and reduces them by amount.
@@ -303,9 +308,12 @@ class CostBasisCalculator(CustomizableDateMixin):
         if remaining_amount_from_last_buy != FVal('-1'):
             asset_events.acquisitions[0].remaining_amount = remaining_amount_from_last_buy
         elif remaining_amount != ZERO:
-            log.critical(
-                f'No documented buy found for {asset} before '
-                f'{self.timestamp_to_date(timestamp)}',
+            self.missing_acquisitions.append(
+                MissingAcquisition(
+                    asset=asset,
+                    time=timestamp,
+                    missing_amount=amount,
+                ),
             )
             return False
 

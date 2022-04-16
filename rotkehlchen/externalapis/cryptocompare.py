@@ -54,7 +54,7 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, Price, Timestamp
-from rotkehlchen.utils.misc import pairwise, timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import pairwise, ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
@@ -834,11 +834,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
-                date=timestamp_to_date(
-                    timestamp,
-                    formatstr='%d/%m/%Y, %H:%M:%S',
-                    treat_as_local=True,
-                ),
+                date=timestamp,
             )
 
         log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price)  # noqa: E501
