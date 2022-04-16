@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Iterable,
     List,
     Literal,
     Optional,
@@ -27,14 +26,12 @@ from rotkehlchen.errors import DeserializationError, InputError, UnknownAsset
 from rotkehlchen.globaldb.upgrades.v1_v2 import upgrade_ethereum_asset_ids
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEthAddress, Location, Timestamp
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.types import ChecksumEthAddress, Timestamp
 
 from .schema import DB_SCRIPT_CREATE_TABLES
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.exchanges.data_structures import BinancePair
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -91,7 +88,7 @@ class GlobalDBHandler():
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
     _data_directory: Optional[Path] = None
-    _conn: sqlite3.Connection
+    conn: sqlite3.Connection
 
     def __new__(
             cls,
@@ -109,26 +106,26 @@ class GlobalDBHandler():
         assert data_dir, 'First instantiation of GlobalDBHandler should have a data_dir'
         GlobalDBHandler.__instance = object.__new__(cls)
         GlobalDBHandler.__instance._data_directory = data_dir
-        GlobalDBHandler.__instance._conn = _initialize_global_db_directory(data_dir)
+        GlobalDBHandler.__instance.conn = _initialize_global_db_directory(data_dir)
         _reload_constant_assets(GlobalDBHandler.__instance)
         return GlobalDBHandler.__instance
 
     @staticmethod
     def get_schema_version() -> int:
         """Get the version of the DB Schema"""
-        cursor = GlobalDBHandler()._conn.cursor()
+        cursor = GlobalDBHandler().conn.cursor()
         return _get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
 
     @staticmethod
     def get_setting_value(name: str, default_value: int) -> int:
         """Get the value of a setting or default. Typing is always int for now"""
-        cursor = GlobalDBHandler()._conn.cursor()
+        cursor = GlobalDBHandler().conn.cursor()
         return _get_setting_value(cursor, name, default_value)
 
     @staticmethod
     def add_setting_value(name: str, value: Any, commit: bool = True) -> None:
         """Add the value of a setting"""
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -149,7 +146,7 @@ class GlobalDBHandler():
         If it's a custom asset the data should be typed. As given in by marshmallow.
 
         May raise InputError in case of error, meaning asset exists or some constraint hit"""
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
 
         details_id: Union[str, ChecksumEthAddress]
@@ -240,7 +237,7 @@ class GlobalDBHandler():
             result = {}
         else:
             result = []
-        cursor = GlobalDBHandler()._conn.cursor()
+        cursor = GlobalDBHandler().conn.cursor()
         specific_ids_query = ''
         if specific_ids is not None:
             specific_ids_query = f'AND A.identifier in ({",".join("?" * len(specific_ids))})'
@@ -294,7 +291,7 @@ class GlobalDBHandler():
 
         Returns None if identifier can't be matched to an asset
         """
-        cursor = GlobalDBHandler()._conn.cursor()
+        cursor = GlobalDBHandler().conn.cursor()
         query = cursor.execute(
             'SELECT identifier, type, name, symbol, started, swapped_for, coingecko, '
             'cryptocompare, details_reference from assets WHERE identifier=?;',
@@ -352,7 +349,7 @@ class GlobalDBHandler():
                 )
                 return None
         else:
-            cursor = GlobalDBHandler()._conn.cursor()
+            cursor = GlobalDBHandler().conn.cursor()
             query = cursor.execute(
                 'SELECT forked FROM common_asset_details WHERE asset_id = ?;',
                 (details_reference,),
@@ -386,7 +383,7 @@ class GlobalDBHandler():
             address: ChecksumEthAddress,
     ) -> Optional[List[UnderlyingToken]]:
         """Fetch underlying tokens for a token address if they exist"""
-        cursor = GlobalDBHandler()._conn.cursor()
+        cursor = GlobalDBHandler().conn.cursor()
         query = cursor.execute(
             'SELECT address, weight from underlying_tokens_list WHERE parent_token_entry=?;',
             (address,),
@@ -408,7 +405,7 @@ class GlobalDBHandler():
 
         Passing in the connection so it can be rolled back in case of error
         """
-        cursor = GlobalDBHandler()._conn.cursor()
+        cursor = GlobalDBHandler().conn.cursor()
         for underlying_token in underlying_tokens:
             # make sure underlying token address is tracked if not already there
             asset_id = GlobalDBHandler.get_ethereum_token_identifier(underlying_token.address)  # noqa: E501
@@ -451,7 +448,7 @@ class GlobalDBHandler():
     @staticmethod
     def get_ethereum_token_identifier(address: ChecksumEthAddress) -> Optional[str]:
         """Returns the asset identifier of an ethereum token by address if it can be found"""
-        cursor = GlobalDBHandler()._conn.cursor()
+        cursor = GlobalDBHandler().conn.cursor()
         query = cursor.execute(
             'SELECT A.identifier from assets AS A LEFT OUTER JOIN ethereum_tokens as B '
             ' ON B.address = A.details_reference WHERE b.address=?;',
@@ -476,7 +473,7 @@ class GlobalDBHandler():
 
         If it exists it returns a list of the identifiers of the assets.
         """
-        cursor = GlobalDBHandler()._conn.cursor()
+        cursor = GlobalDBHandler().conn.cursor()
         query = cursor.execute(
             'SELECT identifier from assets WHERE type=? AND name=? AND symbol=?;',
             (asset_type.serialize_for_db(), name, symbol),
@@ -493,7 +490,7 @@ class GlobalDBHandler():
 
         If no token for the given address can be found None is returned.
         """
-        cursor = GlobalDBHandler()._conn.cursor()
+        cursor = GlobalDBHandler().conn.cursor()
         query = cursor.execute(
             'SELECT A.identifier, B.address, B.decimals, A.name, A.symbol, A.started, '
             'A.swapped_for, A.coingecko, A.cryptocompare, B.protocol '
@@ -532,7 +529,7 @@ class GlobalDBHandler():
         - List of addresses to ignore via exceptions
         - Protocol for which to return tokens
         """
-        cursor = GlobalDBHandler()._conn.cursor()
+        cursor = GlobalDBHandler().conn.cursor()
         querystr = (
             'SELECT A.identifier, B.address, B.decimals, A.name, A.symbol, A.started, '
             'A.swapped_for, A.coingecko, A.cryptocompare, B.protocol '
@@ -582,7 +579,7 @@ class GlobalDBHandler():
 
         May raise InputError if the token already exists
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         try:
             cursor.execute(
@@ -620,7 +617,7 @@ class GlobalDBHandler():
 
         Returns the token's rotki identifier
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         try:
             cursor.execute(
@@ -682,7 +679,7 @@ class GlobalDBHandler():
         some other constraint is hit. Such as for example trying to delete
         a token that is in another token's underlying tokens list.
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         try:
             cursor.execute(
@@ -756,7 +753,7 @@ class GlobalDBHandler():
 
         Returns the asset's identifier
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
 
         identifier = data['identifier']
@@ -814,7 +811,7 @@ class GlobalDBHandler():
 
         Does not commit to the DB. Commit must be called from the caller.
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         # assuming they are already serialized
         asset_id = data['identifier']
@@ -839,7 +836,7 @@ class GlobalDBHandler():
         some other constraint is hit. Such as for example trying to delete
         an asset that is in another asset's forked or swapped attribute
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         try:
             cursor.execute(
@@ -878,7 +875,7 @@ class GlobalDBHandler():
         These assets are there so that when someone tries to delete assets from the global DB
         they don't delete assets that are owned by any local user.
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         try:
             cursor.executemany(
@@ -903,7 +900,7 @@ class GlobalDBHandler():
         is a swapped_for or forked_for of another asset.
         """
         globaldb = GlobalDBHandler()
-        connection = globaldb._conn
+        connection = globaldb.conn
         cursor = connection.cursor()
         cursor.execute('DELETE FROM user_owned_assets WHERE asset_id=?;', (identifier,))
         cursor.execute(
@@ -925,7 +922,7 @@ class GlobalDBHandler():
     @staticmethod
     def get_assets_with_symbol(symbol: str, asset_type: Optional[AssetType] = None) -> List[AssetData]:  # noqa: E501
         """Find all asset entries that have the given symbol"""
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         query_tuples: Union[Tuple[str, str, str, str], Tuple[str, str, str, str, str]]
         eth_token_type = AssetType.ETHEREUM_TOKEN.serialize_for_db()    # pylint: disable=no-member
@@ -980,7 +977,7 @@ class GlobalDBHandler():
 
         If no price can be found returns None
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         querystr = (
             'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
@@ -1007,7 +1004,7 @@ class GlobalDBHandler():
 
         If any addition causes a DB error it's skipped and an error is logged
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         try:
             cursor.executemany(
@@ -1043,7 +1040,7 @@ class GlobalDBHandler():
         Adds the given historical price entries in the DB.
         Returns True if the operation succeeded and False otherwise
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         try:
             serialized = entry.serialize_for_db()
@@ -1070,7 +1067,7 @@ class GlobalDBHandler():
         to_asset: Optional[Asset],
     ) -> List[Dict[str, str]]:
         """Returns prices added to the database by the user for an asset"""
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         querystr = (
             'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
@@ -1101,7 +1098,7 @@ class GlobalDBHandler():
         """Edits a manually inserted historical price. Returns false if no row
         was updated and true otherwise.
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         querystr = (
             'UPDATE price_history SET price=? WHERE from_asset=? AND to_asset=? '
@@ -1136,7 +1133,7 @@ class GlobalDBHandler():
         Deletes a manually inserted historical price given by its primary key.
         Returns True if one row was deleted and False otherwise
         """
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         querystr = (
             'DELETE FROM price_history WHERE from_asset=? AND to_asset=? '
@@ -1164,7 +1161,7 @@ class GlobalDBHandler():
             to_asset: 'Asset',
             source: Optional[HistoricalPriceOracle] = None,
     ) -> None:
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         querystr = 'DELETE FROM price_history WHERE from_asset=? AND to_asset=?'
         query_list = [from_asset.identifier, to_asset.identifier]
@@ -1189,7 +1186,7 @@ class GlobalDBHandler():
             to_asset: 'Asset',
             source: Optional[HistoricalPriceOracle] = None,
     ) -> Optional[Tuple[Timestamp, Timestamp]]:
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         querystr = 'SELECT MIN(timestamp), MAX(timestamp) FROM price_history WHERE from_asset=? AND to_asset=?'  # noqa: E501
         query_list = [from_asset.identifier, to_asset.identifier]
@@ -1208,7 +1205,7 @@ class GlobalDBHandler():
         """Return a list of assets and first/last ts
 
         Only used by the API so just returning it as List of dicts from here"""
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         query = cursor.execute(
             'SELECT from_asset, to_asset, MIN(timestamp), MAX(timestamp) FROM '
@@ -1233,7 +1230,7 @@ class GlobalDBHandler():
         """
         detach_database = 'DETACH DATABASE "clean_db";'
 
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
         user_db_cursor = user_db.conn.cursor()
         root_dir = Path(__file__).resolve().parent.parent
@@ -1304,7 +1301,7 @@ class GlobalDBHandler():
         root_dir = Path(__file__).resolve().parent.parent
         builtin_database = root_dir / 'data' / 'global.db'
         detach_database = 'DETACH DATABASE "clean_db";'
-        connection = GlobalDBHandler()._conn
+        connection = GlobalDBHandler().conn
         cursor = connection.cursor()
 
         try:
@@ -1351,37 +1348,6 @@ class GlobalDBHandler():
         cursor.execute(detach_database)
         return True, ''
 
-    def save_binance_pairs(
-        self,
-        new_pairs: Iterable['BinancePair'],
-        location: Location,
-    ) -> None:
-        query = 'INSERT OR IGNORE INTO binance_pairs(pair, base_asset, quote_asset, location) VALUES (?, ?, ?, ?)'  # noqa: E501
-        cursor = self._conn.cursor()
-        try:
-            cursor.executemany(query, [pair.serialize_for_db() for pair in new_pairs])
-            self.add_setting_value(name=f'binance_pairs_queried_at_{location}', value=ts_now())
-        except sqlite3.IntegrityError as e:
-            raise InputError(
-                f'Tried to add a binance pair to the database but failed due to {str(e)}',
-            ) from e
-
-    def get_binance_pairs(self, location: Location) -> List['BinancePair']:
-        # TODO: Change the logic around BinancePair to avoid the importing here
-        from rotkehlchen.exchanges.utils import BinancePair  # noqa: E501  # pylint: disable=import-outside-toplevel  # isort:skip
-        cursor = self._conn.cursor()
-        cursor.execute(
-            'SELECT pair, base_asset, quote_asset, location FROM binance_pairs WHERE location=?',
-            location.serialize_for_db(),
-        )
-        pairs = []
-        for pair in cursor:
-            try:
-                pairs.append(BinancePair.deserialize_from_db(pair))
-            except DeserializationError as e:
-                log.debug(f'Failed to deserialize binance pair {pair}. {str(e)}')
-        return pairs
-
     def get_user_added_assets(
         self,
         user_db: 'DBHandler',
@@ -1393,7 +1359,7 @@ class GlobalDBHandler():
         May raise:
         - sqlite3.Error if the user_db couldn't be correctly attached
         """
-        connection = self._conn
+        connection = self.conn
         cursor = connection.cursor()
         root_dir = Path(__file__).resolve().parent.parent
         builtin_database = root_dir / 'data' / 'global.db'

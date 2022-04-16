@@ -403,7 +403,7 @@ class AssetsUpdater():
             # otherwise we are sure the DB will work without conflicts so let's
             # now move the data to the actual global DB
             connection.close()
-            connection = GlobalDBHandler()._conn
+            connection = GlobalDBHandler().conn
             _replace_assets_from_db(connection, tempdbpath)
             return None
 

@@ -588,7 +588,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
         assert_proper_response_with_result(response)
 
     # before the replacement. Check that we got a globaldb entry in owned assets
-    global_cursor = globaldb._conn.cursor()
+    global_cursor = globaldb.conn.cursor()
     if not only_in_globaldb:
         assert global_cursor.execute(
             'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (custom1_id,),
@@ -709,7 +709,7 @@ def test_replace_asset_not_in_globaldb(rotkehlchen_api_server, globaldb):
         'balance_type': 'asset',
     }]
     # check the previous asset is not in globaldb owned assets
-    global_cursor = globaldb._conn.cursor()
+    global_cursor = globaldb.conn.cursor()
     assert global_cursor.execute(
         'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (unknown_id,),
     ).fetchone()[0] == 0
@@ -762,7 +762,7 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
         ), json={'async_query': False, 'balances': balances},
     )
     assert_proper_response_with_result(response)
-    global_cursor = globaldb._conn.cursor()
+    global_cursor = globaldb.conn.cursor()
 
     def assert_db() -> None:
         assert global_cursor.execute(

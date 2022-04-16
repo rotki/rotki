@@ -12,6 +12,7 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import BinancePair
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.binance import GlobalDBBinance
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, Timestamp
@@ -85,6 +86,7 @@ def query_binance_exchange_pairs(location: Location) -> Dict[str, BinancePair]:
     last_pair_check_ts = Timestamp(
         db.get_setting_value(f'binance_pairs_queried_at_{location}', 0),
     )
+    gdb_binance = GlobalDBBinance(db)
 
     assert location in (Location.BINANCE, Location.BINANCEUS), f'Invalid location used as argument for binance pair query. {location}'  # noqa: E501
     if location == Location.BINANCE:
@@ -102,10 +104,10 @@ def query_binance_exchange_pairs(location: Location) -> Dict[str, BinancePair]:
         except (JSONDecodeError, requests.exceptions.RequestException) as e:
             log.debug(f'Failed to obtain market pairs from binance. {str(e)}')
             # If request fails try to get them from the database
-            database_pairs = db.get_binance_pairs(location)
+            database_pairs = gdb_binance.get_all_binance_pairs(location)
             return {pair.symbol: pair for pair in database_pairs}
-        db.save_binance_pairs(new_pairs=pairs.values(), location=location)
+        gdb_binance.save_all_binance_pairs(new_pairs=pairs.values(), location=location)
     else:
-        database_pairs = db.get_binance_pairs(location)
+        database_pairs = gdb_binance.get_all_binance_pairs(location)
         pairs = {pair.symbol: pair for pair in database_pairs}
     return pairs

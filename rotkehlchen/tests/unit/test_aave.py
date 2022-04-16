@@ -23,7 +23,7 @@ def test_aave_reserve_mapping():
 
 
 def test_atoken_to_asset():
-    cursor = GlobalDBHandler()._conn.cursor()
+    cursor = GlobalDBHandler().conn.cursor()
     result = cursor.execute(
         'SELECT A.address from ethereum_tokens as A LEFT OUTER JOIN assets as B '
         'WHERE A.address=B.details_reference AND A.protocol IN (?, ?)',

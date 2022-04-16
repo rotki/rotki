@@ -457,7 +457,7 @@ def test_asset_with_unknown_type_does_not_crash(asset_resolver):  # pylint: disa
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('force_reinitialize_asset_resolver', [True])
 def test_get_or_create_ethereum_token(globaldb, database):
-    cursor = globaldb._conn.cursor()
+    cursor = globaldb.conn.cursor()
     assets_num = cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0]
     assert A_DAI == get_or_create_ethereum_token(
         userdb=database,

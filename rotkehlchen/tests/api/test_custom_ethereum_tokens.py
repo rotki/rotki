@@ -143,7 +143,7 @@ def test_adding_custom_tokens(rotkehlchen_api_server):
     )
 
     # also test that the addition of underlying tokens has created proper asset entries for them
-    cursor = GlobalDBHandler()._conn.cursor()
+    cursor = GlobalDBHandler().conn.cursor()
     result = cursor.execute(
         'SELECT COUNT(*) from assets WHERE identifier IN (?, ?, ?, ?)',
         [ETHEREUM_DIRECTIVE + x for x in [underlying_address1, underlying_address2, underlying_address3, underlying_address4]],  # noqa: E501
@@ -385,7 +385,7 @@ def test_deleting_custom_tokens(rotkehlchen_api_server):
     underlying1_id = ETHEREUM_DIRECTIVE + underlying_address1
     underlying2_id = ETHEREUM_DIRECTIVE + underlying_address2
     underlying3_id = ETHEREUM_DIRECTIVE + underlying_address3
-    cursor = GlobalDBHandler()._conn.cursor()
+    cursor = GlobalDBHandler().conn.cursor()
     initial_underlying_num = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]  # noqa: E501
 
     # Make sure the equivalent assets we will delete exist in the DB

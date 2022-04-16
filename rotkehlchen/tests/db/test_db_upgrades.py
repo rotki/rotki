@@ -2085,7 +2085,7 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
                 '0.001504',
             )
     userdb_assets_num = cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0]
-    globaldb_cursor = globaldb._conn.cursor()
+    globaldb_cursor = globaldb.conn.cursor()
     globaldb_assets_num = globaldb_cursor.execute('SELECT COUNT(*) from assets;').fetchone()[0]
     msg = 'User DB should contain 1 extra asset that is moved over without existing in the global DB'  # noqa: E501
     assert globaldb_assets_num == userdb_assets_num - 1, msg

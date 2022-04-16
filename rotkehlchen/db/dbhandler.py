@@ -2113,6 +2113,7 @@ class DBHandler:
         return extras
 
     def set_binance_pairs(self, name: str, pairs: List[str], location: Location) -> None:
+        """Sets the market pairs used by the user on a specific binance exchange"""
         cursor = self.conn.cursor()
         data = json.dumps(pairs)
         cursor.execute(
@@ -2129,6 +2130,7 @@ class DBHandler:
         self.update_last_write()
 
     def get_binance_pairs(self, name: str, location: Location) -> List[str]:
+        """Gets the market pairs used by the user on a specific binance exchange"""
         cursor = self.conn.cursor()
         result = cursor.execute(
             'SELECT setting_value FROM user_credentials_mappings WHERE '
@@ -2900,7 +2902,7 @@ class DBHandler:
 
     def add_globaldb_assetids(self) -> None:
         """Makes sure that all the GlobalDB asset identifiers are mirrored in the user DB"""
-        cursor = GlobalDBHandler()._conn.cursor()  # after succesfull update add all asset ids
+        cursor = GlobalDBHandler().conn.cursor()  # after succesfull update add all asset ids
         query = cursor.execute('SELECT identifier from assets;')
         self.add_asset_identifiers([x[0] for x in query])
 
