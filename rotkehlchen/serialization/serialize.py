@@ -70,6 +70,7 @@ from rotkehlchen.types import (
     AssetMovementCategory,
     BlockchainAccountData,
     EthereumTransaction,
+    ExchangeLocationID,
     Location,
     TradeType,
 )
@@ -151,6 +152,7 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             StakePosition,
             DillBalance,
             NFTResult,
+            ExchangeLocationID,
     )):
         return process_result(entry.serialize())
     if isinstance(entry, (

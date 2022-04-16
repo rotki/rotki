@@ -84,9 +84,12 @@ class ExchangeManager():
 
     def iterate_exchanges(self) -> Iterator[ExchangeInterface]:
         """Iterate all connected exchanges"""
+        excluded = self.database.get_settings().non_syncing_exchanges
         for _, exchanges in self.connected_exchanges.items():
             for exchange in exchanges:
-                yield exchange
+                # We are not yielding excluded exchanges
+                if exchange.location_id() not in excluded:
+                    yield exchange
 
     def edit_exchange(
             self,

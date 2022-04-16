@@ -16,7 +16,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.constants import A_JPY
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockWeb3
-from rotkehlchen.types import ChecksumEthAddress, ModuleName
+from rotkehlchen.types import ChecksumEthAddress, ExchangeLocationID, Location, ModuleName
 
 
 def test_querying_settings(rotkehlchen_api_server, username):
@@ -96,6 +96,8 @@ def test_set_settings(rotkehlchen_api_server):
             value = ['coingecko', 'cryptocompare']
         elif setting == 'taxable_ledger_actions':
             value = ['income']
+        elif setting == 'non_syncing_exchanges':
+            value = [ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize()]
         else:
             raise AssertionError(f'Unexpected settting {setting} encountered')
 
@@ -532,3 +534,40 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
         'aave': [address1, address2],
         'makerdao_vaults': [address2],
     })
+
+
+def test_excluded_exchanges_settings(rotkehlchen_api_server):
+    exchanges_input = {
+        'settings': {
+            'non_syncing_exchanges': [
+                ExchangeLocationID(name="test_name", location=Location.KRAKEN).serialize(),
+                ExchangeLocationID(name="test_name2", location=Location.KRAKEN).serialize(),
+            ],
+        },
+    }
+    exchanges_expected = [
+        ExchangeLocationID(name="test_name", location=Location.KRAKEN).serialize(),
+        ExchangeLocationID(name="test_name2", location=Location.KRAKEN).serialize(),
+    ]
+
+    exchanges_bad_input = {
+        'settings': {
+            'non_syncing_exchanges': [
+                ExchangeLocationID(name="bad_name", location=Location.KRAKEN).serialize(),
+                ExchangeLocationID(name="bad_name", location=Location.KRAKEN).serialize(),
+            ],
+        },
+    }
+
+    requests.put(
+        api_url_for(rotkehlchen_api_server, "settingsresource"),
+        json=exchanges_input,
+    )
+    response = requests.get(api_url_for(rotkehlchen_api_server, "settingsresource")).json()
+    assert response['result']['non_syncing_exchanges'] == exchanges_expected
+
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, "settingsresource"),
+        json=exchanges_bad_input,
+    )
+    assert response.status_code == 400

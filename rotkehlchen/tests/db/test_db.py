@@ -349,6 +349,7 @@ def test_writing_fetching_data(data_dir, username):
         'pnl_csv_have_summary': DEFAULT_PNL_CSV_HAVE_SUMMARY,
         'ssf_0graph_multiplier': DEFAULT_SSF_0GRAPH_MULTIPLIER,
         'last_data_migration': DEFAULT_LAST_DATA_MIGRATION,
+        'non_syncing_exchanges': [],
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 

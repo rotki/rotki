@@ -8,7 +8,6 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.db.ethtx import DBEthTx
-from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.tests.utils.ethereum import setup_ethereum_transactions_test
@@ -35,11 +34,6 @@ def fixture_max_tasks_num() -> int:
 @pytest.fixture(name='api_task_greenlets')
 def fixture_api_task_greenlets() -> List:
     return []
-
-
-@pytest.fixture(name='exchange_manager')
-def fixture_exchange_manager(function_scope_messages_aggregator) -> ExchangeManager:
-    return ExchangeManager(msg_aggregator=function_scope_messages_aggregator)
 
 
 @pytest.fixture(name='task_manager')

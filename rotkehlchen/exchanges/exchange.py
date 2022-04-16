@@ -16,7 +16,15 @@ from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ApiKey, ApiSecret, Location, T_ApiKey, T_ApiSecret, Timestamp
+from rotkehlchen.types import (
+    ApiKey,
+    ApiSecret,
+    ExchangeLocationID,
+    Location,
+    T_ApiKey,
+    T_ApiSecret,
+    Timestamp,
+)
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
@@ -63,9 +71,9 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         log.info(f'Initialized {str(location)} exchange {name}')
 
-    def location_id(self) -> Tuple[str, Location]:
+    def location_id(self) -> ExchangeLocationID:
         """Returns unique location identifier for this exchange object (name + location)"""
-        return self.name, self.location
+        return ExchangeLocationID(name=self.name, location=self.location)
 
     def edit_exchange_credentials(
             self,

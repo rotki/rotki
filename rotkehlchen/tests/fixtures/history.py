@@ -1,6 +1,5 @@
 import pytest
 
-from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.history.events import EventsHistorian
@@ -73,8 +72,8 @@ def events_historian(
         function_scope_messages_aggregator,
         blockchain,
         evm_transaction_decoder,
+        exchange_manager,
 ):
-    exchange_manager = ExchangeManager(msg_aggregator=function_scope_messages_aggregator)
     historian = EventsHistorian(
         user_directory=data_dir,
         db=database,
