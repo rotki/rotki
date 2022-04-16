@@ -2088,7 +2088,7 @@ class UserAssetsResource(BaseResource):
 class DBSnapshotExportingResource(BaseResource):
     get_schema = SnapshotExportingSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='json')
     def post(self, timestamp: Timestamp, path: Path) -> Response:
         return self.rest_api.export_user_db_snapshot(timestamp=timestamp, path=path)
 
@@ -2096,6 +2096,6 @@ class DBSnapshotExportingResource(BaseResource):
 class DBSnapshotDownloadingResource(BaseResource):
     get_schema = SnapshotDownloadingSchema()
 
-    @use_kwargs(get_schema, location='json_and_query')
+    @use_kwargs(get_schema, location='json')
     def post(self, timestamp: Timestamp) -> Response:
         return self.rest_api.download_user_db_snapshot(timestamp=timestamp)

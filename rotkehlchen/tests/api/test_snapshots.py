@@ -102,14 +102,15 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
         },
     )
     assert_csv_export_response(response, csv_dir, is_download=False)
-    # test query params
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'dbsnapshotexportingresource',
-            timestamp=1,
-            path=csv_dir2,
         ),
+        json={
+            'timestamp': 1,
+            'path': csv_dir2,
+        },
     )
     assert_csv_export_response(response, csv_dir2, is_download=False)
 

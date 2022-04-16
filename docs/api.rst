@@ -10319,9 +10319,6 @@ Export database snapshot to CSV
 
 .. http:post:: /api/(version)/snapshot/export
 
-   .. note::
-      This endpoint also accepts parameters as query arguments.
-
    Doing a POST on the snapshot export endpoint will export the database snapshot for the specified timestamp to CSV files and save them in the given directory.
 
    **Example Request**:
@@ -10363,9 +10360,6 @@ Downloading a database snapshot
 =================================
 
 .. http:post:: /api/(version)/snapshot/download
-
-   .. note::
-      This endpoint also accepts parameters as query arguments.
 
    Doing a POST on the snapshot download endpoint will download database snapshot for the specified timestamp as a zip file.
 
