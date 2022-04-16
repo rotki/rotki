@@ -4108,3 +4108,45 @@ class RestAPI():
                 wrap_in_fail_result('No file was found'),
                 status_code=HTTPStatus.NOT_FOUND,
             )
+
+    def _query_addresses(
+        self,
+        addresses: List[ChecksumEthAddress],
+    ) -> Dict[ChecksumEthAddress, Optional[str]]:
+        addr_mappings = {}
+        for addr in addresses:
+            new_name = self.rotkehlchen.chain_manager.ethereum.ens_reverse_lookup(addr)
+            addr_mappings[addr] = new_name
+            self.rotkehlchen.data.db.add_ens_mapping(addr, new_name)
+        return addr_mappings
+
+    @require_loggedin_user()
+    def get_reverse_ens(self, addresses: List[ChecksumEthAddress]) -> Response:
+        addr_mappings = self.rotkehlchen.data.db.get_reverse_ens(addresses)
+        missing_addrs = list(set(addresses) - set(addr_mappings))
+        try:
+            missing_queried = self._query_addresses(addresses=missing_addrs)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(f'{str(e)}'),
+                status_code=HTTPStatus.CONFLICT,
+            )
+        addr_mappings.update(missing_queried)
+        return api_response(
+            result=_wrap_in_ok_result(addr_mappings),
+            status_code=HTTPStatus.OK,
+        )
+
+    @require_loggedin_user()
+    def patch_reverse_ens(self, addresses: List[ChecksumEthAddress]) -> Response:
+        try:
+            addresses_mapping = self._query_addresses(addresses=addresses)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(f'{str(e)}'),
+                status_code=HTTPStatus.CONFLICT,
+            )
+        return api_response(
+            result=_wrap_in_ok_result(addresses_mapping),
+            status_code=HTTPStatus.OK,
+        )

@@ -98,6 +98,7 @@ from rotkehlchen.api.v1.resources import (
     PickleDillResource,
     PingResource,
     QueriedAddressesResource,
+    ReverseEnsResource,
     SettingsResource,
     StakingResource,
     StatisticsAssetBalanceResource,
@@ -274,6 +275,7 @@ URLS_V1: URLS = [
     ('/staking/kraken', StakingResource),
     ('/snapshot/download', DBSnapshotDownloadingResource),
     ('/snapshot/export', DBSnapshotExportingResource),
+    ('/ens/reverse', ReverseEnsResource),
 ]
 
 logger = logging.getLogger(__name__)

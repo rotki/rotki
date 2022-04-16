@@ -85,6 +85,7 @@ from rotkehlchen.api.v1.schemas import (
     OptionalEthereumAddressSchema,
     QueriedAddressesSchema,
     RequiredEthereumAddressSchema,
+    ReverseEnsSchema,
     SingleAssetIdentifierSchema,
     SingleFileSchema,
     SnapshotDownloadingSchema,
@@ -2104,3 +2105,15 @@ class DBSnapshotDownloadingResource(BaseResource):
     @use_kwargs(get_schema, location='json')
     def post(self, timestamp: Timestamp) -> Response:
         return self.rest_api.download_user_db_snapshot(timestamp=timestamp)
+
+
+class ReverseEnsResource(BaseResource):
+    reverse_ens_schema = ReverseEnsSchema
+
+    @use_kwargs(reverse_ens_schema, location='json_and_query')
+    def get(self, ethereum_addresses: List[ChecksumEthAddress]) -> Response:
+        return self.rest_api.get_reverse_ens(ethereum_addresses)
+
+    @use_kwargs(reverse_ens_schema, location='json_and_query')
+    def patch(self, ethereum_addresses: List[ChecksumEthAddress]) -> Response:
+        return self.rest_api.patch_reverse_ens(ethereum_addresses)

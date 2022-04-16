@@ -1987,3 +1987,7 @@ class AssetsImportingSchema(Schema):
 
 class AssetsImportingFromFormSchema(Schema):
     file = FileField(allowed_extensions=['.zip', '.json'], required=True)
+
+
+class ReverseEnsSchema(Schema):
+    ethereum_addresses = fields.List(EthereumAddressField(), required=True)
