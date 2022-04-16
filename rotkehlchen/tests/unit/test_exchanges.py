@@ -1,5 +1,5 @@
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.exchanges import Ftx
+from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.types import Location

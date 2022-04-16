@@ -294,8 +294,7 @@ def check_airdrops(
                 }
         csvfile.close()
 
-    # TODO: fix next line annotation
-    for protocol_name, airdrop_data in POAP_AIRDROPS.items():  # type: ignore
+    for protocol_name, poap_airdrop_data in POAP_AIRDROPS.items():
         data_dict = get_poap_airdrop_data(protocol_name, data_dir)
         for addr, assets in data_dict.items():
             # not doing to_checksum_address() here since the file addresses are checksummed
@@ -307,8 +306,8 @@ def check_airdrops(
                 found_data[addr]['poap'].append({
                     'event': protocol_name,
                     'assets': assets,
-                    'link': airdrop_data[1],
-                    'name': airdrop_data[2],
+                    'link': poap_airdrop_data[1],
+                    'name': poap_airdrop_data[2],
                 })
 
     return dict(found_data)

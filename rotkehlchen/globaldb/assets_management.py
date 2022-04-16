@@ -113,7 +113,7 @@ def export_assets_from_file(
         except UnknownAsset as e:
             log.error(e)
 
-    cursor = GlobalDBHandler()._conn.cursor()
+    cursor = GlobalDBHandler().conn.cursor()
     query = cursor.execute('SELECT value from settings WHERE name="version";')
     version = query.fetchone()[0]
     data = {

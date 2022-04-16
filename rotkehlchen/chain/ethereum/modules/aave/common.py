@@ -81,7 +81,7 @@ def atoken_to_asset(atoken: EthereumToken) -> Optional[Asset]:
         return A_REP
 
     asset_symbol = atoken.symbol[1:]
-    cursor = GlobalDBHandler()._conn.cursor()
+    cursor = GlobalDBHandler().conn.cursor()
     result = cursor.execute(
         'SELECT A.address from ethereum_tokens as A LEFT OUTER JOIN assets as B '
         'WHERE A.address=B.details_reference AND B.symbol=? COLLATE NOCASE',
@@ -99,7 +99,7 @@ def asset_to_atoken(asset: Asset, version: int) -> Optional[EthereumToken]:
         return A_AETH_V1
 
     protocol = 'aave' if version == 1 else 'aave-v2'
-    cursor = GlobalDBHandler()._conn.cursor()
+    cursor = GlobalDBHandler().conn.cursor()
     result = cursor.execute(
         'SELECT A.address from ethereum_tokens as A LEFT OUTER JOIN assets as B '
         'WHERE A.protocol==? AND A.address=B.details_reference AND B.symbol=?',

@@ -49,7 +49,7 @@ def test_cryptocompare_query_pricehistorical(cryptocompare):
 def get_globaldb_cache_entries(from_asset: Asset, to_asset: Asset) -> List[HistoricalPrice]:
     """TODO: This should probaly be moved in the globaldb/handler.py if we use it elsewhere
     and made more generic (accept different sources)"""
-    connection = GlobalDBHandler()._conn
+    connection = GlobalDBHandler().conn
     cursor = connection.cursor()
     query = cursor.execute(
         'SELECT from_asset, to_asset, source_type, timestamp, price FROM '

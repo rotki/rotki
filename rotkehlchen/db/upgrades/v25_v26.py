@@ -32,7 +32,7 @@ class V25V26UpgradeHelper():
             'rotkehlchen': 'A',
         }
         globaldb = GlobalDBHandler()
-        globaldb_conn = globaldb._conn
+        globaldb_conn = globaldb.conn
         globaldb_cursor = globaldb_conn.cursor()
         query = globaldb_cursor.execute('SELECT identifier from assets;')
         self.all_asset_ids = {x[0] for x in query}

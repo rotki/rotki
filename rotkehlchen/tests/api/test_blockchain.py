@@ -8,6 +8,7 @@ import gevent
 import pytest
 import requests
 from eth_utils import to_checksum_address
+from flaky import flaky
 
 from rotkehlchen.chain.substrate.types import KusamaAddress
 from rotkehlchen.constants.assets import A_DAI
@@ -1817,6 +1818,7 @@ def test_add_ksm_blockchain_account_invalid(rotkehlchen_api_server):
     )
 
 
+@flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 def test_add_ksm_blockchain_account(rotkehlchen_api_server):
@@ -1965,6 +1967,7 @@ def test_add_ksm_blockchain_account_invalid_ens_domain(rotkehlchen_api_server):
     )
 
 
+@flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
@@ -2014,6 +2017,7 @@ def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
     assert FVal(total_ksm['usd_value']) >= ZERO
 
 
+@flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, ENS_BRUNO_KSM_ADDR]])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])

@@ -677,7 +677,7 @@ def _validate_historical_price_oracles(
 
 
 class ExchangeLocationIDSchema(Schema):
-    name = fields.Str(required=True)
+    name = fields.String(required=True)
     location = LocationField(required=True)
 
     @post_load()

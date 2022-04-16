@@ -394,7 +394,7 @@ INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES("0x1B175474E8909
                 status_code=HTTPStatus.OK,
             )
 
-        cursor = globaldb._conn.cursor()
+        cursor = globaldb.conn.cursor()
         # check conflicts were solved as per the given choices and new asset also added
         assert result is True
         assert globaldb.get_setting_value(ASSETS_VERSION_KEY, None) == 999999991
@@ -654,7 +654,7 @@ INSERT INTO ethereum_tokens(address, decimals, protocol) VALUES("0xa74476443119A
         }},
         sql_actions={"1": update_1},
     )
-    cursor = globaldb._conn.cursor()
+    cursor = globaldb.conn.cursor()
     cursor.execute(f'DELETE FROM settings WHERE name="{ASSETS_VERSION_KEY}"')
     start_assets_num = len(globaldb.get_all_asset_data(mapping=False))
     with update_patch:

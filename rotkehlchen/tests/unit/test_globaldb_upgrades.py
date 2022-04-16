@@ -34,7 +34,7 @@ def test_upgrade_v1_v2(globaldb):
     assert asset_data.swapped_for == strethaddress_to_identifier('0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429')  # noqa: E501
 
     # Make sure the number of assets remained the same
-    cursor = globaldb._conn.cursor()
+    cursor = globaldb.conn.cursor()
     assert cursor.execute('SELECT COUNT(*) from assets').fetchone()[0] == 1886
     assert cursor.execute('SELECT COUNT(*) from user_owned_assets').fetchone()[0] == 105
     # Make sure that populated underlying assets are still there
