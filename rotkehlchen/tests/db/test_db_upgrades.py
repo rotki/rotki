@@ -6,6 +6,7 @@ from shutil import copyfile
 from unittest.mock import patch
 
 import pytest
+from pysqlcipher3._sqlite3 import IntegrityError
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -2549,6 +2550,19 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     assert len([row[2] for row in result]) == 5
     assert len({row[2] for row in result}) == 5
 
+    cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x45E6CA515E840A4e9E02A3062F99216951825eB2', 'LABEL1'))  # noqa: E501
+    try:
+        cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x4362BBa5a26b07db048Bc2603f843E21Ac22D75E', 'LABEL1'))  # noqa: E501
+        raise AssertionError('Expected to get IntegrityError')
+    except IntegrityError:
+        pass
+    try:
+        cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x45E6CA515E840A4e9E02A3062F99216951825eB2', 'LABEL1'))  # noqa: E501
+        raise AssertionError('Expected to get IntegrityError')
+    except IntegrityError:
+        pass
+    cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x4362BBa5a26b07db048Bc2603f843E21Ac22D75E', 'LABEL2'))  # noqa: E501
+
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
     """
@@ -2590,7 +2604,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     assert missing_tables == removed_tables
     assert tables_after_creation - tables_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'ethereum_internal_transactions', 'ethtx_address_mappings', 'evm_tx_mappings', 'history_events_mappings'}  # noqa: E501
+    assert new_tables == {'ens_mappings', 'ethereum_internal_transactions', 'ethtx_address_mappings', 'evm_tx_mappings', 'history_events_mappings'}  # noqa: E501
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

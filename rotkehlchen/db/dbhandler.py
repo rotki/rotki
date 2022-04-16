@@ -3490,3 +3490,24 @@ class DBHandler:
         if cursor.fetchone()[0] >= 1:
             locations.add(Location.BALANCER)
         return locations
+
+    def add_ens_mapping(self, address: ChecksumEthAddress, ens_name: Optional[str]) -> None:
+        cursor = self.conn.cursor()
+        if address is not None:
+            cursor.execute('DELETE FROM ens_mappings WHERE ens_name = ?', (ens_name,))
+            cursor.execute('DELETE FROM ens_mappings WHERE address = ?', (address,))
+        cursor.execute(
+            'INSERT OR IGNORE INTO ens_mappings (ens_name, address) VALUES (?, ?)',
+            (ens_name, address),
+        )
+
+    def get_reverse_ens(
+        self,
+        addresses: List[ChecksumEthAddress],
+    ) -> Dict[ChecksumEthAddress, Optional[str]]:
+        cursor = self.conn.cursor()
+        data = cursor.execute(
+            f'SELECT ens_name, address FROM ens_mappings WHERE address IN (? {", ?"*(len(addresses)-1)})',  # noqa: E501
+            addresses,
+        )
+        return {ChecksumEthAddress(address): ens_name for ens_name, address in data}

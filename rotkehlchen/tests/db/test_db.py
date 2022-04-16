@@ -124,6 +124,7 @@ TABLES_AT_INIT = [
     'nfts',
     'history_events',
     'history_events_mappings',
+    'ens_mappings'
 ]
 
 

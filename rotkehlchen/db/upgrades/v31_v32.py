@@ -85,6 +85,12 @@ def _add_new_tables(cursor: 'Cursor') -> None:
     FOREIGN KEY(parent_identifier) references history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (parent_identifier, value)
 );""")  # noqa: E501
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS ens_mappings (
+    address TEXT NOT NULL PRIMARY KEY,
+    ens_name TEXT UNIQUE
+);
+""")  # noqa: E501
 
 
 def _refactor_manual_balance_id(cursor: 'Cursor') -> None:
@@ -131,7 +137,7 @@ def _update_history_entries_from_kraken(cursor: 'Cursor') -> None:
     sequence_index, COUNT(*) as cnt FROM history_events GROUP BY event_identifier, sequence_index)
     other ON e.event_identifier = other.event_identifier and e.sequence_index=other.sequence_index
     WHERE other.cnt > 1;
-    """)  # noqa: E501
+    """)
 
     update_tuples = []
     eventid_to_indices: Dict[str, Set[int]] = defaultdict(set)
