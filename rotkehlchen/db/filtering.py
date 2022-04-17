@@ -24,16 +24,21 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class DBFilterOrder(NamedTuple):
-    attribute: str
-    ascending: bool
+    rules: List[Tuple[str, bool]]
 
     def prepare(self) -> str:
-        if self.attribute in ('amount', 'fee', 'rate'):
-            order_by = f'CAST({self.attribute} AS REAL)'
-        else:
-            order_by = self.attribute
+        querystr = 'ORDER BY '
+        for idx, (attribute, ascending) in enumerate(self.rules):
+            if idx != 0:
+                querystr += ','
+            if attribute in ('amount', 'fee', 'rate'):
+                order_by = f'CAST({attribute} AS REAL)'
+            else:
+                order_by = attribute
 
-        return f'ORDER BY {order_by} {"ASC" if self.ascending else "DESC"}'
+            querystr += f'{order_by} {"ASC" if ascending else "DESC"}'
+
+        return querystr
 
 
 class DBFilterPagination(NamedTuple):
@@ -209,21 +214,17 @@ class DBFilterQuery():
             and_op: bool,
             limit: Optional[int],
             offset: Optional[int],
-            order_by_attribute: Optional[str] = None,
-            order_ascending: bool = True,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
     ) -> 'DBFilterQuery':
         if limit is None or offset is None:
             pagination = None
         else:
             pagination = DBFilterPagination(limit=limit, offset=offset)
 
-        if order_by_attribute is None:
+        if order_by_rules is None:
             order_by = None
         else:
-            order_by = DBFilterOrder(
-                attribute=order_by_attribute,
-                ascending=order_ascending,
-            )
+            order_by = DBFilterOrder(order_by_rules)
 
         return cls(
             and_op=and_op,
@@ -287,8 +288,7 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls,
             and_op: bool = True,
-            order_by_attribute: str = 'timestamp',
-            order_ascending: bool = True,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             addresses: Optional[List[ChecksumEthAddress]] = None,
@@ -296,12 +296,14 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
     ) -> 'ETHTransactionsFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('timestamp', True)]
+
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
             offset=offset,
-            order_by_attribute=order_by_attribute,
-            order_ascending=order_ascending,
+            order_by_rules=order_by_rules,
         )
         filter_query = cast('ETHTransactionsFilterQuery', filter_query)
         filters: List[DBFilter] = []
@@ -404,8 +406,7 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
     def make(
             cls,
             and_op: bool = True,
-            order_by_attribute: str = 'time',
-            order_ascending: bool = True,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
@@ -415,12 +416,14 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
             trade_type: Optional[List[TradeType]] = None,
             location: Optional[Location] = None,
     ) -> 'TradesFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('time', True)]
+
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
             offset=offset,
-            order_by_attribute=order_by_attribute,
-            order_ascending=order_ascending,
+            order_by_rules=order_by_rules,
         )
         filter_query = cast('TradesFilterQuery', filter_query)
         filters: List[DBFilter] = []
@@ -451,8 +454,7 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
     def make(
             cls,
             and_op: bool = True,
-            order_by_attribute: str = 'time',
-            order_ascending: bool = True,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
@@ -461,12 +463,14 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
             action: Optional[List[AssetMovementCategory]] = None,
             location: Optional[Location] = None,
     ) -> 'AssetMovementsFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('time', True)]
+
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
             offset=offset,
-            order_by_attribute=order_by_attribute,
-            order_ascending=order_ascending,
+            order_by_rules=order_by_rules,
         )
         filter_query = cast('AssetMovementsFilterQuery', filter_query)
         filters: List[DBFilter] = []
@@ -495,8 +499,7 @@ class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoc
     def make(
             cls,
             and_op: bool = True,
-            order_by_attribute: str = 'timestamp',
-            order_ascending: bool = True,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
@@ -505,12 +508,13 @@ class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoc
             action_type: Optional[List[LedgerActionType]] = None,
             location: Optional[Location] = None,
     ) -> 'LedgerActionsFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('timestamp', True)]
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
             offset=offset,
-            order_by_attribute=order_by_attribute,
-            order_ascending=order_ascending,
+            order_by_rules=order_by_rules,
         )
         filter_query = cast('LedgerActionsFilterQuery', filter_query)
         filters: List[DBFilter] = []
@@ -539,20 +543,21 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls,
             and_op: bool = True,
-            order_by_attribute: str = 'timestamp',
-            order_ascending: bool = True,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             validators: Optional[List[int]] = None,
     ) -> 'Eth2DailyStatsFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('timestamp', True)]
+
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
             offset=offset,
-            order_by_attribute=order_by_attribute,
-            order_ascending=order_ascending,
+            order_by_rules=order_by_rules,
         )
         filter_query = cast('Eth2DailyStatsFilterQuery', filter_query)
         filters: List[DBFilter] = []
@@ -602,8 +607,7 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls,
             and_op: bool = True,
-            order_by_attribute: str = 'timestamp',
-            order_ascending: bool = True,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             report_id: Optional[int] = None,
@@ -611,12 +615,14 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
     ) -> 'ReportDataFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('timestamp', True)]
+
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
             offset=offset,
-            order_by_attribute=order_by_attribute,
-            order_ascending=order_ascending,
+            order_by_rules=order_by_rules,
         )
         filter_query = cast('ReportDataFilterQuery', filter_query)
         filters: List[DBFilter] = []
@@ -653,8 +659,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
     def make(
             cls,
             and_op: bool = True,
-            order_by_attribute: Optional[str] = 'timestamp',
-            order_ascending: bool = True,
+            order_by_rules: Optional[List[Tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
             from_ts: Optional[Timestamp] = None,
@@ -669,12 +674,14 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             null_columns: Optional[List[str]] = None,
             event_identifier: Optional[str] = None,
     ) -> 'HistoryEventFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('timestamp', True), ('sequence_index', True)]
+
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
             offset=offset,
-            order_by_attribute=order_by_attribute,
-            order_ascending=order_ascending,
+            order_by_rules=order_by_rules,
         )
         filter_query = cast('HistoryEventFilterQuery', filter_query)
         filters: List[DBFilter] = []
