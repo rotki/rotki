@@ -80,74 +80,11 @@ class EthTransactions(LockableQueryMixIn):
         if new_transactions != []:
             dbethtx.add_ethereum_transactions(new_transactions, relevant_address=address)
 
-        # and now internal transactions, after normal ones so they are already in DB
-        new_internal_txs = []
-        for query_start_ts, query_end_ts in ranges_to_query:
-            try:
-                new_internal_txs.extend(self.ethereum.etherscan.get_transactions(
-                    account=address,
-                    from_ts=query_start_ts,
-                    to_ts=query_end_ts,
-                    action='txlistinternal',
-                ))
-            except RemoteError as e:
-                self.ethereum.msg_aggregator.add_error(
-                    f'Got error "{str(e)}" while querying internal ethereum transactions '
-                    f'from Etherscan. Transactions not added to the DB '
-                    f'address: {address} '
-                    f'from_ts: {query_start_ts} '
-                    f'to_ts: {query_end_ts} ',
-                )
-
-        # add new internal transactions to the DB
-        if new_internal_txs != []:
-            for internal_tx in new_internal_txs:
-                # make sure all internal transaction parent transactions are in the DB
-                result = dbethtx.get_ethereum_transactions(
-                    ETHTransactionsFilterQuery.make(tx_hash=internal_tx.parent_tx_hash),
-                    has_premium=True,  # ignore limiting here
-                )
-                if len(result) != 0:
-                    continue  # already got that transaction
-
-                transaction = self.ethereum.get_transaction_by_hash(internal_tx.parent_tx_hash)
-                # add the parent transaction to the DB
-                dbethtx.add_ethereum_transactions([transaction], relevant_address=address)
-
-            # add all new internal txs to the DB
-            dbethtx.add_ethereum_internal_transactions(new_internal_txs, relevant_address=address)
+        # add internal transactions, after normal ones so they are already in DB
+        self._get_internal_transactions_for_ranges(address=address, ranges_to_query=ranges_to_query)  # noqa: E501
 
         # and now detect ERC20 events thanks to etherscan and get their transactions
-        erc20_tx_hashes = set()
-        for query_start_ts, query_end_ts in ranges_to_query:
-            try:
-                erc20_tx_hashes.update(self.ethereum.etherscan.get_transactions(
-                    account=address,
-                    from_ts=query_start_ts,
-                    to_ts=query_end_ts,
-                    action='tokentx',
-                ))
-            except RemoteError as e:
-                self.ethereum.msg_aggregator.add_error(
-                    f'Got error "{str(e)}" while querying token transactions'
-                    f'from Etherscan. Transactions not added to the DB '
-                    f'address: {address} '
-                    f'from_ts: {query_start_ts} '
-                    f'to_ts: {query_end_ts} ',
-                )
-
-        # and add them to the DB
-        for tx_hash in erc20_tx_hashes:
-            tx_hash_bytes = deserialize_evm_tx_hash(tx_hash)
-            result = dbethtx.get_ethereum_transactions(
-                ETHTransactionsFilterQuery.make(tx_hash=tx_hash_bytes),
-                has_premium=True,  # ignore limiting here
-            )
-            if len(result) != 0:
-                continue  # already got that transaction
-
-            transaction = self.ethereum.get_transaction_by_hash(tx_hash_bytes)
-            dbethtx.add_ethereum_transactions([transaction], relevant_address=address)
+        self._get_erc20_transfers_for_ranges(address=address, ranges_to_query=ranges_to_query)
 
         # finally also set the last queried timestamps for the address
         ranges.update_used_query_range(
@@ -199,6 +136,93 @@ class EthTransactions(LockableQueryMixIn):
             has_premium=has_premium,
         )
 
+    def _get_internal_transactions_for_ranges(
+            self,
+            address: ChecksumEthAddress,
+            ranges_to_query: List[Tuple[Timestamp, Timestamp]],
+    ) -> None:
+        """Queries etherscan for all internal transactions of address in the given ranges.
+
+        If any internal transactions are found, they are added in the DB
+        """
+        new_internal_txs = []
+        dbethtx = DBEthTx(self.database)
+        for query_start_ts, query_end_ts in ranges_to_query:
+            try:
+                new_internal_txs.extend(self.ethereum.etherscan.get_transactions(
+                    account=address,
+                    from_ts=query_start_ts,
+                    to_ts=query_end_ts,
+                    action='txlistinternal',
+                ))
+            except RemoteError as e:
+                self.ethereum.msg_aggregator.add_error(
+                    f'Got error "{str(e)}" while querying internal ethereum transactions '
+                    f'from Etherscan. Transactions not added to the DB '
+                    f'address: {address} '
+                    f'from_ts: {query_start_ts} '
+                    f'to_ts: {query_end_ts} ',
+                )
+
+        # add new internal transactions to the DB
+        if new_internal_txs != []:
+            for internal_tx in new_internal_txs:
+                # make sure all internal transaction parent transactions are in the DB
+                result = dbethtx.get_ethereum_transactions(
+                    ETHTransactionsFilterQuery.make(tx_hash=internal_tx.parent_tx_hash),
+                    has_premium=True,  # ignore limiting here
+                )
+                if len(result) != 0:
+                    continue  # already got that transaction
+
+                transaction = self.ethereum.get_transaction_by_hash(internal_tx.parent_tx_hash)
+                # add the parent transaction to the DB
+                dbethtx.add_ethereum_transactions([transaction], relevant_address=address)
+
+            # add all new internal txs to the DB
+            dbethtx.add_ethereum_internal_transactions(new_internal_txs, relevant_address=address)
+
+    def _get_erc20_transfers_for_ranges(
+            self,
+            address: ChecksumEthAddress,
+            ranges_to_query: List[Tuple[Timestamp, Timestamp]],
+    ) -> None:
+        """Queries etherscan for all erc20 transfers of address in the given ranges.
+
+        If any transfers are found, they are added in the DB
+        """
+        dbethtx = DBEthTx(self.database)
+        erc20_tx_hashes = set()
+        for query_start_ts, query_end_ts in ranges_to_query:
+            try:
+                erc20_tx_hashes.update(self.ethereum.etherscan.get_transactions(
+                    account=address,
+                    from_ts=query_start_ts,
+                    to_ts=query_end_ts,
+                    action='tokentx',
+                ))
+            except RemoteError as e:
+                self.ethereum.msg_aggregator.add_error(
+                    f'Got error "{str(e)}" while querying token transactions'
+                    f'from Etherscan. Transactions not added to the DB '
+                    f'address: {address} '
+                    f'from_ts: {query_start_ts} '
+                    f'to_ts: {query_end_ts} ',
+                )
+
+        # and add them to the DB
+        for tx_hash in erc20_tx_hashes:
+            tx_hash_bytes = deserialize_evm_tx_hash(tx_hash)
+            result = dbethtx.get_ethereum_transactions(
+                ETHTransactionsFilterQuery.make(tx_hash=tx_hash_bytes),
+                has_premium=True,  # ignore limiting here
+            )
+            if len(result) != 0:
+                continue  # already got that transaction
+
+            transaction = self.ethereum.get_transaction_by_hash(tx_hash_bytes)
+            dbethtx.add_ethereum_transactions([transaction], relevant_address=address)
+
     def get_or_query_transaction_receipt(
             self,
             tx_hash: EVMTxHash,
@@ -223,6 +247,9 @@ class EthTransactions(LockableQueryMixIn):
         if len(result) == 0:
             transaction = self.ethereum.get_transaction_by_hash(tx_hash)
             dbethtx.add_ethereum_transactions([transaction], relevant_address=None)
+            ranges_to_query = [(transaction.timestamp, transaction.timestamp)]
+            self._get_internal_transactions_for_ranges(address=transaction.from_address, ranges_to_query=ranges_to_query)  # noqa: E501
+            self._get_erc20_transfers_for_ranges(address=transaction.from_address, ranges_to_query=ranges_to_query)  # noqa: E501
 
         tx_receipt = dbethtx.get_receipt(tx_hash)
         if tx_receipt is not None:

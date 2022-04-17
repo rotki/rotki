@@ -7,10 +7,11 @@ from rotkehlchen.accounting.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.chain.ethereum.decoding.oneinch.v1.decoder import CPT_ONEINCH_V1
+from rotkehlchen.chain.ethereum.decoding.oneinch.v2.decoder import CPT_ONEINCH_V2
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_CHI, ZERO_ADDRESS
+from rotkehlchen.tests.utils.constants import A_CHI, A_PAN, ZERO_ADDRESS
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, deserialize_evm_tx_hash
 
@@ -100,6 +101,85 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             location_label=ADDY,
             notes=f'Approve 0 CHI of {ADDY} for spending by {chispender_addy}',
             counterparty=chispender_addy,
+            identifier=None,
+            extras=None,
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])  # noqa: E501
+def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_messages_aggregator):
+    """
+    Test an 1inchv2 swap for ETH.
+
+    Data taken from
+    https://etherscan.io/tx/0x5edc23d5a05e347afc60e64a4d5831ed2551985c21dceb85d267926ca2e2c13e
+    """
+    # TODO: For faster tests hard-code the transaction and the logs here so no remote query needed
+    tx_hash = deserialize_evm_tx_hash('0x5edc23d5a05e347afc60e64a4d5831ed2551985c21dceb85d267926ca2e2c13e')  # noqa: E501
+    events = get_decoded_events_of_transaction(
+        ethereum_manager=ethereum_manager,
+        database=database,
+        msg_aggregator=function_scope_messages_aggregator,
+        tx_hash=tx_hash,
+    )
+    oneinch_v2_addy = '0x111111125434b319222CdBf8C261674aDB56F3ae'
+    expected_events = [
+        HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=0,
+            timestamp=1608498702000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.002618947'), usd_value=ZERO),
+            location_label=ADDY,
+            notes=f'Burned 0.002618947 ETH in gas from {ADDY} for transaction {tx_hash.hex()}',  # pylint: disable=no-member  # noqa: E501
+            counterparty='gas',
+            identifier=None,
+            extras=None,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=217,
+            timestamp=1608498702000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_PAN,
+            balance=Balance(amount=FVal('2152.63'), usd_value=ZERO),
+            location_label=ADDY,
+            notes='Swap 2152.63 PAN in 1inch-v2',
+            counterparty=CPT_ONEINCH_V2,
+            identifier=None,
+            extras=None,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=218,
+            timestamp=1608498702000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.220582251767407014'), usd_value=ZERO),
+            location_label=ADDY,
+            notes='Receive 0.220582251767407014 ETH from 1inch-v2 swap',
+            counterparty=CPT_ONEINCH_V2,
+            identifier=None,
+            extras=None,
+        ), HistoryBaseEntry(
+            event_identifier=tx_hash.hex(),  # pylint: disable=no-member
+            sequence_index=221,
+            timestamp=1608498702000,
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_PAN,
+            balance=Balance(amount=FVal('1.157920892373161954235709850E+59'), usd_value=ZERO),
+            location_label=ADDY,
+            notes=f'Approve 1.157920892373161954235709850E+59 PAN of {ADDY} for spending by {oneinch_v2_addy}',  # noqa: E501
+            counterparty=oneinch_v2_addy,
             identifier=None,
             extras=None,
         ),
