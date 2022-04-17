@@ -3319,7 +3319,7 @@
     "loading_message": "Please wait while your report is generated...",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
     "select_directory": "Select a directory",
-    "csv_export_error": "There was an error with Export",
+    "csv_export_error": "There was an error with export",
     "report_period": "Report starting from {start} to {end}",
     "upgrade": "{processed} total events have been processed starting from {start}.",
     "upgrade2": "The limit of the free version has been reached. To get the full report please upgrade to {link}"
@@ -3422,6 +3422,19 @@
     },
     "liabilities": {
       "title": "Liabilities"
+    },
+    "snapshot": {
+      "time": "Time: ",
+      "balance": "Balance: ",
+      "export_database_snapshot": "Export database snapshot",
+      "subtitle": "Click the button below to download snapshot for",
+      "download_snapshot": "Download snapshot",
+      "select_directory": "Select a directory",
+      "message": {
+        "title": "Snapshot CSV Export",
+        "failure": "Snapshot CSV export failed",
+        "success": "Snapshot exported to CSV successfully"
+      }
     }
   },
   "dashboard_asset_table": {

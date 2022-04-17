@@ -1,24 +1,66 @@
 <template>
-  <div class="net-worth-chart__chart">
-    <canvas id="net-worth-chart__chart" />
-    <div
-      id="net-worth-chart__tooltip"
-      :class="{
-        'theme--dark': $vuetify.theme.dark
-      }"
-    >
+  <div>
+    <div class="net-worth-chart__chart">
+      <canvas id="net-worth-chart__chart" @click="canvasClicked" />
       <div
-        class="net-worth-chart__tooltip__value font-weight-bold text-center"
-      />
-      <div
-        class="net-worth-chart__tooltip__time rotki-grey--text text-center"
-      />
+        id="net-worth-chart__tooltip"
+        :class="{
+          'theme--dark': $vuetify.theme.dark
+        }"
+      >
+        <div
+          class="net-worth-chart__tooltip__value font-weight-bold text-center"
+        />
+        <div
+          class="net-worth-chart__tooltip__time rotki-grey--text text-center"
+        />
+      </div>
     </div>
+
+    <v-dialog v-model="showExportSnapshotDialog" max-width="600">
+      <card>
+        <template #title>
+          {{ $t('dashboard.snapshot.export_database_snapshot') }}
+        </template>
+        <template #subtitle>
+          {{ $t('dashboard.snapshot.subtitle') }}
+        </template>
+        <div class="mb-n4">
+          <div>
+            <div>
+              {{ $t('dashboard.snapshot.time') }}
+            </div>
+            <div>
+              <b>{{ formattedSelectedTimestamp }}</b>
+            </div>
+          </div>
+          <div class="pt-2">
+            <div>
+              {{ $t('dashboard.snapshot.balance') }}
+            </div>
+            <div>
+              <amount-display
+                :value="formattedSelectedBalance"
+                :fiat-currency="currency.tickerSymbol"
+                class="font-weight-bold"
+              />
+            </div>
+          </div>
+        </div>
+        <template #buttons>
+          <v-spacer />
+          <v-btn depressed color="primary" @click="exportSnapshot">
+            {{ $t('dashboard.snapshot.download_snapshot') }}
+          </v-btn>
+        </template>
+      </card>
+    </v-dialog>
   </div>
 </template>
 
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
+import { Message } from '@rotki/common/lib/messages';
 import {
   Timeframe,
   TimeFramePeriod,
@@ -43,9 +85,12 @@ import {
 import dayjs from 'dayjs';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { mapGetters, mapState } from 'vuex';
+import i18n from '@/i18n';
+import { useMainStore } from '@/store/store';
 import { Currency } from '@/types/currency';
 import { assert } from '@/utils/assertions';
 import { bigNumberify } from '@/utils/bignumbers';
+import { downloadFileByUrl } from '@/utils/download';
 
 export interface ValueOverTime {
   readonly x: Date;
@@ -73,6 +118,25 @@ export default class NetWorthChart extends Vue {
   currency!: Currency;
   graphZeroBased!: boolean;
   nftsInNetValue!: boolean;
+  selectedTimestamp: number = 0;
+  selectedBalance: number = 0;
+  showExportSnapshotDialog: boolean = false;
+
+  get formattedSelectedTimestamp(): Date | null {
+    if (this.selectedTimestamp) {
+      return new Date(this.selectedTimestamp * 1000);
+    }
+
+    return null;
+  }
+
+  get formattedSelectedBalance(): BigNumber | null {
+    if (this.selectedBalance) {
+      return bigNumberify(this.selectedBalance);
+    }
+
+    return null;
+  }
 
   get darkModeEnabled(): boolean {
     return this.$vuetify.theme.dark;
@@ -358,6 +422,88 @@ export default class NetWorthChart extends Vue {
     this.times.push(...this.chartData.times);
     this.data.push(...this.chartData.data);
     this.transformData();
+  }
+
+  canvasClicked(event: PointerEvent) {
+    const data = this.chart?.getElementsAtXAxis(event);
+
+    if (data && data.length > 0) {
+      // @ts-ignore
+      const index = data[0]._index;
+
+      this.selectedTimestamp = this.times[index];
+      this.selectedBalance = this.data[index];
+
+      this.showExportSnapshotDialog = true;
+    }
+  }
+
+  exportSnapshot() {
+    if (this.$interop.isPackaged) {
+      this.exportSnapshotCSV();
+    } else {
+      this.downloadSnapshot();
+    }
+  }
+
+  async exportSnapshotCSV() {
+    const { setMessage } = useMainStore();
+    let message: Message | null = null;
+
+    try {
+      if (this.$interop.isPackaged && this.$api.defaultBackend) {
+        const path = await this.$interop.openDirectory(
+          i18n.t('dashboard.snapshot.select_directory').toString()
+        );
+
+        if (!path) {
+          return;
+        }
+
+        const success = await this.$api.exportSnapshotCSV({
+          path,
+          timestamp: this.selectedTimestamp
+        });
+
+        message = {
+          title: i18n.t('dashboard.snapshot.message.title').toString(),
+          description: success
+            ? i18n.t('dashboard.snapshot.message.success').toString()
+            : i18n.t('dashboard.snapshot.message.failure').toString(),
+          success
+        };
+
+        this.showExportSnapshotDialog = false;
+      } else {
+        await this.downloadSnapshot();
+      }
+    } catch (e: any) {
+      message = {
+        title: i18n.t('dashboard.snapshot.message.title').toString(),
+        description: e.message,
+        success: false
+      };
+    }
+
+    if (message) {
+      setMessage(message);
+    }
+  }
+
+  async downloadSnapshot() {
+    const resp = await this.$api.downloadSnapshot({
+      timestamp: this.selectedTimestamp
+    });
+
+    const blob = new Blob([resp.data], { type: 'application/zip' });
+    const url = window.URL.createObjectURL(blob);
+
+    const date = dayjs(this.selectedTimestamp * 1000).format('YYYYDDMMHHmmss');
+    const fileName = `${date}-snapshot.zip`;
+
+    downloadFileByUrl(url, fileName);
+
+    this.showExportSnapshotDialog = false;
   }
 }
 </script>

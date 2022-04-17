@@ -84,6 +84,7 @@
 import { defineComponent } from '@vue/composition-api';
 import i18n from '@/i18n';
 import { useNotifications } from '@/store/notifications';
+import { downloadFileByUrl } from '@/utils/download';
 import IndexedDb from '@/utils/indexed-db';
 
 type Entry = {
@@ -158,20 +159,11 @@ export default defineComponent({
           return;
         }
         const messages = data.map((item: any) => item.message).join('\n');
-        let link = document.createElement('a');
-        link.setAttribute(
-          'href',
-          'data:text/plain;charset=utf-8,' + encodeURIComponent(messages)
-        );
-        link.setAttribute('download', 'frontend_log.txt');
 
-        if (document.createEvent) {
-          let event = document.createEvent('MouseEvents');
-          event.initEvent('click', true, true);
-          link.dispatchEvent(event);
-        } else {
-          link.click();
-        }
+        downloadFileByUrl(
+          'data:text/plain;charset=utf-8,' + encodeURIComponent(messages),
+          'frontend_log.txt'
+        );
       });
     };
 
