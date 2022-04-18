@@ -6,7 +6,7 @@
       :items="items"
       single-expand
       :loading="loading || refreshing"
-      :expanded.sync="expanded"
+      :expanded="items"
       :server-items-length="itemLength"
       :options.sync="options"
       sort-by="time"
@@ -90,16 +90,9 @@
           <template v-else>{{ item.notes }}</template>
         </div>
       </template>
-      <template #item.expand="{ item }">
-        <row-expander
-          v-if="item.costBasis"
-          :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
-        />
-      </template>
       <template #expanded-item="{ headers, item }">
         <cost-basis-table
-          :visible="!!item.costBasis"
+          v-if="item.costBasis"
           :currency="report.settings.profitCurrency"
           :colspan="headers.length"
           :cost-basis="item.costBasis"
@@ -122,7 +115,6 @@ import { DataTableHeader } from 'vuetify';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import DataTable from '@/components/helper/DataTable.vue';
-import RowExpander from '@/components/helper/RowExpander.vue';
 import TransactionEventNote from '@/components/history/transactions/TransactionEventNote.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
@@ -188,12 +180,6 @@ const tableHeaders: DataTableHeader[] = [
     text: i18n.t('profit_loss_events.headers.notes').toString(),
     value: 'notes',
     sortable: false
-  },
-  {
-    text: i18n.t('profit_loss_events.headers.cost_basis').toString(),
-    value: 'expand',
-    align: 'end',
-    sortable: false
   }
 ];
 
@@ -211,7 +197,6 @@ export default defineComponent({
     ProfitLossEventType,
     UpgradeRow,
     CostBasisTable,
-    RowExpander,
     DateDisplay,
     AmountDisplay
   },
@@ -235,7 +220,6 @@ export default defineComponent({
   setup(props, { emit }) {
     const route = useRoute();
     const options = ref<PaginationOptions | null>(null);
-    const expanded = ref([]);
     const { report } = toRefs(props);
 
     const items = computed(() => {
@@ -286,7 +270,6 @@ export default defineComponent({
       items,
       itemLength,
       options,
-      expanded,
       showUpgradeMessage,
       isTransactionEvent,
       tableHeaders

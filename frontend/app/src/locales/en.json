@@ -1438,7 +1438,6 @@
   },
   "profit_loss_events": {
     "headers": {
-      "cost_basis": "Cost Basis",
       "location": "Location",
       "tax_free_amount": "Tax Free Amount",
       "taxable_amount": "Taxable Amount",
@@ -1449,11 +1448,15 @@
       "type": "Type",
       "notes": "Notes"
     },
+    "cost_basis": {
+      "show": "Show Cost Basis",
+      "hide": "Hide Cost Basis"
+    },
     "title": "Events"
   },
   "profit_loss_overview": {
     "columns": {
-      "result": "Result",
+      "type": "Type",
       "tax_free_profit_loss": "Tax Free Profit/Loss",
       "taxable_profit_loss": "Taxable Profit/Loss"
     },

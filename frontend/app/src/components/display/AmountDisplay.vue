@@ -37,11 +37,7 @@
           <div class="text-center">
             <div
               v-if="
-                !(
-                  (!!fiatCurrency ||
-                    renderValueDecimalPlaces <= floatingPrecision) &&
-                  !tooltip
-                ) ||
+                !(renderValueDecimalPlaces <= floatingPrecision && !tooltip) ||
                 isPriceAsset ||
                 showExponential
               "

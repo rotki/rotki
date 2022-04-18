@@ -8,7 +8,7 @@
         <tr>
           <th
             class="text-left"
-            v-text="$t('profit_loss_overview.columns.result')"
+            v-text="$t('profit_loss_overview.columns.type')"
           />
           <th
             class="text-right"
@@ -22,7 +22,7 @@
       </thead>
       <tbody>
         <tr v-for="(item, key) in report.overview" :key="key">
-          <td>{{ toCapitalCase(key) }}</td>
+          <td>{{ pluralizeLastWord(toCapitalCase(key)) }}</td>
           <td class="text-right">
             <amount-display
               pnl
@@ -84,7 +84,7 @@ import { get } from '@vueuse/core';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import { ProfitLossOverviewItem, Report } from '@/types/reports';
 import { calculateTotalProfitLoss } from '@/utils/report';
-import { toCapitalCase } from '@/utils/text';
+import { pluralizeLastWord, toCapitalCase } from '@/utils/text';
 
 export default defineComponent({
   name: 'ProfitLossOverview',
@@ -120,7 +120,8 @@ export default defineComponent({
 
     return {
       total,
-      toCapitalCase
+      toCapitalCase,
+      pluralizeLastWord
     };
   }
 });
