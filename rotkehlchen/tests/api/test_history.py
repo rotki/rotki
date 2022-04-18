@@ -99,12 +99,20 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert 'bittrex trade with unknown asset IDONTEXIST' in warnings[9]
 
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 13
+    assert len(errors) == 3
     assert 'bittrex trade with unprocessable pair %$#%$#%#$%' in errors[0]
     assert 'Failed to read ledger event from kraken' in errors[1]
     assert 'Failed to read ledger event from kraken ' in errors[2]
-    for idx in range(3, 12):
-        assert 'No documented acquisition found for' in errors[idx]  # noqa: E501
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'historyactionableitemsresource',
+        ),
+    )
+    assert_proper_response_with_result(response=response, status_code=HTTPStatus.OK)
+    assert len(response.json()['result']['missing_acquisitions']) == 10
+    assert len(response.json()['result']['missing_prices']) == 0
 
 
 @pytest.mark.parametrize(

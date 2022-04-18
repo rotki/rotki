@@ -244,23 +244,6 @@ class CostBasisCalculator(CustomizableDateMixin):
 
         return self._events[asset]
 
-    def inform_user_missing_acquisition(
-            self,
-            asset: Asset,
-            time: Timestamp,
-            found_amount: FVal,
-            missing_amount: FVal,
-    ) -> None:
-        """Inform the user for missing data for an acquisition by appending it to a list."""
-        self.missing_acquisitions.append(
-            MissingAcquisition(
-                asset=asset,
-                time=time,
-                found_amount=found_amount,
-                missing_amount=missing_amount,
-            ),
-        )
-
     def reduce_asset_amount(self, asset: Asset, amount: FVal, timestamp: Timestamp) -> bool:
         """Searches all acquisition events for asset and reduces them by amount.
 
@@ -304,8 +287,8 @@ class CostBasisCalculator(CustomizableDateMixin):
                 MissingAcquisition(
                     asset=asset,
                     time=timestamp,
-                    found_amount=ZERO,
-                    missing_amount=amount,
+                    found_amount=amount - remaining_amount,
+                    missing_amount=remaining_amount,
                 ),
             )
             return False
@@ -487,11 +470,13 @@ class CostBasisCalculator(CustomizableDateMixin):
                 stop_index = idx + 1
 
         if len(asset_events.acquisitions) == 0:
-            self.inform_user_missing_acquisition(
-                asset=spending_asset,
-                time=timestamp,
-                found_amount=ZERO,
-                missing_amount=spending_amount,
+            self.missing_acquisitions.append(
+                MissingAcquisition(
+                    asset=spending_asset,
+                    time=timestamp,
+                    found_amount=ZERO,
+                    missing_amount=spending_amount,
+                ),
             )
             # That means we had no documented acquisition for that asset. This is not good
             # because we can't prove a corresponding acquisition and as such we are burdened
@@ -517,11 +502,13 @@ class CostBasisCalculator(CustomizableDateMixin):
             # if we still have sold amount but no acquisitions to satisfy it then we only
             # found acquisitions to partially satisfy the sell
             adjusted_amount = spending_amount - taxfree_amount
-            self.inform_user_missing_acquisition(
-                asset=spending_asset,
-                time=timestamp,
-                found_amount=taxable_amount + taxfree_amount,
-                missing_amount=remaining_sold_amount,
+            self.missing_acquisitions.append(
+                MissingAcquisition(
+                    asset=spending_asset,
+                    time=timestamp,
+                    found_amount=taxable_amount + taxfree_amount,
+                    missing_amount=remaining_sold_amount,
+                ),
             )
             taxable_amount = adjusted_amount
             is_complete = False

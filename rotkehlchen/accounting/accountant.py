@@ -83,7 +83,6 @@ class Accountant():
         event = events[count]
         ts = event.get_timestamp()
         identifier = event.get_identifier()
-
         self.msg_aggregator.add_error(
             f'Skipping event with id {identifier} at '
             f'{self.csvexporter.timestamp_to_date(ts)} '

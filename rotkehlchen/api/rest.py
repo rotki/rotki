@@ -1652,8 +1652,8 @@ class RestAPI():
         missing_acquisitions = self.rotkehlchen.accountant.pots[0].cost_basis.missing_acquisitions
         missing_prices = self.rotkehlchen.accountant.pots[0].cost_basis.missing_prices
 
-        processed_missing_acquisitions = process_result_list(missing_acquisitions)
-        processed_missing_prices = process_result_list(missing_prices)
+        processed_missing_acquisitions = [entry.serialize() for entry in missing_acquisitions]
+        processed_missing_prices = [entry.serialize() for entry in missing_prices]
         result_dict = _wrap_in_ok_result(
             {
                 'missing_acquisitions': processed_missing_acquisitions,

@@ -1,10 +1,9 @@
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from rotkehlchen.utils.misc import timestamp_to_date
-
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.types import Timestamp
+    from rotkehlchen.utils.misc import timestamp_to_date
 
 
 class InputError(Exception):

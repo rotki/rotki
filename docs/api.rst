@@ -4378,6 +4378,84 @@ Export action history to CSV
    :statuscode 500: Internal rotki error.
 
 
+Get missing acquisitions and prices
+====================================
+
+.. http:get:: /api/(version)/history/actionable_items
+
+   .. note::
+      This endpoint should be called after getting a PnL report data.
+
+   Doing a GET on the this endpoint will return all missing acquisitions and prices discovered during generation of a PnL report.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/actionable_items HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+            "missing_acquisitions": [
+              {
+                "asset": "BTC(Bitcoin)",
+                "time": 1428994442,
+                "found_amount": "0",
+                "missing_amount": "0.1"
+              },
+              {
+                "asset": "ETH(Ethereum)",
+                "time": 1439048640,
+                "found_amount": "0",
+                "missing_amount": "14.36963"
+              },
+              {
+                "asset": "ETH(Ethereum)",
+                "time": 1439994442,
+                "found_amount": "0",
+                "missing_amount": "0.0035000000"
+              },
+              {
+                "asset": "ETH(Ethereum)",
+                "time": 1439994442,
+                "found_amount": "0",
+                "missing_amount": "1.7500"
+              }
+            ],
+          "missing_prices": [
+            {
+              "from_asset": "ETH(Ethereum)",
+              "to_asset": "AVAX(Avalanche)",
+              "time": 1439994442,
+            }
+          ]
+        },
+        "message": ""
+      }
+
+   :resjson str asset: The asset that is involved in the event.
+   :resjson int time: The timestamp this event took place in.
+   :resjson str found_amount: The amount found from an acquistion event for a spend.
+   :resjson str missing_amount: The amount undiscovered for a particular spend.
+   :resjson str from_asset: The quote asset being converted from.
+   :resjson str to_asset: The base asset being converted to.
+
+   :statuscode 200: Data were queried successfully.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+
 Querying history progress status
 =================================
 

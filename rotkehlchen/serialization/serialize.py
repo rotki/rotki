@@ -6,7 +6,6 @@ from web3.datastructures import AttributeDict
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.base import StakingEvent
-from rotkehlchen.accounting.types import MissingAcquisition, MissingPrice
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -193,9 +192,6 @@ def _process_entry(entry: Any) -> Union[str, List[Any], Dict[str, Any], Any]:
             BalanceType,
     )):
         return str(entry)
-
-    if isinstance(entry, (MissingAcquisition, MissingPrice)):
-        return entry.serialize()
 
     # else
     return entry
