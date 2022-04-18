@@ -82,7 +82,10 @@ def test_big_taxfree_period(accountant):
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('265253.1283582327833875')),
-        AccountingEventType.FEE: PNL(taxable=ZERO, free=FVal('-0.238868129979988140934107')),
+        AccountingEventType.FEE: PNL(
+            taxable=FVal('-1.170885322708749896'),
+            free=FVal('0.932017192728761755465893'),
+        ),
     })
     check_pnls_and_csv(accountant, expected_pnls)
 

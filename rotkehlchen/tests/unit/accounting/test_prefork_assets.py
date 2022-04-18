@@ -69,7 +69,7 @@ def test_buying_selling_eth_before_daofork(accountant):
 
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=FVal('382.4205350'), free=FVal('923.8099920')),
-        AccountingEventType.FEE: PNL(taxable=FVal('-0.5215'), free=FVal('-1.0575')),
+        AccountingEventType.FEE: PNL(taxable=FVal('-1.579'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls)
 
@@ -254,6 +254,6 @@ def test_buying_selling_bch_before_bsvfork(accountant):
             taxable=FVal('13877.57646153846153846153846'),
             free=FVal('-464.4416923076923076923076920'),
         ),
-        AccountingEventType.FEE: PNL(taxable=FVal('-2'), free=FVal('-1.04')),
+        AccountingEventType.FEE: PNL(taxable=FVal('-3.04'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls)

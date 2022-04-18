@@ -132,7 +132,7 @@ class ProcessedAccountingEvent:
         self.pnl = PNL()
         if count_entire_amount_spend:
             # for fees and other types  we also need to consider the entire amount as spent
-            self.pnl -= PNL(taxable=taxable_value, free=free_value)
+            self.pnl -= PNL(taxable=taxable_value + free_value, free=ZERO)
 
         if self.asset.is_fiat() or count_cost_basis_pnl is False:
             return self.pnl  # no need to calculate spending pnl if asset is fiat
