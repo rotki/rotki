@@ -7,10 +7,9 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-class ExternalServiceWithApiKey():
+class ExternalServiceWithApiKey:
 
     def __init__(self, database: Optional['DBHandler'], service_name: ExternalService) -> None:
-        super().__init__()
         self.db = database
         self.api_key: Optional[ApiKey] = None
         self.api_key_saved_ts = Timestamp(0)

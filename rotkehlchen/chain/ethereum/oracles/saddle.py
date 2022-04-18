@@ -10,37 +10,34 @@ from rotkehlchen.errors import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.interfaces import PriceOracleInterface
 from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 
+ALETH = EthereumToken('0x0100546F2cD4C9D97f798fFC9755E47865FF7Ee6')
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class SaddleOracle:
+class SaddleOracle(PriceOracleInterface):
     """
     Provides logic to use saddle as oracle for certain assets
     """
     def __init__(self, eth_manager: 'EthereumManager'):
+        PriceOracleInterface.__init__(self, oracle_name=self.get_oracle_name())
         self.eth_manager = eth_manager
+
+    def get_oracle_name(self) -> str:  # pylint: disable=no-self-use
+        return 'saddle'
 
     def rate_limited_in_last(  # pylint: disable=no-self-use
             self,
             seconds: Optional[int] = None,  # pylint: disable=unused-argument
     ) -> bool:
         return False  # noop for saddle
-
-    def can_query_history(  # pylint: disable=no-self-use
-        self,
-        from_asset: Asset,  # pylint: disable=unused-argument
-        to_asset: Asset,  # pylint: disable=unused-argument
-        timestamp: Timestamp,  # pylint: disable=unused-argument
-        seconds: Optional[int] = None,  # pylint: disable=unused-argument
-    ) -> bool:
-        return False  # noop for uniswap oracles atm
 
     def get_price(
         self,
@@ -49,8 +46,7 @@ class SaddleOracle:
         block_identifier: BlockIdentifier,
     ) -> Price:
         log.debug(f'Querying saddle for price of {from_asset} to {to_asset}')
-        aleth = EthereumToken('0x0100546F2cD4C9D97f798fFC9755E47865FF7Ee6')
-        if from_asset != aleth:
+        if from_asset != ALETH:
             raise PriceQueryUnsupportedAsset(
                 f'{from_asset} is not a valid asset for the Saddle oracle',
             )
@@ -74,3 +70,12 @@ class SaddleOracle:
             to_asset=to_asset,
             block_identifier='latest',
         )
+
+    def can_query_history(
+            self,
+            from_asset: Asset,  # pylint: disable=unused-argument
+            to_asset: Asset,  # pylint: disable=unused-argument
+            timestamp: Timestamp,  # pylint: disable=unused-argument
+            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+    ) -> bool:
+        return False

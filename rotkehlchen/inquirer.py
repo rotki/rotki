@@ -134,8 +134,8 @@ class CurrentPriceOracle(SerializableEnumMixin):
     """Supported oracles for querying current prices"""
     COINGECKO = 1
     CRYPTOCOMPARE = 2
-    UNISWAPV3 = 3
-    UNISWAPV2 = 4
+    UNISWAPV2 = 3
+    UNISWAPV3 = 4
     SADDLE = 5
 
 

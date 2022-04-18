@@ -50,6 +50,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.interfaces import PriceOracleInterface
 from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import pairwise, ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
@@ -203,9 +204,14 @@ def _check_hourly_data_sanity(
         index += 2
 
 
-class Cryptocompare(ExternalServiceWithApiKey):
+class Cryptocompare(ExternalServiceWithApiKey, PriceOracleInterface):
     def __init__(self, data_directory: Path, database: Optional['DBHandler']) -> None:
-        super().__init__(database=database, service_name=ExternalService.CRYPTOCOMPARE)
+        PriceOracleInterface.__init__(self, oracle_name='cryptocompare')
+        ExternalServiceWithApiKey.__init__(
+            self,
+            database=database,
+            service_name=ExternalService.CRYPTOCOMPARE,
+        )
         self.data_directory = data_directory
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})

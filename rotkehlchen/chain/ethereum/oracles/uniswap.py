@@ -23,6 +23,7 @@ from rotkehlchen.errors import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.interfaces import PriceOracleInterface
 from rotkehlchen.types import ChecksumEthAddress, Price, Timestamp
 
 if TYPE_CHECKING:
@@ -33,11 +34,12 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class UniswapOracle(metaclass=abc.ABCMeta):
+class UniswapOracle(PriceOracleInterface):
     """
     Provides shared logic between Uniswap V2 and Uniswap V3 to use them as price oracles.
     """
     def __init__(self, eth_manager: 'EthereumManager'):
+        super().__init__(oracle_name=self.get_oracle_name())
         self.eth_manager = eth_manager
         self.routing_assets = [
             A_WETH,
@@ -46,13 +48,17 @@ class UniswapOracle(metaclass=abc.ABCMeta):
         ]
 
     @abc.abstractmethod
+    def get_oracle_name(self) -> str:
+        ...
+
+    @abc.abstractmethod
     def get_pool(
         self,
         token_0: EthereumToken,
         token_1: EthereumToken,
     ) -> List[str]:
-        """Given two tokens returns a list of pool where they can be swapped"""
-        raise NotImplementedError('should only be implemented by subclasses')
+        """Given two tokens returns a list of pools where they can be swapped"""
+        ...
 
     @abc.abstractmethod
     def get_pool_price(
@@ -60,10 +66,10 @@ class UniswapOracle(metaclass=abc.ABCMeta):
         pool_addr: ChecksumEthAddress,
         block_identifier: BlockIdentifier = 'latest',
     ) -> Tuple[FVal, EthereumToken, EthereumToken]:
-        """Retruns the price for the tokens in the given pool and the token0 and
+        """Returns the price for the tokens in the given pool and the token0 and
         token1 of the pool
         """
-        raise NotImplementedError('should only be implemented by subclasses')
+        ...
 
     def rate_limited_in_last(  # pylint: disable=no-self-use
             self,
@@ -82,7 +88,8 @@ class UniswapOracle(metaclass=abc.ABCMeta):
 
     def find_route(self, from_asset: EthereumToken, to_asset: EthereumToken) -> List[str]:
         """
-        Returns a list of the pools that will be needed to go from_asset to to_asset
+        Calculate the path needed to go from from_asset to to_asset and return a
+        list of the pools needed to jump through to do that.
         """
         output = []
         # If any of the assets is in the glue assets let's see if we find any path
@@ -179,7 +186,7 @@ class UniswapOracle(metaclass=abc.ABCMeta):
         if from_asset == to_asset:
             return Price(ONE)
 
-        # If we are working with non eth tokens just make as if we want to go from eth/to eth
+        # If we are working with tokens and not ETH just make as if we want to go from eth/to eth
         # and then find the price of asset <=> eth from a different oracle
         from_asset_aux: Union[Asset, EthereumToken] = from_asset
         to_asset_aux: Union[Asset, EthereumToken] = to_asset
@@ -257,8 +264,19 @@ class UniswapOracle(metaclass=abc.ABCMeta):
             block_identifier='latest',
         )
 
+    def can_query_history(
+            self,
+            from_asset: Asset,  # pylint: disable=unused-argument
+            to_asset: Asset,  # pylint: disable=unused-argument
+            timestamp: Timestamp,  # pylint: disable=unused-argument
+            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+    ) -> bool:
+        return False
 
 class UniswapV3Oracle(UniswapOracle):
+
+    def get_oracle_name(self) -> str:
+        return 'Uniswap V3 oracle'
 
     def get_pool(
         self,
@@ -324,6 +342,9 @@ class UniswapV3Oracle(UniswapOracle):
 
 
 class UniswapV2Oracle(UniswapOracle):
+
+    def get_oracle_name(self) -> str:
+        return 'Uniswap V2 oracle'
 
     def get_pool(
         self,
