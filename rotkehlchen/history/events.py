@@ -342,7 +342,6 @@ class EventsHistorian():
 
         self.processing_state_name = 'Querying ethereum transactions history'
         tx_filter_query = ETHTransactionsFilterQuery.make(
-            order_ascending=True,  # for history processing we need oldest first
             limit=None,
             offset=None,
             addresses=None,

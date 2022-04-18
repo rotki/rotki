@@ -55,9 +55,13 @@ class ProcessedAccountingEvent:
             self,
             ts_converter: Callable[[Timestamp], str],
             eth_explorer: Optional[str],
-            for_csv: bool,
+            for_api: bool,
     ) -> Dict[str, Any]:
-        """These are the fields that will appear in CSV and report API"""
+        """These are the fields that will appear in CSV and report API
+
+        If `eth_explorer` is given then this is for exporting to CSV
+        If `for_api` is True then this is for exporting to the rest API
+        """
         exported_dict = {
             'type': self.type.serialize(),
             'notes': self.notes,
@@ -70,22 +74,25 @@ class ProcessedAccountingEvent:
             'pnl_taxable': str(self.pnl.taxable),
             'pnl_free': str(self.pnl.free),
         }
+        tx_hash = self.extra_data.get('tx_hash', None)
 
-        if for_csv:
+        if eth_explorer:
             taxable_basis = free_basis = ''
             if self.cost_basis is not None:
                 taxable_basis, free_basis = self.cost_basis.to_string(ts_converter)
             exported_dict['cost_basis_taxable'] = taxable_basis
             exported_dict['cost_basis_free'] = free_basis
-            tx_hash = self.extra_data.get('tx_hash', None)
+            exported_dict['asset'] = str(self.asset)
             if tx_hash:
                 exported_dict['notes'] = f'{eth_explorer}{tx_hash}  ->  {self.notes}'
-            exported_dict['asset'] = str(self.asset)
         else:
             cost_basis = None
             if self.cost_basis is not None:
                 cost_basis = self.cost_basis.serialize()
             exported_dict['cost_basis'] = cost_basis
+
+        if for_api is True and tx_hash is not None:
+            exported_dict['notes'] = f'transaction {tx_hash} {self.notes}'
 
         return exported_dict
 
@@ -94,8 +101,10 @@ class ProcessedAccountingEvent:
         data = self.to_exported_dict(
             ts_converter=ts_converter,
             eth_explorer=None,
-            for_csv=False,
+            for_api=False,
         )
+        data['extra_data'] = self.extra_data
+        data['notes'] = self.notes  # undo the tx_hash addition to notes before going to the DB
         data['index'] = self.index
         data['count_entire_amount_spend'] = self.count_entire_amount_spend
         data['count_cost_basis_pnl'] = self.count_cost_basis_pnl
@@ -123,7 +132,7 @@ class ProcessedAccountingEvent:
         self.pnl = PNL()
         if count_entire_amount_spend:
             # for fees and other types  we also need to consider the entire amount as spent
-            self.pnl -= PNL(taxable=taxable_value, free=free_value)
+            self.pnl -= PNL(taxable=taxable_value + free_value, free=ZERO)
 
         if self.asset.is_fiat() or count_cost_basis_pnl is False:
             return self.pnl  # no need to calculate spending pnl if asset is fiat
@@ -185,6 +194,7 @@ class ProcessedAccountingEvent:
                 pnl=PNL(free=pnl_free, taxable=pnl_taxable),
                 cost_basis=cost_basis,
                 index=data['index'],
+                extra_data=data['extra_data'],
             )
             event.count_cost_basis_pnl = data['count_cost_basis_pnl']
             event.count_entire_amount_spend = data['count_entire_amount_spend']

@@ -285,7 +285,7 @@ class DBHistoryEvents():
         by asset"""
         cursor = self.db.conn.cursor()
         usd_value = ZERO
-        query_filters, bindings = query_filter.prepare(with_pagination=False)
+        query_filters, bindings = query_filter.prepare(with_pagination=False, with_order=False)
         try:
             query = 'SELECT SUM(CAST(usd_value AS REAL)) FROM history_events ' + query_filters
             result = cursor.execute(query, bindings).fetchone()[0]

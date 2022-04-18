@@ -1944,7 +1944,7 @@ Querying ethereum transactions
                 "event_type": "spend",
                 "location": "blockchain",
                 "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-                "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545",
                 "sequence_index": 0,
                 "timestamp": 1642802807
               },
@@ -1992,7 +1992,7 @@ Querying ethereum transactions
                 "event_type": "spend",
                 "location": "blockchain",
                 "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545",
-                "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545 for transaction 0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
+                "notes": "Burned 0.00863351371344 ETH in gas from 0x6e15887E2CEC81434C16D587709f64603b39b545",
                 "sequence_index": 0,
                 "timestamp": 1642802807
               },

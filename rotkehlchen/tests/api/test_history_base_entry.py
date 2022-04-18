@@ -65,7 +65,7 @@ def _add_entries(server) -> List[HistoryBaseEntry]:
         asset=A_ETH,
         balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Burned 0.0001 ETH in gas from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for transaction 0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc',  # noqa: E501
+        notes='Burned 0.0001 ETH in gas from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # noqa: E501
         event_subtype=HistoryEventSubType.FEE,
         counterparty='gas',
     ), HistoryBaseEntry(

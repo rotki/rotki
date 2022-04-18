@@ -90,7 +90,7 @@ def test_votium_claim(database, ethereum_manager):
                 usd_value=ZERO,
             ),
             location_label='0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',
-            notes='Burned 0.00393701451 ETH in gas from 0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA for transaction 0x75b81b2edd454a7b564cc55a6b676e2441e155401bde99a38d867028081d2c30',  # noqa: E501
+            notes='Burned 0.00393701451 ETH in gas from 0x362C51b56D3c8f79aecf367ff301d1aFd42EDCEA',  # noqa: E501
             counterparty='gas',
             identifier=None,
             extras=None,

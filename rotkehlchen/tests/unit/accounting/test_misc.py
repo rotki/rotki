@@ -54,7 +54,7 @@ def test_kfee_price_in_accounting(accountant):
             amount=FVal('0.02'),
             rate=FVal(1000),
             fee=FVal(30),  # 0.82411 USD/EUR -> 30 * 0.01 * 0.82411 -> 0.247233
-            fee_currency=A_KFEE,  # - 0.247233 + 0.247233 - 30 * 0.01 * 0.8612 -> -0.25836
+            fee_currency=A_KFEE,  # -0.247233,  0.247233 - 30 * 0.01 * 0.8612
             link=None,
         ),
     ]
@@ -67,7 +67,8 @@ def test_kfee_price_in_accounting(accountant):
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('14.2277')),
-        AccountingEventType.FEE: PNL(taxable=ZERO, free=FVal('-0.25836')),
+        AccountingEventType.FEE: PNL(
+            taxable=FVal('-0.247233'), free=FVal('-0.011127')),
         AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('187.227'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls)

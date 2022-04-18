@@ -82,7 +82,10 @@ def test_big_taxfree_period(accountant):
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('265253.1283582327833875')),
-        AccountingEventType.FEE: PNL(taxable=ZERO, free=FVal('-0.238868129979988140934107')),
+        AccountingEventType.FEE: PNL(
+            taxable=FVal('-1.170885322708749896'),
+            free=FVal('0.932017192728761755465893'),
+        ),
     })
     check_pnls_and_csv(accountant, expected_pnls)
 
@@ -113,7 +116,7 @@ def test_include_gas_costs(accountant):
             location_label=addr1,
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000030921')),
-            notes=f'Burned 0.000030921 ETH in gas from {addr1} for transaction {tx_hash}',
+            notes=f'Burned 0.000030921 ETH in gas from {addr1}',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             counterparty='gas',
@@ -159,7 +162,7 @@ def test_ignored_transactions(accountant):
             location_label=addr1,
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000030921')),
-            notes=f'Burned 0.000030921 ETH in gas from {addr1} for transaction {tx_hash}',
+            notes=f'Burned 0.000030921 ETH in gas from {addr1}',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             counterparty='gas',
@@ -172,7 +175,7 @@ def test_ignored_transactions(accountant):
             location_label=addr1,
             asset=A_ETH,
             balance=Balance(amount=FVal('0.000040921')),
-            notes=f'Burned 0.000040921 ETH in gas from {addr1} for transaction {tx_hash}',
+            notes=f'Burned 0.000040921 ETH in gas from {addr1}',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             counterparty='gas',

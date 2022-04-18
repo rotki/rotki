@@ -418,7 +418,7 @@ class EVMTransactionDecoder():
                     location_label=location_label,
                     asset=A_ETH,
                     balance=Balance(amount=eth_burned_as_gas),
-                    notes=f'Burned {eth_burned_as_gas} ETH in gas from {location_label} for transaction {tx_hash_hex}',  # noqa: E501
+                    notes=f'Burned {eth_burned_as_gas} ETH in gas from {location_label}',
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     counterparty='gas',

@@ -113,6 +113,7 @@ class AccountingPot(CustomizableDateMixin):
         self.pnls.reset()
         self.cost_basis.reset(settings)
         self.transactions.reset()
+        self.processed_events = []
 
     def add_acquisition(
             self,  # pylint: disable=unused-argument

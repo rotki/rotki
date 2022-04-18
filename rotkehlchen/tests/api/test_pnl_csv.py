@@ -103,7 +103,35 @@ def test_history_export_download_csv(
         f'?directory_path={csv_dir2}',
     )
     assert_csv_export_response(response, csv_dir2)
+    # query it again and make sure that csv is recreated and events are not duplicated
+    query_api_create_and_get_report(
+        server=rotkehlchen_api_server_with_exchanges,
+        start_ts=0,
+        end_ts=1601040361,
+        prepare_mocks=True,
+    )
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource') +
+        f'?directory_path={csv_dir2}',
+    )
+    assert_csv_export_response(response, csv_dir2)
     # now query the download CSV endpoint
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historydownloadingresource'))
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        tempzipfile = Path(tmpdirname, 'temp.zip')
+        extractdir = Path(tmpdirname, 'extractdir')
+        tempzipfile.write_bytes(response.content)
+        with zipfile.ZipFile(tempzipfile, 'r') as zip_ref:
+            zip_ref.extractall(extractdir)
+        assert_csv_export_response(response, extractdir, is_download=True)
+    # query it again and make sure that csv is recreated and events are not duplicated
+    query_api_create_and_get_report(
+        server=rotkehlchen_api_server_with_exchanges,
+        start_ts=0,
+        end_ts=1601040361,
+        prepare_mocks=True,
+    )
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historydownloadingresource'))
     with tempfile.TemporaryDirectory() as tmpdirname:

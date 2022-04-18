@@ -157,6 +157,7 @@ class DBPaginationSchema(Schema):
 
 
 class DBOrderBySchema(Schema):
+    # TODO: DBFilters already allow ordering by multiple attributes. Make the API do that too
     order_by_attribute = fields.String(load_default=None)
     ascending = fields.Boolean(load_default=False)  # most recent first by default
 
@@ -193,8 +194,7 @@ class EthereumTransactionQuerySchema(
         address = data.get('address')
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         filter_query = ETHTransactionsFilterQuery.make(
-            order_by_attribute=order_by_attribute,
-            order_ascending=data['ascending'],
+            order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],
             offset=data['offset'],
             addresses=[address] if address is not None else None,
@@ -255,8 +255,7 @@ class TradesQuerySchema(
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'time'  # noqa: E501
         filter_query = TradesFilterQuery.make(
-            order_by_attribute=order_by_attribute,
-            order_ascending=data['ascending'],
+            order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -298,8 +297,7 @@ class StakingQuerySchema(
             order_by_attribute = 'subtype'
 
         query_filter = HistoryEventFilterQuery.make(
-            order_by_attribute=order_by_attribute,
-            order_ascending=data['ascending'],
+            order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -328,7 +326,7 @@ class StakingQuerySchema(
             event_subtypes=[
                 HistoryEventSubType.REWARD,
             ],
-            order_by_attribute=None,
+            order_by_rules=None,
             asset=data['asset'],
         )
 
@@ -425,8 +423,7 @@ class AssetMovementsQuerySchema(
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'time'  # noqa: E501
         filter_query = AssetMovementsFilterQuery.make(
-            order_by_attribute=order_by_attribute,
-            order_ascending=data['ascending'],
+            order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -482,8 +479,7 @@ class LedgerActionsQuerySchema(
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         filter_query = LedgerActionsFilterQuery.make(
-            order_by_attribute=order_by_attribute,
-            order_ascending=data['ascending'],
+            order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
@@ -1012,8 +1008,7 @@ class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
         event_type = data.get('event_type')
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         filter_query = ReportDataFilterQuery.make(
-            order_by_attribute=order_by_attribute,
-            order_ascending=data['ascending'],
+            order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],
             offset=data['offset'],
             report_id=report_id,
@@ -1939,8 +1934,7 @@ class Eth2DailyStatsSchema(
     ) -> Dict[str, Any]:
         order_by_attribute = data['order_by_attribute'] if data['order_by_attribute'] is not None else 'timestamp'  # noqa: E501
         filter_query = Eth2DailyStatsFilterQuery.make(
-            order_by_attribute=order_by_attribute,
-            order_ascending=data['ascending'],
+            order_by_rules=[(order_by_attribute, data['ascending'])],
             limit=data['limit'],
             offset=data['offset'],
             from_ts=data['from_timestamp'],
