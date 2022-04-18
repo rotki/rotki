@@ -254,5 +254,5 @@ class PriceHistorian():
         raise NoPriceForGivenTimestamp(
             from_asset=from_asset,
             to_asset=to_asset,
-            date=timestamp,
+            time=timestamp,
         )

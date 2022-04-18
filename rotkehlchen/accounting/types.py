@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, NamedTuple, Tuple
+from typing import Any, Dict, NamedTuple, Tuple, Union
 
 import jsonschema
 
@@ -109,10 +109,26 @@ class NamedJson(NamedTuple):
 class MissingAcquisition(NamedTuple):
     asset: Asset
     time: Timestamp
+    found_amount: FVal
     missing_amount: FVal
+
+    def serialize(self) -> Dict[str, Union[str, int]]:
+        return {
+            'asset': str(self.asset),
+            'time': self.time,
+            'found_amount': str(self.found_amount),
+            'missing_amount': str(self.missing_amount),
+        }
 
 
 class MissingPrice(NamedTuple):
     from_asset: Asset
     to_asset: Asset
     time: Timestamp
+
+    def serialize(self) -> Dict[str, Union[str, int]]:
+        return {
+            'from_asset': str(self.from_asset),
+            'to_asset': str(self.to_asset),
+            'time': self.time,
+        }

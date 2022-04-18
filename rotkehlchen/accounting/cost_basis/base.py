@@ -248,26 +248,18 @@ class CostBasisCalculator(CustomizableDateMixin):
             self,
             asset: Asset,
             time: Timestamp,
-            found_amount: Optional[FVal] = None,
-            missing_amount: Optional[FVal] = None,
+            found_amount: FVal,
+            missing_amount: FVal,
     ) -> None:
         """Inform the user for missing data for an acquisition by appending it to a list."""
-        if found_amount is None:
-            self.msg_aggregator.add_error(
-                f'No documented acquisition found for {asset} before '
-                f'{self.timestamp_to_date(time)}. Let rotki '
-                f'know how you acquired it via a ledger action',
-            )
-            return
-
-        if missing_amount is not None:
-            self.missing_acquisitions.append(
-                MissingAcquisition(
-                    asset=asset,
-                    time=time,
-                    missing_amount=missing_amount,
-                ),
-            )
+        self.missing_acquisitions.append(
+            MissingAcquisition(
+                asset=asset,
+                time=time,
+                found_amount=found_amount,
+                missing_amount=missing_amount,
+            ),
+        )
 
     def reduce_asset_amount(self, asset: Asset, amount: FVal, timestamp: Timestamp) -> bool:
         """Searches all acquisition events for asset and reduces them by amount.
@@ -312,6 +304,7 @@ class CostBasisCalculator(CustomizableDateMixin):
                 MissingAcquisition(
                     asset=asset,
                     time=timestamp,
+                    found_amount=ZERO,
                     missing_amount=amount,
                 ),
             )
@@ -494,7 +487,12 @@ class CostBasisCalculator(CustomizableDateMixin):
                 stop_index = idx + 1
 
         if len(asset_events.acquisitions) == 0:
-            self.inform_user_missing_acquisition(spending_asset, timestamp)
+            self.inform_user_missing_acquisition(
+                asset=spending_asset,
+                time=timestamp,
+                found_amount=ZERO,
+                missing_amount=spending_amount,
+            )
             # That means we had no documented acquisition for that asset. This is not good
             # because we can't prove a corresponding acquisition and as such we are burdened
             # calculating the entire spend as profit which needs to be taxed

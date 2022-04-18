@@ -1648,6 +1648,21 @@ class RestAPI():
         return api_response(result_dict, status_code=status_code)
 
     @require_loggedin_user()
+    def get_history_actionable_items(self) -> Response:
+        missing_acquisitions = self.rotkehlchen.accountant.pots[0].cost_basis.missing_acquisitions
+        missing_prices = self.rotkehlchen.accountant.pots[0].cost_basis.missing_prices
+
+        processed_missing_acquisitions = process_result_list(missing_acquisitions)
+        processed_missing_prices = process_result_list(missing_prices)
+        result_dict = _wrap_in_ok_result(
+            {
+                'missing_acquisitions': processed_missing_acquisitions,
+                'missing_prices': processed_missing_prices,
+            },
+        )
+        return api_response(result_dict, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
     def export_processed_history_csv(self, directory_path: Path) -> Response:
         success, msg = self.rotkehlchen.accountant.export(directory_path)
         if success is False:

@@ -84,25 +84,16 @@ class Accountant():
         ts = event.get_timestamp()
         identifier = event.get_identifier()
 
-        if isinstance(exception, NoPriceForGivenTimestamp):
-            self.pots[0].cost_basis.missing_prices.append(
-                MissingPrice(
-                    from_asset=exception.from_asset,
-                    to_asset=exception.to_asset,
-                    time=exception.date,
-                ),
-            )
-        else:
-            self.msg_aggregator.add_error(
-                f'Skipping event with id {identifier} at '
-                f'{self.csvexporter.timestamp_to_date(ts)} '
-                f'during history processing due to {reason}: '
-                f'{str(exception)}. Check the logs for more details',
-            )
-            log.error(
-                f'Skipping event with id {identifier}  during history processing due to '
-                f'{reason}: {str(exception)}',
-            )
+        self.msg_aggregator.add_error(
+            f'Skipping event with id {identifier} at '
+            f'{self.csvexporter.timestamp_to_date(ts)} '
+            f'during history processing due to {reason}: '
+            f'{str(exception)}. Check the logs for more details',
+        )
+        log.error(
+            f'Skipping event with id {identifier}  during history processing due to '
+            f'{reason}: {str(exception)}',
+        )
         return count + 1
 
     def process_history(
@@ -178,11 +169,12 @@ class Accountant():
                 )
                 continue
             except NoPriceForGivenTimestamp as e:
-                count = self._process_skipping_exception(
-                    exception=e,
-                    events=events,
-                    count=count,
-                    reason='inability to find a price at that point in time',
+                self.pots[0].cost_basis.missing_prices.append(
+                    MissingPrice(
+                        from_asset=e.from_asset,
+                        to_asset=e.to_asset,
+                        time=e.time,
+                    ),
                 )
                 continue
             except RemoteError as e:

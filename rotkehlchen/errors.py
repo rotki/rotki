@@ -93,16 +93,16 @@ class DeserializationError(Exception):
 
 
 class NoPriceForGivenTimestamp(Exception):
-    def __init__(self, from_asset: 'Asset', to_asset: 'Asset', date: 'Timestamp') -> None:
+    def __init__(self, from_asset: 'Asset', to_asset: 'Asset', time: 'Timestamp') -> None:
         self.from_asset = from_asset
         self.to_asset = to_asset
-        self.date = date
+        self.time = time
         super().__init__(
             'Unable to query a historical price for "{}" to "{}" at {}'.format(
                 from_asset.identifier,
                 to_asset.identifier,
                 timestamp_to_date(
-                    date,
+                    ts=time,
                     formatstr='%d/%m/%Y, %H:%M:%S',
                     treat_as_local=True,
                 ),

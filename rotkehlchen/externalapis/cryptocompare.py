@@ -834,7 +834,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             raise NoPriceForGivenTimestamp(
                 from_asset=from_asset,
                 to_asset=to_asset,
-                date=timestamp,
+                time=timestamp,
             )
 
         log.debug('Got historical price from cryptocompare', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp, price=price)  # noqa: E501
