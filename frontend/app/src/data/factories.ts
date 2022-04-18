@@ -16,7 +16,8 @@ export const defaultGeneralSettings = (): GeneralSettings => ({
   displayDateInLocaltime: Defaults.DISPLAY_DATE_IN_LOCALTIME,
   currentPriceOracles: [],
   historicalPriceOracles: [],
-  ssf0graphMultiplier: 0
+  ssf0graphMultiplier: 0,
+  nonSyncingExchanges: []
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({

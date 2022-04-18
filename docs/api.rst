@@ -153,7 +153,9 @@ Handling user creation, sign-in, log-out and querying
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
                   "current_price_oracles": ["cryptocompare", "coingecko"],
                   "historical_price_oracles": ["cryptocompare", "coingecko"],
-                  "taxable_ledger_actions": ["income", "airdrop"]
+                  "taxable_ledger_actions": ["income", "airdrop"],
+                  "ssf_0graph_multiplier": 2,
+                  "non_sync_exchanges: [{"location": "binance", "name": "binance1"}]
               }
           },
           "message": ""
@@ -221,7 +223,9 @@ Handling user creation, sign-in, log-out and querying
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
                   "current_price_oracles": ["cryptocompare", "coingecko"],
                   "historical_price_oracles": ["cryptocompare", "coingecko"],
-                  "taxable_ledger_actions": ["income", "airdrop"]
+                  "taxable_ledger_actions": ["income", "airdrop"],
+                  "ssf_0graph_multiplier": 2,
+                  "non_sync_exchanges: [{"location": "binance", "name": "binance1"}]
               }
           },
           "message": ""
@@ -592,7 +596,8 @@ Getting or modifying settings
               "current_price_oracles": ["coingecko"],
               "historical_price_oracles": ["cryptocompare", "coingecko"],
               "taxable_ledger_actions": ["income", "airdrop"],
-              "ssf_0graph_multiplier": 2
+              "ssf_0graph_multiplier": 2,
+              "non_sync_exchanges: [{"location": "binance", "name": "binance1"}]
           },
           "message": ""
       }
@@ -691,7 +696,8 @@ Getting or modifying settings
               "current_price_oracles": ["cryptocompare"],
               "historical_price_oracles": ["coingecko", "cryptocompare"],
               "taxable_ledger_actions": ["income", "airdrop"],
-              "ssf_0graph_multiplier": 2
+              "ssf_0graph_multiplier": 2,
+              "non_sync_exchanges: [{"location": "binance", "name": "binance1"}]
           },
           "message": ""
       }
