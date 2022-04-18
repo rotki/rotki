@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from hexbytes import HexBytes as Web3HexBytes
 
-from rotkehlchen.errors import ConversionError, DeserializationError
+from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import convert_to_int
 

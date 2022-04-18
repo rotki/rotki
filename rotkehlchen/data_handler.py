@@ -12,7 +12,8 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import AuthenticationError, SystemPermissionError
+from rotkehlchen.errors.api import AuthenticationError
+from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import B64EncodedBytes, B64EncodedString, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator

@@ -7,12 +7,8 @@ from rotkehlchen.accounting.structures.base import HistoryEventType
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.utils import get_asset_by_symbol
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import (
-    ConversionError,
-    DeserializationError,
-    UnknownAsset,
-    UnprocessableTradePair,
-)
+from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter

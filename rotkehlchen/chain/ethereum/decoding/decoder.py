@@ -26,15 +26,14 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors import (
-    ConversionError,
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import (
     DecoderLoadingError,
-    DeserializationError,
     InputError,
     NotERC20Conformant,
     RemoteError,
-    UnknownAsset,
 )
+from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter

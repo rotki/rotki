@@ -13,12 +13,12 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
-from rotkehlchen.errors import (
+from rotkehlchen.errors.api import (
     IncorrectApiKeyFormat,
     PremiumApiError,
     PremiumAuthenticationError,
-    RemoteError,
 )
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import B64EncodedBytes, Timestamp
 from rotkehlchen.utils.serialization import jsonloads_dict

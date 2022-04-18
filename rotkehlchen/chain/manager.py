@@ -70,12 +70,12 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.utils import BlockchainAccounts
-from rotkehlchen.errors import (
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import (
     EthSyncError,
     InputError,
     ModuleInactive,
     ModuleInitializationFailure,
-    UnknownAsset,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager

@@ -1,7 +1,7 @@
 import hashlib
 from pathlib import Path
 
-from rotkehlchen.errors import SystemPermissionError
+from rotkehlchen.errors.misc import SystemPermissionError
 
 
 def file_md5(filepath: Path) -> str:

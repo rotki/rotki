@@ -28,13 +28,9 @@ from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
-from rotkehlchen.errors import (
-    DeserializationError,
-    InputError,
-    RemoteError,
-    UnknownAsset,
-    UnsupportedAsset,
-)
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     BinancePair,

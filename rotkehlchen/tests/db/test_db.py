@@ -41,7 +41,8 @@ from rotkehlchen.db.settings import (
     ModifiableDBSettings,
 )
 from rotkehlchen.db.utils import BlockchainAccounts, DBAssetBalance, LocationData
-from rotkehlchen.errors import AuthenticationError, InputError
+from rotkehlchen.errors.api import AuthenticationError
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import PremiumCredentials

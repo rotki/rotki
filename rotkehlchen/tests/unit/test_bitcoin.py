@@ -11,7 +11,7 @@ from rotkehlchen.chain.bitcoin.utils import (
     scriptpubkey_to_p2sh_address,
 )
 from rotkehlchen.chain.bitcoin.xpub import XpubData
-from rotkehlchen.errors import XPUBError
+from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.tests.utils.ens import ENS_BRUNO_BTC_ADDR, ENS_BRUNO_BTC_BYTES
 from rotkehlchen.tests.utils.factories import (
     UNIT_BTC_ADDRESS1,

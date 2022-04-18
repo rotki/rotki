@@ -4,7 +4,7 @@ from typing import Any, Dict, NamedTuple, Tuple, Union
 import jsonschema
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]

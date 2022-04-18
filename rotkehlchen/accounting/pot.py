@@ -14,13 +14,9 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
-from rotkehlchen.errors import (
-    DeserializationError,
-    InputError,
-    NoPriceForGivenTimestamp,
-    PriceQueryUnsupportedAsset,
-    RemoteError,
-)
+from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter

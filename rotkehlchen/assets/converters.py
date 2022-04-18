@@ -23,7 +23,8 @@ from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_DAI, A_SAI
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.upgrades.v7_v8 import COINBASE_DAI_UPGRADE_END_TS
-from rotkehlchen.errors import DeserializationError, UnsupportedAsset
+from rotkehlchen.errors.asset import UnsupportedAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 

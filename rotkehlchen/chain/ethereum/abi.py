@@ -15,7 +15,7 @@ from web3._utils.events import get_event_abi_types_for_decoding
 from web3._utils.normalizers import BASE_RETURN_NORMALIZERS
 from web3.types import ABIEvent
 
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:

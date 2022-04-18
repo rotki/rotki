@@ -43,13 +43,8 @@ from rotkehlchen.db.filtering import (
     TradesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import (
-    DeserializationError,
-    EncodingError,
-    InputError,
-    RemoteError,
-    XPUBError,
-)
+from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
+from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal

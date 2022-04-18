@@ -9,7 +9,8 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.eth2 import ETH2_DEPOSITS_PREFIX, DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
-from rotkehlchen.errors import InputError, PremiumPermissionError, RemoteError
+from rotkehlchen.errors.api import PremiumPermissionError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter

@@ -5,7 +5,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubDerivedAddressData
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.utils import insert_tag_mappings
-from rotkehlchen.errors import InputError
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.types import BlockchainAccountData, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 

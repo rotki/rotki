@@ -85,26 +85,27 @@ from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import DBSnapshot
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
-from rotkehlchen.errors import (
+from rotkehlchen.errors.api import (
     AuthenticationError,
-    DBUpgradeError,
-    DeserializationError,
-    EthSyncError,
     IncorrectApiKeyFormat,
-    InputError,
-    ModuleInactive,
-    NoPriceForGivenTimestamp,
     PremiumApiError,
     PremiumAuthenticationError,
     PremiumPermissionError,
-    RemoteError,
     RotkehlchenPermissionError,
+)
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.misc import (
+    DBUpgradeError,
+    EthSyncError,
+    InputError,
+    ModuleInactive,
+    RemoteError,
     SystemPermissionError,
     TagConstraintError,
     UnableToDecryptRemoteData,
-    UnknownAsset,
-    UnsupportedAsset,
 )
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs

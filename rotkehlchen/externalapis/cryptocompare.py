@@ -40,13 +40,10 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors import (
-    DeserializationError,
-    NoPriceForGivenTimestamp,
-    PriceQueryUnsupportedAsset,
-    RemoteError,
-    UnsupportedAsset,
-)
+from rotkehlchen.errors.asset import UnsupportedAsset
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler

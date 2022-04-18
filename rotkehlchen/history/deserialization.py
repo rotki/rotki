@@ -1,4 +1,4 @@
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.types import Price
 

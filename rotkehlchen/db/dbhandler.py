@@ -82,16 +82,10 @@ from rotkehlchen.db.utils import (
     is_valid_db_blockchain_account,
     str_to_bool,
 )
-from rotkehlchen.errors import (
-    AuthenticationError,
-    DeserializationError,
-    IncorrectApiKeyFormat,
-    InputError,
-    SystemPermissionError,
-    TagConstraintError,
-    UnknownAsset,
-    UnsupportedAsset,
-)
+from rotkehlchen.errors.api import AuthenticationError, IncorrectApiKeyFormat
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.misc import InputError, SystemPermissionError, TagConstraintError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.ftx import FTX_SUBACCOUNT_DB_SETTING
 from rotkehlchen.exchanges.kraken import KrakenAccountType

@@ -4,7 +4,7 @@ import logging
 import sys
 import traceback
 
-from rotkehlchen.errors import SystemPermissionError
+from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.server import RotkehlchenServer
 

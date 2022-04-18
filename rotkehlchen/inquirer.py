@@ -57,14 +57,10 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, YEARN_VAULT_V2_ABI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
-from rotkehlchen.errors import (
-    BlockchainQueryError,
-    DeserializationError,
-    PriceQueryUnsupportedAsset,
-    RemoteError,
-    UnableToDecryptRemoteData,
-    UnknownAsset,
-)
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.bisq_market import get_bisq_market_price
 from rotkehlchen.externalapis.xratescom import (
     get_current_xratescom_exchange_rates,

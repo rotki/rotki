@@ -4,7 +4,7 @@ from typing import Dict, Tuple
 import requests
 
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 

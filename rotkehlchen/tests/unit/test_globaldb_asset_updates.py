@@ -2,7 +2,7 @@ import pytest
 
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.updates import AssetsUpdater
 from rotkehlchen.types import Timestamp
 

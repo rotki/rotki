@@ -5,7 +5,7 @@ from rotkehlchen.chain.ethereum.structures import EthereumTxReceipt, EthereumTxR
 from rotkehlchen.db.constants import HISTORY_MAPPING_DECODED
 from rotkehlchen.db.filtering import ETHTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_ethereum_address,

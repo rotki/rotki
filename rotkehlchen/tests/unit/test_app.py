@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from rotkehlchen.errors import SystemPermissionError
+from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.exchanges.manager import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret

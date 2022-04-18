@@ -33,13 +33,13 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.chain.ethereum.utils import multicall_2
 from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN, UNIV1_LP_ABI
-from rotkehlchen.errors import (
+from rotkehlchen.errors.misc import (
     BlockchainQueryError,
-    DeserializationError,
     InputError,
     RemoteError,
     UnableToDecryptRemoteData,
 )
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets import GreenletManager

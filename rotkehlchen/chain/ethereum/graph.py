@@ -9,7 +9,7 @@ from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
 
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, Timestamp
 
