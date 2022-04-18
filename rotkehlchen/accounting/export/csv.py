@@ -248,7 +248,7 @@ class CSVExporter(CustomizableDateMixin):
         dict_event = event.to_exported_dict(
             ts_converter=self.timestamp_to_date,
             eth_explorer=self.eth_explorer,
-            for_csv=True,
+            for_api=False,
         )
         # For CSV also convert timestamp to date
         dict_event['timestamp'] = self.timestamp_to_date(event.timestamp)
