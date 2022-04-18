@@ -43,7 +43,7 @@ def test_1inchv1_swap(database, ethereum_manager, function_scope_messages_aggreg
             asset=A_ETH,
             balance=Balance(amount=FVal('0.00896373909'), usd_value=ZERO),
             location_label=ADDY,
-            notes=f'Burned 0.00896373909 ETH in gas from {ADDY} for transaction {tx_hash.hex()}',  # pylint: disable=no-member  # noqa: E501
+            notes=f'Burned 0.00896373909 ETH in gas from {ADDY}',
             counterparty='gas',
             identifier=None,
             extras=None,
@@ -136,7 +136,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_manager, function_scope_message
             asset=A_ETH,
             balance=Balance(amount=FVal('0.002618947'), usd_value=ZERO),
             location_label=ADDY,
-            notes=f'Burned 0.002618947 ETH in gas from {ADDY} for transaction {tx_hash.hex()}',  # pylint: disable=no-member  # noqa: E501
+            notes=f'Burned 0.002618947 ETH in gas from {ADDY}',
             counterparty='gas',
             identifier=None,
             extras=None,

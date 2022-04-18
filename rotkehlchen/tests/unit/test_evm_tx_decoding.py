@@ -54,7 +54,7 @@ def test_tx_decode(evm_transaction_decoder, database):
                     asset=A_ETH,
                     balance=Balance(amount=FVal('0.000030921')),
                     # The no-member is due to https://github.com/PyCQA/pylint/issues/3162
-                    notes=f'Burned 0.000030921 ETH in gas from {addr1} for transaction {approve_tx_hash.hex()}',  # noqa: E501  # pylint: disable=no-member
+                    notes=f'Burned 0.000030921 ETH in gas from {addr1}',
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     counterparty='gas',
