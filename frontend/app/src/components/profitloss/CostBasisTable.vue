@@ -1,53 +1,88 @@
 <template>
-  <table-expand-container :visible="visible" :colspan="colspan" :padded="false">
-    <template #title>
-      {{ $t('cost_basis_table.cost_basis') }}
-      <span class="text-caption">
-        {{
-          costBasis.isComplete
-            ? $t('cost_basis_table.complete')
-            : $t('cost_basis_table.incomplete')
-        }}
-      </span>
+  <table-expand-container visible :colspan="colspan" :padded="false">
+    <template #append>
+      <v-expansion-panels
+        v-model="panel"
+        :class="$style['expansions-panels']"
+        multiple
+      >
+        <v-expansion-panel>
+          <v-expansion-panel-header>
+            <template #default="{ open }">
+              <div class="primary--text font-weight-bold">
+                {{
+                  open
+                    ? $t('profit_loss_events.cost_basis.hide')
+                    : $t('profit_loss_events.cost_basis.show')
+                }}
+              </div>
+            </template>
+          </v-expansion-panel-header>
+
+          <v-expansion-panel-content>
+            <card class="mt-4">
+              <template #title>
+                {{ $t('cost_basis_table.cost_basis') }}
+                <span class="text-caption ml-2">
+                  {{
+                    costBasis.isComplete
+                      ? $t('cost_basis_table.complete')
+                      : $t('cost_basis_table.incomplete')
+                  }}
+                </span>
+              </template>
+              <data-table
+                :class="$style.table"
+                :items="costBasis.matchedAcquisitions"
+                :headers="headers"
+                item-key="id"
+                sort-by="time"
+              >
+                <template #item.amount="{ item }">
+                  <amount-display force-currency :value="item.amount" />
+                </template>
+                <template #item.fullAmount="{ item }">
+                  <amount-display
+                    force-currency
+                    :value="item.event.fullAmount"
+                  />
+                </template>
+                <template #item.remainingAmount="{ item }">
+                  <amount-display
+                    force-currency
+                    :value="item.event.fullAmount.minus(item.amount)"
+                  />
+                </template>
+                <template #item.rate="{ item }">
+                  <amount-display
+                    force-currency
+                    :value="item.event.rate"
+                    :fiat-currency="currency"
+                  />
+                </template>
+                <template #item.time="{ item }">
+                  <date-display :timestamp="item.event.timestamp" />
+                </template>
+                <template #item.taxable="{ item }">
+                  <v-icon v-if="item.taxable" color="success">mdi-check</v-icon>
+                </template>
+              </data-table>
+            </card>
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
     </template>
-    <data-table
-      :class="$style.table"
-      :items="costBasis.matchedAcquisitions"
-      :headers="headers"
-      item-key="id"
-      sort-by="time"
-    >
-      <template #item.amount="{ item }">
-        <amount-display force-currency :value="item.amount" />
-      </template>
-      <template #item.fullAmount="{ item }">
-        <amount-display force-currency :value="item.event.fullAmount" />
-      </template>
-      <template #item.remainingAmount="{ item }">
-        <amount-display
-          force-currency
-          :value="item.event.fullAmount.minus(item.amount)"
-        />
-      </template>
-      <template #item.rate="{ item }">
-        <amount-display
-          force-currency
-          :value="item.event.rate"
-          :fiat-currency="currency"
-        />
-      </template>
-      <template #item.time="{ item }">
-        <date-display :timestamp="item.event.timestamp" />
-      </template>
-      <template #item.taxable="{ item }">
-        <v-icon v-if="item.taxable" color="success">mdi-check</v-icon>
-      </template>
-    </data-table>
   </table-expand-container>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, Ref } from '@vue/composition-api';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  Ref
+} from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { DataTableHeader } from 'vuetify';
 import DataTable from '@/components/helper/DataTable.vue';
@@ -97,15 +132,17 @@ export default defineComponent({
   components: { DataTable },
   props: {
     costBasis: { required: true, type: Object as PropType<CostBasis> },
-    visible: { required: true, type: Boolean },
     colspan: { required: true, type: Number },
     currency: { required: false, type: String, default: CURRENCY_USD }
   },
   setup() {
     const { currencySymbol } = setupGeneralSettings();
 
+    const panel = ref<number[]>([]);
+
     return {
-      headers: getHeaders(currencySymbol)
+      headers: getHeaders(currencySymbol),
+      panel
     };
   }
 });
@@ -118,6 +155,32 @@ export default defineComponent({
       &:first-child {
         span {
           padding-left: 16px;
+        }
+      }
+    }
+  }
+}
+
+.expansions {
+  &-panels {
+    :global {
+      .v-expansion-panel {
+        background: transparent !important;
+
+        &::before {
+          box-shadow: none;
+        }
+
+        &-header {
+          padding: 0;
+          min-height: auto;
+          width: auto;
+        }
+
+        &-content {
+          &__wrap {
+            padding: 0;
+          }
         }
       }
     }

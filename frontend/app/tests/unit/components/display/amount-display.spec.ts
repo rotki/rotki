@@ -63,7 +63,9 @@ describe('AmountDisplay.vue', () => {
     test('displays amount converted to selected fiat currency', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), Zero, 'USD');
       expect(wrapper.find('.amount-display__value').text()).toBe('1.44');
-      expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
+      expect(wrapper.find('.amount-display__full-value').text()).toBe(
+        '1.445280012'
+      );
     });
 
     test('displays amount converted to selected fiat currency (does not double-convert)', async () => {
@@ -73,7 +75,9 @@ describe('AmountDisplay.vue', () => {
         'EUR'
       );
       expect(wrapper.find('.amount-display__value').text()).toBe('1.20');
-      expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
+      expect(wrapper.find('.amount-display__full-value').text()).toBe(
+        '1.20440001'
+      );
     });
 
     test('displays amount as it is without fiat conversion', async () => {
@@ -93,7 +97,9 @@ describe('AmountDisplay.vue', () => {
     test('displays amount converted to selected fiat currency as scrambled', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), Zero, 'USD');
       expect(wrapper.find('.amount-display__value').text()).not.toBe('1.44');
-      expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
+      expect(wrapper.find('.amount-display__full-value').text()).not.toBe(
+        '1.445280012'
+      );
     });
 
     test('displays amount converted to selected fiat currency (does not double-convert) as scrambled', async () => {
@@ -103,7 +109,9 @@ describe('AmountDisplay.vue', () => {
         'EUR'
       );
       expect(wrapper.find('.amount-display__value').text()).not.toBe('1.20');
-      expect(wrapper.find('.amount-display__full-value').exists()).toBe(false);
+      expect(wrapper.find('.amount-display__full-value').text()).not.toBe(
+        '1.20440001'
+      );
     });
 
     test('displays amount as it is without fiat conversion as scrambled', async () => {
