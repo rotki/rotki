@@ -483,6 +483,19 @@
       "non_empty": "The passphrase field cannot be empty."
     }
   },
+  "exchange_sync_settings": {
+    "title": "Exchange Sync Settings",
+    "actions": {
+      "add": "Add",
+      "remove": "Remove"
+    },
+    "labels": {
+      "disable": "Select exchange to disable sync",
+      "enable": "Select exchange to enable sync",
+      "enable_hint": "Click to see all exchange that the sync is disabled and select one to re-enable"
+    },
+    "ignore_tags_hint": "Click to see all exchange and select one to re-enable"
+  },
   "explorers": {
     "title": "Blockchain explorers",
     "address_url": "Addresses will open at {addressUrl}",
