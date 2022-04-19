@@ -18,6 +18,7 @@ Changelog
 * :feature:`2934` Users will now be able to deploy the docker image under a sub directory behind a proxy.
 * :feature:`569` Users will now be able to see assets staked, and amounts gained on Kraken's staking feature.
 * :feature:`3838` Support for FTX.US has been added.
+* :feature:`2216` Users will now be able to use Uniswap V2 and Uniswap V3 as price oracles.
 
 * :release:`1.23.4 <2022-03-23>`
 * :bug:`4072` Prevent users from inputting future date on trade and ledger action form.

@@ -37,6 +37,14 @@ class SaddleOracle(CurrentPriceOracleInterface):
         to_asset: Asset,
         block_identifier: BlockIdentifier,
     ) -> Price:
+        """
+        NOTE: This function is limited to be used for ALETH at the moment.
+        The reason for that is how pools for saddle are engineer and the lack
+        of an automate way to get the pools. ALETH was choosen because this is
+        the only place where price can be queried
+        What the code does is querying the pool for the swap ALETH -> ETH
+        and then get the eth price to calculate the ALETH price
+        """
         log.debug(f'Querying saddle for price of {from_asset} to {to_asset}')
         # TODO @yabirgb: Move this asset to the assets.py file
         aleth = EthereumToken('0x0100546F2cD4C9D97f798fFC9755E47865FF7Ee6')
