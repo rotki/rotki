@@ -17,6 +17,8 @@ from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
 history1 = [
@@ -68,8 +70,31 @@ history1 = [
 ]
 
 
+def _get_pnl_report_after_processing(
+        report_id: int,
+        database: 'DBHandler',
+) -> Tuple[Dict[str, Any], List[ProcessedAccountingEvent]]:
+    dbpnl = DBAccountingReports(database)
+    report = dbpnl.get_reports(report_id=report_id, with_limit=False)[0][0]
+    events = dbpnl.get_report_data(
+        filter_=ReportDataFilterQuery.make(report_id=1),
+        with_limit=False,
+    )[0]
+    return report, events
+
+
+def accounting_create_and_process_history(
+        rotki: 'Rotkehlchen',
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+) -> Tuple[Dict[str, Any], List[ProcessedAccountingEvent]]:
+    report_id, error_or_empty = rotki.process_history(start_ts=start_ts, end_ts=end_ts)
+    assert error_or_empty == ''
+    return _get_pnl_report_after_processing(report_id=report_id, database=rotki.data.db)
+
+
 def accounting_history_process(
-        accountant,
+        accountant: 'Accountant',
         start_ts: Timestamp,
         end_ts: Timestamp,
         history_list: List[AccountingEventMixin],
@@ -79,13 +104,7 @@ def accounting_history_process(
         end_ts=end_ts,
         events=history_list,
     )
-    dbpnl = DBAccountingReports(accountant.csvexporter.database)
-    report = dbpnl.get_reports(report_id=report_id, with_limit=False)[0][0]
-    events = dbpnl.get_report_data(
-        filter_=ReportDataFilterQuery.make(report_id=1),
-        with_limit=False,
-    )[0]
-    return report, events
+    return _get_pnl_report_after_processing(report_id=report_id, database=accountant.csvexporter.database)  # noqa: E501
 
 
 def check_pnls_and_csv(accountant: 'Accountant', expected_pnls: PnlTotals) -> None:

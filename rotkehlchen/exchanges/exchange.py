@@ -37,7 +37,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 ExchangeQueryBalances = Tuple[Optional[Dict[Asset, Balance]], str]
 ExchangeHistorySuccessCallback = Callable[
-    [List[Trade], List[MarginPosition], List[AssetMovement], List[LedgerAction], Any],
+    [List[Trade], List[MarginPosition], List[AssetMovement], Any],
     None,
 ]
 
@@ -465,7 +465,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
     ) -> None:
         """Queries the historical event endpoints for this exchange and performs actions.
 
-        In case of success passes the result to successcallback.
+        In case of success passes the result to success_callback.
         In case of failure passes the error to failure_callback
         """
         try:
@@ -483,7 +483,8 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 end_ts=end_ts,
                 only_cache=False,
             )
-            ledger_actions = self.query_income_loss_expense(
+            # Query (and save in the DB) any ledger actions. They will be included in history l8er
+            self.query_income_loss_expense(
                 start_ts=start_ts,
                 end_ts=end_ts,
                 only_cache=False,
@@ -496,7 +497,6 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 trades_history,
                 margin_history,
                 asset_movements,
-                ledger_actions,
                 exchange_specific_data,
             )
 

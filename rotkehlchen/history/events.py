@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Tuple
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
 from rotkehlchen.constants.misc import ZERO
@@ -27,6 +26,7 @@ from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.event.mixins import AccountingEventMixin
+    from rotkehlchen.accounting.ledger_actions import LedgerAction
     from rotkehlchen.chain.ethereum.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.manager import ChainManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -302,7 +302,6 @@ class EventsHistorian():
                 trades_history: List[Trade],
                 margin_history: List[MarginPosition],
                 result_asset_movements: List[AssetMovement],
-                result_ledger_actions: List[LedgerAction],
                 exchange_specific_data: Any,
         ) -> None:
             """This callback will run for succesfull exchange history query
@@ -383,7 +382,7 @@ class EventsHistorian():
             history.extend(external_trades)
             step = self._increase_progress(step, total_steps)
 
-        # include the ledger actions from offline sources
+        # include all ledger actions
         self.processing_state_name = 'Querying ledger actions history'
         ledger_actions, _ = self.query_ledger_actions(
             filter_query=LedgerActionsFilterQuery.make(),

@@ -877,3 +877,374 @@ def check_saved_events_for_exchange(
         assert margins_range is None
         assert movements_range is None
         assert len(trades) == 0
+
+
+BUYS_RESPONSE = """{
+"pagination": {
+    "ending_before": null,
+    "starting_after": null,
+    "limit": 25,
+    "order": "desc",
+    "previous_uri": null,
+    "next_uri": null
+},
+"data": [{
+  "id": "9e14d574-30fa-5d85-b02c-6be0d851d61d",
+  "status": "completed",
+  "payment_method": {
+    "id": "83562370-3e5c-51db-87da-752af5ab9559",
+    "resource": "payment_method",
+    "resource_path": "/v2/payment-methods/83562370-3e5c-51db-87da-752af5ab9559"
+  },
+  "transaction": {
+    "id": "4117f7d6-5694-5b36-bc8f-847509850ea4",
+    "resource": "transaction",
+    "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/441b9494"
+  },
+  "amount": {
+    "amount": "486.34313725",
+    "currency": "BTC"
+  },
+  "total": {
+    "amount": "4863.43",
+    "currency": "USD"
+  },
+  "subtotal": {
+    "amount": "4862.42",
+    "currency": "USD"
+  },
+  "created_at": "2017-07-21T23:43:59-07:00",
+  "updated_at": "2017-07-21T23:43:59-07:00",
+  "resource": "buy",
+  "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/buys/9e14d574",
+  "committed": true,
+  "instant": false,
+  "fee": {
+    "amount": "1.01",
+    "currency": "USD"
+  },
+  "payout_at": "2017-07-23T23:44:08Z"
+}]}"""
+
+
+SELLS_RESPONSE = """{
+"pagination": {
+    "ending_before": null,
+    "starting_after": null,
+    "limit": 25,
+    "order": "desc",
+    "previous_uri": null,
+    "next_uri": null
+},
+"data": [{
+  "id": "1e14d574-30fa-5d85-b02c-6be0d851d61d",
+  "status": "completed",
+  "payment_method": {
+    "id": "23562370-3e5c-51db-87da-752af5ab9559",
+    "resource": "payment_method",
+    "resource_path": "/v2/payment-methods/83562370-3e5c-51db-87da-752af5ab9559"
+  },
+  "transaction": {
+    "id": "3117f7d6-5694-5b36-bc8f-847509850ea4",
+    "resource": "transaction",
+    "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/4117f7d6"
+  },
+  "amount": {
+    "amount": "100.45",
+    "currency": "ETH"
+  },
+  "total": {
+    "amount": "8940.12",
+    "currency": "USD"
+  },
+  "subtotal": {
+    "amount": "8930.02",
+    "currency": "USD"
+  },
+  "created_at": "2016-03-26T13:42:00-07:00",
+  "updated_at": "2016-03-26T13:42:00-07:00",
+  "resource": "sell",
+  "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/sells/9e14d574",
+  "committed": true,
+  "instant": true,
+  "fee": {
+    "amount": "10.1",
+    "currency": "USD"
+  },
+  "payout_at": "2016-04-01T23:43:59-07:00"
+}]}"""
+
+DEPOSITS_RESPONSE = """{
+"pagination": {
+    "ending_before": null,
+    "starting_after": null,
+    "limit": 25,
+    "order": "desc",
+    "previous_uri": null,
+    "next_uri": null
+},
+"data": [{
+      "id": "1130eaec-07d7-54c4-a72c-2e92826897df",
+      "status": "completed",
+      "payment_method": {
+        "id": "83562370-3e5c-51db-87da-752af5ab9559",
+        "resource": "payment_method",
+        "resource_path": "/v2/payment-methods/83562370-3e5c-51db-87da-752af5ab9559"
+      },
+      "transaction": {
+        "id": "441b9494-b3f0-5b98-b9b0-4d82c21c252a",
+        "resource": "transaction",
+        "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/441b9494"
+      },
+      "amount": {
+        "amount": "55.00",
+        "currency": "USD"
+      },
+      "subtotal": {
+        "amount": "54.95",
+        "currency": "USD"
+      },
+      "created_at": "2015-01-31T20:49:02Z",
+      "updated_at": "2015-02-11T16:54:02-08:00",
+      "resource": "deposit",
+      "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/deposits/67e0eaec",
+      "committed": true,
+      "fee": {
+        "amount": "0.05",
+        "currency": "USD"
+      },
+      "payout_at": "2018-02-18T16:54:00-08:00"
+}]}"""
+
+
+WITHDRAWALS_RESPONSE = """{
+"pagination": {
+    "ending_before": null,
+    "starting_after": null,
+    "limit": 25,
+    "order": "desc",
+    "previous_uri": null,
+    "next_uri": null
+},
+"data": [{
+      "id": "146eaec-07d7-54c4-a72c-2e92826897df",
+      "status": "completed",
+      "payment_method": {
+        "id": "85562970-3e5c-51db-87da-752af5ab9559",
+        "resource": "payment_method",
+        "resource_path": "/v2/payment-methods/83562370-3e5c-51db-87da-752af5ab9559"
+      },
+      "transaction": {
+        "id": "441b9454-b3f0-5b98-b9b0-4d82c21c252a",
+        "resource": "transaction",
+        "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/441b9494"
+      },
+      "amount": {
+        "amount": "10.00",
+        "currency": "USD"
+      },
+      "subtotal": {
+        "amount": "9.99",
+        "currency": "USD"
+      },
+      "created_at": "2017-01-31T20:49:02Z",
+      "updated_at": "2017-01-31T20:49:02Z",
+      "resource": "withdrawal",
+      "resource_path": "/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/withdrawals/67e0eaec",
+      "committed": true,
+      "fee": {
+        "amount": "0.01",
+        "currency": "USD"
+      },
+      "payout_at": null
+}]}"""
+
+TRANSACTIONS_RESPONSE = """{
+"pagination": {
+    "ending_before": null,
+    "starting_after": null,
+    "limit": 25,
+    "order": "desc",
+    "previous_uri": null,
+    "next_uri": null
+},
+"data": [{
+  "id": "id1",
+  "type": "send",
+  "status": "completed",
+  "amount": {
+    "amount": "-0.05770427",
+    "currency": "ETH"
+  },
+  "native_amount": {
+    "amount": "-9.83",
+    "currency": "EUR"
+  },
+  "description": null,
+  "created_at": "2019-08-25T09:42:06Z",
+  "updated_at": "2019-08-25T09:43:42Z",
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/foo/transactions/boo",
+  "instant_exchange": false,
+  "network": {
+    "status": "confirmed",
+    "hash": "0x558bfa4d2a4ef598ddb92233459c00eda9e6c14cda75e6773b90208cb6938169",
+    "transaction_url": "https://etherscan.io/tx/bbb",
+    "transaction_fee": {"amount": "0.00021", "currency": "ETH"},
+    "transaction_amount": {"amount": "0.05749427", "currency": "ETH"},
+    "confirmations": 86
+   },
+    "to": {
+      "resource": "ethereum_address",
+      "address": "0x6dcd6449dbca615e40d696328209686ea95327b2",
+      "currency": "ETH",
+      "address_info": {"address": "0xboo"}
+    },
+    "idem": "zzzz",
+    "details": {"title": "Sent Ethereum", "subtitle": "To Ethereum address"}
+},{
+  "id": "id2",
+  "type": "send",
+  "status": "completed",
+  "amount": {
+    "amount": "-0.05770427",
+    "currency": "ETH"
+  },
+  "native_amount": {
+    "amount": "-9.83",
+    "currency": "EUR"
+  },
+  "description": null,
+  "created_at": "2019-08-25T09:42:06Z",
+  "updated_at": "2019-08-25T09:43:42Z",
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/foo/transactions/coo",
+  "instant_exchange": false,
+    "to": {
+      "resource": "ethereum_address",
+      "address": "0x6dcd6449dbca615e40d696328209686ea95327b2",
+      "currency": "ETH",
+      "address_info": {"address": "0xboo"}
+    },
+    "idem": "zzzz",
+    "details": {"title": "Sent Ethereum", "subtitle": "To Ethereum address"}
+}, {
+  "id": "id3",
+  "type": "send",
+  "status": "completed",
+  "amount": {
+    "amount": "0.10181673",
+    "currency": "BTC"
+  },
+  "native_amount": {
+    "amount": "410.24",
+    "currency": "USD"
+  },
+  "description": null,
+  "created_at": "2017-08-12T16:11:44Z",
+  "updated_at": "2017-08-12T16:21:41Z",
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/boo",
+  "instant_exchange": false,
+  "network": {
+    "status": "confirmed",
+    "status_description": null,
+    "hash": "ccc",
+    "transaction_url":
+    "https://blockchain.info/tx/ccc"
+  },
+  "from": {
+    "resource": "bitcoin_network",
+    "currency": "BTC"
+  },
+  "details": {
+    "title": "Received Bitcoin",
+    "subtitle": "From Bitcoin address",
+    "header": "Received 0.10181673 BTC ($410.24)",
+    "health": "positive"
+  },
+  "hide_native_amount": false
+
+},{
+  "id": "id4",
+  "type": "send",
+  "status": "completed",
+  "amount": {
+    "amount": "0.02762431",
+    "currency": "NMR"
+  },
+  "native_amount": {
+    "amount": "1.01",
+    "currency": "USD"
+  },
+  "description": null,
+  "created_at": "2021-01-05T20:11:54Z",
+  "updated_at": "2021-01-05T20:11:54Z",
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/boo",
+  "instant_exchange": false,
+  "off_chain_status": "completed",
+  "network": {"status": "off_blockchain", "status_description": null},
+  "from": {
+    "id": "idc",
+    "resource": "user",
+    "resource_path": "/v2/users/idc",
+    "currency": "NMR"
+  },
+  "details": {
+    "title": "Received Numeraire",
+    "subtitle": "From Coinbase Earn",
+    "header": "Received 0.02762431 NMR ($1.01)",
+    "health": "positive"
+  },
+  "hide_native_amount": false
+},{
+  "id": "id5",
+  "type": "inflation_reward",
+  "status": "completed",
+  "amount": {
+    "amount": "0.000076",
+    "currency": "ALGO"
+  },
+  "native_amount": {
+    "amount": "0.00",
+    "currency": "USD"
+  },
+  "description": null,
+  "created_at": "2021-01-23T18:23:53Z",
+  "updated_at": "2021-01-23T18:23:53Z",
+  "resource": "transaction",
+  "resource_path": "/v2/accounts/boo",
+  "instant_exchange": false,
+  "from": {
+    "id": "idc",
+    "resource": "user",
+    "resource_path": "/v2/users/idd",
+    "currency": "ALGO"
+  },
+  "details": {
+    "title": "Algorand reward",
+    "subtitle": "From Coinbase",
+    "header": "Received 0.000076 ALGO ($0.00)",
+    "health": "positive"
+  },
+  "hide_native_amount": false
+}]}"""
+
+
+def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argument
+    if 'buys' in url:
+        return MockResponse(200, BUYS_RESPONSE)
+    if 'sells' in url:
+        return MockResponse(200, SELLS_RESPONSE)
+    if 'deposits' in url:
+        return MockResponse(200, DEPOSITS_RESPONSE)
+    if 'withdrawals' in url:
+        return MockResponse(200, WITHDRAWALS_RESPONSE)
+    if 'transactions' in url:
+        return MockResponse(200, TRANSACTIONS_RESPONSE)
+    if 'accounts' in url:
+        # keep it simple just return a single ID and ignore the rest of the fields
+        return MockResponse(200, '{"data": [{"id": "5fs23"}]}')
+    # else
+    raise AssertionError(f'Unexpected url {url} for test')
