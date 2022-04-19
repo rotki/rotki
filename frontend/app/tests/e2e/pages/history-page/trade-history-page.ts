@@ -36,6 +36,13 @@ export class TradeHistoryPage {
       force: true
     });
     cy.get('[data-cy=amount]').type(trade.amount);
+    cy.intercept({
+      method: 'GET',
+      url: '/api/1/tasks/*'
+    }).as('priceTask');
+    cy.wait('@priceTask', { timeout: 30000 })
+      .its('response.statusCode')
+      .should('equal', 200);
     cy.get('[data-cy=rate]')
       .parent()
       .parent()
