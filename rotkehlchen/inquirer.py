@@ -69,6 +69,7 @@ from rotkehlchen.externalapis.xratescom import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.interfaces import PriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
@@ -345,7 +346,10 @@ class Inquirer():
         )
         price = Price(ZERO)
         for oracle, oracle_instance in zip(oracles, oracle_instances):
-            if oracle_instance.rate_limited_in_last() is True:
+            if (
+                isinstance(oracle_instance, PriceOracleInterface) and
+                oracle_instance.rate_limited_in_last() is True
+            ):
                 continue
 
             try:

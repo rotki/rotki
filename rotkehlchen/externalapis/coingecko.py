@@ -15,8 +15,8 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.interfaces import PriceOracleInterface
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date
 

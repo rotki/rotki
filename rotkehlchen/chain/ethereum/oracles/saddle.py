@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from web3.types import BlockIdentifier
 
@@ -9,35 +9,29 @@ from rotkehlchen.constants.ethereum import SADDLE_ALETH_POOL
 from rotkehlchen.errors import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.interfaces import PriceOracleInterface
-from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.types import Price
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 
+# TODO @yabirgb: Move this asset to the assets.py file
 ALETH = EthereumToken('0x0100546F2cD4C9D97f798fFC9755E47865FF7Ee6')
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class SaddleOracle(PriceOracleInterface):
+class SaddleOracle(CurrentPriceOracleInterface):
     """
     Provides logic to use saddle as oracle for certain assets
     """
     def __init__(self, eth_manager: 'EthereumManager'):
-        PriceOracleInterface.__init__(self, oracle_name=self.get_oracle_name())
         self.eth_manager = eth_manager
 
     def get_oracle_name(self) -> str:  # pylint: disable=no-self-use
         return 'saddle'
-
-    def rate_limited_in_last(  # pylint: disable=no-self-use
-            self,
-            seconds: Optional[int] = None,  # pylint: disable=unused-argument
-    ) -> bool:
-        return False  # noop for saddle
 
     def get_price(
         self,
@@ -70,12 +64,3 @@ class SaddleOracle(PriceOracleInterface):
             to_asset=to_asset,
             block_identifier='latest',
         )
-
-    def can_query_history(
-            self,
-            from_asset: Asset,  # pylint: disable=unused-argument
-            to_asset: Asset,  # pylint: disable=unused-argument
-            timestamp: Timestamp,  # pylint: disable=unused-argument
-            seconds: Optional[int] = None,  # pylint: disable=unused-argument
-    ) -> bool:
-        return False

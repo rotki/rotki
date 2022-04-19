@@ -19,7 +19,7 @@ class PriceOracleInterface(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
-        pass
+        ...
 
     @abc.abstractmethod
     def can_query_history(
@@ -30,4 +30,15 @@ class PriceOracleInterface(metaclass=abc.ABCMeta):
             seconds: Optional[int] = None,  # pylint: disable=unused-argument
     ) -> bool:
         """Checks if it's okay to query historical price"""
+        ...
+
+
+class CurrentPriceOracleInterface(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def get_oracle_name(self) -> str:
+        ...
+
+    @abc.abstractmethod
+    def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
         ...

@@ -1,8 +1,9 @@
 import abc
 import logging
 from functools import reduce
+from multiprocessing import Pool
 from operator import mul
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, NamedTuple, Tuple, Union
 
 from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
@@ -10,7 +11,7 @@ from web3.types import BlockIdentifier
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.utils import multicall, multicall_specific
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDT, A_WETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDT, A_WETH, A_USDC, A_USD
 from rotkehlchen.constants.ethereum import (
     UNISWAP_V2_FACTORY,
     UNISWAP_V2_LP_ABI,
@@ -22,9 +23,9 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.interfaces import PriceOracleInterface
-from rotkehlchen.types import ChecksumEthAddress, Price, Timestamp
+from rotkehlchen.types import ChecksumEthAddress, Price
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -34,22 +35,30 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class UniswapOracle(PriceOracleInterface):
+class PoolPrice(NamedTuple):
+    price: FVal
+    token_0: EthereumToken
+    token_1: EthereumToken
+
+    def swap_tokens(self) -> 'PoolPrice':
+        return PoolPrice(
+            price = 1 / self.price,
+            token_0 = self.token_1,
+            token_1 = self.token_0,
+        )
+
+
+class UniswapOracle(CurrentPriceOracleInterface):
     """
     Provides shared logic between Uniswap V2 and Uniswap V3 to use them as price oracles.
     """
     def __init__(self, eth_manager: 'EthereumManager'):
-        super().__init__(oracle_name=self.get_oracle_name())
         self.eth_manager = eth_manager
         self.routing_assets = [
             A_WETH,
             A_DAI,
             A_USDT,
         ]
-
-    @abc.abstractmethod
-    def get_oracle_name(self) -> str:
-        ...
 
     @abc.abstractmethod
     def get_pool(
@@ -65,26 +74,18 @@ class UniswapOracle(PriceOracleInterface):
         self,
         pool_addr: ChecksumEthAddress,
         block_identifier: BlockIdentifier = 'latest',
-    ) -> Tuple[FVal, EthereumToken, EthereumToken]:
+    ) -> PoolPrice:
         """Returns the price for the tokens in the given pool and the token0 and
         token1 of the pool
         """
         ...
 
-    def rate_limited_in_last(  # pylint: disable=no-self-use
-            self,
-            seconds: Optional[int] = None,  # pylint: disable=unused-argument
-    ) -> bool:
-        return False  # noop for uniswap
-
-    def can_query_history(  # pylint: disable=no-self-use
-        self,
-        from_asset: Asset,  # pylint: disable=unused-argument
-        to_asset: Asset,  # pylint: disable=unused-argument
-        timestamp: Timestamp,  # pylint: disable=unused-argument
-        seconds: Optional[int] = None,  # pylint: disable=unused-argument
-    ) -> bool:
-        return False  # noop for uniswap oracles atm
+    def _find_pool_for(self, asset, link_asset, path: List[str]) -> bool:
+        pools = self.get_pool(asset, link_asset)
+        for pool in pools:
+            if pool != ZERO_ADDRESS:
+                path.append(pool)
+                return True
 
     def find_route(self, from_asset: EthereumToken, to_asset: EthereumToken) -> List[str]:
         """
@@ -94,59 +95,62 @@ class UniswapOracle(PriceOracleInterface):
         output = []
         # If any of the assets is in the glue assets let's see if we find any path
         # (avoids iterating the list of glue assets)
-        if to_asset in self.routing_assets or from_asset in self.routing_assets:
-            pools = self.get_pool(from_asset, to_asset)
-            for pool in pools:
-                if pool != ZERO_ADDRESS:
-                    return [pool]
+        if any(x in self.routing_assets for x in (to_asset, from_asset)):
+            output = []
+            found_path = self._find_pool_for(
+                asset=from_asset,
+                link_asset=to_asset,
+                path=output,
+            )
+            if found_path:
+                return output
 
         if from_asset == to_asset:
             return []
 
         # Try to find one asset that can be used between from_asset and to_asset
+        # from_asset < first link > glue asset < second link > to_asset
         link_asset = None
         found_first_link, found_second_link = False, False
         for asset in self.routing_assets:
             if asset != from_asset:
-                pools = self.get_pool(from_asset, asset)
-                for pool in pools:
-                    if pool != ZERO_ADDRESS:
-                        found_first_link = True
-                        output.append(pool)
-                        link_asset = asset
-                        break
+                found_first_link = self._find_pool_for(
+                    asset=from_asset,
+                    link_asset=asset,
+                    path=output,
+                )
                 if found_first_link:
-                    # If we have an asset lets see if we can pair with to_asset
-                    assert link_asset is not None
-                    pools = self.get_pool(link_asset, to_asset)
-                    for pool in pools:
-                        if pool != ZERO_ADDRESS:
-                            found_second_link = True
-                            output.append(pool)
-                            break
+                    link_asset = asset
+                    found_second_link = self._find_pool_for(
+                        asset=to_asset,
+                        link_asset=link_asset,
+                        path=output,
+                    )
                     if found_second_link:
                         return output
 
-        # if we reach this point it means that we need 2 more jumps
         if not found_first_link:
             return []
 
+        # if we reach this point it means that we need 2 more jumps
+        # from asset <1st link> glue asset A <2nd link> glue asset B <3rd link> to asset
+        # find now the part for glue asset B <3rd link> to asset
         second_link_asset = None
         for asset in self.routing_assets:
             if asset != to_asset:
-                pools = self.get_pool(asset, to_asset)
-                for pool in pools:
-                    if pool != ZERO_ADDRESS:
-                        found_second_link = True
-                        second_link_asset = asset
-                        output.append(pool)
-                        break
+                found_second_link = self._find_pool_for(
+                    asset=to_asset,
+                    link_asset=asset,
+                    path=output,
+                )
                 if found_second_link:
+                    second_link_asset = asset
                     break
 
         if not found_second_link:
             return []
 
+        # finally find the step of glue asset A <2nd link> glue asset B
         assert second_link_asset is not None
         assert link_asset is not None
         pools = self.get_pool(link_asset, second_link_asset)
@@ -171,11 +175,10 @@ class UniswapOracle(PriceOracleInterface):
         - PriceQueryUnsupportedAsset
         - RemoteError
         """
-        log.debug(f'Searching price for {from_asset} to {to_asset} at {block_identifier!r}')
-        if not (from_asset.is_eth_token() or to_asset.is_eth_token()):
-            raise PriceQueryUnsupportedAsset(
-                f'Neither {from_asset} nor {to_asset} are ethereum tokens for the uniswap oracle',
-            )
+        log.debug(
+            f'Searching price for {from_asset} to {to_asset} at '
+            f'{block_identifier!r} with {self.get_oracle_name()}'
+        )
 
         # Use weth internally
         if from_asset == A_ETH:
@@ -186,28 +189,29 @@ class UniswapOracle(PriceOracleInterface):
         if from_asset == to_asset:
             return Price(ONE)
 
-        # If we are working with tokens and not ETH just make as if we want to go from eth/to eth
-        # and then find the price of asset <=> eth from a different oracle
-        from_asset_aux: Union[Asset, EthereumToken] = from_asset
-        to_asset_aux: Union[Asset, EthereumToken] = to_asset
-        if not from_asset.is_eth_token():
-            from_asset_aux = A_WETH
-        else:
-            from_as_token = EthereumToken.from_identifier(from_asset_aux.identifier)
-            if from_as_token is None:
-                raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {from_asset_aux}')
-            from_asset_aux = from_as_token
-        if not to_asset.is_eth_token():
-            to_asset_aux = A_WETH
-        else:
-            to_as_token = EthereumToken.from_identifier(to_asset_aux.identifier)
-            if to_as_token is None:
-                raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {to_asset_aux}')
-            to_asset_aux = to_as_token
+        if not (from_asset.is_eth_token() and to_asset.is_eth_token()):
+            raise PriceQueryUnsupportedAsset(
+                f'Neither {from_asset} nor {to_asset} are ethereum tokens for the uniswap oracle',
+            )
 
-        assert isinstance(from_asset_aux, EthereumToken), f'Got non valid token {from_asset_aux}'
-        assert isinstance(to_asset_aux, EthereumToken), f'Found non valid token {to_asset_aux}'
-        route = self.find_route(from_asset_aux, to_asset_aux)
+        # Could be that we are dealing with ethereum tokens as intances of Asset instead of
+        # EthereumToken, handle the conversion
+        from_asset_raw: Union[Asset, EthereumToken] = from_asset
+        to_asset_raw: Union[Asset, EthereumToken] = to_asset
+        if not isinstance(from_asset, EthereumToken):
+            from_as_token = EthereumToken.from_identifier(from_asset_raw.identifier)
+            if from_as_token is None:
+                raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {from_asset_raw}')
+            from_asset = from_as_token
+        if not isinstance(to_asset, EthereumToken):
+            to_as_token = EthereumToken.from_identifier(to_asset_raw.identifier)
+            if to_as_token is None:
+                raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {to_asset_raw}')
+            to_asset = to_as_token
+
+        assert isinstance(from_asset, EthereumToken), f'Got non valid token {from_asset}'
+        assert isinstance(to_asset, EthereumToken), f'Found non valid token {to_asset}'
+        route = self.find_route(from_asset_raw, to_asset_raw)
 
         if len(route) == 0:
             log.debug(f'Failed to find price for {from_asset} to {to_asset}')
@@ -222,56 +226,34 @@ class UniswapOracle(PriceOracleInterface):
                 ),
             )
 
-        # Looking at which one is token0 and token1 we need to see if we need price or
-        # 1/price (the price from going token0->token1)
-        if prices_and_tokens[0][2] != from_asset:
-            prices_and_tokens[0] = (
-                1 / prices_and_tokens[0][0],
-                prices_and_tokens[0][2],
-                prices_and_tokens[0][1],
-            )
+        # Looking at which one is token0 and token1 we need to see if we need price or 1/price
+        if prices_and_tokens[0].token_0 != from_asset:
+            prices_and_tokens[0] = prices_and_tokens[0].swap_tokens()
 
         # For the possible intermediate steps also make sure that we use the correct price
-        for pos, item in enumerate(prices_and_tokens[:-1]):
-            if item[2] != prices_and_tokens[pos + 1][1]:
-                prices_and_tokens[pos] = (
-                    1 / item[0],
-                    item[2],
-                    item[1],
-                )
+        for pos, item in enumerate(prices_and_tokens[1:-1]):
+            if item.token_0 != prices_and_tokens[pos - 1].token_1:
+                prices_and_tokens[pos-1] = prices_and_tokens[pos-1].swap_tokens()
 
         # Finally for the tail query the price
-        if prices_and_tokens[-1][2] != to_asset:
-            prices_and_tokens[-1] = (
-                1 / prices_and_tokens[-1][0],
-                prices_and_tokens[-1][2],
-                prices_and_tokens[-1][1],
-            )
+        if prices_and_tokens[-1].token_1 != to_asset:
+            prices_and_tokens[-1] = prices_and_tokens[-1].swap_tokens()
 
-        price = FVal(reduce(mul, [item[0] for item in prices_and_tokens], 1))
-        if not from_asset.is_eth_token():
-            price = price * Inquirer().find_price(from_asset, A_ETH)
-
-        if not to_asset.is_eth_token():
-            price = price * Inquirer().find_price(A_ETH, to_asset)
-
+        price = FVal(reduce(mul, [item.price for item in prices_and_tokens], 1))
         return Price(price)
 
     def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
+        if to_asset == A_USD:
+            to_asset = A_USDC
+        elif from_asset == A_USD:
+            from_asset = A_USDC
+        
         return self.get_price(
             from_asset=from_asset,
             to_asset=to_asset,
             block_identifier='latest',
         )
 
-    def can_query_history(
-            self,
-            from_asset: Asset,  # pylint: disable=unused-argument
-            to_asset: Asset,  # pylint: disable=unused-argument
-            timestamp: Timestamp,  # pylint: disable=unused-argument
-            seconds: Optional[int] = None,  # pylint: disable=unused-argument
-    ) -> bool:
-        return False
 
 class UniswapV3Oracle(UniswapOracle):
 
@@ -300,7 +282,7 @@ class UniswapV3Oracle(UniswapOracle):
         self,
         pool_addr: ChecksumEthAddress,
         block_identifier: BlockIdentifier = 'latest',
-    ) -> Tuple[FVal, EthereumToken, EthereumToken]:
+    ) -> PoolPrice:
         """
         Returns the units of token1 that one token0 can buy
         """
@@ -338,7 +320,7 @@ class UniswapV3Oracle(UniswapOracle):
 
         price = (sqrt_price_x96 * sqrt_price_x96) / 2 ** (192) * decimals_constant
 
-        return (price, token_0, token_1)
+        return PoolPrice(price=price, token_0=token_0, token_1=token_1)
 
 
 class UniswapV2Oracle(UniswapOracle):
@@ -365,7 +347,7 @@ class UniswapV2Oracle(UniswapOracle):
         self,
         pool_addr: ChecksumEthAddress,
         block_identifier: BlockIdentifier = 'latest',
-    ) -> Tuple[FVal, EthereumToken, EthereumToken]:
+    ) -> PoolPrice:
         """
         Returns the units of token1 that one token0 can buy
         """
@@ -403,4 +385,4 @@ class UniswapV2Oracle(UniswapOracle):
 
         price = (reserve_1 / reserve_0) * decimals_constant
 
-        return (price, token_0, token_1)
+        return PoolPrice(price=price, token_0=token_0, token_1=token_1)

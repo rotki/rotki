@@ -49,8 +49,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.interfaces import PriceOracleInterface
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import pairwise, ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
@@ -223,7 +223,7 @@ class Cryptocompare(ExternalServiceWithApiKey, PriceOracleInterface):
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
-            seconds: int = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
+            seconds: Optional[int] = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
     ) -> bool:
         """Checks if it's okay to query cryptocompare historical price. This is determined by:
 
@@ -246,8 +246,14 @@ class Cryptocompare(ExternalServiceWithApiKey, PriceOracleInterface):
         )
         return can_query
 
-    def rate_limited_in_last(self, seconds: int = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME) -> bool:
+    def rate_limited_in_last(
+        self,
+        seconds: Optional[int] = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
+    ) -> bool:
         """Checks when we were last rate limited by CC and if it was within the given seconds"""
+        if seconds is None:
+            return False
+
         return ts_now() - self.last_rate_limit <= seconds
 
     def set_database(self, database: 'DBHandler') -> None:
