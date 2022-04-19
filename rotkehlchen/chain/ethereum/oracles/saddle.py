@@ -6,7 +6,7 @@ from web3.types import BlockIdentifier
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.ethereum import SADDLE_ALETH_POOL
-from rotkehlchen.errors import PriceQueryUnsupportedAsset
+from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
@@ -17,8 +17,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 
-# TODO @yabirgb: Move this asset to the assets.py file
-ALETH = EthereumToken('0x0100546F2cD4C9D97f798fFC9755E47865FF7Ee6')
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -40,7 +38,9 @@ class SaddleOracle(CurrentPriceOracleInterface):
         block_identifier: BlockIdentifier,
     ) -> Price:
         log.debug(f'Querying saddle for price of {from_asset} to {to_asset}')
-        if from_asset != ALETH:
+        # TODO @yabirgb: Move this asset to the assets.py file
+        aleth = EthereumToken('0x0100546F2cD4C9D97f798fFC9755E47865FF7Ee6')
+        if from_asset != aleth:
             raise PriceQueryUnsupportedAsset(
                 f'{from_asset} is not a valid asset for the Saddle oracle',
             )

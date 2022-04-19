@@ -1,8 +1,9 @@
 import pytest
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_1INCH, A_AAVE, A_BTC, A_DOGE, A_ETH, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
-from rotkehlchen.errors import PriceQueryUnsupportedAsset
+from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.types import Price
 
@@ -26,8 +27,14 @@ def test_uniswap_oracles_asset_to_asset(inquirer_defi):
         inquirer_defi.set_oracles_order(oracles=[CurrentPriceOracle.UNISWAPV3])
         price = inquirer_defi._uniswapv2.query_current_price(A_1INCH, A_AAVE)
         assert (inch_price / aave_price).is_close(price, max_diff='0.01')
-        assert inquirer_defi.find_usd_price(A_AAVE, ignore_cache=True).is_close(aave_price, max_diff='3')
+        defi_price = inquirer_defi.find_usd_price(A_AAVE, ignore_cache=True)
+        assert defi_price.is_close(aave_price, max_diff='3')
 
+        # test with ethereum tokens but as assets instead of instance of the EthereumToken class
+        a1inch = Asset(A_1INCH.identifier)
+        aaave = Asset(A_AAVE.identifier)
+        price_as_assets = inquirer_defi._uniswapv2.query_current_price(a1inch, aaave)
+        assert price_as_assets.is_close(price, max_diff='0.01')
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

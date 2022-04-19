@@ -7,8 +7,6 @@ import requests
 
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
-from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -23,17 +21,15 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.coingecko import Coingecko
-from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
     CURRENT_PRICE_CACHE_SECS,
-    DEFAULT_CURRENT_PRICE_ORACLES_ORDER,
     CurrentPriceOracle,
     _query_currency_converterapi,
 )
+from rotkehlchen.interfaces import PriceOracleInterface
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -217,33 +213,6 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
         assert price == Price(FVal('2'))
 
 
-def test_all_common_methods_implemented():
-    """Test all current price oracles implement the expected methods.
-    """
-    for oracle in DEFAULT_CURRENT_PRICE_ORACLES_ORDER:
-        if oracle == CurrentPriceOracle.COINGECKO:
-            instance = Coingecko
-        elif oracle == CurrentPriceOracle.CRYPTOCOMPARE:
-            instance = Cryptocompare
-        elif oracle == CurrentPriceOracle.UNISWAPV2:
-            instance = UniswapV2Oracle
-        elif oracle == CurrentPriceOracle.UNISWAPV3:
-            instance = UniswapV3Oracle
-        elif oracle == CurrentPriceOracle.SADDLE:
-            instance = SaddleOracle
-        else:
-            raise AssertionError(
-                f'Unexpected current price oracle: {oracle}. Update this test',
-            )
-
-        # Check 'rate_limited_in_last' method exists
-        assert hasattr(instance, 'rate_limited_in_last')
-        assert callable(instance.rate_limited_in_last)
-        # Check 'query_historical_price' method exists
-        assert hasattr(instance, 'query_current_price')
-        assert callable(instance.query_current_price)
-
-
 def test_set_oracles_order(inquirer):
     inquirer.set_oracles_order([CurrentPriceOracle.COINGECKO])
 
@@ -257,7 +226,9 @@ def test_find_usd_price_all_rate_limited_in_last(inquirer):  # pylint: disable=u
     """Test zero price is returned when all the oracles have exceeded the rate
     limits requesting the USD price of an asset.
     """
-    inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
+    inquirer._oracle_instances = [
+        MagicMock() for oracle in inquirer._oracles if isinstance(oracle, PriceOracleInterface)
+    ]
 
     for oracle_instance in inquirer._oracle_instances:
         oracle_instance.rate_limited_in_last.return_value = True

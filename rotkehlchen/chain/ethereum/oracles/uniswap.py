@@ -1,9 +1,8 @@
 import abc
 import logging
 from functools import reduce
-from multiprocessing import Pool
 from operator import mul
-from typing import TYPE_CHECKING, List, NamedTuple, Tuple, Union
+from typing import TYPE_CHECKING, List, NamedTuple, Union
 
 from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
@@ -11,7 +10,7 @@ from web3.types import BlockIdentifier
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.utils import multicall, multicall_specific
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDT, A_WETH, A_USDC, A_USD
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USD, A_USDC, A_USDT, A_WETH
 from rotkehlchen.constants.ethereum import (
     UNISWAP_V2_FACTORY,
     UNISWAP_V2_LP_ABI,
@@ -20,9 +19,9 @@ from rotkehlchen.constants.ethereum import (
     ZERO_ADDRESS,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
-from rotkehlchen.errors import PriceQueryUnsupportedAsset
+from rotkehlchen.errors.defi import DefiPoolError
+from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, Price
@@ -42,9 +41,9 @@ class PoolPrice(NamedTuple):
 
     def swap_tokens(self) -> 'PoolPrice':
         return PoolPrice(
-            price = 1 / self.price,
-            token_0 = self.token_1,
-            token_1 = self.token_0,
+            price=1 / self.price,
+            token_0=self.token_1,
+            token_1=self.token_0,
         )
 
 
@@ -80,19 +79,26 @@ class UniswapOracle(CurrentPriceOracleInterface):
         """
         ...
 
-    def _find_pool_for(self, asset, link_asset, path: List[str]) -> bool:
+    def _find_pool_for(
+        self,
+        asset: EthereumToken,
+        link_asset: EthereumToken,
+        path: List[str],
+    ) -> bool:
         pools = self.get_pool(asset, link_asset)
         for pool in pools:
             if pool != ZERO_ADDRESS:
                 path.append(pool)
                 return True
 
+        return False
+
     def find_route(self, from_asset: EthereumToken, to_asset: EthereumToken) -> List[str]:
         """
         Calculate the path needed to go from from_asset to to_asset and return a
         list of the pools needed to jump through to do that.
         """
-        output = []
+        output: List[str] = []
         # If any of the assets is in the glue assets let's see if we find any path
         # (avoids iterating the list of glue assets)
         if any(x in self.routing_assets for x in (to_asset, from_asset)):
@@ -177,7 +183,7 @@ class UniswapOracle(CurrentPriceOracleInterface):
         """
         log.debug(
             f'Searching price for {from_asset} to {to_asset} at '
-            f'{block_identifier!r} with {self.get_oracle_name()}'
+            f'{block_identifier!r} with {self.get_oracle_name()}',
         )
 
         # Use weth internally
@@ -211,7 +217,7 @@ class UniswapOracle(CurrentPriceOracleInterface):
 
         assert isinstance(from_asset, EthereumToken), f'Got non valid token {from_asset}'
         assert isinstance(to_asset, EthereumToken), f'Found non valid token {to_asset}'
-        route = self.find_route(from_asset_raw, to_asset_raw)
+        route = self.find_route(from_asset, to_asset)
 
         if len(route) == 0:
             log.debug(f'Failed to find price for {from_asset} to {to_asset}')
@@ -233,7 +239,7 @@ class UniswapOracle(CurrentPriceOracleInterface):
         # For the possible intermediate steps also make sure that we use the correct price
         for pos, item in enumerate(prices_and_tokens[1:-1]):
             if item.token_0 != prices_and_tokens[pos - 1].token_1:
-                prices_and_tokens[pos-1] = prices_and_tokens[pos-1].swap_tokens()
+                prices_and_tokens[pos - 1] = prices_and_tokens[pos - 1].swap_tokens()
 
         # Finally for the tail query the price
         if prices_and_tokens[-1].token_1 != to_asset:
@@ -247,7 +253,7 @@ class UniswapOracle(CurrentPriceOracleInterface):
             to_asset = A_USDC
         elif from_asset == A_USD:
             from_asset = A_USDC
-        
+
         return self.get_price(
             from_asset=from_asset,
             to_asset=to_asset,
