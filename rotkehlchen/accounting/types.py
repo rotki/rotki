@@ -114,7 +114,7 @@ class MissingAcquisition(NamedTuple):
 
     def serialize(self) -> Dict[str, Union[str, int]]:
         return {
-            'asset': str(self.asset),
+            'asset': self.asset.identifier,
             'time': self.time,
             'found_amount': str(self.found_amount),
             'missing_amount': str(self.missing_amount),
@@ -128,7 +128,7 @@ class MissingPrice(NamedTuple):
 
     def serialize(self) -> Dict[str, Union[str, int]]:
         return {
-            'from_asset': str(self.from_asset),
-            'to_asset': str(self.to_asset),
+            'from_asset': self.from_asset.identifier,
+            'to_asset': self.to_asset.identifier,
             'time': self.time,
         }

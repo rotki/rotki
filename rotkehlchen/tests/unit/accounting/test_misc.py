@@ -11,7 +11,6 @@ from rotkehlchen.tests.utils.accounting import accounting_history_process, check
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import Location, Timestamp, TradeType
-from rotkehlchen.utils.misc import timestamp_to_date
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -127,15 +126,8 @@ def test_fees_count_in_cost_basis(accountant):
         AccountingEventType.FEE: PNL(taxable=FVal('-300.630'), free=ZERO),
     })
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_ETH) is None
-    error = (
-        f'No documented acquisition found for ETH(Ethereum) before '
-        f'{timestamp_to_date(1625001464, treat_as_local=True)}. '
-        f'Let rotki know how you acquired it via a ledger action'
-    )
     warnings = accountant.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
-    errors = accountant.msg_aggregator.consume_errors()
-    assert errors == [error]
     check_pnls_and_csv(accountant, expected_pnls)
 
 

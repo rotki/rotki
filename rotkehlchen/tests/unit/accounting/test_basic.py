@@ -232,10 +232,11 @@ def test_sell_fiat_for_crypto(accountant):
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_asset_and_price_not_found_in_history_processing(accountant):
     """
-    Make sure that in history processing if no price is found for a trade it's skipped
-    and an error is logged.
+    Make sure that in history processing if no price is found for a trade it's added to a
+    `missing_prices` list and no error is logged.
 
     Regression for https://github.com/rotki/rotki/issues/432
+    Updated with https://github.com/rotki/rotki/pull/4196
     """
     fgp = EthereumToken('0xd9A8cfe21C232D485065cb62a96866799d4645f7')
     history = [Trade(
@@ -257,6 +258,4 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
         history_list=history,
     )
     errors = accountant.msg_aggregator.consume_errors()
-    assert len(errors) == 2
-    assert 'No documented acquisition found for BTC' in errors[0]
-    assert 'due to inability to find a price at that point in time' in errors[1]
+    assert len(errors) == 0

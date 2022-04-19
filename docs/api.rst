@@ -4386,7 +4386,7 @@ Get missing acquisitions and prices
    .. note::
       This endpoint should be called after getting a PnL report data.
 
-   Doing a GET on the this endpoint will return all missing acquisitions and prices discovered during generation of a PnL report.
+   Doing a GET on the this endpoint will return all missing acquisitions and missing prices encountered during generation of the last PnL report.
 
 
    **Example Request**:
@@ -4409,25 +4409,25 @@ Get missing acquisitions and prices
         "result": {
             "missing_acquisitions": [
               {
-                "asset": "BTC(Bitcoin)",
+                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359v",
                 "time": 1428994442,
                 "found_amount": "0",
                 "missing_amount": "0.1"
               },
               {
-                "asset": "ETH(Ethereum)",
+                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
                 "time": 1439048640,
                 "found_amount": "0",
                 "missing_amount": "14.36963"
               },
               {
-                "asset": "ETH(Ethereum)",
+                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
                 "time": 1439994442,
                 "found_amount": "0",
                 "missing_amount": "0.0035000000"
               },
               {
-                "asset": "ETH(Ethereum)",
+                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
                 "time": 1439994442,
                 "found_amount": "0",
                 "missing_amount": "1.7500"
@@ -4435,8 +4435,8 @@ Get missing acquisitions and prices
             ],
           "missing_prices": [
             {
-              "from_asset": "ETH(Ethereum)",
-              "to_asset": "AVAX(Avalanche)",
+              "from_asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+              "to_asset": "AVAX",
               "time": 1439994442,
             }
           ]
@@ -4444,12 +4444,15 @@ Get missing acquisitions and prices
         "message": ""
       }
 
-   :resjson str asset: The asset that is involved in the event.
-   :resjson int time: The timestamp this event took place in.
-   :resjson str found_amount: The amount found from an acquistion event for a spend.
-   :resjson str missing_amount: The amount undiscovered for a particular spend.
-   :resjson str from_asset: The quote asset being converted from.
-   :resjson str to_asset: The base asset being converted to.
+   :resjson object result: An object with missing acquisitions and prices data.
+   :resjson list missing_prices: A list that contains entries of missing prices found during PnL reporting.
+   :resjsonarr str from_asset: The asset whose price is missing.
+   :resjsonarr str to_asset: The asset in which we want the price of from_asset.
+   :resjson list missing_acquisitions: A list that contains entries of missing acquisitions found during PnL reporting.
+   :resjsonarr str asset: The asset that is involved in the event.
+   :resjsonarr int time: The timestamp this event took place in.
+   :resjsonarr str found_amount: The matching amount found from an acquisition event for a spend.
+   :resjsonarr str missing_amount: The corresponding acquisition amount we can't find for a particular spend.
 
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.

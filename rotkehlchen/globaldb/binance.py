@@ -2,7 +2,8 @@ import logging
 import sqlite3
 from typing import TYPE_CHECKING, Iterable, List
 
-from rotkehlchen.errors import DeserializationError, InputError
+from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import BinancePair
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
