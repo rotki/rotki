@@ -11,7 +11,7 @@ import requests
 from rotkehlchen.assets.asset import Asset, EthereumToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
-from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.tests.utils.api import (

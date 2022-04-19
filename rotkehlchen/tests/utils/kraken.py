@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from rotkehlchen.assets.asset import WORLD_TO_KRAKEN
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import TradeType
 from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken
 from rotkehlchen.fval import FVal

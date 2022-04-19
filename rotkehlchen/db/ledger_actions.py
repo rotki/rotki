@@ -6,7 +6,8 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.constants.limits import FREE_LEDGER_ACTIONS_LIMIT
 from rotkehlchen.db.filtering import LedgerActionsFilterQuery
-from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
 

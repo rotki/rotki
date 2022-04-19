@@ -14,7 +14,9 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import DeserializationError, UnknownAsset, XPUBError
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import XPUBError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPriceOracle

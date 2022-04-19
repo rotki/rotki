@@ -20,7 +20,8 @@ from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.settings import DBSettings
-from rotkehlchen.errors import DeserializationError, InputError
+from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now

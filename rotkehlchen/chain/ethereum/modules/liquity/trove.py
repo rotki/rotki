@@ -17,7 +17,8 @@ from rotkehlchen.chain.ethereum.graph import (
 from rotkehlchen.chain.ethereum.utils import multicall_2, token_normalized_value_decimals
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD, A_USD
 from rotkehlchen.constants.ethereum import LIQUITY_TROVE_MANAGER
-from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
+from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer

@@ -16,7 +16,7 @@ from typing import (
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
 
-from rotkehlchen.errors import DeserializationError  # lgtm [py/unsafe-cyclic-import]  # noqa: E501
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]

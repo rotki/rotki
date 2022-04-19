@@ -39,13 +39,8 @@ from rotkehlchen.data.importer import DataImporter
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
-from rotkehlchen.errors import (
-    EthSyncError,
-    InputError,
-    PremiumAuthenticationError,
-    RemoteError,
-    SystemPermissionError,
-)
+from rotkehlchen.errors.api import PremiumAuthenticationError
+from rotkehlchen.errors.misc import EthSyncError, InputError, RemoteError, SystemPermissionError
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko

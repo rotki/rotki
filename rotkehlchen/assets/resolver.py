@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb import GlobalDBHandler
 
 from .types import AssetData

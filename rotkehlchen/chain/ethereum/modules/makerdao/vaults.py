@@ -70,7 +70,8 @@ from rotkehlchen.constants.ethereum import (
     RAY_DIGITS,
 )
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
-from rotkehlchen.errors import DeserializationError, RemoteError
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.inquirer import Inquirer

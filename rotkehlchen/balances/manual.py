@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import InputError, RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.types import Location, Price

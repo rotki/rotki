@@ -10,7 +10,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_CRV, A_ETH, A_EUR, A_KFEE, A_LINK, A_USD
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal

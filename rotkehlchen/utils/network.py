@@ -8,7 +8,7 @@ import requests
 
 from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
-from rotkehlchen.errors import RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)

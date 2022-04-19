@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, DefaultDict, Dict, Tuple
 
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import InputError
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.misc import combine_dicts
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn

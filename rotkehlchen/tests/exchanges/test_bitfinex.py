@@ -14,7 +14,7 @@ from rotkehlchen.assets.converters import (
     asset_from_bitfinex,
 )
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD, A_USDT, A_WBTC
-from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bitfinex import (
     API_ERR_AUTH_NONCE_CODE,
     API_ERR_AUTH_NONCE_MESSAGE,

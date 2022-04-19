@@ -4,7 +4,7 @@ import os
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from rotkehlchen.errors import UnableToDecryptRemoteData
+from rotkehlchen.errors.misc import UnableToDecryptRemoteData
 
 AES_BLOCK_SIZE = 16
 

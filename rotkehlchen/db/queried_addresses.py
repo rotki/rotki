@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors import InputError
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.types import AVAILABLE_MODULES_MAP, ChecksumAddress, ModuleName
 
 

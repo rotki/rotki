@@ -5,7 +5,7 @@ import pytest
 
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.errors import (
+from rotkehlchen.errors.api import (
     IncorrectApiKeyFormat,
     PremiumAuthenticationError,
     RotkehlchenPermissionError,

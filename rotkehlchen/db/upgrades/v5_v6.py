@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rotkehlchen.crypto import sha3
-from rotkehlchen.errors import DBUpgradeError
+from rotkehlchen.errors.misc import DBUpgradeError
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

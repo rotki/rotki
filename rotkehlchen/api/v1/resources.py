@@ -981,6 +981,11 @@ class HistoryProcessingResource(BaseResource):
         )
 
 
+class HistoryActionableItemsResource(BaseResource):
+    def get(self) -> Response:
+        return self.rest_api.get_history_actionable_items()
+
+
 class AccountingReportsResource(BaseResource):
 
     get_schema = AccountingReportsSchema(required_report_id=False)

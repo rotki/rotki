@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.errors import SystemPermissionError
+from rotkehlchen.errors.misc import SystemPermissionError
 
 
 def _user_creation_and_login(username, password, data_dir, msg_aggregator):

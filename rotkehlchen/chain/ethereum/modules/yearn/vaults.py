@@ -51,7 +51,7 @@ from rotkehlchen.constants.ethereum import (
     ZERO_ADDRESS,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer

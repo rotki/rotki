@@ -67,6 +67,7 @@ from rotkehlchen.api.v1.resources import (
     ExchangesResource,
     ExternalServicesResource,
     HistoricalAssetsPriceResource,
+    HistoryActionableItemsResource,
     HistoryBaseEntryResource,
     HistoryDownloadingResource,
     HistoryExportingResource,
@@ -184,6 +185,7 @@ URLS_V1: URLS = [
     ('/history/export/', HistoryExportingResource),
     ('/history/download/', HistoryDownloadingResource),
     ('/history/events', HistoryBaseEntryResource),
+    ('/history/actionable_items', HistoryActionableItemsResource),
     ('/reports/', AccountingReportsResource),
     (
         '/reports/<int:report_id>',

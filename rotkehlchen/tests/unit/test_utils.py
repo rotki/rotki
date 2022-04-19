@@ -9,7 +9,7 @@ from eth_utils import to_checksum_address
 from hexbytes import HexBytes
 
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
-from rotkehlchen.errors import ConversionError
+from rotkehlchen.errors.serialization import ConversionError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_date
 from rotkehlchen.serialization.serialize import process_result

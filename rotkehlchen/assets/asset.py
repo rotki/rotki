@@ -10,7 +10,8 @@ from rotkehlchen.constants.resolver import (
     ethaddress_to_identifier,
     strethaddress_to_identifier,
 )
-from rotkehlchen.errors import DeserializationError, UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, Timestamp

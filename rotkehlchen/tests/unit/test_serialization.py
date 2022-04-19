@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance, add_manually_tracked_balances
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_int_from_hex_or_int
 from rotkehlchen.types import Location, TradeType

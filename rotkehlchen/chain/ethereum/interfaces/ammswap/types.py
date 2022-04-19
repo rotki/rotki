@@ -8,7 +8,7 @@ from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.trades import AMMTrade
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter

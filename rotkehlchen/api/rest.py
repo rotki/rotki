@@ -85,26 +85,27 @@ from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import DBSnapshot
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
-from rotkehlchen.errors import (
+from rotkehlchen.errors.api import (
     AuthenticationError,
-    DBUpgradeError,
-    DeserializationError,
-    EthSyncError,
     IncorrectApiKeyFormat,
-    InputError,
-    ModuleInactive,
-    NoPriceForGivenTimestamp,
     PremiumApiError,
     PremiumAuthenticationError,
     PremiumPermissionError,
-    RemoteError,
     RotkehlchenPermissionError,
+)
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.misc import (
+    DBUpgradeError,
+    EthSyncError,
+    InputError,
+    ModuleInactive,
+    RemoteError,
     SystemPermissionError,
     TagConstraintError,
     UnableToDecryptRemoteData,
-    UnknownAsset,
-    UnsupportedAsset,
 )
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.manager import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
@@ -1646,6 +1647,21 @@ class RestAPI():
         status_code = _get_status_code_from_async_response(response)
         result_dict = _wrap_in_result(result=result, message=msg)
         return api_response(result_dict, status_code=status_code)
+
+    @require_loggedin_user()
+    def get_history_actionable_items(self) -> Response:
+        missing_acquisitions = self.rotkehlchen.accountant.pots[0].cost_basis.missing_acquisitions
+        missing_prices = self.rotkehlchen.accountant.pots[0].cost_basis.missing_prices
+
+        processed_missing_acquisitions = [entry.serialize() for entry in missing_acquisitions]
+        processed_missing_prices = [entry.serialize() for entry in missing_prices]
+        result_dict = _wrap_in_ok_result(
+            {
+                'missing_acquisitions': processed_missing_acquisitions,
+                'missing_prices': processed_missing_prices,
+            },
+        )
+        return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @require_loggedin_user()
     def export_processed_history_csv(self, directory_path: Path) -> Response:

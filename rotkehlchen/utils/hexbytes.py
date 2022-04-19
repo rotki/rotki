@@ -6,7 +6,7 @@ from typing import Type, Union, cast, overload
 
 from hexbytes import HexBytes as Web3HexBytes
 
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 
 
 def hexstring_to_bytes(hexstr: str) -> bytes:

@@ -8,7 +8,7 @@ from rotkehlchen.assets.asset import WORLD_TO_FTX, Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_FTX_ASSETS, asset_from_ftx
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_USD, A_USDC
-from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.ftx import Ftx
 from rotkehlchen.fval import FVal

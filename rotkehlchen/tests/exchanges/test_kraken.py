@@ -25,7 +25,8 @@ from rotkehlchen.constants.assets import (
     A_XRP,
 )
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
-from rotkehlchen.errors import DeserializationError, UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken, kraken_to_world_pair
 from rotkehlchen.fval import FVal

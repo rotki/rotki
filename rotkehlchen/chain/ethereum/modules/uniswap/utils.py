@@ -16,7 +16,8 @@ from rotkehlchen.chain.ethereum.utils import multicall, multicall_2
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.ethereum import UNISWAP_V2_LP_ABI, ZERION_ABI
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
-from rotkehlchen.errors import RemoteError, UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter

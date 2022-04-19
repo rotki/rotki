@@ -4384,6 +4384,87 @@ Export action history to CSV
    :statuscode 500: Internal rotki error.
 
 
+Get missing acquisitions and prices
+====================================
+
+.. http:get:: /api/(version)/history/actionable_items
+
+   .. note::
+      This endpoint should be called after getting a PnL report data.
+
+   Doing a GET on the this endpoint will return all missing acquisitions and missing prices encountered during generation of the last PnL report.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/actionable_items HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+            "missing_acquisitions": [
+              {
+                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359v",
+                "time": 1428994442,
+                "found_amount": "0",
+                "missing_amount": "0.1"
+              },
+              {
+                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+                "time": 1439048640,
+                "found_amount": "0",
+                "missing_amount": "14.36963"
+              },
+              {
+                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+                "time": 1439994442,
+                "found_amount": "0",
+                "missing_amount": "0.0035000000"
+              },
+              {
+                "asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+                "time": 1439994442,
+                "found_amount": "0",
+                "missing_amount": "1.7500"
+              }
+            ],
+          "missing_prices": [
+            {
+              "from_asset": "_ceth_0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+              "to_asset": "AVAX",
+              "time": 1439994442,
+            }
+          ]
+        },
+        "message": ""
+      }
+
+   :resjson object result: An object with missing acquisitions and prices data.
+   :resjson list missing_prices: A list that contains entries of missing prices found during PnL reporting.
+   :resjsonarr str from_asset: The asset whose price is missing.
+   :resjsonarr str to_asset: The asset in which we want the price of from_asset.
+   :resjson list missing_acquisitions: A list that contains entries of missing acquisitions found during PnL reporting.
+   :resjsonarr str asset: The asset that is involved in the event.
+   :resjsonarr int time: The timestamp this event took place in.
+   :resjsonarr str found_amount: The matching amount found from an acquisition event for a spend.
+   :resjsonarr str missing_amount: The corresponding acquisition amount we can't find for a particular spend.
+
+   :statuscode 200: Data were queried successfully.
+   :statuscode 409: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+
 Querying history progress status
 =================================
 

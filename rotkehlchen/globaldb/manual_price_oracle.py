@@ -3,12 +3,11 @@ from typing import Optional
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.errors import NoPriceForGivenTimestamp
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
-from rotkehlchen.utils.misc import timestamp_to_date
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -46,9 +45,5 @@ class ManualPriceOracle:
         raise NoPriceForGivenTimestamp(
             from_asset=from_asset,
             to_asset=to_asset,
-            date=timestamp_to_date(
-                timestamp,
-                formatstr='%d/%m/%Y, %H:%M:%S',
-                treat_as_local=True,
-            ),
+            time=timestamp,
         )

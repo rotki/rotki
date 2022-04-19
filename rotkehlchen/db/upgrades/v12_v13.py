@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.errors import DBUpgradeError
+from rotkehlchen.errors.misc import DBUpgradeError
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

@@ -16,11 +16,12 @@ from typing import (
     overload,
 )
 
+from rotkehlchen.accounting.types import MissingAcquisition, MissingPrice
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import DBSettings
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, Price, Timestamp
@@ -233,6 +234,8 @@ class CostBasisCalculator(CustomizableDateMixin):
         self.settings = settings
         self.profit_currency = settings.main_currency
         self._events: DefaultDict[Asset, CostBasisEvents] = defaultdict(CostBasisEvents)
+        self.missing_acquisitions: List[MissingAcquisition] = []
+        self.missing_prices: List[MissingPrice] = []
 
     def get_events(self, asset: Asset) -> CostBasisEvents:
         """Custom getter for events so that we have common cost basis for some assets"""
@@ -240,29 +243,6 @@ class CostBasisCalculator(CustomizableDateMixin):
             asset = A_ETH
 
         return self._events[asset]
-
-    def inform_user_missing_acquisition(
-            self,
-            asset: Asset,
-            time: Timestamp,
-            found_amount: Optional[FVal] = None,
-            missing_amount: Optional[FVal] = None,
-    ) -> None:
-        """Inform the user for missing data for an acquisition via the msg aggregator"""
-        if found_amount is None:
-            self.msg_aggregator.add_error(
-                f'No documented acquisition found for {asset} before '
-                f'{self.timestamp_to_date(time)}. Let rotki '
-                f'know how you acquired it via a ledger action',
-            )
-            return
-
-        self.msg_aggregator.add_error(
-            f'Not enough documented acquisitions found for {asset} before '
-            f'{self.timestamp_to_date(time)}. Only found acquisitions '
-            f'for {found_amount} {asset} and miss {missing_amount} {asset}.'
-            f'Let rotki know how you acquired it via a ledger action',
-        )
 
     def reduce_asset_amount(self, asset: Asset, amount: FVal, timestamp: Timestamp) -> bool:
         """Searches all acquisition events for asset and reduces them by amount.
@@ -303,9 +283,13 @@ class CostBasisCalculator(CustomizableDateMixin):
         if remaining_amount_from_last_buy != FVal('-1'):
             asset_events.acquisitions[0].remaining_amount = remaining_amount_from_last_buy
         elif remaining_amount != ZERO:
-            log.critical(
-                f'No documented buy found for {asset} before '
-                f'{self.timestamp_to_date(timestamp)}',
+            self.missing_acquisitions.append(
+                MissingAcquisition(
+                    asset=asset,
+                    time=timestamp,
+                    found_amount=amount - remaining_amount,
+                    missing_amount=remaining_amount,
+                ),
             )
             return False
 
@@ -486,7 +470,14 @@ class CostBasisCalculator(CustomizableDateMixin):
                 stop_index = idx + 1
 
         if len(asset_events.acquisitions) == 0:
-            self.inform_user_missing_acquisition(spending_asset, timestamp)
+            self.missing_acquisitions.append(
+                MissingAcquisition(
+                    asset=spending_asset,
+                    time=timestamp,
+                    found_amount=ZERO,
+                    missing_amount=spending_amount,
+                ),
+            )
             # That means we had no documented acquisition for that asset. This is not good
             # because we can't prove a corresponding acquisition and as such we are burdened
             # calculating the entire spend as profit which needs to be taxed
@@ -511,11 +502,13 @@ class CostBasisCalculator(CustomizableDateMixin):
             # if we still have sold amount but no acquisitions to satisfy it then we only
             # found acquisitions to partially satisfy the sell
             adjusted_amount = spending_amount - taxfree_amount
-            self.inform_user_missing_acquisition(
-                asset=spending_asset,
-                time=timestamp,
-                found_amount=taxable_amount + taxfree_amount,
-                missing_amount=remaining_sold_amount,
+            self.missing_acquisitions.append(
+                MissingAcquisition(
+                    asset=spending_asset,
+                    time=timestamp,
+                    found_amount=taxable_amount + taxfree_amount,
+                    missing_amount=remaining_sold_amount,
+                ),
             )
             taxable_amount = adjusted_amount
             is_complete = False

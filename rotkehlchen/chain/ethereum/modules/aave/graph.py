@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.constants import RAY
 from rotkehlchen.chain.ethereum.utils import ethaddress_to_asset, token_normalized_value_decimals
 from rotkehlchen.constants.ethereum import ATOKEN_ABI, ATOKEN_V2_ABI
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer

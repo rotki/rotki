@@ -1,9 +1,12 @@
 import json
-from typing import Any, Dict, NamedTuple, Tuple
+from typing import Any, Dict, NamedTuple, Tuple, Union
 
 import jsonschema
 
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.fval import FVal
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.dbenum import DBEnumMixIn  # lgtm[py/unsafe-cyclic-import]
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
@@ -101,3 +104,31 @@ class NamedJson(NamedTuple):
             ) from e
 
         return event_type, string_data
+
+
+class MissingAcquisition(NamedTuple):
+    asset: Asset
+    time: Timestamp
+    found_amount: FVal
+    missing_amount: FVal
+
+    def serialize(self) -> Dict[str, Union[str, int]]:
+        return {
+            'asset': self.asset.identifier,
+            'time': self.time,
+            'found_amount': str(self.found_amount),
+            'missing_amount': str(self.missing_amount),
+        }
+
+
+class MissingPrice(NamedTuple):
+    from_asset: Asset
+    to_asset: Asset
+    time: Timestamp
+
+    def serialize(self) -> Dict[str, Union[str, int]]:
+        return {
+            'from_asset': self.from_asset.identifier,
+            'to_asset': self.to_asset.identifier,
+            'time': self.time,
+        }

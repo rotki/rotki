@@ -2,7 +2,7 @@ import logging
 import re
 from typing import TYPE_CHECKING
 
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location

@@ -19,7 +19,7 @@ from rotkehlchen.constants.ethereum import (
     YEARN_VAULTS_V2_PREFIX,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import ModuleInitializationFailure, RemoteError
+from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter

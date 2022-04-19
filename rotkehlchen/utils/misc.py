@@ -23,7 +23,7 @@ from typing import (
 import pkg_resources
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen.errors import ConversionError, DeserializationError
+from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEthAddress, Fee, Timestamp, TimestampMS
 

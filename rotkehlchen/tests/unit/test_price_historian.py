@@ -5,7 +5,7 @@ import pytest
 
 from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal

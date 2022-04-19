@@ -3,7 +3,8 @@ from typing import Any, Dict, Literal, Optional, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EthereumToken
-from rotkehlchen.errors import DeserializationError, UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_optional_to_fval
 from rotkehlchen.types import ChecksumEthAddress, Timestamp

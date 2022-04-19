@@ -8,7 +8,8 @@ from web3.exceptions import BadFunctionCallOutput
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import BlockchainQueryError, DeserializationError, RemoteError
+from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter

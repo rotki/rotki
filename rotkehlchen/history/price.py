@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, List, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset, RemoteError
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.manual_price_oracle import ManualPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import timestamp_to_date
 
 from .types import HistoricalPriceOracle, HistoricalPriceOracleInstance
 
@@ -255,5 +255,5 @@ class PriceHistorian():
         raise NoPriceForGivenTimestamp(
             from_asset=from_asset,
             to_asset=to_asset,
-            date=timestamp_to_date(timestamp, formatstr='%d/%m/%Y, %H:%M:%S', treat_as_local=True),
+            time=timestamp,
         )

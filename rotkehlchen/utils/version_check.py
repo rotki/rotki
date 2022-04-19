@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional
 
 from pkg_resources import parse_version
 
-from rotkehlchen.errors import RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.utils.misc import get_system_spec
 

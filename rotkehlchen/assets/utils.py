@@ -2,7 +2,9 @@ import logging
 from typing import TYPE_CHECKING, List, Optional
 
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.errors import DeserializationError, NotERC20Conformant, UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import NotERC20Conformant
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress

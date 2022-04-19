@@ -28,7 +28,7 @@ from rotkehlchen.db.upgrades.v7_v8 import (
     v7_generate_asset_movement_id,
 )
 from rotkehlchen.db.upgrades.v13_v14 import REMOVED_ASSETS, REMOVED_ETH_TOKENS
-from rotkehlchen.errors import DBUpgradeError
+from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.tests.utils.database import (
     _init_prepared_db,
     _use_prepared_db,

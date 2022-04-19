@@ -3,7 +3,7 @@ from typing import Union
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,

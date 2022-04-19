@@ -1,6 +1,6 @@
 import pytest
 
-from rotkehlchen.errors import ConversionError
+from rotkehlchen.errors.serialization import ConversionError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.serialization import rlk_jsondumps
 

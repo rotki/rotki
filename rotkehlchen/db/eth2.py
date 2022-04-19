@@ -12,7 +12,7 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.utils import form_query_to_filter_timestamps
-from rotkehlchen.errors import InputError
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, Timestamp, Tuple, Union

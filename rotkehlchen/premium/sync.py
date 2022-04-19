@@ -5,12 +5,8 @@ from enum import Enum
 from typing import Any, Dict, Literal, NamedTuple, Optional, Tuple
 
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.errors import (
-    PremiumAuthenticationError,
-    RemoteError,
-    RotkehlchenPermissionError,
-    UnableToDecryptRemoteData,
-)
+from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
+from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.utils.misc import ts_now

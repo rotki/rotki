@@ -22,7 +22,8 @@ from rotkehlchen.chain.ethereum.utils import (
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ADX, A_DAI, A_USD
 from rotkehlchen.constants.ethereum import EthereumConstants
-from rotkehlchen.errors import DeserializationError, ModuleInitializationFailure, RemoteError
+from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer

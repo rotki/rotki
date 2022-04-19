@@ -6,7 +6,7 @@ from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery
-from rotkehlchen.errors import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bittrex import Bittrex
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal

@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 
 from rotkehlchen.chain.ethereum.utils import multicall
 from rotkehlchen.constants.ethereum import DS_PROXY_REGISTRY
-from rotkehlchen.errors import DeserializationError, RemoteError
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address

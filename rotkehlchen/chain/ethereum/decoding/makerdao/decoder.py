@@ -74,7 +74,7 @@ from rotkehlchen.constants.ethereum import (
     MAKERDAO_ZRX_A_JOIN,
     RAY_DIGITS,
 )
-from rotkehlchen.errors import DeserializationError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_ethereum_address
 from rotkehlchen.types import ChecksumEthAddress, EthereumTransaction, Location
 from rotkehlchen.utils.misc import (

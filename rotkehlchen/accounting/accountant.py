@@ -9,16 +9,12 @@ from rotkehlchen.accounting.export.csv import CSVExporter
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.base import ActionType
+from rotkehlchen.accounting.types import MissingPrice
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
-from rotkehlchen.errors import (
-    NoPriceForGivenTimestamp,
-    PriceQueryUnsupportedAsset,
-    RemoteError,
-    UnknownAsset,
-    UnprocessableTradePair,
-    UnsupportedAsset,
-)
+from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import Timestamp
@@ -167,11 +163,12 @@ class Accountant():
                 )
                 continue
             except NoPriceForGivenTimestamp as e:
-                count = self._process_skipping_exception(
-                    exception=e,
-                    events=events,
-                    count=count,
-                    reason='inability to find a price at that point in time',
+                self.pots[0].cost_basis.missing_prices.append(
+                    MissingPrice(
+                        from_asset=e.from_asset,
+                        to_asset=e.to_asset,
+                        time=e.time,
+                    ),
                 )
                 continue
             except RemoteError as e:
