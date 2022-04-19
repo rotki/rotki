@@ -94,7 +94,7 @@
                 class="accounting-settings__asset-to-ignore"
               />
             </v-col>
-            <v-col cols="auto">
+            <v-col cols="auto" class="ml-4">
               <v-btn
                 class="accounting-settings__buttons__add mt-3"
                 text
@@ -123,7 +123,7 @@
                 class="accounting-settings__ignored-assets"
               />
             </v-col>
-            <v-col cols="auto">
+            <v-col cols="auto" class="ml-4">
               <v-btn
                 width="110px"
                 class="accounting-settings__buttons__remove mt-3"

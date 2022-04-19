@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2853` Add option to disable sync for connected exchanges.
 * :bug:`4172` Disallow addition and editing of external trade that could result in invalid trade fees.
 * :feature:`3370` Manual balance labels are now editable even after their creation
 * :feature:`4125` Introduces auto login mechanism for electron app.

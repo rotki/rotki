@@ -532,6 +532,8 @@ Then copy and paste the ``API Key`` and the ``API Secret`` in the respective tex
 
 If all went well, you should be able to see your newly added exchange. If not please doublecheck that the key and secret are correct.
 
+You also have option to enable/disable synchronization for the connected exchanges. Usually, you may want to disable the synchronization to prevent your IP get banned because of too many syncs.
+
 .. image:: images/rotki_add_exchange_3.png
    :alt: Add API keys for a new exchange
    :align: center
