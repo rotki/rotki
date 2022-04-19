@@ -358,5 +358,10 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     identifier: TransactionEventProtocol.VOTIUM,
     label: 'Votium',
     image: require('@/assets/images/defi/votium.png')
+  },
+  {
+    identifier: TransactionEventProtocol.PICKLE,
+    label: 'Pickle Finance',
+    image: require('@/assets/images/modules/pickle.svg')
   }
 ];

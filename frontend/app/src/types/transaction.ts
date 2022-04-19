@@ -72,5 +72,6 @@ export enum TransactionEventProtocol {
   XDAI = 'xdai',
   ZKSYNC = 'zksync',
   '1INCH' = '1inch',
-  VOTIUM = 'votium'
+  VOTIUM = 'votium',
+  PICKLE = 'pickle finance'
 }
