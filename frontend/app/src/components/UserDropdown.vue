@@ -4,7 +4,8 @@
       id="user-dropdown"
       content-class="user-dropdown__menu"
       transition="slide-y-transition"
-      max-width="250px"
+      max-width="180px"
+      min-width="180px"
       offset-y
     >
       <template #activator="{ on }">

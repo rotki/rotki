@@ -84,6 +84,7 @@ import {
 } from '@/types/user';
 import { assert } from '@/utils/assertions';
 import { nonNullProperties } from '@/utils/data';
+import { downloadFileByUrl } from '@/utils/download';
 
 export class RotkehlchenApi {
   private axios: AxiosInstance;
@@ -1086,13 +1087,7 @@ export class RotkehlchenApi {
 
       if (response.status === 200) {
         const url = window.URL.createObjectURL(response.data);
-        const link = document.createElement('a');
-        link.id = 'history-download-link';
-        link.href = url;
-        link.setAttribute('download', 'reports.zip');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        downloadFileByUrl(url, 'reports.zip');
         return { success: true };
       }
 
@@ -1181,6 +1176,33 @@ export class RotkehlchenApi {
         transformResponse: basicAxiosTransformer
       })
       .then(handleResponse);
+  }
+
+  async exportSnapshotCSV(payload: {
+    path: string;
+    timestamp: number;
+  }): Promise<boolean> {
+    return this.axios
+      .post<ActionResult<boolean>>(
+        '/snapshot/export',
+        axiosSnakeCaseTransformer(payload),
+        {
+          validateStatus: validWithoutSessionStatus,
+          transformResponse: basicAxiosTransformer
+        }
+      )
+      .then(handleResponse);
+  }
+
+  async downloadSnapshot(payload: { timestamp: number }): Promise<any> {
+    return this.axios.post<any>(
+      '/snapshot/download',
+      axiosSnakeCaseTransformer(payload),
+      {
+        validateStatus: validWithoutSessionStatus,
+        responseType: 'arraybuffer'
+      }
+    );
   }
 }
 
