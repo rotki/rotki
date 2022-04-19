@@ -90,7 +90,7 @@ import { setupExchangeRateGetter } from '@/composables/balances';
 import { setupDisplayData, setupGeneralSettings } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import { displayAmountFormatter } from '@/data/amount_formatter';
-import { CURRENCY_USD, findCurrency } from '@/data/currencies';
+import { findCurrency } from '@/data/currencies';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import { Currency } from '@/types/currency';
 import { bigNumberify } from '@/utils/bignumbers';
@@ -183,11 +183,12 @@ export default defineComponent({
     });
 
     const renderValue = computed<BigNumber>(() => {
-      const multiplier = [10, 100, 1000];
       let valueToRender;
 
       // return a random number if scrambleData is on
       if (get(scrambleData)) {
+        const multiplier = [10, 100, 1000];
+
         return BigNumber.random()
           .multipliedBy(
             multiplier[Math.floor(Math.random() * multiplier.length)]
@@ -279,14 +280,7 @@ export default defineComponent({
     });
 
     const convertValue = (value: BigNumber): BigNumber => {
-      let rate = exchangeRate(get(currencySymbol));
-      if (get(fiatCurrency) !== CURRENCY_USD) {
-        const denominatorRate = exchangeRate(get(fiatCurrency));
-
-        if (rate && denominatorRate && !denominatorRate.isZero()) {
-          rate = rate.dividedBy(denominatorRate);
-        }
-      }
+      const rate = exchangeRate(get(currencySymbol));
       return rate ? value.multipliedBy(rate) : value;
     };
 
