@@ -2,7 +2,7 @@ import abc
 import logging
 from functools import reduce
 from operator import mul
-from typing import TYPE_CHECKING, List, NamedTuple, Union
+from typing import TYPE_CHECKING, List, NamedTuple, Optional, Union
 
 from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
@@ -51,13 +51,20 @@ class UniswapOracle(CurrentPriceOracleInterface):
     """
     Provides shared logic between Uniswap V2 and Uniswap V3 to use them as price oracles.
     """
-    def __init__(self, eth_manager: 'EthereumManager'):
+    def __init__(self, eth_manager: 'EthereumManager', version: int):
+        super().__init__(oracle_name=f'Uniswap V{version} oracle')
         self.eth_manager = eth_manager
         self.routing_assets = [
             A_WETH,
             A_DAI,
             A_USDT,
         ]
+
+    def rate_limited_in_last(
+            self,
+            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+    ) -> bool:
+        return False
 
     @abc.abstractmethod
     def get_pool(
@@ -75,7 +82,9 @@ class UniswapOracle(CurrentPriceOracleInterface):
         block_identifier: BlockIdentifier = 'latest',
     ) -> PoolPrice:
         """Returns the price for the tokens in the given pool and the token0 and
-        token1 of the pool
+        token1 of the pool.
+        May raise:
+        - DefiPoolError
         """
         ...
 
@@ -183,10 +192,10 @@ class UniswapOracle(CurrentPriceOracleInterface):
         """
         log.debug(
             f'Searching price for {from_asset} to {to_asset} at '
-            f'{block_identifier!r} with {self.get_oracle_name()}',
+            f'{block_identifier!r} with {self.name}',
         )
 
-        # Use weth internally
+        # Uniswap V2 and V3 use in their contracts WETH instead of ETH
         if from_asset == A_ETH:
             from_asset = A_WETH
         if to_asset == A_ETH:
@@ -197,30 +206,28 @@ class UniswapOracle(CurrentPriceOracleInterface):
 
         if not (from_asset.is_eth_token() and to_asset.is_eth_token()):
             raise PriceQueryUnsupportedAsset(
-                f'Neither {from_asset} nor {to_asset} are ethereum tokens for the uniswap oracle',
+                f'Either {from_asset} or {to_asset} arent ethereum tokens for the uniswap oracle',
             )
 
-        # Could be that we are dealing with ethereum tokens as intances of Asset instead of
+        # Could be that we are dealing with ethereum tokens as instances of Asset instead of
         # EthereumToken, handle the conversion
         from_asset_raw: Union[Asset, EthereumToken] = from_asset
         to_asset_raw: Union[Asset, EthereumToken] = to_asset
         if not isinstance(from_asset, EthereumToken):
-            from_as_token = EthereumToken.from_identifier(from_asset_raw.identifier)
+            from_as_token = EthereumToken.from_asset(from_asset)
             if from_as_token is None:
                 raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {from_asset_raw}')
             from_asset = from_as_token
         if not isinstance(to_asset, EthereumToken):
-            to_as_token = EthereumToken.from_identifier(to_asset_raw.identifier)
+            to_as_token = EthereumToken.from_asset(to_asset)
             if to_as_token is None:
                 raise PriceQueryUnsupportedAsset(f'Unsupported asset for uniswap {to_asset_raw}')
             to_asset = to_as_token
 
-        assert isinstance(from_asset, EthereumToken), f'Got non valid token {from_asset}'
-        assert isinstance(to_asset, EthereumToken), f'Found non valid token {to_asset}'
         route = self.find_route(from_asset, to_asset)
 
         if len(route) == 0:
-            log.debug(f'Failed to find price for {from_asset} to {to_asset}')
+            log.debug(f'Failed to find uniswap price for {from_asset} to {to_asset}')
             return Price(ZERO)
 
         prices_and_tokens = []
@@ -249,6 +256,12 @@ class UniswapOracle(CurrentPriceOracleInterface):
         return Price(price)
 
     def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
+        """
+        This method gets the current price for two ethereum tokens finding a pool
+        or a path of pools in the uniswap protocol. The special case of USD as asset
+        is handled using USDC instead of USD since is one of the most used stables
+        right now for pools.
+        """
         if to_asset == A_USD:
             to_asset = A_USDC
         elif from_asset == A_USD:
@@ -263,8 +276,8 @@ class UniswapOracle(CurrentPriceOracleInterface):
 
 class UniswapV3Oracle(UniswapOracle):
 
-    def get_oracle_name(self) -> str:
-        return 'Uniswap V3 oracle'
+    def __init__(self, eth_manager: 'EthereumManager'):
+        super().__init__(eth_manager=eth_manager, version=3)
 
     def get_pool(
         self,
@@ -324,15 +337,18 @@ class UniswapV3Oracle(UniswapOracle):
         sqrt_price_x96, _, _, _, _, _, _ = pool_contract.decode(output[0], 'slot0')
         decimals_constant = 10 ** (token_0.decimals - token_1.decimals)
 
-        price = (sqrt_price_x96 * sqrt_price_x96) / 2 ** (192) * decimals_constant
+        price = FVal((sqrt_price_x96 * sqrt_price_x96) / 2 ** (192) * decimals_constant)
+
+        if ZERO == price:
+            raise DefiPoolError(f'Uniswap pool for {token_0}/{token_1} has price 0')
 
         return PoolPrice(price=price, token_0=token_0, token_1=token_1)
 
 
 class UniswapV2Oracle(UniswapOracle):
 
-    def get_oracle_name(self) -> str:
-        return 'Uniswap V2 oracle'
+    def __init__(self, eth_manager: 'EthereumManager'):
+        super().__init__(eth_manager=eth_manager, version=3)
 
     def get_pool(
         self,
@@ -389,6 +405,8 @@ class UniswapV2Oracle(UniswapOracle):
         reserve_0, reserve_1, _ = pool_contract.decode(output[0], 'getReserves')
         decimals_constant = 10**(token_0.decimals - token_1.decimals)
 
-        price = (reserve_1 / reserve_0) * decimals_constant
+        if ZERO in (reserve_0, reserve_1):
+            raise DefiPoolError(f'Uniswap pool for {token_0}/{token_1} has asset with no reserves')
 
+        price = FVal((reserve_1 / reserve_0) * decimals_constant)
         return PoolPrice(price=price, token_0=token_0, token_1=token_1)

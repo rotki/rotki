@@ -15,7 +15,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.interfaces import PriceOracleInterface
+from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date
@@ -284,11 +284,10 @@ COINGECKO_SIMPLE_VS_CURRENCIES = [
 ]
 
 
-class Coingecko(PriceOracleInterface):
+class Coingecko(HistoricalPriceOracleInterface):
 
     def __init__(self) -> None:
-        oracle_name = 'coingecko'
-        PriceOracleInterface.__init__(self, oracle_name=oracle_name)
+        super().__init__(oracle_name='coingecko')
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.all_coins_cache: Optional[Dict[str, Dict[str, Any]]] = None

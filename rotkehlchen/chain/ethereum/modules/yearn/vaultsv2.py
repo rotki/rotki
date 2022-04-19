@@ -18,7 +18,7 @@ from rotkehlchen.constants.ethereum import (
     YEARN_VAULT_V2_ABI,
     YEARN_VAULTS_V2_PREFIX,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -93,7 +93,7 @@ class YearnVaultsV2(EthereumModule):
             abi=YEARN_VAULT_V2_ABI,  # Any vault ABI will do
             method_name='pricePerShare',
         )
-        nominator = price_per_full_share - (10**18)
+        nominator = price_per_full_share - EXP18
         try:
             denonimator = now_block_number - self.ethereum.etherscan.get_blocknumber_by_time(vault.started)  # noqa: E501
         except RemoteError as e:
@@ -102,7 +102,7 @@ class YearnVaultsV2(EthereumModule):
                 f'Etherscan error {str(e)}.',
             )
             return ZERO, price_per_full_share
-        return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / 10**18, price_per_full_share
+        return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / EXP18, price_per_full_share
 
     def _get_single_addr_balance(
             self,

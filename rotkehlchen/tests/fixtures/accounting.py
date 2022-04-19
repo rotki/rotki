@@ -242,6 +242,11 @@ def fixture_inquirer(
         current_price_oracles_order,
         ignore_mocked_prices_for,
 ):
+    """This version of the inquirer doesn't make use of the defi oracles and is initialized
+    with ethereum_manager as None. To make use of the defi oracles use `inquirer_defi`.
+    The reason is that some tests became really slow because they exhausted the coingecko/cc
+    oracles and used the defi ones.
+    """
     return create_inquirer(
         data_directory=data_dir,
         should_mock_current_price_queries=should_mock_current_price_queries,
@@ -259,6 +264,10 @@ def session_inquirer(
         session_mocked_current_prices,
         session_current_price_oracles_order,
 ):
+    """
+    The ethereum_manager argument is defined as None for the reasons explained in the
+    `inquirer` fixture
+    """
     return create_inquirer(
         data_directory=session_data_dir,
         should_mock_current_price_queries=session_should_mock_current_price_queries,
@@ -277,6 +286,9 @@ def fixture_inquirer_defi(
         ignore_mocked_prices_for,
         ethereum_manager,
 ):
+    """This fixture is different from `inquirer` just in the use of defi oracles to query
+    prices. If you don't need to use the defi oracles it is faster to use the `inquirer` fixture.
+    """
     return create_inquirer(
         data_directory=data_dir,
         should_mock_current_price_queries=should_mock_current_price_queries,

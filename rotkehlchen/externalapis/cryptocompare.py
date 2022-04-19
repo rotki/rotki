@@ -49,7 +49,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.interfaces import PriceOracleInterface
+from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import pairwise, ts_now
@@ -204,9 +204,9 @@ def _check_hourly_data_sanity(
         index += 2
 
 
-class Cryptocompare(ExternalServiceWithApiKey, PriceOracleInterface):
+class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
     def __init__(self, data_directory: Path, database: Optional['DBHandler']) -> None:
-        PriceOracleInterface.__init__(self, oracle_name='cryptocompare')
+        HistoricalPriceOracleInterface.__init__(self, oracle_name='cryptocompare')
         ExternalServiceWithApiKey.__init__(
             self,
             database=database,

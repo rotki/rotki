@@ -2,6 +2,7 @@ from __future__ import unicode_literals  # isort:skip
 
 import logging
 import operator
+from enum import auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
@@ -58,6 +59,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, YEARN_VAULT_V2_ABI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -69,7 +71,7 @@ from rotkehlchen.externalapis.xratescom import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.interfaces import PriceOracleInterface
+from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
@@ -133,11 +135,11 @@ def _check_curve_contract_call(decoded: Tuple[Any, ...]) -> bool:
 
 class CurrentPriceOracle(SerializableEnumMixin):
     """Supported oracles for querying current prices"""
-    COINGECKO = 1
-    CRYPTOCOMPARE = 2
-    UNISWAPV2 = 3
-    UNISWAPV3 = 4
-    SADDLE = 5
+    COINGECKO = auto()
+    CRYPTOCOMPARE = auto()
+    UNISWAPV2 = auto()
+    UNISWAPV3 = auto()
+    SADDLE = auto()
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
@@ -347,7 +349,7 @@ class Inquirer():
         price = Price(ZERO)
         for oracle, oracle_instance in zip(oracles, oracle_instances):
             if (
-                isinstance(oracle_instance, PriceOracleInterface) and
+                isinstance(oracle_instance, CurrentPriceOracleInterface) and
                 oracle_instance.rate_limited_in_last() is True
             ):
                 continue
@@ -357,7 +359,7 @@ class Inquirer():
                     from_asset=from_asset,
                     to_asset=to_asset,
                 )
-            except (PriceQueryUnsupportedAsset, RemoteError) as e:
+            except (DefiPoolError, PriceQueryUnsupportedAsset, RemoteError) as e:
                 log.error(
                     f'Current price oracle {oracle} failed to request {to_asset.identifier} '
                     f'price for {from_asset.identifier} due to: {str(e)}.',

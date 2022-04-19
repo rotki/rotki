@@ -5,40 +5,48 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.types import Price, Timestamp
 
 
-class PriceOracleInterface(metaclass=abc.ABCMeta):
+class CurrentPriceOracleInterface(metaclass=abc.ABCMeta):
+    """
+    Interface for oracles able to query current price. Oracle could be rate limited
+    """
 
-    def __init__(self, oracle_name: str):
-        self.oracle_name = oracle_name
+    def __init__(self, oracle_name: str) -> None:
+        self.name = oracle_name
 
     @abc.abstractmethod
     def rate_limited_in_last(
             self,
-            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+            seconds: Optional[int] = None,
     ) -> bool:
         ...
 
     @abc.abstractmethod
     def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
+        """Returns the price from_asset to to_asset at the current timestamp
+        for the current oracle
+        """
         ...
+
+
+class HistoricalPriceOracleInterface(CurrentPriceOracleInterface):
+    """Query prices for certain timestamps. Oracle could be rate limited"""
 
     @abc.abstractmethod
     def can_query_history(
             self,
-            from_asset: Asset,  # pylint: disable=unused-argument
-            to_asset: Asset,  # pylint: disable=unused-argument
-            timestamp: Timestamp,  # pylint: disable=unused-argument
-            seconds: Optional[int] = None,  # pylint: disable=unused-argument
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+            seconds: Optional[int] = None,
     ) -> bool:
         """Checks if it's okay to query historical price"""
         ...
 
-
-class CurrentPriceOracleInterface(metaclass=abc.ABCMeta):
-
     @abc.abstractmethod
-    def get_oracle_name(self) -> str:
-        ...
-
-    @abc.abstractmethod
-    def query_current_price(self, from_asset: Asset, to_asset: Asset) -> Price:
+    def query_historical_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> Price:
         ...

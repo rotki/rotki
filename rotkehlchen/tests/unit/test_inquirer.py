@@ -29,7 +29,7 @@ from rotkehlchen.inquirer import (
     CurrentPriceOracle,
     _query_currency_converterapi,
 )
-from rotkehlchen.interfaces import PriceOracleInterface
+from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -227,7 +227,7 @@ def test_find_usd_price_all_rate_limited_in_last(inquirer):  # pylint: disable=u
     limits requesting the USD price of an asset.
     """
     inquirer._oracle_instances = [
-        MagicMock() for oracle in inquirer._oracles if isinstance(oracle, PriceOracleInterface)
+        MagicMock() for oracle in inquirer._oracles if isinstance(oracle, HistoricalPriceOracleInterface)  # noqa: E501
     ]
 
     for oracle_instance in inquirer._oracle_instances:
@@ -365,5 +365,5 @@ def test_find_asset_with_no_api_oracles(inquirer_defi):
 
     assert price != Price(ZERO)
     assert price != price_uni_v2
-    assert price.is_close(price_uni_v2, max_diff='0.03')
-    assert price.is_close(price_uni_v3, max_diff='0.03')
+    assert price.is_close(price_uni_v2, max_diff='0.05')
+    assert price.is_close(price_uni_v3, max_diff='0.05')
