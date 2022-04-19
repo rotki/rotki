@@ -9,7 +9,13 @@
         :src="icon"
       />
     </v-col>
-    <v-col cols="auto">
+    <v-col cols="auto" v-if="identifier == 'uniswapv3'">
+        {{ $t('oracles.uniswap_v3') }}
+    </v-col>
+    <v-col cols="auto" v-else-if="identifier == 'uniswapv2'">
+        {{ $t('oracles.uniswap_v2') }}
+    </v-col>
+    <v-col cols="auto" v-else>
       {{ toSentenceCase(identifier) }}
     </v-col>
   </v-row>
