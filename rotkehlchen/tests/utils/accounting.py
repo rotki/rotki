@@ -1,7 +1,7 @@
 import csv
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from rotkehlchen.accounting.export.csv import CSV_INDEX_OFFSET, FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
+    from rotkehlchen.tests.fixtures.google import GoogleService
 
 
 history1 = [
@@ -107,10 +108,14 @@ def accounting_history_process(
     return _get_pnl_report_after_processing(report_id=report_id, database=accountant.csvexporter.database)  # noqa: E501
 
 
-def check_pnls_and_csv(accountant: 'Accountant', expected_pnls: PnlTotals) -> None:
+def check_pnls_and_csv(
+        accountant: 'Accountant',
+        expected_pnls: PnlTotals,
+        google_service: Optional['GoogleService'] = None,
+) -> None:
     pnls = accountant.pots[0].pnls
     assert_pnl_totals_close(expected=expected_pnls, got=pnls)
-    assert_csv_export(accountant, expected_pnls)
+    assert_csv_export(accountant, expected_pnls, google_service)
     # also check the totals
     assert pnls.taxable.is_close(expected_pnls.taxable)
     assert pnls.free.is_close(expected_pnls.free)
@@ -145,11 +150,54 @@ def _check_summaries_row(row: Dict[str, Any], accountant: 'Accountant'):
         _check_boolean_settings(row, accountant)
 
 
+def _check_column(attribute: str, index: int, sheet_id: str, expected, got_columns: List[List[str]]):  # noqa: E501
+    expected_value = FVal(expected[attribute])
+    got_value = FVal(got_columns[index][0])
+    msg = f'Sheet: {sheet_id}, row: {index + CSV_INDEX_OFFSET} {attribute} mismatch. {got_value} != {expected_value}'  # noqa: E501
+    assert expected_value.is_close(got_value), msg
+
+
+def upload_csv_and_check(
+        service: 'GoogleService',
+        csv_data: List[Dict[str, Any]],
+        expected_csv_data: List[Dict[str, Any]],
+) -> None:
+    """Creates a new google sheet, uploads the CSV and then checks it renders properly"""
+    sheet_id = service.create_spreadsheet()
+    service.add_rows(sheet_id=sheet_id, csv_data=csv_data)
+    result = service.get_cell_ranges(
+        sheet_id=sheet_id,
+        range_names=['I2:I', 'J2:J'],
+    )
+    # Check that the data length matches
+    assert len(result[0]['values']) == len(expected_csv_data)
+    assert len(result[1]['values']) == len(expected_csv_data)
+    for idx, expected in enumerate(expected_csv_data):
+        _check_column(
+            attribute='pnl_taxable',
+            index=idx,
+            sheet_id=sheet_id,
+            expected=expected,
+            got_columns=result[0]['values'],
+        )
+        _check_column(
+            attribute='pnl_free',
+            index=idx,
+            sheet_id=sheet_id,
+            expected=expected,
+            got_columns=result[1]['values'],
+        )
+
+
 def assert_csv_export(
         accountant: 'Accountant',
         expected_pnls: PnlTotals,
+        google_service: Optional['GoogleService'] = None,
 ) -> None:
-    """Test the contents of the csv export match the actual result"""
+    """Test the contents of the csv export match the actual result
+
+    If google_service exists then it's also uploaded to a sheet to check the formular rendering
+    """
     csvexporter = accountant.csvexporter
     if len(accountant.pots[0].processed_events) == 0:
         return  # nothing to do for no events as no csv is generated
@@ -165,11 +213,13 @@ def assert_csv_export(
         )
 
         calculated_pnls = PnlTotals()
+        expected_csv_data = []
         with open(tmpdir / FILENAME_ALL_CSV, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
+                expected_csv_data.append(row)
                 if row['type'] == '':
-                    break  # have summaries and reached the end
+                    continue  # have summaries and reached the end
 
                 event_type = AccountingEventType.deserialize(row['type'])
                 taxable = FVal(row['pnl_taxable'])
@@ -188,9 +238,12 @@ def assert_csv_export(
         )
         index = CSV_INDEX_OFFSET
         at_summaries = False
+        to_upload_data = []
         with open(tmpdir / FILENAME_ALL_CSV, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
+                to_upload_data.append(row)
+
                 if at_summaries:
                     _check_summaries_row(row, accountant)
                     continue
@@ -214,3 +267,10 @@ def assert_csv_export(
                         assert row['pnl_free'] == f'={value}+{value}-:{index}'
 
                 index += 1
+
+        if google_service is not None:
+            upload_csv_and_check(
+                service=google_service,
+                csv_data=to_upload_data,
+                expected_csv_data=expected_csv_data,
+            )

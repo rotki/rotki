@@ -22,7 +22,7 @@ from rotkehlchen.types import Location, Timestamp
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_receiving_value_from_tx(accountant):
+def test_receiving_value_from_tx(accountant, google_service):
     """
     Test that receiving a transaction that provides value works fine
     """
@@ -52,11 +52,11 @@ def test_receiving_value_from_tx(accountant):
     expected_pnls = PnlTotals({
         AccountingEventType.TRANSACTION_EVENT: PNL(taxable=FVal('242.385'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_gas_fees_after_year(accountant):
+def test_gas_fees_after_year(accountant, google_service):
     """
     Test that for an expense like gas fees after year the "selling" part is tax free
     PnL, and the expense part is taxable pnl.
@@ -99,4 +99,4 @@ def test_gas_fees_after_year(accountant):
             taxable=FVal('-40.7251'),
             free=FVal('38.93895')),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)

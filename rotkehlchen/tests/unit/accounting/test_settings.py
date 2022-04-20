@@ -49,35 +49,35 @@ history5 = history1 + [Trade(
 @pytest.mark.parametrize('db_settings', [{
     'include_crypto2crypto': False,
 }])
-def test_nocrypto2crypto(accountant):
+def test_nocrypto2crypto(accountant, google_service):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('264693.433642820')),
         AccountingEventType.FEE: PNL(taxable=FVal('-1.1708853227087498964'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{
     'taxfree_after_period': -1,
 }])
-def test_no_taxfree_period(accountant):
+def test_no_taxfree_period(accountant, google_service):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=FVal('265253.1283582327833875'), free=ZERO),
         AccountingEventType.FEE: PNL(taxable=FVal('-0.238868129979988140934107'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{
     'taxfree_after_period': 86400,
 }])
-def test_big_taxfree_period(accountant):
+def test_big_taxfree_period(accountant, google_service):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
@@ -87,13 +87,13 @@ def test_big_taxfree_period(accountant):
             free=FVal('0.932017192728761755465893'),
         ),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('ignored_assets', [[A_DASH]])
 @pytest.mark.parametrize('db_settings', [{'include_gas_costs': True}, {'include_gas_costs': False}])  # noqa: E501
-def test_include_gas_costs(accountant):
+def test_include_gas_costs(accountant, google_service):
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
     tx_hash = '0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a'
     history = [
@@ -128,12 +128,12 @@ def test_include_gas_costs(accountant):
     if accountant.pots[0].settings.include_gas_costs:
         expected = FVal('-0.0052163727')
         expected_pnls[AccountingEventType.TRANSACTION_EVENT] = PNL(taxable=expected, free=ZERO)
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('ignored_assets', [[A_DASH]])
-def test_ignored_transactions(accountant):
+def test_ignored_transactions(accountant, google_service):
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
     tx_hash = '0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a'
     ignored_tx_hash = '0x1000e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde11'
@@ -186,12 +186,12 @@ def test_ignored_transactions(accountant):
     expected_pnls = PnlTotals({
         AccountingEventType.TRANSACTION_EVENT: PNL(taxable=FVal('-0.0052163727'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('ignored_assets', [[A_DASH]])
-def test_ignored_assets(accountant):
+def test_ignored_assets(accountant, google_service):
     history = history1 + [
         Trade(
             timestamp=1476979735,
@@ -223,11 +223,11 @@ def test_ignored_assets(accountant):
         AccountingEventType.TRADE: PNL(taxable=FVal('559.6947154127833875'), free=ZERO),
         AccountingEventType.FEE: PNL(taxable=FVal('-0.238868129979988140934107'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_margin_events_affect_gained_lost_amount(accountant):
+def test_margin_events_affect_gained_lost_amount(accountant, google_service):
     history = [
         Trade(
             timestamp=1476979735,
@@ -288,7 +288,7 @@ def test_margin_events_affect_gained_lost_amount(accountant):
         AccountingEventType.FEE: PNL(taxable=FVal('-1.87166029184'), free=ZERO),
         AccountingEventType.MARGIN_POSITION: PNL(taxable=FVal('-44.47442060'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -296,7 +296,7 @@ def test_margin_events_affect_gained_lost_amount(accountant):
     ({'account_for_assets_movements': False, 'taxfree_after_period': -1}, ZERO),
     ({'account_for_assets_movements': True, 'taxfree_after_period': -1}, FVal('-0.0781483014791')),
 ])
-def test_assets_movements_not_accounted_for(accountant, expected):
+def test_assets_movements_not_accounted_for(accountant, expected, google_service):
     # asset_movements_list partially copied from
     # rotkehlchen/tests/integration/test_end_to_end_tax_report.py
     history = [
@@ -358,7 +358,7 @@ def test_assets_movements_not_accounted_for(accountant, expected):
     expected_pnls = PnlTotals()
     if expected != ZERO:
         expected_pnls[AccountingEventType.ASSET_MOVEMENT] = PNL(taxable=expected, free=ZERO)  # noqa: E501
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -378,7 +378,7 @@ def test_assets_movements_not_accounted_for(accountant, expected):
         }),
     ),
 ])
-def test_not_calculate_past_cost_basis(accountant, expected):
+def test_not_calculate_past_cost_basis(accountant, expected, google_service):
     # trades copied from
     # rotkehlchen/tests/integration/test_end_to_end_tax_report.py
 
@@ -413,4 +413,4 @@ def test_not_calculate_past_cost_basis(accountant, expected):
         end_ts=1519693374,
         history_list=history,
     )
-    check_pnls_and_csv(accountant, expected)
+    check_pnls_and_csv(accountant, expected, google_service)

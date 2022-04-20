@@ -9,3 +9,8 @@ psutil==5.9.0
 pytest-freezegun==0.4.2
 freezegun==1.2.1
 flaky==3.7.0
+
+
+# To test google spreadsheet uploading
+google-api-python-client==2.45.0
+google-auth-httplib2==0.1.0

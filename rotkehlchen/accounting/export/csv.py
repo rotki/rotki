@@ -109,7 +109,7 @@ class CSVExporter(CustomizableDateMixin):
 
         index = event.index + CSV_INDEX_OFFSET
         value_formula = f'{amount_column}{index}*H{index}'
-        cost_basis_column = 'J' if name == 'taxable' else 'L'
+        cost_basis_column = 'K' if name == 'taxable' else 'L'
         cost_basis = f'{cost_basis_column}{index}'
 
         if event.count_entire_amount_spend:
