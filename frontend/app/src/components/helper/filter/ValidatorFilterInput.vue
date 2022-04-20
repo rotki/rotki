@@ -1,8 +1,7 @@
 <template>
-  <v-card id="validator-filter-input" flat>
+  <v-card flat>
     <v-autocomplete
       :class="$style.filter"
-      attach="#validator-filter-input"
       :filter="filter"
       :value="value"
       :items="items"
