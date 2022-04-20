@@ -2483,6 +2483,13 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     assert len([row[2] for row in result]) == 5
     assert len({row[2] for row in result}) == 3
 
+    # check that user_credential_mappings with setting_name=PAIRS are present
+    selected_binance_markets_before = cursor.execute('SELECT * from user_credentials_mappings WHERE setting_name="PAIRS"').fetchall()  # noqa: E501
+    assert selected_binance_markets_before == [
+        ('binance', 'E', 'PAIRS', 'pro'),
+        ('binanceus', 'S', 'PAIRS', 'abc'),
+    ]
+
     db_v31.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2557,6 +2564,12 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     data_in_db = cursor.execute('SELECT address, ens_name, last_update FROM ens_mappings').fetchone()  # noqa: E501
     assert data_in_db[:2] == ens_names_test_data
     assert data_in_db[2] is not None
+    # Check that selected binance markets settings_name changed to the updated one.
+    selected_binance_markets_after = cursor.execute('SELECT * from user_credentials_mappings WHERE setting_name="binance_selected_trade_pairs"').fetchall()  # noqa: E501
+    assert selected_binance_markets_after == [
+        ('binance', 'E', 'binance_selected_trade_pairs', 'pro'),
+        ('binanceus', 'S', 'binance_selected_trade_pairs', 'abc'),
+    ]
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

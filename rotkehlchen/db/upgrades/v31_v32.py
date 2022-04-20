@@ -1,6 +1,8 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, Set
 
+from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
+
 if TYPE_CHECKING:
     from sqlite3 import Cursor
 
@@ -164,9 +166,8 @@ def _update_history_entries_from_kraken(cursor: 'Cursor') -> None:
 
 def _update_settings_name_for_selected_binance_markets(cursor: 'Cursor') -> None:
     cursor.execute("""
-    UPDATE user_credentials_mappings SET setting_name = binance_selected_trade_pairs
-    WHERE setting_name = PAIRS
-    """)
+    UPDATE user_credentials_mappings SET setting_name = ? WHERE setting_name = "PAIRS"
+    """, (BINANCE_MARKETS_KEY,))
 
 
 def upgrade_v31_to_v32(db: 'DBHandler') -> None:

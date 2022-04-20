@@ -873,7 +873,12 @@ def test_binance_query_trade_history_custom_markets(function_scope_binance):
     binance = function_scope_binance
 
     markets = ['ETHBTC', 'BNBBTC', 'BTCUSDC']
-    binance.edit_exchange(name=None, api_key=None, api_secret=None, PAIRS=markets)
+    binance.edit_exchange(
+        name=None,
+        api_key=None,
+        api_secret=None,
+        binance_selected_trade_pairs=markets,
+    )
     count = 0
     p = re.compile(r'symbol=[A-Z]*')
     seen = set()
