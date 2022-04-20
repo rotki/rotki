@@ -13,7 +13,7 @@ from rotkehlchen.types import Location, TradeType
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_buying_selling_eth_before_daofork(accountant):
+def test_buying_selling_eth_before_daofork(accountant, google_service):
     history3 = [
         Trade(
             timestamp=1446979735,  # 11/08/2015
@@ -71,11 +71,11 @@ def test_buying_selling_eth_before_daofork(accountant):
         AccountingEventType.TRADE: PNL(taxable=FVal('382.4205350'), free=FVal('923.8099920')),
         AccountingEventType.FEE: PNL(taxable=FVal('-1.579'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_buying_selling_btc_before_bchfork(accountant):
+def test_buying_selling_btc_before_bchfork(accountant, google_service):
     history = [
         Trade(
             timestamp=1491593374,  # 04/07/2017
@@ -140,11 +140,11 @@ def test_buying_selling_btc_before_bchfork(accountant):
         AccountingEventType.TRADE: PNL(taxable=FVal('13877.57646153846153846153846'), free=ZERO),
         AccountingEventType.FEE: PNL(taxable=FVal('-1.48'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_buying_selling_bch_before_bsvfork(accountant):
+def test_buying_selling_bch_before_bsvfork(accountant, google_service):
     history = [
         Trade(  # 6.5 BTC 6.5 BCH 6.5 BSV
             timestamp=1491593374,  # 04/07/2017
@@ -256,4 +256,4 @@ def test_buying_selling_bch_before_bsvfork(accountant):
         ),
         AccountingEventType.FEE: PNL(taxable=FVal('-3.04'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)

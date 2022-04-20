@@ -148,7 +148,7 @@ def test_ledger_action_can_be_edited(database, function_scope_messages_aggregato
     ]}, FVal('961.425')),  # 578.505 + 478.65 -2*400 + 2*400 - 2 * 47.865
     ({'taxable_ledger_actions': []}, 0),
 ])
-def test_taxable_ledger_action_setting(accountant, expected):
+def test_taxable_ledger_action_setting(accountant, expected, google_service):
     """Test that ledger actions respect the taxable setting"""
     history = [
         LedgerAction(
@@ -206,11 +206,11 @@ def test_taxable_ledger_action_setting(accountant, expected):
     expected_pnls = PnlTotals()
     if expected != 0:
         expected_pnls[AccountingEventType.LEDGER_ACTION] = PNL(taxable=FVal(expected), free=ZERO)
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_ledger_actions_accounting(accountant):
+def test_ledger_actions_accounting(accountant, google_service):
     """Test for accounting for ledger actions
 
     Makes sure that Ledger actions are processed in accounting, range is respected
@@ -298,4 +298,4 @@ def test_ledger_actions_accounting(accountant):
         # 400 + 0.4*10 - 1*0.1 + 1*0.1 - 1*0.01 - 0.1*500*0.9004 + 0.1*500*0.9004 - 0.1* 400
         AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('363.99'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)

@@ -19,7 +19,7 @@ from rotkehlchen.types import Location
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_kraken_staking_events(accountant):
+def test_kraken_staking_events(accountant, google_service):
     """
     Test that staking events from kraken are correctly processed
     """
@@ -63,7 +63,7 @@ def test_kraken_staking_events(accountant):
     expected_pnls = PnlTotals({
         AccountingEventType.STAKING: PNL(taxable=FVal('0.471505826'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
     assert len(events) == 2
     expected_pnls = [FVal('0.25114638241'), FVal('0.22035944359')]
     for idx, event in enumerate(events):
@@ -72,7 +72,7 @@ def test_kraken_staking_events(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_eth2_staking(accountant):
+def test_eth2_staking(accountant, google_service):
     """Test that ethereum 2 staking is accounted for properly"""
     history = [
         ValidatorDailyStats(
@@ -112,4 +112,4 @@ def test_eth2_staking(accountant):
     expected_pnls = PnlTotals({  # 22.484 - 2.2484 + 19.4628 + 21.89565
         AccountingEventType.STAKING: PNL(taxable=FVal('61.59405'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)

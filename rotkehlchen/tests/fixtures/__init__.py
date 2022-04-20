@@ -8,6 +8,7 @@ from rotkehlchen.tests.fixtures.db import *
 from rotkehlchen.tests.fixtures.eth2 import *
 from rotkehlchen.tests.fixtures.exchanges import *
 from rotkehlchen.tests.fixtures.globaldb import *
+from rotkehlchen.tests.fixtures.google import *
 from rotkehlchen.tests.fixtures.greenlets import *
 from rotkehlchen.tests.fixtures.history import *
 from rotkehlchen.tests.fixtures.messages import *

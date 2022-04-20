@@ -19,18 +19,19 @@ from rotkehlchen.types import Location, TradeType
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_simple_accounting(accountant):
+@pytest.mark.parametrize('upload_csv_to_google', [True])
+def test_simple_accounting(accountant, google_service):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=FVal('559.6947154'), free=ZERO),
         AccountingEventType.FEE: PNL(taxable=FVal('-0.23886813'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_selling_crypto_bought_with_crypto(accountant):
+def test_selling_crypto_bought_with_crypto(accountant, google_service):
     history = [
         Trade(
             timestamp=1446979735,
@@ -80,7 +81,7 @@ def test_selling_crypto_bought_with_crypto(accountant):
         AccountingEventType.TRADE: PNL(taxable=FVal('74.3118704999540625'), free=ZERO),
         AccountingEventType.FEE: PNL(taxable=FVal('-0.419658351381311222'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -124,7 +125,7 @@ def test_buy_event_creation(accountant):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_no_corresponding_buy_for_sell(accountant):
+def test_no_corresponding_buy_for_sell(accountant, google_service):
     """Test that if there is no corresponding buy for a sell, the entire sell counts as profit"""
     history = [Trade(
         timestamp=1476979735,
@@ -149,11 +150,11 @@ def test_no_corresponding_buy_for_sell(accountant):
         AccountingEventType.TRADE: PNL(taxable=FVal('2519.62'), free=ZERO),
         AccountingEventType.FEE: PNL(taxable=FVal('-0.02'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_accounting_works_for_empty_history(accountant):
+def test_accounting_works_for_empty_history(accountant, google_service):
     history = []
     accounting_history_process(
         accountant=accountant,
@@ -163,14 +164,14 @@ def test_accounting_works_for_empty_history(accountant):
     )
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals()
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('db_settings', [{
     'taxfree_after_period': -1,
 }])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_sell_fiat_for_crypto(accountant):
+def test_sell_fiat_for_crypto(accountant, google_service):
     """
     Test for https://github.com/rotki/rotki/issues/2993
     Make sure that selling fiat for crypto does not give warnings due to
@@ -226,7 +227,7 @@ def test_sell_fiat_for_crypto(accountant):
         AccountingEventType.TRADE: PNL(taxable=FVal('24749.74'), free=ZERO),
         AccountingEventType.FEE: PNL(taxable=FVal('-0.0412'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('should_mock_price_queries', [False])

@@ -15,7 +15,7 @@ from rotkehlchen.types import Location, Timestamp, TradeType
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('dont_mock_price_for', [[A_KFEE]])
-def test_kfee_price_in_accounting(accountant):
+def test_kfee_price_in_accounting(accountant, google_service):
     """
     Test that KFEEs are correctly handled during accounting
 
@@ -70,11 +70,11 @@ def test_kfee_price_in_accounting(accountant):
             taxable=FVal('-0.247233'), free=FVal('-0.011127')),
         AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('187.227'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_fees_count_in_cost_basis(accountant):
+def test_fees_count_in_cost_basis(accountant, google_service):
     """Make sure that asset amounts used in fees are reduced."""
     history = [
         Trade(
@@ -128,11 +128,11 @@ def test_fees_count_in_cost_basis(accountant):
     assert accountant.pots[0].cost_basis.get_calculated_asset_amount(A_ETH) is None
     warnings = accountant.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_fees_in_received_asset(accountant):
+def test_fees_in_received_asset(accountant, google_service):
     """
     Test the sell trade where the fee is nominated in the asset received. We had a bug
     where the PnL report said that there was no documented acquisition.
@@ -181,4 +181,4 @@ def test_fees_in_received_asset(accountant):
         AccountingEventType.FEE: PNL(taxable=FVal('-0.060271'), free=ZERO),
         AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('178.615'), free=ZERO),
     })
-    check_pnls_and_csv(accountant, expected_pnls)
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
