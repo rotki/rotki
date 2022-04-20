@@ -88,9 +88,10 @@ def _add_new_tables(cursor: 'Cursor') -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS ens_mappings (
     address TEXT NOT NULL PRIMARY KEY,
-    ens_name TEXT UNIQUE
+    ens_name TEXT UNIQUE,
+    last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-""")  # noqa: E501
+""")
 
 
 def _refactor_manual_balance_id(cursor: 'Cursor') -> None:
@@ -137,7 +138,7 @@ def _update_history_entries_from_kraken(cursor: 'Cursor') -> None:
     sequence_index, COUNT(*) as cnt FROM history_events GROUP BY event_identifier, sequence_index)
     other ON e.event_identifier = other.event_identifier and e.sequence_index=other.sequence_index
     WHERE other.cnt > 1;
-    """)
+    """)  # noqa: E501
 
     update_tuples = []
     eventid_to_indices: Dict[str, Set[int]] = defaultdict(set)

@@ -489,3 +489,9 @@ class ExchangeLocationID(NamedTuple):
             )
         except KeyError as e:
             raise DeserializationError(f'Missing key {str(e)}') from e
+
+
+class EnsMapping(NamedTuple):
+    name: str
+    address: Optional[ChecksumEthAddress]
+    last_update: Optional[Timestamp] = None

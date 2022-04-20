@@ -795,9 +795,10 @@ CREATE VIEW IF NOT EXISTS combined_trades_view AS
 DB_CREATE_ENS_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS ens_mappings (
     address TEXT NOT NULL PRIMARY KEY,
-    ens_name TEXT UNIQUE
+    ens_name TEXT UNIQUE,
+    last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-"""  # noqa: E501
+"""
 
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;

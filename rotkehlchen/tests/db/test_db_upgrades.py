@@ -6,7 +6,6 @@ from shutil import copyfile
 from unittest.mock import patch
 
 import pytest
-from pysqlcipher3._sqlite3 import IntegrityError
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EthereumToken
@@ -2550,18 +2549,14 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     assert len([row[2] for row in result]) == 5
     assert len({row[2] for row in result}) == 5
 
-    cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x45E6CA515E840A4e9E02A3062F99216951825eB2', 'LABEL1'))  # noqa: E501
-    try:
-        cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x4362BBa5a26b07db048Bc2603f843E21Ac22D75E', 'LABEL1'))  # noqa: E501
-        raise AssertionError('Expected to get IntegrityError')
-    except IntegrityError:
-        pass
-    try:
-        cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x45E6CA515E840A4e9E02A3062F99216951825eB2', 'LABEL1'))  # noqa: E501
-        raise AssertionError('Expected to get IntegrityError')
-    except IntegrityError:
-        pass
-    cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ('0x4362BBa5a26b07db048Bc2603f843E21Ac22D75E', 'LABEL2'))  # noqa: E501
+    ens_names_test_data = (
+        '0xASDF123',
+        'TEST_ENS_NAME',
+    )
+    cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ens_names_test_data)  # noqa: E501
+    data_in_db = cursor.execute('SELECT address, ens_name, last_update FROM ens_mappings').fetchone()  # noqa: E501
+    assert data_in_db[:2] == ens_names_test_data
+    assert data_in_db[2] is not None
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
