@@ -50,7 +50,7 @@ from rotkehlchen.constants.ethereum import (
     YEARN_YFI_VAULT,
     ZERO_ADDRESS,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import EXP18, ZERO
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import query_usd_price_zero_if_error
@@ -229,9 +229,9 @@ class YearnVaults(EthereumModule):
             abi=YEARN_DAI_VAULT.abi,  # Any vault ABI will do
             method_name='getPricePerFullShare',
         )
-        nominator = price_per_full_share - (10**18)
+        nominator = price_per_full_share - EXP18
         denonimator = now_block_number - vault.contract.deployed_block
-        return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / 10**18
+        return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / EXP18
 
     def _get_single_addr_balance(
             self,

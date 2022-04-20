@@ -8,20 +8,28 @@ import requests
 from rotkehlchen.assets.asset import Asset, EthereumToken, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_CRV, A_ETH, A_EUR, A_KFEE, A_LINK, A_USD
+from rotkehlchen.constants.assets import (
+    A_1INCH,
+    A_AAVE,
+    A_BTC,
+    A_CRV,
+    A_ETH,
+    A_EUR,
+    A_KFEE,
+    A_LINK,
+    A_USD,
+)
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.coingecko import Coingecko
-from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
     CURRENT_PRICE_CACHE_SECS,
-    DEFAULT_CURRENT_PRICE_ORACLES_ORDER,
     CurrentPriceOracle,
     _query_currency_converterapi,
 )
+from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.factories import make_ethereum_address
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -205,27 +213,6 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
         assert price == Price(FVal('2'))
 
 
-def test_all_common_methods_implemented():
-    """Test all current price oracles implement the expected methods.
-    """
-    for oracle in DEFAULT_CURRENT_PRICE_ORACLES_ORDER:
-        if oracle == CurrentPriceOracle.COINGECKO:
-            instance = Coingecko
-        elif oracle == CurrentPriceOracle.CRYPTOCOMPARE:
-            instance = Cryptocompare
-        else:
-            raise AssertionError(
-                f'Unexpected current price oracle: {oracle}. Update this test',
-            )
-
-        # Check 'rate_limited_in_last' method exists
-        assert hasattr(instance, 'rate_limited_in_last')
-        assert callable(instance.rate_limited_in_last)
-        # Check 'query_historical_price' method exists
-        assert hasattr(instance, 'query_current_price')
-        assert callable(instance.query_current_price)
-
-
 def test_set_oracles_order(inquirer):
     inquirer.set_oracles_order([CurrentPriceOracle.COINGECKO])
 
@@ -239,7 +226,9 @@ def test_find_usd_price_all_rate_limited_in_last(inquirer):  # pylint: disable=u
     """Test zero price is returned when all the oracles have exceeded the rate
     limits requesting the USD price of an asset.
     """
-    inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
+    inquirer._oracle_instances = [
+        MagicMock() for oracle in inquirer._oracles if isinstance(oracle, HistoricalPriceOracleInterface)  # noqa: E501
+    ]
 
     for oracle_instance in inquirer._oracle_instances:
         oracle_instance.rate_limited_in_last.return_value = True
@@ -341,14 +330,14 @@ def test_find_uniswap_v2_lp_token_price(inquirer, globaldb, ethereum_manager):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_curve_lp_token_price(inquirer, ethereum_manager):
+def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
     address = '0xb19059ebb43466C323583928285a49f558E572Fd'
-    inquirer.inject_ethereum(ethereum_manager)
+    inquirer_defi.inject_ethereum(ethereum_manager)
 
-    price = inquirer.find_curve_pool_price(EthereumToken(address))
+    price = inquirer_defi.find_curve_pool_price(EthereumToken(address))
     assert price is not None
     # Check that the protocol is correctly caught by the inquirer
-    assert price == inquirer.find_usd_price(EthereumToken(address))
+    assert price == inquirer_defi.find_usd_price(EthereumToken(address))
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -356,3 +345,25 @@ def test_find_curve_lp_token_price(inquirer, ethereum_manager):
 def test_find_kfee_price(inquirer):
     price = inquirer.find_usd_price(A_KFEE)
     assert FVal(price) == FVal(0.01)
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_asset_with_no_api_oracles(inquirer_defi):
+    """
+    Test that uniswap oracles correctly query USD price of assets
+    """
+    price = inquirer_defi.find_usd_price(A_1INCH, ignore_cache=True)
+    inquirer_defi.set_oracles_order(
+        oracles=[CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.CRYPTOCOMPARE],
+    )
+    price_uni_v2 = inquirer_defi.find_usd_price(A_1INCH, ignore_cache=True)
+    inquirer_defi.set_oracles_order(
+        oracles=[CurrentPriceOracle.UNISWAPV3, CurrentPriceOracle.CRYPTOCOMPARE],
+    )
+    price_uni_v3 = inquirer_defi.find_usd_price(A_1INCH, ignore_cache=True)
+
+    assert price != Price(ZERO)
+    assert price != price_uni_v2
+    assert price.is_close(price_uni_v2, max_diff='0.05')
+    assert price.is_close(price_uni_v3, max_diff='0.05')

@@ -26,6 +26,8 @@ from rotkehlchen.chain.ethereum.manager import (
     EthereumManager,
     NodeName,
 )
+from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
+from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.manager import BlockchainBalancesUpdate, ChainManager
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateChain
@@ -276,6 +278,14 @@ class Rotkehlchen():
         )
 
         Inquirer().inject_ethereum(ethereum_manager)
+        uniswap_v2_oracle = UniswapV2Oracle(ethereum_manager)
+        uniswap_v3_oracle = UniswapV3Oracle(ethereum_manager)
+        saddle_oracle = SaddleOracle(ethereum_manager)
+        Inquirer().add_defi_oracles(
+            uniswap_v2=uniswap_v2_oracle,
+            uniswap_v3=uniswap_v3_oracle,
+            saddle=saddle_oracle,
+        )
         Inquirer().set_oracles_order(settings.current_price_oracles)
 
         self.chain_manager = ChainManager(

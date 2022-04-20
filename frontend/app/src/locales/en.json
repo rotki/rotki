@@ -3591,5 +3591,9 @@
   },
   "l2": {
     "loopring": "Loopring"
+  },
+  "oracles": {
+    "uniswap_v2": "Uniswap V2",
+    "uniswap_v3": "Uniswap V3"
   }
 }

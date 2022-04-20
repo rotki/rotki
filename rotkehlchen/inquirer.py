@@ -2,6 +2,7 @@ from __future__ import unicode_literals  # isort:skip
 
 import logging
 import operator
+from enum import auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
 
@@ -58,6 +59,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.ethereum import CURVE_POOL_ABI, YEARN_VAULT_V2_ABI
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -69,6 +71,7 @@ from rotkehlchen.externalapis.xratescom import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
@@ -84,6 +87,8 @@ from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
+    from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 
@@ -104,7 +109,13 @@ ASSETS_UNDERLYING_BTC = (
 )
 
 
-CurrentPriceOracleInstance = Union['Coingecko', 'Cryptocompare']
+CurrentPriceOracleInstance = Union[
+    'Coingecko',
+    'Cryptocompare',
+    'UniswapV3Oracle',
+    'UniswapV2Oracle',
+    'SaddleOracle',
+]
 
 
 def _check_curve_contract_call(decoded: Tuple[Any, ...]) -> bool:
@@ -124,13 +135,19 @@ def _check_curve_contract_call(decoded: Tuple[Any, ...]) -> bool:
 
 class CurrentPriceOracle(SerializableEnumMixin):
     """Supported oracles for querying current prices"""
-    COINGECKO = 1
-    CRYPTOCOMPARE = 2
+    COINGECKO = auto()
+    CRYPTOCOMPARE = auto()
+    UNISWAPV2 = auto()
+    UNISWAPV3 = auto()
+    SADDLE = auto()
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
     CurrentPriceOracle.COINGECKO,
     CurrentPriceOracle.CRYPTOCOMPARE,
+    CurrentPriceOracle.UNISWAPV2,
+    CurrentPriceOracle.UNISWAPV3,
+    CurrentPriceOracle.SADDLE,
 ]
 
 
@@ -225,6 +242,9 @@ class Inquirer():
     _data_directory: Path
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
+    _uniswapv2: Optional['UniswapV2Oracle'] = None
+    _uniswapv3: Optional['UniswapV3Oracle'] = None
+    _saddle: Optional['SaddleOracle'] = None
     _ethereum: Optional['EthereumManager'] = None
     _oracles: Optional[List[CurrentPriceOracle]] = None
     _oracle_instances: Optional[List[CurrentPriceOracleInstance]] = None
@@ -288,6 +308,16 @@ class Inquirer():
         Inquirer()._ethereum = ethereum
 
     @staticmethod
+    def add_defi_oracles(
+        uniswap_v2: Optional['UniswapV2Oracle'],
+        uniswap_v3: Optional['UniswapV3Oracle'],
+        saddle: Optional['SaddleOracle'],
+    ) -> None:
+        Inquirer()._uniswapv2 = uniswap_v2
+        Inquirer()._uniswapv3 = uniswap_v3
+        Inquirer()._saddle = saddle
+
+    @staticmethod
     def get_cached_current_price_entry(cache_key: Tuple[Asset, Asset]) -> Optional[CachedPriceEntry]:  # noqa: E501
         cache = Inquirer()._cached_current_price.get(cache_key, None)
         if cache is None or ts_now() - cache.time > CURRENT_PRICE_CACHE_SECS:
@@ -318,7 +348,10 @@ class Inquirer():
         )
         price = Price(ZERO)
         for oracle, oracle_instance in zip(oracles, oracle_instances):
-            if oracle_instance.rate_limited_in_last() is True:
+            if (
+                isinstance(oracle_instance, CurrentPriceOracleInterface) and
+                oracle_instance.rate_limited_in_last() is True
+            ):
                 continue
 
             try:
@@ -326,7 +359,7 @@ class Inquirer():
                     from_asset=from_asset,
                     to_asset=to_asset,
                 )
-            except (PriceQueryUnsupportedAsset, RemoteError) as e:
+            except (DefiPoolError, PriceQueryUnsupportedAsset, RemoteError) as e:
                 log.error(
                     f'Current price oracle {oracle} failed to request {to_asset.identifier} '
                     f'price for {from_asset.identifier} due to: {str(e)}.',

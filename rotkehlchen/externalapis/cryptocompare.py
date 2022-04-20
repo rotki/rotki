@@ -49,6 +49,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import pairwise, ts_now
@@ -203,9 +204,14 @@ def _check_hourly_data_sanity(
         index += 2
 
 
-class Cryptocompare(ExternalServiceWithApiKey):
+class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface):
     def __init__(self, data_directory: Path, database: Optional['DBHandler']) -> None:
-        super().__init__(database=database, service_name=ExternalService.CRYPTOCOMPARE)
+        HistoricalPriceOracleInterface.__init__(self, oracle_name='cryptocompare')
+        ExternalServiceWithApiKey.__init__(
+            self,
+            database=database,
+            service_name=ExternalService.CRYPTOCOMPARE,
+        )
         self.data_directory = data_directory
         self.session = requests.session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
@@ -217,7 +223,7 @@ class Cryptocompare(ExternalServiceWithApiKey):
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
-            seconds: int = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
+            seconds: Optional[int] = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
     ) -> bool:
         """Checks if it's okay to query cryptocompare historical price. This is determined by:
 
@@ -240,8 +246,14 @@ class Cryptocompare(ExternalServiceWithApiKey):
         )
         return can_query
 
-    def rate_limited_in_last(self, seconds: int = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME) -> bool:
+    def rate_limited_in_last(
+        self,
+        seconds: Optional[int] = CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME,
+    ) -> bool:
         """Checks when we were last rate limited by CC and if it was within the given seconds"""
+        if seconds is None:
+            return False
+
         return ts_now() - self.last_rate_limit <= seconds
 
     def set_database(self, database: 'DBHandler') -> None:
