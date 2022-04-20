@@ -1,8 +1,7 @@
 <template>
   <v-card v-bind="$attrs">
-    <div :id="id" :class="noPadding ? null : 'mx-4 pt-2'">
+    <div :class="noPadding ? null : 'mx-4 pt-2'">
       <v-autocomplete
-        :attach="`#${id}`"
         :value="value"
         :items="displayedAccounts"
         :filter="filter"
@@ -87,7 +86,6 @@ import {
   toRefs
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
-import { uniqueId } from 'lodash';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { setupBlockchainAccounts } from '@/composables/balances';
@@ -178,10 +176,7 @@ export default defineComponent({
 
     const { dark } = setupThemeCheck();
 
-    const id = uniqueId('rcmp-');
-
     return {
-      id,
       search,
       input,
       filter,
