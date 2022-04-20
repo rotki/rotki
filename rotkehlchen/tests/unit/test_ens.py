@@ -1,6 +1,7 @@
 import warnings as test_warnings
 
 import pytest
+from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.errors.misc import InputError
@@ -80,3 +81,21 @@ def test_ens_lookup_multichain(
         blockchain=SupportedBlockchain.KUSAMA,
     )
     assert result == ENS_BRUNO_SUBSTRATE_PUBLIC_KEY
+
+
+def test_ens_reverse_lookup(ethereum_manager):
+    """This test could be flaky because it assumes
+        that all used ens names exist
+    """
+    reversed_addr_0 = to_checksum_address('0x71C7656EC7ab88b098defB751B7401B5f6d8976F')
+    reversed_addr_1 = ethereum_manager.ens_lookup('lefteris.eth')
+    expected = {reversed_addr_0: None, reversed_addr_1: 'lefteris.eth'}
+    assert ethereum_manager.ens_reverse_lookup([reversed_addr_0, reversed_addr_1]) == expected
+
+    reversed_addr_2 = ethereum_manager.ens_lookup('abc.eth')
+    reversed_addr_3 = ethereum_manager.ens_lookup('rotki.eth')
+    expected = {reversed_addr_2: 'abc.eth', reversed_addr_3: 'rotki.eth'}
+    assert ethereum_manager.ens_reverse_lookup([reversed_addr_2, reversed_addr_3]) == expected
+
+    with pytest.raises(InputError):
+        ethereum_manager.ens_reverse_lookup('xyz')
