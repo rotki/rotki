@@ -492,6 +492,6 @@ class ExchangeLocationID(NamedTuple):
 
 
 class EnsMapping(NamedTuple):
-    name: str
-    address: Optional[ChecksumEthAddress]
-    last_update: Optional[Timestamp] = None
+    address: ChecksumEthAddress
+    name: Optional[str]
+    last_update: Timestamp = Timestamp(0)

@@ -3,6 +3,7 @@ import hashlib
 import json
 import logging
 import tempfile
+import time
 import traceback
 from collections import defaultdict
 from functools import wraps
@@ -57,6 +58,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.constants import ENS_UPDATE_INTERVAL
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
@@ -128,6 +130,7 @@ from rotkehlchen.types import (
     AssetAmount,
     BlockchainAccountData,
     ChecksumEthAddress,
+    EnsMapping,
     Eth2PubKey,
     EthereumTransaction,
     EVMTxHash,
@@ -4109,44 +4112,37 @@ class RestAPI():
                 status_code=HTTPStatus.NOT_FOUND,
             )
 
-    def _query_addresses(
+    @require_loggedin_user()
+    def get_ens_mappings(
         self,
         addresses: List[ChecksumEthAddress],
-    ) -> Dict[ChecksumEthAddress, Optional[str]]:
-        addr_mappings = {}
-        for addr in addresses:
-            new_name = self.rotkehlchen.chain_manager.ethereum.ens_reverse_lookup(addr)
-            addr_mappings[addr] = new_name
-            self.rotkehlchen.data.db.add_ens_mapping(addr, new_name)
-        return addr_mappings
+        force_update: bool,
+    ) -> Response:
+        mappings_to_send = []
 
-    @require_loggedin_user()
-    def get_reverse_ens(self, addresses: List[ChecksumEthAddress]) -> Response:
-        addr_mappings = self.rotkehlchen.data.db.get_reverse_ens(addresses)
-        missing_addrs = list(set(addresses) - set(addr_mappings))
-        try:
-            missing_queried = self._query_addresses(addresses=missing_addrs)
-        except InputError as e:
-            return api_response(
-                result=wrap_in_fail_result(f'{str(e)}'),
-                status_code=HTTPStatus.CONFLICT,
-            )
-        addr_mappings.update(missing_queried)
-        return api_response(
-            result=_wrap_in_ok_result(addr_mappings),
-            status_code=HTTPStatus.OK,
-        )
+        if force_update:
+            addresses_to_query = addresses
+        else:
+            addresses_to_query = []
+            cached_data = self.rotkehlchen.data.db.get_reverse_ens(addresses)
+            cur_time = Timestamp(int(time.time()))
+            for mapping in cached_data:
+                if cur_time - mapping.last_update > ENS_UPDATE_INTERVAL:
+                    addresses_to_query.append(mapping.address)
+                else:
+                    mappings_to_send.append(mapping)
+            addresses_to_query += list(set(addresses) - set(map(lambda x: x.address, cached_data)))
+        query_results = self.rotkehlchen.chain_manager.ethereum.ens_reverse_lookup(addresses_to_query)  # noqa: E501
+        for address, name in query_results.items():
+            new_mapping = EnsMapping(name=name, address=address)
+            self.rotkehlchen.data.db.add_ens_mapping(new_mapping)
+            mappings_to_send.append(new_mapping)
 
-    @require_loggedin_user()
-    def patch_reverse_ens(self, addresses: List[ChecksumEthAddress]) -> Response:
-        try:
-            addresses_mapping = self._query_addresses(addresses=addresses)
-        except InputError as e:
-            return api_response(
-                result=wrap_in_fail_result(f'{str(e)}'),
-                status_code=HTTPStatus.CONFLICT,
-            )
+        wrapped_mappings = {}
+        for mapping in mappings_to_send:
+            wrapped_mappings[mapping.address] = mapping.name
+
         return api_response(
-            result=_wrap_in_ok_result(addresses_mapping),
+            result=_wrap_in_ok_result(wrapped_mappings),
             status_code=HTTPStatus.OK,
         )

@@ -1991,3 +1991,4 @@ class AssetsImportingFromFormSchema(Schema):
 
 class ReverseEnsSchema(Schema):
     ethereum_addresses = fields.List(EthereumAddressField(), required=True)
+    force_update = fields.Boolean(required=False, load_default=False)
