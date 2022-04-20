@@ -41,6 +41,7 @@ import HashLink from '@/components/helper/HashLink.vue';
 import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
 import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
+import TableFilter from '@/components/history/filtering/TableFilter.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeLocationSelector from '@/components/history/TradeLocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
@@ -102,6 +103,7 @@ export function registerComponents() {
   Vue.component('LiquidityPoolSelector', LiquidityPoolSelector);
   Vue.component('BalancerPoolAsset', BalancerPoolAsset);
   Vue.component('TradeLocationSelector', TradeLocationSelector);
+  Vue.component('TableFilter', TableFilter);
   // version 10
   Vue.component('DataTable', DataTable);
   Vue.component('TableExpandContainer', TableExpandContainer);

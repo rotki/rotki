@@ -32,7 +32,9 @@ import {
 } from '@/premium/premium-apis';
 import { registerComponents } from '@/premium/register-components';
 import store from '@/store/store';
+import { DateFormat } from '@/types/date-format';
 import { FrontendSettingsPayload } from '@/types/frontend-settings';
+import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
 
 const date: DateUtilities = {
   epoch(): number {
@@ -58,6 +60,12 @@ const date: DateUtilities = {
       new Date(timestamp * 1000),
       store.getters['session/dateDisplayFormat']
     );
+  },
+  getDateInputISOFormat(format: string): string {
+    return getDateInputISOFormat(format as DateFormat);
+  },
+  convertToTimestamp(date: string, dateFormat: string): number {
+    return convertToTimestamp(date, dateFormat as DateFormat);
   }
 };
 

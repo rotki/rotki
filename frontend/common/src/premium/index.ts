@@ -43,6 +43,8 @@ export interface DateUtilities {
   dateToEpoch(date: string, format: string): number;
   epochStartSubtract(amount: number, unit: TimeUnit): number;
   toUserSelectedFormat(timestamp: number): string;
+  getDateInputISOFormat(format: string): string;
+  convertToTimestamp(date: string, dateFormat?: string): number;
 }
 
 export type DexTradesApi = {
@@ -113,6 +115,7 @@ export type UserSettingsApi = {
   shouldShowPercentage: Ref<boolean>
   scrambleData: Ref<boolean>
   darkModeEnabled: Ref<boolean>
+  dateInputFormat: Ref<string>
   privacyMode: Ref<boolean>
   graphZeroBased: Ref<boolean>
 };
