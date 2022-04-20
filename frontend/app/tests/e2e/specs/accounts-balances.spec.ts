@@ -35,13 +35,12 @@ describe('balances', () => {
     dashboardPage = new DashboardPage();
     tagManager = new TagManager();
     settings = new GeneralSettingsPage();
-    app.visit();
-    app.createAccount(username);
+    app.fasterLogin(username);
     page.visit();
   });
 
   after(() => {
-    app.logout();
+    app.fasterLogout();
   });
 
   describe('blockchain balances', () => {

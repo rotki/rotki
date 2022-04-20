@@ -35,11 +35,11 @@ export class TradeHistoryPage {
     cy.get('[data-cy=type] input').check(trade.trade_type, {
       force: true
     });
-    cy.get('[data-cy=amount]').type(trade.amount);
     cy.intercept({
       method: 'GET',
       url: '/api/1/tasks/*'
     }).as('priceTask');
+    cy.get('[data-cy=amount]').type(trade.amount);
     cy.wait('@priceTask', { timeout: 30000 })
       .its('response.statusCode')
       .should('equal', 200);
@@ -68,6 +68,8 @@ export class TradeHistoryPage {
   }
 
   visibleEntries(visible: number) {
+    cy.get('.v-data-table__progress').should('not.exist');
+    cy.get('.v-data-table__empty-wrapper').should('not.exist');
     cy.get('.closed-trades tbody').find('tr').should('have.length', visible);
   }
 

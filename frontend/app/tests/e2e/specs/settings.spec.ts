@@ -33,12 +33,11 @@ describe('settings', () => {
     pageGeneral = new GeneralSettingsPage();
     pageUserSecurity = new UserSecuritySettingsPage();
     pageAccounting = new AccountingSettingsPage();
-    app.visit();
-    app.createAccount(username, password);
+    app.fasterLogin(username);
   });
 
   after(() => {
-    app.logout();
+    app.fasterLogout();
   });
 
   describe('General Settings', () => {
@@ -174,7 +173,7 @@ describe('settings', () => {
 
   describe('Verify settings persist after re-login', () => {
     it('Log in with new password', () => {
-      app.logout();
+      app.fasterLogout();
       // If we don't visit the logout doesn't persist the skip_update parameter
       app.visit();
       app.login(username, newPassword);

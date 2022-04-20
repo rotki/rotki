@@ -11,36 +11,35 @@ describe('ledger actions history', () => {
   let ledgerActionPage: LedgerActionPage;
   let externalLedgerActions: ExternalLedgerAction[];
 
-  before(() => {
+  beforeEach(() => {
     username = Guid.newGuid().toString();
     app = new RotkiApp();
     page = new HistoryPage();
     ledgerActionPage = new LedgerActionPage();
-    app.visit();
-    app.createAccount(username);
+    app.fasterLogin(username);
     page.visit();
     cy.fixture('history/ledger-actions').then(ledgerAction => {
       externalLedgerActions = ledgerAction;
     });
-    ledgerActionPage.visit();
   });
 
-  after(() => {
-    app.logout();
+  afterEach(() => {
+    app.fasterLogout();
   });
 
   it('add two ledger actions', () => {
+    ledgerActionPage.visit();
     ledgerActionPage.addLedgerAction(externalLedgerActions[0]);
     ledgerActionPage.addLedgerAction(externalLedgerActions[1]);
-  });
-
-  it('displays two ledger actions', () => {
     ledgerActionPage.visibleEntries(2);
     ledgerActionPage.ledgerActionIsVisible(0, externalLedgerActions[0]);
     ledgerActionPage.ledgerActionIsVisible(1, externalLedgerActions[1]);
   });
 
   it('edit ledger action', () => {
+    cy.addLedgerAction(externalLedgerActions[0]);
+    ledgerActionPage.visit();
+    ledgerActionPage.visibleEntries(1);
     ledgerActionPage.editTrade(0, '123.2');
     ledgerActionPage.ledgerActionIsVisible(0, {
       ...externalLedgerActions[0],
@@ -49,6 +48,10 @@ describe('ledger actions history', () => {
   });
 
   it('delete ledger action', () => {
+    cy.addLedgerAction(externalLedgerActions[0]);
+    cy.addLedgerAction(externalLedgerActions[1]);
+    ledgerActionPage.visit();
+    ledgerActionPage.visibleEntries(2);
     ledgerActionPage.deleteLedgerAction(0);
     ledgerActionPage.confirmDelete();
     ledgerActionPage.visibleEntries(1);

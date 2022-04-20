@@ -11,8 +11,7 @@ describe('defi', () => {
     username = Guid.newGuid().toString();
     app = new RotkiApp();
     page = new DefiPage();
-    app.visit();
-    app.createAccount(username);
+    app.fasterLogin(username);
   });
 
   it('goes through the wizard', () => {
@@ -24,6 +23,6 @@ describe('defi', () => {
   });
 
   after(() => {
-    app.logout();
+    app.fasterLogout();
   });
 });
