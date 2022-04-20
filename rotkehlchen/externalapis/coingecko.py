@@ -234,7 +234,24 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0xcbb20D755ABAD34cb4a9b5fF6Dd081C76769f62e'),
     strethaddress_to_identifier('0xB4EaF48bD7f72356e1019C157e91b81A1C541073'),
     strethaddress_to_identifier('0x2a093BcF0C98Ef744Bb6F69D74f2F85605324290'),
-
+    strethaddress_to_identifier('0x7B22938ca841aA392C93dBB7f4c42178E3d65E88'),
+    strethaddress_to_identifier('0x47bc01597798DCD7506DCCA36ac4302fc93a8cFb'),
+    strethaddress_to_identifier('0x6aEDbF8dFF31437220dF351950Ba2a3362168d1b'),
+    strethaddress_to_identifier('0x31f3D9D1BeCE0c033fF78fA6DA60a6048F3E13c5'),
+    strethaddress_to_identifier('0x00c4B398500645eb5dA00a1a379a88B11683ba01'),
+    strethaddress_to_identifier('0x5B2e4a700dfBc560061e957edec8F6EeEb74a320'),
+    strethaddress_to_identifier('0x68AA3F232dA9bdC2343465545794ef3eEa5209BD'),
+    strethaddress_to_identifier('0x905E337c6c8645263D3521205Aa37bf4d034e745'),
+    strethaddress_to_identifier('0xE477292f1B3268687A29376116B0ED27A9c76170'),
+    strethaddress_to_identifier('0x9fBFed658919A896B5Dc7b00456Ce22D780f9B65'),
+    strethaddress_to_identifier('0xAFe60511341a37488de25Bef351952562E31fCc1'),
+    strethaddress_to_identifier('0x3c4bEa627039F0B7e7d21E34bB9C9FE962977518'),
+    strethaddress_to_identifier('0x48FF53777F747cFB694101222a944dE070c15D36'),
+    strethaddress_to_identifier('0xe2DA716381d7E0032CECaA5046b34223fC3f218D'),
+    strethaddress_to_identifier('0x2fdF40C484b1BD6F1c214ACAC737FEDc8b03E5a8'),
+    strethaddress_to_identifier('0x88665A7556E1B3C939D6661248116886845249a8'),
+    'XVC',
+    'MCN',
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [

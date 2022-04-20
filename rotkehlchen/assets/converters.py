@@ -365,6 +365,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'BTR',  # neither in coingecko nor cryptocompare
     'BST',  # No coingecko or cryptocompare yet. Beshare Token TODO: Review this one in a few days
     'CADX',  # no cryptocompare/coingecko data TODO: Review this one
+    'CAST',  # castello but no cc/cryptocompare
     'CBC',  # neither in coingecko nor cryptocompare
     'CIND',  # neither in coingecko nor cryptocompare
     'CLI',  # Couldn't find a reference to this asset
@@ -410,6 +411,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # HINT. As of 28/07/2019 no data found outside of Bittrex for this token
     # https://twitter.com/BittrexIntl/status/1154445165257474051
     'HINT',
+    'HRTS',  # no cc/cryptocompare data
     # TUDA. As of 02/08/2019 no data found outside of Bittrex for this token
     # https://mobile.twitter.com/BittrexIntl/status/1156974900986490880
     'TUDA',
@@ -419,6 +421,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # BlockTV. As of 29/11/2019 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-BLTV
     'BLTV',
+    'BTD',  # bitdesk but no cc/coingecko
     # Forkspot. As for 01/03/2020 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-FRSP
     'FRSP',
@@ -541,6 +544,7 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'PLANETS',  # PlanetWatch (PLANETS) but has no cryptocompare/coingecko
     'MCS',  # no cryptocompare/coingecko data yet
     'EXO',  # noqa: E501 #  https://blog.exordium.co/exo-security-token-to-be-listed-on-bitfinex-securities-ltd-24cb03dc8bb0 no cc/coingecko data
+    'BMN',  # no cryptocompare and coingecko doesn't update it
 )
 
 UNSUPPORTED_FTX_ASSETS = (
