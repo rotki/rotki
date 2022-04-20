@@ -42,6 +42,7 @@ def test_set_own_rpc_endpoint(rotkehlchen_api_server):
     assert kusama_manager.available_nodes_call_order[0][0] == KusamaNodeName.OWN
 
 
+@flaky(max_runs=3, min_passes=1)  # Kusama open nodes some times time out
 @pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR]])
 @pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_NODES[1].endpoint()])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [[KusamaNodeName.OWN]])

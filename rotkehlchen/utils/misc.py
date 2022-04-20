@@ -25,7 +25,7 @@ from eth_utils.address import to_checksum_address
 
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEthAddress, Fee, Timestamp, TimestampMS
+from rotkehlchen.types import ChecksumEthAddress, Timestamp, TimestampMS
 
 log = logging.getLogger(__name__)
 
@@ -212,18 +212,6 @@ def convert_to_int(
             return int(val)
     # else
     raise ConversionError(f'Can not convert {val} which is of type {type(val)} to int.')
-
-
-def taxable_gain_for_sell(
-        taxable_amount: FVal,
-        rate_in_profit_currency: FVal,
-        total_fee_in_profit_currency: Fee,
-        selling_amount: FVal,
-) -> FVal:
-    return (
-        rate_in_profit_currency * taxable_amount -
-        total_fee_in_profit_currency * (taxable_amount / selling_amount)
-    )
 
 
 def get_system_spec() -> Dict[str, str]:
