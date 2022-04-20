@@ -245,8 +245,13 @@ jobs:
           fi
           npm run build -w @rotki/common
       - name: Run integration tests
-        working-directory: ./frontend/app
-        run: npm run test:integration-ci
+        uses: cypress-io/github-action@v2
+        env:
+          ARGS: "--browser chrome"
+        with:
+          install: false
+          command: npm run test:integration-ci
+          working-directory: ./frontend/app
       - name: Upload coverage
         working-directory: ./frontend/app
         run: cd ../.. && ./.github/.codecov -F frontend_integration
