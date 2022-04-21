@@ -24,6 +24,8 @@
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
+import { ExternalLedgerAction, ExternalTrade } from './types';
+
 const logout = () => {
   cy.request({
     url: 'http://localhost:22221/api/1/users',
@@ -69,10 +71,12 @@ const updateAssets = () => {
 
 const disableModules = () => {
   cy.request({
-    url: 'http://localhost:22221/api/1//settings',
+    url: 'http://localhost:22221/api/1/settings',
     method: 'PUT',
     body: {
-      active_modules: []
+      settings: {
+        active_modules: []
+      }
     }
   })
     .its('body')
@@ -84,6 +88,68 @@ const disableModules = () => {
     });
 };
 
+const createAccount = (username: string, password: string = '1234') => {
+  cy.logout();
+  return cy
+    .request({
+      url: 'http://localhost:22221/api/1/users',
+      method: 'PUT',
+      body: {
+        name: username,
+        password: password,
+        initial_settings: {
+          submit_usage_analytics: true
+        }
+      }
+    })
+    .its('body');
+};
+
+const addExternalTrade = (trade: ExternalTrade) => {
+  return cy
+    .request({
+      url: 'http://localhost:22221/api/1/trades',
+      method: 'PUT',
+      body: {
+        timestamp: new Date(trade.time).getTime() / 1000,
+        location: 'external',
+        base_asset: trade.base_id,
+        quote_asset: trade.quote_id,
+        trade_type: trade.trade_type,
+        amount: trade.amount,
+        rate: trade.rate,
+        fee: trade.fee,
+        fee_currency: trade.fee_id,
+        link: trade.link,
+        notes: trade.notes
+      }
+    })
+    .its('body');
+};
+
+const addLedgerAction = (action: ExternalLedgerAction) => {
+  return cy
+    .request({
+      url: 'http://localhost:22221/api/1/ledgeractions',
+      method: 'PUT',
+      body: {
+        timestamp: new Date(action.datetime).getTime() / 1000,
+        action_type: action.action_type,
+        location: action.location,
+        amount: action.amount,
+        asset: action.asset_id,
+        rate: action.rate,
+        rate_asset: action.rate_asset_id,
+        link: action.link,
+        notes: action.notes
+      }
+    })
+    .its('body');
+};
+
 Cypress.Commands.add('logout', logout);
 Cypress.Commands.add('updateAssets', updateAssets);
 Cypress.Commands.add('disableModules', disableModules);
+Cypress.Commands.add('createAccount', createAccount);
+Cypress.Commands.add('addExternalTrade', addExternalTrade);
+Cypress.Commands.add('addLedgerAction', addLedgerAction);

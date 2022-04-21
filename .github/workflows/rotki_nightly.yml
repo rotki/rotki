@@ -128,16 +128,22 @@ jobs:
           pip install --upgrade pip==21.3.1 wheel
           pip install -r requirements.txt
           pip install -e .
-      - name: Run integration tests
+      - name: Restore dependencies
         working-directory: ./frontend
         run: |
           npm install -g npm@8
           if ! npm ci --exit-code; then
-           npm ci
+            npm ci
           fi
           npm run build -w @rotki/common
-          cd app
-          npm run test:integration-ci
+      - name: Run integration tests
+        uses: cypress-io/github-action@v2
+        env:
+          ARGS: "--browser chrome"
+        with:
+          install: false
+          command: npm run test:integration-ci
+          working-directory: ./frontend/app
       - name: Upload coverage
         working-directory: ./frontend/app
         run: cd ../.. && ./.github/.codecov -F frontend_integration

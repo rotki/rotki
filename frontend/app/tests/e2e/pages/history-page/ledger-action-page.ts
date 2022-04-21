@@ -52,6 +52,9 @@ export class LedgerActionPage {
   }
 
   visibleEntries(visible: number) {
+    cy.get('.ledger_actions tbody').should('be.visible');
+    cy.get('.v-data-table__progress').should('not.exist');
+    cy.get('.v-data-table__empty-wrapper').should('not.exist');
     cy.get('.ledger_actions tbody').find('tr').should('have.length', visible);
   }
 

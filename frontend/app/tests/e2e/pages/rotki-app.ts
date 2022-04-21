@@ -25,6 +25,18 @@ export class RotkiApp {
     cy.updateAssets();
   }
 
+  fasterLogin(username: string, password: string = '1234') {
+    cy.createAccount(username, password);
+    this.visit();
+    this.login(username, password);
+    this.closePremiumOverlay();
+  }
+
+  fasterLogout() {
+    cy.logout();
+    this.visit();
+  }
+
   closePremiumOverlay() {
     cy.get('.premium-reminder__title', {
       timeout: 10000

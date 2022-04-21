@@ -130,7 +130,7 @@
     "@cypress/code-coverage": "3.9.12",
     "@cypress/webpack-preprocessor": "5.11.0",
     "@vue/cli-plugin-e2e-cypress": "4.5.15",
-    "cypress": "8.3.1",
+    "cypress": "9.5.4",
     "dmg-license": "1.0.10"
   },
   "engines": {

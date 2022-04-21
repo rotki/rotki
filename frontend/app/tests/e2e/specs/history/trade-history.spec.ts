@@ -19,39 +19,39 @@ describe(
     let tradeHistoryPage: TradeHistoryPage;
     let externalTrades: ExternalTrade[];
 
-    before(() => {
+    beforeEach(() => {
       username = Guid.newGuid().toString();
       app = new RotkiApp();
       page = new HistoryPage();
       tradeHistoryPage = new TradeHistoryPage();
 
-      app.visit();
-      app.createAccount(username);
+      app.fasterLogin(username);
       page.visit();
       cy.fixture('history/trades').then(trade => {
         externalTrades = trade;
       });
-      tradeHistoryPage.visit();
     });
 
-    after(() => {
-      app.logout();
+    afterEach(() => {
+      app.fasterLogout();
     });
 
     it('add two external trades', () => {
+      tradeHistoryPage.visit();
       // add trade by input rate
       tradeHistoryPage.addTrade(externalTrades[0]);
       // add trade by input quote amount
       tradeHistoryPage.addTrade(externalTrades[1]);
-    });
-
-    it('displays two trades', () => {
       tradeHistoryPage.visibleEntries(2);
       tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
       tradeHistoryPage.tradeIsVisible(1, externalTrades[1]);
     });
 
     it('edit external trade', () => {
+      cy.addExternalTrade(externalTrades[0]);
+      tradeHistoryPage.visit();
+      tradeHistoryPage.visibleEntries(1);
+      tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
       tradeHistoryPage.editTrade(0, '123.2');
       tradeHistoryPage.tradeIsVisible(0, {
         ...externalTrades[0],
@@ -60,6 +60,11 @@ describe(
     });
 
     it('delete external trade', () => {
+      cy.addExternalTrade(externalTrades[0]);
+      cy.addExternalTrade(externalTrades[1]);
+      tradeHistoryPage.visit();
+      tradeHistoryPage.visibleEntries(2);
+      tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
       tradeHistoryPage.deleteTrade(0);
       tradeHistoryPage.confirmDelete();
       tradeHistoryPage.visibleEntries(1);

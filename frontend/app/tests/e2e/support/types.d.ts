@@ -35,6 +35,9 @@ declare global {
       logout: () => void;
       updateAssets: () => void;
       disableModules: () => void;
+      createAccount: (username: string, password?: string) => Chainable;
+      addExternalTrade: (trade: ExternalTrade) => Chainable;
+      addLedgerAction: (action: ExternalLedgerAction) => Chainable;
     }
   }
 }

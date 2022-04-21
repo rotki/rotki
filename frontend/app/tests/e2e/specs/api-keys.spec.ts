@@ -11,12 +11,11 @@ describe('API keys', () => {
     username = Guid.newGuid().toString();
     app = new RotkiApp();
     page = new ApiKeysPage();
-    app.visit();
-    app.createAccount(username);
+    app.fasterLogin(username);
   });
 
   after(() => {
-    app.logout();
+    app.fasterLogout();
   });
 
   it('add exchange key', () => {
