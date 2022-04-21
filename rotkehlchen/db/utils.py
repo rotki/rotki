@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import is_valid_kusama_address, is_valid_polkadot_address
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.types import (
     BlockchainAccountData,
     BTCAddress,
@@ -53,12 +54,12 @@ class DBAssetBalance(NamedTuple):
     amount: str
     usd_value: str
 
-    def serialize(self) -> Dict[str, str]:
+    def serialize(self, currency: Asset = A_USD) -> Dict[str, str]:
         return {
             'category': str(self.category),
             'asset': str(self.asset),
             'amount': self.amount,
-            'usd_value': self.usd_value,
+            f'{currency.symbol.lower()}_value': self.usd_value,
         }
 
 
@@ -74,10 +75,10 @@ class LocationData(NamedTuple):
     location: str  # Location serialized in a DB enum
     usd_value: str
 
-    def serialize(self) -> Dict[str, str]:
+    def serialize(self, currency: Asset = A_USD) -> Dict[str, str]:
         return {
             'location': str(Location.deserialize_from_db(self.location)),
-            'usd_value': self.usd_value,
+            f'{currency.symbol.lower()}_value': self.usd_value,
         }
 
 
