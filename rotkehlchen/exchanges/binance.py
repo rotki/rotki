@@ -191,7 +191,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
             uri: str = BINANCE_BASE_URL,
-            PAIRS: Optional[List[str]] = None,  # noqa: N803
+            binance_selected_trade_pairs: Optional[List[str]] = None,  # noqa: N803
     ):
         exchange_location = Location.BINANCE
         if uri == BINANCEUS_BASE_URL:
@@ -211,7 +211,7 @@ class Binance(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         })
         self.msg_aggregator = msg_aggregator
         self.offset_ms = 0
-        self.selected_pairs = PAIRS
+        self.selected_pairs = binance_selected_trade_pairs
 
     def first_connection(self) -> None:
         if self.first_connection_made:
