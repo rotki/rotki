@@ -333,6 +333,7 @@ class Rotkehlchen():
             exchange_manager=self.exchange_manager,
             evm_tx_decoder=self.evm_tx_decoder,
             deactivate_premium=self.deactivate_premium_status,
+            query_balances=self.query_balances,
         )
         DataMigrationManager(self).maybe_migrate_data()
         self.greenlet_manager.spawn_and_track(

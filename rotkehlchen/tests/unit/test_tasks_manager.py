@@ -58,6 +58,7 @@ def fixture_task_manager(
         exchange_manager=exchange_manager,
         evm_tx_decoder=evm_transaction_decoder,
         deactivate_premium=lambda: None,
+        query_balances=lambda: None,
     )
     return task_manager
 
@@ -229,3 +230,22 @@ def test_check_premium_status(rotkehlchen_api_server):
             raise AssertionError(f'Premium check query was not completed within {timeout} seconds') from e  # noqa: E501
 
         assert rotki.premium is None
+
+
+@pytest.mark.parametrize('max_tasks_num', [7])
+def test_update_snapshot_balances(rotkehlchen_api_server):
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    gevent.killall(rotki.api_task_greenlets)
+    task_manager = rotki.task_manager
+    task_manager.potential_tasks = [task_manager._maybe_update_snapshot_balances]
+
+    now = ts_now()
+    timeout = 90
+    try:
+        with gevent.Timeout(timeout):
+            task_manager.schedule()
+    except gevent.Timeout as e:
+        raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501
+
+    last_balance_save_time = rotki.data.db.get_last_balance_save_time()
+    assert last_balance_save_time >= now

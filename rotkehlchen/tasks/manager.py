@@ -75,6 +75,7 @@ class TaskManager():
             exchange_manager: ExchangeManager,
             evm_tx_decoder: EVMTransactionDecoder,
             deactivate_premium: Callable,
+            query_balances: Callable,
     ) -> None:
         self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
@@ -97,6 +98,7 @@ class TaskManager():
             method=self._prepare_cryptocompare_queries,
         )
         self.deactivate_premium = deactivate_premium
+        self.query_balances = query_balances
         self.last_premium_status_check = ts_now()
         self.msg_aggregator = MessagesAggregator()
 
@@ -109,6 +111,7 @@ class TaskManager():
             self._maybe_query_missing_prices,
             self._maybe_decode_evm_transactions,
             self._maybe_check_premium_status,
+            self._maybe_update_snapshot_balances,
         ]
         if premium_sync_manager is not None:
             self.potential_tasks.append(premium_sync_manager.maybe_upload_data_to_server)
@@ -416,6 +419,27 @@ class TaskManager():
                 self.msg_aggregator.add_error(message)
                 self.deactivate_premium()
         self.last_premium_status_check = now
+
+    def should_query_balances(self) -> bool:
+        """Utility function to check if balances should be updated."""
+        last_save = self.database.get_last_balance_save_time()
+        settings = self.database.get_settings()
+        # Setting is saved in hours, convert to seconds here
+        period = settings.balance_save_frequency * 60 * 60
+        now = ts_now()
+        return now - last_save > period
+
+    def _maybe_update_snapshot_balances(self) -> None:
+        """
+        Update the balances of a user if the difference between last time they were updated
+        and the current time exceeds the `balance_save_frequency`.
+        """
+        if self.should_query_balances():
+            self.query_balances(
+                requested_save_data=True,
+                save_despite_errors=False,
+                ignore_cache=True,
+            )
 
     def _schedule(self) -> None:
         """Schedules background tasks"""
