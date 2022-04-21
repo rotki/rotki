@@ -85,6 +85,13 @@ def _add_new_tables(cursor: 'Cursor') -> None:
     FOREIGN KEY(parent_identifier) references history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (parent_identifier, value)
 );""")  # noqa: E501
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS ens_mappings (
+    address TEXT NOT NULL PRIMARY KEY,
+    ens_name TEXT UNIQUE,
+    last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+""")
 
 
 def _refactor_manual_balance_id(cursor: 'Cursor') -> None:

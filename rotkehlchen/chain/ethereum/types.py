@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Any, List, NamedTuple
 
 from eth_typing import HexAddress, HexStr
 
@@ -72,3 +73,12 @@ class NodeName(Enum):
             return 'https://cloudflare-eth.com/'
         # else
         raise RuntimeError(f'Corrupt value {self} for NodeName -- Should never happen')
+
+
+class EnsContractParams(NamedTuple):
+    """Parameters for a contract"""
+
+    address: ChecksumEthAddress
+    abi: List[Any]
+    method_name: str
+    arguments: List[Any]

@@ -10476,3 +10476,61 @@ Downloading a database snapshot
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is currently logged in. No snapshot data found for the given timestamp. No permissions to write in the given directory. Check error message.
    :statuscode 500: Internal rotki error.
+
+
+Get ENS names
+=============================================
+
+.. http:post:: /api/(version)/ens/reverse
+
+   Doing a POST on the ENS reverse endpoint will return the ENS names for
+   the given ethereum addresses from cache if found and from blockchain otherwise.
+   If force_update is true, the entire cache will be updated
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/ens/reverse HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "ethereum_addresses": ["0x1", "0x2"]
+      }
+
+    .. http:example:: curl wget httpie python-requests
+
+          POST /api/1/ens/reverse HTTP/1.1
+          Host: localhost:5042
+          Content-Type: application/json;charset=UTF-8
+
+          {
+              "ethereum_addresses": ["0x1", "0x2"],
+              "force_update": true
+          }
+
+   :reqjson list ethereum_addresses: A list of ethereum addresses to get names for.
+   :reqjson bool force_update: If true, the entire cache will be updated.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0x1": "name1",
+              "0x2": "name2"
+          },
+          "message": "",
+      }
+
+   :resjson bool result: A dictionary of ethereum address to ENS name.
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Names were returned successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in or addresses have incorrect format.
+   :statuscode 500: Internal rotki error.

@@ -3,6 +3,7 @@ import hashlib
 import json
 import logging
 import tempfile
+import time
 import traceback
 from collections import defaultdict
 from functools import wraps
@@ -57,6 +58,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.constants import ENS_UPDATE_INTERVAL
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
@@ -128,6 +130,7 @@ from rotkehlchen.types import (
     AssetAmount,
     BlockchainAccountData,
     ChecksumEthAddress,
+    EnsMapping,
     Eth2PubKey,
     EthereumTransaction,
     EVMTxHash,
@@ -4108,3 +4111,38 @@ class RestAPI():
                 wrap_in_fail_result('No file was found'),
                 status_code=HTTPStatus.NOT_FOUND,
             )
+
+    @require_loggedin_user()
+    def get_ens_mappings(
+        self,
+        addresses: List[ChecksumEthAddress],
+        force_update: bool,
+    ) -> Response:
+        mappings_to_send = []
+
+        if force_update:
+            addresses_to_query = addresses
+        else:
+            addresses_to_query = []
+            cached_data = self.rotkehlchen.data.db.get_reverse_ens(addresses)
+            cur_time = Timestamp(int(time.time()))
+            for mapping in cached_data:
+                if cur_time - mapping.last_update > ENS_UPDATE_INTERVAL:
+                    addresses_to_query.append(mapping.address)
+                else:
+                    mappings_to_send.append(mapping)
+            addresses_to_query += list(set(addresses) - set(map(lambda x: x.address, cached_data)))
+        query_results = self.rotkehlchen.chain_manager.ethereum.ens_reverse_lookup(addresses_to_query)  # noqa: E501
+        for address, name in query_results.items():
+            new_mapping = EnsMapping(name=name, address=address)
+            self.rotkehlchen.data.db.add_ens_mapping(new_mapping)
+            mappings_to_send.append(new_mapping)
+
+        wrapped_mappings = {}
+        for mapping in mappings_to_send:
+            wrapped_mappings[mapping.address] = mapping.name
+
+        return api_response(
+            result=_wrap_in_ok_result(wrapped_mappings),
+            status_code=HTTPStatus.OK,
+        )

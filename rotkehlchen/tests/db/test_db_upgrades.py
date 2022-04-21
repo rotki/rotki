@@ -2549,6 +2549,15 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
     assert len([row[2] for row in result]) == 5
     assert len({row[2] for row in result}) == 5
 
+    ens_names_test_data = (
+        '0xASDF123',
+        'TEST_ENS_NAME',
+    )
+    cursor.execute('INSERT INTO ens_mappings(address, ens_name) VALUES(?, ?)', ens_names_test_data)  # noqa: E501
+    data_in_db = cursor.execute('SELECT address, ens_name, last_update FROM ens_mappings').fetchone()  # noqa: E501
+    assert data_in_db[:2] == ens_names_test_data
+    assert data_in_db[2] is not None
+
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
     """
@@ -2590,7 +2599,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     assert missing_tables == removed_tables
     assert tables_after_creation - tables_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'ethereum_internal_transactions', 'ethtx_address_mappings', 'evm_tx_mappings', 'history_events_mappings'}  # noqa: E501
+    assert new_tables == {'ens_mappings', 'ethereum_internal_transactions', 'ethtx_address_mappings', 'evm_tx_mappings', 'history_events_mappings'}  # noqa: E501
 
 
 def test_db_newer_than_software_raises_error(data_dir, username):

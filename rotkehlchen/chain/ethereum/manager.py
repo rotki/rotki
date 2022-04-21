@@ -9,7 +9,12 @@ from ens import ENS
 from ens.abis import ENS as ENS_ABI, RESOLVER as ENS_RESOLVER_ABI
 from ens.exceptions import InvalidName
 from ens.main import ENS_MAINNET_ADDR
-from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
+from ens.utils import (
+    address_to_reverse_domain,
+    is_none_or_zero_address,
+    normal_name_to_hash,
+    normalize_name,
+)
 from eth_typing import BlockNumber, HexStr
 from gevent.lock import Semaphore
 from web3 import HTTPProvider, Web3
@@ -30,8 +35,8 @@ from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.contracts import EthereumContract
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.eth2.constants import ETH2_DEPOSIT
-from rotkehlchen.chain.ethereum.types import string_to_ethereum_address
-from rotkehlchen.chain.ethereum.utils import multicall_2
+from rotkehlchen.chain.ethereum.types import EnsContractParams, string_to_ethereum_address
+from rotkehlchen.chain.ethereum.utils import multicall, multicall_2
 from rotkehlchen.constants.ethereum import ERC20TOKEN_ABI, ETH_SCAN, UNIV1_LP_ABI
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
@@ -167,6 +172,31 @@ def _query_web3_get_logs(
         block_range = initial_block_range
 
     return events
+
+
+def _prepare_ens_call_arguments(addr: ChecksumEthAddress) -> List[Any]:
+    try:
+        reversed_domain = address_to_reverse_domain(addr)
+    except (TypeError, ValueError) as e:
+        raise InputError(f'Address {addr} has incorrect format or type. {str(e)}') from e
+    normalized_domain_name = normalize_name(reversed_domain)
+    arguments = [normal_name_to_hash(normalized_domain_name)]
+    return arguments
+
+
+def _encode_ens_contract(params: EnsContractParams) -> str:
+    contract = EthereumContract(address=params.address, abi=params.abi, deployed_block=0)
+    return contract.encode(method_name=params.method_name, arguments=params.arguments)
+
+
+def _decode_ens_contract(params: EnsContractParams, result_encoded: Any) -> ChecksumEthAddress:
+    contract = EthereumContract(address=params.address, abi=params.abi, deployed_block=0)
+    result = contract.decode(  # pylint: disable=E1136
+        result=result_encoded,
+        method_name=params.method_name,
+        arguments=params.arguments,
+    )[0]
+    return string_to_ethereum_address(result)
 
 
 # TODO: Ideally all these should become configurable
@@ -605,6 +635,59 @@ class EthereumManager():
             return self.etherscan.get_code(account)
 
         return hex_or_bytes_to_str(web3.eth.getCode(account))
+
+    def ens_reverse_lookup(self, reversed_addresses: List[ChecksumEthAddress]) -> Any:
+        """Performs a reverse ENS lookup on a list of addresses
+
+        Because a multicall is used, no exceptions are raised.
+        If any exceptions occur, they are logged and None is returned for that
+        """
+
+        human_names: Dict[ChecksumEthAddress, Optional[str]] = {}
+        # Querying resolvers' addresses
+        resolver_params = [
+            EnsContractParams(address=addr, abi=ENS_ABI, method_name='resolver', arguments=_prepare_ens_call_arguments(addr))  # noqa: E501
+            for addr in reversed_addresses
+        ]
+        resolvers_output = multicall(
+            ethereum=self,
+            calls=[(ENS_MAINNET_ADDR, _encode_ens_contract(params=params)) for params in resolver_params],  # noqa: E501
+        )
+        resolvers = []
+        # We need a new list for reversed_addresses because not all addresses have resolver
+        filtered_reversed_addresses = []
+        # Processing resolvers query output
+        for reversed_addr, params, resolver_output in zip(reversed_addresses, resolver_params, resolvers_output):  # noqa: E501
+            decoded_resolver = _decode_ens_contract(params=params, result_encoded=resolver_output)
+            if is_none_or_zero_address(decoded_resolver):
+                log.error(f'Got zero resolver address for address {reversed_addr}')
+                human_names[reversed_addr] = None
+                continue
+            try:
+                deserialized_resolver = deserialize_ethereum_address(decoded_resolver)
+            except DeserializationError:
+                log.error(
+                    f'Error deserializing address {decoded_resolver} while doing reverse ens lookup',  # noqa: E501
+                )
+                human_names[reversed_addr] = None
+                continue
+            resolvers.append(deserialized_resolver)
+            filtered_reversed_addresses.append(reversed_addr)
+
+        # Querying human names
+        human_names_params = [
+            EnsContractParams(address=resolver, abi=ENS_RESOLVER_ABI, method_name='name', arguments=_prepare_ens_call_arguments(addr))  # noqa: E501
+            for addr, resolver in zip(filtered_reversed_addresses, resolvers)]
+        human_names_output = multicall(
+            ethereum=self,
+            calls=[(params.address, _encode_ens_contract(params=params)) for params in human_names_params],  # noqa: E501
+        )
+
+        # Processing human names query output
+        for addr, params, human_name_output in zip(filtered_reversed_addresses, human_names_params, human_names_output):  # noqa: E501
+            human_names[addr] = _decode_ens_contract(params=params, result_encoded=human_name_output)  # noqa: E501
+
+        return human_names
 
     @overload
     def ens_lookup(
