@@ -1067,7 +1067,7 @@ class GlobalDBHandler():
     def get_manual_prices(
         from_asset: Optional[Asset],
         to_asset: Optional[Asset],
-    ) -> List[Dict[str, str]]:
+    ) -> List[Dict[str, Union[int, str]]]:
         """Returns prices added to the database by the user for an asset"""
         connection = GlobalDBHandler().conn
         cursor = connection.cursor()

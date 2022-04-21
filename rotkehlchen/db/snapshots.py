@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import List, Optional, Tuple
@@ -6,15 +7,23 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from rotkehlchen.accounting.export.csv import CSVWriteError, _dict_to_csv_file
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.types import Timestamp
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 
 BALANCES_FILENAME = 'balances_snapshot.csv'
 LOCATION_DATA_FILENAME = 'location_data_snapshot.csv'
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class DBSnapshot:
@@ -24,7 +33,7 @@ class DBSnapshot:
     def get_timed_balances(
         self,
         timestamp: Timestamp,
-        main_currency: Asset,
+        main_currency_price: FVal,
     ) -> List[DBAssetBalance]:
         """Retrieves the timed_balances from the db for a given timestamp
            Sets the usd_value to the value in the main currency
@@ -35,11 +44,7 @@ class DBSnapshot:
             'SELECT category, time, amount, currency, usd_value FROM timed_balances '
             'WHERE time=?', (timestamp,),
         )
-        main_currency_price = PriceHistorian.query_historical_price(
-            from_asset=A_USD,
-            to_asset=main_currency,
-            timestamp=timestamp,
-        )
+
         for data in timed_balances_result:
             balances_data.append(
                 DBAssetBalance(
@@ -55,7 +60,7 @@ class DBSnapshot:
     def get_timed_location_data(
         self,
         timestamp: Timestamp,
-        main_currency: Asset,
+        main_currency_price: FVal,
     ) -> List[LocationData]:
         """Retrieves the timed_location_data from the db for a given timestamp
            Sets the usd_value to the value in the main currency
@@ -66,11 +71,6 @@ class DBSnapshot:
             'SELECT time, location, usd_value FROM timed_location_data '
             'WHERE time=?',
             (timestamp,),
-        )
-        main_currency_price = PriceHistorian.query_historical_price(
-            from_asset=A_USD,
-            to_asset=main_currency,
-            timestamp=timestamp,
         )
         for data in timed_location_data:
             location_data.append(
@@ -127,13 +127,35 @@ class DBSnapshot:
         and a path to the zip file is returned.
         """
         main_currency = self.db.get_settings().main_currency
+        try:
+            main_currency_price = PriceHistorian.query_historical_price(
+                from_asset=A_USD,
+                to_asset=main_currency,
+                timestamp=timestamp,
+            )
+        except NoPriceForGivenTimestamp:
+            manual_prices = GlobalDBHandler.get_manual_prices(
+                from_asset=A_USD,
+                to_asset=main_currency,
+            )
+            if len(manual_prices) == 0:
+                main_currency_price = Price(ONE)
+                MessagesAggregator().add_error(
+                    f'Could not find price for timestamp {timestamp}. Using USD for export. '
+                    f'Please add manual price from USD to your main currency {main_currency}',
+                )
+            else:
+                best_price = min(manual_prices, key=lambda x: abs(Timestamp(int(x['timestamp'])) - timestamp))  # noqa: E501
+                log.info(f'Used manual price {best_price} for {main_currency} - {timestamp}')
+                main_currency_price = Price(FVal(best_price['price']))
+
         timed_balances = self.get_timed_balances(
             timestamp=timestamp,
-            main_currency=main_currency,
+            main_currency_price=main_currency_price,
         )
         timed_location_data = self.get_timed_location_data(
             timestamp=timestamp,
-            main_currency=main_currency,
+            main_currency_price=main_currency_price,
         )
 
         if len(timed_balances) == 0 or len(timed_location_data) == 0:
