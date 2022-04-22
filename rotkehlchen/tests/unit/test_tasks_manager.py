@@ -3,13 +3,20 @@ from unittest.mock import MagicMock, patch
 
 import gevent
 import pytest
+import requests
 
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.transactions import EthTransactions
+from rotkehlchen.constants.assets import A_BNB
 from rotkehlchen.db.ethtx import DBEthTx
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.tasks.manager import TaskManager
+from rotkehlchen.tests.api.test_manually_tracked_balances import (
+    _populate_initial_balances,
+    _populate_tags,
+)
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.ethereum import setup_ethereum_transactions_test
 from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET
 from rotkehlchen.types import Location
@@ -237,15 +244,39 @@ def test_update_snapshot_balances(rotkehlchen_api_server):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     gevent.killall(rotki.api_task_greenlets)
     task_manager = rotki.task_manager
+    # This prevents the task from being scheduled again.
+    rotki.task_manager = None
     task_manager.potential_tasks = [task_manager._maybe_update_snapshot_balances]
 
+    _populate_tags(rotkehlchen_api_server)
+    _populate_initial_balances(rotkehlchen_api_server)
+
+    # check that the update was successful by checking `last_balance_save_time`
     now = ts_now()
-    timeout = 90
+    timeout = 60
     try:
         with gevent.Timeout(timeout):
             task_manager.schedule()
     except gevent.Timeout as e:
         raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501
-
     last_balance_save_time = rotki.data.db.get_last_balance_save_time()
     assert last_balance_save_time >= now
+
+    # check that manual balances were added into the balances update.
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            "allbalancesresource",
+        ), json={'async_query': False},
+    )
+    result = assert_proper_response_with_result(response)
+    assets = result['assets']
+    assert len(result['assets']) == 4
+    assert assets['BTC']['amount'] == '1.425'
+    assert assets['ETH']['amount'] == '0'
+    assert assets['XMR']['amount'] == '50.315'
+    assert assets[A_BNB.identifier]['amount'] == '155'
+    liabilities = result['liabilities']
+    assert len(liabilities) == 2
+    assert liabilities['ETH']['amount'] == '2'
+    assert liabilities['USD']['amount'] == '100'
