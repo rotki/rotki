@@ -16,6 +16,7 @@ import {
   ProfitLossReportEvents,
   ProfitLossReportOverview,
   ProfitLossReportPeriod,
+  ReportActionableItem,
   Reports
 } from '@/types/reports';
 
@@ -51,6 +52,19 @@ export class ReportsApi {
       }
     );
     return handleResponse(response);
+  }
+
+  async fetchActionableItems(): Promise<ReportActionableItem> {
+    const response = await this.axios.get<ActionResult<ReportActionableItem>>(
+      '/history/actionable_items',
+      {
+        validateStatus: validStatus,
+        transformResponse: setupTransformer([])
+      }
+    );
+
+    const data = handleResponse(response);
+    return ReportActionableItem.parse(data);
   }
 
   async fetchReports(): Promise<Reports> {

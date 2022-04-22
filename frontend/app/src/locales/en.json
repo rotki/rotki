@@ -277,8 +277,8 @@
     "cost_basis": "Cost Basis",
     "headers": {
       "amount": "Amount Sold",
-      "full_amount": "Total Owned Amount",
-      "remaining_amount": "Remaining Amount",
+      "full_amount": "Total acquired by event",
+      "remaining_amount": "Remaining after selling",
       "rate": "{currency} Rate",
       "time": "Time",
       "taxable": "Taxable ?"
@@ -757,7 +757,6 @@
     "from_non_empty": "The from asset cannot be empty",
     "hint": "1 {fromAsset} was worth {price} {toAsset}",
     "price": "Price",
-    "price_nan": "The specified price is not a valid number",
     "price_non_empty": "The price cannot be empty",
     "to_asset": "To Asset",
     "to_non_empty": "The to asset cannot be empty"
@@ -947,6 +946,9 @@
     "error": "Purging the cached data for {source} failed: {message}",
     "subtitle": "Allows you to purge data cached by rotki",
     "title": "Manage Data"
+  },
+  "data_table": {
+    "rows_per_page": "Rows per page"
   },
   "date_time_picker": {
     "default_format": "Date should be in {dateFormat} or {dateFormat} HH:MM format",
@@ -2736,6 +2738,7 @@
       "add_event": "Add a new event"
     },
     "details": {
+      "close": "Close",
       "title": "Transaction details",
       "nonce": "Nonce",
       "gas_fee": "Gas Fee",
@@ -3335,7 +3338,49 @@
     "csv_export_error": "There was an error with export",
     "report_period": "Report starting from {start} to {end}",
     "upgrade": "{processed} total events have been processed starting from {start}.",
-    "upgrade2": "The limit of the free version has been reached. To get the full report please upgrade to {link}"
+    "upgrade2": "The limit of the free version has been reached. To get the full report please upgrade to {link}",
+    "actionable": {
+      "actions": {
+        "back": "Back",
+        "cancel": "Cancel",
+        "close": "Close",
+        "finish": "Finish",
+        "next": "Next",
+        "regenerate_report": "Re-Generate Report",
+        "yes": "Yes"
+      },
+      "show_issues": "Show Issues",
+      "issues_found": "{total} issues found with the generated report",
+      "missing_acquisitions": {
+        "headers": {
+          "asset": "Asset",
+          "time": "Time",
+          "missing_acquisitions": "Missing Acquisitions",
+          "found_amount": "Found Amount",
+          "missing_amount": "Missing Amount"
+        },
+        "title": "Missing Acquisitions ({total})",
+        "hint": "Some asset acquisitions are missing. You will need to figure out where you bought them and either import or manually create the relevant acquisition events",
+        "to": "to"
+      },
+      "missing_prices": {
+        "headers": {
+          "from_asset": "From Asset",
+          "to_asset": "To Asset",
+          "time": "Time",
+          "price": "Price"
+        },
+        "no_filled_prices": "No prices are filled",
+        "total_skipped_prices": "{total} prices are skipped",
+        "all_prices_filled": "All prices are filled",
+        "skipped_all_events_confirmation": "Are you sure you want to skip all events whose asset price is missing?",
+        "if_sure": "If you are sure, ",
+        "regenerate_report_nudge": "click button below to re-generate the report.",
+        "title": "Missing Prices ({total})",
+        "hint": "Some events are skipped because we cannot find prices for the related assets. You can help rotki by manually inputting the prices. The entries that you don't fill will keep being skipped.",
+        "price_is_saved": "Price is saved"
+      }
+    }
   },
   "import_data": {
     "cointracking": {

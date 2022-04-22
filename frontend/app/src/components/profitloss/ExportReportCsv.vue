@@ -24,7 +24,7 @@
   </span>
   <v-btn
     v-else
-    class="profit_loss_report__export-csv mt-8"
+    class="profit_loss_report__export-csv"
     depressed
     color="primary"
     @click="exportCSV()"

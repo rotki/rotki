@@ -8,6 +8,7 @@ import {
   EthereumToken,
   HistoricalPrice,
   HistoricalPriceDeletePayload,
+  HistoricalPriceFormPayload,
   HistoricalPricePayload
 } from '@/services/assets/types';
 import {
@@ -267,7 +268,9 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  async addHistoricalPrice(price: HistoricalPrice): Promise<boolean> {
+  async addHistoricalPrice(
+    price: HistoricalPriceFormPayload
+  ): Promise<boolean> {
     return this.axios
       .put<ActionResult<boolean>>(
         '/assets/prices/historical',
@@ -279,7 +282,9 @@ export class AssetApi {
       .then(handleResponse);
   }
 
-  async editHistoricalPrice(price: HistoricalPrice): Promise<boolean> {
+  async editHistoricalPrice(
+    price: HistoricalPriceFormPayload
+  ): Promise<boolean> {
     return this.axios
       .patch<ActionResult<boolean>>(
         '/assets/prices/historical',

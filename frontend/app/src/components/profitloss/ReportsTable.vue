@@ -45,7 +45,7 @@
         {{ size(item.sizeOnDisk) }}
       </template>
       <template #item.actions="{ item }">
-        <export-report-csv v-if="canExport(item.identifier)" icon />
+        <export-report-csv v-if="isLatestReport(item.identifier)" icon />
         <v-tooltip top open-delay="400">
           <template #activator="{ on, attrs }">
             <v-btn
@@ -171,7 +171,8 @@ export default defineComponent({
     const selected = ref<string[]>([]);
     const expanded = ref([]);
     const reportStore = useReports();
-    const { fetchReports, fetchReport, deleteReport, canExport } = reportStore;
+    const { fetchReports, fetchReport, deleteReport, isLatestReport } =
+      reportStore;
     const { reports } = storeToRefs(reportStore);
     const items = computed(() =>
       get(reports).entries.map((value, index) => ({
@@ -214,7 +215,7 @@ export default defineComponent({
       size,
       refresh,
       selected,
-      canExport: (reportId: number) => get(canExport(reportId)),
+      isLatestReport: (reportId: number) => get(isLatestReport(reportId)),
       getReportUrl,
       fetchReports,
       fetchReport,

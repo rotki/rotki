@@ -124,3 +124,27 @@ export interface ProfitLossReportPeriod {
   readonly start: number;
   readonly end: number;
 }
+
+export const MissingAcquisition = z.object({
+  asset: z.string(),
+  foundAmount: NumericString,
+  missingAmount: NumericString,
+  time: z.number()
+});
+
+export type MissingAcquisition = z.infer<typeof MissingAcquisition>;
+
+export const MissingPrice = z.object({
+  fromAsset: z.string(),
+  toAsset: z.string(),
+  time: z.number()
+});
+
+export type MissingPrice = z.infer<typeof MissingPrice>;
+
+export const ReportActionableItem = z.object({
+  missingAcquisitions: z.array(MissingAcquisition),
+  missingPrices: z.array(MissingPrice)
+});
+
+export type ReportActionableItem = z.infer<typeof ReportActionableItem>;

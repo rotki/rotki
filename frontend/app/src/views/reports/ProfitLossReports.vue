@@ -32,13 +32,14 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
+import { computed, defineComponent, onMounted } from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { storeToRefs } from 'pinia';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import Generate from '@/components/profitloss/Generate.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
-import { useRouter } from '@/composables/common';
+import { useRoute, useRouter } from '@/composables/common';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
 import { useTasks } from '@/store/tasks';
@@ -61,13 +62,36 @@ export default defineComponent({
     const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
 
     const router = useRouter();
+    const route = useRoute();
+
+    onMounted(() => {
+      const query = get(route).query;
+      if (query.regenerate) {
+        const start: string = (query.start as string) || '';
+        const end: string = (query.end as string) || '';
+
+        if (start && end) {
+          const period = {
+            start: parseInt(start),
+            end: parseInt(end)
+          };
+
+          generate(period);
+        }
+
+        router.replace({ query: {} });
+      }
+    });
 
     const generate = async (period: ProfitLossReportPeriod) => {
       const reportId = await generateReport(period);
       if (reportId > 0) {
-        router.push(
-          Routes.PROFIT_LOSS_REPORT.replace(':id', reportId.toString())
-        );
+        router.push({
+          path: Routes.PROFIT_LOSS_REPORT.replace(':id', reportId.toString()),
+          query: {
+            openReportActionable: 'true'
+          }
+        });
       }
     };
 

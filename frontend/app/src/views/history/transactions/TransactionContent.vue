@@ -98,7 +98,12 @@
                 </v-btn>
               </template>
 
-              <transaction-detail :transaction="item" />
+              <template #default="dialog">
+                <transaction-detail
+                  :transaction="item"
+                  @close="dialog.value = false"
+                />
+              </template>
             </v-dialog>
             <v-menu transition="slide-y-transition" max-width="250px" offset-y>
               <template #activator="{ on }">

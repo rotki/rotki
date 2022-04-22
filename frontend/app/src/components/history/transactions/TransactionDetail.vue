@@ -62,6 +62,12 @@
         </v-col>
       </v-row>
     </div>
+    <template #buttons>
+      <v-spacer />
+      <v-btn color="primary" class="px-6" @click="close">
+        {{ $t('transactions.details.close') }}
+      </v-btn>
+    </template>
   </card>
 </template>
 <script lang="ts">
@@ -84,7 +90,8 @@ export default defineComponent({
       type: Object as PropType<EthTransactionEntry>
     }
   },
-  setup(props) {
+  emits: ['close'],
+  setup(props, { emit }) {
     const { transaction } = toRefs(props);
 
     const toGwei = (value: BigNumber) => {
@@ -96,9 +103,14 @@ export default defineComponent({
       return toUnit(tx.gasPrice.multipliedBy(tx.gasUsed), Unit.ETH);
     });
 
+    const close = () => {
+      emit('close');
+    };
+
     return {
       toGwei,
-      gasFee
+      gasFee,
+      close
     };
   }
 });
