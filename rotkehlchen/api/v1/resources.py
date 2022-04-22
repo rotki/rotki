@@ -2091,9 +2091,9 @@ class UserAssetsResource(BaseResource):
 
 
 class DBSnapshotExportingResource(BaseResource):
-    get_schema = SnapshotExportingSchema()
+    post_schema = SnapshotExportingSchema()
 
-    @use_kwargs(get_schema, location='json')
+    @use_kwargs(post_schema, location='json')
     def post(self, timestamp: Timestamp, path: Path) -> Response:
         return self.rest_api.export_user_db_snapshot(timestamp=timestamp, path=path)
 
