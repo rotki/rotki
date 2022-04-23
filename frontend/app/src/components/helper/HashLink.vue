@@ -14,7 +14,10 @@
             v-bind="attrs"
             v-on="on"
           >
-            {{ truncateAddress(displayText, truncateLength) }}
+            <span v-if="ensName">{{ ensName }}</span>
+            <span v-else>
+              {{ truncateAddress(displayText, truncateLength) }}
+            </span>
           </span>
         </template>
         <span> {{ displayText }} </span>
@@ -84,6 +87,7 @@ import { setupDisplayData } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
 import { interop } from '@/electron-interop';
 import { truncateAddress } from '@/filters';
+import { useEnsNames } from '@/store/balances';
 import { randomHex } from '@/utils/data';
 
 export default defineComponent({
@@ -111,6 +115,16 @@ export default defineComponent({
     const { scrambleData, shouldShowAmount } = setupDisplayData();
     const { explorers } = setupSettings();
     const { dark } = setupThemeCheck();
+
+    const { ensNameSelector } = useEnsNames();
+
+    const ensName = computed<string | null>(() => {
+      if (!get(scrambleData) || get(tx)) {
+        return get(ensNameSelector(get(text)));
+      }
+
+      return null;
+    });
 
     const displayText = computed<string>(() => {
       if (!get(scrambleData)) {
@@ -174,6 +188,7 @@ export default defineComponent({
     };
 
     return {
+      ensName,
       makeBlockie,
       url,
       truncateAddress,

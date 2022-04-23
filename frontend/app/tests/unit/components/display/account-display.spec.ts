@@ -30,7 +30,16 @@ describe('AccountDisplay.vue', () => {
         'vuex-store': store
       },
       vuetify,
-      stubs: ['v-tooltip', 'asset-icon'],
+      stubs: {
+        VTooltip: {
+          template:
+            '<span><slot name="activator"/><slot v-if="!disabled"/></span>',
+          props: {
+            disabled: { type: Boolean }
+          }
+        },
+        AssetIcon: true
+      },
       propsData: {
         account
       }
@@ -47,7 +56,7 @@ describe('AccountDisplay.vue', () => {
   });
 
   test('blurs address on privacy mode', async () => {
-    store.commit('session/privacyMode', true);
+    store.commit('session/privacyMode', 1);
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.blur-content').exists()).toBe(true);
   });

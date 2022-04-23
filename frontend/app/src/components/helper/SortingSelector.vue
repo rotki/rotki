@@ -87,8 +87,8 @@ export default defineComponent({
 }
 
 .selector {
+  flex: 1;
   margin-left: 8px;
-  width: 200px;
 }
 
 .dark {

@@ -19,6 +19,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { GeneralAccountData, XpubAccountData } from '@/services/types-api';
 import { BalanceActions } from '@/store/balances/action-types';
 import { chainSection } from '@/store/balances/const';
+import { useEnsNames } from '@/store/balances/index';
 import { BalanceMutations } from '@/store/balances/mutation-types';
 import {
   AccountAssetBalances,
@@ -307,7 +308,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const balances = BlockchainBalances.parse(result);
       await dispatch('updateBalances', {
         chain,
-        balances
+        balances,
+        ignoreCache
       });
       setStatus(Status.LOADED, section);
     };
@@ -358,7 +360,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async updateBalances(
     { commit, dispatch },
-    payload: { chain?: Blockchain; balances: BlockchainBalances }
+    payload: {
+      chain?: Blockchain;
+      balances: BlockchainBalances;
+      ignoreCache?: boolean;
+    }
   ): Promise<void> {
     const { perAccount, totals } = payload.balances;
     const {
@@ -370,6 +376,20 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       AVAX: avaxBalances
     } = perAccount;
     const chain = payload.chain;
+    const forceUpdate = payload.ignoreCache;
+
+    if (forceUpdate && (ethBalances || eth2Balances)) {
+      const addresses = [];
+      if (ethBalances) {
+        addresses.push(...Object.keys(ethBalances));
+      }
+      if (eth2Balances) {
+        addresses.push(...Object.keys(eth2Balances));
+      }
+
+      const { fetchEnsNames } = useEnsNames();
+      fetchEnsNames(addresses, forceUpdate);
+    }
 
     if (!chain || chain === Blockchain.ETH) {
       commit('updateEth', ethBalances ?? {});
@@ -775,6 +795,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         const accounts = await api.accounts(blockchain);
         if (blockchain === Blockchain.ETH) {
           commit('ethAccounts', accounts);
+
+          const addresses = accounts.map(account => account.address);
+          const { fetchEnsNames } = useEnsNames();
+          fetchEnsNames(addresses, true);
         } else if (blockchain === Blockchain.KSM) {
           commit('ksmAccounts', accounts);
         } else if (blockchain === Blockchain.DOT) {

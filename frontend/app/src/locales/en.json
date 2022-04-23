@@ -1505,13 +1505,15 @@
       "zero_based": "Use zero as the lowest y-axis value for the graphs",
       "zero_based_hint": "By default the lowest value is the minimum in the selected period",
       "include_nfts": "Include NFTs in the graphs and total networth",
-      "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs"
+      "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs",
+      "enable_ens": "Show Ethereum Name Service (ENS) for ETH addresses."
     },
     "subtitle": {
       "graph_basis": "Graph basis",
       "query": "Periodic status query",
       "refresh": "Automatic balance refresh",
-      "include_nfts": "Include NFTs in graphs and total amounts"
+      "include_nfts": "Include NFTs in graphs and total amounts",
+      "ens_names": "Use ENS names"
     },
     "title": "Frontend-only Settings",
     "validation": {
@@ -1535,6 +1537,11 @@
         "success": "Automatic refresh was successfully changed to every {period} min",
         "success_disabled": "Automatic refresh was successfully deactivated",
         "invalid_period": "Period must be between {start} and {end} min"
+      },
+      "enable_ens": {
+        "error": "Failed to change ENS visibility",
+        "success": "ENS is enabled",
+        "success_disabled": "ENS is disabled"
       }
     }
   },

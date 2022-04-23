@@ -3,13 +3,16 @@
     <v-btn
       text
       color="primary"
-      :class="$style.fullwidth"
+      :class="$style.button"
       class="text-none text-body-1"
       @click="click(matcher.key)"
     >
-      <span class="text-start" :class="$style.fullwidth">
+      <span class="text-start" :class="$style.wrapper">
         <span class="font-weight-medium"> {{ matcher.key }}: </span>
-        <span class="ms-2 text--secondary font-weight-regular">
+        <span
+          class="ms-2 text--secondary font-weight-regular"
+          :class="$style.description"
+        >
           {{ matcher.description }}
         </span>
       </span>
@@ -42,7 +45,20 @@ export default defineComponent({
 </script>
 
 <style module>
-.fullwidth {
+.button {
   width: 100%;
+  height: auto !important;
+  padding: 0.5rem !important;
+  display: block;
+}
+
+.wrapper {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+}
+
+.description {
+  white-space: normal;
 }
 </style>

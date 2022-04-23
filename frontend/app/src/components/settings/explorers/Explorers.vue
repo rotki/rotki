@@ -1,6 +1,6 @@
 ﻿<template>
-  <div class="explorers">
-    <div class="text-h6 mt-4">
+  <div class="explorers mt-8">
+    <div class="text-h6">
       {{ $t('explorers.title') }}
     </div>
     <div class="text-subtitle-1">

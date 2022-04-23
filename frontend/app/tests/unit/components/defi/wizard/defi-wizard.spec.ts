@@ -10,7 +10,7 @@ import '../../../i18n';
 Vue.use(Vuetify);
 
 describe('DefiWizard.vue', () => {
-  let wrapper: Wrapper<DefiWizard>;
+  let wrapper: Wrapper<any>;
   function createWrapper() {
     const vuetify = new Vuetify();
     const pinia = createPinia();

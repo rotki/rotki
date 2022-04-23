@@ -28,6 +28,7 @@ import {
   validWithSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
+import { EnsNames } from '@/store/balances/types';
 import { Eth2Validator } from '@/types/balances';
 import { SupportedExchange } from '@/types/exchanges';
 import { Module } from '@/types/modules';
@@ -137,6 +138,25 @@ export class BalancesApi {
         validateStatus: validWithParamsSessionAndExternalService,
         transformResponse: basicAxiosTransformer
       })
+      .then(handleResponse);
+  }
+
+  async getEnsNames(
+    forceUpdate: boolean = false,
+    ethereumAddresses: string[]
+  ): Promise<EnsNames> {
+    return this.axios
+      .post<ActionResult<EnsNames>>(
+        '/ens/reverse',
+        axiosSnakeCaseTransformer({
+          forceUpdate,
+          ethereumAddresses
+        }),
+        {
+          validateStatus: validWithSessionAndExternalService,
+          transformResponse: basicAxiosTransformer
+        }
+      )
       .then(handleResponse);
   }
 
