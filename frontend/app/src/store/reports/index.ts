@@ -2,14 +2,18 @@ import { Message } from '@rotki/common/lib/messages';
 import { computed, Ref, ref } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import { setupEnsNames } from '@/composables/balances';
+import { setupSettings } from '@/composables/settings';
 import { CURRENCY_USD } from '@/data/currencies';
 import i18n from '@/i18n';
 import { api } from '@/services/rotkehlchen-api';
+import { filterAddressesFromWords } from '@/store/history/utils';
 import { useNotifications } from '@/store/notifications';
-import store, { useMainStore } from '@/store/store';
+import { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
 import {
   ProfitLossEvents,
+  ProfitLossEventTypeEnum,
   ProfitLossReportPeriod,
   ReportError,
   Reports,
@@ -120,8 +124,8 @@ export const useReports = defineStore('reports', () => {
     page?: { limit: number; offset: number }
   ): Promise<boolean> => {
     set(loaded, false);
-    const itemsPerPage = store.state.settings!.itemsPerPage;
-    const currentPage = page ?? { limit: itemsPerPage, offset: 0 };
+    const { itemsPerPage } = setupSettings();
+    const currentPage = page ?? { limit: get(itemsPerPage), offset: 0 };
 
     try {
       const selectedReport = get(reports).entries.find(
@@ -147,6 +151,22 @@ export const useReports = defineStore('reports', () => {
         processedActions: selectedReport.processedActions
       });
       set(loaded, false);
+      const words = reportEntries.entries
+        .filter(event => {
+          return event.type === ProfitLossEventTypeEnum.TRANSACTION_EVENT;
+        })
+        .map(event => {
+          return event.notes;
+        })
+        .join(' ')
+        .split(' ');
+
+      const addresses = filterAddressesFromWords(words);
+
+      if (addresses.length > 0) {
+        const { fetchEnsNames } = setupEnsNames();
+        fetchEnsNames({ addresses, forceUpdate: false });
+      }
     } catch (e: any) {
       notify({
         title: i18n.t('actions.reports.fetch.error.title').toString(),

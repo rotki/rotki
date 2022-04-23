@@ -40,6 +40,10 @@ export interface AccountAssetBalances {
   readonly [account: string]: AssetBalances;
 }
 
+export interface EnsNames {
+  readonly [account: string]: string | null;
+}
+
 export interface BalanceState {
   eth2Validators: Eth2Validators;
   loopringBalances: AccountAssetBalances;
@@ -59,6 +63,8 @@ export interface BalanceState {
   ksmAccounts: GeneralAccountData[];
   dotAccounts: GeneralAccountData[];
   avaxAccounts: GeneralAccountData[];
+  ensAddresses: string[];
+  ensNames: EnsNames;
   manualBalances: ManualBalanceWithValue[];
   manualLiabilities: ManualBalanceWithValue[];
   manualBalanceByLocation: BalanceByLocation;
@@ -92,6 +98,11 @@ export enum XpubKeyType {
   XPUB = 'p2pkh',
   YPUB = 'p2sh_p2wpkh',
   ZPUB = 'wpkh'
+}
+
+export interface EnsNamesPayload {
+  readonly addresses: string[];
+  readonly forceUpdate: boolean;
 }
 
 export interface XpubPayload {

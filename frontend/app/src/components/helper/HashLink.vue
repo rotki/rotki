@@ -14,7 +14,10 @@
             v-bind="attrs"
             v-on="on"
           >
-            {{ truncateAddress(displayText, truncateLength) }}
+            <span v-if="ensName">{{ ensName }}</span>
+            <span v-else>
+              {{ truncateAddress(displayText, truncateLength) }}
+            </span>
           </span>
         </template>
         <span> {{ displayText }} </span>
@@ -79,6 +82,7 @@ import {
   ExplorerUrls,
   explorerUrls
 } from '@/components/helper/asset-urls';
+import { setupEnsNames } from '@/composables/balances';
 import { setupThemeCheck } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
 import { setupSettings } from '@/composables/settings';
@@ -112,10 +116,21 @@ export default defineComponent({
     const { explorers } = setupSettings();
     const { dark } = setupThemeCheck();
 
+    const { ensNameSelector } = setupEnsNames();
+
+    const ensName = computed<string | null>(() => {
+      if (!get(scrambleData) || get(tx)) {
+        return get(ensNameSelector(get(text)));
+      }
+
+      return null;
+    });
+
     const displayText = computed<string>(() => {
       if (!get(scrambleData)) {
         return get(text);
       }
+
       const length = get(tx) ? 64 : 40;
       return randomHex(length);
     });
@@ -174,6 +189,7 @@ export default defineComponent({
     };
 
     return {
+      ensName,
       makeBlockie,
       url,
       truncateAddress,

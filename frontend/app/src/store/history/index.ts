@@ -3,6 +3,7 @@ import { get, set } from '@vueuse/core';
 import isEqual from 'lodash/isEqual';
 import { acceptHMRUpdate, defineStore } from 'pinia';
 import { exchangeName } from '@/components/history/consts';
+import { setupEnsNames } from '@/composables/balances';
 import i18n from '@/i18n';
 import { IgnoredActions } from '@/services/history/const';
 import {
@@ -36,7 +37,10 @@ import {
   LedgerActionEntry,
   TradeEntry
 } from '@/store/history/types';
-import { mapCollectionEntriesWithMeta } from '@/store/history/utils';
+import {
+  filterAddressesFromWords,
+  mapCollectionEntriesWithMeta
+} from '@/store/history/utils';
 import { useNotifications } from '@/store/notifications';
 import store, { useMainStore } from '@/store/store';
 import { useTasks } from '@/store/tasks';
@@ -419,11 +423,25 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
         parameters ?? get(assetMovementsPayload)
       );
 
+      const { fetchEnsNames } = setupEnsNames();
       if (onlyCache) {
         const result = await api.history.assetMovements(payload);
-        return mapCollectionEntriesWithMeta<AssetMovement>(
+        const mapped = mapCollectionEntriesWithMeta<AssetMovement>(
           mapCollectionResponse(result)
         ) as Collection<AssetMovementEntry>;
+
+        const addresses: string[] = [];
+        result.entries.forEach(item => {
+          if (item.entry.address) {
+            addresses.push(item.entry.address);
+          }
+        });
+
+        if (addresses.length > 0) {
+          fetchEnsNames({ addresses, forceUpdate: false });
+        }
+
+        return mapped;
       }
 
       const { taskId } = await api.history.assetMovementsTask(payload);
@@ -454,9 +472,20 @@ export const useAssetMovements = defineStore('history/assetMovements', () => {
       );
 
       const parsedResult = AssetMovementCollectionResponse.parse(result);
-      return mapCollectionEntriesWithMeta<AssetMovement>(
+      const mapped = mapCollectionEntriesWithMeta<AssetMovement>(
         mapCollectionResponse(parsedResult)
       ) as Collection<AssetMovementEntry>;
+
+      const addresses: string[] = [];
+      result.entries.forEach(item => {
+        if (item.entry.address) {
+          addresses.push(item.entry.address);
+        }
+      });
+
+      fetchEnsNames({ addresses, forceUpdate: true });
+
+      return mapped;
     };
 
     try {
@@ -577,11 +606,20 @@ export const useTransactions = defineStore('history/transactions', () => {
         parameters ?? get(transactionsPayload)
       );
 
+      const { fetchEnsNames } = setupEnsNames();
       if (onlyCache) {
         const result = await api.history.ethTransactions(payload);
-        return mapCollectionEntriesWithMeta<EthTransaction>(
+
+        const mapped = mapCollectionEntriesWithMeta<EthTransaction>(
           mapCollectionResponse(result)
         ) as Collection<EthTransactionEntry>;
+
+        const addresses = getNotesAddresses(mapped.data);
+        if (addresses.length > 0) {
+          fetchEnsNames({ addresses, forceUpdate: false });
+        }
+
+        return mapped;
       }
 
       const { taskId } = await api.history.ethTransactionsTask(payload);
@@ -609,9 +647,14 @@ export const useTransactions = defineStore('history/transactions', () => {
       );
 
       const parsedResult = EthTransactionCollectionResponse.parse(result);
-      return mapCollectionEntriesWithMeta<EthTransaction>(
+      const mapped = mapCollectionEntriesWithMeta<EthTransaction>(
         mapCollectionResponse(parsedResult)
       ) as Collection<EthTransactionEntry>;
+
+      const addresses = getNotesAddresses(mapped.data);
+      fetchEnsNames({ addresses, forceUpdate: true });
+
+      return mapped;
     };
 
     try {
@@ -744,6 +787,23 @@ export const useTransactions = defineStore('history/transactions', () => {
       await fetchTransactions();
     }
   };
+
+  const getTransactionsNotesWords = (
+    transactions: EthTransactionEntry[]
+  ): string[] => {
+    return transactions
+      .map(transaction => {
+        return transaction.decodedEvents!.map(event => {
+          return event.entry.notes;
+        });
+      })
+      .flat()
+      .join(' ')
+      .split(' ');
+  };
+
+  const getNotesAddresses = (transactions: EthTransactionEntry[]): string[] =>
+    filterAddressesFromWords(getTransactionsNotesWords(transactions));
 
   const reset = () => {
     set(transactions, defaultHistoricState<EthTransactionEntry>());

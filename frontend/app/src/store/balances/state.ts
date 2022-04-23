@@ -23,6 +23,8 @@ export const defaultState = (): BalanceState => ({
     standalone: [],
     xpubs: []
   },
+  ensAddresses: [],
+  ensNames: {},
   eth2Validators: {
     entries: [],
     entriesLimit: 0,

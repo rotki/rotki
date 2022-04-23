@@ -31,6 +31,7 @@ import {
   BalanceState,
   BlockchainAccountPayload,
   BlockchainBalancePayload,
+  EnsNamesPayload,
   ERC20Token,
   ExchangeBalancePayload,
   ExchangeSetupPayload,
@@ -307,7 +308,8 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       const balances = BlockchainBalances.parse(result);
       await dispatch('updateBalances', {
         chain,
-        balances
+        balances,
+        ignoreCache
       });
       setStatus(Status.LOADED, section);
     };
@@ -358,7 +360,11 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
 
   async updateBalances(
     { commit, dispatch },
-    payload: { chain?: Blockchain; balances: BlockchainBalances }
+    payload: {
+      chain?: Blockchain;
+      balances: BlockchainBalances;
+      ignoreCache?: boolean;
+    }
   ): Promise<void> {
     const { perAccount, totals } = payload.balances;
     const {
@@ -370,6 +376,19 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
       AVAX: avaxBalances
     } = perAccount;
     const chain = payload.chain;
+    const forceUpdate = payload.ignoreCache;
+
+    if (forceUpdate && (ethBalances || eth2Balances)) {
+      const addresses = [];
+      if (ethBalances) {
+        addresses.push(...Object.keys(ethBalances));
+      }
+      if (eth2Balances) {
+        addresses.push(...Object.keys(eth2Balances));
+      }
+
+      dispatch('fetchEnsNames', { addresses, forceUpdate });
+    }
 
     if (!chain || chain === Blockchain.ETH) {
       commit('updateEth', ethBalances ?? {});
@@ -399,6 +418,20 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     commit('updateLiabilities', totals.liabilities);
     const blockchainToRefresh = chain ? [chain] : null;
     dispatch('accounts', blockchainToRefresh).then();
+  },
+
+  async fetchEnsNames({ state, commit }, payload: EnsNamesPayload) {
+    await commit('updateEnsAddresses', payload.addresses);
+
+    const addresses = state.ensAddresses;
+    if (addresses.length > 0) {
+      const ensNames = await api.balances.getEnsNames(
+        payload.forceUpdate ?? false,
+        addresses
+      );
+
+      commit('updateEnsNames', ensNames);
+    }
   },
 
   async deleteXpub({ dispatch }, payload: XpubPayload) {
@@ -751,7 +784,7 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
   },
 
   async accounts(
-    { commit, rootState: { session } },
+    { commit, dispatch, rootState: { session } },
     blockchains: Blockchain[] | null
   ) {
     const error = (error: any, blockchain: Blockchain) => {
@@ -775,6 +808,9 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
         const accounts = await api.accounts(blockchain);
         if (blockchain === Blockchain.ETH) {
           commit('ethAccounts', accounts);
+
+          const addresses = accounts.map(account => account.address);
+          dispatch('fetchEnsNames', { addresses, forceUpdate: true });
         } else if (blockchain === Blockchain.KSM) {
           commit('ksmAccounts', accounts);
         } else if (blockchain === Blockchain.DOT) {

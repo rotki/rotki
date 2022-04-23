@@ -1,24 +1,34 @@
 <template>
-  <v-row align="center" no-gutters class="flex-nowrap">
-    <v-col cols="auto">
-      <v-avatar left size="28px">
-        <asset-icon size="24px" :identifier="account.chain" />
-      </v-avatar>
-    </v-col>
+  <v-tooltip top open-delay="400">
+    <template #activator="{ on }">
+      <v-row align="center" no-gutters class="flex-nowrap" v-on="on">
+        <v-col cols="auto">
+          <v-avatar left size="28px">
+            <asset-icon size="24px" :identifier="account.chain" />
+          </v-avatar>
+        </v-col>
 
-    <v-col class="font-weight-bold mr-1 account-display__label text-no-wrap">
-      <span class="text-truncate">
-        {{ account.label }}
-      </span>
-    </v-col>
-    <v-col
-      cols="auto"
-      :class="{ 'blur-content': !shouldShowAmount }"
-      class="text-no-wrap"
-    >
-      ({{ truncateAddress(address) }})
-    </v-col>
-  </v-row>
+        <v-col
+          class="font-weight-bold mr-1 account-display__label text-no-wrap"
+        >
+          <span class="text-truncate">
+            {{ account.label }}
+          </span>
+        </v-col>
+        <v-col
+          cols="auto"
+          :class="{ 'blur-content': !shouldShowAmount }"
+          class="text-no-wrap"
+        >
+          <div v-if="ensName">{{ ensName }}</div>
+          <div v-else>({{ truncateAddress(address, 6) }})</div>
+        </v-col>
+      </v-row>
+    </template>
+    <div>
+      {{ account.address }}
+    </div>
+  </v-tooltip>
 </template>
 
 <script lang="ts">
@@ -31,6 +41,7 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { setupEnsNames } from '@/composables/balances';
 import { setupDisplayData } from '@/composables/session';
 import { truncateAddress } from '@/filters';
 import { randomHex } from '@/utils/data';
@@ -45,6 +56,8 @@ export default defineComponent({
     const { account } = toRefs(props);
     const { scrambleData, shouldShowAmount } = setupDisplayData();
 
+    const { ensNameSelector } = setupEnsNames();
+
     const address = computed<string>(() => {
       if (!get(scrambleData)) {
         return get(account).address;
@@ -52,7 +65,16 @@ export default defineComponent({
       return randomHex();
     });
 
+    const ensName = computed<string | null>(() => {
+      if (!get(scrambleData)) {
+        return get(ensNameSelector(get(account).address));
+      }
+
+      return null;
+    });
+
     return {
+      ensName,
       address,
       truncateAddress,
       shouldShowAmount

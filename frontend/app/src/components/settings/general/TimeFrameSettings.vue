@@ -75,13 +75,13 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-row>
+    <v-row no-gutters>
       <v-col
         :class="{
           'success--text': !!message.success,
           'error--text': !!message.error
         }"
-        class="text-subtitle-2 general-settings__timeframe"
+        class="text-subtitle-2 message"
       >
         <div v-if="text" v-text="text" />
       </v-col>
@@ -240,5 +240,10 @@ export default class TimeFrameSettings extends Mixins(
     color: white !important;
     background-color: var(--v-primary-base) !important;
   }
+}
+
+.message {
+  padding-top: 0.5rem !important;
+  height: 1rem;
 }
 </style>

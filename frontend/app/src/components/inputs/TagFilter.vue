@@ -13,6 +13,7 @@
     dense
     item-value="name"
     multiple
+    :hide-details="hideDetails"
     @input="input"
   >
     <template #selection="{ item, selected, select }">
@@ -65,6 +66,8 @@ export default class TagFilter extends Vue {
   value!: string[];
   @Prop({ required: false, default: false, type: Boolean })
   disabled!: boolean;
+  @Prop({ required: false, default: false, type: Boolean })
+  hideDetails!: boolean;
   availableTagsArray!: Tag[];
 
   filter(tag: Tag, queryText: string): boolean {

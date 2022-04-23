@@ -12,6 +12,8 @@ import {
   AssetPrices,
   BlockchainAccountPayload,
   BlockchainAccountWithBalance,
+  EnsNames,
+  EnsNamesPayload,
   ExchangeRateGetter,
   FetchPricePayload,
   HistoricPricePayload
@@ -234,5 +236,34 @@ export const useExchanges = () => {
 
   return {
     connectedExchanges
+  };
+};
+
+export const setupEnsNames = () => {
+  const store = useStore();
+
+  const isEnsEnabled = computed<boolean>(() => {
+    return store.state.settings!!.enableEns;
+  });
+
+  const fetchEnsNames = async (payload: EnsNamesPayload) => {
+    await store.dispatch('balances/fetchEnsNames', payload);
+  };
+
+  const ensNames = computed<EnsNames>(() => {
+    return store.state.balances!!.ensNames;
+  });
+
+  const ensNameSelector = (address: string) => {
+    return computed<string | null>(() => {
+      if (!get(isEnsEnabled)) return null;
+      return get(ensNames)[address] ?? null;
+    });
+  };
+
+  return {
+    ensNames,
+    ensNameSelector,
+    fetchEnsNames
   };
 };

@@ -15,10 +15,12 @@ import {
   AssetPrices,
   BalanceState,
   EditExchange,
+  EnsNames,
   NonFungibleBalances
 } from '@/store/balances/types';
 import { Exchange, ExchangeData, ExchangeInfo } from '@/types/exchanges';
 import { ExchangeRates } from '@/types/user';
+import { uniqueStrings } from '@/utils/data';
 
 export const mutations: MutationTree<BalanceState> = {
   updateEth(state: BalanceState, payload: BlockchainAssetBalances) {
@@ -121,6 +123,17 @@ export const mutations: MutationTree<BalanceState> = {
   },
   eth2Validators(state: BalanceState, eth2Validators: Eth2Validators) {
     state.eth2Validators = eth2Validators;
+  },
+  updateEnsAddresses(state: BalanceState, addresses: string[]) {
+    state.ensAddresses = [...state.ensAddresses, ...addresses].filter(
+      uniqueStrings
+    );
+  },
+  updateEnsNames(state: BalanceState, ensNames: EnsNames) {
+    state.ensNames = {
+      ...state.ensNames,
+      ...ensNames
+    };
   },
   manualBalances(
     state: BalanceState,
