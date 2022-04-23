@@ -177,8 +177,8 @@ def test_cryptocompare_asset_support(cryptocompare):
         ethaddress_to_identifier('0x73d7c860998CA3c01Ce8c808F5577d94d545d1b4'),  # noqa: E501 # IXS token but IXS swap in CC
         'TULIP',  # Solfarm but TULIP project in CC
         'AIR',  # altair but another AIR in CC
-        ethaddress_to_identifier('0xfC1Cb4920dC1110fD61AfaB75Cf085C1f871b8C6'),  # edenloop but cc has electron
-        ethaddress_to_identifier('0x3392D8A60B77F8d3eAa4FB58F09d835bD31ADD29'),  # indiegg but cc has indicoin
+        ethaddress_to_identifier('0xfC1Cb4920dC1110fD61AfaB75Cf085C1f871b8C6'),  # noqa: E501 # edenloop but cc has electron
+        ethaddress_to_identifier('0x3392D8A60B77F8d3eAa4FB58F09d835bD31ADD29'),  # noqa: E501 # indiegg but cc has indicoin
         'NBT',  # nanobyte but cc has nix bridge
         'NHCT',  # Hurricane nft but cc has nano healthcare
         'ZBC',  # zebec but cc has zilbercoin
