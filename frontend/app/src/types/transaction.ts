@@ -82,5 +82,6 @@ export enum TransactionEventProtocol {
   PICKLE = 'pickle finance',
   DXDAO = 'dxdao',
   BADGER = 'badger',
-  ENS = 'ens'
+  ENS = 'ens',
+  CURVE = 'curve'
 }
