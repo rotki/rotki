@@ -295,6 +295,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
             premium: Optional['Premium'],  # pylint: disable=unused-argument
     ) -> None:
         super().__init__(database=database, service_name=ExternalService.LOOPRING)
+        LockableQueryMixIn.__init__(self)
         api_key = self._get_api_key()
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
