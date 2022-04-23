@@ -56,7 +56,7 @@ def test_loopring_accountid_mapping(database):
     assert db.get_accountid_mapping(addr1) is None
 
 
-def test_query_balances(temp_loopring, inquirer):  # pylint: disable=W0613
+def test_get_account_balances(temp_loopring, inquirer):  # pylint: disable=W0613
     """Test the get account balances and check that all the conversions
     are done correctly.
     """
@@ -68,3 +68,12 @@ def test_query_balances(temp_loopring, inquirer):  # pylint: disable=W0613
         assert result[A_ETH].amount == FVal(8.4270061497)
         assert result[A_LRC].amount == FVal(435.974889)
         assert result[A_DPI].amount == FVal(2.82924992)
+
+
+def test_get_balances(temp_loopring, inquirer):  # pylint: disable=W0613
+    """Test that loopring's get_balances can be called"""
+    loopring = temp_loopring
+    patched_loopring = patch_loopring(loopring)
+
+    with patched_loopring:
+        loopring.get_balances(addresses=[])
