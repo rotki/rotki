@@ -8,7 +8,6 @@ from rotkehlchen.accounting.structures.base import (
 )
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.pickle.constants import PICKLE_CONTRACTS
 from rotkehlchen.chain.ethereum.decoding.structures import (
     ActionItem,
     TxEventSettings,
@@ -110,7 +109,7 @@ class PickleDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             event.event_subtype == HistoryEventSubType.NONE and
             event.location_label == transaction.from_address and
             hex_or_bytes_to_address(tx_log.topics[2]) == transaction.from_address and
-            hex_or_bytes_to_address(tx_log.topics[1]) in PICKLE_CONTRACTS
+            hex_or_bytes_to_address(tx_log.topics[1]) in self.pickle_contracts
         ):
             if event.asset != EthereumToken(tx_log.address):
                 return True

@@ -1785,10 +1785,10 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
 
     # make sure the globaldb has a custom token used in the DB
     globaldb.add_asset(
-        asset_id='_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94',
+        asset_id='_ceth_0xa54d2EBfD977ad836203c85F18db2F0a0cF88854',
         asset_type=AssetType.ETHEREUM_TOKEN,
         data=EthereumToken.initialize(
-            address=ChecksumEthAddress('0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94'),
+            address=ChecksumEthAddress('0xa54d2EBfD977ad836203c85F18db2F0a0cF88854'),
             decimals=18,
             name='foo',
             symbol='FOO',
@@ -1884,7 +1884,7 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
         ('CNY', 'test CNY balance', '1', 'A'),
         ('_ceth_0x8Ab7404063Ec4DBcfd4598215992DC3F8EC853d7', 'exotic asset', '1500', 'A'),
         ('_ceth_0x111111111117dC0aa78b770fA6A738034120C302', 'test for duplication', '100000', 'J'),  # noqa: E501
-        ('_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94', 'test custom token balance', '65', 'A'),  # noqa: E501
+        ('_ceth_0xa54d2EBfD977ad836203c85F18db2F0a0cF88854', 'test custom token balance', '65', 'A'),  # noqa: E501
         ('_ceth_0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9', 'test_asset_with_same_symbol', '85', 'A'),  # noqa: E501
         ('_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e', 'test_custom_token', '25', 'A'),  # this token is not known but will still be here after the upgrade  # noqa: E501
     ]
@@ -2018,7 +2018,7 @@ def test_upgrade_db_25_to_26(globaldb, user_data_dir, have_kraken, have_kraken_s
         ('CNY', 'test CNY balance', '1', 'A'),
         ('_ceth_0x8Ab7404063Ec4DBcfd4598215992DC3F8EC853d7', 'exotic asset', '1500', 'A'),
         ('_ceth_0x111111111117dC0aa78b770fA6A738034120C302', 'test for duplication', '100000', 'J'),  # noqa: E501
-        ('_ceth_0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94', 'test custom token balance', '65', 'A'),  # noqa: E501
+        ('_ceth_0xa54d2EBfD977ad836203c85F18db2F0a0cF88854', 'test custom token balance', '65', 'A'),  # noqa: E501
         ('_ceth_0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9', 'test_asset_with_same_symbol', '85', 'A'),  # noqa: E501
         ('_ceth_0xdb89d55d8878680FED2233ea6E1Ae7DF79C7073e', 'test_custom_token', '25', 'A'),  # this token is not known but will still be here after the upgrade  # noqa: E501
     ]
