@@ -2,7 +2,7 @@ import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 
 export const KrakenStakingEventType = z.enum([
-  'get reward',
+  'reward',
   'receive staked asset',
   'stake asset',
   'unstake asset'
