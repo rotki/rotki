@@ -126,6 +126,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     'FOX',
     # FairQuark. No data found except from here:
     # https://coinmarketcap.com/currencies/fairquark/
+    'FREE',
     'FRQ',
     # FVZCoin. No data found except from here:
     # https://coin.market/crypto/fvz
@@ -300,6 +301,7 @@ UNSUPPORTED_POLONIEX_ASSETS = (
     # Voxels. No data found except from here:
     # https://coincodex.com/crypto/voxels/
     'VOX',
+    'VRA',
     # X13 coin. No data found. Except from maybe this:
     # https://bitcointalk.org/index.php?topic=635382.200;wap2
     'X13',
@@ -363,15 +365,15 @@ UNSUPPORTED_BITTREX_ASSETS = (
     'BTR',  # neither in coingecko nor cryptocompare
     'BST',  # No coingecko or cryptocompare yet. Beshare Token TODO: Review this one in a few days
     'CADX',  # no cryptocompare/coingecko data TODO: Review this one
+    'CAST',  # castello but no cc/cryptocompare
     'CBC',  # neither in coingecko nor cryptocompare
     'CIND',  # neither in coingecko nor cryptocompare
     'CLI',  # Couldn't find a reference to this asset
     # Tether CNH. As of 30/09/2019 no data found outside of Bittrex for this token
     # https://medium.com/bittrex/new-bittrex-international-listing-tether-cnh-cnht-c9ad966ac303
     'CNHT',
-    # Credit coin. As of 29/01/2020 no data found outside of Bittrex for this token
-    # https://global.bittrex.com/Market/Index?MarketName=BTC-CTC
-    'CTC',
+    'CWD',
+    'DECE',
     'DAF',  # neither in coingecko nor cryptocompare
     'DATA',  # Couldn't find what token this is
     'MPC',  # neither in coingecko nor cryptocompare
@@ -409,6 +411,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # HINT. As of 28/07/2019 no data found outside of Bittrex for this token
     # https://twitter.com/BittrexIntl/status/1154445165257474051
     'HINT',
+    'HRTS',  # no cc/cryptocompare data
     # TUDA. As of 02/08/2019 no data found outside of Bittrex for this token
     # https://mobile.twitter.com/BittrexIntl/status/1156974900986490880
     'TUDA',
@@ -418,6 +421,7 @@ UNSUPPORTED_BITTREX_ASSETS = (
     # BlockTV. As of 29/11/2019 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-BLTV
     'BLTV',
+    'BTD',  # bitdesk but no cc/coingecko
     # Forkspot. As for 01/03/2020 no data found outside of Bittrex for this token
     # https://global.bittrex.com/Market/Index?MarketName=BTC-FRSP
     'FRSP',
@@ -528,6 +532,7 @@ UNSUPPORTED_BINANCE_ASSETS = (
     'XLMDOWN',  # no cryptocompare/coingecko data
     'XLMUP',  # no cryptocompare/coingecko data
     'UAH',  # no cryptocompare/coingecko data
+    'BTTC',  # no cryptocompare/coingecko data
 )
 
 UNSUPPORTED_BITFINEX_ASSETS = (
@@ -539,6 +544,7 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'PLANETS',  # PlanetWatch (PLANETS) but has no cryptocompare/coingecko
     'MCS',  # no cryptocompare/coingecko data yet
     'EXO',  # noqa: E501 #  https://blog.exordium.co/exo-security-token-to-be-listed-on-bitfinex-securities-ltd-24cb03dc8bb0 no cc/coingecko data
+    'BMN',  # no cryptocompare and coingecko doesn't update it
 )
 
 UNSUPPORTED_FTX_ASSETS = (
@@ -603,6 +609,8 @@ UNSUPPORTED_FTX_ASSETS = (
     'CGC',  # Trade Canopy Growth Corp Tokenized stock
     'MRNA',  # Moderna Tokenized stock
     'XRPMOON',  # no cryptocompare/coingecko data
+    'KBTT',  # no cryptocompare/coingecko data
+    'KSOS',  # no cryptocompare/coingecko data
 )
 
 # https://api.kucoin.com/api/v1/currencies
@@ -683,6 +691,7 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'FEAR',  # no cryptocompare/coingecko data
     'DAPPX',  # no cryptocompare/coingecko data
     'OOE',  # no cryptocompare/coingecko data
+    'ROAR',  # no cryptocompare/coingecko data *alphadex coin
     'SPHRI',  # no cryptocompare/coingecko data SpheriumFinance
     'MUSH',  # Couldn't find a listing post saying what asset is this one
     'MAKI',  # Couldn't find information about this asset at kucoin. Seems like is not public yet

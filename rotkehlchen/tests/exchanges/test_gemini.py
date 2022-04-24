@@ -77,7 +77,7 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
             ))
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
-                f'Unknown Gemini asset detected. {e}',
+                f'Unknown Gemini asset detected. {e} Symbol: {symbol}',
             ))
         except UnsupportedAsset as e:
             assert str(e).split(' ')[2] in UNSUPPORTED_GEMINI_ASSETS

@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# tools/scripts/generate_constant_assets.py at 01/04/2022 09:37:12.
+# /home/yabirgb/work/rotki/tools/scripts/generate_constant_assets.py at 19/04/2022 06:51:19.
 # Do not edit manually!
 
 from typing import List
@@ -2283,3 +2283,15 @@ A_SDL = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_SDL)
+A_VCOW = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xD057B63f5E69CF1B929b356b579Cba08D7688048'),
+    decimals=18,
+    name="CoW Protocol Virtual Token",
+    symbol='vCOW',
+    started=Timestamp(1644609915),
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_VCOW)

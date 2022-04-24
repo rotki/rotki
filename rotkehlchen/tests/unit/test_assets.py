@@ -174,6 +174,15 @@ def test_cryptocompare_asset_support(cryptocompare):
         'DFL',  # Defi land but another DFL in CC
         'CDEX',  # Codex but another CDEX in CC
         'MIMO',  # mimosa but another MIMO in CC
+        ethaddress_to_identifier('0x73d7c860998CA3c01Ce8c808F5577d94d545d1b4'),  # noqa: E501 # IXS token but IXS swap in CC
+        'TULIP',  # Solfarm but TULIP project in CC
+        'AIR',  # altair but another AIR in CC
+        ethaddress_to_identifier('0xfC1Cb4920dC1110fD61AfaB75Cf085C1f871b8C6'),  # noqa: E501 # edenloop but cc has electron
+        ethaddress_to_identifier('0x3392D8A60B77F8d3eAa4FB58F09d835bD31ADD29'),  # noqa: E501 # indiegg but cc has indicoin
+        'NBT',  # nanobyte but cc has nix bridge
+        'NHCT',  # Hurricane nft but cc has nano healthcare
+        'ZBC',  # zebec but cc has zilbercoin
+        'MINE',  # spacemine but cc has instamine
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -396,6 +405,32 @@ def test_coingecko_identifiers_are_reachable():
         ethaddress_to_identifier('0x8542325B72C6D9fC0aD2Ca965A78435413a915A0'),
         # dorado but another DOR in coingecko
         ethaddress_to_identifier('0x906b3f8b7845840188Eab53c3f5AD348A787752f'),
+        # FundYourselfNow but coingecko has affyn
+        ethaddress_to_identifier('0x88FCFBc22C6d3dBaa25aF478C578978339BDe77a'),
+        # hat exchange but coingecko has joe hat token
+        ethaddress_to_identifier('0x9002D4485b7594e3E850F0a206713B305113f69e'),
+        # iconomi but coingecko has icon v2
+        ethaddress_to_identifier('0x888666CA69E0f178DED6D75b5726Cee99A87D698'),
+        # we have mcap and coingecko has meta capital
+        ethaddress_to_identifier('0x93E682107d1E9defB0b5ee701C71707a4B2E46Bc'),
+        # we have primalbase but coingecko has property blockchain
+        ethaddress_to_identifier('0xF4c07b1865bC326A3c01339492Ca7538FD038Cc0'),
+        # Sphere Identity and coingecko has Xid Network
+        ethaddress_to_identifier('0xB110eC7B1dcb8FAB8dEDbf28f53Bc63eA5BEdd84'),
+        # We have ultracoin and coingecko has unitech
+        'UTC',
+        # We have sonic and coingecko has secretworld
+        'SSD',
+        # We have shadowchash and coingecko has skydos
+        'SDC',
+        # We have getgems and coingecko has battlemerchs
+        'GEMZ',
+        # We have breackout and coingecko has blueark
+        'BRK',
+        # We have aerocoin and coingecko has aerochain
+        'AERO',
+        # coingecko has prime dai and we have pickle dai
+        ethaddress_to_identifier('0x6949Bb624E8e8A90F87cD2058139fcd77D2F3F87'),
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

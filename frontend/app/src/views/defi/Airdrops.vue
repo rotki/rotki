@@ -112,6 +112,8 @@ import {
   AIRDROP_1INCH,
   AIRDROP_CONVEX,
   AIRDROP_CORNICHON,
+  AIRDROP_COW_GNOSIS,
+  AIRDROP_COW_MAINNET,
   AIRDROP_CURVE,
   AIRDROP_ENS,
   AIRDROP_FOX,
@@ -258,6 +260,14 @@ export default class Airdrops extends Mixins(StatusMixin, ThemeMixin) {
     [AIRDROP_SADDLE]: {
       icon: require('@/assets/images/airdrops/saddle-finance.svg'),
       name: 'SaddleFinance'
+    },
+    [AIRDROP_COW_MAINNET]: {
+      icon: require('@/assets/images/airdrops/cow.svg'),
+      name: 'COW (ethereum)'
+    },
+    [AIRDROP_COW_GNOSIS]: {
+      icon: require('@/assets/images/airdrops/cow.svg'),
+      name: 'COW (gnosis chain)'
     }
   };
 

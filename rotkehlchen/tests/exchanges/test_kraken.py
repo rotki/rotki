@@ -88,6 +88,10 @@ def test_coverage_of_kraken_balances(kraken):
     got_assets.remove('KSM.P')  # kusama bonded for parachains
     got_assets.remove('ALGO.S')
     got_assets.remove('DOT.P')
+    got_assets.remove('MINA.S')
+    got_assets.remove('TRX.S')
+    got_assets.remove('LUNA.S')
+    got_assets.remove('SCRT.S')
 
     diff = expected_assets.symmetric_difference(got_assets)
     if len(diff) != 0:

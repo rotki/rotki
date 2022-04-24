@@ -22,6 +22,7 @@ from rotkehlchen.constants.assets import (
     A_SDL,
     A_TORN,
     A_UNI,
+    A_VCOW,
 )
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
@@ -106,6 +107,16 @@ AIRDROPS = {
         'https://raw.githubusercontent.com/rotki/data/main/airdrops/saddle_finance.csv',
         A_SDL,
         'https://saddle.exchange/#/',
+    ),
+    'cow_mainnet': (
+        'https://raw.githubusercontent.com/rotki/data/main/airdrops/cow_mainnet.csv',
+        A_VCOW,
+        'https://cowswap.exchange/#/claim',
+    ),
+    'cow_gnosis': (
+        'https://raw.githubusercontent.com/rotki/data/main/airdrops/cow_gnosis.csv',
+        A_VCOW,
+        'https://cowswap.exchange/#/claim',
     ),
 }
 
@@ -284,7 +295,15 @@ def check_airdrops(
             addr, amount, *_ = row
             # not doing to_checksum_address() here since the file addresses are checksummed
             # and doing to_checksum_address() so many times hits performance
-            if protocol_name in ('cornichon', 'tornado', 'grain', 'lido', 'sdl'):
+            if protocol_name in (
+                'cornichon',
+                'tornado',
+                'grain',
+                'lido',
+                'sdl',
+                'cow_mainnet',
+                'cow_gnosis',
+            ):
                 amount = token_normalized_value_decimals(int(amount), 18)
             if addr in addresses:
                 found_data[addr][protocol_name] = {

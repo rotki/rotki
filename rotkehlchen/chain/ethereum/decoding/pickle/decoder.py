@@ -8,7 +8,6 @@ from rotkehlchen.accounting.structures.base import (
 )
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.chain.ethereum.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.ethereum.decoding.pickle.constants import PICKLE_CONTRACTS
 from rotkehlchen.chain.ethereum.decoding.structures import (
     ActionItem,
     TxEventSettings,
@@ -17,16 +16,34 @@ from rotkehlchen.chain.ethereum.decoding.structures import (
 from rotkehlchen.chain.ethereum.structures import EthereumTxReceiptLog
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.ethereum import ZERO_ADDRESS
-from rotkehlchen.types import EthereumTransaction
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.types import PICKLE_JAR_PROTOCOL, EthereumTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.chain.ethereum.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.user_messages import MessagesAggregator
 
 CPT_PICKLE = 'pickle finance'
 
 
 class PickleDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
+
+    def __init__(
+            self,
+            ethereum_manager: 'EthereumManager',  # pylint: disable=unused-argument
+            base_tools: 'BaseDecoderTools',  # pylint: disable=unused-argument
+            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+    ) -> None:
+        super().__init__(
+            ethereum_manager=ethereum_manager,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        jars = GlobalDBHandler().get_ethereum_tokens(protocol=PICKLE_JAR_PROTOCOL)
+        self.pickle_contracts = {jar.ethereum_address for jar in jars}
 
     def _maybe_enrich_pickle_transfers(  # pylint: disable=no-self-use
             self,
@@ -38,9 +55,9 @@ class PickleDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
     ) -> bool:
         """Enrich tranfer transactions to address for jar deposits and withdrawals"""
         if not (
-            hex_or_bytes_to_address(tx_log.topics[2]) in PICKLE_CONTRACTS or
-            hex_or_bytes_to_address(tx_log.topics[1]) in PICKLE_CONTRACTS or
-            tx_log.address in PICKLE_CONTRACTS
+            hex_or_bytes_to_address(tx_log.topics[2]) in self.pickle_contracts or
+            hex_or_bytes_to_address(tx_log.topics[1]) in self.pickle_contracts or
+            tx_log.address in self.pickle_contracts
         ):
             return False
 
@@ -48,7 +65,7 @@ class PickleDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             event.event_type == HistoryEventType.SPEND and
             event.event_subtype == HistoryEventSubType.NONE and
             event.location_label == transaction.from_address and
-            hex_or_bytes_to_address(tx_log.topics[2]) in PICKLE_CONTRACTS
+            hex_or_bytes_to_address(tx_log.topics[2]) in self.pickle_contracts
         ):
             if EthereumToken(tx_log.address) != event.asset:
                 return True
@@ -62,7 +79,7 @@ class PickleDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
         elif (  # Deposit receive wrapped
             event.event_type == HistoryEventType.RECEIVE and
             event.event_subtype == HistoryEventSubType.NONE and
-            tx_log.address in PICKLE_CONTRACTS
+            tx_log.address in self.pickle_contracts
         ):
             amount_raw = hex_or_bytes_to_int(tx_log.data)
             amount = asset_normalized_value(amount=amount_raw, asset=event.asset)
@@ -92,7 +109,7 @@ class PickleDecoder(DecoderInterface):  # lgtm[py/missing-call-to-init]
             event.event_subtype == HistoryEventSubType.NONE and
             event.location_label == transaction.from_address and
             hex_or_bytes_to_address(tx_log.topics[2]) == transaction.from_address and
-            hex_or_bytes_to_address(tx_log.topics[1]) in PICKLE_CONTRACTS
+            hex_or_bytes_to_address(tx_log.topics[1]) in self.pickle_contracts
         ):
             if event.asset != EthereumToken(tx_log.address):
                 return True
