@@ -1,15 +1,17 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 
-export const KrakenStakingEventType = z.enum([
-  'get reward',
-  'receive staked asset',
-  'stake asset',
-  'unstake asset'
-]);
+export enum KrakenStakingEventType {
+  REWARD = 'reward',
+  RECEIVE_WRAPPED = 'receive wrapped',
+  DEPOSIT_ASSET = 'deposit asset',
+  REMOVE_ASSET = 'remove asset'
+}
+
+export const KrakenStakingEventTypeEnum = z.nativeEnum(KrakenStakingEventType);
 
 const KrakenStakingEvent = z.object({
-  eventType: KrakenStakingEventType,
+  eventType: KrakenStakingEventTypeEnum,
   asset: z.string(),
   timestamp: z.number().nonnegative(),
   location: z.literal('kraken'),

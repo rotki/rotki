@@ -43,7 +43,7 @@
       </template>
       <template #item.type="{ item }">
         <badge-display color="grey">
-          {{ item.eventType }}
+          {{ getEventTypeLabel(item.eventType) }}
         </badge-display>
       </template>
       <template #item.asset="{ item }">
@@ -89,6 +89,7 @@ import { setupSettings } from '@/composables/settings';
 import { SupportedCurrency } from '@/data/currencies';
 import i18n from '@/i18n';
 import { useAssetInfoRetrieval } from '@/store/assets';
+import { krakenStakingEventTypeData } from '@/store/staking/consts';
 import {
   KrakenStakingEvents,
   KrakenStakingEventType,
@@ -127,6 +128,7 @@ const useHeaders = (currencySymbol: Ref<SupportedCurrency>) => {
     }
   ]);
 };
+
 enum KrakenStakingKeys {
   TYPE = 'type',
   ASSET = 'asset',
@@ -140,6 +142,17 @@ enum KrakenStakingValueKeys {
   START = 'fromTimestamp',
   END = 'toTimestamp'
 }
+
+const krakenStakingEventTypeValues = krakenStakingEventTypeData.map(
+  data => data.label
+);
+
+const getEventTypeIdentifier = (label: string) => {
+  return (
+    krakenStakingEventTypeData.find(data => data.label === label)?.identifier ??
+    label
+  );
+};
 
 const useMatchers = (events: Ref<KrakenStakingEvents>) => {
   const { getAssetIdentifierForSymbol } = useAssetInfoRetrieval();
@@ -159,9 +172,10 @@ const useMatchers = (events: Ref<KrakenStakingEvents>) => {
         key: KrakenStakingKeys.TYPE,
         keyValue: KrakenStakingValueKeys.TYPE,
         description: i18n.t('kraken_staking_events.filter.type').toString(),
-        suggestions: () => KrakenStakingEventType.options,
+        suggestions: () => krakenStakingEventTypeValues,
         validate: (option: string) =>
-          KrakenStakingEventType.options.includes(option as any)
+          krakenStakingEventTypeValues.includes(option as any),
+        transformer: (type: string) => getEventTypeIdentifier(type)
       },
       {
         key: KrakenStakingKeys.START,
@@ -278,6 +292,13 @@ export default defineComponent({
 
     watch(options, options => updatePagination(options));
 
+    const getEventTypeLabel = (eventType: KrakenStakingEventType) => {
+      return (
+        krakenStakingEventTypeData.find(data => data.identifier === eventType)
+          ?.label ?? eventType
+      );
+    };
+
     return {
       options,
       isMobile,
@@ -286,7 +307,8 @@ export default defineComponent({
       matchers: useMatchers(events),
       refresh,
       updateFilter,
-      currencySymbol
+      currencySymbol,
+      getEventTypeLabel
     };
   }
 });

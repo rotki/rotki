@@ -70,10 +70,10 @@ export class RotkiApp {
       '[data-cy="privacy-mode-dropdown__input"] ~ .v-slider__thumb-container'
     ).as('input');
 
-    cy.get('@input').focus().type('{downarrow}'.repeat(3));
+    cy.get('@input').focus().type('{downarrow}'.repeat(2), { force: true });
 
     if (mode > 0) {
-      cy.get('@input').type('{uparrow}'.repeat(mode));
+      cy.get('@input').type('{uparrow}'.repeat(mode), { force: true });
     }
     cy.get('.privacy-mode-dropdown').click();
     cy.get('.user-dropdown').click();

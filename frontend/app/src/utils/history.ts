@@ -1,7 +1,7 @@
 import makeBlockie from 'ethereum-blockies-base64';
 import i18n from '@/i18n';
+import { ActionDataEntry } from '@/store/const';
 import {
-  ActionDataEntry,
   transactionEventProtocolData,
   transactionEventTypeData,
   transactionEventTypeMapping

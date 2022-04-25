@@ -93,3 +93,12 @@ export const defiSections: Section[] = [
   Section.DEFI_SUSHISWAP_EVENTS,
   Section.DEFI_AIRDROPS
 ];
+
+export type ActionDataEntry = {
+  readonly identifier: string;
+  readonly label: string;
+  readonly icon?: string | undefined;
+  readonly image?: string | undefined;
+  readonly color?: string | undefined;
+  readonly matcher?: (identifier: string) => boolean | undefined;
+};
