@@ -420,24 +420,22 @@ class TaskManager():
                 self.deactivate_premium()
         self.last_premium_status_check = now
 
-    def should_query_balances(self) -> bool:
-        """Utility function to check if balances should be updated."""
-        last_save = self.database.get_last_balance_save_time()
-        settings = self.database.get_settings()
-        # Setting is saved in hours, convert to seconds here
-        period = settings.balance_save_frequency * 60 * 60
-        now = ts_now()
-        return now - last_save > period
-
     def _maybe_update_snapshot_balances(self) -> None:
         """
         Update the balances of a user if the difference between last time they were updated
         and the current time exceeds the `balance_save_frequency`.
         """
-        if self.should_query_balances():
-            self.query_balances(
+        if self.database.should_save_balances():
+            task_name = 'Periodically update snapshot balances'
+            log.debug(f'Scheduling task to {task_name}')
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=task_name,
+                exception_is_error=True,
+                method=self.query_balances,
                 requested_save_data=True,
                 save_despite_errors=False,
+                timestamp=None,
                 ignore_cache=True,
             )
 

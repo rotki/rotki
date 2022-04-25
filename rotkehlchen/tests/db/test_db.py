@@ -420,9 +420,9 @@ def test_balance_save_frequency_check(data_dir, username):
         time=data_save_ts, location=Location.KRAKEN.serialize_for_db(), usd_value='1500',  # pylint: disable=no-member  # noqa: E501
     )])
 
-    assert not data.should_save_balances()
+    assert not data.db.should_save_balances()
     data.db.set_settings(ModifiableDBSettings(balance_save_frequency=5))
-    assert data.should_save_balances()
+    assert data.db.should_save_balances()
 
     last_save_ts = data.db.get_last_balance_save_time()
     assert last_save_ts == data_save_ts

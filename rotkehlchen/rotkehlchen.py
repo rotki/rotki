@@ -766,7 +766,7 @@ class Rotkehlchen():
             'location': location_stats,
             'net_usd': net_usd,
         }
-        allowed_to_save = requested_save_data or self.data.should_save_balances()
+        allowed_to_save = requested_save_data or self.data.db.should_save_balances()
 
         if (problem_free or save_despite_errors) and allowed_to_save:
             if not timestamp:

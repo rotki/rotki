@@ -3,7 +3,6 @@ import hashlib
 import logging
 import shutil
 import tempfile
-import time
 import zlib
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -15,7 +14,7 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import B64EncodedBytes, B64EncodedString, Timestamp
+from rotkehlchen.types import B64EncodedBytes, B64EncodedString
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
@@ -158,16 +157,6 @@ class DataHandler():
             self.db.remove_from_ignored_assets(asset)
 
         return self.db.get_ignored_assets(), ''
-
-    def should_save_balances(self) -> bool:
-        """ Returns whether or not we can save data to the database depending on
-        the balance data saving frequency setting"""
-        last_save = self.db.get_last_balance_save_time()
-        settings = self.db.get_settings()
-        # Setting is saved in hours, convert to seconds here
-        period = settings.balance_save_frequency * 60 * 60
-        now = Timestamp(int(time.time()))
-        return now - last_save > period
 
     def get_users(self) -> Dict[str, str]:
         """Returns a dict with all users in the system.
