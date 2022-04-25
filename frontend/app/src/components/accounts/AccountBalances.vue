@@ -19,7 +19,7 @@
       </v-row>
     </v-card-title>
     <v-card-text>
-      <v-row align="center" class="mb-1">
+      <v-row class="mb-2">
         <v-col cols="12" sm="6">
           <v-tooltip top>
             <template #activator="{ on, attrs }">
@@ -45,7 +45,7 @@
           </v-tooltip>
         </v-col>
         <v-col v-if="!isEth2" cols="12" sm="6">
-          <tag-filter v-model="visibleTags" />
+          <tag-filter v-model="visibleTags" hide-details />
         </v-col>
       </v-row>
       <account-balance-table

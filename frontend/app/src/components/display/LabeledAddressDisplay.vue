@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex flex-row labeled-address-display align-center">
-    <v-tooltip top open-delay="400" :disabled="!truncated">
+    <v-tooltip top open-delay="400" :disabled="!truncated && !ensName">
       <template #activator="{ on }">
         <span
           data-cy="labeled-address-display"
@@ -31,8 +31,11 @@
           </v-chip>
         </span>
       </template>
-      <span v-if="!!label"> {{ account.label }} <br /> </span>
-      <span> {{ address }} </span>
+      <div>
+        <span v-if="!!label"> {{ account.label }}</span>
+        <span v-if="smAndDown && ensName"> ({{ ensName }})</span>
+      </div>
+      <div>{{ address }}</div>
     </v-tooltip>
     <div class="labeled-address-display__actions">
       <hash-link :text="account.address" buttons small :chain="account.chain" />
@@ -53,6 +56,7 @@ import makeBlockie from 'ethereum-blockies-base64';
 import { setupThemeCheck } from '@/composables/common';
 import { setupDisplayData } from '@/composables/session';
 import { truncateAddress, truncationPoints } from '@/filters';
+import { useEnsNames } from '@/store/balances';
 import { randomHex } from '@/utils/data';
 
 export default defineComponent({
@@ -64,6 +68,11 @@ export default defineComponent({
     const { account } = toRefs(props);
     const { currentBreakpoint } = setupThemeCheck();
     const { scrambleData, shouldShowAmount } = setupDisplayData();
+
+    const { ensNameSelector } = useEnsNames();
+    const ensName = computed<string | null>(() =>
+      get(ensNameSelector(get(account).address))
+    );
 
     const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
     const smAndDown = computed(() => get(currentBreakpoint).smAndDown);
@@ -91,6 +100,7 @@ export default defineComponent({
     });
 
     const displayAddress = computed<string>(() => {
+      if (get(ensName)) return get(ensName) as string;
       if (get(truncatedAddress).length >= get(address).length) {
         return get(address);
       }
@@ -127,6 +137,7 @@ export default defineComponent({
     });
 
     return {
+      ensName,
       xsOnly,
       smAndDown,
       truncated,

@@ -118,13 +118,15 @@ import DataTable from '@/components/helper/DataTable.vue';
 import TransactionEventNote from '@/components/history/transactions/TransactionEventNote.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
-import ProfitLossEventType, {
-  TRANSACTION_EVENT
-} from '@/components/profitloss/ProfitLossEventType.vue';
+import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import { useRoute } from '@/composables/common';
 import { getPremium } from '@/composables/session';
 import i18n from '@/i18n';
-import { ProfitLossEvent, SelectedReport } from '@/types/reports';
+import {
+  ProfitLossEvent,
+  ProfitLossEventTypeEnum,
+  SelectedReport
+} from '@/types/reports';
 
 const tableHeaders: DataTableHeader[] = [
   {
@@ -261,7 +263,7 @@ export default defineComponent({
     };
 
     const isTransactionEvent = (item: ProfitLossEvent) => {
-      return item.type === TRANSACTION_EVENT;
+      return item.type === ProfitLossEventTypeEnum.TRANSACTION_EVENT;
     };
 
     watch(options, updatePagination);

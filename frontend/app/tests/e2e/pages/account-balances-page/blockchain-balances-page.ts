@@ -66,10 +66,11 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     );
 
     cy.get('@address-tooltip')
-      .find('span:nth-child(1)')
+      .find('div:nth-child(1)')
+      .find('span')
       .contains(balance.label);
     cy.get('@address-tooltip')
-      .find('span:nth-child(2)')
+      .find('div:nth-child(2)')
       .contains(balance.address);
 
     cy.get('@row')

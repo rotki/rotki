@@ -12,11 +12,11 @@
       {{ error ? error : $t('nft_gallery.empty_subtitle') }}
     </span>
   </no-data-screen>
-  <div v-else>
-    <v-row justify="space-between" align="center">
+  <div v-else class="py-4">
+    <v-row justify="space-between">
       <v-col>
         <v-row align="center">
-          <v-col :cols="isMobile ? '12' : 'auto'">
+          <v-col :cols="isMobile ? '12' : '6'">
             <blockchain-account-selector
               v-model="selectedAccount"
               :label="$t('nft_gallery.select_account')"
@@ -26,11 +26,10 @@
               no-padding
               flat
               :usable-addresses="availableAddresses"
-              :max-width="isMobile ? '100%' : '250px'"
             />
           </v-col>
-          <v-col :cols="isMobile ? '12' : 'auto'">
-            <v-card flat :max-width="isMobile ? '100%' : '250px'">
+          <v-col :cols="isMobile ? '12' : '6'">
+            <v-card flat>
               <div>
                 <v-autocomplete
                   v-model="selectedCollection"
@@ -47,7 +46,7 @@
               </div>
             </v-card>
           </v-col>
-          <v-col :cols="isMobile ? '12' : 'auto'">
+          <v-col :cols="isMobile ? '12' : '6'">
             <sorting-selector
               :sort-by="sortBy"
               :sort-properties="sortProperties"
@@ -56,7 +55,7 @@
               @update:sort-desc="sortDesc = $event"
             />
           </v-col>
-          <v-col :cols="isMobile ? '12' : 'auto'">
+          <v-col :cols="isMobile ? '12' : '6'">
             <pagination v-if="pages > 0" v-model="page" :length="pages" />
           </v-col>
         </v-row>

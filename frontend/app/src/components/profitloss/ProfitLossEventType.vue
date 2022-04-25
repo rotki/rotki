@@ -18,66 +18,53 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import i18n from '@/i18n';
+import { ProfitLossEventTypeEnum } from '@/types/reports';
 import { toCapitalCase } from '@/utils/text';
 
-const TRADE = 'trade';
-const FEE = 'fee';
-const ASSET_MOVEMENT = 'asset movement';
-const MARGIN_POSITION = 'margin position';
-const LOAN = 'loan';
-const PREFORK_ACQUISITION = 'prefork acquisition';
-const LEDGER_ACTION = 'ledger action';
-const STAKING = 'staking';
-const HISTORY_BASE_ENTRY = 'history base entry';
-export const TRANSACTION_EVENT = 'transaction event';
-
-const EVENT_TYPES = [
-  TRADE,
-  FEE,
-  ASSET_MOVEMENT,
-  MARGIN_POSITION,
-  LOAN,
-  PREFORK_ACQUISITION,
-  LEDGER_ACTION,
-  STAKING,
-  HISTORY_BASE_ENTRY,
-  TRANSACTION_EVENT
-] as const;
-
-type EventTypes = typeof EVENT_TYPES[number];
-
-type Resources = { [key in EventTypes]: string };
+type Resources = { [key in ProfitLossEventTypeEnum]: string };
 
 const icons: Resources = {
-  [TRADE]: 'mdi-shuffle-variant',
-  [FEE]: 'mdi-fire',
-  [ASSET_MOVEMENT]: 'mdi-bank-transfer',
-  [MARGIN_POSITION]: 'mdi-margin',
-  [LOAN]: 'mdi-handshake',
-  [PREFORK_ACQUISITION]: 'mdi-source-fork',
-  [LEDGER_ACTION]: 'mdi-book-open-variant',
-  [STAKING]: 'mdi-sprout',
-  [HISTORY_BASE_ENTRY]: 'mdi-history',
-  [TRANSACTION_EVENT]: 'mdi-swap-horizontal'
+  [ProfitLossEventTypeEnum.TRADE]: 'mdi-shuffle-variant',
+  [ProfitLossEventTypeEnum.FEE]: 'mdi-fire',
+  [ProfitLossEventTypeEnum.ASSET_MOVEMENT]: 'mdi-bank-transfer',
+  [ProfitLossEventTypeEnum.MARGIN_POSITION]: 'mdi-margin',
+  [ProfitLossEventTypeEnum.LOAN]: 'mdi-handshake',
+  [ProfitLossEventTypeEnum.PREFORK_ACQUISITION]: 'mdi-source-fork',
+  [ProfitLossEventTypeEnum.LEDGER_ACTION]: 'mdi-book-open-variant',
+  [ProfitLossEventTypeEnum.STAKING]: 'mdi-sprout',
+  [ProfitLossEventTypeEnum.HISTORY_BASE_ENTRY]: 'mdi-history',
+  [ProfitLossEventTypeEnum.TRANSACTION_EVENT]: 'mdi-swap-horizontal'
 };
 
 const names: Resources = {
-  [TRADE]: i18n.t('profit_loss_event_type.trade').toString(),
-  [FEE]: i18n.t('profit_loss_event_type.fee').toString(),
-  [ASSET_MOVEMENT]: i18n.t('profit_loss_event_type.asset_movement').toString(),
-  [MARGIN_POSITION]: i18n
+  [ProfitLossEventTypeEnum.TRADE]: i18n
+    .t('profit_loss_event_type.trade')
+    .toString(),
+  [ProfitLossEventTypeEnum.FEE]: i18n
+    .t('profit_loss_event_type.fee')
+    .toString(),
+  [ProfitLossEventTypeEnum.ASSET_MOVEMENT]: i18n
+    .t('profit_loss_event_type.asset_movement')
+    .toString(),
+  [ProfitLossEventTypeEnum.MARGIN_POSITION]: i18n
     .t('profit_loss_event_type.margin_position')
     .toString(),
-  [LOAN]: i18n.t('profit_loss_event_type.loan').toString(),
-  [PREFORK_ACQUISITION]: i18n
+  [ProfitLossEventTypeEnum.LOAN]: i18n
+    .t('profit_loss_event_type.loan')
+    .toString(),
+  [ProfitLossEventTypeEnum.PREFORK_ACQUISITION]: i18n
     .t('profit_loss_event_type.prefork_acquisition')
     .toString(),
-  [LEDGER_ACTION]: i18n.t('profit_loss_event_type.ledger_action').toString(),
-  [STAKING]: i18n.t('profit_loss_event_type.staking').toString(),
-  [HISTORY_BASE_ENTRY]: i18n
+  [ProfitLossEventTypeEnum.LEDGER_ACTION]: i18n
+    .t('profit_loss_event_type.ledger_action')
+    .toString(),
+  [ProfitLossEventTypeEnum.STAKING]: i18n
+    .t('profit_loss_event_type.staking')
+    .toString(),
+  [ProfitLossEventTypeEnum.HISTORY_BASE_ENTRY]: i18n
     .t('profit_loss_event_type.history_base_entry')
     .toString(),
-  [TRANSACTION_EVENT]: i18n
+  [ProfitLossEventTypeEnum.TRANSACTION_EVENT]: i18n
     .t('profit_loss_event_type.transaction_event')
     .toString()
 };
@@ -85,7 +72,7 @@ const names: Resources = {
 export default defineComponent({
   name: 'ProfitLossEventType',
   props: {
-    type: { required: true, type: String as PropType<EventTypes> }
+    type: { required: true, type: String as PropType<ProfitLossEventTypeEnum> }
   },
   setup(props) {
     const { type } = toRefs(props);

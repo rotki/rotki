@@ -41,6 +41,7 @@ export const DASHBOARD_TABLES_VISIBLE_COLUMNS =
 export const DATE_INPUT_FORMAT = 'dateInputFormat' as const;
 export const VERSION_UPDATE_CHECK_FREQUENCY =
   'versionUpdateCheckFrequency' as const;
+export const ENABLE_ENS = 'enableEns' as const;
 
 export enum Quarter {
   Q1 = 'Q1',
@@ -98,8 +99,6 @@ const QueryPeriod = z
   .int()
   .max(Constraints.MAX_SECONDS_DELAY)
   .nonnegative();
-
-export type QueryPeriod = z.infer<typeof RefreshPeriod>;
 
 export enum DashboardTableType {
   ASSETS = 'ASSETS',
@@ -188,7 +187,8 @@ export const FrontendSettings = z.object({
     VersionUpdateCheckFrequency.default(
       Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY
     )
-  )
+  ),
+  [ENABLE_ENS]: z.boolean().default(true)
 });
 
 export type FrontendSettings = z.infer<typeof FrontendSettings>;

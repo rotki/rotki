@@ -36,7 +36,8 @@ import {
   DashboardTablesVisibleColumns,
   DATE_INPUT_FORMAT,
   VISIBLE_TIMEFRAMES,
-  VERSION_UPDATE_CHECK_FREQUENCY
+  VERSION_UPDATE_CHECK_FREQUENCY,
+  ENABLE_ENS
 } from '@/types/frontend-settings';
 
 type Mutations<S = SettingsState> = {
@@ -65,6 +66,7 @@ type Mutations<S = SettingsState> = {
   ): void;
   [DATE_INPUT_FORMAT](state: S, format: DateFormat): void;
   [VERSION_UPDATE_CHECK_FREQUENCY](state: S, period: number): void;
+  [ENABLE_ENS](state: S, enable: boolean): void;
   restore(state: S, persisted: S): void;
   reset(state: S): void;
 };
@@ -162,6 +164,9 @@ export const mutations: Mutations = {
     period: number
   ) {
     state[VERSION_UPDATE_CHECK_FREQUENCY] = period;
+  },
+  [ENABLE_ENS](state: Writeable<SettingsState>, enable: boolean) {
+    state[ENABLE_ENS] = enable;
   },
   restore(state: SettingsState, persisted: SettingsState) {
     Object.assign(state, persisted);

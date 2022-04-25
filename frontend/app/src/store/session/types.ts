@@ -14,8 +14,6 @@ export enum PrivacyMode {
   PRIVATE = 2
 }
 
-export const PrivacyModeEnum = z.nativeEnum(PrivacyMode);
-
 export interface SessionState {
   newAccount: boolean;
   logged: boolean;

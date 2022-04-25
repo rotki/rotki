@@ -40,6 +40,10 @@ export interface AccountAssetBalances {
   readonly [account: string]: AssetBalances;
 }
 
+export interface EnsNames {
+  readonly [account: string]: string | null;
+}
+
 export interface BalanceState {
   eth2Validators: Eth2Validators;
   loopringBalances: AccountAssetBalances;
