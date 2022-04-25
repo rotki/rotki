@@ -90,6 +90,9 @@ export const userSettings = (): UserSettingsApi => {
     darkModeEnabled: computed<boolean>(() => {
       return store.getters['settings/darkModeEnabled'];
     }),
+    dateInputFormat: computed<string>(() => {
+      return store.getters['settings/dateInputFormat'];
+    }),
     graphZeroBased: computed(() => {
       const state = store.state;
       if (state.settings && state.settings.graphZeroBased) {
