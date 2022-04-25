@@ -58,6 +58,7 @@ def fixture_task_manager(
         exchange_manager=exchange_manager,
         evm_tx_decoder=evm_transaction_decoder,
         deactivate_premium=lambda: None,
+        query_balances=lambda: None,
     )
     return task_manager
 
@@ -229,3 +230,29 @@ def test_check_premium_status(rotkehlchen_api_server):
             raise AssertionError(f'Premium check query was not completed within {timeout} seconds') from e  # noqa: E501
 
         assert rotki.premium is None
+
+
+def test_update_snapshot_balances(task_manager):
+    task_manager.potential_tasks = [task_manager._maybe_update_snapshot_balances]
+    query_balances_patch = patch.object(
+        task_manager,
+        'query_balances',
+    )
+    timeout = 5
+    try:
+        with gevent.Timeout(timeout):
+            with query_balances_patch as query_mock:
+                task_manager.schedule()
+                while True:
+                    if query_mock.call_count == 1:
+                        break
+                    gevent.sleep(.2)
+
+                query_mock.assert_called_once_with(
+                    requested_save_data=True,
+                    save_despite_errors=False,
+                    timestamp=None,
+                    ignore_cache=True,
+                )
+    except gevent.Timeout as e:
+        raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501

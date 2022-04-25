@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1106` Balance snapshots will now be created automatically without the need to restart the application or force a save.
 * :feature:`2853` Add option to disable sync for connected exchanges.
 * :feature:`3894` Users will now be able to download snapshot of database by clicking a point at dashboard graph.
 * :bug:`4172` Disallow addition and editing of external trade that could result in invalid trade fees.

@@ -75,6 +75,7 @@ class TaskManager():
             exchange_manager: ExchangeManager,
             evm_tx_decoder: EVMTransactionDecoder,
             deactivate_premium: Callable,
+            query_balances: Callable,
     ) -> None:
         self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
@@ -97,6 +98,7 @@ class TaskManager():
             method=self._prepare_cryptocompare_queries,
         )
         self.deactivate_premium = deactivate_premium
+        self.query_balances = query_balances
         self.last_premium_status_check = ts_now()
         self.msg_aggregator = MessagesAggregator()
 
@@ -109,6 +111,7 @@ class TaskManager():
             self._maybe_query_missing_prices,
             self._maybe_decode_evm_transactions,
             self._maybe_check_premium_status,
+            self._maybe_update_snapshot_balances,
         ]
         if premium_sync_manager is not None:
             self.potential_tasks.append(premium_sync_manager.maybe_upload_data_to_server)
@@ -416,6 +419,25 @@ class TaskManager():
                 self.msg_aggregator.add_error(message)
                 self.deactivate_premium()
         self.last_premium_status_check = now
+
+    def _maybe_update_snapshot_balances(self) -> None:
+        """
+        Update the balances of a user if the difference between last time they were updated
+        and the current time exceeds the `balance_save_frequency`.
+        """
+        if self.database.should_save_balances():
+            task_name = 'Periodically update snapshot balances'
+            log.debug(f'Scheduling task to {task_name}')
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=task_name,
+                exception_is_error=True,
+                method=self.query_balances,
+                requested_save_data=True,
+                save_despite_errors=False,
+                timestamp=None,
+                ignore_cache=True,
+            )
 
     def _schedule(self) -> None:
         """Schedules background tasks"""

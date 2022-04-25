@@ -3519,3 +3519,15 @@ class DBHandler:
                 last_update=create_timestamp(last_update),
             ) for ens_name, address, last_update in data
         ]
+
+    def should_save_balances(self) -> bool:
+        """
+        Returns whether or not we can save data to the database depending on
+        the balance data saving frequency setting
+        """
+        last_save = self.get_last_balance_save_time()
+        settings = self.get_settings()
+        # Setting is saved in hours, convert to seconds here
+        period = settings.balance_save_frequency * 60 * 60
+        now = ts_now()
+        return now - last_save > period

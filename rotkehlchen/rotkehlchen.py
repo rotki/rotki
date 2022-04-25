@@ -333,6 +333,7 @@ class Rotkehlchen():
             exchange_manager=self.exchange_manager,
             evm_tx_decoder=self.evm_tx_decoder,
             deactivate_premium=self.deactivate_premium_status,
+            query_balances=self.query_balances,
         )
         DataMigrationManager(self).maybe_migrate_data()
         self.greenlet_manager.spawn_and_track(
@@ -765,7 +766,7 @@ class Rotkehlchen():
             'location': location_stats,
             'net_usd': net_usd,
         }
-        allowed_to_save = requested_save_data or self.data.should_save_balances()
+        allowed_to_save = requested_save_data or self.data.db.should_save_balances()
 
         if (problem_free or save_despite_errors) and allowed_to_save:
             if not timestamp:
