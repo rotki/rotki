@@ -1,4 +1,5 @@
 import i18n from '@/i18n';
+import { ActionDataEntry } from '@/store/const';
 import { LedgerActionType } from '@/types/ledger-actions';
 import {
   HistoryEventSubType,
@@ -6,15 +7,6 @@ import {
   TransactionEventProtocol,
   TransactionEventType
 } from '@/types/transaction';
-
-export type ActionDataEntry = {
-  readonly identifier: string;
-  readonly label: string;
-  readonly icon?: string | undefined;
-  readonly image?: string | undefined;
-  readonly color?: string | undefined;
-  readonly matcher?: (identifier: string) => boolean | undefined;
-};
 
 export const ledgerActionsData: ActionDataEntry[] = [
   {

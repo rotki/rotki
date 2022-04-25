@@ -555,6 +555,12 @@
     },
     "refresh_tooltip": "Refresh your Kraken staking events",
     "titles": "Kraken Staking Events",
+    "types": {
+      "staking_reward": "staking reward",
+      "receive_staked_asset": "receive staked asset",
+      "stake_asset": "stake asset",
+      "unstake_asset": "unstake asset"
+    },
     "upgrade": {
       "label": "Staking events"
     }

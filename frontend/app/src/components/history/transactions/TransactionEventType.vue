@@ -61,7 +61,7 @@ import {
 } from '@vue/composition-api';
 import { get } from '@vueuse/core';
 import { setupThemeCheck } from '@/composables/common';
-import { ActionDataEntry } from '@/store/history/consts';
+import { ActionDataEntry } from '@/store/const';
 import { EthTransactionEventEntry } from '@/store/history/types';
 import { getEventCounterpartyData, getEventTypeData } from '@/utils/history';
 
