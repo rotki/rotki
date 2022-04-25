@@ -48,7 +48,7 @@ TX_RECEIPTS_QUERY_LIMIT = 500
 TX_DECODING_LIMIT = 500
 
 
-def noop_exchange_succes_cb(trades, margin, asset_movements, ledger_actions, exchange_specific_data) -> None:  # type: ignore # noqa: E501
+def noop_exchange_success_cb(trades, margin, asset_movements, exchange_specific_data) -> None:  # type: ignore # noqa: E501
     pass
 
 
@@ -298,7 +298,7 @@ class TaskManager():
             method=exchange.query_history_with_callbacks,
             start_ts=0,
             end_ts=now,
-            success_callback=noop_exchange_succes_cb,
+            success_callback=noop_exchange_success_cb,
             fail_callback=exchange_fail_cb,
         )
         self.last_exchange_query_ts[exchange.location_id()] = now
