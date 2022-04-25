@@ -1,5 +1,5 @@
 <template>
-  <v-overlay opacity="1" color="grey lighten-4">
+  <v-overlay :dark="false" opacity="1" color="grey lighten-4">
     <div
       class="animate"
       :class="{
