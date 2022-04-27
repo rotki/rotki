@@ -10534,3 +10534,39 @@ Get ENS names
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is currently logged in or addresses have incorrect format.
    :statuscode 500: Internal rotki error.
+
+
+Importing a database snapshot
+=================================
+
+.. http:post:: /api/(version)/snapshot/import
+
+   Doing a POST on the snapshot import endpoint will import database snapshot from the specified paths in the request body.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/snapshot/import HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "balances_snapshot_file": "/path/to/balances_snapshot_import.csv",
+          "location_data_snapshot_file": "/path/to/location_data_snapshot.csv"
+      }
+
+   :reqjson int timestamp: The epoch timestamp representing the time of the snapshot to be returned.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/zip
+
+
+   :statuscode 200: Snapshot was imported successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. Csv file has different timestamps. Csv file has invalid headers.Check error message.
+   :statuscode 500: Internal rotki error.

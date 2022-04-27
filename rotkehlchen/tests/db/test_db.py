@@ -1035,11 +1035,11 @@ def test_timed_balances_primary_key_works(user_data_dir):
             usd_value='9100',
         ),
     ]
-    db.add_multiple_balances(balances)
-    warnings = msg_aggregator.consume_warnings()
-    errors = msg_aggregator.consume_errors()
-    assert len(warnings) == 1
-    assert len(errors) == 0
+    with pytest.raises(InputError) as exc_info:
+        db.add_multiple_balances(balances)
+    assert exc_info.errisinstance(InputError)
+    assert 'Adding timed_balance failed' in str(exc_info.value)
+
     balances = db.query_timed_balances(asset=A_BTC)
     assert len(balances) == 1
 
@@ -1059,11 +1059,6 @@ def test_timed_balances_primary_key_works(user_data_dir):
         ),
     ]
     db.add_multiple_balances(balances)
-    warnings = msg_aggregator.consume_warnings()
-    errors = msg_aggregator.consume_errors()
-    assert len(warnings) == 0
-    assert len(errors) == 0
-    balances = db.query_timed_balances(asset=A_ETH)
     assert len(balances) == 2
 
 
@@ -1090,7 +1085,11 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
             usd_value='9100',
         ),
     ]
-    db.add_multiple_balances(balances)
+    with pytest.raises(InputError) as exc_info:
+        db.add_multiple_balances(balances)
+    assert 'Adding timed_balance failed.' in str(exc_info.value)
+    assert exc_info.errisinstance(InputError)
+
     balances = db.query_timed_balances(from_ts=0, to_ts=1590676728, asset=A_BTC)
     assert len(balances) == 1
 
@@ -1105,7 +1104,11 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir):
             usd_value='56',
         ),
     ]
-    db.add_multiple_location_data(locations)
+    with pytest.raises(InputError) as exc_info:
+        db.add_multiple_location_data(locations)
+    assert 'Tried to add a timed_location_data for' in str(exc_info.value)
+    assert exc_info.errisinstance(InputError)
+
     locations = db.get_latest_location_value_distribution()
     assert len(locations) == 1
     assert locations[0].usd_value == '55'

@@ -738,14 +738,13 @@ class DBHandler:
                     ' VALUES(?, ?, ?, ?, ?)',
                     (entry.time, entry.asset.identifier, entry.amount, entry.usd_value, entry.category.serialize_for_db()),  # noqa: E501
                 )
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                self.msg_aggregator.add_warning(
+                self.update_last_write()
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                raise InputError(
                     f'Adding timed_balance failed. Either asset with identifier '
                     f'{entry.asset.identifier} is not known or an entry for timestamp '
-                    f'{entry.time} already exists. Skipping.',
-                )
-                continue
-        self.update_last_write()
+                    f'{entry.time} already exists.',
+                ) from e
 
     def add_aave_events(self, address: ChecksumEthAddress, events: Sequence[AaveEvent]) -> None:
         cursor = self.conn.cursor()
@@ -1399,14 +1398,13 @@ class DBHandler:
                     ' VALUES(?, ?, ?)',
                     (entry.time, entry.location, entry.usd_value),
                 )
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                self.msg_aggregator.add_warning(
+                self.update_last_write()
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                raise InputError(
                     f'Tried to add a timed_location_data for '
                     f'{str(Location.deserialize_from_db(entry.location))} at'
-                    f' already existing timestamp {entry.time}. Skipping.',
-                )
-                continue
-        self.update_last_write()
+                    f' already existing timestamp {entry.time}.',
+                ) from e
 
     def add_blockchain_accounts(
             self,
@@ -1881,9 +1879,11 @@ class DBHandler:
             location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
             usd_value=str(data['net_usd']),
         ))
-
-        self.add_multiple_balances(balances)
-        self.add_multiple_location_data(locations)
+        try:
+            self.add_multiple_balances(balances)
+            self.add_multiple_location_data(locations)
+        except InputError as err:
+            self.msg_aggregator.add_warning(str(err))
 
     def add_exchange(
             self,

@@ -49,6 +49,7 @@ from rotkehlchen.api.v1.resources import (
     DataImportResource,
     DBSnapshotDownloadingResource,
     DBSnapshotExportingResource,
+    DBSnapshotImportingResource,
     DefiBalancesResource,
     ERC20TokenInfo,
     ERC20TokenInfoAVAX,
@@ -275,6 +276,7 @@ URLS_V1: URLS = [
     ('/staking/kraken', StakingResource),
     ('/snapshot/download', DBSnapshotDownloadingResource),
     ('/snapshot/export', DBSnapshotExportingResource),
+    ('/snapshot/import', DBSnapshotImportingResource),
     ('/ens/reverse', ReverseEnsResource),
 ]
 
