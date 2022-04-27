@@ -25,9 +25,11 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress, Price
+from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+UNISWAP_FACTORY_DEPLOYED_BLOCK = 12369621
 
 
 logger = logging.getLogger(__name__)
@@ -47,12 +49,13 @@ class PoolPrice(NamedTuple):
         )
 
 
-class UniswapOracle(CurrentPriceOracleInterface):
+class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
     """
     Provides shared logic between Uniswap V2 and Uniswap V3 to use them as price oracles.
     """
     def __init__(self, eth_manager: 'EthereumManager', version: int):
-        super().__init__(oracle_name=f'Uniswap V{version} oracle')
+        CacheableMixIn.__init__(self)
+        CurrentPriceOracleInterface.__init__(self, oracle_name=f'Uniswap V{version} oracle')
         self.eth_manager = eth_manager
         self.routing_assets = [
             A_WETH,
@@ -229,9 +232,11 @@ class UniswapOracle(CurrentPriceOracleInterface):
         if len(route) == 0:
             log.debug(f'Failed to find uniswap price for {from_asset} to {to_asset}')
             return Price(ZERO)
+        log.debug(f'Found price route {route} for {from_asset} to {to_asset} using {self.name}')
 
         prices_and_tokens = []
         for step in route:
+            log.debug(f'Getting pool price for {step}')
             prices_and_tokens.append(
                 self.get_pool_price(
                     pool_addr=to_checksum_address(step),
@@ -279,6 +284,7 @@ class UniswapV3Oracle(UniswapOracle):
     def __init__(self, eth_manager: 'EthereumManager'):
         super().__init__(eth_manager=eth_manager, version=3)
 
+    @cache_response_timewise()
     def get_pool(
         self,
         token_0: EthereumToken,
@@ -295,7 +301,27 @@ class UniswapV3Oracle(UniswapOracle):
             ] for fee in (3000, 500, 10000)],
         )
 
-        return [pool[0] for pool in result]
+        # get liquidity for each pool and choose the pool with the highest liquidity
+        best_pool, max_liquidity = to_checksum_address(result[0][0]), 0
+        for query in result:
+            if query[0] == ZERO_ADDRESS:
+                continue
+            pool_address = to_checksum_address(query[0])
+            pool_contract = EthereumContract(
+                address=pool_address,
+                abi=UNISWAP_V3_POOL_ABI,
+                deployed_block=UNISWAP_FACTORY_DEPLOYED_BLOCK,
+            )
+            pool_liquidity = pool_contract.call(
+                ethereum=self.eth_manager,
+                method_name='liquidity',
+                arguments=[],
+                call_order=None,
+            )
+            if pool_liquidity > max_liquidity:
+                best_pool = pool_address
+
+        return [best_pool]
 
     def get_pool_price(
         self,
@@ -308,7 +334,7 @@ class UniswapV3Oracle(UniswapOracle):
         pool_contract = EthereumContract(
             address=pool_addr,
             abi=UNISWAP_V3_POOL_ABI,
-            deployed_block=12369621,  # Factory deployment block
+            deployed_block=UNISWAP_FACTORY_DEPLOYED_BLOCK,
         )
         calls = [
             (
@@ -350,6 +376,7 @@ class UniswapV2Oracle(UniswapOracle):
     def __init__(self, eth_manager: 'EthereumManager'):
         super().__init__(eth_manager=eth_manager, version=3)
 
+    @cache_response_timewise()
     def get_pool(
         self,
         token_0: EthereumToken,
