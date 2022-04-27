@@ -53,7 +53,10 @@ export default defineComponent({
     );
 
     const route = {
-      path: Routes.LOCATIONS.replace(':identifier', get(location).identifier)
+      path: Routes.LOCATIONS.route.replace(
+        ':identifier',
+        get(location).identifier
+      )
     };
 
     return {

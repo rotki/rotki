@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`1219` Introduces basic global search (you can go to any page in the app, do some basic actions such as adding a new trade or a ledger action, and also see prices of owned asset).
 * :feature:`4249` Allow users to ignore asset from the asset overview page
 * :feature:`1106` Balance snapshots will now be created automatically without the need to restart the application or force a save.
 * :feature:`2853` Add option to disable sync for connected exchanges.

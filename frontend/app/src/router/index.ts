@@ -30,52 +30,72 @@ export default new Router({
   routes: [
     {
       path: '*',
-      redirect: Routes.ROOT
+      redirect: Routes.ROOT.route
     },
     {
-      path: Routes.DASHBOARD,
-      alias: Routes.ROOT,
+      path: Routes.DASHBOARD.route,
+      alias: Routes.ROOT.route,
       name: 'dashboard',
       component: () => import('../views/Dashboard.vue')
     },
     {
-      path: Routes.NFTS,
+      path: Routes.ACCOUNTS_BALANCES.route,
+      component: () => import('../views/AccountsBalances.vue'),
+      children: [
+        {
+          path: '',
+          name: 'accounts-balances',
+          redirect: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route
+        },
+        {
+          path: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route,
+          component: () =>
+            import('../components/accounts/BlockchainBalances.vue')
+        },
+        {
+          path: Routes.ACCOUNTS_BALANCES_EXCHANGE.route,
+          component: () =>
+            import('../components/accounts/exchanges/ExchangeBalances.vue')
+        },
+        {
+          path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/:exchange`,
+          component: () =>
+            import('../components/accounts/exchanges/ExchangeBalances.vue'),
+          props: true
+        },
+        {
+          path: Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.route,
+          component: () =>
+            import('../views/accountsbalances/NonFungibleBalancePage.vue')
+        },
+        {
+          path: Routes.ACCOUNTS_BALANCES_MANUAL.route,
+          component: () =>
+            import('../components/accounts/manual-balances/ManualBalances.vue')
+        }
+      ]
+    },
+    {
+      path: Routes.NFTS.route,
       name: 'nfts',
       component: () => import('../views/Nft.vue')
     },
     {
-      path: '/statistics',
-      name: 'statistics',
-      component: () => import('../views/Statistics.vue')
-    },
-    {
-      path: Routes.PROFIT_LOSS_REPORTS,
-      component: () => import('../views/reports/ProfitLossReports.vue')
-    },
-    {
-      path: Routes.PROFIT_LOSS_REPORT,
-      component: () => import('../views/reports/ProfitLossReport.vue'),
-      meta: {
-        canNavigateBack: true
-      }
-    },
-    {
-      path: '/history',
+      path: Routes.HISTORY.route,
       component: () => import('../views/history/History.vue'),
       children: [
         {
           path: '',
-          redirect: 'trades',
-          component: () => import('../views/history/trades/TradeHistory.vue')
+          redirect: Routes.HISTORY_TRADES.route
         },
         {
           name: 'trades',
-          path: Routes.HISTORY_TRADES,
+          path: Routes.HISTORY_TRADES.route,
           component: () => import('../views/history/trades/TradeHistory.vue')
         },
         {
           name: 'deposits-withdrawals',
-          path: Routes.HISTORY_DEPOSITS_WITHDRAWALS,
+          path: Routes.HISTORY_DEPOSITS_WITHDRAWALS.route,
           component: () =>
             import(
               '../views/history/deposits-withdrawals/DepositsWithdrawals.vue'
@@ -83,153 +103,62 @@ export default new Router({
         },
         {
           name: 'transactions',
-          path: Routes.HISTORY_TRANSACTIONS,
+          path: Routes.HISTORY_TRANSACTIONS.route,
           component: () =>
             import('../views/history/transactions/Transactions.vue')
         },
         {
           name: 'ledger-actions',
-          path: Routes.HISTORY_LEDGER_ACTIONS,
+          path: Routes.HISTORY_LEDGER_ACTIONS.route,
           component: () =>
             import('../views/history/ledger-actions/LedgerActions.vue')
         }
       ]
     },
     {
-      path: '/settings',
-      name: 'settings',
-      component: () => import('../views/settings/Settings.vue'),
-      children: [
-        {
-          path: 'general',
-          component: () => import('../views/settings/GeneralSettings.vue')
-        },
-        {
-          path: 'accounting',
-          component: () => import('../views/settings/AccountingSettings.vue')
-        },
-        {
-          path: 'data-security',
-          component: () => import('../views/settings/UserSecuritySettings.vue')
-        },
-        {
-          path: 'modules',
-          component: () => import('../views/settings/ModuleSettings.vue')
-        }
-      ]
-    },
-    {
-      path: '/settings/general',
-      name: 'general-settings',
-      component: () => import('../views/settings/Settings.vue')
-    },
-    {
-      path: '/settings/api-keys',
-      name: 'api-keys',
-      component: () => import('../views/settings/ApiKeys.vue'),
-      children: [
-        {
-          path: 'rotki-premium',
-          component: () => import('../components/settings/PremiumSettings.vue')
-        },
-        {
-          path: 'exchanges',
-          component: () =>
-            import('../components/settings/api-keys/ExchangeSettings.vue')
-        },
-        {
-          path: 'external-services',
-          component: () =>
-            import('../components/settings/api-keys/ExternalServices.vue')
-        }
-      ]
-    },
-    {
-      path: '/import',
-      name: 'import',
-      component: () => import('../views/ImportData.vue')
-    },
-    {
-      path: '/accounts-balances',
-      component: () => import('../views/AccountsBalances.vue'),
-      children: [
-        {
-          path: '',
-          name: 'accounts-balances',
-          redirect: 'blockchain-balances'
-        },
-        {
-          path: 'blockchain-balances',
-          component: () =>
-            import('../components/accounts/BlockchainBalances.vue')
-        },
-        {
-          path: 'exchange-balances/',
-          component: () =>
-            import('../components/accounts/exchanges/ExchangeBalances.vue')
-        },
-        {
-          path: 'exchange-balances/:exchange',
-          component: () =>
-            import('../components/accounts/exchanges/ExchangeBalances.vue'),
-          props: true
-        },
-        {
-          path: Routes.NON_FUNGIBLE,
-          component: () =>
-            import('../views/accountsbalances/NonFungibleBalancePage.vue')
-        },
-        {
-          path: 'manual-balances',
-          component: () =>
-            import('../components/accounts/manual-balances/ManualBalances.vue')
-        }
-      ]
-    },
-    {
-      path: Routes.DEFI,
+      path: Routes.DEFI.route,
       component: () => import('../views/defi/DecentralizedFinance.vue'),
       children: [
         {
           path: '',
-          redirect: Routes.DEFI_OVERVIEW
+          redirect: Routes.DEFI_OVERVIEW.route
         },
         {
-          path: Routes.DEFI_OVERVIEW,
+          path: Routes.DEFI_OVERVIEW.route,
           component: () => import('../views/defi/DecentralizedOverview.vue')
         },
         {
-          path: Routes.DEFI_DEPOSITS,
+          path: Routes.DEFI_DEPOSITS.route,
           component: () => import('../views/defi/DecentralizedDeposits.vue'),
           children: [
             {
               path: '',
-              redirect: Routes.DEFI_DEPOSITS_PROTOCOLS
+              redirect: Routes.DEFI_DEPOSITS_PROTOCOLS.route
             },
             {
-              path: Routes.DEFI_DEPOSITS_PROTOCOLS,
+              path: Routes.DEFI_DEPOSITS_PROTOCOLS.route,
               component: () => import('../views/defi/deposits/Protocols.vue')
             },
             {
-              path: Routes.DEFI_DEPOSITS_LIQUIDITY,
+              path: Routes.DEFI_DEPOSITS_LIQUIDITY.route,
               component: () => import('../views/defi/deposits/Liquidity.vue'),
               children: [
                 {
                   path: '',
-                  redirect: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP
+                  redirect: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP.route
                 },
                 {
-                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP,
+                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP.route,
                   component: () =>
                     import('../components/defi/uniswap/Uniswap.vue')
                 },
                 {
-                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
+                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER.route,
                   component: () =>
                     import('../components/defi/balancer/Balancer.vue')
                 },
                 {
-                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP,
+                  path: Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP.route,
                   component: () =>
                     import('../components/defi/sushiswap/Sushiswap.vue')
                 }
@@ -238,43 +167,48 @@ export default new Router({
           ]
         },
         {
-          path: Routes.DEFI_LIABILITIES,
+          path: Routes.DEFI_LIABILITIES.route,
           name: 'defi-liabilities',
           component: () => import('../views/defi/DecentralizedBorrowing.vue')
         },
         {
-          path: Routes.DEFI_DEX_TRADES,
+          path: Routes.DEFI_DEX_TRADES.route,
           component: () => import('../views/defi/DexTrades.vue')
         },
         {
-          path: Routes.DEFI_AIRDROPS,
+          path: Routes.DEFI_AIRDROPS.route,
           component: () => import('../views/defi/Airdrops.vue')
         }
       ]
     },
     {
-      path: Routes.STAKING,
+      path: Routes.STATISTICS.route,
+      name: 'statistics',
+      component: () => import('../views/Statistics.vue')
+    },
+    {
+      path: Routes.STAKING.route,
       component: () => import('../views/staking/StakingPage.vue'),
       props: route => ({ location: route.params.location ?? null })
     },
     {
-      path: Routes.ASSETS,
-      component: () => import('../views/Assets.vue'),
-      meta: {
-        canNavigateBack: true
-      },
-      props: true
+      path: Routes.PROFIT_LOSS_REPORTS.route,
+      component: () => import('../views/reports/ProfitLossReports.vue')
     },
     {
-      path: Routes.LOCATIONS,
-      component: () => import('../views/LocationOverview.vue'),
+      path: Routes.PROFIT_LOSS_REPORT.route,
+      component: () => import('../views/reports/ProfitLossReport.vue'),
       meta: {
         canNavigateBack: true
-      },
-      props: true
+      }
     },
     {
-      path: Routes.PRICE_MANAGER,
+      path: Routes.ASSET_MANAGER.route,
+      component: () => import('../views/AssetManager.vue'),
+      props: route => ({ identifier: route.query.id ?? null })
+    },
+    {
+      path: Routes.PRICE_MANAGER.route,
       component: () => import('../views/PriceManager.vue'),
       meta: {
         canNavigateBack: true
@@ -282,9 +216,75 @@ export default new Router({
       props: true
     },
     {
-      path: Routes.ASSET_MANAGER,
-      component: () => import('../views/AssetManager.vue'),
-      props: route => ({ identifier: route.query.id ?? null })
+      path: Routes.API_KEYS.route,
+      component: () => import('../views/settings/ApiKeys.vue'),
+      children: [
+        {
+          path: '',
+          redirect: Routes.API_KEYS_ROTKI_PREMIUM.route
+        },
+        {
+          path: Routes.API_KEYS_ROTKI_PREMIUM.route,
+          component: () => import('../components/settings/PremiumSettings.vue')
+        },
+        {
+          path: Routes.API_KEYS_EXCHANGES.route,
+          component: () =>
+            import('../components/settings/api-keys/ExchangeSettings.vue')
+        },
+        {
+          path: Routes.API_KEYS_EXTERNAL_SERVICES.route,
+          component: () =>
+            import('../components/settings/api-keys/ExternalServices.vue')
+        }
+      ]
+    },
+    {
+      path: Routes.IMPORT.route,
+      name: 'import',
+      component: () => import('../views/ImportData.vue')
+    },
+    {
+      path: Routes.SETTINGS.route,
+      component: () => import('../views/settings/Settings.vue'),
+      children: [
+        {
+          path: '',
+          redirect: Routes.SETTINGS_GENERAL.route
+        },
+        {
+          path: Routes.SETTINGS_GENERAL.route,
+          component: () => import('../views/settings/GeneralSettings.vue')
+        },
+        {
+          path: Routes.SETTINGS_ACCOUNTING.route,
+          component: () => import('../views/settings/AccountingSettings.vue')
+        },
+        {
+          path: Routes.SETTINGS_DATA_SECURITY.route,
+          component: () => import('../views/settings/UserSecuritySettings.vue')
+        },
+        {
+          path: Routes.SETTINGS_MODULES.route,
+          component: () => import('../views/settings/ModuleSettings.vue')
+        }
+      ]
+    },
+    {
+      path: Routes.ASSETS.route,
+      component: () => import('../views/Assets.vue'),
+      meta: {
+        canNavigateBack: true
+      },
+      props: true
+    },
+    {
+      path: Routes.LOCATIONS.route,
+      component: () => import('../views/LocationOverview.vue'),
+      meta: {
+        canNavigateBack: true
+      },
+      props: true
     },
     ...(process.env.NODE_ENV === 'development'
       ? [

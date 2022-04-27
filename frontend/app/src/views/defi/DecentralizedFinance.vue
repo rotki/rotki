@@ -16,31 +16,15 @@ import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
-import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { DEFI_SETUP_DONE } from '@/types/frontend-settings';
 
 const tabs: TabContent[] = [
-  {
-    name: i18n.t('decentralized_finance.tabs.overview').toString(),
-    routeTo: Routes.DEFI_OVERVIEW
-  },
-  {
-    name: i18n.t('decentralized_finance.tabs.deposits').toString(),
-    routeTo: Routes.DEFI_DEPOSITS
-  },
-  {
-    name: i18n.t('decentralized_finance.tabs.liabilities').toString(),
-    routeTo: Routes.DEFI_LIABILITIES
-  },
-  {
-    name: i18n.t('decentralized_finance.tabs.dex_trades').toString(),
-    routeTo: Routes.DEFI_DEX_TRADES
-  },
-  {
-    name: i18n.t('decentralized_finance.tabs.airdrops').toString(),
-    routeTo: Routes.DEFI_AIRDROPS
-  }
+  Routes.DEFI_OVERVIEW,
+  Routes.DEFI_DEPOSITS,
+  Routes.DEFI_LIABILITIES,
+  Routes.DEFI_DEX_TRADES,
+  Routes.DEFI_AIRDROPS
 ];
 
 export default defineComponent({

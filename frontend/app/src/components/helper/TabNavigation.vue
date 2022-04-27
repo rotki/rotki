@@ -12,17 +12,17 @@
       <v-tab
         v-for="tab in visibleTabs"
         v-show="visibleTabs.length > 1 && !tab.hideHeader"
-        :key="tab.name"
-        :to="tab.routeTo"
+        :key="tab.text"
+        :to="tab.route"
         class="tab-navigation__tabs__tab"
-        :class="getClass(tab.routeTo)"
+        :class="getClass(tab.route)"
       >
-        <div>{{ tab.name }}</div>
+        <div>{{ tab.text }}</div>
       </v-tab>
       <v-tab-item
         v-for="tab of tabContents"
         :key="tab.id"
-        :value="tab.routeTo"
+        :value="tab.route"
         :class="
           !noContentMargin
             ? 'tab-navigation__tabs__tab-item--content-margin'
@@ -54,8 +54,8 @@ import {
 import { get } from '@vueuse/core';
 
 export interface TabContent {
-  readonly name: string;
-  readonly routeTo: string;
+  readonly text: string;
+  readonly route: string;
   readonly hidden?: boolean;
   readonly hideHeader?: boolean;
 }
@@ -76,9 +76,7 @@ export default defineComponent({
     };
     const selectedTab = ref('');
     const isRouterVisible = (route: string, tab: TabContent) => {
-      return (
-        route.indexOf(tab.routeTo) >= 0 && tab.routeTo === get(selectedTab)
-      );
+      return route.indexOf(tab.route) >= 0 && tab.route === get(selectedTab);
     };
 
     return {

@@ -13,7 +13,7 @@
           :value="provider.route"
         >
           <adaptive-wrapper class="me-2">
-            <v-img contain width="24" height="24" :src="provider.icon" />
+            <v-img contain width="24" height="24" :src="provider.image" />
           </adaptive-wrapper>
           {{ provider.text }}
         </v-btn>
@@ -30,25 +30,12 @@
 <script lang="ts">
 import { defineComponent, ref } from '@vue/composition-api';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 
 const providers = [
-  {
-    route: Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP,
-    icon: require('@/assets/images/defi/uniswap.svg'),
-    text: i18n.t('liquidity.uniswap').toString()
-  },
-  {
-    route: Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
-    icon: require('@/assets/images/defi/balancer.svg'),
-    text: i18n.t('liquidity.balancer').toString()
-  },
-  {
-    route: Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP,
-    icon: require('@/assets/images/modules/sushiswap.svg'),
-    text: i18n.t('liquidity.sushiswap').toString()
-  }
+  Routes.DEFI_DEPOSITS_LIQUIDITY_UNISWAP,
+  Routes.DEFI_DEPOSITS_LIQUIDITY_BALANCER,
+  Routes.DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP
 ];
 export default defineComponent({
   name: 'Liquidity',

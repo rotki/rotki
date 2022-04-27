@@ -7,25 +7,13 @@ import { defineComponent } from '@vue/composition-api';
 import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
-import i18n from '@/i18n';
+import { Routes } from '@/router/routes';
 
 const tabs: TabContent[] = [
-  {
-    name: i18n.t('settings.tabs.general').toString(),
-    routeTo: '/settings/general'
-  },
-  {
-    name: i18n.t('settings.tabs.accounting').toString(),
-    routeTo: '/settings/accounting'
-  },
-  {
-    name: i18n.t('settings.tabs.data_security').toString(),
-    routeTo: '/settings/data-security'
-  },
-  {
-    name: i18n.t('settings.tabs.modules').toString(),
-    routeTo: '/settings/modules'
-  }
+  Routes.SETTINGS_GENERAL,
+  Routes.SETTINGS_ACCOUNTING,
+  Routes.SETTINGS_DATA_SECURITY,
+  Routes.SETTINGS_MODULES
 ];
 
 export default defineComponent({

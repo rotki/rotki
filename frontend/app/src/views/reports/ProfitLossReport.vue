@@ -110,7 +110,12 @@ export default defineComponent({
       }
       const success = await fetchReport(reportId);
       if (!success) {
-        router.push(Routes.PROFIT_LOSS_REPORTS);
+        router.push(Routes.PROFIT_LOSS_REPORTS.route);
+      }
+
+      if (get(route).query.openReportActionable) {
+        set(initialOpenReportActionable, true);
+        router.replace({ query: {} });
       }
 
       if (get(route).query.openReportActionable) {

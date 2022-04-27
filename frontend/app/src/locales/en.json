@@ -770,8 +770,8 @@
       }
     },
     "dialog": {
-      "add_title": "Add Price",
-      "edit_title": "Edit Price"
+      "add_title": "Add a manual price",
+      "edit_title": "Edit a manual price"
     },
     "edit": {
       "error": {
@@ -1260,11 +1260,6 @@
     },
     "subtitle": "Control which ledger actions are considered taxable or not during the profit/loss report generation. That means which ones will add/subtract to/from the profit loss. All ledger actions irrespective of this setting will be taken into account for cost basis calculation.",
     "title": "Taxable ledger actions"
-  },
-  "liquidity": {
-    "balancer": "Balancer",
-    "sushiswap": "Sushiswap",
-    "uniswap": "Uniswap"
   },
   "loan_liquidation": {
     "liquidated_collateral": "Liquidated collateral",
@@ -1780,7 +1775,7 @@
     "dialog": {
       "save": "Save",
       "add": {
-        "title": "Add External Trade"
+        "title": "Add an external trade"
       },
       "edit": {
         "title": "Edit External Trade",
@@ -1842,14 +1837,6 @@
     "no_items": {
       "description": "All the selected entries are already ignored | All the selected entries are already included",
       "title": "No entries to ignore | No entries to unignore"
-    }
-  },
-  "history": {
-    "tabs": {
-      "trades": "Trades",
-      "deposits_withdrawals": "Deposits & Withdrawals",
-      "transactions": "Ethereum Transactions",
-      "ledger_actions": "Ledger Actions"
     }
   },
   "overview": {
@@ -2700,8 +2687,13 @@
   "navigation_menu": {
     "dashboard": "Dashboard",
     "accounts_balances": "Accounts & Balances",
-    "api_keys": "API Keys",
-    "import_data": "Import Data",
+    "accounts_balances_sub": {
+      "blockchain_balances": "Blockchain Balances",
+      "exchange_balances": "Exchange Balances",
+      "manual_balances": "Manual Balances",
+      "non_fungible_balances": "Non Fungible Balances"
+    },
+    "nfts": "NFTs",
     "history": "History",
     "history_sub": {
       "trades": "Trades",
@@ -2710,19 +2702,41 @@
       "ledger_actions": "Ledger Actions"
     },
     "defi": "DeFi",
-    "manage_prices": "Manage Prices",
-    "nfts": "NFTs",
-    "statistics": "Statistics",
-    "profit_loss_report": "Profit and Loss Report",
     "defi_sub": {
       "overview": "Overview",
       "deposits": "Deposits",
+      "deposits_sub": {
+        "protocols": "Protocols",
+        "liquidity": "Liquidity Pools",
+        "liquidity_sub": {
+          "balancer": "Balancer",
+          "sushiswap": "Sushiswap",
+          "uniswap": "Uniswap"
+        }
+      },
       "liabilities": "Liabilities",
       "dex_trades": "DEX Trades",
       "airdrops": "Airdrops"
     },
+    "statistics": "Statistics",
     "staking": "Staking",
-    "manage_assets": "Manage Assets"
+    "profit_loss_report": "Profit and Loss Report",
+    "manage_assets": "Manage Assets",
+    "manage_prices": "Manage Prices",
+    "api_keys": "API Keys",
+    "api_keys_sub": {
+      "premium": "rotki Premium",
+      "exchanges": "Exchanges",
+      "external_services": "External Services"
+    },
+    "import_data": "Import Data",
+    "settings": "Settings",
+    "settings_sub": {
+      "general": "General",
+      "accounting": "Accounting",
+      "data_security": "Data & Security",
+      "modules": "Modules"
+    }
   },
   "trade_history": {
     "loading": "Please wait while your trades are getting loaded...",
@@ -2908,7 +2922,7 @@
   "manual_balances": {
     "dialog": {
       "add": {
-        "title": "Add Manual Balance"
+        "title": "Add a manual balance"
       },
       "edit": {
         "subtitle": "Modify balance amount, location, and tags",
@@ -2973,9 +2987,6 @@
       "usd_value_eth": "Total {symbol} value of account's assets",
       "usd_value": "{symbol} value",
       "validator": "Validator Index | Public Key"
-    },
-    "tabs": {
-      "nonfungible": "Non Fungible Balances"
     },
     "total": "Total",
     "confirm_delete": {
@@ -3076,8 +3087,8 @@
     "form_dialog": {
       "save": "Save",
       "cancel": "Cancel",
-      "add_title": "Add Blockchain Account",
-      "edit_title": "Edit Blockchain Account",
+      "add_title": "Add blockchain account",
+      "edit_title": "Edit blockchain account",
       "edit_subtitle": "Modify account details"
     },
     "per_asset": {
@@ -3101,15 +3112,6 @@
   },
   "percentage_display": {
     "symbol": "%"
-  },
-  "decentralized_finance": {
-    "tabs": {
-      "overview": "Overview",
-      "deposits": "Deposits",
-      "liabilities": "Liabilities",
-      "dex_trades": "DEX Trades",
-      "airdrops": "Airdrops"
-    }
   },
   "decentralized_overview": {
     "loading": "Please wait while your defi balances are getting loaded...",
@@ -3312,13 +3314,7 @@
   },
   "settings": {
     "not_saved": "Setting not saved",
-    "saved": "Setting saved",
-    "tabs": {
-      "accounting": "Accounting",
-      "data_security": "Data & Security",
-      "modules": "Modules",
-      "general": "General"
-    }
+    "saved": "Setting saved"
   },
   "statistics": {
     "no_premium_label": "Statistics are"
@@ -3511,13 +3507,6 @@
     },
     "select_visible_columns": "Select visible columns"
   },
-  "api_keys": {
-    "tabs": {
-      "premium": "rotki Premium",
-      "exchanges": "Exchanges",
-      "external_services": "External Services"
-    }
-  },
   "sync_indicator": {
     "ignore_errors": "Save the balance snapshot ignoring any errors on external APIs. This can cause the snapshot to be incomplete.",
     "menu_tooltip": "View the date of the last balances snapshot | View the date of the last balances snapshot, and the time of the last premium database sync",
@@ -3616,10 +3605,6 @@
     "liabilities": "Liabilities",
     "loopring": "Loopring"
   },
-  "decentralized_deposits": {
-    "protocols": "Protocols",
-    "liquidity": "Liquidity Pools"
-  },
   "uniswap": {
     "loading_non_premium": "Loading the liquidity pool balances might take a while... Consider upgrading to {0} for faster load times.",
     "premium": "premium",
@@ -3654,5 +3639,16 @@
   "oracles": {
     "uniswap_v2": "Uniswap V2",
     "uniswap_v3": "Uniswap V3"
+  },
+  "global_search": {
+    "menu_tooltip": "Search ({modifier} + {key})",
+    "search_placeholder": "Search anything...",
+    "no_actions": "No actions found",
+    "hint": {
+      "asset": "Asset",
+      "location": "Location",
+      "price": "Price:",
+      "total": "Total:"
+    }
   }
 }

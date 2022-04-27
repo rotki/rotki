@@ -52,6 +52,7 @@
         <div class="d-flex overflow-hidden">
           <node-status-indicator v-if="!xsOnly" />
           <balance-saved-indicator />
+          <global-search />
           <back-button :can-navigate-back="canNavigateBack" />
         </div>
         <v-spacer />
@@ -142,6 +143,7 @@ import CurrencyDropdown from '@/components/CurrencyDropdown.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import MacOsVersionUnsupported from '@/components/error/MacOsVersionUnsupported.vue';
 import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
+import GlobalSearch from '@/components/GlobalSearch.vue';
 import HelpIndicator from '@/components/help/HelpIndicator.vue';
 import HelpSidebar from '@/components/help/HelpSidebar.vue';
 import BackButton from '@/components/helper/BackButton.vue';
@@ -173,6 +175,7 @@ import { logger } from '@/utils/logging';
 export default defineComponent({
   name: 'App',
   components: {
+    GlobalSearch,
     FrontendUpdateNotifier,
     About,
     ThemeSwitchLock,

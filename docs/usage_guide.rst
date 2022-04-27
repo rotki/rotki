@@ -1367,6 +1367,21 @@ Moreover you can see a piechart of the distribution of your netvalue across all 
    :align: center
 
 
+Global search
+*****************************
+
+You can use global search provided to speed up your actions by clicking icon on top bar, or using shortcut Ctrl + / (Cmd + / if you are using Mac).
+
+Some actions provided by this global search:
+- Navigate to any page in rotki
+- Some basic actions such as adding a new trade, or new ledger action.
+- Go to certain owned asset overview page.
+- Go to certain location overview page.
+
+.. image:: images/global_searchbox.gif
+   :alt: Global Search
+   :align: center
+
 .. _set-the-backend-s-arguments:
 
 Set the backend's arguments

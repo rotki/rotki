@@ -83,7 +83,7 @@ export default defineComponent({
 
     const editRoute = computed<RawLocation>(() => {
       return {
-        path: Routes.ASSET_MANAGER,
+        path: Routes.ASSET_MANAGER.route,
         query: {
           id: get(identifier)
         }

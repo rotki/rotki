@@ -148,6 +148,7 @@ export default class ExchangeSettings extends Mixins(SettingsMixin) {
     const { currentRoute } = this.$router;
     if (currentRoute.query.add) {
       this.addExchange();
+      this.$router.replace({ query: {} });
     }
   }
 

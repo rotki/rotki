@@ -434,7 +434,7 @@ export default defineComponent({
     const getId = (item: AssetMovementEntry) => item.identifier;
     const selected: Ref<AssetMovementEntry[]> = ref([]);
 
-    const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
+    const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS.route;
 
     return {
       pageRoute,

@@ -164,6 +164,7 @@
 import {
   computed,
   defineComponent,
+  onMounted,
   PropType,
   Ref,
   ref,
@@ -192,7 +193,7 @@ import LedgerActionForm, {
 } from '@/components/history/LedgerActionForm.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { isSectionLoading } from '@/composables/common';
+import { isSectionLoading, useRoute, useRouter } from '@/composables/common';
 import {
   getCollectionData,
   setupEntryLimit,
@@ -564,7 +565,19 @@ export default defineComponent({
     const getId = (item: LedgerActionEntry) => item.identifier.toString();
     const selected: Ref<LedgerActionEntry[]> = ref([]);
 
-    const pageRoute = Routes.HISTORY_LEDGER_ACTIONS;
+    const pageRoute = Routes.HISTORY_LEDGER_ACTIONS.route;
+
+    const router = useRouter();
+    const route = useRoute();
+
+    onMounted(() => {
+      const query = get(route).query;
+
+      if (query.add) {
+        newLedgerAction();
+        router.replace({ query: {} });
+      }
+    });
 
     return {
       pageRoute,
