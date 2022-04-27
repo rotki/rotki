@@ -1281,10 +1281,6 @@ class ChainManager(CacheableMixIn, LockableQueryMixIn):
         eth_balances = self.balances.eth
         for account, token_balances in balance_result.items():
             for token, token_balance in token_balances.items():
-                if token_usd_price[token] == ZERO:
-                    # skip tokens that have no price
-                    continue
-
                 token_totals[token] += token_balance
                 balance = Balance(
                     amount=token_balance,
