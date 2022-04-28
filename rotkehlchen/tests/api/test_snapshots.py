@@ -72,7 +72,7 @@ def _create_snapshot_with_valid_data(directory: str, timestamp: Timestamp) -> No
         writer.writeheader()
         writer.writerow(
             {
-                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
+                'timestamp': timestamp,
                 'category': 'asset',
                 'asset_identifier': 'AVAX',
                 'amount': '10.555',
@@ -81,7 +81,7 @@ def _create_snapshot_with_valid_data(directory: str, timestamp: Timestamp) -> No
         )
         writer.writerow(
             {
-                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
+                'timestamp': timestamp,
                 'category': 'asset',
                 'asset_identifier': 'BTC',
                 'amount': '1',
@@ -142,14 +142,14 @@ def _create_snapshot_different_timestamps(directory: str, timestamp: Timestamp) 
         writer.writeheader()
         writer.writerow(
             {
-                'timestamp': timestamp + 1000,
+                'timestamp': timestamp_to_date(Timestamp(timestamp + 1000), '%Y-%m-%d %H:%M:%S'),
                 'location': 'blockchain',
                 'eur_value': '100.555',
             },
         )
         writer.writerow(
             {
-                'timestamp': timestamp - 400,
+                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
                 'location': 'total',
                 'eur_value': '41000.555',
             },
@@ -188,14 +188,14 @@ def _create_snapshot_with_invalid_headers(directory: str, timestamp: Timestamp) 
         writer.writeheader()
         writer.writerow(
             {
-                'timestamp': timestamp,
+                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
                 'location': 'blockchain',
                 'value': '100.555',
             },
         )
         writer.writerow(
             {
-                'timestamp': timestamp,
+                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
                 'location': 'total',
                 'value': '41000.555',
             },
@@ -333,34 +333,8 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
 
     # check that importing a valid snapshot passes
-    csv_dirx = str(tmpdir_factory.mktemp('test_csv_dirx'))
-    _create_snapshot_with_valid_data(csv_dirx, Timestamp(1651071105))
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dbsnapshotimportingresource',
-        ),
-        json={
-            'balances_snapshot_file': f'{csv_dirx}/{BALANCES_FOR_IMPORT_FILENAME}',
-            'location_data_snapshot_file': f'{csv_dirx}/{LOCATION_DATA_FILENAME}',
-        },
-    )
-    print(response.json())
-    assert_simple_ok_response(response)
-
-    # check that importing a snapshot that is present in the db fails.
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dbsnapshotexportingresource',
-        ),
-        json={
-            'timestamp': ts,
-            'path': csv_dir,
-        },
-    )
-    assert_csv_export_response(response, csv_dir, main_currency=A_EUR, is_download=False)
+    _create_snapshot_with_valid_data(csv_dir, Timestamp(1651071105))
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -371,15 +345,21 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
             'location_data_snapshot_file': f'{csv_dir}/{LOCATION_DATA_FILENAME}',
         },
     )
-    assert_error_response(
-        response,
-        contained_in_msg='Adding timed_balance failed',
-        status_code=HTTPStatus.CONFLICT,
-    )
+    assert_simple_ok_response(response)
 
-    # check that importing snapshot with different timestamps fails.
+    # check that importing a snapshot that is present in the db fails.
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
-    _create_snapshot_different_timestamps(csv_dir2, ts)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dbsnapshotexportingresource',
+        ),
+        json={
+            'timestamp': ts,
+            'path': csv_dir2,
+        },
+    )
+    assert_csv_export_response(response, csv_dir2, main_currency=A_EUR, is_download=False)
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -392,13 +372,13 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     )
     assert_error_response(
         response,
-        contained_in_msg='csv file has different timestamps',
+        contained_in_msg='Adding timed_balance failed',
         status_code=HTTPStatus.CONFLICT,
     )
 
-    # check that importing snapshot with invalid header fails.
+    # check that importing snapshot with different timestamps fails.
     csv_dir3 = str(tmpdir_factory.mktemp('test_csv_dir3'))
-    _create_snapshot_with_invalid_headers(csv_dir3, ts)
+    _create_snapshot_different_timestamps(csv_dir3, ts)
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -407,6 +387,25 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
         json={
             'balances_snapshot_file': f'{csv_dir3}/{BALANCES_FOR_IMPORT_FILENAME}',
             'location_data_snapshot_file': f'{csv_dir3}/{LOCATION_DATA_FILENAME}',
+        },
+    )
+    assert_error_response(
+        response,
+        contained_in_msg='csv file has different timestamps',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    # check that importing snapshot with invalid header fails.
+    csv_dir4 = str(tmpdir_factory.mktemp('test_csv_dir4'))
+    _create_snapshot_with_invalid_headers(csv_dir4, ts)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dbsnapshotimportingresource',
+        ),
+        json={
+            'balances_snapshot_file': f'{csv_dir4}/{BALANCES_FOR_IMPORT_FILENAME}',
+            'location_data_snapshot_file': f'{csv_dir4}/{LOCATION_DATA_FILENAME}',
         },
     )
     assert_error_response(

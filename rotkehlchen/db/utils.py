@@ -57,15 +57,15 @@ class DBAssetBalance(NamedTuple):
     def serialize(self, for_import: bool, currency: Asset = A_USD) -> Dict[str, str]:
         if for_import is True:
             return {
-                'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
-                'category': str(self.category),
+                'timestamp': str(self.time),
+                'category': self.category.serialize(),
                 'asset_identifier': str(self.asset.identifier),
                 'amount': self.amount,
                 f'{currency.symbol.lower()}_value': self.usd_value,
             }
         return {
             'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
-            'category': str(self.category),
+            'category': self.category.serialize(),
             'asset': str(self.asset),
             'amount': self.amount,
             f'{currency.symbol.lower()}_value': self.usd_value,
@@ -87,7 +87,7 @@ class LocationData(NamedTuple):
     def serialize(self, currency: Asset = A_USD) -> Dict[str, str]:
         return {
             'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
-            'location': str(Location.deserialize_from_db(self.location)),
+            'location': Location.deserialize_from_db(self.location).serialize(),
             f'{currency.symbol.lower()}_value': self.usd_value,
         }
 

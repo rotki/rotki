@@ -10556,7 +10556,8 @@ Importing a database snapshot
           "location_data_snapshot_file": "/path/to/location_data_snapshot.csv"
       }
 
-   :reqjson int timestamp: The epoch timestamp representing the time of the snapshot to be returned.
+   :reqjson str balances_snapshot_file: The path to a `balances_snapshot_import.csv` file that was previously exported.
+   :reqjson str location_data_snapshot_file: The path to a `location_data_snapshot.csv` file that was previously exported.
 
    **Example Response**:
 

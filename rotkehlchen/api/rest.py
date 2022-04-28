@@ -4085,7 +4085,10 @@ class RestAPI():
 
     @require_loggedin_user()
     def export_user_db_snapshot(self, timestamp: Timestamp, path: Path) -> Response:
-        dbsnapshot = DBSnapshot(self.rotkehlchen.data.db)
+        dbsnapshot = DBSnapshot(
+            db_handler=self.rotkehlchen.data.db,
+            msg_aggregator=self.rotkehlchen.msg_aggregator,
+        )
         is_success, message = dbsnapshot.export(timestamp=timestamp, directory_path=path)
         if is_success is False:
             return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
@@ -4094,7 +4097,10 @@ class RestAPI():
 
     @require_loggedin_user()
     def download_user_db_snapshot(self, timestamp: Timestamp) -> Response:
-        dbsnapshot = DBSnapshot(self.rotkehlchen.data.db)
+        dbsnapshot = DBSnapshot(
+            db_handler=self.rotkehlchen.data.db,
+            msg_aggregator=self.rotkehlchen.msg_aggregator,
+        )
         is_success, zipfile_path = dbsnapshot.export(timestamp, directory_path=None)
         if is_success is False:
             return api_response(wrap_in_fail_result('Could not create a zip archive'), status_code=HTTPStatus.CONFLICT)  # noqa: E501
@@ -4153,7 +4159,10 @@ class RestAPI():
         balances_snapshot_file: Path,
         location_data_snapshot_file: Path,
     ) -> Response:
-        dbsnapshot = DBSnapshot(self.rotkehlchen.data.db)
+        dbsnapshot = DBSnapshot(
+            db_handler=self.rotkehlchen.data.db,
+            msg_aggregator=self.rotkehlchen.msg_aggregator,
+        )
         is_success, message = dbsnapshot.import_snapshot(
             balances_snapshot_file=balances_snapshot_file,
             location_data_snapshot_file=location_data_snapshot_file,

@@ -15,7 +15,6 @@ from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb import GlobalDBHandler
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, Price, Timestamp
@@ -31,8 +30,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class DBSnapshot:
-    def __init__(self, db_handler: DBHandler) -> None:
+    def __init__(self, db_handler: DBHandler, msg_aggregator: MessagesAggregator) -> None:
         self.db = db_handler
+        self.msg_aggregator = msg_aggregator
 
     def get_timed_balances(
         self,
@@ -97,20 +97,11 @@ class DBSnapshot:
                 timestamp=timestamp,
             )
         except NoPriceForGivenTimestamp:
-            manual_prices = GlobalDBHandler.get_manual_prices(
-                from_asset=A_USD,
-                to_asset=main_currency,
+            main_currency_price = Price(ONE)
+            self.msg_aggregator.add_error(
+                f'Could not find price for timestamp {timestamp}. Using USD for export. '
+                f'Please add manual price from USD to your main currency {main_currency}',
             )
-            if len(manual_prices) == 0:
-                main_currency_price = Price(ONE)
-                MessagesAggregator().add_error(
-                    f'Could not find price for timestamp {timestamp}. Using USD for export. '
-                    f'Please add manual price from USD to your main currency {main_currency}',
-                )
-            else:
-                best_price = min(manual_prices, key=lambda x: abs(Timestamp(int(x['timestamp'])) - timestamp))  # noqa: E501
-                log.info(f'Used manual price {best_price} for {main_currency} - {timestamp}')
-                main_currency_price = Price(FVal(best_price['price']))
         return main_currency, main_currency_price
 
     @staticmethod
@@ -238,24 +229,27 @@ class DBSnapshot:
         balances_list = self._csv_to_dict(balances_snapshot_file)
         location_data_list = self._csv_to_dict(location_data_snapshot_file)
         # check if the headers match the type stored in the db
-        if tuple(balances_list[0].keys()) != ('timestamp', 'category', 'asset_identifier', 'amount', f'{main_currency.symbol.lower()}_value'):  # noqa: E501
-            return False, 'csv file has invalid headers'
-        if tuple(location_data_list[0].keys()) != ('timestamp', 'location', f'{main_currency.symbol.lower()}_value'):  # noqa: E501
+        has_invalid_headers = (
+            tuple(balances_list[0].keys()) != ('timestamp', 'category', 'asset_identifier', 'amount', f'{main_currency.symbol.lower()}_value') or  # noqa: E501
+            tuple(location_data_list[0].keys()) != ('timestamp', 'location', f'{main_currency.symbol.lower()}_value')  # noqa: E501
+        )
+        if has_invalid_headers:
             return False, 'csv file has invalid headers'
 
         # check if all timestamps are the same.
-        balances_timestamps = [entry['timestamp'] for entry in balances_list]
-        if balances_timestamps.count(balances_timestamps[0]) != len(balances_timestamps):
-            return False, 'csv file has different timestamps'
+        balances_timestamps = [int(entry['timestamp']) for entry in balances_list]
         location_data_timestamps = [entry['timestamp'] for entry in location_data_list]
-        if location_data_timestamps.count(location_data_timestamps[0]) != len(location_data_timestamps):   # noqa: E501
-            return False, 'csv file has different timestamps'
-        if balances_timestamps[0] != location_data_timestamps[0]:
+        has_different_timestamps = (
+            balances_timestamps.count(balances_timestamps[0]) != len(balances_timestamps) or
+            location_data_timestamps.count(location_data_timestamps[0]) != len(location_data_timestamps) or  # noqa: E501
+            balances_timestamps[0] != create_timestamp(location_data_timestamps[0])
+        )
+        if has_different_timestamps:
             return False, 'csv file has different timestamps'
 
-        # check if the timestamp format == '%Y-%m-%d %H:%M:%S'
+        # check if the timestamp can be converted to int
         try:
-            timestamp = create_timestamp(balances_list[0]['timestamp'])
+            timestamp = Timestamp(int(balances_list[0]['timestamp']))
         except ValueError:
             return False, 'csv file contains invalid timestamp format'
 
@@ -278,8 +272,8 @@ class DBSnapshot:
         for entry in balances_list:
             processed_balances_list.append(
                 DBAssetBalance(
-                    category=BalanceType[entry['category'].upper()],
-                    time=create_timestamp(entry['timestamp']),
+                    category=BalanceType.deserialize(entry['category']),
+                    time=Timestamp(int(entry['timestamp'])),
                     asset=Asset(identifier=entry['asset_identifier']),
                     amount=entry['amount'],
                     usd_value=str(
@@ -291,7 +285,7 @@ class DBSnapshot:
             processed_location_data_list.append(
                 LocationData(
                     time=create_timestamp(entry['timestamp']),
-                    location=Location[entry['location'].upper()].serialize_for_db(),
+                    location=Location.deserialize(entry['location']).serialize_for_db(),
                     usd_value=str(
                         FVal(entry[f'{main_currency.symbol.lower()}_value']) / main_currency_price,
                     ),
