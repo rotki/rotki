@@ -13,6 +13,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.dataimport import (
+    assert_binance_import_results,
     assert_bisq_trades_import_results,
     assert_blockfi_trades_import_results,
     assert_blockfi_transactions_import_results,
@@ -409,3 +410,21 @@ def test_data_import_custom_format(rotkehlchen_api_server, file_upload):
     assert result is True
     # And also assert data was imported succesfully
     assert_custom_cointracking(rotki)
+
+
+def test_data_import_binance_history(rotkehlchen_api_server):
+    """Test that the data import endpoint works successfully for uphold trades"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'binance_history.csv'
+
+    json_data = {'source': 'binance', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    result = assert_proper_response_with_result(response)
+    assert result is True
+    assert_binance_import_results(rotki)

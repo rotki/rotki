@@ -1684,6 +1684,7 @@ class DataImportSchema(Schema):
                 'shapeshift-trades',
                 'uphold',
                 'bisq',
+                'binance',
             ),
         ),
     )

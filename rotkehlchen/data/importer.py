@@ -4,15 +4,26 @@ import logging
 from collections import defaultdict
 from itertools import count
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Type
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.assets.converters import asset_from_cryptocom, asset_from_nexo, asset_from_uphold
+from rotkehlchen.assets.converters import (
+    asset_from_binance,
+    asset_from_cryptocom,
+    asset_from_nexo,
+    asset_from_uphold,
+)
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_BSQ, A_BTC, A_DAI, A_SAI, A_USD
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.data.import_utils import (
+    BinanceCsvRow,
+    BinanceEntry,
+    BinanceMultipleEntry,
+    BinanceSingleEntry,
+)
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors.asset import UnknownAsset
@@ -1434,4 +1445,88 @@ Activity from uphold with uphold transaction id:
                     continue
                 except KeyError as e:
                     return False, str(e)
+        return True, ''
+
+    @staticmethod
+    def _group_binance_rows(
+        rows: List[BinanceCsvRow],
+        **kwargs: Dict[str, Any],
+    ) -> Tuple[int, Dict[Timestamp, List[BinanceCsvRow]]]:
+        multirows: Dict[Timestamp, List[BinanceCsvRow]] = defaultdict(lambda: [])
+        skipped_count = 0
+        formatstr = kwargs.get('timestamp_format')
+        for csv_row in rows:
+            try:
+                timestamp = Timestamp(deserialize_timestamp_from_date(
+                    date=csv_row['UTC_Time'],
+                    formatstr=formatstr if formatstr is not None else '%Y-%m-%d %H:%M:%S',  # type: ignore  # noqa: E501
+                    location='binance',
+                ))
+                csv_row['Coin'] = asset_from_binance(csv_row['Coin'])
+                csv_row['Change'] = deserialize_asset_amount(csv_row['Change'])
+                del csv_row['UTC_Time']
+                del csv_row['User_ID']
+                del csv_row['Account']
+                del csv_row['Remark']
+                multirows[timestamp].append(csv_row)
+            except (DeserializationError, UnknownAsset) as e:
+                log.warning(f'Skipped binance csv row {csv_row} because of {str(e)}')
+                skipped_count += 1
+            except KeyError as e:
+                log.error(f'Malformed binance csv columns! Broke on row {csv_row}. {str(e)}')
+                return len(rows), {}
+
+        return skipped_count, multirows
+
+    def _process_binance_rows(self, multi: Dict[Timestamp, List[BinanceCsvRow]]) -> None:
+        BinanceEntry.db = self.db
+        single_entry_classes = BinanceSingleEntry.__subclasses__()
+        multiple_entry_classes = BinanceMultipleEntry.__subclasses__()
+        stats: Dict[Type[BinanceEntry], int] = defaultdict(lambda: 0)
+        skipped_entries: List[Any] = []
+        for timestamp, rows in multi.items():
+            for single_entry_class in single_entry_classes:
+                for row in rows.copy():
+                    if single_entry_class.is_entry(row['Operation']):
+                        single_entry_class.process_entry(timestamp=timestamp, data=row)
+                        stats[single_entry_class] += 1
+                        rows.remove(row)
+            for multiple_entry_class in multiple_entry_classes:
+                if multiple_entry_class.are_entries([row['Operation'] for row in rows]):
+                    processed_count = multiple_entry_class.process_entries(timestamp=timestamp, data=rows)  # noqa: E501
+                    stats[multiple_entry_class] += processed_count
+                    rows = rows if processed_count == 0 else []
+
+            if len(rows) > 0:
+                skipped_entries.append([timestamp, rows])
+
+        skipped_nontrade_rows = list(filter(
+            lambda x: not {el['Operation'] for el in x[1]}.issubset({'Buy', 'Sell', 'Fee'}),
+            skipped_entries,
+        ))
+        skipped_trade_rows = list(filter(
+            lambda x: {el['Operation'] for el in x[1]}.issubset({'Buy', 'Sell', 'Fee'}),
+            skipped_entries,
+        ))
+        total_found = sum(stats.values())
+        skipped_count = 0
+        for _, rows in skipped_entries:
+            skipped_count += len(rows)
+        log.debug(f'Skipped Binance trade rows: {skipped_trade_rows}')
+        log.debug(f'Skipped Binance non-trade rows {skipped_nontrade_rows}')
+        log.info(f'Total found Binance entries: {total_found}')
+        log.info(f'Total skipped Binance csv rows: {skipped_count}')
+        log.debug('Binance import stats: {}'.format(
+            [{entry_class.__name__: count} for entry_class, count in stats.items()],
+        ))
+        if skipped_count > 0:
+            self.db.msg_aggregator.add_warning(f'Skipped {skipped_count} rows during processing')  # noqa: E501
+
+    def import_binance_csv(self, filepath: Path, **kwargs: Any) -> Tuple[bool, str]:
+        with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
+            input_rows = list(csv.DictReader(csvfile))
+            skipped_count, multirows = self._group_binance_rows(rows=input_rows, **kwargs)
+            self.db.msg_aggregator.add_warning(f'{skipped_count} Binance rows have bad format.')
+            self._process_binance_rows(multirows)
+
         return True, ''

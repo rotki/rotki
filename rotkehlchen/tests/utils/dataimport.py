@@ -1132,3 +1132,23 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         notes='ID: xxhee',
     )]
     assert trades == expected_trades
+
+
+def assert_binance_import_results(rotki: Rotkehlchen):
+    trades = rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
+    warnings = rotki.msg_aggregator.consume_warnings()
+    asset_movements = rotki.data.db.get_asset_movements(
+        filter_query=AssetMovementsFilterQuery.make(),
+        has_premium=True,
+    )
+    ledger_actions = DBLedgerActions(
+        database=rotki.data.db,
+        msg_aggregator=rotki.data.msg_aggregator,
+    ).get_ledger_actions(
+        filter_query=LedgerActionsFilterQuery.make(),
+        has_premium=True,
+    )
+    assert len(trades) == 10
+    assert len(asset_movements) == 2
+    assert len(ledger_actions) == 6
+    assert warnings == ['2 Binance rows have bad format.', 'Skipped 4 rows during processing']
