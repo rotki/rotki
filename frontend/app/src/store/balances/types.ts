@@ -104,12 +104,16 @@ export interface XpubPayload {
   readonly xpubType: XpubKeyType;
 }
 
-export interface BlockchainAccountPayload extends AccountPayload {
+export interface BasicBlockchainAccountPayload {
   readonly blockchain: Blockchain;
   readonly xpub?: XpubPayload;
   readonly accounts?: string[];
   readonly modules?: Module[];
 }
+
+export interface BlockchainAccountPayload
+  extends BasicBlockchainAccountPayload,
+    AccountPayload {}
 
 export interface AccountPayload {
   readonly address: string;

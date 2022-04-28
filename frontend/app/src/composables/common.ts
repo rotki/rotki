@@ -24,6 +24,7 @@ export const useRoute = () => {
 export const setupThemeCheck = () => {
   const { $vuetify } = useProxy();
   const isMobile = computed(() => $vuetify.breakpoint.mobile);
+  const theme = computed(() => $vuetify.theme);
   const dark = computed(() => $vuetify.theme.dark);
   const breakpoint = computed(() => $vuetify.breakpoint.name);
   const currentBreakpoint = computed(() => $vuetify.breakpoint);
@@ -36,6 +37,7 @@ export const setupThemeCheck = () => {
   return {
     $vuetify,
     isMobile,
+    theme,
     dark,
     breakpoint,
     currentBreakpoint,

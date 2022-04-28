@@ -48,6 +48,14 @@ export const setupSettings = () => {
     () => store.state.settings!.valueRoundingMode
   );
 
+  const graphZeroBased = computed<boolean>(
+    () => store.state.settings!.graphZeroBased
+  );
+
+  const nftsInNetValue = computed<boolean>(
+    () => store.state.settings!.nftsInNetValue
+  );
+
   const explorers = computed<ExplorersSettings>(
     () => store.state.settings!.explorers
   );
@@ -69,6 +77,8 @@ export const setupSettings = () => {
     amountRoundingMode,
     valueRoundingMode,
     explorers,
+    graphZeroBased,
+    nftsInNetValue,
     updateSetting
   };
 };

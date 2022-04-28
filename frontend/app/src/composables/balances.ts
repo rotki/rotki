@@ -1,4 +1,4 @@
-import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import { GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { computed, Ref } from '@vue/composition-api';
@@ -11,16 +11,24 @@ import {
   AddAccountsPayload,
   AssetPrices,
   BalanceByLocation,
+  BasicBlockchainAccountPayload,
   BlockchainAccountPayload,
   BlockchainAccountWithBalance,
+  BlockchainBalancePayload,
+  BlockchainTotal,
+  ExchangeBalancePayload,
   ExchangeRateGetter,
   FetchPricePayload,
-  HistoricPricePayload
+  HistoricPricePayload,
+  LocationBalance,
+  OracleCachePayload,
+  XpubPayload
 } from '@/store/balances/types';
 import { ActionStatus } from '@/store/types';
 import { useStore } from '@/store/utils';
 import { Eth2Validator } from '@/types/balances';
-import { Exchange } from '@/types/exchanges';
+import { Exchange, ExchangeInfo } from '@/types/exchanges';
+import { PriceOracle } from '@/types/user';
 import { assert } from '@/utils/assertions';
 
 export const setupExchangeRateGetter = () => {
@@ -39,6 +47,34 @@ export const setupGeneralBalances = () => {
     return store.getters['balances/byLocation'];
   });
 
+  const manualBalanceByLocation = computed<LocationBalance[]>(() => {
+    return store.getters['balances/manualBalanceByLocation'];
+  });
+
+  const liabilities = computed<AssetBalance[]>(() => {
+    return store.getters['balances/liabilities'];
+  });
+
+  const blockchainTotals = computed<BlockchainTotal[]>(() => {
+    return store.getters['balances/blockchainTotals'];
+  });
+
+  const fetchBlockchainBalances: (
+    payload: BlockchainBalancePayload
+  ) => Promise<void> = async payload => {
+    return await store.dispatch('balances/fetchBlockchainBalances', payload);
+  };
+
+  const fetchLoopringBalances: (
+    refresh: boolean
+  ) => Promise<void> = async refresh => {
+    return await store.dispatch('balances/fetchLoopringBalances', refresh);
+  };
+
+  const fetchManualBalances: () => Promise<void> = async () => {
+    return await store.dispatch('balances/fetchManualBalances');
+  };
+
   const fetchHistoricPrice: (
     payload: HistoricPricePayload
   ) => Promise<BigNumber> = async payload => {
@@ -51,9 +87,27 @@ export const setupGeneralBalances = () => {
     return await store.dispatch('balances/refreshPrices', payload);
   };
 
+  const isEthereumToken = (asset: string) => {
+    return computed<boolean>(() =>
+      store.getters['balances/isEthereumToken'](asset)
+    );
+  };
+
+  const fetchTokenDetails = async (address: string) => {
+    return await store.dispatch('balances/fetchTokenDetails', address);
+  };
+
   return {
     aggregatedBalances,
     balancesByLocation,
+    manualBalanceByLocation,
+    liabilities,
+    blockchainTotals,
+    isEthereumToken,
+    fetchTokenDetails,
+    fetchBlockchainBalances,
+    fetchLoopringBalances,
+    fetchManualBalances,
     fetchHistoricPrice,
     refreshPrices
   };
@@ -184,22 +238,33 @@ export const setupManualBalances = () => {
 
 export const setupBlockchainAccounts = () => {
   const { dispatch, getters, state } = useStore();
+
   const account = (address: string) =>
     computed<GeneralAccount | undefined>(() =>
       getters['balances/account'](address)
     );
+
   const accounts = computed<GeneralAccount[]>(
     () => getters['balances/accounts']
   );
+
   const addAccount = async (payload: BlockchainAccountPayload) => {
     return await dispatch('balances/addAccount', payload);
   };
+
+  const removeAccount = async (payload: BasicBlockchainAccountPayload) => {
+    return await dispatch('balances/removeAccount', payload);
+  };
+
   const editAccount = async (payload: BlockchainAccountPayload) => {
     return await dispatch('balances/editAccount', payload);
   };
+
   const addAccounts = async (payload: AddAccountsPayload) => {
     return await dispatch('balances/addAccounts', payload);
   };
+
+  const eth2Validators = computed(() => state.balances?.eth2Validators.entries);
 
   const addEth2Validator = async (payload: Eth2Validator) => {
     return await dispatch('balances/addEth2Validator', payload);
@@ -209,7 +274,13 @@ export const setupBlockchainAccounts = () => {
     return await dispatch('balances/editEth2Validator', payload);
   };
 
-  const eth2Validators = computed(() => state.balances?.eth2Validators.entries);
+  const deleteEth2Validators = async (payload: string[]) => {
+    return await dispatch('balances/deleteEth2Validators', payload);
+  };
+
+  const deleteXpub = async (payload: XpubPayload) => {
+    return await dispatch('balances/deleteXpub', payload);
+  };
 
   return {
     account,
@@ -217,9 +288,12 @@ export const setupBlockchainAccounts = () => {
     addAccount,
     editAccount,
     addAccounts,
+    removeAccount,
+    eth2Validators,
     addEth2Validator,
     editEth2Validator,
-    eth2Validators
+    deleteEth2Validators,
+    deleteXpub
   };
 };
 
@@ -231,19 +305,56 @@ export const usePrices = () => {
     return balances!!.prices;
   });
 
+  const createOracleCache = async (payload: OracleCachePayload) => {
+    return await store.dispatch('balances/createOracleCache', payload);
+  };
+
+  const getPriceCache = async (source: PriceOracle) => {
+    return await api.balances.getPriceCache(source);
+  };
+
+  const deletePriceCache = async (
+    source: PriceOracle,
+    fromAsset: string,
+    toAsset: string
+  ) => {
+    return await api.balances.deletePriceCache(source, fromAsset, toAsset);
+  };
+
   return {
-    prices
+    prices,
+    createOracleCache,
+    getPriceCache,
+    deletePriceCache
   };
 };
 
 export const useExchanges = () => {
   const store = useStore();
 
+  const exchanges = computed<ExchangeInfo[]>(() => {
+    return store.getters['balances/exchanges'];
+  });
+
   const connectedExchanges = computed<Exchange[]>(() => {
     return store.state.balances!!.connectedExchanges;
   });
 
+  const exchangeBalances = (exchange: string) =>
+    computed<AssetBalanceWithPrice[]>(() =>
+      store.getters['balances/exchangeBalances'](exchange)
+    );
+
+  const fetchExchangeBalances: (
+    payload: ExchangeBalancePayload
+  ) => Promise<void> = async payload => {
+    return await store.dispatch('balances/fetchExchangeBalances', payload);
+  };
+
   return {
-    connectedExchanges
+    exchanges,
+    exchangeBalances,
+    connectedExchanges,
+    fetchExchangeBalances
   };
 };

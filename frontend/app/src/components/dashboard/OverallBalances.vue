@@ -85,7 +85,7 @@ import { NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
 import { Component, Mixins, Watch } from 'vue-property-decorator';
 import { mapActions, mapGetters, mapMutations, mapState } from 'vuex';
-import NetWorthChart from '@/components/dashboard/NetworthChart.vue';
+import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
 import Loading from '@/components/helper/Loading.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';

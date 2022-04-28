@@ -187,8 +187,15 @@ export default NotificationSidebar;
   color: rgb(0, 0, 0, 0.6);
 }
 
-.container,
-.messages,
+.container {
+  height: 100%;
+}
+
+.messages {
+  height: calc(100% - 50px);
+  padding-right: 0.5rem;
+}
+
 .content {
   height: calc(100% - 64px);
 }

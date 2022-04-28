@@ -41,42 +41,59 @@
 </template>
 
 <script lang="ts">
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  toRefs
+} from '@vue/composition-api';
+import { get } from '@vueuse/core';
 import { tradeLocations } from '@/components/history/consts';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TradeLocationData } from '@/components/history/type';
 import { TradeLocation } from '@/services/history/types';
 
-@Component({
-  components: { LocationIcon }
-})
-export default class TradeLocationSelector extends Vue {
-  readonly tradeLocations = tradeLocations;
+export default defineComponent({
+  name: 'TradeLocationSelector',
+  components: { LocationIcon },
+  props: {
+    value: { required: true, type: Object as PropType<TradeLocation> },
+    availableLocations: {
+      required: false,
+      type: Array as PropType<string[]>,
+      default: () => []
+    },
+    outlined: { required: false, type: Boolean, default: false }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { availableLocations, value } = toRefs(props);
 
-  get locations(): TradeLocationData[] {
-    return tradeLocations.filter(location =>
-      this.availableLocations.includes(location.identifier)
-    );
+    const locations = computed<TradeLocationData[]>(() => {
+      return tradeLocations.filter(location =>
+        get(availableLocations).includes(location.identifier)
+      );
+    });
+
+    const name = computed<string>(() => {
+      return (
+        tradeLocations.find(location => location.identifier === get(value))
+          ?.name ?? ''
+      );
+    });
+
+    const input = (value: TradeLocation) => {
+      emit('input', value);
+    };
+
+    return {
+      locations,
+      name,
+      tradeLocations,
+      input
+    };
   }
-
-  get name(): string {
-    return (
-      this.tradeLocations.find(location => location.identifier === this.value)
-        ?.name ?? ''
-    );
-  }
-
-  @Prop({ required: true })
-  value!: TradeLocation;
-
-  @Prop({ required: false, type: Array, default: () => [] })
-  availableLocations!: TradeLocation[];
-  @Prop({ required: false, default: false, type: Boolean })
-  outlined!: boolean;
-
-  @Emit()
-  input(_value: TradeLocation) {}
-}
+});
 </script>
 
 <style scoped lang="scss">

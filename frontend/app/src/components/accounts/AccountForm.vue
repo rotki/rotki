@@ -274,14 +274,14 @@ const AccountForm = defineComponent({
 
     const { isTaskRunning } = setupTaskStatus();
 
-    const accountOperation = computed(
+    const accountOperation = computed<boolean>(
       () =>
         get(isTaskRunning(TaskType.ADD_ACCOUNT)) ||
         get(isTaskRunning(TaskType.REMOVE_ACCOUNT)) ||
         get(pending)
     );
 
-    const loading = computed(
+    const loading = computed<boolean>(
       () =>
         get(accountOperation) ||
         get(isTaskRunning(TaskType.QUERY_BALANCES)) ||

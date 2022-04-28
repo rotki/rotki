@@ -401,9 +401,7 @@ const ExternalTradeForm = defineComponent({
       );
     });
 
-    const fetching = computed<boolean>(() => {
-      return get(isTaskRunning(TaskType.FETCH_HISTORIC_PRICE));
-    });
+    const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
     const numericAmount = bigNumberifyFromRef(amount);
     const numericFee = bigNumberifyFromRef(fee);

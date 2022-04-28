@@ -12,7 +12,7 @@
         {{ edit.identifier }}
         <copy-button
           :value="edit.identifier"
-          :tooltip="$t('asset_form.identifier_copy')"
+          :tooltip="$tc('asset_form.identifier_copy')"
         />
       </v-col>
     </v-row>
@@ -95,7 +95,7 @@
               <help-link
                 small
                 :url="`${$interop.contributeUrl}#get-coingecko-asset-identifier`"
-                :tooltip="$t('asset_form.help_coingecko')"
+                :tooltip="$tc('asset_form.help_coingecko')"
               />
             </template>
           </v-text-field>
@@ -124,7 +124,7 @@
               <help-link
                 small
                 :url="`${$interop.contributeUrl}#get-cryptocompare-asset-identifier`"
-                :tooltip="$t('asset_form.help_cryptocompare')"
+                :tooltip="$tc('asset_form.help_cryptocompare')"
               />
             </template>
           </v-text-field>
@@ -151,7 +151,7 @@
               v-model="started"
               seconds
               outlined
-              :label="$t('asset_form.labels.started')"
+              :label="$tc('asset_form.labels.started')"
               :error-messages="errors['started']"
               :disabled="saving"
               @focus="delete errors['started']"
@@ -177,7 +177,7 @@
                   outlined
                   persistent-hint
                   clearable
-                  :label="$t('asset_form.labels.swapped_for')"
+                  :label="$tc('asset_form.labels.swapped_for')"
                   :error-messages="errors['swapped_for']"
                   :disabled="saving"
                   @focus="delete errors['swapped_for']"
@@ -190,7 +190,7 @@
                   outlined
                   persistent-hint
                   clearable
-                  :label="$t('asset_form.labels.forked')"
+                  :label="$tc('asset_form.labels.forked')"
                   :error-messages="errors['forked']"
                   :disabled="saving"
                   @focus="delete errors['forked']"
@@ -236,23 +236,34 @@
 
 <script lang="ts">
 import { SupportedAsset } from '@rotki/common/lib/data';
-import { Component, Emit, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  onActivated,
+  onMounted,
+  PropType,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import Fragment from '@/components/helper/Fragment';
 import HelpLink from '@/components/helper/HelpLink.vue';
-import RowActions from '@/components/helper/RowActions.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
+import { setupGeneralBalances } from '@/composables/balances';
+import { interop } from '@/electron-interop';
+import i18n from '@/i18n';
 import {
   EthereumToken,
   ManagedAsset,
   UnderlyingToken
 } from '@/services/assets/types';
 import { deserializeApiErrorMessage } from '@/services/converters';
-import { ERC20Token } from '@/store/balances/types';
+import { api } from '@/services/rotkehlchen-api';
+import { useAssetInfoRetrieval } from '@/store/assets';
 import { showError } from '@/store/utils';
-import { Nullable } from '@/types';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 function value<T>(t: T): T | undefined {
@@ -265,278 +276,319 @@ function time(t: string): number | undefined {
 
 const ETHEREUM_TOKEN = 'ethereum token';
 
-@Component({
+export default defineComponent({
+  name: 'AssetForm',
   components: {
     CopyButton,
     HelpLink,
     Fragment,
     UnderlyingTokenManager,
-    RowActions,
     FileUpload
   },
-  methods: {
-    ...mapActions('balances', ['fetchSupportedAssets', 'fetchTokenDetails'])
-  }
-})
-export default class AssetForm extends Vue {
-  address: string = '';
-  name: string = '';
-  symbol: string = '';
-  decimals: string = '';
-  started: string = '';
-  coingecko: string = '';
-  cryptocompare: string = '';
-  assetType: string = ETHEREUM_TOKEN;
-  types: string[] = [ETHEREUM_TOKEN];
-  identifier: string = '';
-  protocol: string = '';
-  swappedFor: string = '';
-  forked: string = '';
-  coingeckoEnabled: boolean = false;
-  cryptocompareEnabled: boolean = false;
-  fetchSupportedAssets!: (refresh: boolean) => Promise<void>;
-  fetchTokenDetails!: (address: string) => Promise<ERC20Token>;
-  fetching: boolean = false;
-  dontAutoFetch: boolean = false;
+  props: {
+    value: { required: true, type: Boolean },
+    edit: {
+      required: false,
+      type: Object as PropType<ManagedAsset>,
+      default: null
+    },
+    saving: { required: false, type: Boolean, default: false }
+  },
+  emits: ['input'],
+  setup(props, { emit }) {
+    const { edit } = toRefs(props);
+    const { fetchSupportedAssets } = useAssetInfoRetrieval();
+    const { fetchTokenDetails } = setupGeneralBalances();
 
-  underlyingTokens: UnderlyingToken[] = [];
-  icon: File | null = null;
+    const input = (value: boolean) => {
+      emit('input', value);
+    };
 
-  errors: { [key: string]: string[] } = {};
+    const address = ref<string>('');
+    const name = ref<string>('');
+    const symbol = ref<string>('');
+    const decimals = ref<string>('');
+    const started = ref<string>('');
+    const coingecko = ref<string>('');
+    const cryptocompare = ref<string>('');
+    const assetType = ref<string>(ETHEREUM_TOKEN);
+    const types = ref<string[]>([ETHEREUM_TOKEN]);
+    const identifier = ref<string>('');
+    const protocol = ref<string>('');
+    const swappedFor = ref<string>('');
+    const forked = ref<string>('');
+    const coingeckoEnabled = ref<boolean>(false);
+    const cryptocompareEnabled = ref<boolean>(false);
+    const fetching = ref<boolean>(false);
+    const dontAutoFetch = ref<boolean>(false);
 
-  @Prop({ required: true, type: Boolean })
-  value!: boolean;
+    const underlyingTokens = ref<UnderlyingToken[]>([]);
+    const icon = ref<File | null>(null);
 
-  @Prop({ required: false, default: () => null })
-  edit!: Nullable<ManagedAsset>;
-  @Prop({ required: false, type: Boolean, default: false })
-  saving!: boolean;
+    const errors = ref<{ [key: string]: string[] }>({});
 
-  @Emit()
-  input(_value: boolean) {}
+    const isEthereumToken = computed<boolean>(() => {
+      return get(assetType) === ETHEREUM_TOKEN;
+    });
 
-  get isEthereumToken() {
-    return this.assetType === ETHEREUM_TOKEN;
-  }
+    const sanitizeAddress = (address: string) => {
+      return address.replace(/\s/g, '');
+    };
 
-  @Watch('address')
-  async onAddressChange() {
-    const sanitizedAddress = this.sanitizeAddress(this.address);
-    if (this.address !== sanitizedAddress) {
-      this.address = sanitizedAddress;
-      return;
-    }
+    watch(address, async () => {
+      const sanitizedAddress = sanitizeAddress(get(address));
+      if (get(address) !== sanitizedAddress) {
+        set(address, sanitizedAddress);
+        return;
+      }
 
-    if (
-      this.dontAutoFetch ||
-      !this.address.startsWith('0x') ||
-      this.address.length < 42
-    ) {
-      this.dontAutoFetch = false;
-      return;
-    }
+      if (
+        get(dontAutoFetch) ||
+        !get(address).startsWith('0x') ||
+        get(address).length < 42
+      ) {
+        set(dontAutoFetch, false);
+        return;
+      }
 
-    this.fetching = true;
-    const { decimals, name, symbol } = await this.fetchTokenDetails(
-      this.address
-    );
-    this.decimals = decimals?.toString() ?? '';
-    this.name = name ?? '';
-    this.symbol = symbol ?? '';
-    this.fetching = false;
-  }
+      set(fetching, true);
+      const {
+        decimals: newDecimals,
+        name: newName,
+        symbol: newSymbol
+      } = await fetchTokenDetails(get(address));
+      set(decimals, newDecimals?.toString() ?? '');
+      set(name, newName ?? '');
+      set(symbol, newSymbol ?? '');
+      set(fetching, false);
+    });
 
-  get preview(): string | null {
-    return this.identifier ?? this.symbol ?? null;
-  }
+    const preview = computed<string | null>(() => {
+      return get(identifier) ?? get(symbol) ?? null;
+    });
 
-  get token(): Omit<EthereumToken, 'identifier'> {
-    const ut = this.underlyingTokens;
+    const token = computed<Omit<EthereumToken, 'identifier'>>(() => {
+      const ut = get(underlyingTokens);
+      return {
+        address: get(address),
+        name: get(name),
+        symbol: get(symbol),
+        decimals: parseInt(get(decimals)),
+        coingecko: get(coingeckoEnabled) ? value(get(coingecko)) : null,
+        cryptocompare: get(cryptocompareEnabled)
+          ? value(get(cryptocompare))
+          : '',
+        started: time(get(started)),
+        underlyingTokens: ut.length > 0 ? ut : undefined,
+        swappedFor: value(get(swappedFor)),
+        protocol: value(get(protocol))
+      };
+    });
+
+    const asset = computed<Omit<SupportedAsset, 'identifier'>>(() => {
+      return {
+        name: get(name),
+        symbol: get(symbol),
+        assetType: get(assetType),
+        started: time(get(started)),
+        forked: value(get(forked)),
+        swappedFor: value(get(swappedFor)),
+        coingecko: get(coingeckoEnabled) ? value(get(coingecko)) : null,
+        cryptocompare: get(cryptocompareEnabled)
+          ? value(get(cryptocompare))
+          : ''
+      };
+    });
+
+    onActivated(async () => {
+      try {
+        set(types, await api.assets.assetTypes());
+      } catch (e: any) {
+        showError(
+          i18n.t('asset_form.types.error', { message: e.message }).toString()
+        );
+      }
+    });
+
+    onMounted(() => {
+      const token = get(edit);
+      set(dontAutoFetch, !!get(edit));
+      if (!token) {
+        return;
+      }
+
+      set(name, token.name ?? '');
+      set(symbol, token.symbol);
+      set(identifier, token.identifier ?? '');
+      set(swappedFor, token.swappedFor ?? '');
+      set(
+        started,
+        token.started ? convertFromTimestamp(token.started, true) : ''
+      );
+      set(coingecko, token.coingecko ?? '');
+      set(cryptocompare, token.cryptocompare ?? '');
+
+      set(coingeckoEnabled, token.coingecko !== null);
+      set(cryptocompareEnabled, token.cryptocompare !== '');
+
+      if ('assetType' in token) {
+        set(forked, token.forked ?? '');
+        set(assetType, token.assetType);
+      } else {
+        set(address, token.address);
+        set(decimals, token.decimals ? token.decimals.toString() : '');
+        set(protocol, token.protocol ?? '');
+        set(underlyingTokens, token.underlyingTokens ?? []);
+        set(assetType, ETHEREUM_TOKEN);
+      }
+    });
+
+    const saveIcon = async (identifier: string) => {
+      if (!get(icon)) {
+        return;
+      }
+
+      let success = false;
+      let message = '';
+      try {
+        if (interop.appSession) {
+          await api.assets.setIcon(identifier, get(icon)!.path);
+        } else {
+          await api.assets.uploadIcon(identifier, get(icon)!);
+        }
+        success = true;
+      } catch (e: any) {
+        message = e.message;
+      }
+
+      if (!success) {
+        showError(
+          i18n
+            .t('asset_form.icon_upload.description', {
+              message
+            })
+            .toString(),
+          i18n.t('asset_form.icon_upload.title').toString()
+        );
+      }
+    };
+
+    const saveEthereumToken = async () => {
+      let newIdentifier: string;
+      const tokenVal = get(token)!;
+      if (get(edit) && get(identifier)) {
+        ({ identifier: newIdentifier } = await api.assets.editEthereumToken(
+          tokenVal
+        ));
+      } else {
+        ({ identifier: newIdentifier } = await api.assets.addEthereumToken(
+          tokenVal
+        ));
+      }
+      return newIdentifier;
+    };
+
+    const saveAsset = async () => {
+      let newIdentifier: string;
+      const assetVal = get(asset);
+      if (get(edit)) {
+        newIdentifier = get(identifier);
+        await api.assets.editAsset({ ...assetVal, identifier: newIdentifier });
+      } else {
+        ({ identifier: newIdentifier } = await api.assets.addAsset(assetVal));
+      }
+      return newIdentifier;
+    };
+
+    const getUnderlyingTokenErrors = (underlyingTokens: any) => {
+      const messages: string[] = [];
+      for (const underlyingToken of Object.values(underlyingTokens)) {
+        const ut = underlyingToken as any;
+        if (ut.address) {
+          messages.push(...(ut.address as string[]));
+        }
+        if (underlyingTokens.weight) {
+          messages.push(...(ut.weight as string[]));
+        }
+      }
+      return messages;
+    };
+
+    const handleError = (message: any) => {
+      if (message.token) {
+        const token = message.token;
+        set(errors, token);
+        const underlyingTokens = token.underlying_tokens;
+        if (underlyingTokens) {
+          const messages = getUnderlyingTokenErrors(underlyingTokens);
+
+          showError(
+            messages.join(','),
+            i18n.t('asset_form.underlying_tokens').toString()
+          );
+        } else if (token._schema) {
+          showError(
+            token._schema[0],
+            i18n.t('asset_form.underlying_tokens').toString()
+          );
+        }
+      } else {
+        set(errors, message);
+      }
+    };
+
+    const save = async () => {
+      try {
+        const newIdentifier = get(isEthereumToken)
+          ? await saveEthereumToken()
+          : await saveAsset();
+        set(identifier, newIdentifier);
+        await saveIcon(newIdentifier);
+        await fetchSupportedAssets(true);
+        return true;
+      } catch (e: any) {
+        const message = deserializeApiErrorMessage(e.message) as any;
+        if (!message) {
+          showError(
+            e.message,
+            i18n.t('asset_form.underlying_tokens').toString()
+          );
+        } else {
+          handleError(message);
+        }
+
+        return false;
+      }
+    };
+
     return {
-      address: this.address,
-      name: this.name,
-      symbol: this.symbol,
-      decimals: parseInt(this.decimals),
-      coingecko: this.coingeckoEnabled ? value(this.coingecko) : null,
-      cryptocompare: this.cryptocompareEnabled ? value(this.cryptocompare) : '',
-      started: time(this.started),
-      underlyingTokens: ut.length > 0 ? ut : undefined,
-      swappedFor: value(this.swappedFor),
-      protocol: value(this.protocol)
+      address,
+      name,
+      symbol,
+      decimals,
+      started,
+      coingecko,
+      cryptocompare,
+      assetType,
+      types,
+      identifier,
+      protocol,
+      swappedFor,
+      forked,
+      coingeckoEnabled,
+      cryptocompareEnabled,
+      fetching,
+      dontAutoFetch,
+      errors,
+      underlyingTokens,
+      preview,
+      icon,
+      input,
+      isEthereumToken,
+      save
     };
   }
-
-  get asset(): Omit<SupportedAsset, 'identifier'> {
-    return {
-      name: this.name,
-      symbol: this.symbol,
-      assetType: this.assetType,
-      started: time(this.started),
-      forked: value(this.forked),
-      swappedFor: value(this.swappedFor),
-      coingecko: this.coingeckoEnabled ? value(this.coingecko) : null,
-      cryptocompare: this.cryptocompareEnabled ? value(this.cryptocompare) : ''
-    };
-  }
-
-  async created() {
-    try {
-      this.types = await this.$api.assets.assetTypes();
-    } catch (e: any) {
-      showError(
-        this.$t('asset_form.types.error', { message: e.message }).toString()
-      );
-    }
-  }
-
-  mounted() {
-    const token = this.edit;
-    this.dontAutoFetch = !!this.edit;
-    if (!token) {
-      return;
-    }
-
-    this.name = token.name ?? '';
-    this.symbol = token.symbol;
-    this.identifier = token.identifier ?? '';
-    this.swappedFor = token.swappedFor ?? '';
-    this.started = token.started
-      ? convertFromTimestamp(token.started, true)
-      : '';
-    this.coingecko = token.coingecko ?? '';
-    this.cryptocompare = token.cryptocompare ?? '';
-
-    this.coingeckoEnabled = token.coingecko !== null;
-    this.cryptocompareEnabled = token.cryptocompare !== '';
-
-    if ('assetType' in token) {
-      this.forked = token.forked ?? '';
-      this.assetType = token.assetType;
-    } else {
-      this.address = token.address;
-      this.decimals = token.decimals ? token.decimals.toString() : '';
-      this.protocol = token.protocol ?? '';
-      this.underlyingTokens = token.underlyingTokens ?? [];
-      this.assetType = ETHEREUM_TOKEN;
-    }
-  }
-
-  async saveIcon(identifier: string) {
-    if (!this.icon) {
-      return;
-    }
-
-    let success = false;
-    let message = '';
-    try {
-      if (this.$interop.appSession) {
-        await this.$api.assets.setIcon(identifier, this.icon.path);
-      } else {
-        await this.$api.assets.uploadIcon(identifier, this.icon);
-      }
-      success = true;
-    } catch (e: any) {
-      message = e.message;
-    }
-
-    if (!success) {
-      showError(
-        this.$t('asset_form.icon_upload.description', {
-          message
-        }).toString(),
-        this.$t('asset_form.icon_upload.title').toString()
-      );
-    }
-  }
-
-  async save(): Promise<boolean> {
-    try {
-      const identifier = this.isEthereumToken
-        ? await this.saveEthereumToken()
-        : await this.saveAsset();
-      this.identifier = identifier;
-      await this.saveIcon(identifier);
-      await this.fetchSupportedAssets(true);
-      return true;
-    } catch (e: any) {
-      const message = deserializeApiErrorMessage(e.message) as any;
-      if (!message) {
-        showError(
-          e.message,
-          this.$t('asset_form.underlying_tokens').toString()
-        );
-      } else {
-        this.handleError(message);
-      }
-
-      return false;
-    }
-  }
-
-  private handleError(message: any) {
-    if (message.token) {
-      const token = message.token;
-      this.errors = token;
-      const underlyingTokens = token.underlying_tokens;
-      if (underlyingTokens) {
-        const messages = this.getUnderlyingTokenErrors(underlyingTokens);
-
-        showError(
-          messages.join(','),
-          this.$t('asset_form.underlying_tokens').toString()
-        );
-      } else if (token._schema) {
-        showError(
-          token._schema[0],
-          this.$t('asset_form.underlying_tokens').toString()
-        );
-      }
-    } else {
-      this.errors = message;
-    }
-  }
-
-  private getUnderlyingTokenErrors(underlyingTokens: any) {
-    const messages: string[] = [];
-    for (const underlyingToken of Object.values(underlyingTokens)) {
-      const ut = underlyingToken as any;
-      if (ut.address) {
-        messages.push(...(ut.address as string[]));
-      }
-      if (underlyingTokens.weight) {
-        messages.push(...(ut.weight as string[]));
-      }
-    }
-    return messages;
-  }
-
-  private async saveEthereumToken() {
-    let identifier: string;
-    const token = this.token!;
-    if (this.edit && this.identifier) {
-      ({ identifier } = await this.$api.assets.editEthereumToken(token));
-    } else {
-      ({ identifier } = await this.$api.assets.addEthereumToken(token));
-    }
-    return identifier;
-  }
-
-  private async saveAsset() {
-    let identifier: string;
-    const asset = this.asset;
-    if (this.edit) {
-      identifier = this.identifier;
-      await this.$api.assets.editAsset({ ...asset, identifier });
-    } else {
-      ({ identifier } = await this.$api.assets.addAsset(asset));
-    }
-    return identifier;
-  }
-
-  private sanitizeAddress(address: string) {
-    return address.replace(/\s/g, '');
-  }
-}
+});
 </script>
 
 <style scoped lang="scss">

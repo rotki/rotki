@@ -1,7 +1,7 @@
 <template>
   <card class="exchange-balances mt-8" outlined-body>
     <template #title>
-      {{ $t('exchange_balances.title') }}
+      {{ $tc('exchange_balances.title') }}
     </template>
     <v-btn
       v-blur
@@ -26,7 +26,7 @@
           filled
           :items="usedExchanges"
           hide-details
-          :label="$t('exchange_balances.select_exchange')"
+          :label="$tc('exchange_balances.select_exchange')"
           class="exchange-balances__content__select"
           @change="openExchangeDetails"
         >
@@ -53,19 +53,19 @@
           class="exchange-balances__tabs"
         >
           <v-tab
-            v-for="(exchange, i) in usedExchanges"
+            v-for="(usedExchange, i) in usedExchanges"
             :key="i"
             class="exchange-balances__tab ml-3 my-3 py-3 text-none"
             active-class="exchange-balances__tab--active"
-            :to="`/accounts-balances/exchange-balances/${exchange}`"
-            @click="selectedExchange = exchange"
+            :to="`/accounts-balances/exchange-balances/${usedExchange}`"
+            @click="selectedExchange = usedExchange"
           >
-            <location-display :identifier="exchange" size="36px" />
+            <location-display :identifier="usedExchange" size="36px" />
             <div class="exchange-balances__tab__amount d-block">
               <amount-display
                 show-currency="symbol"
                 fiat-currency="USD"
-                :value="exchangeBalance(exchange)"
+                :value="exchangeBalance(usedExchange)"
               />
             </div>
           </v-tab>
@@ -78,8 +78,8 @@
       >
         <asset-balances
           v-if="exchange"
-          :loading="exchangeIsLoading"
-          :balances="exchangeBalances(exchange)"
+          :loading="isExchangeLoading"
+          :balances="balances"
         />
         <div v-else class="pa-4">
           {{ $t('exchange_balances.select_hint') }}
@@ -99,84 +99,102 @@
 </template>
 
 <script lang="ts">
-import { AssetBalance, BigNumber } from '@rotki/common';
-import { Ref } from '@vue/composition-api';
-import { mapState as mapPiniaState } from 'pinia';
-import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
-import { mapGetters, mapState } from 'vuex';
+import { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import {
+  computed,
+  defineComponent,
+  onMounted,
+  PropType,
+  ref,
+  toRefs,
+  watch
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/AmountDisplay.vue';
-import { tradeLocations } from '@/components/history/consts';
+import { useExchanges } from '@/composables/balances';
+import { useRoute, useRouter } from '@/composables/common';
+import { Routes } from '@/router/routes';
 import { useTasks } from '@/store/tasks';
-import { Exchange, ExchangeInfo } from '@/types/exchanges';
+import { SupportedExchange } from '@/types/exchanges';
 import { TaskType } from '@/types/task-type';
 import { Zero } from '@/utils/bignumbers';
 import { uniqueStrings } from '@/utils/data';
 
-@Component({
+export default defineComponent({
+  name: 'ExchangeBalances',
   components: {
     ExchangeAmountRow,
     AssetBalances,
     AmountDisplay
   },
-  computed: {
-    ...mapPiniaState(useTasks, ['isTaskRunning']),
-    ...mapState('balances', ['connectedExchanges']),
-    ...mapGetters('balances', ['exchangeBalances', 'exchanges'])
-  }
-})
-export default class ExchangeBalances extends Vue {
-  @Prop({ required: false, default: '' })
-  exchange!: string;
-  selectedExchange: string = '';
+  props: {
+    exchange: {
+      required: false,
+      type: String as PropType<SupportedExchange>,
+      default: ''
+    }
+  },
+  setup(props) {
+    const { exchange } = toRefs(props);
+    const { isTaskRunning } = useTasks();
+    const { exchangeBalances, connectedExchanges } = useExchanges();
 
-  connectedExchanges!: Exchange[];
-  exchanges!: ExchangeInfo[];
-  isTaskRunning!: (type: TaskType) => Ref<boolean>;
-  exchangeBalances!: (exchange: string) => AssetBalance[];
-
-  get usedExchanges(): string[] {
-    return this.connectedExchanges
-      .map(({ location }) => location)
-      .filter(uniqueStrings);
-  }
-
-  get exchangeIsLoading(): boolean {
-    return this.isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES).value;
-  }
-
-  mounted() {
-    this.selectedExchange = this.$route.params.exchange;
-  }
-
-  getIcon(exchange: string): string {
-    const location = tradeLocations.find(
-      ({ identifier }) => identifier === exchange
-    );
-    return location?.icon ?? '';
-  }
-
-  @Watch('$route')
-  onRouteChange() {
-    // this is necessary to keep the "pre-selected exchange" in sync during the use of history
-    // backward/forward events when staying within the same "route" (since the mounted() event doesn't fire)
-    this.selectedExchange = this.$route.params.exchange;
-  }
-
-  exchangeBalance(exchange: string): BigNumber {
-    return this.exchangeBalances(exchange).reduce(
-      (sum, asset: AssetBalance) => sum.plus(asset.usdValue),
-      Zero
-    );
-  }
-
-  openExchangeDetails() {
-    this.$router.push({
-      path: `/accounts-balances/exchange-balances/${this.selectedExchange}`
+    const selectedExchange = ref<string>('');
+    const usedExchanges = computed<string[]>(() => {
+      return get(connectedExchanges)
+        .map(({ location }) => location)
+        .filter(uniqueStrings);
     });
+
+    const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+
+    const router = useRouter();
+    const route = useRoute();
+
+    const setSelectedExchange = () => {
+      set(selectedExchange, get(route).params.exchange);
+    };
+
+    onMounted(() => {
+      setSelectedExchange();
+    });
+
+    watch(route, () => {
+      setSelectedExchange();
+    });
+
+    const exchangeBalance = (exchange: string): BigNumber => {
+      return get(exchangeBalances(exchange)).reduce(
+        (sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue),
+        Zero
+      );
+    };
+
+    const openExchangeDetails = () => {
+      router.push({
+        path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE.route}/${get(
+          selectedExchange
+        )}`
+      });
+    };
+
+    const balances = computed(() => {
+      return get(exchangeBalances(get(exchange)));
+    });
+
+    return {
+      balances,
+      usedExchanges,
+      selectedExchange,
+      openExchangeDetails,
+      exchangeBalance,
+      isExchangeLoading,
+      exchangeBalances
+    };
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

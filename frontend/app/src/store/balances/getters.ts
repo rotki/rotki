@@ -294,7 +294,7 @@ export const getters: Getters<
 
   exchangeBalances:
     (state: BalanceState, _, { session }) =>
-    (exchange: string): AssetBalance[] => {
+    (exchange: string): AssetBalanceWithPrice[] => {
       const ignoredAssets = session!.ignoredAssets;
       const exchangeBalances = state.exchangeBalances[exchange];
       const noPrice = new BigNumber(-1);
@@ -308,7 +308,7 @@ export const getters: Getters<
                   amount: exchangeBalances[asset].amount,
                   usdValue: exchangeBalances[asset].usdValue,
                   usdPrice: state.prices[asset] ?? noPrice
-                } as AssetBalance)
+                } as AssetBalanceWithPrice)
             )
         : [];
     },

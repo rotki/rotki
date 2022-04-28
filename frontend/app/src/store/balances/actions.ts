@@ -30,6 +30,7 @@ import {
   AssetPriceResponse,
   AssetPrices,
   BalanceState,
+  BasicBlockchainAccountPayload,
   BlockchainAccountPayload,
   BlockchainBalancePayload,
   ERC20Token,
@@ -469,7 +470,10 @@ export const actions: ActionTree<BalanceState, RotkehlchenState> = {
     }
   },
 
-  async removeAccount({ commit, dispatch }, payload: BlockchainAccountPayload) {
+  async removeAccount(
+    { commit, dispatch },
+    payload: BasicBlockchainAccountPayload
+  ) {
     const { accounts, blockchain } = payload;
     assert(accounts, 'Accounts was empty');
     const { taskId } = await api.removeBlockchainAccount(blockchain, accounts);

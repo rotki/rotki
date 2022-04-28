@@ -6,11 +6,12 @@ html {
 }
 
 body {
-  overflow: auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
   height: calc(100vh - 64px);
   margin-top: 64px;
   background: var(--v-rotki-light-grey-base);
-  scroll-behavior: smooth;
 }
 
 .v-application {

@@ -124,7 +124,7 @@ export default defineComponent({
     const toDeleteAsset = ref<Nullable<ManagedAsset>>(null);
     const mergeTool = ref<boolean>(false);
     const restoreMode = ref<string>('soft');
-    const form = ref<AssetForm | null>(null);
+    const form = ref<any>(null);
 
     const deleteAssetSymbol = computed<string>(() => {
       return get(toDeleteAsset)?.symbol ?? '';

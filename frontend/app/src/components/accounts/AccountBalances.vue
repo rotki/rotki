@@ -1,8 +1,5 @@
 <template>
-  <v-card
-    class="account-balances"
-    :class="`${blockchain.toLocaleLowerCase()}-account-balances`"
-  >
+  <v-card :class="`${blockchain.toLocaleLowerCase()}-account-balances`">
     <v-card-title>
       <v-row align="center" no-gutters>
         <v-col cols="auto">
@@ -37,11 +34,11 @@
                   @click="confirmDelete = true"
                 >
                   <v-icon> mdi-delete-outline </v-icon>
-                  <span>{{ $t('account_balances.delete_button') }}</span>
+                  <span>{{ $tc('account_balances.delete_button') }}</span>
                 </v-btn>
               </span>
             </template>
-            <span>{{ $t('account_balances.delete_tooltip') }}</span>
+            <span>{{ $tc('account_balances.delete_tooltip') }}</span>
           </v-tooltip>
         </v-col>
         <v-col v-if="!isEth2" cols="12" sm="6">
@@ -49,7 +46,7 @@
         </v-col>
       </v-row>
       <account-balance-table
-        ref="balances"
+        ref="balanceTable"
         data-cy="blockchain-balances"
         :loopring="loopring"
         :blockchain="blockchain"
@@ -61,8 +58,8 @@
         @addresses-selected="selectedAddresses = $event"
       />
       <confirm-dialog
-        :display="confirm"
-        :title="$t('account_balances.confirm_delete.title')"
+        :display="deleteConfirmed"
+        :title="$tc('account_balances.confirm_delete.title')"
         :message="deleteDescription"
         @cancel="cancelDelete()"
         @confirm="deleteAccount()"
@@ -73,26 +70,34 @@
 
 <script lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Ref } from '@vue/composition-api';
-import { get } from '@vueuse/core';
-import { mapState } from 'pinia';
-import { Component, Emit, Prop, Vue } from 'vue-property-decorator';
-import { mapActions } from 'vuex';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs
+} from '@vue/composition-api';
+import { get, set } from '@vueuse/core';
 import AccountBalanceTable from '@/components/accounts/AccountBalanceTable.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import {
+  setupBlockchainAccounts,
+  setupGeneralBalances
+} from '@/composables/balances';
+import i18n from '@/i18n';
+import {
   AccountWithBalance,
   BlockchainAccountWithBalance,
-  BlockchainBalancePayload,
   XpubPayload
 } from '@/store/balances/types';
 import { useTasks } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
-@Component({
+export default defineComponent({
+  name: 'AccountBalances',
   components: {
     CardTitle,
     AccountBalanceTable,
@@ -100,118 +105,117 @@ import { TaskType } from '@/types/task-type';
     TagFilter,
     ConfirmDialog
   },
-  computed: {
-    ...mapState(useTasks, ['isTaskRunning'])
+  props: {
+    balances: { required: true, type: Array as PropType<AccountWithBalance[]> },
+    blockchain: { required: true, type: String as PropType<Blockchain> },
+    title: { required: true, type: String },
+    loopring: { required: false, type: Boolean, default: false }
   },
-  methods: {
-    ...mapActions('balances', ['fetchLoopringBalances'])
-  }
-})
-export default class AccountBalances extends Vue {
-  @Prop({ required: true })
-  balances!: AccountWithBalance[];
-  @Prop({ required: true })
-  blockchain!: Blockchain;
-  @Prop({ required: true })
-  title!: string;
-  @Prop({ required: false, type: Boolean, default: false })
-  loopring!: boolean;
+  emits: ['edit-account'],
+  setup(props, { emit }) {
+    const { blockchain } = toRefs(props);
 
-  selectedAddresses: string[] = [];
-  visibleTags: string[] = [];
-  editedAccount = '';
-  confirmDelete: boolean = false;
-  xpubToDelete: XpubPayload | null = null;
+    const { isTaskRunning } = useTasks();
+    const { fetchLoopringBalances, fetchBlockchainBalances } =
+      setupGeneralBalances();
 
-  isTaskRunning!: (type: TaskType) => Ref<boolean>;
-  fetchLoopringBalances!: (refresh: true) => Promise<void>;
+    const selectedAddresses = ref<string[]>([]);
+    const visibleTags = ref<string[]>([]);
+    const editedAccount = ref<string>('');
+    const confirmDelete = ref<boolean>(false);
+    const xpubToDelete = ref<XpubPayload | null>(null);
+    const balanceTable = ref<any>(null);
 
-  get isEth2() {
-    return this.blockchain === Blockchain.ETH2;
-  }
-
-  get isLoading(): boolean {
-    return get(this.isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES));
-  }
-
-  get operationRunning(): boolean {
-    return (
-      get(this.isTaskRunning(TaskType.ADD_ACCOUNT)) ||
-      get(this.isTaskRunning(TaskType.REMOVE_ACCOUNT))
-    );
-  }
-
-  get confirm(): boolean {
-    return this.confirmDelete || !!this.xpubToDelete;
-  }
-
-  get deleteDescription(): string {
-    if (this.xpubToDelete) {
-      return this.$tc('account_balances.confirm_delete.description_xpub', 0, {
-        address: this.xpubToDelete.xpub
-      });
-    }
-    return this.$tc('account_balances.confirm_delete.description_address', 0, {
-      count: this.selectedAddresses.length
+    const isEth2 = computed<boolean>(() => {
+      return get(blockchain) === Blockchain.ETH2;
     });
-  }
 
-  @Emit()
-  editAccount(account: BlockchainAccountWithBalance) {
-    this.editedAccount = account.address;
-    return account;
-  }
+    const isLoading = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 
-  async deleteAccount() {
-    if (this.selectedAddresses.length > 0) {
-      const blockchain = this.blockchain;
-      this.confirmDelete = false;
+    const operationRunning = computed<boolean>(() => {
+      return (
+        get(isTaskRunning(TaskType.ADD_ACCOUNT)) ||
+        get(isTaskRunning(TaskType.REMOVE_ACCOUNT))
+      );
+    });
 
-      if (blockchain === Blockchain.ETH2) {
-        await this.$store.dispatch(
-          'balances/deleteEth2Validators',
-          this.selectedAddresses
-        );
-      } else {
-        await this.$store.dispatch('balances/removeAccount', {
-          accounts: this.selectedAddresses,
-          blockchain
+    const deleteConfirmed = computed<boolean>(() => {
+      return get(confirmDelete) || !!get(xpubToDelete);
+    });
+
+    const deleteDescription = computed<string>(() => {
+      if (get(xpubToDelete)) {
+        return i18n.tc('account_balances.confirm_delete.description_xpub', 0, {
+          address: get(xpubToDelete)!.xpub
         });
       }
+      return i18n.tc('account_balances.confirm_delete.description_address', 0, {
+        count: get(selectedAddresses).length
+      });
+    });
 
-      this.selectedAddresses = [];
-    } else if (this.xpubToDelete) {
-      const payload = { ...this.xpubToDelete };
-      this.xpubToDelete = null;
-      await this.$store.dispatch('balances/deleteXpub', payload);
-      (this.$refs.balances as AccountBalanceTable).removeCollapsed(payload);
-    }
-  }
+    const editAccount = (account: BlockchainAccountWithBalance) => {
+      set(editedAccount, account.address);
+      emit('edit-account', account);
+    };
 
-  cancelDelete() {
-    this.confirmDelete = false;
-    this.xpubToDelete = null;
-  }
+    const { deleteEth2Validators, removeAccount, deleteXpub } =
+      setupBlockchainAccounts();
 
-  refresh() {
-    this.$store.dispatch('balances/fetchBlockchainBalances', {
-      ignoreCache: true,
-      blockchain: this.blockchain
-    } as BlockchainBalancePayload);
-    if (this.blockchain === Blockchain.ETH) {
-      this.fetchLoopringBalances(true);
-    }
+    const deleteAccount = async () => {
+      if (get(selectedAddresses).length > 0) {
+        const blockchainValue = get(blockchain);
+        set(confirmDelete, false);
+
+        if (blockchainValue === Blockchain.ETH2) {
+          await deleteEth2Validators(get(selectedAddresses));
+        } else {
+          await removeAccount({
+            accounts: get(selectedAddresses),
+            blockchain: blockchainValue
+          });
+        }
+
+        set(selectedAddresses, []);
+      } else if (get(xpubToDelete)) {
+        const payload = { ...get(xpubToDelete)! };
+        set(xpubToDelete, null);
+        await deleteXpub(payload);
+        get(balanceTable)?.removeCollapsed(payload);
+      }
+    };
+
+    const cancelDelete = () => {
+      set(confirmDelete, false);
+      set(xpubToDelete, null);
+    };
+
+    const refresh = () => {
+      fetchBlockchainBalances({
+        ignoreCache: true,
+        blockchain: get(blockchain)
+      });
+      if (get(blockchain) === Blockchain.ETH) {
+        fetchLoopringBalances(true);
+      }
+    };
+
+    return {
+      balanceTable,
+      isLoading,
+      operationRunning,
+      selectedAddresses,
+      refresh,
+      confirmDelete,
+      isEth2,
+      visibleTags,
+      editAccount,
+      xpubToDelete,
+      deleteDescription,
+      deleteConfirmed,
+      cancelDelete,
+      deleteAccount
+    };
   }
-}
+});
 </script>
-
-<style scoped lang="scss">
-.account-balances {
-  margin-top: 16px;
-  margin-bottom: 16px;
-
-  &__column {
-    width: 80px;
-  }
-}
-</style>
