@@ -47,6 +47,7 @@ from rotkehlchen.api.v1.resources import (
     DatabaseBackupsResource,
     DatabaseInfoResource,
     DataImportResource,
+    DBSnapshotDeletingResource,
     DBSnapshotDownloadingResource,
     DBSnapshotExportingResource,
     DBSnapshotImportingResource,
@@ -277,6 +278,7 @@ URLS_V1: URLS = [
     ('/snapshot/download', DBSnapshotDownloadingResource),
     ('/snapshot/export', DBSnapshotExportingResource),
     ('/snapshot/import', DBSnapshotImportingResource),
+    ('/snapshot/delete', DBSnapshotDeletingResource),
     ('/ens/reverse', ReverseEnsResource),
 ]
 

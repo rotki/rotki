@@ -1776,11 +1776,11 @@ class TimedManualPriceSchema(ManualPriceSchema):
     timestamp = TimestampField(required=True)
 
 
-class SnapshotDownloadingSchema(Schema):
+class SnapshotTimestampQuerySchema(Schema):
     timestamp = TimestampField(required=True)
 
 
-class SnapshotExportingSchema(SnapshotDownloadingSchema):
+class SnapshotExportingSchema(SnapshotTimestampQuerySchema):
     path = DirectoryField(required=True)
 
 

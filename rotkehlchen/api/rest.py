@@ -4119,6 +4119,18 @@ class RestAPI():
             )
 
     @require_loggedin_user()
+    def delete_user_db_snapshot(self, timestamp: Timestamp) -> Response:
+        dbsnapshot = DBSnapshot(
+            db_handler=self.rotkehlchen.data.db,
+            msg_aggregator=self.rotkehlchen.msg_aggregator,
+        )
+        is_success, message = dbsnapshot.delete(timestamp=timestamp)
+        if is_success is False:
+            return api_response(wrap_in_fail_result(message), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @require_loggedin_user()
     def get_ens_mappings(
         self,
         addresses: List[ChecksumEthAddress],

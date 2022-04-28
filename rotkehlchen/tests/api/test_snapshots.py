@@ -413,3 +413,40 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
         contained_in_msg='csv file has invalid headers',
         status_code=HTTPStatus.CONFLICT,
     )
+
+
+def test_delete_snapshot(rotkehlchen_api_server):
+    conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
+    ts = Timestamp(ts_now())
+    _populate_db_with_balances(conn, ts)
+    _populate_db_with_location_data(conn, ts)
+    rotkehlchen_api_server.rest_api.rotkehlchen.data.db.set_settings(ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dbsnapshotdeletingresource',
+        ),
+        json={
+            'timestamp': ts,
+        },
+    )
+    assert_simple_ok_response(response)
+    cursor = conn.cursor()
+    assert len(cursor.execute('SELECT time FROM timed_balances WHERE time=?', (ts,)).fetchall()) == 0  # noqa: 501
+    assert len(cursor.execute('SELECT time FROM timed_location_data WHERE time=?', (ts,)).fetchall()) == 0  # noqa: 501
+
+    # check that an error is thrown for invalid timestamp
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dbsnapshotdeletingresource',
+        ),
+        json={
+            'timestamp': 1000000,
+        },
+    )
+    assert_error_response(
+        response,
+        contained_in_msg='No snapshot found for the specified timestamp',
+        status_code=HTTPStatus.CONFLICT,
+    )
