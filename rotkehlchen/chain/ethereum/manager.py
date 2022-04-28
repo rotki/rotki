@@ -450,6 +450,7 @@ class EthereumManager():
                     BlockNotFound,
                     KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Probably fixed as written below, but no risking it. # noqa: E501
                     BadResponseFormat,  # should replace the above KeyError after https://github.com/ethereum/web3.py/pull/2188  # noqa: E501
+                    ValueError,  # Yabir saw this happen with mew node for unavailable method at node. Since it's generic we should replace if web3 implements https://github.com/ethereum/web3.py/issues/2448
             ) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
