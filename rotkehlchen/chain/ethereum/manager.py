@@ -448,14 +448,10 @@ class EthereumManager():
                     BlockchainQueryError,
                     TransactionNotFound,
                     BlockNotFound,
-                    KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Probably fixed as written below, but no risking it. # noqa: E501
-                    BadResponseFormat,  # should replace the above KeyError after https://github.com/ethereum/web3.py/pull/2188  # noqa: E501
-                    ValueError,  # Yabir saw this happen with mew node for unavailable method at node. Since it's generic we should replace if web3 implements https://github.com/ethereum/web3.py/issues/2448
+                    BadResponseFormat,
+                    ValueError,  # Yabir saw this happen with mew node for unavailable method at node. Since it's generic we should replace if web3 implements https://github.com/ethereum/web3.py/issues/2448  # noqa: E501
             ) as e:
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Missing key {str(e)}'
-                log.warning(f'Failed to query {node} for {str(method)} due to {msg}')
+                log.warning(f'Failed to query {node} for {str(method)} due to {str(e)}')
                 # Catch all possible errors here and just try next node call
                 continue
 
