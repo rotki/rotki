@@ -1480,9 +1480,10 @@ Activity from uphold with uphold transaction id:
 
     def _process_binance_rows(self, multi: Dict[Timestamp, List[BinanceCsvRow]]) -> None:
         BinanceEntry.db = self.db
+        BinanceEntry.db_ledger = self.db_ledger
         single_entry_classes = BinanceSingleEntry.__subclasses__()
         multiple_entry_classes = BinanceMultipleEntry.__subclasses__()
-        stats: Dict[Type[BinanceEntry], int] = defaultdict(lambda: 0)
+        stats: Dict[Type[BinanceEntry], int] = defaultdict(int)
         skipped_entries: List[Any] = []
         for timestamp, rows in multi.items():
             for single_entry_class in single_entry_classes:
@@ -1493,7 +1494,10 @@ Activity from uphold with uphold transaction id:
                         rows.remove(row)
             for multiple_entry_class in multiple_entry_classes:
                 if multiple_entry_class.are_entries([row['Operation'] for row in rows]):
-                    processed_count = multiple_entry_class.process_entries(timestamp=timestamp, data=rows)  # noqa: E501
+                    processed_count = multiple_entry_class.process_entries(
+                        timestamp=timestamp,
+                        data=rows,
+                    )
                     stats[multiple_entry_class] += processed_count
                     rows = rows if processed_count == 0 else []
 
@@ -1526,7 +1530,10 @@ Activity from uphold with uphold transaction id:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
             input_rows = list(csv.DictReader(csvfile))
             skipped_count, multirows = self._group_binance_rows(rows=input_rows, **kwargs)
-            self.db.msg_aggregator.add_warning(f'{skipped_count} Binance rows have bad format.')
+            if skipped_count > 0:
+                self.db.msg_aggregator.add_warning(
+                    f'{skipped_count} Binance rows have bad format.',
+                )
             self._process_binance_rows(multirows)
 
         return True, ''
