@@ -75,5 +75,6 @@ export enum TransactionEventProtocol {
   ZKSYNC = 'zksync',
   '1INCH' = '1inch',
   VOTIUM = 'votium',
+  LIQUITY = 'liquity',
   PICKLE = 'pickle finance'
 }
