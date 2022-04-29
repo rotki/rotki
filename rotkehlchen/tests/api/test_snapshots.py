@@ -312,9 +312,7 @@ def test_download_snapshot(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'dbsnapshotdownloadingresource',
         ),
-        json={
-            'timestamp': ts,
-        },
+        json={'timestamp': ts},
     )
     with tempfile.TemporaryDirectory() as tmpdirname:
         tempzipfile = Path(tmpdirname, 'temp.zip')
@@ -426,9 +424,7 @@ def test_delete_snapshot(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'dbsnapshotdeletingresource',
         ),
-        json={
-            'timestamp': ts,
-        },
+        json={'timestamp': ts},
     )
     assert_simple_ok_response(response)
     cursor = conn.cursor()
@@ -441,9 +437,7 @@ def test_delete_snapshot(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'dbsnapshotdeletingresource',
         ),
-        json={
-            'timestamp': 1000000,
-        },
+        json={'timestamp': 1000000},
     )
     assert_error_response(
         response,
