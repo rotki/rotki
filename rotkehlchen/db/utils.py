@@ -18,7 +18,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
-from rotkehlchen.utils.misc import rgetattr
+from rotkehlchen.utils.misc import rgetattr, timestamp_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -54,9 +54,18 @@ class DBAssetBalance(NamedTuple):
     amount: str
     usd_value: str
 
-    def serialize(self, currency: Asset = A_USD) -> Dict[str, str]:
+    def serialize(self, for_import: bool, currency: Asset = A_USD) -> Dict[str, str]:
+        if for_import is True:
+            return {
+                'timestamp': str(self.time),
+                'category': self.category.serialize(),
+                'asset_identifier': str(self.asset.identifier),
+                'amount': self.amount,
+                f'{currency.symbol.lower()}_value': self.usd_value,
+            }
         return {
-            'category': str(self.category),
+            'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
+            'category': self.category.serialize(),
             'asset': str(self.asset),
             'amount': self.amount,
             f'{currency.symbol.lower()}_value': self.usd_value,
@@ -77,7 +86,8 @@ class LocationData(NamedTuple):
 
     def serialize(self, currency: Asset = A_USD) -> Dict[str, str]:
         return {
-            'location': str(Location.deserialize_from_db(self.location)),
+            'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
+            'location': Location.deserialize_from_db(self.location).serialize(),
             f'{currency.symbol.lower()}_value': self.usd_value,
         }
 

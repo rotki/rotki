@@ -1992,3 +1992,8 @@ class AssetsImportingFromFormSchema(Schema):
 class ReverseEnsSchema(Schema):
     ethereum_addresses = fields.List(EthereumAddressField(), required=True)
     force_update = fields.Boolean(required=False, load_default=False)
+
+
+class SnapshotImportingSchema(Schema):
+    balances_snapshot_file = FileField(allowed_extensions=['.csv'], required=True)
+    location_data_snapshot_file = FileField(allowed_extensions=['.csv'], required=True)
