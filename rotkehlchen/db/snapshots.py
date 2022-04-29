@@ -297,3 +297,15 @@ class DBSnapshot:
         except InputError as err:
             return False, str(err)
         return True, ''
+
+    def delete(self, timestamp: Timestamp) -> Tuple[bool, str]:
+        """Deletes a snapshot of the database at a given timestamp"""
+        cursor = self.db.conn.cursor()
+        cursor.execute('DELETE FROM timed_balances WHERE time=?', (timestamp,))
+        if cursor.rowcount == 0:
+            return False, 'No snapshot found for the specified timestamp'
+        cursor.execute('DELETE FROM timed_location_data WHERE time=?', (timestamp,))
+        if cursor.rowcount == 0:
+            self.db.conn.rollback()
+            return False, 'No snapshot found for the specified timestamp'
+        return True, ''

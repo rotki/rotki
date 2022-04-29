@@ -88,9 +88,9 @@ from rotkehlchen.api.v1.schemas import (
     ReverseEnsSchema,
     SingleAssetIdentifierSchema,
     SingleFileSchema,
-    SnapshotDownloadingSchema,
     SnapshotExportingSchema,
     SnapshotImportingSchema,
+    SnapshotTimestampQuerySchema,
     StakingQuerySchema,
     StatisticsAssetBalanceSchema,
     StatisticsNetValueSchema,
@@ -2101,9 +2101,9 @@ class DBSnapshotExportingResource(BaseResource):
 
 
 class DBSnapshotDownloadingResource(BaseResource):
-    get_schema = SnapshotDownloadingSchema()
+    post_schema = SnapshotTimestampQuerySchema()
 
-    @use_kwargs(get_schema, location='json')
+    @use_kwargs(post_schema, location='json')
     def post(self, timestamp: Timestamp) -> Response:
         return self.rest_api.download_user_db_snapshot(timestamp=timestamp)
 
@@ -2117,6 +2117,14 @@ class DBSnapshotImportingResource(BaseResource):
             balances_snapshot_file=balances_snapshot_file,
             location_data_snapshot_file=location_data_snapshot_file,
         )
+
+
+class DBSnapshotDeletingResource(BaseResource):
+    delete_schema = SnapshotTimestampQuerySchema()
+
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, timestamp: Timestamp) -> Response:
+        return self.rest_api.delete_user_db_snapshot(timestamp=timestamp)
 
 
 class ReverseEnsResource(BaseResource):

@@ -10478,6 +10478,41 @@ Downloading a database snapshot
    :statuscode 500: Internal rotki error.
 
 
+Deleting a database snapshot
+=================================
+
+.. http:delete:: /api/(version)/snapshot/delete
+
+   Doing a DELETE on the snapshot delete endpoint will delete the snapshot for the specified timestamp.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/snapshot/delete HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "timestamp": 133899009
+      }
+
+   :reqjson int timestamp: The epoch timestamp representing the time of the snapshot to be deleted.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/zip
+
+
+   :statuscode 200: Snapshot was deleted successfully.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. No snapshot found for the specified timestamp.Check error message.
+   :statuscode 500: Internal rotki error.
+
+
 Get ENS names
 =============================================
 
