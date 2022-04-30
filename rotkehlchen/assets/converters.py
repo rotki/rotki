@@ -545,6 +545,7 @@ UNSUPPORTED_BITFINEX_ASSETS = (
     'MCS',  # no cryptocompare/coingecko data yet
     'EXO',  # noqa: E501 #  https://blog.exordium.co/exo-security-token-to-be-listed-on-bitfinex-securities-ltd-24cb03dc8bb0 no cc/coingecko data
     'BMN',  # no cryptocompare and coingecko doesn't update it
+    'LUXO',  # no cc/coingecko data
 )
 
 UNSUPPORTED_FTX_ASSETS = (
@@ -710,6 +711,9 @@ UNSUPPORTED_KUCOIN_ASSETS = (
     'GALAX3L',  # no cryptocompare/coingecko data
     'GALAX3S',  # no cryptocompare/coingecko data
     'KDON',  # no cryptocompare/coingecko data
+    'PLY',  # no cryptocompare/coingecko data
+    'ELITEHERO',  # no cryptocompare/coingecko data
+    'EPX',  # ellipsis x, no cc/coingekco data
 )
 
 # https://api.iconomi.com/v1/assets marks delisted assets

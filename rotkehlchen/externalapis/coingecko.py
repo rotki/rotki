@@ -252,6 +252,8 @@ DELISTED_ASSETS = [
     strethaddress_to_identifier('0x88665A7556E1B3C939D6661248116886845249a8'),
     'XVC',
     'MCN',
+    strethaddress_to_identifier('0xac2e58A06E6265F1Cf5084EE58da68e5d75b49CA'),
+    strethaddress_to_identifier('0x50f09629d0afDF40398a3F317cc676cA9132055c'),
 ]
 
 COINGECKO_SIMPLE_VS_CURRENCIES = [
