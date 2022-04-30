@@ -163,7 +163,7 @@ class Accountant():
                 )
                 continue
             except NoPriceForGivenTimestamp as e:
-                self.pots[0].cost_basis.missing_prices.append(
+                self.pots[0].cost_basis.missing_prices.add(
                     MissingPrice(
                         from_asset=e.from_asset,
                         to_asset=e.to_asset,

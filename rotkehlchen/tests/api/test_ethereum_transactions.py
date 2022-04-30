@@ -855,12 +855,14 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
         ethereum=rotki.chain_manager.ethereum,
         database=rotki.data.db,
     )
+    start_ts = Timestamp(0)
+    end_ts = Timestamp(1642803566)  # time of test writing
 
     def query_transactions(rotki, tx_module: EthTransactions) -> None:
         tx_module.single_address_query_transactions(
             address=ethereum_accounts[0],
-            start_ts=Timestamp(0),
-            end_ts=Timestamp(1642803566),  # time of test writing
+            start_ts=start_ts,
+            end_ts=end_ts,
         )
         rotki.task_manager._maybe_schedule_ethereum_txreceipts()
         gevent.joinall(rotki.greenlet_manager.greenlets)
@@ -871,6 +873,7 @@ def test_query_transactions_check_decoded_events(rotkehlchen_api_server, ethereu
                 rotkehlchen_api_server,
                 'ethereumtransactionsresource',
             ),
+            json={'from_timestamp': start_ts, 'to_timestamp': end_ts},
         )
         return assert_proper_response_with_result(response)
 
