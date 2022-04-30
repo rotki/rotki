@@ -1,5 +1,5 @@
 # This python file was generated automatically by
-# /home/yabirgb/work/rotki/tools/scripts/generate_constant_assets.py at 19/04/2022 06:51:19.
+# /home/yabirgb/work/rotkib/tools/scripts/generate_constant_assets.py at 30/04/2022 12:00:49.
 # Do not edit manually!
 
 from typing import List
@@ -2295,3 +2295,15 @@ A_VCOW = EthereumToken.initialize(
     protocol=None,
 )
 CONSTANT_ASSETS.append(A_VCOW)
+A_FPIS = EthereumToken.initialize(
+    address=string_to_ethereum_address('0xc2544A32872A91F4A553b404C6950e89De901fdb'),
+    decimals=18,
+    name="Frax Price Index Share",
+    symbol='FPIS',
+    started=None,
+    swapped_for=None,
+    coingecko=None,
+    cryptocompare=None,
+    protocol=None,
+)
+CONSTANT_ASSETS.append(A_FPIS)

@@ -335,6 +335,16 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     matcher: (identifier: string) => identifier.toLowerCase().startsWith('aave')
   },
   {
+    identifier: TransactionEventProtocol.FRAX,
+    label: 'FRAX',
+    image: require('@/assets/images/defi/frax.png')
+  },
+  {
+    identifier: TransactionEventProtocol.CONVEX,
+    label: 'Convex',
+    image: require('@/assets/images/defi/convex.jpeg')
+  },
+  {
     identifier: TransactionEventProtocol['1INCH'],
     label: '1inch',
     image: require('@/assets/images/defi/1inch.svg'),

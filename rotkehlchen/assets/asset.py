@@ -112,6 +112,7 @@ WORLD_TO_BITSTAMP = {
     strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
     strethaddress_to_identifier('0xC581b735A1688071A1746c968e0798D642EDE491'): 'EURT',
     strethaddress_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF'): 'IMX',
+    strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',
 }
 
 WORLD_TO_FTX = {
@@ -354,6 +355,12 @@ WORLD_TO_KRAKEN = {
     strethaddress_to_identifier('0x3a4f40631a4f906c2BaD353Ed06De7A5D3fCb430'): 'PLA',
     strethaddress_to_identifier('0xF17e65822b568B3903685a7c9F496CF7656Cc6C2'): 'BICO',
     strethaddress_to_identifier('0x949D48EcA67b17269629c7194F4b727d4Ef9E5d6'): 'MC',
+    'MSOL': 'MSOL',
+    'SAMO': 'SAMO',
+    'GARI': 'GARI',
+    'GST-2': 'GST',
+    'GMT': 'GMT',
+    'CFG': 'CFG',
 }
 
 WORLD_TO_BINANCE = {
@@ -487,7 +494,9 @@ WORLD_TO_KUCOIN = {
     strethaddress_to_identifier('0x3106a0a076BeDAE847652F42ef07FD58589E001f'): 'ADS',
     strethaddress_to_identifier('0xa3EE21C306A700E682AbCdfe9BaA6A08F3820419'): 'CTC',
     strethaddress_to_identifier('0x27702a26126e0B3702af63Ee09aC4d1A084EF628'): 'ALEPH',
+    strethaddress_to_identifier('0xDaF88906aC1DE12bA2b1D2f7bfC94E9638Ac40c4'): 'EPK',
     'ARN': 'ARNM',
+    strethaddress_to_identifier('0xC775C0C30840Cb9F51e21061B054ebf1A00aCC29'): 'PSL',
 }
 
 WORLD_TO_ICONOMI = {
@@ -605,6 +614,7 @@ WORLD_TO_GEMINI = {
     strethaddress_to_identifier('0xaea46A60368A7bD060eec7DF8CBa43b7EF41Ad85'): 'FET',
     strethaddress_to_identifier('0xd2877702675e6cEb975b4A1dFf9fb7BAF4C91ea9'): 'LUNA',
     'SOL-2': 'SOL',
+    strethaddress_to_identifier('0x9E32b13ce7f2E80A01932B42553652E053D6ed8e'): 'METI',
 }
 
 WORLD_TO_NEXO = {

@@ -183,6 +183,8 @@ def test_cryptocompare_asset_support(cryptocompare):
         'NHCT',  # Hurricane nft but cc has nano healthcare
         'ZBC',  # zebec but cc has zilbercoin
         'MINE',  # spacemine but cc has instamine
+        'SIN',  # sincity but cc has sinnoverse
+        'GST-2',  # green satoshi coin but cc has gstcoin
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -431,6 +433,8 @@ def test_coingecko_identifiers_are_reachable():
         'AERO',
         # coingecko has prime dai and we have pickle dai
         ethaddress_to_identifier('0x6949Bb624E8e8A90F87cD2058139fcd77D2F3F87'),
+        # sinovate but we have sincity
+        'SIN',
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

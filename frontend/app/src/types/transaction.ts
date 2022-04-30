@@ -70,6 +70,8 @@ export enum TransactionEventProtocol {
   UNISWAP = 'uniswap',
   AAVE = 'aave',
   XDAI = 'xdai',
+  FRAX = 'frax',
+  CONVEX = 'convex',
   ZKSYNC = 'zksync',
   '1INCH' = '1inch',
   VOTIUM = 'votium',
