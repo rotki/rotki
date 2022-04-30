@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
+from rotkehlchen.accounting.types import MissingPrice
 from rotkehlchen.assets.asset import EthereumToken
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
@@ -15,7 +16,7 @@ from rotkehlchen.tests.utils.accounting import (
 from rotkehlchen.tests.utils.constants import A_CHF, A_XMR
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location, TradeType
+from rotkehlchen.types import Location, Timestamp, TradeType
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -240,8 +241,9 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
     Updated with https://github.com/rotki/rotki/pull/4196
     """
     fgp = EthereumToken('0xd9A8cfe21C232D485065cb62a96866799d4645f7')
-    history = [Trade(
-        timestamp=1492685761,
+    time = Timestamp(1492685761)
+    trade = Trade(
+        timestamp=time,
         location=Location.KRAKEN,
         base_asset=fgp,
         quote_asset=A_BTC,
@@ -251,7 +253,8 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
         fee=FVal('0.15'),
         fee_currency=fgp,
         link=None,
-    )]
+    )
+    history = [trade, trade]  # duplicate missing price
     accounting_history_process(
         accountant,
         start_ts=0,
@@ -260,3 +263,9 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
     )
     errors = accountant.msg_aggregator.consume_errors()
     assert len(errors) == 0
+    assert len(accountant.pots[0].cost_basis.missing_prices) == 1
+    assert list(accountant.pots[0].cost_basis.missing_prices)[0] == MissingPrice(
+        from_asset=fgp,
+        to_asset=A_EUR,
+        time=time,
+    )

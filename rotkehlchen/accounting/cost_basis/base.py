@@ -11,6 +11,7 @@ from typing import (
     Literal,
     NamedTuple,
     Optional,
+    Set,
     Tuple,
     Type,
     overload,
@@ -235,7 +236,7 @@ class CostBasisCalculator(CustomizableDateMixin):
         self.profit_currency = settings.main_currency
         self._events: DefaultDict[Asset, CostBasisEvents] = defaultdict(CostBasisEvents)
         self.missing_acquisitions: List[MissingAcquisition] = []
-        self.missing_prices: List[MissingPrice] = []
+        self.missing_prices: Set[MissingPrice] = set()
 
     def get_events(self, asset: Asset) -> CostBasisEvents:
         """Custom getter for events so that we have common cost basis for some assets"""
