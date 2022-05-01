@@ -39,6 +39,13 @@ export interface HistoricalPrice {
   readonly price: BigNumber;
 }
 
+export interface HistoricalPriceFormPayload {
+  readonly fromAsset: string;
+  readonly toAsset: string;
+  readonly timestamp: number;
+  readonly price: string;
+}
+
 export interface HistoricalPriceDeletePayload {
   readonly fromAsset: string;
   readonly toAsset: string;

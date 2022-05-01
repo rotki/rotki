@@ -24,22 +24,31 @@
     </v-row>
     <v-row>
       <v-col>
-        <v-text-field
-          :value="value.price"
+        <amount-input
+          v-model="price"
+          outlined
           :rules="priceRules"
           :label="$t('price_form.price')"
-          type="numeric"
-          outlined
-          :hint="
-            $t('price_form.hint', {
-              price,
-              fromAsset,
-              toAsset
-            })
-          "
-          persistent-hint
-          @input="price = $event"
         />
+        <div v-if="price" class="text-caption green--text mt-n6 pb-1 pl-3">
+          <i18n tag="div" path="price_form.hint">
+            <template #fromAsset>
+              <strong>
+                {{ fromAsset }}
+              </strong>
+            </template>
+            <template #toAsset>
+              <strong>
+                {{ toAsset }}
+              </strong>
+            </template>
+            <template #price>
+              <strong>
+                <amount-display :value="numericPrice" :tooltip="false" />
+              </strong>
+            </template>
+          </i18n>
+        </div>
       </v-col>
     </v-row>
     <v-row>
@@ -70,9 +79,9 @@ import {
 } from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import AssetMixin from '@/mixins/asset-mixin';
-import { HistoricalPrice } from '@/services/assets/types';
+import { HistoricalPriceFormPayload } from '@/services/assets/types';
 import { useAssetInfoRetrieval } from '@/store/assets';
-import { bigNumberify } from '@/utils/bignumbers';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 export default defineComponent({
@@ -81,7 +90,7 @@ export default defineComponent({
   props: {
     value: {
       required: true,
-      type: Object as PropType<HistoricalPrice>
+      type: Object as PropType<HistoricalPriceFormPayload>
     },
     edit: {
       required: true,
@@ -92,7 +101,9 @@ export default defineComponent({
   setup(props, { emit }) {
     const { value } = toRefs(props);
     const { assetSymbol } = useAssetInfoRetrieval();
+
     const valid = ref(false);
+
     const date = computed(({ value }) =>
       value.timestamp ? convertFromTimestamp(value.timestamp, true) : ''
     );
@@ -100,34 +111,30 @@ export default defineComponent({
       get(assetSymbol(value.fromAsset))
     );
     const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));
-    const price = ref('');
-    const input = (price: Partial<HistoricalPrice>) => {
+
+    const price = ref<string>('');
+    const numericPrice = bigNumberifyFromRef(price);
+
+    const input = (price: Partial<HistoricalPriceFormPayload>) => {
       emit('input', { ...get(value), ...price });
     };
     watch(valid, value => emit('valid', value));
     watch(value, val => {
-      if (get(price).endsWith('.')) {
-        return;
-      }
-      set(price, val.price.toString());
+      set(price, val.price);
     });
-    watch(price, value => {
-      if (value.endsWith('.') || (value.includes('.') && value.endsWith('0'))) {
-        return;
-      }
-      const bn = bigNumberify(value);
-      if (bn.isFinite()) {
-        input({ price: bn });
-      }
+
+    watch(price, val => {
+      input({ price: val });
     });
 
     onMounted(() => {
-      set(price, get(value).price.toString());
+      set(price, get(value).price);
     });
 
     return {
       date,
       price,
+      numericPrice,
       fromAsset,
       toAsset,
       valid,
@@ -144,10 +151,7 @@ export default defineComponent({
         (v: string) => !!v || this.$t('price_form.to_non_empty').toString()
       ],
       priceRules: [
-        (v: string) => !!v || this.$t('price_form.price_non_empty').toString(),
-        (v: string) =>
-          (!!v && bigNumberify(v).isFinite()) ||
-          this.$t('price_form.price_nan').toString()
+        (v: string) => !!v || this.$t('price_form.price_non_empty').toString()
       ],
       dateRules: [
         (v: string) => !!v || this.$t('price_form.date_non_empty').toString()

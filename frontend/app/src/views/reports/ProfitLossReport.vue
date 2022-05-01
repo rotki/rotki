@@ -28,9 +28,15 @@
     </card>
     <accounting-settings-display
       :accounting-settings="report.settings"
-      class="mt-4"
+      class="mt-4 mb-8"
     />
-    <export-report-csv v-if="exportable" />
+    <div v-if="latest" class="d-flex">
+      <export-report-csv class="mr-4" />
+      <report-actionable
+        :report="report"
+        :initial-open="initialOpenReportActionable"
+      />
+    </div>
     <profit-loss-overview
       class="mt-8"
       :report="report"
@@ -62,14 +68,16 @@ import AccountingSettingsDisplay from '@/components/profitloss/AccountingSetting
 import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
 import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
+import ReportActionable from '@/components/profitloss/ReportActionable.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
 import { useRoute, useRouter } from '@/composables/common';
 import { Routes } from '@/router/routes';
 import { useReports } from '@/store/reports';
 
 export default defineComponent({
-  name: 'ProfitLossReports',
+  name: 'ProfitLossReport',
   components: {
+    ReportActionable,
     ExportReportCsv,
     ProgressScreen,
     ReportHeader,
@@ -83,14 +91,18 @@ export default defineComponent({
     const refreshing = ref(false);
     const reportsStore = useReports();
     const { report, reports } = storeToRefs(reportsStore);
-    const { fetchReports, fetchReport, clearReport, canExport } = reportsStore;
+
+    const { fetchReports, fetchReport, clearReport, isLatestReport } =
+      reportsStore;
     const router = useRouter();
     const route = useRoute();
     let firstPage = true;
 
+    const initialOpenReportActionable = ref<boolean>(false);
+
     const currentRoute = get(route);
     const reportId = parseInt(currentRoute.params.id);
-    const exportable = canExport(reportId);
+    const latest = isLatestReport(reportId);
 
     onMounted(async () => {
       if (get(reports).entries.length === 0) {
@@ -99,6 +111,11 @@ export default defineComponent({
       const success = await fetchReport(reportId);
       if (!success) {
         router.push(Routes.PROFIT_LOSS_REPORTS);
+      }
+
+      if (get(route).query.openReportActionable) {
+        set(initialOpenReportActionable, true);
+        router.replace({ query: {} });
       }
       set(loading, false);
     });
@@ -130,11 +147,12 @@ export default defineComponent({
     };
 
     return {
+      initialOpenReportActionable,
       loading,
       refreshing,
       report,
       showUpgradeMessage,
-      exportable,
+      latest,
       onPage
     };
   }

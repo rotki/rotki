@@ -15,6 +15,7 @@ import {
   ProfitLossEvents,
   ProfitLossEventTypeEnum,
   ProfitLossReportPeriod,
+  ReportActionableItem,
   ReportError,
   Reports,
   SelectedReport
@@ -80,7 +81,11 @@ export const useReports = defineStore('reports', () => {
   const loaded = ref(false);
   const reportProgress = ref(defaultProgress());
   const reportError = ref(emptyError());
-  const generatedReport = ref(false);
+  const lastGeneratedReport = ref<number | null>(null);
+  const actionableItems = ref<ReportActionableItem>({
+    missingAcquisitions: [],
+    missingPrices: []
+  });
 
   const { setMessage } = useMainStore();
 
@@ -150,6 +155,11 @@ export const useReports = defineStore('reports', () => {
         totalActions: selectedReport.totalActions,
         processedActions: selectedReport.processedActions
       });
+
+      if (isLatestReport(reportId)) {
+        const actionable = await api.reports.fetchActionableItems();
+        set(actionableItems, actionable);
+      }
       set(loaded, false);
       const words = reportEntries.entries
         .filter(event => {
@@ -216,7 +226,7 @@ export const useReports = defineStore('reports', () => {
       );
 
       if (result) {
-        set(generatedReport, true);
+        set(lastGeneratedReport, result);
         await fetchReports();
       } else {
         set(reportError, {
@@ -246,14 +256,9 @@ export const useReports = defineStore('reports', () => {
   const progress = computed(() => get(reportProgress).totalProgress);
   const processingState = computed(() => get(reportProgress).processingState);
 
-  const canExport = (reportId: number) =>
+  const isLatestReport = (reportId: number) =>
     computed(() => {
-      const entries = get(reports).entries;
-      if (!get(generatedReport) || entries.length === 0) {
-        return false;
-      }
-      const reverse = [...entries].sort((a, b) => b.identifier - a.identifier);
-      return reverse[0].identifier === reportId;
+      return get(lastGeneratedReport) === reportId;
     });
 
   const clearError = () => {
@@ -281,6 +286,7 @@ export const useReports = defineStore('reports', () => {
     progress,
     processingState,
     reportError,
+    actionableItems,
     createCsv,
     generateReport,
     deleteReport,
@@ -288,7 +294,7 @@ export const useReports = defineStore('reports', () => {
     fetchReports,
     clearReport,
     clearError,
-    canExport,
+    isLatestReport,
     reset
   };
 });

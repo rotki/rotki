@@ -134,6 +134,37 @@ const priceDeletion = (
   };
 };
 
+const headers: DataTableHeader[] = [
+  {
+    text: i18n.t('price_table.headers.from_asset').toString(),
+    value: 'fromAsset'
+  },
+  {
+    text: '',
+    value: 'wasWorth'
+  },
+  {
+    text: i18n.t('price_table.headers.price').toString(),
+    value: 'price'
+  },
+  {
+    text: i18n.t('price_table.headers.to_asset').toString(),
+    value: 'toAsset'
+  },
+  {
+    text: '',
+    value: 'on'
+  },
+  {
+    text: i18n.t('price_table.headers.date').toString(),
+    value: 'timestamp'
+  },
+  {
+    text: '',
+    value: 'actions'
+  }
+];
+
 export default defineComponent({
   name: 'PriceTable',
   components: { RowActions },
@@ -174,42 +205,9 @@ export default defineComponent({
     return {
       fetchPrices,
       ...priceDeletion(store, refresh),
+      headers,
       prices,
       loading
-    };
-  },
-  data() {
-    return {
-      headers: [
-        {
-          text: this.$t('price_table.headers.from_asset').toString(),
-          value: 'fromAsset'
-        },
-        {
-          text: '',
-          value: 'wasWorth'
-        },
-        {
-          text: this.$t('price_table.headers.price').toString(),
-          value: 'price'
-        },
-        {
-          text: this.$t('price_table.headers.to_asset').toString(),
-          value: 'toAsset'
-        },
-        {
-          text: '',
-          value: 'on'
-        },
-        {
-          text: this.$t('price_table.headers.date').toString(),
-          value: 'timestamp'
-        },
-        {
-          text: '',
-          value: 'actions'
-        }
-      ] as DataTableHeader[]
     };
   }
 });

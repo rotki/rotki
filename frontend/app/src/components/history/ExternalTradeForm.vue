@@ -151,7 +151,6 @@
               </v-icon>
               <i18n
                 v-if="type === 'buy'"
-                tag="span"
                 path="external_trade_form.summary.buy"
               >
                 <template #label>
