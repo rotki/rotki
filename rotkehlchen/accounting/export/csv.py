@@ -10,6 +10,7 @@ from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -67,9 +68,11 @@ class CSVExporter(CustomizableDateMixin):
             database: 'DBHandler',
     ):
         super().__init__(database=database)
-        self.reset()
+        self.reset(start_ts=Timestamp(0), end_ts=Timestamp(0))
 
-    def reset(self) -> None:
+    def reset(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
+        self.start_ts = start_ts
+        self.end_ts = end_ts
         self.reload_settings()
         try:
             frontend_settings = json.loads(self.settings.frontend_settings)
@@ -96,8 +99,8 @@ class CSVExporter(CustomizableDateMixin):
 
         return f'=SUMIF({check_range};{condition};{sum_range})'
 
-    @staticmethod
     def _add_pnl_type(
+            self,
             event: 'ProcessedAccountingEvent',
             dict_event: Dict[str, Any],
             amount_column: str,
@@ -109,14 +112,19 @@ class CSVExporter(CustomizableDateMixin):
 
         index = event.index + CSV_INDEX_OFFSET
         value_formula = f'{amount_column}{index}*H{index}'
+        total_value_formula = f'(F{index}*H{index}+G{index}*H{index})'  # noqa: E501  # formula of both free and taxable
         cost_basis_column = 'K' if name == 'taxable' else 'L'
         cost_basis = f'{cost_basis_column}{index}'
 
-        if event.count_entire_amount_spend:
+        should_count_entire_spend_formula = (
+            name == 'taxable' and event.timestamp >= self.start_ts or
+            name == 'free' and event.timestamp < self.start_ts
+        )
+        if event.count_entire_amount_spend and should_count_entire_spend_formula:
             equation = (
                 f'=IF({cost_basis}="",'
-                f'-{value_formula},'
-                f'-{value_formula}+{value_formula}-{cost_basis})'
+                f'-{total_value_formula},'
+                f'-{total_value_formula}+{value_formula}-{cost_basis})'
             )
         else:
             equation = (
@@ -129,6 +137,11 @@ class CSVExporter(CustomizableDateMixin):
         cost_basis = ''
         if event.cost_basis is not None:
             for acquisition in event.cost_basis.matched_acquisitions:
+                if name == 'taxable' and acquisition.taxable is False:
+                    continue
+                if name == 'free' and acquisition.taxable is True:
+                    continue
+
                 index = acquisition.event.index + CSV_INDEX_OFFSET
                 if cost_basis == '':
                     cost_basis = '='

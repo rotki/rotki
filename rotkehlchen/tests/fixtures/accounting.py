@@ -122,7 +122,7 @@ def fixture_accountant(
                 end_ts=Timestamp(0),
                 report_id=1,
             )
-        accountant.csvexporter.reset()
+        accountant.csvexporter.reset(start_ts=Timestamp(0), end_ts=Timestamp(0))
 
     return accountant
 

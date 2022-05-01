@@ -7,8 +7,8 @@ from typing import Any, Dict, Generator, List, Optional
 import pytest
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
-from rotkehlchen.accounting.export.csv import CSV_INDEX_OFFSET
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class GoogleService:
     This is only to give you write permissions to all created sheets so you
     can view/edit/delete.
     3. Use the google_service fixture
-    4. Set the upload_csv_to_google fixture variable to true
+    4. Set the upload_csv_to_google fixture variable to true if it's not default already.
 
     All created sheets would appear in https://drive.google.com/drive/shared-with-me
 
@@ -63,6 +63,9 @@ class GoogleService:
         self.drive_service = _login('drive', 'v3', DRIVE_SCOPES, credentials_path)
         self.sheets_service = _login('sheets', 'v4', SHEETS_SCOPES, credentials_path)
         self.user_email = os.environ.get('GOOGLE_EMAIL', None)
+        self.send_email = os.environ.get('SEND_GOOGLE_SHARE_EMAIL', False)
+        if isinstance(self.send_email, str):
+            self.send_email = self.send_email.lower() == 'true'
 
     def clean_drive(self) -> None:
         """Lists all files for the service account in the drive and delete them"""
@@ -99,28 +102,68 @@ class GoogleService:
                 'type': 'user',
                 'role': 'writer',
                 'emailAddress': self.user_email,
+                # this seems to not work -- since it's a change of ownership
+                # https://developers.google.com/drive/api/v3/reference/permissions/create
+                'sendNotificationEmail': self.send_email,
             }
-            self.drive_service.permissions().create(fileId=sheet_id, body=permissions).execute()  # noqa: E501 # pylint: disable=no-member
+            try:
+                self.drive_service.permissions().create(fileId=sheet_id, body=permissions).execute()  # noqa: E501 # pylint: disable=no-member
+            except HttpError:
+                pass  # can't share due to an error. Probably rate limit (50/day).
+
         return sheet_id
 
     def add_rows(self, sheet_id: str, csv_data: List[Dict[str, Any]]) -> None:
-        data = [{
-            'range': 'A1:L1',
-            'values': [list(csv_data[0].keys())],
-        }]
-        for idx, row in enumerate(csv_data):
-            data.append({
-                'range': f'A{idx + CSV_INDEX_OFFSET}:L{idx + CSV_INDEX_OFFSET}',
-                'values': [list(row.values())],
+        requests = []
+        data_length = len(csv_data)
+        # Add the csv values (not using values.batchUpdate() to combine formatting and inserting into one call  # noqa: E501
+        data = [list(csv_data[0].keys())]
+        data.extend([list(x.values()) for x in csv_data])
+        rows = []
+        for entry in data:
+            values = []
+            for val in entry:
+                if val.startswith('='):
+                    values.append({'userEnteredValue': {'formulaValue': val}})
+                else:
+                    values.append({'userEnteredValue': {'stringValue': val}})
+            rows.append({'values': values})
+        requests.append({
+            'updateCells': {
+                'start': {
+                    'sheetId': 0,
+                    'rowIndex': 0,
+                    'columnIndex': 0,
+                },
+                'rows': rows,
+                'fields': 'userEnteredValue',
+            },
+        })
+        # now set the formatting to have enough precision in the columns
+        for column in range(5, 12):
+            requests.append({
+                'repeatCell': {
+                    'range': {
+                        'sheetId': 0,  # all our tests use the first sheet
+                        'startRowIndex': 1,
+                        'endRowIndex': data_length + 1,
+                        'startColumnIndex': column,
+                        'endColumnIndex': column + 1,
+                    },
+                    'cell': {
+                        'userEnteredFormat': {
+                            'numberFormat': {
+                                'type': 'NUMBER',
+                                'pattern': '###0.0000000000',
+                            },
+                        },
+                    },
+                    'fields': 'userEnteredFormat.numberFormat',
+                },
             })
-
-        body = {
-            'valueInputOption': VALUE_INPUT_OPTION,
-            'data': data,
-        }
-        self.sheets_service.spreadsheets().values().batchUpdate(  # noqa: E501 # pylint: disable=no-member
+        self.sheets_service.spreadsheets().batchUpdate(  # noqa: E501 # pylint: disable=no-member
             spreadsheetId=sheet_id,
-            body=body,
+            body={'requests': requests},
         ).execute()
 
     def get_cell_range(self, sheet_id: str, range_name: str) -> List[List[str]]:
@@ -166,7 +209,7 @@ def fixture_session_google_service() -> Optional[Generator[GoogleService, None, 
 
 @pytest.fixture(name='upload_csv_to_google')
 def fixture_upload_csv_to_google() -> bool:
-    return False
+    return True
 
 
 @pytest.fixture(scope='function', name='google_service')
