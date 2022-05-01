@@ -2490,6 +2490,9 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         ('binanceus', 'S', 'PAIRS', 'abc'),
     ]
 
+    ignored_assets = db_v31.get_ignored_assets()
+    assert EthereumToken.from_identifier('_ceth_0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC') not in ignored_assets  # noqa: E501
+
     db_v31.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2570,6 +2573,9 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument 
         ('binance', 'E', 'binance_selected_trade_pairs', 'pro'),
         ('binanceus', 'S', 'binance_selected_trade_pairs', 'abc'),
     ]
+
+    ignored_assets = db.get_ignored_assets()
+    assert EthereumToken.from_identifier('_ceth_0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC') in ignored_assets  # noqa: E501
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
