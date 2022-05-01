@@ -130,7 +130,7 @@ class Accountant():
         )
         self.pots[0].reset(settings=db_settings, start_ts=start_ts, end_ts=end_ts, report_id=report_id)  # noqa: E501
         self.end_ts = end_ts
-        self.csvexporter.reset()
+        self.csvexporter.reset(start_ts=start_ts, end_ts=end_ts)
 
         # The first ts is the ts of the first action we have in history or 0 for empty history
         self.currently_processing_timestamp = first_ts

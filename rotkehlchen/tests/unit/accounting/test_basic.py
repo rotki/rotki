@@ -20,7 +20,6 @@ from rotkehlchen.types import Location, Timestamp, TradeType
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('upload_csv_to_google', [True])
 def test_simple_accounting(accountant, google_service):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
     no_message_errors(accountant.msg_aggregator)
