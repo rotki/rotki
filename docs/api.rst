@@ -10574,15 +10574,16 @@ Get ENS names
 Importing a database snapshot
 =================================
 
+.. http:put:: /api/(version)/snapshot/import
 .. http:post:: /api/(version)/snapshot/import
 
-   Doing a POST on the snapshot import endpoint will import database snapshot from the specified paths in the request body.
+   Doing either a PUT or a POST on the snapshot import endpoint will import database snapshot from the specified paths in the request body.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/snapshot/import HTTP/1.1
+      PUT /api/1/snapshot/import HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -10591,8 +10592,8 @@ Importing a database snapshot
           "location_data_snapshot_file": "/path/to/location_data_snapshot.csv"
       }
 
-   :reqjson str balances_snapshot_file: The path to a `balances_snapshot_import.csv` file that was previously exported.
-   :reqjson str location_data_snapshot_file: The path to a `location_data_snapshot.csv` file that was previously exported.
+   :reqjson str balances_snapshot_file: The path to a `balances_snapshot_import.csv` file that was previously exported for PUT. The file itself for POST.
+   :reqjson str location_data_snapshot_file: The path to a `location_data_snapshot.csv` file that was previously exported for PUT. The file itself for POST.
 
    **Example Response**:
 

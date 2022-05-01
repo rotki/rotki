@@ -2109,14 +2109,34 @@ class DBSnapshotDownloadingResource(BaseResource):
 
 
 class DBSnapshotImportingResource(BaseResource):
-    post_schema = SnapshotImportingSchema()
+    upload_schema = SnapshotImportingSchema()
 
-    @use_kwargs(post_schema, location='json')
-    def post(self, balances_snapshot_file: Path, location_data_snapshot_file: Path) -> Response:
+    @use_kwargs(upload_schema, location='json')
+    def put(self, balances_snapshot_file: Path, location_data_snapshot_file: Path) -> Response:
         return self.rest_api.import_user_snapshot(
             balances_snapshot_file=balances_snapshot_file,
             location_data_snapshot_file=location_data_snapshot_file,
         )
+
+    @use_kwargs(upload_schema, location='form_and_file')
+    def post(
+        self,
+        balances_snapshot_file: FileStorage,
+        location_data_snapshot_file: FileStorage,
+    ) -> Response:
+        with TemporaryDirectory() as temp_directory:
+            balance_snapshot_filename = balances_snapshot_file.filename if balances_snapshot_file.filename else 'balances_snapshot_import.csv'  # noqa: 501
+            location_data_snapshot_filename = location_data_snapshot_file.filename if location_data_snapshot_file.filename else 'location_data_snapshot.csv'  # noqa: 501
+            balance_snapshot_filepath = Path(temp_directory) / balance_snapshot_filename
+            location_data_snapshot_filepath = Path(temp_directory) / location_data_snapshot_filename  # noqa: 501
+            balances_snapshot_file.save(str(balance_snapshot_filepath))
+            location_data_snapshot_file.save(str(location_data_snapshot_filepath))
+            response = self.rest_api.import_user_snapshot(
+                balances_snapshot_file=balance_snapshot_filepath,
+                location_data_snapshot_file=location_data_snapshot_filepath,
+            )
+
+        return response
 
 
 class DBSnapshotDeletingResource(BaseResource):
