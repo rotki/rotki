@@ -123,6 +123,15 @@
         />
       </v-col>
       <v-col cols="12" md="4">
+        <v-text-field
+          v-model="transactionEventType"
+          outlined
+          required
+          disabled
+          :label="$t('transactions.events.form.transaction_event_type.label')"
+        />
+      </v-col>
+      <v-col cols="12" md="4">
         <amount-input
           v-model="sequenceIndex"
           outlined
@@ -135,7 +144,7 @@
           @focus="delete errorMessages['sequenceIndex']"
         />
       </v-col>
-      <v-col cols="12" md="6">
+      <v-col cols="12" md="4">
         <v-text-field
           v-model="locationLabel"
           outlined
@@ -145,7 +154,7 @@
           @focus="delete errorMessages['locationLabel']"
         />
       </v-col>
-      <v-col cols="12" md="6">
+      <v-col cols="12" md="4">
         <v-text-field
           v-model="counterparty"
           outlined
@@ -214,6 +223,7 @@ import { TaskType } from '@/types/task-type';
 import { HistoryEventSubType, HistoryEventType } from '@/types/transaction';
 import { bigNumberifyFromRef, Zero } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { getEventTypeData } from '@/utils/history';
 
 const TransactionEventForm = defineComponent({
   name: 'TransactionEventForm',
@@ -263,6 +273,7 @@ const TransactionEventForm = defineComponent({
     const location = ref<string>('');
     const eventType = ref<string | null>();
     const eventSubtype = ref<string | null>();
+    const transactionEventType = ref<string | null>();
     const asset = ref<string>('');
     const amount = ref<string>('');
     const fiatValue = ref<string>('');
@@ -497,6 +508,11 @@ const TransactionEventForm = defineComponent({
       }
     });
 
+    watch([eventType, eventSubtype], ([eventType, eventSubtype]) => {
+      const typeData = getEventTypeData({ eventType, eventSubtype }, false);
+      set(transactionEventType, typeData.label);
+    });
+
     onMounted(() => {
       setEditMode();
     });
@@ -511,6 +527,7 @@ const TransactionEventForm = defineComponent({
       location,
       eventType,
       eventSubtype,
+      transactionEventType,
       asset,
       amount,
       fiatValue,

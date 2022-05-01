@@ -99,6 +99,7 @@ const SOURCES = [
   'cryptocom',
   'icon',
   'zip',
+  'csv',
   'nexo',
   'blockfi-transactions',
   'blockfi-trades',
@@ -164,7 +165,7 @@ export default defineComponent({
       if (!target || !target.files) {
         return;
       }
-      if (!['icon', 'zip'].includes(get(source))) {
+      if (!['icon', 'zip', 'csv'].includes(get(source))) {
         check(target.files);
       } else {
         selected(target.files[0]);
@@ -219,6 +220,10 @@ export default defineComponent({
       emit('update:uploaded', value);
     };
 
+    watch(file, file => {
+      selected(file);
+    });
+
     watch(uploaded, uploaded => {
       if (!uploaded) {
         return;
@@ -239,7 +244,8 @@ export default defineComponent({
       onDrop,
       onEnter,
       onLeave,
-      onSelect
+      onSelect,
+      removeFile
     };
   }
 });

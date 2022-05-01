@@ -1126,7 +1126,7 @@
     "import": "Import",
     "date_input_format": {
       "placeholder": "Input custom date format",
-      "hint": "Used this if date format in your file is: {format}",
+      "hint": "Use this if date format in your file is: {format}",
       "switch_label": "Use custom date format to parsing your file"
     }
   },
@@ -2845,6 +2845,9 @@
           "validation": {
             "non_empty": "The sequence index field cannot be empty."
           }
+        },
+        "transaction_event_type": {
+          "label": "Transaction Event Type"
         }
       },
       "headers": {
@@ -3463,7 +3466,7 @@
     },
     "title": "Import Data",
     "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
-    "notice_warning": "⚠️Important notice ⚠️:",
+    "notice_warning": "⚠️ Important notice ⚠️:",
     "notice_link": "open an issue with rotki"
   },
   "dashboard": {
@@ -3526,6 +3529,23 @@
     "snapshot_tooltip": "This will force taking a snapshot of all your balances, ignoring any cache. Use this sparingly as it may lead to you being rate-limited.",
     "force_save": "Force save",
     "last_data_upload": "Last premium database sync",
+    "import_snapshot": {
+      "title": "Import snapshot manually",
+      "balance_snapshot_file": "Balance snapshot file",
+      "balance_snapshot_file_suggested": "Suggested filename: balances_snapshot_import.csv",
+      "location_data_snapshot_file": "Location data snapshot file",
+      "location_data_snapshot_suggested": "Suggested filename: location_data_snapshot_import.csv",
+      "actions": {
+        "cancel": "Cancel",
+        "import": "Import"
+      },
+      "messages": {
+        "title": "Snapshot import",
+        "failed_description": "Importing snapshot failed: {message}",
+        "success_description": "Snapshot successfully imported. You will be logged out now."
+      }
+    },
+    "import": "Import",
     "upload_confirmation": {
       "cancel": "Cancel",
       "action": "Push | Pull",

@@ -128,6 +128,7 @@ export default defineComponent({
 
       .v-tabs-items {
         background-color: transparent !important;
+        overflow: visible;
       }
     }
 

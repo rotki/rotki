@@ -9,6 +9,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { useAssetInfoRetrieval } from '@/store/assets';
 import {
   AddAccountsPayload,
+  AllBalancePayload,
   AssetPrices,
   BalanceByLocation,
   BasicBlockchainAccountPayload,
@@ -59,6 +60,12 @@ export const setupGeneralBalances = () => {
     return store.getters['balances/blockchainTotals'];
   });
 
+  const fetchBalances: (
+    payload: Partial<AllBalancePayload>
+  ) => Promise<void> = async payload => {
+    return await store.dispatch('balances/fetchBalances', payload);
+  };
+
   const fetchBlockchainBalances: (
     payload: BlockchainBalancePayload
   ) => Promise<void> = async payload => {
@@ -103,6 +110,7 @@ export const setupGeneralBalances = () => {
     manualBalanceByLocation,
     liabilities,
     blockchainTotals,
+    fetchBalances,
     isEthereumToken,
     fetchTokenDetails,
     fetchBlockchainBalances,
@@ -288,8 +296,8 @@ export const setupBlockchainAccounts = () => {
     addAccount,
     editAccount,
     addAccounts,
-    removeAccount,
     eth2Validators,
+    removeAccount,
     addEth2Validator,
     editEth2Validator,
     deleteEth2Validators,

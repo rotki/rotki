@@ -1,9 +1,5 @@
 <template>
-  <v-row
-    :class="$style.content"
-    :style="backgroundStyle"
-    data-cy="status-content"
-  >
+  <v-row :class="$style.content" data-cy="status-content">
     <v-col cols="auto">
       <v-icon v-if="connected" color="primary" data-cy="status-icon">
         mdi-check-circle
@@ -22,11 +18,9 @@
 </template>
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api';
-import ThemeMixin from '@/mixins/theme-mixin';
 
 export default defineComponent({
   name: 'NodeStatus',
-  mixins: [ThemeMixin],
   props: {
     connected: {
       required: true,

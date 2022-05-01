@@ -9,7 +9,7 @@
 
           <v-switch
             v-model="anonymousUsageAnalytics"
-            class="general-settings__fields__anonymous-usage-statistics"
+            class="general-settings__fields__anonymous-usage-statistics mb-4 mt-0"
             color="primary"
             :label="$t('general_settings.labels.anonymous_analytics')"
             :success-messages="
@@ -45,6 +45,7 @@
             <v-col class="shrink">
               <v-switch
                 v-model="versionUpdateCheckEnabled"
+                class="mt-3"
                 :label="
                   $t('general_settings.labels.version_update_check_enabled')
                 "
@@ -118,7 +119,7 @@
 
           <v-switch
             v-model="displayDateInLocaltime"
-            class="mt-0 general-settings__fields__display-date-in-localtime"
+            class="general-settings__fields__display-date-in-localtime mb-4 mt-0"
             color="primary"
             :label="$t('general_settings.labels.display_date_in_localtime')"
             :success-messages="

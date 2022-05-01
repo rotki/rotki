@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`4219` Users will now be able to import snapshot manually.
 * :bug:`4261` Fixes a problem were the docker container image would increase on every restart.
 * :feature:`1219` Introduces basic global search (you can go to any page in the app, do some basic actions such as adding a new trade or a ledger action, and also see prices of owned asset).
 * :feature:`4249` Allow users to ignore asset from the asset overview page
@@ -11,7 +12,7 @@ Changelog
 * :bug:`4172` Disallow addition and editing of external trade that could result in invalid trade fees.
 * :feature:`3370` Manual balance labels are now editable even after their creation
 * :feature:`4125` Introduces auto login mechanism for electron app.
-* :feature:`1447` Adds classification for ETH transactions and their events.
+* :feature:`1477` Adds classification for ETH transactions and their events.
 * :bug:`4078` Adjust scrollbar color in dark mode for better visibility.
 * :feature:`4071` Add option to reduce the animations effect.
 * :feature:`3669` Users can export and import their custom assets.

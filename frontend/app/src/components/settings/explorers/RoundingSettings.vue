@@ -1,6 +1,6 @@
 <template>
-  <div class="rounding-settings">
-    <div class="text-h6 mt-4">
+  <div class="rounding-settings mt-8">
+    <div class="text-h6">
       {{ $t('rounding_settings.title') }}
     </div>
     <div class="text-subtitle-1">

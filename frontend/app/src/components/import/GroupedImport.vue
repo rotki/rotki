@@ -1,6 +1,6 @@
 <template>
   <card>
-    <div class="pa-2">
+    <div class="pa-1 pt-2">
       <v-select
         v-model="selectedSource"
         :label="$t('import_data.select_source.title')"
