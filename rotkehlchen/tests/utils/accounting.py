@@ -150,24 +150,43 @@ def _check_summaries_row(row: Dict[str, Any], accountant: 'Accountant'):
         _check_boolean_settings(row, accountant)
 
 
-def _check_column(attribute: str, index: int, sheet_id: str, expected, got_columns: List[List[str]]):  # noqa: E501
+def _check_column(attribute: str, index: int, sheet_id: str, expected: Dict[str, Any], got_columns: List[List[str]]):  # noqa: E501
     expected_value = FVal(expected[attribute])
     got_value = FVal(got_columns[index][0])
     msg = f'Sheet: {sheet_id}, row: {index + CSV_INDEX_OFFSET} {attribute} mismatch. {got_value} != {expected_value}'  # noqa: E501
     assert expected_value.is_close(got_value), msg
 
 
+def _check_total(sheet_id: str, offset: int, total_type: str, expected_pnls: PnlTotals, result: List[Dict[str, Any]]) -> bool:  # noqa: E501
+    """Check each total line and return true if all lines are checked"""
+    if total_type != 'TOTAL':  # must be a pnl total
+        accounting_type = AccountingEventType.deserialize(total_type.removesuffix(' total'))
+        assert accounting_type in expected_pnls
+
+    for pnl_type in ('taxable', 'free'):
+        if total_type == 'TOTAL':
+            expected_value = getattr(expected_pnls, pnl_type)
+        else:
+            expected_value = getattr(expected_pnls[accounting_type], pnl_type)
+        got_value = FVal(result[3 if pnl_type == 'taxable' else 4]['values'][offset][0])
+        msg = f'Sheet: {sheet_id}, row: {offset} {pnl_type} {total_type} mismatch. {got_value} != {expected_value}'  # noqa: E501
+        assert expected_value.is_close(got_value), msg
+
+    return total_type == 'TOTAL'
+
+
 def upload_csv_and_check(
         service: 'GoogleService',
         csv_data: List[Dict[str, Any]],
         expected_csv_data: List[Dict[str, Any]],
+        expected_pnls: PnlTotals,
 ) -> None:
     """Creates a new google sheet, uploads the CSV and then checks it renders properly"""
     sheet_id = service.create_spreadsheet()
     service.add_rows(sheet_id=sheet_id, csv_data=csv_data)
     result = service.get_cell_ranges(
         sheet_id=sheet_id,
-        range_names=['I2:I', 'J2:J'],
+        range_names=['I2:I', 'J2:J', 'F2:F', 'G2:G', 'H2:H'],
     )
     # Check that the data length matches
     assert len(result[0]['values']) == len(expected_csv_data)
@@ -187,6 +206,22 @@ def upload_csv_and_check(
             expected=expected,
             got_columns=result[1]['values'],
         )
+
+    offset = len(expected_csv_data) + 2
+    assert result[3]['values'][offset][0] == 'TAXABLE'
+    assert result[4]['values'][offset][0] == 'FREE'
+    offset += 1
+    while offset < len(csv_data):
+        should_break = _check_total(
+            sheet_id=sheet_id,
+            offset=offset,
+            total_type=result[2]['values'][offset][0],
+            expected_pnls=expected_pnls,
+            result=result,
+        )
+        if should_break:
+            break  # reached the end
+        offset += 1
 
 
 def assert_csv_export(
@@ -273,4 +308,5 @@ def assert_csv_export(
                 service=google_service,
                 csv_data=to_upload_data,
                 expected_csv_data=expected_csv_data,
+                expected_pnls=expected_pnls,
             )
