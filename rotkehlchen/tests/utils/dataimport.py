@@ -1,5 +1,6 @@
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.assets.converters import asset_from_cryptocom
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import asset_from_binance, asset_from_cryptocom
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import (
     A_BAT,
@@ -8,15 +9,18 @@ from rotkehlchen.constants.assets import (
     A_DOGE,
     A_DOT,
     A_ETH,
+    A_ETH2,
     A_EUR,
+    A_KNC,
     A_LTC,
     A_SAI,
     A_UNI,
     A_USD,
     A_USDC,
+    A_USDT,
     A_XRP,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     LedgerActionsFilterQuery,
@@ -26,7 +30,7 @@ from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.tests.utils.constants import A_CRO, A_MCO, A_XMR
+from rotkehlchen.tests.utils.constants import A_AXS, A_CRO, A_MCO, A_XMR
 from rotkehlchen.types import (
     AssetAmount,
     AssetMovementCategory,
@@ -1135,6 +1139,240 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
 
 
 def assert_binance_import_results(rotki: Rotkehlchen):
+    expected_trades = [
+        Trade(
+            timestamp=Timestamp(1603922583),
+            location=Location.BINANCE,
+            base_asset=asset_from_binance('BNB'),
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.576474665')),
+            rate=Price(FVal('0.002350559286442405708460754332')),
+            fee=None,
+            fee_currency=None,
+            link='',
+            notes=None,
+        ),
+        Trade(
+            timestamp=Timestamp(1604042198),
+            location=Location.BINANCE,
+            base_asset=A_AXS,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('1.19592356')),
+            rate=Price(FVal('0.007972823733333333333333333333')),
+            fee=None,
+            fee_currency=None,
+            link='',
+            notes=None,
+        ),
+        Trade(
+            timestamp=Timestamp(1604067680),
+            location=Location.BINANCE,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.03605')),
+            rate=Price(FVal('0.0002680857338176748924305993057')),
+            fee=Fee(FVal('-0.00003605')),
+            fee_currency=A_ETH,
+            link='',
+            notes=None,
+        ),
+        Trade(
+            timestamp=Timestamp(1604070545),
+            location=Location.BINANCE,
+            base_asset=A_ETH2,
+            quote_asset=A_ETH,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal(0.036)),
+            rate=Price(ONE),
+            fee=None,
+            fee_currency=None,
+            link='',
+            notes=None,
+        ),
+        Trade(
+            timestamp=Timestamp(1604437979),
+            location=Location.BINANCE,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.08345')),
+            rate=Price(FVal('0.0002504432846137663664686495096')),
+            fee=Fee(FVal('-0.00008345')),
+            fee_currency=A_ETH,
+            link='',
+            notes=None,
+        ),
+        Trade(
+            timestamp=Timestamp(1604437979),
+            location=Location.BINANCE,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.0148')),
+            rate=Price(FVal('0.0002504658665117117839180876430')),
+            fee=Fee(FVal('-0.00009009')),
+            fee_currency=asset_from_binance('BNB'),
+            link='',
+            notes=None,
+        ),
+        Trade(
+            timestamp=Timestamp(1605169314),
+            location=Location.BINANCE,
+            base_asset=A_BTC,
+            quote_asset=Asset('IOTA'),
+            trade_type=TradeType.SELL,
+            amount=AssetAmount(FVal('0.001366875')),
+            rate=Price(FVal('0.00002025')),
+            fee=Fee(FVal('-0.0001057')),
+            fee_currency=asset_from_binance('BNB'),
+            link='',
+            notes=None,
+        ),
+        Trade(
+            timestamp=Timestamp(1605903740),
+            location=Location.BINANCE,
+            base_asset=asset_from_binance('BNB'),
+            quote_asset=Asset('SOL-2'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.000237955')),
+            rate=Price(FVal('1.643676176003315604061614975')),
+            fee=None,
+            fee_currency=None,
+            link='',
+            notes=None,
+        ),
+        Trade(
+            timestamp=Timestamp(1605903740),
+            location=Location.BINANCE,
+            base_asset=asset_from_binance('BNB'),
+            quote_asset=Asset('SOL-2'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('0.00072724')),
+            rate=Price(FVal('0.3537908069071033997951901302')),
+            fee=None,
+            fee_currency=None,
+            link='',
+            notes=None,
+        ),
+        Trade(
+            timestamp=Timestamp(1605910681),
+            location=Location.BINANCE,
+            base_asset=A_USDT,
+            quote_asset=Asset('DAR'),
+            trade_type=TradeType.SELL,
+            amount=AssetAmount(FVal('1157.56')),
+            rate=Price(FVal('3.44')),
+            fee=Fee(FVal('-1.15756')),
+            fee_currency=A_USDT,
+            link='',
+            notes=None,
+        ),
+        Trade(
+            timestamp=Timestamp(1605911401),
+            location=Location.BINANCE,
+            base_asset=Asset('IOTA'),
+            quote_asset=A_USDT,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('882')),
+            rate=Price(FVal('0.7694083249980764791875048088')),
+            fee=Fee(FVal('-0.882')),
+            fee_currency=Asset('IOTA'),
+            link='',
+            notes=None,
+        ),
+    ]
+    expected_asset_movements = [
+        AssetMovement(
+            location=Location.BINANCE,
+            category=AssetMovementCategory.DEPOSIT,
+            timestamp=Timestamp(1603922583),
+            address=None,
+            transaction_id=None,
+            asset=A_EUR,
+            amount=FVal(245.25),
+            fee_asset=A_USD,
+            fee=Fee(ZERO),
+            link='',
+        ),
+        AssetMovement(
+            location=Location.BINANCE,
+            category=AssetMovementCategory.WITHDRAWAL,
+            timestamp=Timestamp(1606853204),
+            address=None,
+            transaction_id=None,
+            asset=A_KNC,
+            amount=FVal(0.16),
+            fee_asset=A_USD,
+            fee=Fee(ZERO),
+            link='',
+        ),
+    ]
+    expected_ledger_actions = [
+        LedgerAction(
+            identifier=1,
+            timestamp=Timestamp(1603926662),
+            action_type=LedgerActionType.EXPENSE,
+            location=Location.BINANCE,
+            amount=AssetAmount(FVal(0.577257355)),
+            asset=asset_from_binance('BNB'),
+            rate=None,
+            rate_asset=None,
+            link=None,
+            notes='POS savings purchase',
+        ),
+        LedgerAction(
+            identifier=2,
+            timestamp=Timestamp(1604223373),
+            action_type=LedgerActionType.INCOME,
+            location=Location.BINANCE,
+            amount=AssetAmount(FVal(0.000004615)),
+            asset=A_ETH2,
+            rate=None,
+            rate_asset=None,
+            link=None,
+            notes='ETH 2.0 Staking Rewards',
+        ),
+        LedgerAction(
+            identifier=3,
+            timestamp=Timestamp(1604274610),
+            action_type=LedgerActionType.INCOME,
+            location=Location.BINANCE,
+            amount=AssetAmount(FVal(0.115147055)),
+            asset=Asset('DAR'),
+            rate=None,
+            rate_asset=None,
+            link=None,
+            notes='Launchpool Interest',
+        ),
+        LedgerAction(
+            identifier=4,
+            timestamp=Timestamp(1604450188),
+            action_type=LedgerActionType.INCOME,
+            location=Location.BINANCE,
+            amount=AssetAmount(FVal(1.18837124)),
+            asset=A_AXS,
+            rate=None,
+            rate_asset=None,
+            link=None,
+            notes='POS savings redemption',
+        ),
+        LedgerAction(
+            identifier=5,
+            timestamp=Timestamp(1604456888),
+            action_type=LedgerActionType.INCOME,
+            location=Location.BINANCE,
+            amount=AssetAmount(FVal(0.000092675)),
+            asset=asset_from_binance('BNB'),
+            rate=None,
+            rate_asset=None,
+            link=None,
+            notes='POS savings interest',
+        ),
+    ]
+
     trades = rotki.data.db.get_trades(filter_query=TradesFilterQuery.make(), has_premium=True)
     warnings = rotki.msg_aggregator.consume_warnings()
     asset_movements = rotki.data.db.get_asset_movements(
@@ -1148,7 +1386,11 @@ def assert_binance_import_results(rotki: Rotkehlchen):
         filter_query=LedgerActionsFilterQuery.make(),
         has_premium=True,
     )
-    assert len(trades) == 10
-    assert len(asset_movements) == 2
-    assert len(ledger_actions) == 6
-    assert warnings == ['2 Binance rows have bad format.', 'Skipped 4 rows during processing']
+    assert trades == expected_trades
+    assert asset_movements == expected_asset_movements
+    assert ledger_actions == expected_ledger_actions
+    expected_warnings = [
+        '2 Binance rows have bad format. Check logs for details.',
+        'Skipped 4 rows during processing binance csv file. Check logs for details',
+    ]
+    assert warnings == expected_warnings
