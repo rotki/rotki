@@ -198,7 +198,7 @@ class CSVExporter(CustomizableDateMixin):
             entry['price'] = self._add_sumif_formula(
                 check_range=f'A2:A{length}',
                 condition=f'"{str(name)}"',
-                sum_range=f'K2:K{length}',
+                sum_range=f'J2:J{length}',
                 actual_value=value.free,
             )
             events.append(entry)
