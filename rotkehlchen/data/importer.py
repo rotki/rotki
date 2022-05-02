@@ -4,7 +4,7 @@ import logging
 from collections import defaultdict
 from itertools import count
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -20,9 +20,12 @@ from rotkehlchen.constants.assets import A_BSQ, A_BTC, A_DAI, A_SAI, A_USD
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data.import_utils import (
     BinanceCsvRow,
+    BinanceDepositWithdrawEntry,
     BinanceEntry,
-    BinanceMultipleEntry,
+    BinancePOSEntry,
     BinanceSingleEntry,
+    BinanceStakingRewardsEntry,
+    BinanceTradeEntry,
 )
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ledger_actions import DBLedgerActions
@@ -1452,16 +1455,16 @@ Activity from uphold with uphold transaction id:
         rows: List[BinanceCsvRow],
         **kwargs: Dict[str, Any],
     ) -> Tuple[int, Dict[Timestamp, List[BinanceCsvRow]]]:
-        multirows: Dict[Timestamp, List[BinanceCsvRow]] = defaultdict(lambda: [])
+        multirows: Dict[Timestamp, List[BinanceCsvRow]] = defaultdict(list)
         skipped_count = 0
         formatstr = kwargs.get('timestamp_format')
         for csv_row in rows:
             try:
-                timestamp = Timestamp(deserialize_timestamp_from_date(
+                timestamp = deserialize_timestamp_from_date(
                     date=csv_row['UTC_Time'],
                     formatstr=formatstr if formatstr is not None else '%Y-%m-%d %H:%M:%S',  # type: ignore  # noqa: E501
                     location='binance',
-                ))
+                )
                 csv_row['Coin'] = asset_from_binance(csv_row['Coin'])
                 csv_row['Change'] = deserialize_asset_amount(csv_row['Change'])
                 del csv_row['UTC_Time']
@@ -1478,38 +1481,64 @@ Activity from uphold with uphold transaction id:
 
         return skipped_count, multirows
 
+    @staticmethod
+    def _process_single_binance_sentries(
+        timestamp: Timestamp,
+        rows: List[BinanceCsvRow],
+    ) -> Sequence[Tuple[Type[BinanceSingleEntry], BinanceCsvRow]]:
+        processed: List[Tuple[Type[BinanceSingleEntry], BinanceCsvRow]] = []
+        for single_entry_class in SINGLE_BINANCE_ENTRIES:
+            for row in rows:
+                if single_entry_class.is_entry(row['Operation']):
+                    single_entry_class.process_entry(timestamp=timestamp, data=row)
+                    processed.append((single_entry_class, row))
+        return processed
+
+    @staticmethod
+    def _process_multiple_binance_entries(
+        timestamp: Timestamp,
+        rows: List[BinanceCsvRow],
+    ) -> Tuple[Optional[Type[BinanceEntry]], int]:
+        for multiple_entry_class in MULTIPLE_BINANCE_ENTRIES:
+            if multiple_entry_class.are_entries([row['Operation'] for row in rows]):
+                processed_count = multiple_entry_class.process_entries(
+                    timestamp=timestamp,
+                    data=rows,
+                )
+                return multiple_entry_class, processed_count
+        return None, 0
+
     def _process_binance_rows(self, multi: Dict[Timestamp, List[BinanceCsvRow]]) -> None:
         BinanceEntry.db = self.db
         BinanceEntry.db_ledger = self.db_ledger
-        single_entry_classes = BinanceSingleEntry.__subclasses__()
-        multiple_entry_classes = BinanceMultipleEntry.__subclasses__()
         stats: Dict[Type[BinanceEntry], int] = defaultdict(int)
         skipped_entries: List[Any] = []
         for timestamp, rows in multi.items():
-            for single_entry_class in single_entry_classes:
-                for row in rows.copy():
-                    if single_entry_class.is_entry(row['Operation']):
-                        single_entry_class.process_entry(timestamp=timestamp, data=row)
-                        stats[single_entry_class] += 1
-                        rows.remove(row)
-            for multiple_entry_class in multiple_entry_classes:
-                if multiple_entry_class.are_entries([row['Operation'] for row in rows]):
-                    processed_count = multiple_entry_class.process_entries(
-                        timestamp=timestamp,
-                        data=rows,
-                    )
-                    stats[multiple_entry_class] += processed_count
-                    rows = rows if processed_count == 0 else []
+            single_processed = self._process_single_binance_sentries(
+                timestamp=timestamp,
+                rows=rows,
+            )
+            for entry_type, row in single_processed:
+                stats[entry_type] += 1
+                rows.remove(row)
+            multiple_type, multiple_count = self._process_multiple_binance_entries(
+                timestamp=timestamp,
+                rows=rows,
+            )
+            if multiple_type is not None and multiple_count > 0:
+                stats[multiple_type] += multiple_count
+                rows = []
 
             if len(rows) > 0:
                 skipped_entries.append([timestamp, rows])
 
+        trade_operations ={'Buy', 'Sell', 'Fee'}
         skipped_nontrade_rows = list(filter(
-            lambda x: not {el['Operation'] for el in x[1]}.issubset({'Buy', 'Sell', 'Fee'}),
+            lambda x: not {el['Operation'] for el in x[1]}.issubset(trade_operations),
             skipped_entries,
         ))
         skipped_trade_rows = list(filter(
-            lambda x: {el['Operation'] for el in x[1]}.issubset({'Buy', 'Sell', 'Fee'}),
+            lambda x: {el['Operation'] for el in x[1]}.issubset(trade_operations),
             skipped_entries,
         ))
         total_found = sum(stats.values())
