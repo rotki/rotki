@@ -357,11 +357,13 @@ class EthereumTransactionsResource(BaseResource):
             async_query: bool,
             only_cache: bool,
             filter_query: ETHTransactionsFilterQuery,
+            event_params: Dict[str, Any],
     ) -> Response:
         return self.rest_api.get_ethereum_transactions(
             async_query=async_query,
             only_cache=only_cache,
             filter_query=filter_query,
+            event_params=event_params,
         )
 
     @use_kwargs(post_schema, location='json_and_query')

@@ -104,6 +104,22 @@ class DBETHTransactionAddressFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBETHTransactionEventsJoin(DBFilter):
+    """Adds history_events to the query, so they can be used for filtering"""
+    @property
+    def addresses(self) -> Optional[List[ChecksumEthAddress]]:
+        return None  # we need it here for compatibility with DBETHTransactionAddressFilter
+
+    def prepare(self) -> Tuple[List[str], List[Any]]:
+        filters = [
+            'LEFT OUTER JOIN '
+            '(SELECT event_identifier, counterparty, asset FROM history_events) '
+            'WHERE hex(tx_hash)=substr(event_identifier, 3)',
+        ]
+        return filters, []
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBETHTransactionHashFilter(DBFilter):
     tx_hash: Optional[EVMTxHash] = None
 
@@ -295,6 +311,9 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
             tx_hash: Optional[EVMTxHash] = None,
+            filter_by_events: Optional[bool] = None,  # If True, filters by events data
+            protocol: Optional[str] = None,  # Events data
+            asset: Optional[Asset] = None,  # Events data
     ) -> 'ETHTransactionsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -312,6 +331,12 @@ class ETHTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         else:
             if addresses is not None:
                 filter_query.join_clause = DBETHTransactionAddressFilter(and_op=False, addresses=addresses)  # noqa: E501
+            elif filter_by_events:
+                filter_query.join_clause = DBETHTransactionEventsJoin(and_op=False)
+                if asset is not None:
+                    filters.append(DBAssetFilter(and_op=True, asset=asset, asset_key='asset'))
+                if protocol is not None:
+                    filters.append(DBStringFilter(and_op=True, column='counterparty', value=protocol))  # noqa: E501
 
             filter_query.timestamp_filter = DBTimestampFilter(
                 and_op=True,
@@ -673,6 +698,7 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
             ignored_ids: Optional[List[str]] = None,
             null_columns: Optional[List[str]] = None,
             event_identifier: Optional[str] = None,
+            counterparty: Optional[str] = None,
     ) -> 'HistoryEventFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True), ('sequence_index', True)]
@@ -732,6 +758,10 @@ class HistoryEventFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLoca
         if event_identifier is not None:
             filters.append(
                 DBStringFilter(and_op=True, column='event_identifier', value=event_identifier),
+            )
+        if counterparty is not None:
+            filters.append(
+                DBStringFilter(and_op=True, column='counterparty', value=counterparty),
             )
 
         filter_query.timestamp_filter = DBTimestampFilter(
