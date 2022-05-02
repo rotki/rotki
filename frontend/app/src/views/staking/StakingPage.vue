@@ -1,5 +1,5 @@
 <template>
-  <v-container class="py-6">
+  <v-container>
     <card>
       <div class="pa-2">
         <v-select

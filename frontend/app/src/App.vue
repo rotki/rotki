@@ -387,10 +387,6 @@ export default defineComponent({
     }
   }
 
-  &__content {
-    height: 100vh;
-  }
-
   &__app-bar {
     &__button {
       i {
@@ -439,22 +435,17 @@ export default defineComponent({
   }
 
   &-main {
-    top: 64px;
-    position: fixed;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
     width: 100%;
-    height: calc(100vh - 64px);
-    overflow-y: scroll;
-    overflow-x: hidden;
-    scroll-behavior: smooth;
+    min-height: calc(100vh - 64px);
 
     &.small {
-      left: 56px;
-      width: calc(100vw - 56px);
+      padding-left: 56px;
     }
 
     &.expanded {
-      left: 300px;
-      width: calc(100vw - 300px);
+      padding-left: 300px;
     }
   }
 }

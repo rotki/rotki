@@ -5,6 +5,20 @@ html {
   max-height: 100vh;
 }
 
+body {
+  overflow: auto !important;
+  height: calc(100vh - 64px);
+  margin-top: 64px;
+  background: var(--v-rotki-light-grey-base);
+  scroll-behavior: smooth;
+}
+
+.v-application {
+  &--wrap {
+    min-height: 0 !important;
+  }
+}
+
 .theme {
   &--light {
     /* stylelint-disable */
@@ -13,6 +27,15 @@ html {
       background-color: transparent;
     }
   }
+}
+
+.container {
+  max-width: 1500px;
+}
+
+aside {
+  max-height: calc(100vh - 64px);
+  position: fixed !important;
 }
 
 .v-card {
