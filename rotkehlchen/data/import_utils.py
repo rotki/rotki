@@ -101,7 +101,8 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             (keys == {'Buy'} and counted['Buy'] % 2 == 0 and (not fee or counted['Buy'] == fee * 2)) or  # noqa: E501
             (keys == {'Sell'} and counted['Sell'] % 2 == 0 and (not fee or counted['Sell'] == fee * 2)) or  # noqa: E501
             (keys == {'Transaction Related'} and counted['Transaction Related'] % 2 == 0) or
-            (keys == {'Small assets exchange BNB'} and counted['Small assets exchange BNB'] % 2 == 0)  # noqa: E501
+            (keys == {'Small assets exchange BNB'} and counted['Small assets exchange BNB'] % 2 == 0) or  # noqa: E501
+            (keys == {'ETH 2.0 Staking'} and counted['ETH 2.0 Staking'] % 2 == 0)
         )
 
     @staticmethod
@@ -254,39 +255,6 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         trades = cls.process_trades(timestamp=timestamp, data=data)
         cls.db.add_trades(trades)
         return len(trades)
-
-
-class BinanceStakingEntry(BinanceMultipleEntry):
-    """This class processes ETH 2.0 Staking events"""
-
-    @classmethod
-    def are_entries(cls, requested_operations: List) -> bool:
-        """Processing only pairs of ETH 2.0 Staking"""
-        return (
-            requested_operations == ['ETH 2.0 Staking', 'ETH 2.0 Staking']
-        )
-
-    @classmethod
-    def process_entries(cls, timestamp: Timestamp, data: List[BinanceCsvRow]) -> int:
-        # Both rows have identical values except amount with is positive / negative
-        # So we can use data from only one row"""
-        amount = abs(data[0]['Change'])
-        asset = data[0]['Coin']
-
-        ledger_action = LedgerAction(
-            identifier=0,
-            timestamp=timestamp,
-            action_type=LedgerActionType.EXPENSE,
-            location=Location.BINANCE,
-            amount=amount,
-            asset=asset,
-            rate=None,
-            rate_asset=None,
-            link=None,
-            notes='ETH 2.0 Staking',
-        )
-        cls.db_ledger.add_ledger_action(ledger_action)
-        return 1
 
 
 class BinanceDepositWithdrawEntry(BinanceSingleEntry):
