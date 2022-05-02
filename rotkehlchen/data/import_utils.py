@@ -116,12 +116,11 @@ class BinanceTradeEntry(BinanceMultipleEntry):
 
     @classmethod
     def process_trades(cls, timestamp: Timestamp, data: List[BinanceCsvRow]) -> List[Trade]:
-        """Processes multirows data and stores it into Rotki's Trades"""
-
-        # Each row has format: {'Operation': ..., 'Change': ..., 'Coin': ...}
-        # Change is amount, Coin is asset
-        # If amount is negative then this asset is sold, otherwise it's bought
-
+        """Processes multirows data and stores it into Rotki's Trades
+        Each row has format: {'Operation': ..., 'Change': ..., 'Coin': ...}
+        Change is amount, Coin is asset
+        If amount is negative then this asset is sold, otherwise it's bought
+        """
         # Because we can get mixed data (e.g. multiple Buys or Sells on a single timestamp) we need
         # to group it somehow. We are doing it by grouping the highest bought with the highest
         # sold value. We query usd equivalent for each amount because different Sells / Buys

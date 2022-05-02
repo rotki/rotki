@@ -48,6 +48,16 @@ log = RotkehlchenLogsAdapter(logger)
 
 SAI_TIMESTAMP = 1574035200
 
+SINGLE_BINANCE_ENTRIES = [
+    BinanceDepositWithdrawEntry,
+    BinanceStakingRewardsEntry,
+    BinancePOSEntry,
+]
+
+MULTIPLE_BINANCE_ENTRIES = [
+    BinanceTradeEntry,
+]
+
 
 def remap_header(fieldnames: List[str]) -> List[str]:
     cur_count = count(1)
@@ -1532,7 +1542,7 @@ Activity from uphold with uphold transaction id:
             if len(rows) > 0:
                 skipped_entries.append([timestamp, rows])
 
-        trade_operations ={'Buy', 'Sell', 'Fee'}
+        trade_operations = {'Buy', 'Sell', 'Fee'}
         skipped_nontrade_rows = list(filter(
             lambda x: not {el['Operation'] for el in x[1]}.issubset(trade_operations),
             skipped_entries,
@@ -1545,15 +1555,18 @@ Activity from uphold with uphold transaction id:
         skipped_count = 0
         for _, rows in skipped_entries:
             skipped_count += len(rows)
-        log.debug(f'Skipped Binance trade rows: {skipped_trade_rows}')
-        log.debug(f'Skipped Binance non-trade rows {skipped_nontrade_rows}')
+        log.info(f'Skipped Binance trade rows: {skipped_trade_rows}')
+        log.info(f'Skipped Binance non-trade rows {skipped_nontrade_rows}')
         log.info(f'Total found Binance entries: {total_found}')
         log.info(f'Total skipped Binance csv rows: {skipped_count}')
-        log.debug('Binance import stats: {}'.format(
+        log.info('Binance import stats: {}'.format(
             [{entry_class.__name__: count} for entry_class, count in stats.items()],
         ))
         if skipped_count > 0:
-            self.db.msg_aggregator.add_warning(f'Skipped {skipped_count} rows during processing')  # noqa: E501
+            self.db.msg_aggregator.add_warning(
+                f'Skipped {skipped_count} rows during processing binance csv file. '
+                f'Check logs for details',
+            )
 
     def import_binance_csv(self, filepath: Path, **kwargs: Any) -> Tuple[bool, str]:
         with open(filepath, 'r', encoding='utf-8-sig') as csvfile:
@@ -1561,7 +1574,7 @@ Activity from uphold with uphold transaction id:
             skipped_count, multirows = self._group_binance_rows(rows=input_rows, **kwargs)
             if skipped_count > 0:
                 self.db.msg_aggregator.add_warning(
-                    f'{skipped_count} Binance rows have bad format.',
+                    f'{skipped_count} Binance rows have bad format. Check logs for details.',
                 )
             self._process_binance_rows(multirows)
 
