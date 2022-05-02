@@ -1,44 +1,46 @@
 <template>
-  <v-tabs
-    v-model="selectedTab"
-    fixed-tabs
-    height="36px"
-    hide-slider
-    :show-arrows="xsOnly"
-    active-class="tab-navigation__tabs__tab--active"
-    class="tab-navigation__tabs py-3"
-  >
-    <v-tab
-      v-for="tab in visibleTabs"
-      v-show="visibleTabs.length > 1 && !tab.hideHeader"
-      :key="tab.name"
-      :to="tab.routeTo"
-      class="tab-navigation__tabs__tab"
-      :class="getClass(tab.routeTo)"
+  <v-container>
+    <v-tabs
+      v-model="selectedTab"
+      fixed-tabs
+      height="36px"
+      hide-slider
+      :show-arrows="xsOnly"
+      active-class="tab-navigation__tabs__tab--active"
+      class="tab-navigation__tabs"
     >
-      <div>{{ tab.name }}</div>
-    </v-tab>
-    <v-tab-item
-      v-for="tab of tabContents"
-      :key="tab.id"
-      :value="tab.routeTo"
-      :class="
-        !noContentMargin
-          ? 'tab-navigation__tabs__tab-item--content-margin'
-          : null
-      "
-      class="tab-navigation__tabs__tab-item"
-    >
-      <v-container v-if="isDev">
-        <router-view v-if="isRouterVisible($route.path, tab)" />
-      </v-container>
-      <keep-alive v-else>
-        <v-container>
+      <v-tab
+        v-for="tab in visibleTabs"
+        v-show="visibleTabs.length > 1 && !tab.hideHeader"
+        :key="tab.name"
+        :to="tab.routeTo"
+        class="tab-navigation__tabs__tab"
+        :class="getClass(tab.routeTo)"
+      >
+        <div>{{ tab.name }}</div>
+      </v-tab>
+      <v-tab-item
+        v-for="tab of tabContents"
+        :key="tab.id"
+        :value="tab.routeTo"
+        :class="
+          !noContentMargin
+            ? 'tab-navigation__tabs__tab-item--content-margin'
+            : null
+        "
+        class="tab-navigation__tabs__tab-item"
+      >
+        <div v-if="isDev">
           <router-view v-if="isRouterVisible($route.path, tab)" />
-        </v-container>
-      </keep-alive>
-    </v-tab-item>
-  </v-tabs>
+        </div>
+        <keep-alive v-else>
+          <div>
+            <router-view v-if="isRouterVisible($route.path, tab)" />
+          </div>
+        </keep-alive>
+      </v-tab-item>
+    </v-tabs>
+  </v-container>
 </template>
 
 <script lang="ts">
@@ -111,11 +113,6 @@ export default defineComponent({
     ::v-deep {
       .v-tabs-bar {
         background-color: var(--v-rotki-light-grey-base) !important;
-
-        &__content {
-          padding-left: 12px;
-          padding-right: 12px;
-        }
       }
 
       /* stylelint-disable scss/selector-nest-combinators,selector-class-pattern,selector-nested-pattern, rule-empty-line-before */
