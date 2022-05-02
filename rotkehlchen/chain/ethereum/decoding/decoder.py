@@ -535,15 +535,19 @@ class EVMTransactionDecoder():
 
         set_verbs = None
         set_counterparty = None
+        set_event_subtype = None
         if transaction.to_address == '0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE':
             set_verbs = 'Donate', 'Receive donation'
             set_counterparty = 'gitcoin'
+            set_event_subtype = HistoryEventSubType.DONATE
+
         transfer = self.base.decode_erc20_721_transfer(
             token=found_token,
             tx_log=tx_log,
             transaction=transaction,
             set_verbs=set_verbs,
             set_counterparty=set_counterparty,
+            set_event_subtype=set_event_subtype,
         )
         if transfer is None:
             return None
