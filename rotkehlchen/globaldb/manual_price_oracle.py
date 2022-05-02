@@ -2,7 +2,6 @@ import logging
 from typing import Optional
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -38,7 +37,7 @@ class ManualPriceOracle:
             max_seconds_distance=3600,
             source=HistoricalPriceOracle.MANUAL,
         )
-        if price_entry and price_entry.price != Price(ZERO):
+        if price_entry is not None:
             log.debug('Got historical manual price', from_asset=from_asset, to_asset=to_asset, timestamp=timestamp)  # noqa: E501
             return price_entry.price
 
