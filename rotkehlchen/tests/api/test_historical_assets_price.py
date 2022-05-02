@@ -1,11 +1,12 @@
 import random
 from http import HTTPStatus
+from typing import Any, Dict, List
 
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import EthereumToken
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_CRV, A_USD
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -41,7 +42,7 @@ def test_get_historical_assets_price(rotkehlchen_api_server):
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
         ),
         json={
             'assets_timestamp': [
@@ -76,43 +77,109 @@ def test_get_historical_assets_price(rotkehlchen_api_server):
     assert result['target_asset'] == 'USD'
 
 
+def _assert_expected_prices(data: List[Dict[str, Any]], after_deletion: bool) -> None:
+    assert len(data) == 2 if after_deletion else 3
+
+    expected_data = []
+    if after_deletion is False:
+        expected_data.append({
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': 1611166335,
+            'price': '1.20',
+        })
+
+    expected_data.extend([{
+        'from_asset': A_CRV.identifier,
+        'to_asset': 'USD',
+        'timestamp': 1611166340,
+        'price': '1.40',
+    }, {
+        'from_asset': A_CRV.identifier,
+        'to_asset': 'USD',
+        'timestamp': 1631166335,
+        'price': '0',
+    }])
+    assert data == expected_data
+
+
 def test_manual_historical_price(rotkehlchen_api_server, globaldb):
-    curv = EthereumToken('0xD533a949740bb3306d119CC777fa900bA034cd52')
-    curv_id = '_ceth_0xD533a949740bb3306d119CC777fa900bA034cd52'
-    # First test adding assets
+    # Test normal price
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
         ),
         json={
-            'from_asset': curv_id,
+            'from_asset': A_CRV.identifier,
             'to_asset': 'USD',
             'timestamp': 1611166335,
-            'price': "1.20",
+            'price': '1.20',
         },
     )
     assert_simple_ok_response(response)
     historical_price = globaldb.get_historical_price(
-        from_asset=curv,
+        from_asset=A_CRV,
         to_asset=A_USD,
         timestamp=1611166335,
         max_seconds_distance=10,
     )
     assert historical_price.price == FVal(1.2)
-    assert historical_price.from_asset == curv_id
+    assert historical_price.from_asset == A_CRV.identifier
     assert historical_price.to_asset == A_USD
-    # Test with an unknown asset
+    # Test with zero price
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
+        ),
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': 1631166335,
+            'price': '0',
+        },
+    )
+    assert_simple_ok_response(response)
+    historical_price = globaldb.get_historical_price(
+        from_asset=A_CRV,
+        to_asset=A_USD,
+        timestamp=1631166335,
+        max_seconds_distance=10,
+    )
+    assert historical_price.price == ZERO
+    assert historical_price.from_asset == A_CRV.identifier
+    assert historical_price.to_asset == A_USD
+
+    # Test negative price fails properly
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalassetspriceresource',
+        ),
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': 1611166335,
+            'price': '-1.20',
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='A negative price is not allowed',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # Test unknown asset fails properly
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'historicalassetspriceresource',
         ),
         json={
             'from_asset': '_ceth_0xD71eCFF9342A5Ced620049e616c5035F1dB98621',
             'to_asset': 'USD',
             'timestamp': 1611166335,
-            'price': "1.20",
+            'price': '1.20',
         },
     )
     assert_error_response(
@@ -124,120 +191,92 @@ def test_manual_historical_price(rotkehlchen_api_server, globaldb):
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
         ),
         json={
-            'from_asset': curv_id,
+            'from_asset': A_CRV.identifier,
             'to_asset': 'USD',
             'timestamp': 1611166340,
-            'price': "1.30",
+            'price': '1.30',
         },
     )
     # Try to edit entry
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
         ),
         json={
-            'from_asset': curv_id,
+            'from_asset': A_CRV.identifier,
             'to_asset': 'USD',
             'timestamp': 1611166340,
-            'price': "1.40",
+            'price': '1.40',
         },
     )
     # Try to retrieve the assets price
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
         ),
         params={
-            'from_asset': curv_id,
+            'from_asset': A_CRV.identifier,
         },
     )
     data = assert_proper_response_with_result(response)
-    assert data[0]['from_asset'] == curv_id
-    assert data[0]['to_asset'] == 'USD'
-    assert data[0]['timestamp'] == 1611166335
-    assert data[0]['price'] == '1.20'
-    assert data[1]['from_asset'] == curv_id
-    assert data[1]['to_asset'] == 'USD'
-    assert data[1]['timestamp'] == 1611166340
-    assert data[1]['price'] == '1.40'
+    _assert_expected_prices(data, after_deletion=False)
     # If we query against the to_asset we should get the same entry
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
         ),
         params={
             'to_asset': 'USD',
         },
     )
-    data = assert_proper_response_with_result(response)
-    assert len(data) == 2
-    assert data[0]['from_asset'] == curv_id
-    assert data[0]['to_asset'] == 'USD'
-    assert data[0]['timestamp'] == 1611166335
-    assert data[0]['price'] == '1.20'
-    assert data[1]['from_asset'] == curv_id
-    assert data[1]['to_asset'] == 'USD'
-    assert data[1]['timestamp'] == 1611166340
-    assert data[1]['price'] == '1.40'
+    _assert_expected_prices(data, after_deletion=False)
     # Without the asset field should return all of them
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
         ),
     )
     data = assert_proper_response_with_result(response)
-    assert len(data) == 2
-    assert data[0]['from_asset'] == curv_id
-    assert data[0]['to_asset'] == 'USD'
-    assert data[0]['timestamp'] == 1611166335
-    assert data[0]['price'] == '1.20'
-    assert data[1]['from_asset'] == curv_id
-    assert data[1]['to_asset'] == 'USD'
-    assert data[1]['timestamp'] == 1611166340
-    assert data[1]['price'] == '1.40'
+    _assert_expected_prices(data, after_deletion=False)
     # Delete entry
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
         ),
         json={
-            'from_asset': curv_id,
+            'from_asset': A_CRV.identifier,
             'to_asset': 'USD',
             'timestamp': 1611166335,
         },
     )
-    # If we query again we should only see one result
+    # If we query again we should only see two results
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
         ),
         params={
-            'from_asset': curv_id,
+            'from_asset': A_CRV.identifier,
         },
     )
     data = assert_proper_response_with_result(response)
-    assert len(data) == 1
-    assert data[0]['from_asset'] == curv_id
-    assert data[0]['to_asset'] == 'USD'
-    assert data[0]['timestamp'] == 1611166340
-    assert data[0]['price'] == '1.40'
+    _assert_expected_prices(data, after_deletion=True)
     # Delete an entry that is not in database
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
         ),
         json={
-            'from_asset': curv_id,
+            'from_asset': A_CRV.identifier,
             'to_asset': 'USD',
             'timestamp': 1611166338,
         },
@@ -252,13 +291,13 @@ def test_manual_historical_price(rotkehlchen_api_server, globaldb):
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
-            "historicalassetspriceresource",
+            'historicalassetspriceresource',
         ),
         json={
-            'from_asset': curv_id,
+            'from_asset': A_CRV.identifier,
             'to_asset': 'USD',
             'timestamp': 1611166344,
-            'price': "1.40",
+            'price': '1.40',
         },
     )
     assert_error_response(
