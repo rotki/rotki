@@ -2664,6 +2664,15 @@ class RestAPI():
             addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
         )
 
+    def get_uniswap_v3_balances(self, async_query: bool) -> Response:
+        return self._api_query_for_eth_module(
+            async_query=async_query,
+            module_name='uniswap',
+            method='get_v3_balances',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chain_manager.queried_addresses_for_module('uniswap'),
+        )
+
     def get_uniswap_events_history(
             self,
             async_query: bool,

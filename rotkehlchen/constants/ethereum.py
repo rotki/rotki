@@ -168,6 +168,7 @@ FARM_ASSET_ABI = EthereumConstants.abi('FARM_ASSET')
 UNISWAP_V2_LP_ABI = EthereumConstants.abi('UNISWAP_V2_LP')
 CURVE_POOL_ABI = EthereumConstants.abi('CURVE_POOL')
 UNISWAP_V3_POOL_ABI = EthereumConstants.abi('UNISWAP_V3_POOL')
+UNISWAP_V3_NFT_MANAGER_ABI = EthereumConstants.abi('UNISWAP_V3_NFT_MANAGER')
 YEARN_VAULT_V2_ABI = EthereumConstants.abi('YEARN_VAULT_V2')
 
 YEARN_VAULTS_PREFIX = 'yearn_vaults_events'

@@ -11,7 +11,7 @@ import abc
 import logging
 from collections import defaultdict
 from datetime import datetime, time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from gevent.lock import Semaphore
 
@@ -27,6 +27,7 @@ from rotkehlchen.chain.ethereum.graph import (
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AddressEventsBalances,
     AddressToLPBalances,
+    AddressToV3LPBalances,
     AddressTrades,
     AggregatedAmount,
     AssetToPrice,
@@ -321,7 +322,7 @@ class AMMSwapPlatform(metaclass=abc.ABCMeta):
 
     @staticmethod
     def _update_assets_prices_in_address_balances(
-            address_balances: AddressToLPBalances,
+            address_balances: Union[AddressToLPBalances, AddressToV3LPBalances],
             known_asset_price: AssetToPrice,
             unknown_asset_price: AssetToPrice,
     ) -> None:
