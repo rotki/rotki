@@ -3,7 +3,7 @@
 import '@mdi/font/css/materialdesignicons.css';
 import Vue from 'vue';
 import Vuetify from 'vuetify/lib';
-import { VSelect } from 'vuetify/lib/components';
+import { VSelect, VSwitch } from 'vuetify/lib/components';
 import {
   DARK_ACCENT,
   DARK_GRAPH,
@@ -16,6 +16,8 @@ import {
 Vue.use(Vuetify);
 // @ts-ignore
 VSelect.options.props.attach.default = true;
+// @ts-ignore
+VSwitch.options.props.inset.default = true;
 
 const DARK_GREY = '#1e1e1e';
 

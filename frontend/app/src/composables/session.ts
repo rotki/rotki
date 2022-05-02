@@ -156,3 +156,26 @@ export const setupDisplayData = () => {
     scrambleData
   };
 };
+
+export const setupIgnoredAssets = () => {
+  const store = useStore();
+  const state = getSessionState();
+
+  const ignoredAssets = computed<string[]>(() => {
+    return state.ignoredAssets;
+  });
+
+  const ignoreAsset = async (asset: string) => {
+    await store.dispatch('session/ignoreAsset', asset);
+  };
+
+  const unignoreAsset = async (asset: string) => {
+    await store.dispatch('session/unignoreAsset', asset);
+  };
+
+  return {
+    ignoredAssets,
+    ignoreAsset,
+    unignoreAsset
+  };
+};

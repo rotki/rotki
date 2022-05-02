@@ -36,7 +36,6 @@
         <template #item.syncEnabled="{ item }">
           <v-switch
             :input-value="!isNonSyncExchange(item)"
-            inset
             @change="toggleSync(item)"
           />
         </template>
