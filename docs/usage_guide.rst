@@ -330,7 +330,11 @@ Asset settings
 Ignored assets
 ^^^^^^^^^^^^^^^
 
-Specify which assets you own and would like to completely ignore from all calculations and balance queries. Any actions that involve these assets are ignored.
+Specify which assets you own and would like to completely ignore from all calculations and balance queries. Any actions that involve these assets are ignored. You can also ignore asset by clicking asset icons anywhere on the app, that will redirect you to this overview asset page. In this page, you can ignore or un-ignore selected asset.
+
+.. image:: images/asset_overview.png
+   :alt: Asset overview page
+   :align: center
 
 .. _ledger_action_settings:
 

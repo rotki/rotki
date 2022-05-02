@@ -140,7 +140,8 @@
       "missing_directory": "Please select a directory"
     },
     "price": "Price",
-    "value": "Value"
+    "value": "Value",
+    "ignore": "Ignore Asset"
   },
   "back_button": {
     "tooltip": "Navigate back to the previous page."
