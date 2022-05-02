@@ -510,13 +510,14 @@ class TradeSchema(Schema):
     notes = fields.String(load_default=None)
 
     @validates_schema
-    def validate_fee_and_fee_currency(  # pylint: disable=no-self-use
+    def validate_trade(  # pylint: disable=no-self-use
         self,
         data: Dict[str, Any],
         **_kwargs: Any,
     ) -> None:
         """This validation checks that fee_currency is provided whenever fee is given and vice versa.
          It also checks that fee is not a zero value when both fee and fee_currency are provided.
+        Also checks that the trade rate is not zero. Negative rate is checked by price field.
         """
         fee = data.get('fee')
         fee_currency = data.get('fee_currency')
@@ -526,6 +527,9 @@ class TradeSchema(Schema):
 
         if fee is not None and fee == ZERO:
             raise ValidationError('fee cannot be zero', field_name='fee')
+
+        if data['rate'] == ZERO:
+            raise ValidationError('A zero rate is not allowed', field_name='rate')
 
 
 class LedgerActionSchema(Schema):

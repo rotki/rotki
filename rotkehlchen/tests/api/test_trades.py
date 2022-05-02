@@ -394,17 +394,41 @@ def test_add_trades(rotkehlchen_api_server):
         'link': 'optional trader identifier',
         'notes': 'optional notes',
     }
-
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
-            "tradesresource",
+            'tradesresource',
         ), json=zero_rate_trade,
     )
-
     assert_error_response(
         response=response,
         contained_in_msg='A zero rate is not allowed',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Test trade with negative rate. Should fail
+    negative_rate_trade = {
+        'timestamp': 1575640208,
+        'location': 'external',
+        'base_asset': 'ETH',
+        'quote_asset': A_WETH.identifier,
+        'trade_type': 'buy',
+        'amount': '0.5541',
+        'rate': '-1',
+        'fee': '0.01',
+        'fee_currency': 'USD',
+        'link': 'optional trader identifier',
+        'notes': 'optional notes',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tradesresource',
+        ), json=negative_rate_trade,
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='A negative price is not allowed',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
