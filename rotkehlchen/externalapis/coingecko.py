@@ -12,6 +12,7 @@ from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
@@ -555,16 +556,24 @@ class Coingecko(HistoricalPriceOracleInterface):
             location='historical price',
         )
         if not vs_currency:
-            return Price(ZERO)
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+            )
 
         try:
             from_coingecko_id = from_asset.to_coingecko()
-        except UnsupportedAsset:
+        except UnsupportedAsset as e:
             log.warning(
                 f'Tried to query coingecko historical price from {from_asset.identifier} '
                 f'to {to_asset.identifier}. But from_asset is not supported in coingecko',
             )
-            return Price(ZERO)
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+            ) from e
 
         # check DB cache
         price_cache_entry = GlobalDBHandler().get_historical_price(
@@ -597,7 +606,11 @@ class Coingecko(HistoricalPriceOracleInterface):
                 f'to {to_asset.identifier}. But got key error for {str(e)} when '
                 f'processing the result.',
             )
-            return Price(ZERO)
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+            ) from e
 
         # save result in the DB and return
         date_timestamp = create_timestamp(date, formatstr='%d-%m-%Y')

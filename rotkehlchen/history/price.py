@@ -242,15 +242,14 @@ class PriceHistorian():
             except (PriceQueryUnsupportedAsset, NoPriceForGivenTimestamp, RemoteError):
                 continue
 
-            if price != Price(ZERO):
-                log.debug(
-                    f'Historical price oracle {oracle} got price',
-                    price=price,
-                    from_asset=from_asset,
-                    to_asset=to_asset,
-                    timestamp=timestamp,
-                )
-                return price
+            log.debug(
+                f'Historical price oracle {oracle} got price',
+                price=price,
+                from_asset=from_asset,
+                to_asset=to_asset,
+                timestamp=timestamp,
+            )
+            return price
 
         raise NoPriceForGivenTimestamp(
             from_asset=from_asset,

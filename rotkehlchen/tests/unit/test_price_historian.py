@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.constants.assets import A_BTC, A_USD
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -118,7 +117,7 @@ def test_token_to_fiat_no_price_found_exception(fake_price_historian):
 
     for oracle_instance in price_historian._oracle_instances:
         if not isinstance(oracle_instance, ManualPriceOracle):
-            oracle_instance.query_historical_price.return_value = Price(ZERO)
+            oracle_instance.query_historical_price.side_effect = NoPriceForGivenTimestamp(from_asset=A_BTC, to_asset=A_USD, time=0)  # noqa: E501  # make sure they all fail
 
     with pytest.raises(NoPriceForGivenTimestamp):
         price_historian.query_historical_price(

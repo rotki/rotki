@@ -128,6 +128,9 @@ class AccountingPot(CustomizableDateMixin):
 
         If a custom price for the asset should be used it can be passed here via
         given_price. Price is always in profit currency during accounting."""
+        if amount == ZERO:  # do nothing for zero acquisitions
+            return
+
         if given_price is not None:
             price = given_price
         else:
@@ -201,6 +204,9 @@ class AccountingPot(CustomizableDateMixin):
 
         Returns (free, taxable) amounts.
         """
+        if amount == ZERO:  # do nothing for zero spends
+            return ZERO, ZERO
+
         if asset.is_fiat() and event_type != AccountingEventType.FEE:
             taxable = False
 

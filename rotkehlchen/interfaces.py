@@ -49,4 +49,11 @@ class HistoricalPriceOracleInterface(CurrentPriceOracleInterface):
             to_asset: Asset,
             timestamp: Timestamp,
     ) -> Price:
+        """An oracle implements this to return a historical price from_asset to to_asset at time.
+
+        If no price can be found may raise:
+        - PriceQueryUnsupportedAsset
+        - NoPriceForGivenTimestamp
+        - RemoteError
+        """
         ...
