@@ -11,7 +11,7 @@
       right
       dark
       color="primary"
-      to="/settings/api-keys/exchanges"
+      to="/settings/api-keys/exchanges?add=true"
     >
       <v-icon> mdi-plus </v-icon>
     </v-btn>

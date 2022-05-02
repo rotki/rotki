@@ -431,10 +431,12 @@ export default class NetWorthChart extends Vue {
       // @ts-ignore
       const index = data[0]._index;
 
-      this.selectedTimestamp = this.times[index];
-      this.selectedBalance = this.data[index];
+      if (this.times[index] && this.data[index]) {
+        this.selectedTimestamp = this.times[index];
+        this.selectedBalance = this.data[index];
 
-      this.showExportSnapshotDialog = true;
+        this.showExportSnapshotDialog = true;
+      }
     }
   }
 

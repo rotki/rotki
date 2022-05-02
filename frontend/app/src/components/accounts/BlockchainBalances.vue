@@ -175,7 +175,7 @@ import AssetBalances from '@/components/AssetBalances.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import { BlockchainData, setupBlockchainData } from '@/composables/balances';
-import { useProxy } from '@/composables/common';
+import { useRoute, useRouter } from '@/composables/common';
 import i18n from '@/i18n';
 import { BlockchainAccountWithBalance } from '@/store/balances/types';
 import { useTasks } from '@/store/tasks';
@@ -245,9 +245,16 @@ const BlockchainBalances = defineComponent({
       }
     };
 
-    const proxy = useProxy();
+    const router = useRouter();
+    const route = useRoute();
+
     onMounted(() => {
-      set(openDialog, !!proxy.$route.query.add);
+      const query = get(route).query;
+
+      if (query.add) {
+        createAccount();
+        router.replace({ query: {} });
+      }
     });
 
     const intersections = ref<Intersections>({

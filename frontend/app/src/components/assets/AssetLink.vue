@@ -22,7 +22,7 @@ export default defineComponent({
     const router = useRouter();
     const navigateToDetails = () => {
       router.push({
-        path: Routes.ASSETS.replace(':identifier', get(asset))
+        path: Routes.ASSETS.route.replace(':identifier', get(asset))
       });
     };
 

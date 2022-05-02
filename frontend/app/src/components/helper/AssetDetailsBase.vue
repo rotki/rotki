@@ -63,7 +63,7 @@ const AssetDetailsBase = defineComponent({
       }
       const id = get(identifier) ?? get(symbol);
       router.push({
-        path: Routes.ASSETS.replace(':identifier', id)
+        path: Routes.ASSETS.route.replace(':identifier', id)
       });
     };
 

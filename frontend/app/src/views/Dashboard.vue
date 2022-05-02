@@ -22,7 +22,7 @@
                   text
                   block
                   color="primary"
-                  to="/settings/api-keys/exchanges/?add=true"
+                  to="/settings/api-keys/exchanges?add=true"
                   class="py-8"
                 >
                   <div class="d-flex flex-column align-center">

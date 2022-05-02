@@ -326,7 +326,7 @@ export default defineComponent({
 
     const regenerateReport = () => {
       router.push({
-        path: Routes.PROFIT_LOSS_REPORTS,
+        path: Routes.PROFIT_LOSS_REPORTS.route,
         query: {
           regenerate: 'true',
           start: get(report).start.toString(),

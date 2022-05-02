@@ -15,26 +15,13 @@ import TabNavigation, {
   TabContent
 } from '@/components/helper/TabNavigation.vue';
 import { setupThemeCheck } from '@/composables/common';
-import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 
 const tabs: TabContent[] = [
-  {
-    name: i18n.t('history.tabs.trades').toString(),
-    routeTo: Routes.HISTORY_TRADES
-  },
-  {
-    name: i18n.t('history.tabs.deposits_withdrawals').toString(),
-    routeTo: Routes.HISTORY_DEPOSITS_WITHDRAWALS
-  },
-  {
-    name: i18n.t('history.tabs.transactions').toString(),
-    routeTo: Routes.HISTORY_TRANSACTIONS
-  },
-  {
-    name: i18n.t('history.tabs.ledger_actions').toString(),
-    routeTo: Routes.HISTORY_LEDGER_ACTIONS
-  }
+  Routes.HISTORY_TRADES,
+  Routes.HISTORY_DEPOSITS_WITHDRAWALS,
+  Routes.HISTORY_TRANSACTIONS,
+  Routes.HISTORY_LEDGER_ACTIONS
 ];
 
 export default defineComponent({

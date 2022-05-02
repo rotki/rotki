@@ -254,7 +254,7 @@ export default defineComponent({
       refresh,
       total,
       loading: shouldShowLoadingScreen(Section.NON_FUNGIBLE_BALANCES),
-      nonFungibleRoute: Routes.NON_FUNGIBLE,
+      nonFungibleRoute: Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE.route,
       percentageOfTotalNetValue,
       percentageOfCurrentGroup
     };

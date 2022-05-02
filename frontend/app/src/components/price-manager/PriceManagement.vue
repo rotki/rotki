@@ -58,11 +58,18 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, Ref, ref } from '@vue/composition-api';
+import {
+  defineComponent,
+  onMounted,
+  reactive,
+  Ref,
+  ref
+} from '@vue/composition-api';
 import { get, set } from '@vueuse/core';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PriceForm from '@/components/price-manager/PriceForm.vue';
 import PriceTable from '@/components/price-manager/PriceTable.vue';
+import { useRoute, useRouter } from '@/composables/common';
 import i18n from '@/i18n';
 import {
   HistoricalPrice,
@@ -156,6 +163,18 @@ export default defineComponent({
       set(showForm, false);
       set(priceForm, emptyPrice());
     };
+
+    const router = useRouter();
+    const route = useRoute();
+
+    onMounted(() => {
+      const query = get(route).query;
+
+      if (query.add) {
+        openForm();
+        router.replace({ query: {} });
+      }
+    });
 
     return {
       ...managePrice(showForm, refresh),

@@ -87,7 +87,10 @@ export default defineComponent({
       const reportId = await generateReport(period);
       if (reportId > 0) {
         router.push({
-          path: Routes.PROFIT_LOSS_REPORT.replace(':id', reportId.toString()),
+          path: Routes.PROFIT_LOSS_REPORT.route.replace(
+            ':id',
+            reportId.toString()
+          ),
           query: {
             openReportActionable: 'true'
           }

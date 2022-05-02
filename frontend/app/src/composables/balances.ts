@@ -10,6 +10,7 @@ import { useAssetInfoRetrieval } from '@/store/assets';
 import {
   AddAccountsPayload,
   AssetPrices,
+  BalanceByLocation,
   BlockchainAccountPayload,
   BlockchainAccountWithBalance,
   ExchangeRateGetter,
@@ -30,6 +31,14 @@ export const setupExchangeRateGetter = () => {
 export const setupGeneralBalances = () => {
   const store = useStore();
 
+  const aggregatedBalances = computed<AssetBalanceWithPrice[]>(() => {
+    return store.getters['balances/aggregatedBalances'];
+  });
+
+  const balancesByLocation = computed<BalanceByLocation>(() => {
+    return store.getters['balances/byLocation'];
+  });
+
   const fetchHistoricPrice: (
     payload: HistoricPricePayload
   ) => Promise<BigNumber> = async payload => {
@@ -43,6 +52,8 @@ export const setupGeneralBalances = () => {
   };
 
   return {
+    aggregatedBalances,
+    balancesByLocation,
     fetchHistoricPrice,
     refreshPrices
   };

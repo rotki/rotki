@@ -200,7 +200,7 @@ export default defineComponent({
     );
 
     const getReportUrl = (identifier: number) => {
-      const url = Routes.PROFIT_LOSS_REPORT;
+      const url = Routes.PROFIT_LOSS_REPORT.route;
       return url.replace(':id', identifier.toString());
     };
 

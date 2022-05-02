@@ -87,7 +87,7 @@ import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import { useRouter } from '@/composables/common';
+import { useRoute, useRouter } from '@/composables/common';
 import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 import { ManagedAsset } from '@/services/assets/types';
@@ -226,15 +226,22 @@ export default defineComponent({
     };
 
     const router = useRouter();
+    const route = useRoute();
 
     const closeDialog = async () => {
       set(showForm, false);
-      router.push(Routes.ASSET_MANAGER);
+      router.push(Routes.ASSET_MANAGER.route);
     };
 
     onMounted(async () => {
       await refresh();
       editAsset(get(identifier));
+
+      const query = get(route).query;
+      if (query.add) {
+        add();
+        router.replace({ query: {} });
+      }
     });
 
     watch(identifier, identifier => {

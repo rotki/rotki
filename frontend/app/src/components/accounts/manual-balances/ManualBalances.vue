@@ -164,6 +164,7 @@ const ManualBalances = defineComponent({
       const { add } = dialog;
       if (currentRoute.query.add) {
         add();
+        router.replace({ query: {} });
       }
     });
 

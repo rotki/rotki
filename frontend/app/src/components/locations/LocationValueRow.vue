@@ -22,8 +22,9 @@
 <script lang="ts">
 import { BigNumber } from '@rotki/common';
 import { computed, defineComponent, toRefs } from '@vue/composition-api';
+import { get } from '@vueuse/core';
+import { setupGeneralBalances } from '@/composables/balances';
 import { setupGeneralSettings } from '@/composables/session';
-import { useStore } from '@/store/utils';
 import { Zero } from '@/utils/bignumbers';
 
 export default defineComponent({
@@ -35,10 +36,10 @@ export default defineComponent({
     const { identifier } = toRefs(props);
 
     const { currencySymbol } = setupGeneralSettings();
+    const { balancesByLocation } = setupGeneralBalances();
 
-    const store = useStore();
     const totalValue = computed<BigNumber>(() => {
-      const locations = store.getters['balances/byLocation'];
+      const locations = get(balancesByLocation);
       return locations?.[identifier.value] ?? Zero;
     });
 

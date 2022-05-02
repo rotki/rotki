@@ -74,7 +74,6 @@
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api';
 import NavigationMenuItem from '@/components/NavigationMenuItem.vue';
-import i18n from '@/i18n';
 import { Routes } from '@/router/routes';
 
 type NavItemDetails = {
@@ -104,165 +103,118 @@ export default defineComponent({
     const navItems: MenuItem[] = [
       {
         type: 'item',
-        text: i18n.t('navigation_menu.dashboard').toString(),
-        route: '/dashboard',
         class: 'dashboard',
-        icon: 'mdi-monitor-dashboard'
+        ...Routes.DASHBOARD
       },
       {
         type: 'item',
-        text: i18n.t('navigation_menu.accounts_balances').toString(),
-        route: '/accounts-balances',
         class: 'accounts-balances',
-        icon: 'mdi-briefcase-variant'
+        ...Routes.ACCOUNTS_BALANCES
       },
       {
         type: 'item',
-        text: i18n.t('navigation_menu.nfts').toString(),
-        route: Routes.NFTS,
         class: 'nfts',
-        icon: 'mdi-image-area'
+        ...Routes.NFTS
       },
       {
         type: 'group',
-        text: i18n.t('navigation_menu.history').toString(),
-        route: '/history',
         class: 'history',
-        icon: 'mdi-history',
+        ...Routes.HISTORY,
         items: [
           {
             type: 'item',
-            text: i18n.t('navigation_menu.history_sub.trades').toString(),
-            route: '/history/trades',
-            icon: 'mdi-shuffle-variant',
-            class: 'history-trades'
+            class: 'history-trades',
+            ...Routes.HISTORY_TRADES
           },
           {
             type: 'item',
-            text: i18n
-              .t('navigation_menu.history_sub.deposits_withdrawals')
-              .toString(),
-            route: '/history/deposits-withdrawals',
-            icon: 'mdi-bank-transfer',
-            class: 'deposits-withdrawals'
+            class: 'deposits-withdrawals',
+            ...Routes.HISTORY_DEPOSITS_WITHDRAWALS
           },
           {
             type: 'item',
-            text: i18n
-              .t('navigation_menu.history_sub.ethereum_transactions')
-              .toString(),
-            route: '/history/transactions',
-            icon: 'mdi-swap-horizontal-bold',
-            class: 'eth-transactions'
+            class: 'eth-transactions',
+            ...Routes.HISTORY_TRANSACTIONS
           },
           {
             type: 'item',
-            text: i18n
-              .t('navigation_menu.history_sub.ledger_actions')
-              .toString(),
-            route: Routes.HISTORY_LEDGER_ACTIONS,
-            icon: 'mdi-book-open-variant',
-            class: 'ledger'
+            class: 'ledger',
+            ...Routes.HISTORY_LEDGER_ACTIONS
           }
         ]
       },
       {
         type: 'group',
-        text: i18n.t('navigation_menu.defi').toString(),
-        route: Routes.DEFI_OVERVIEW,
-        icon: 'mdi-finance',
         class: 'defi',
+        ...Routes.DEFI,
         items: [
           {
             type: 'item',
-            text: i18n.t('navigation_menu.defi_sub.overview').toString(),
-            route: Routes.DEFI_OVERVIEW,
-            icon: 'mdi-chart-box',
-            class: 'defi-overview'
+            class: 'defi-overview',
+            ...Routes.DEFI_OVERVIEW
           },
           {
             type: 'item',
-            text: i18n.t('navigation_menu.defi_sub.deposits').toString(),
-            route: Routes.DEFI_DEPOSITS,
-            icon: 'mdi-bank-transfer-in',
-            class: 'defi-deposits'
+            class: 'defi-deposits',
+            ...Routes.DEFI_DEPOSITS
           },
           {
             type: 'item',
-            text: i18n.t('navigation_menu.defi_sub.liabilities').toString(),
-            route: Routes.DEFI_LIABILITIES,
-            icon: 'mdi-bank-transfer-out',
-            class: 'defi-liabilities'
+            class: 'defi-liabilities',
+            ...Routes.DEFI_LIABILITIES
           },
           {
             type: 'item',
-            text: i18n.t('navigation_menu.defi_sub.dex_trades').toString(),
-            route: Routes.DEFI_DEX_TRADES,
-            icon: 'mdi-shuffle-variant',
-            class: 'defi-dex-trades'
+            class: 'defi-dex-trades',
+            ...Routes.DEFI_DEX_TRADES
           },
           {
             type: 'item',
-            text: i18n.t('navigation_menu.defi_sub.airdrops').toString(),
-            route: Routes.DEFI_AIRDROPS,
-            icon: 'mdi-parachute',
-            class: 'defi-airdrops'
+            class: 'defi-airdrops',
+            ...Routes.DEFI_AIRDROPS
           }
         ]
       },
       {
         type: 'item',
-        text: i18n.t('navigation_menu.statistics').toString(),
-        route: '/statistics',
         class: 'statistics',
-        icon: 'mdi-chart-bar'
+        ...Routes.STATISTICS
       },
       {
         type: 'item',
-        text: i18n.t('navigation_menu.staking').toString(),
-        route: Routes.STAKING.split(':')[0],
         class: 'staking',
-        icon: 'mdi-inbox-arrow-down'
+        ...Routes.STAKING,
+        route: Routes.STAKING.route.split(':')[0]
       },
       {
         type: 'item',
-        text: i18n.t('navigation_menu.profit_loss_report').toString(),
-        route: Routes.PROFIT_LOSS_REPORTS,
         class: 'profit-loss-report',
-        icon: 'mdi-calculator'
+        ...Routes.PROFIT_LOSS_REPORTS
       },
       {
         type: 'divider'
       },
       {
         type: 'item',
-        text: i18n.t('navigation_menu.manage_assets').toString(),
-        route: Routes.ASSET_MANAGER,
         class: 'asset-manager',
-        icon: 'mdi-database-edit'
+        ...Routes.ASSET_MANAGER
       },
       {
         type: 'item',
-        text: i18n.t('navigation_menu.manage_prices').toString(),
-        route: Routes.PRICE_MANAGER,
-        class: 'asset-manager',
-        icon: 'mdi-chart-line'
+        class: 'price-manager',
+        ...Routes.PRICE_MANAGER
       },
       {
         type: 'divider'
       },
       {
         type: 'item',
-        text: i18n.t('navigation_menu.api_keys').toString(),
-        route: '/settings/api-keys/rotki-premium',
         class: 'settings__api-keys',
-        icon: 'mdi-key-chain-variant'
+        ...Routes.API_KEYS
       },
       {
         type: 'item',
-        text: i18n.t('navigation_menu.import_data').toString(),
-        route: '/import',
-        icon: 'mdi-database-import'
+        ...Routes.IMPORT
       }
     ];
 

@@ -192,6 +192,7 @@
 import {
   computed,
   defineComponent,
+  onMounted,
   PropType,
   Ref,
   ref,
@@ -221,7 +222,7 @@ import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TradeDetails from '@/components/history/TradeDetails.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { isSectionLoading } from '@/composables/common';
+import { isSectionLoading, useRoute, useRouter } from '@/composables/common';
 import {
   getCollectionData,
   setupEntryLimit,
@@ -630,7 +631,19 @@ export default defineComponent({
     const getId = (item: TradeEntry) => item.tradeId;
     const selected: Ref<TradeEntry[]> = ref([]);
 
-    const pageRoute = Routes.HISTORY_TRADES;
+    const pageRoute = Routes.HISTORY_TRADES.route;
+
+    const router = useRouter();
+    const route = useRoute();
+
+    onMounted(() => {
+      const query = get(route).query;
+
+      if (query.add) {
+        newExternalTrade();
+        router.replace({ query: {} });
+      }
+    });
 
     return {
       pageRoute,

@@ -207,7 +207,7 @@ export default defineComponent({
       if (location) {
         set(lastLocation, location);
       }
-      router.push(Routes.STAKING.replace(':location*', location));
+      router.push(Routes.STAKING.route.replace(':location*', location));
     };
 
     onBeforeMount(() => {
