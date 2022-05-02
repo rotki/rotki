@@ -6,7 +6,7 @@
       :items="formattedItems"
     >
       <template #item="{ item }">
-        <tr :key="item.fromAsset + item.toAsset + item.time">
+        <tr :key="createKey(item)">
           <td>
             <asset-details :asset="item.fromAsset" />
           </td>
@@ -31,6 +31,8 @@
                     ]
                   : []
               "
+              :error-messages="errorMessages[createKey(item)]"
+              @focus="delete errorMessages[createKey(item)]"
               @blur="updatePrice(item)"
             />
           </td>
@@ -46,6 +48,7 @@ import {
   defineComponent,
   onMounted,
   PropType,
+  Ref,
   ref,
   toRefs
 } from '@vue/composition-api';
@@ -57,6 +60,7 @@ import {
   HistoricalPriceDeletePayload,
   HistoricalPriceFormPayload
 } from '@/services/assets/types';
+import { deserializeApiErrorMessage } from '@/services/converters';
 import { api } from '@/services/rotkehlchen-api';
 import { MissingPrice } from '@/types/reports';
 
@@ -73,6 +77,11 @@ export default defineComponent({
   setup(props) {
     const { items } = toRefs(props);
     const prices = ref<HistoricalPrice[]>([]);
+    const errorMessages: Ref<{ [key: string]: string[] }> = ref({});
+
+    const createKey = (item: MissingPrice) => {
+      return item.fromAsset + item.toAsset + item.time;
+    };
 
     const fetchHistoricalPrices = async () => {
       set(prices, await api.assets.historicalPrices());
@@ -139,21 +148,31 @@ export default defineComponent({
         timestamp: item.time
       };
 
-      if (item.price) {
-        const formPayload: HistoricalPriceFormPayload = {
-          ...payload,
-          price: item.price
-        };
+      try {
+        if (item.price) {
+          const formPayload: HistoricalPriceFormPayload = {
+            ...payload,
+            price: item.price
+          };
 
-        if (item.saved) {
-          await api.assets.editHistoricalPrice(formPayload);
+          if (item.saved) {
+            await api.assets.editHistoricalPrice(formPayload);
+          } else {
+            await api.assets.addHistoricalPrice(formPayload);
+          }
         } else {
-          await api.assets.addHistoricalPrice(formPayload);
+          if (item.saved) {
+            await api.assets.deleteHistoricalPrice(payload);
+          }
         }
-      } else {
-        if (item.saved) {
-          await api.assets.deleteHistoricalPrice(payload);
-        }
+      } catch (e: any) {
+        const message = deserializeApiErrorMessage(e.message) as any;
+        const errorMessage = message ? message.price[0] : e.message;
+
+        set(errorMessages, {
+          ...get(errorMessages),
+          [createKey(item)]: errorMessage
+        });
       }
 
       await fetchHistoricalPrices();
@@ -162,7 +181,9 @@ export default defineComponent({
     return {
       updatePrice,
       formattedItems,
-      headers
+      headers,
+      errorMessages,
+      createKey
     };
   }
 });
