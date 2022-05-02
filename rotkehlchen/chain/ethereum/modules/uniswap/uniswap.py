@@ -11,11 +11,13 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AddressEvents,
     AddressEventsBalances,
     AddressToLPBalances,
+    AddressToV3LPBalances,
     AddressTrades,
     AssetToPrice,
     DDAddressEvents,
     EventType,
     ProtocolBalance,
+    V3ProtocolBalance,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import SUBGRAPH_REMOTE_ERROR_MSG
 from rotkehlchen.chain.ethereum.trades import AMMSwap, AMMTrade
@@ -34,7 +36,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
 from .graph import V3_SWAPS_QUERY
-from .utils import get_latest_lp_addresses, uniswap_lp_token_balances
+from .utils import get_latest_lp_addresses, uniswap_lp_token_balances, uniswap_v3_lp_token_balances
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.balance import AssetBalance
@@ -106,6 +108,31 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                 address_mapping[address] = pool_balances
 
         protocol_balance = ProtocolBalance(
+            address_balances=address_mapping,
+            known_assets=known_assets,
+            unknown_assets=unknown_assets,
+        )
+        return protocol_balance
+
+    def get_v3_balances_chain(self, addresses: List[ChecksumEthAddress]) -> V3ProtocolBalance:
+        """Get the addresses' Uniswap V3 pools data via chain queries."""
+        known_assets: Set[EthereumToken] = set()
+        unknown_assets: Set[EthereumToken] = set()
+
+        address_mapping = {}
+        for address in addresses:
+            pool_balances = uniswap_v3_lp_token_balances(
+                userdb=self.database,
+                premium=self.premium,
+                address=address,
+                ethereum=self.ethereum,
+                known_assets=known_assets,
+                unknown_assets=unknown_assets,
+            )
+            if len(pool_balances) != 0:
+                address_mapping[address] = pool_balances
+
+        protocol_balance = V3ProtocolBalance(
             address_balances=address_mapping,
             known_assets=known_assets,
             unknown_assets=unknown_assets,
@@ -503,6 +530,34 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             unknown_asset_price=unknown_asset_price,
         )
 
+        return protocol_balance.address_balances
+
+    def get_v3_balances(
+        self,
+        addresses: List[ChecksumEthAddress],
+    ) -> AddressToV3LPBalances:
+        """Get the addresses' balances in the Uniswap V3 protocol
+
+        Premium users can request balances either via the Uniswap subgraph or
+        on-chain.
+        """
+        protocol_balance = self.get_v3_balances_chain(addresses)
+        known_assets = protocol_balance.known_assets
+        unknown_assets = protocol_balance.unknown_assets
+        known_asset_price = self._get_known_asset_price(
+            known_assets=known_assets,
+            unknown_assets=unknown_assets,
+        )
+
+        unknown_asset_price: AssetToPrice = {}
+        if self.premium:
+            unknown_asset_price = self._get_unknown_asset_price_graph(unknown_assets=unknown_assets)  # noqa:E501
+
+        self._update_assets_prices_in_address_balances(
+            address_balances=protocol_balance.address_balances,
+            known_asset_price=known_asset_price,
+            unknown_asset_price=unknown_asset_price,
+        )
         return protocol_balance.address_balances
 
     def get_trades_history(

@@ -2,6 +2,7 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -38,6 +39,8 @@ from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TradeType
 # DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
 # From that pool find a holder and test
 LP_HOLDER_ADDRESS = string_to_ethereum_address('0xc4d15CbE36BE26596fA676Ff1B21421541d7e8e6')
+LP_V3_HOLDER_ADDRESS = string_to_ethereum_address('0xCC6A4c77D94957feADBD27DBdB4CDD3Ed00fc1E6')
+
 # Uniswap Factory contract
 TEST_ADDRESS_FACTORY_CONTRACT = (
     string_to_ethereum_address('0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f')
@@ -1192,3 +1195,97 @@ def test_get_uniswap_trades_history_v3(rotkehlchen_api_server):
     assert len(trades) == 1
     assert '0x000e62ea8bf5f69e1e32920600839f56313c490f' in trades.keys()
     assert trades['0x000e62ea8bf5f69e1e32920600839f56313c490f'] == expected_trades
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[LP_V3_HOLDER_ADDRESS]])
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+@pytest.mark.parametrize(
+    'start_with_valid_premium,ethrpc_endpoint,ethereum_manager_connect_at_start',
+    SKIPPED_UNISWAP_TEST_OPTIONS,
+)
+def test_get_v3_balances(rotkehlchen_api_server):
+    """Check querying the uniswap balances v3 endpoint works. Mock real data"""
+    mock_response = {
+        "result": {
+            "0xCC6A4c77D94957feADBD27DBdB4CDD3Ed00fc1E6": [
+                {
+                    "address": "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8",
+                    "nft_id": 226583,
+                    "price_range": [
+                        "2659.805689681604",
+                        "3203.499390234706",
+                    ],
+                    "assets": [
+                        {
+                            "asset": "_ceth_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                            "total_amount": "3410064.7008276195",
+                            "user_balance": {
+                                "amount": "1019.8635686398459",
+                                "usd_value": "1529.79535295976885",
+                            },
+                            "usd_price": "1.5",
+                        },
+                        {
+                            "asset": "_ceth_0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                            "total_amount": "1251.608339987909",
+                            "user_balance": {
+                                "amount": "2.4300277678319997",
+                                "usd_value": "3.64504165174799955",
+                            },
+                            "usd_price": "1.5",
+                        },
+                    ],
+                    "total_supply": None,
+                    "user_balance": {
+                        "amount": "0",
+                        "usd_value": "1533.44039461151684955",
+                    },
+                },
+            ],
+        },
+        "message": "",
+    }
+    with patch(
+        'rotkehlchen.api.rest.RestAPI._eth_module_query',
+        MagicMock(return_value=mock_response),
+    ):
+        response = requests.get(
+            api_url_for(rotkehlchen_api_server, 'uniswapv3balancesresource'),
+        )
+        result = assert_proper_response_with_result(response)
+
+        if LP_V3_HOLDER_ADDRESS not in result or len(result[LP_V3_HOLDER_ADDRESS]) == 0:
+            test_warnings.warn(
+                UserWarning(f'Test account {LP_V3_HOLDER_ADDRESS} has no uniswap balances'),
+            )
+            return
+
+        address_balances = result[LP_V3_HOLDER_ADDRESS]
+        for lp in address_balances:
+            # LiquidityPool attributes
+            assert lp['address'].startswith('0x')
+            assert len(lp['price_range']) == 2
+            assert isinstance(lp['price_range'], list)
+            assert lp['nft_id']
+            assert isinstance(lp['nft_id'], int)
+            assert len(lp['assets']) == 2
+            assert lp['user_balance']['amount']
+            assert lp['user_balance']['usd_value']
+
+            # LiquidityPoolAsset attributes
+            for lp_asset in lp['assets']:
+                lp_asset_type = type(lp_asset['asset'])
+
+                assert lp_asset_type in (str, dict)
+
+                # Unknown asset, at least contains token address
+                if lp_asset_type is dict:
+                    assert lp_asset['asset']['ethereum_address'].startswith('0x')
+                # Known asset, contains identifier
+                else:
+                    assert not lp_asset['asset'].startswith('0x')
+                assert lp_asset['total_amount'] is not None
+                assert lp_asset['usd_price']
+                assert len(lp_asset['user_balance']) == 2
+                assert lp_asset['user_balance']['amount']
+                assert lp_asset['user_balance']['usd_value']

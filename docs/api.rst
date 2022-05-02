@@ -7103,6 +7103,87 @@ Getting Uniswap balances
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
 
+Getting Uniswap V3 balances
+==============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/uniswap/balances_v3
+
+   Doing a GET on the uniswap v3 balances resource will return the balances locked in Uniswap V3 Liquidity Pools (LPs or pools).
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/uniswap/balances_v3 HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "0xcf2B8EeC2A9cE682822b252a1e9B78EedebEFB02": [
+            {
+              "address": "0x318BE2AA088FFb991e3F6E61AFb276744e36F4Ae",
+              "nft_id": 223251,
+              "price_range": ["1000", "1500"],
+              "assets": [
+                {
+                  "asset": {
+                    "ethereum_address": "0x364A7381A5b378CeD7AB33d1CDf6ff1bf162Bfd6",
+                    "name": "DeFi-X Token",
+                    "symbol": "TGX"
+                  },
+                  "total_amount": "410064.7008276195",
+                  "usd_price": "0.3015901111469715543448531276626107",
+                  "user_balance": {
+                    "amount": "4.631122964837017895643",
+                    "usd_value": "1334263.191525095084350185834"
+                  }
+                },
+                {
+                  "asset": "_ceth_0xdAC17F958D2ee523a2206206994597C13D831ec7",
+                  "total_amount": "1251.608339987909",
+                  "usd_price": "1.001",
+                  "user_balance": {
+                    "amount": "1336837.868136041506994516873",
+                    "usd_value": "1338174.706004177548501511390"
+                  }
+                }
+              ],
+              "total_supply": null,
+              "user_balance": {
+                "amount": "0,
+                "usd_value": "2672437.897529272632851697224"
+              }
+            }
+          ],
+        },
+        "message": "",
+      }
+
+   :resjson object result: A mapping between accounts and their Uniswap V3 balances (represented by a list where each item is a LP).
+   :resjson string address: The LP contract address.
+   :resjson int nft_id: The LP position NFT index.
+   :resjson string price_range: The range of prices the LP position is valid for.
+   :resjson list[object] assets: A list with the LP underlying tokens data. Per item, when ``"asset"`` is an object, it means the token is unknown to rotki. ``"total_amount"`` is the total amount of this token the pool has. ``"total_amount"`` is only available to premium users. For free users ``null`` is returned. ``"usd_price"`` is the token USD price. ``"user_balance"`` contains the user token balance and its estimated USD value.
+   :resjson optional[string] total_supply: The total amount of liquidity tokens the LP has. Only available for premium users via the graph query. For free users ``null`` is returned.
+   :resjson object user_balance: The liquidity token user balance and its USD value.
+
+   :statuscode 200: Uniswap balances successfully queried.
+   :statuscode 409: User is not logged in. Or Uniswap module is not activated.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
+
 Getting Uniswap events
 =========================
 

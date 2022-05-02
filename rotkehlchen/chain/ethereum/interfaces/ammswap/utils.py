@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, NamedTuple, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Set, Tuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EthereumToken
@@ -9,7 +9,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEthAddress
 
-from .types import LiquidityPool, LiquidityPoolAsset
+from .types import LiquidityPool, LiquidityPoolAsset, NFTLiquidityPool
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -42,6 +42,16 @@ def _decode_token(entry: Tuple) -> TokenDetails:
         symbol=entry[0][2],
         decimals=decimals,
         amount=token_normalized_value_decimals(entry[1], decimals),
+    )
+
+
+def _decode_v3_token(entry: Dict[str, Any]) -> TokenDetails:
+    return TokenDetails(
+        address=entry['address'],
+        name=entry['name'],
+        symbol=entry['symbol'],
+        decimals=entry['decimals'],
+        amount=FVal(entry['amount']),
     )
 
 
@@ -80,5 +90,51 @@ def _decode_result(
         assets=assets,
         total_supply=None,
         user_balance=Balance(amount=pool_token.amount),
+    )
+    return pool
+
+
+def _decode_v3_result(
+        userdb: 'DBHandler',
+        data: Tuple,
+        known_assets: Set[EthereumToken],
+        unknown_assets: Set[EthereumToken],
+) -> NFTLiquidityPool:
+    nft_id = data[0]
+    pool_token = data[1]
+    token0 = _decode_v3_token(data[4])
+    token1 = _decode_v3_token(data[5])
+    total_amounts_of_tokens = {
+        token0.address: data[4]['total_amount'],
+        token1.address: data[5]['total_amount'],
+    }
+
+    assets = []
+    for token in (token0, token1):
+        asset = get_or_create_ethereum_token(
+            userdb=userdb,
+            symbol=token.symbol,
+            ethereum_address=token.address,
+            name=token.name,
+            decimals=token.decimals,
+        )
+        # Classify the asset either as price known or unknown
+        if asset.has_oracle():
+            known_assets.add(asset)
+        else:
+            unknown_assets.add(asset)
+        assets.append(LiquidityPoolAsset(
+            asset=asset,
+            total_amount=total_amounts_of_tokens[token.address],
+            user_balance=Balance(amount=token.amount),
+        ))
+
+    pool = NFTLiquidityPool(
+        address=pool_token,
+        price_range=(FVal(data[3][0]), FVal(data[3][1])),
+        nft_id=nft_id,
+        assets=assets,
+        total_supply=None,
+        user_balance=Balance(amount=FVal(0)),
     )
     return pool
