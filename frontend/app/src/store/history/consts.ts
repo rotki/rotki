@@ -362,6 +362,11 @@ export const transactionEventProtocolData: ActionDataEntry[] = [
     image: require('@/assets/images/defi/votium.png')
   },
   {
+    identifier: TransactionEventProtocol.LIQUITY,
+    label: 'Liquity',
+    image: require('@/assets/images/defi/liquity.svg')
+  },
+  {
     identifier: TransactionEventProtocol.PICKLE,
     label: 'Pickle Finance',
     image: require('@/assets/images/modules/pickle.svg')
