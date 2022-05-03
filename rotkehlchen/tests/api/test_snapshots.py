@@ -14,6 +14,7 @@ from rotkehlchen.db.snapshots import (
     BALANCES_FILENAME,
     BALANCES_FOR_IMPORT_FILENAME,
     LOCATION_DATA_FILENAME,
+    LOCATION_DATA_IMPORT_FILENAME,
 )
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -21,7 +22,12 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.types import Location, Timestamp
-from rotkehlchen.utils.misc import timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import ts_now
+
+BALANCES_IMPORT_HEADERS = ['timestamp', 'category', 'asset_identifier', 'amount', 'usd_value']
+BALANCES_IMPORT_INVALID_HEADERS = ['timestamp', 'category', 'asset', 'amount', 'value']
+LOCATION_DATA_IMPORT_HEADERS = ['timestamp', 'location', 'usd_value']
+LOCATION_DATA_IMPORT_INVALID_HEADERS = ['timestamp', 'location', 'value']
 
 
 def _populate_db_with_balances(connection, ts: Timestamp):
@@ -64,188 +70,152 @@ def _populate_db_with_location_data(connection, ts: Timestamp):
     connection.commit()
 
 
+def _write_balances_csv_row(writer: 'csv.DictWriter', timestamp: Timestamp) -> None:
+    writer.writerow(
+        {
+            'timestamp': timestamp,
+            'category': 'asset',
+            'asset_identifier': 'AVAX',
+            'amount': '10.555',
+            'usd_value': '100.555',
+        },
+    )
+    writer.writerow(
+        {
+            'timestamp': timestamp,
+            'category': 'asset',
+            'asset_identifier': 'BTC',
+            'amount': '1',
+            'usd_value': '40000.000',
+        },
+    )
+
+
+def _write_location_data_csv_row(writer: 'csv.DictWriter', timestamp: Timestamp) -> None:
+    writer.writerow(
+        {
+            'timestamp': timestamp,
+            'location': 'blockchain',
+            'usd_value': '100.555',
+        },
+    )
+    writer.writerow(
+        {
+            'timestamp': timestamp,
+            'location': 'total',
+            'usd_value': '41000.555',
+        },
+    )
+
+
+def _write_balances_csv_row_with_invalid_headers(
+    writer: 'csv.DictWriter',
+    timestamp: Timestamp,
+) -> None:
+    writer.writerow(
+        {
+            'timestamp': timestamp,
+            'category': 'asset',
+            'asset': 'AVAX',
+            'amount': '10.555',
+            'value': '100.555',
+        },
+    )
+    writer.writerow(
+        {
+            'timestamp': timestamp,
+            'category': 'asset',
+            'asset': 'BTC',
+            'amount': '1',
+            'value': '40000.000',
+        },
+    )
+
+
+def _write_location_data_csv_row_with_invalid_headers(
+    writer: 'csv.DictWriter',
+    timestamp: Timestamp,
+) -> None:
+    writer.writerow(
+        {
+            'timestamp': timestamp,
+            'location': 'blockchain',
+            'value': '100.555',
+        },
+    )
+    writer.writerow(
+        {
+            'timestamp': timestamp,
+            'location': 'total',
+            'value': '41000.555',
+        },
+    )
+
+
 def _create_snapshot_with_valid_data(directory: str, timestamp: Timestamp) -> None:
     path = Path(directory) / BALANCES_FOR_IMPORT_FILENAME
     with open(path, 'w') as f:
-        fieldnames = ['timestamp', 'category', 'asset_identifier', 'amount', 'eur_value']
+        fieldnames = BALANCES_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerow(
-            {
-                'timestamp': timestamp,
-                'category': 'asset',
-                'asset_identifier': 'AVAX',
-                'amount': '10.555',
-                'eur_value': '100.555',
-            },
-        )
-        writer.writerow(
-            {
-                'timestamp': timestamp,
-                'category': 'asset',
-                'asset_identifier': 'BTC',
-                'amount': '1',
-                'eur_value': '40000.000',
-            },
-        )
+        _write_balances_csv_row(writer, timestamp)
 
-    path = Path(directory) / LOCATION_DATA_FILENAME
+    path = Path(directory) / LOCATION_DATA_IMPORT_FILENAME
     with open(path, 'w') as f:
-        fieldnames = ['timestamp', 'location', 'eur_value']
+        fieldnames = LOCATION_DATA_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerow(
-            {
-                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
-                'location': 'blockchain',
-                'eur_value': '100.555',
-            },
-        )
-        writer.writerow(
-            {
-                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
-                'location': 'total',
-                'eur_value': '41000.555',
-            },
-        )
+        _write_location_data_csv_row(writer, timestamp)
 
 
 def _create_snapshot_with_valid_data_for_post(directory: str, timestamp: Timestamp) -> None:
     path = Path(directory) / BALANCES_FOR_IMPORT_FILENAME
     with open(path, 'w') as f:
-        fieldnames = ['timestamp', 'category', 'asset_identifier', 'amount', 'eur_value']
+        fieldnames = BALANCES_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerow(
-            {
-                'timestamp': timestamp,
-                'category': 'asset',
-                'asset_identifier': 'AVAX',
-                'amount': '10.555',
-                'eur_value': '100.555',
-            },
-        )
-        writer.writerow(
-            {
-                'timestamp': timestamp,
-                'category': 'asset',
-                'asset_identifier': 'BTC',
-                'amount': '1',
-                'eur_value': '40000.000',
-            },
-        )
+        _write_balances_csv_row(writer, timestamp)
 
-    path = Path(directory) / LOCATION_DATA_FILENAME
+    path = Path(directory) / LOCATION_DATA_IMPORT_FILENAME
     with open(path, 'w') as f:
-        fieldnames = ['timestamp', 'location', 'eur_value']
+        fieldnames = LOCATION_DATA_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerow(
-            {
-                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
-                'location': 'blockchain',
-                'eur_value': '100.555',
-            },
-        )
-        writer.writerow(
-            {
-                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
-                'location': 'total',
-                'eur_value': '41000.555',
-            },
-        )
+        _write_location_data_csv_row(writer, timestamp)
 
 
 def _create_snapshot_different_timestamps(directory: str, timestamp: Timestamp) -> None:
     path = Path(directory) / BALANCES_FOR_IMPORT_FILENAME
     with open(path, 'w') as f:
-        fieldnames = ['timestamp', 'category', 'asset_identifier', 'amount', 'eur_value']
+        fieldnames = BALANCES_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerow(
-            {
-                'timestamp': timestamp,
-                'category': 'asset',
-                'asset_identifier': 'AVAX',
-                'amount': '10.555',
-                'eur_value': '100.555',
-            },
-        )
-        writer.writerow(
-            {
-                'timestamp': timestamp + 500,
-                'category': 'asset',
-                'asset_identifier': 'BTC',
-                'amount': '1',
-                'eur_value': '40000.000',
-            },
-        )
+        _write_balances_csv_row(writer, timestamp)
+        _write_balances_csv_row(writer, Timestamp(timestamp + 500))
 
-    path = Path(directory) / LOCATION_DATA_FILENAME
+    path = Path(directory) / LOCATION_DATA_IMPORT_FILENAME
     with open(path, 'w') as f:
-        fieldnames = ['timestamp', 'location', 'eur_value']
+        fieldnames = LOCATION_DATA_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerow(
-            {
-                'timestamp': timestamp_to_date(Timestamp(timestamp + 1000), '%Y-%m-%d %H:%M:%S'),
-                'location': 'blockchain',
-                'eur_value': '100.555',
-            },
-        )
-        writer.writerow(
-            {
-                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
-                'location': 'total',
-                'eur_value': '41000.555',
-            },
-        )
+        _write_location_data_csv_row(writer, timestamp)
+        _write_location_data_csv_row(writer, Timestamp(timestamp + 1000))
 
 
 def _create_snapshot_with_invalid_headers(directory: str, timestamp: Timestamp) -> None:
     path = Path(directory) / BALANCES_FOR_IMPORT_FILENAME
     with open(path, 'w') as f:
-        fieldnames = ['timestamp', 'category', 'asset', 'amount', 'value']
+        fieldnames = BALANCES_IMPORT_INVALID_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerow(
-            {
-                'timestamp': timestamp,
-                'category': 'asset',
-                'asset': 'AVAX',
-                'amount': '10.555',
-                'value': '100.555',
-            },
-        )
-        writer.writerow(
-            {
-                'timestamp': timestamp,
-                'category': 'asset',
-                'asset': 'BTC',
-                'amount': '1',
-                'value': '40000.000',
-            },
-        )
+        _write_balances_csv_row_with_invalid_headers(writer, timestamp)
 
-    path = Path(directory) / LOCATION_DATA_FILENAME
+    path = Path(directory) / LOCATION_DATA_IMPORT_FILENAME
     with open(path, 'w') as f:
-        fieldnames = ['timestamp', 'location', 'value']
+        fieldnames = LOCATION_DATA_IMPORT_INVALID_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerow(
-            {
-                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
-                'location': 'blockchain',
-                'value': '100.555',
-            },
-        )
-        writer.writerow(
-            {
-                'timestamp': timestamp_to_date(timestamp, '%Y-%m-%d %H:%M:%S'),
-                'location': 'total',
-                'value': '41000.555',
-            },
-        )
+        _write_location_data_csv_row_with_invalid_headers(writer, timestamp)
 
 
 def assert_csv_export_response(response, csv_dir, main_currency: Asset, is_download=False):
@@ -282,7 +252,7 @@ def assert_csv_export_response(response, csv_dir, main_currency: Asset, is_downl
             assert row['amount'] is not None
             assert row['asset_identifier'] is not None
             assert row['timestamp'] is not None
-            assert row[f'{main_currency.symbol.lower()}_value'] is not None
+            assert row['usd_value'] is not None
             count += 1
         assert count == 2
 
@@ -294,6 +264,17 @@ def assert_csv_export_response(response, csv_dir, main_currency: Asset, is_downl
             assert row['timestamp'] is not None
             assert Location.deserialize(row['location']) is not None
             assert row[f'{main_currency.symbol.lower()}_value'] is not None
+            count += 1
+        assert count == 3
+
+    with open(os.path.join(csv_dir, LOCATION_DATA_IMPORT_FILENAME), newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        count = 0
+        for row in reader:
+            assert len(row) == 3
+            assert row['timestamp'] is not None
+            assert Location.deserialize(row['location']) is not None
+            assert row['usd_value'] is not None
             count += 1
         assert count == 3
 
@@ -386,7 +367,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
         ),
         json={
             'balances_snapshot_file': f'{csv_dir}/{BALANCES_FOR_IMPORT_FILENAME}',
-            'location_data_snapshot_file': f'{csv_dir}/{LOCATION_DATA_FILENAME}',
+            'location_data_snapshot_file': f'{csv_dir}/{LOCATION_DATA_IMPORT_FILENAME}',
         },
     )
     assert_simple_ok_response(response)
@@ -401,7 +382,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
         ),
         files={
             'balances_snapshot_file': open(f'{csv_dir2}/{BALANCES_FOR_IMPORT_FILENAME}'),
-            'location_data_snapshot_file': open(f'{csv_dir2}/{LOCATION_DATA_FILENAME}'),
+            'location_data_snapshot_file': open(f'{csv_dir2}/{LOCATION_DATA_IMPORT_FILENAME}'),
         },
     )
     assert_simple_ok_response(response)
@@ -426,7 +407,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
         ),
         json={
             'balances_snapshot_file': f'{csv_dir3}/{BALANCES_FOR_IMPORT_FILENAME}',
-            'location_data_snapshot_file': f'{csv_dir3}/{LOCATION_DATA_FILENAME}',
+            'location_data_snapshot_file': f'{csv_dir3}/{LOCATION_DATA_IMPORT_FILENAME}',
         },
     )
     assert_error_response(
@@ -445,7 +426,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
         ),
         json={
             'balances_snapshot_file': f'{csv_dir4}/{BALANCES_FOR_IMPORT_FILENAME}',
-            'location_data_snapshot_file': f'{csv_dir4}/{LOCATION_DATA_FILENAME}',
+            'location_data_snapshot_file': f'{csv_dir4}/{LOCATION_DATA_IMPORT_FILENAME}',
         },
     )
     assert_error_response(
@@ -464,7 +445,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
         ),
         json={
             'balances_snapshot_file': f'{csv_dir5}/{BALANCES_FOR_IMPORT_FILENAME}',
-            'location_data_snapshot_file': f'{csv_dir5}/{LOCATION_DATA_FILENAME}',
+            'location_data_snapshot_file': f'{csv_dir5}/{LOCATION_DATA_IMPORT_FILENAME}',
         },
     )
     assert_error_response(

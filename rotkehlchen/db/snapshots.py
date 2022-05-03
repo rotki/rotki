@@ -14,16 +14,18 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import create_timestamp
 
 BALANCES_FILENAME = 'balances_snapshot.csv'
 BALANCES_FOR_IMPORT_FILENAME = 'balances_snapshot_import.csv'
 LOCATION_DATA_FILENAME = 'location_data_snapshot.csv'
+LOCATION_DATA_IMPORT_FILENAME = 'location_data_snapshot_import.csv'
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -37,11 +39,8 @@ class DBSnapshot:
     def get_timed_balances(
         self,
         timestamp: Timestamp,
-        main_currency_price: FVal,
     ) -> List[DBAssetBalance]:
-        """Retrieves the timed_balances from the db for a given timestamp
-           Sets the usd_value to the value in the main currency
-        """
+        """Retrieves the timed_balances from the db for a given timestamp."""
         balances_data = []
         cursor = self.db.conn.cursor()
         timed_balances_result = cursor.execute(
@@ -56,7 +55,7 @@ class DBSnapshot:
                     time=data[1],
                     amount=data[2],
                     asset=Asset(data[3]),
-                    usd_value=str(FVal(data[4]) * main_currency_price),
+                    usd_value=str(FVal(data[4])),
                 ),
             )
         return balances_data
@@ -64,11 +63,8 @@ class DBSnapshot:
     def get_timed_location_data(
         self,
         timestamp: Timestamp,
-        main_currency_price: FVal,
     ) -> List[LocationData]:
-        """Retrieves the timed_location_data from the db for a given timestamp
-           Sets the usd_value to the value in the main currency
-        """
+        """Retrieves the timed_location_data from the db for a given timestamp."""
         location_data = []
         cursor = self.db.conn.cursor()
         timed_location_data = cursor.execute(
@@ -81,7 +77,7 @@ class DBSnapshot:
                 LocationData(
                     time=data[0],
                     location=data[1],
-                    usd_value=str(FVal(data[2]) * main_currency_price),
+                    usd_value=str(FVal(data[2])),
                 ),
             )
         return location_data
@@ -116,6 +112,7 @@ class DBSnapshot:
         timed_balances: List[DBAssetBalance],
         timed_location_data: List[LocationData],
         main_currency: Asset,
+        main_currency_price: Price,
     ) -> Tuple[bool, str]:
         """Creates a zip file of csv files containing timed_balances and timed_location_data."""
         dirpath = Path(mkdtemp())
@@ -124,6 +121,7 @@ class DBSnapshot:
             timed_location_data=timed_location_data,
             directory=dirpath,
             main_currency=main_currency,
+            main_currency_price=main_currency_price,
         )
         if not success:
             return False, msg
@@ -132,6 +130,7 @@ class DBSnapshot:
             (dirpath / BALANCES_FILENAME, BALANCES_FILENAME),
             (dirpath / BALANCES_FOR_IMPORT_FILENAME, BALANCES_FOR_IMPORT_FILENAME),
             (dirpath / LOCATION_DATA_FILENAME, LOCATION_DATA_FILENAME),
+            (dirpath / LOCATION_DATA_IMPORT_FILENAME, LOCATION_DATA_IMPORT_FILENAME),
         ]
         with ZipFile(file=dirpath / 'snapshot.zip', mode='w', compression=ZIP_DEFLATED) as archive:
             for path, filename in files:
@@ -161,14 +160,8 @@ class DBSnapshot:
         and a path to the zip file is returned.
         """
         main_currency, main_currency_price = self.get_main_currency_price(timestamp)
-        timed_balances = self.get_timed_balances(
-            timestamp=timestamp,
-            main_currency_price=main_currency_price,
-        )
-        timed_location_data = self.get_timed_location_data(
-            timestamp=timestamp,
-            main_currency_price=main_currency_price,
-        )
+        timed_balances = self.get_timed_balances(timestamp=timestamp)
+        timed_location_data = self.get_timed_location_data(timestamp=timestamp)
 
         if len(timed_balances) == 0 or len(timed_location_data) == 0:
             return False, 'No snapshot data found for the given timestamp.'
@@ -178,6 +171,7 @@ class DBSnapshot:
                 timed_balances=timed_balances,
                 timed_location_data=timed_location_data,
                 main_currency=main_currency,
+                main_currency_price=main_currency_price,
             )
 
         return self._export(
@@ -185,6 +179,7 @@ class DBSnapshot:
             timed_location_data=timed_location_data,
             directory=directory_path,
             main_currency=main_currency,
+            main_currency_price=main_currency_price,
         )
 
     @staticmethod
@@ -193,13 +188,15 @@ class DBSnapshot:
         timed_location_data: List[LocationData],
         directory: Path,
         main_currency: Asset,
+        main_currency_price: Price,
     ) -> Tuple[bool, str]:
         """Serializes the balances and location_data snapshots into a dictionary.
         It then writes the serialized data to a csv file.
         """
-        serialized_timed_balances = [balance.serialize(currency=main_currency, for_import=False) for balance in timed_balances]  # noqa: E501
-        serialized_timed_balances_for_import = [balance.serialize(currency=main_currency, for_import=True) for balance in timed_balances]  # noqa: E501
-        serialized_timed_location_data = [loc_data.serialize(currency=main_currency) for loc_data in timed_location_data]  # noqa: E501
+        serialized_timed_balances = [balance.serialize(export_data=(main_currency, main_currency_price)) for balance in timed_balances]  # noqa: E501
+        serialized_timed_balances_for_import = [balance.serialize() for balance in timed_balances]
+        serialized_timed_location_data = [loc_data.serialize(export_data=(main_currency, main_currency_price)) for loc_data in timed_location_data]  # noqa: E501
+        serialized_timed_location_data_for_import = [loc_data.serialize() for loc_data in timed_location_data]  # noqa: E501
 
         try:
             directory.mkdir(parents=True, exist_ok=True)
@@ -215,6 +212,10 @@ class DBSnapshot:
                 directory / LOCATION_DATA_FILENAME,
                 serialized_timed_location_data,
             )
+            _dict_to_csv_file(
+                directory / LOCATION_DATA_IMPORT_FILENAME,
+                serialized_timed_location_data_for_import,
+            )
         except (CSVWriteError, PermissionError) as e:
             return False, str(e)
 
@@ -225,49 +226,45 @@ class DBSnapshot:
         balances_snapshot_file: Path,
         location_data_snapshot_file: Path,
     ) -> Tuple[bool, str]:
-        main_currency = self.db.get_main_currency()
         balances_list = self._csv_to_dict(balances_snapshot_file)
         location_data_list = self._csv_to_dict(location_data_snapshot_file)
         # check if the headers match the type stored in the db
         has_invalid_headers = (
-            tuple(balances_list[0].keys()) != ('timestamp', 'category', 'asset_identifier', 'amount', f'{main_currency.symbol.lower()}_value') or  # noqa: E501
-            tuple(location_data_list[0].keys()) != ('timestamp', 'location', f'{main_currency.symbol.lower()}_value')  # noqa: E501
+            tuple(balances_list[0].keys()) != ('timestamp', 'category', 'asset_identifier', 'amount', 'usd_value') or  # noqa: E501
+            tuple(location_data_list[0].keys()) != ('timestamp', 'location', 'usd_value')  # noqa: E501
         )
         if has_invalid_headers:
             return False, 'csv file has invalid headers'
 
         # check if all timestamps are the same.
         balances_timestamps = [int(entry['timestamp']) for entry in balances_list]
-        location_data_timestamps = [entry['timestamp'] for entry in location_data_list]
+        location_data_timestamps = [int(entry['timestamp']) for entry in location_data_list]
         has_different_timestamps = (
             balances_timestamps.count(balances_timestamps[0]) != len(balances_timestamps) or
             location_data_timestamps.count(location_data_timestamps[0]) != len(location_data_timestamps) or  # noqa: E501
-            balances_timestamps[0] != create_timestamp(location_data_timestamps[0])
+            balances_timestamps[0] != location_data_timestamps[0]
         )
         if has_different_timestamps:
             return False, 'csv file has different timestamps'
 
         # check if the timestamp can be converted to int
         try:
-            timestamp = Timestamp(int(balances_list[0]['timestamp']))
-        except ValueError:
+            _ = deserialize_timestamp(balances_list[0]['timestamp'])
+        except DeserializationError:
             return False, 'csv file contains invalid timestamp format'
 
         return self._import_snapshot(
             balances_list=balances_list,
             location_data_list=location_data_list,
-            timestamp=timestamp,
         )
 
     def _import_snapshot(
         self,
         balances_list: List[Dict[str, str]],
         location_data_list: List[Dict[str, str]],
-        timestamp: Timestamp,
     ) -> Tuple[bool, str]:
         processed_balances_list = []
         processed_location_data_list = []
-        main_currency, main_currency_price = self.get_main_currency_price(timestamp)
 
         for entry in balances_list:
             processed_balances_list.append(
@@ -276,19 +273,15 @@ class DBSnapshot:
                     time=Timestamp(int(entry['timestamp'])),
                     asset=Asset(identifier=entry['asset_identifier']),
                     amount=entry['amount'],
-                    usd_value=str(
-                        FVal(entry[f'{main_currency.symbol.lower()}_value']) / main_currency_price,
-                    ),
+                    usd_value=str(FVal(entry['usd_value'])),
                 ),
             )
         for entry in location_data_list:
             processed_location_data_list.append(
                 LocationData(
-                    time=create_timestamp(entry['timestamp']),
+                    time=Timestamp(int(entry['timestamp'])),
                     location=Location.deserialize(entry['location']).serialize_for_db(),
-                    usd_value=str(
-                        FVal(entry[f'{main_currency.symbol.lower()}_value']) / main_currency_price,
-                    ),
+                    usd_value=str(FVal(entry['usd_value'])),
                 ),
             )
         try:

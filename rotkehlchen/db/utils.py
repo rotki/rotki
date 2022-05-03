@@ -7,7 +7,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.substrate.types import KusamaAddress, PolkadotAddress
 from rotkehlchen.chain.substrate.utils import is_valid_kusama_address, is_valid_polkadot_address
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     BlockchainAccountData,
     BTCAddress,
@@ -15,6 +15,7 @@ from rotkehlchen.types import (
     HexColorCode,
     ListOfBlockchainAddresses,
     Location,
+    Price,
     SupportedBlockchain,
     Timestamp,
 )
@@ -54,21 +55,21 @@ class DBAssetBalance(NamedTuple):
     amount: str
     usd_value: str
 
-    def serialize(self, for_import: bool, currency: Asset = A_USD) -> Dict[str, str]:
-        if for_import is True:
+    def serialize(self, export_data: Optional[Tuple[Asset, Price]] = None) -> Dict[str, str]:
+        if export_data:
             return {
-                'timestamp': str(self.time),
+                'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
                 'category': self.category.serialize(),
-                'asset_identifier': str(self.asset.identifier),
+                'asset': str(self.asset),
                 'amount': self.amount,
-                f'{currency.symbol.lower()}_value': self.usd_value,
+                f'{export_data[0].symbol.lower()}_value': str(FVal(self.usd_value) * export_data[1]),  # noqa: 501
             }
         return {
-            'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
+            'timestamp': str(self.time),
             'category': self.category.serialize(),
-            'asset': str(self.asset),
+            'asset_identifier': str(self.asset.identifier),
             'amount': self.amount,
-            f'{currency.symbol.lower()}_value': self.usd_value,
+            'usd_value': self.usd_value,
         }
 
 
@@ -84,11 +85,17 @@ class LocationData(NamedTuple):
     location: str  # Location serialized in a DB enum
     usd_value: str
 
-    def serialize(self, currency: Asset = A_USD) -> Dict[str, str]:
+    def serialize(self, export_data: Optional[Tuple[Asset, Price]] = None) -> Dict[str, str]:
+        if export_data:
+            return {
+                'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
+                'location': Location.deserialize_from_db(self.location).serialize(),
+                f'{export_data[0].symbol.lower()}_value': str(FVal(self.usd_value) * export_data[1]),   # noqa: 501
+            }
         return {
-            'timestamp': timestamp_to_date(self.time, '%Y-%m-%d %H:%M:%S'),
+            'timestamp': str(self.time),
             'location': Location.deserialize_from_db(self.location).serialize(),
-            f'{currency.symbol.lower()}_value': self.usd_value,
+            'usd_value': self.usd_value,
         }
 
 
